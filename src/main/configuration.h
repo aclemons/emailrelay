@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 #include "goptions.h"
 #include "goptionmap.h"
 #include "gpath.h"
-#include "gstrings.h"
+#include "gstringarray.h"
 #include "glogoutput.h"
 #include <string>
 
@@ -44,10 +44,11 @@ namespace Main
 class Main::Configuration
 {
 public:
-	Configuration( const G::Options & , const G::OptionMap & , const G::Path & app_dir , const G::Path & base_dir ) ;
-		///< Constructor. The app-dir path is used as a substitution
-		///< value, and the base-dir path is used to turn relative paths
-		///< into absolute ones when daemon() is true.
+	Configuration( const std::vector<G::Option> & , const G::OptionMap & ,
+		const G::Path & app_dir , const G::Path & base_dir ) ;
+			///< Constructor. The app-dir path is used as a substitution
+			///< value, and the base-dir path is used to turn relative paths
+			///< into absolute ones when daemon() is true.
 
 	std::string semanticError() const ;
 		///< Returns a non-empty string if there is a fatal semantic conflict
@@ -64,7 +65,10 @@ public:
 	unsigned int port() const ;
 		///< Returns the main listening port number.
 
-	G::StringArray listeningAddresses( const std::string & protocol = std::string() ) const ;
+	std::pair<int,int> socketLinger() const ;
+		///< Returns the socket linger option for smtp connections.
+
+	G::StringArray listeningAddresses( const std::string & protocol = {} ) const ;
 		///< Returns the listening addresses.
 
 	std::string clientBindAddress() const ;
@@ -140,8 +144,14 @@ public:
 	unsigned int adminPort() const ;
 		///< Returns the admin port number.
 
+	std::pair<int,int> adminSocketLinger() const ;
+		///< Returns the socket linger option for admin connections.
+
 	unsigned int popPort() const ;
 		///< Returns the pop port number.
+
+	std::pair<int,int> popSocketLinger() const ;
+		///< Returns the socket linger option for pop connections.
 
 	bool allowRemoteClients() const ;
 		///< Returns true if allowing remote clients to connect.
@@ -200,11 +210,6 @@ public:
 	std::string smtpSaslServerConfig() const ;
 		///< Returns the SMTP server-side SASL configuration string.
 
-	bool smtpPipelining() const ;
-		///< Returns true if the SMTP server protocol should allow some
-		///< limited SMTP command pipelining from broken clients, esp.
-		///< QUIT in the same network packet as the DATA EOM dot.
-
 	G::Path popSecretsFile() const ;
 		///< Returns the pop-server autentication secrets (password) file.
 		///< Returns the empty string if not defined.
@@ -212,7 +217,7 @@ public:
 	std::string popSaslServerConfig() const ;
 		///< Returns the POP SASL configuration string.
 
-	std::string networkName( const std::string & default_ = std::string() ) const ;
+	std::string networkName( const std::string & default_ = {} ) const ;
 		///< Returns an override for local host's canonical network name.
 
 	std::string user() const ;
@@ -303,9 +308,14 @@ public:
 	unsigned int maxSize() const ;
 		///< Returns the maximum size of submitted messages, or zero.
 
-	bool eightBitTest() const ;
-		///< Returns true if the new messages should be tested as to
-		///< whether they have 7bit or 8bit content.
+	int shutdownHowOnQuit() const ;
+		///< Returns the socket shutdown parameter when replying
+		///< to SMTP QUIT command (1 for the default behaviour
+		///< or -1 for no-op).
+
+	bool utf8Test() const ;
+		///< Returns true if new messages should be tested as to
+		///< whether they have 8bit mailbox names.
 
 	std::string dnsbl() const ;
 		///< Returns a DNSBL configuration string including a list servers.
@@ -320,6 +330,7 @@ public:
 
 private:
 	G::Path pathValue( const std::string & ) const ;
+	G::Path pathValue( const char * ) const ;
 	std::string semanticError( bool & ) const ;
 	bool pathlike( const std::string & ) const ;
 	bool filterType( const std::string & ) const ;
@@ -330,7 +341,7 @@ private:
 	bool validSyslogFacility() const ;
 
 private:
-	G::Options m_options ;
+	std::vector<G::Option> m_options ;
 	G::OptionMap m_map ;
 	G::Path m_app_dir ;
 	G::Path m_base_dir ;

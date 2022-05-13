@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,15 +15,15 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
-/// \file geventloophandles.h
+/// \file geventloophandles_win32.h
 ///
 
-#ifndef G_NET_EVENTLOOPHANDLES_H
-#define G_NET_EVENTLOOPHANDLES_H
+#ifndef G_NET_EVENTLOOPHANDLES_WIN32_H
+#define G_NET_EVENTLOOPHANDLES_WIN32_H
 
 #include "gdef.h"
-#if G_WINDOWS
 #include "geventloop_win32.h"
+#include <memory>
 #include <vector>
 #include <algorithm>
 
@@ -84,9 +84,8 @@ public:
 
 public:
 	EventLoopHandles( List & , std::size_t threads ) ;
-		///< Constructor. The implementation is free to populate the list
-		///< with an initial set of handles of type 'other' for internal
-		///< use.
+		///< Constructor. The implementation might populate the list with
+		///< an initial set of handles of type 'other' for internal use.
 
 	~EventLoopHandles() ;
 		///< Destructor.
@@ -105,9 +104,9 @@ public:
 		///< been handled in 'rc'.
 
 	bool overflow( List & list , bool (*valid_fn)(const ListItem&) ) ;
-		///< Returns true if number of valid entries in the event-loop
-		///< list would cause an overflow, using the given function
-		///< to ignore list items that are going to be garbage collected.
+		///< Returns true if the number of valid entries in the event-loop
+		///< list would cause an overflow, using the given function to
+		///< ignore list items that are going to be garbage collected.
 		///< The last item on the list is considered to be valid,
 		///< regardless of what the tester function says.
 		///<
@@ -136,7 +135,8 @@ public:
 	std::size_t shuffle( List & , Rc rc ) ;
 		///< Shuffles the external event-loop list and the internal
 		///< handles as necessary to prevent starvation. Returns
-		///< the new list index after shuffling (see Rc::index()).
+		///< the new list index of the current event after shuffling
+		///< (see Rc::index()).
 
 	void handleInternalEvent( std::size_t list_index ) ;
 		///< Called when the current event comes from a handle that was
@@ -300,5 +300,4 @@ void GNet::EventLoopHandles::handleInternalEvent( std::size_t index )
 		handleInternalEventImp( index ) ;
 }
 
-#endif
 #endif

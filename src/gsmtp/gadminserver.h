@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,10 +29,13 @@
 #include "gsmtpserverprotocol.h"
 #include "gclientptr.h"
 #include "gsmtpclient.h"
+#include "gstringarray.h"
+#include "gstringmap.h"
 #include <string>
 #include <list>
 #include <sstream>
 #include <utility>
+#include <memory>
 
 namespace GSmtp
 {
@@ -51,7 +54,7 @@ namespace GSmtp
 class GSmtp::AdminServerPeer : public GNet::ServerPeer
 {
 public:
-	AdminServerPeer( GNet::ExceptionSinkUnbound , const GNet::ServerPeerInfo & , AdminServer & ,
+	AdminServerPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo && , AdminServer & ,
 		const std::string & remote , const G::StringMap & info_commands ,
 		const G::StringMap & config_commands , bool with_terminate ) ;
 			///< Constructor.
@@ -119,9 +122,11 @@ class GSmtp::AdminServer : public GNet::MultiServer
 {
 public:
 	AdminServer( GNet::ExceptionSink , MessageStore & store , FilterFactory & ,
-		G::Slot::Signal<std::string> & forward_request ,
-		const GNet::ServerPeerConfig & server_peer_config ,
-		const GSmtp::Client::Config & client_config , const GAuth::Secrets & client_secrets ,
+		G::Slot::Signal<const std::string&> & forward_request ,
+		const GNet::ServerPeer::Config & net_server_peer_config ,
+		const GNet::Server::Config & net_server_config ,
+		const GSmtp::Client::Config & smtp_client_config ,
+		const GAuth::SaslClientSecrets & client_secrets ,
 		const G::StringArray & interfaces , unsigned int port , bool allow_remote ,
 		const std::string & remote_address , unsigned int connection_timeout ,
 		const G::StringMap & info_commands , const G::StringMap & config_commands ,
@@ -142,7 +147,7 @@ public:
 		///< Returns a reference to the filter factory, as
 		///< passed in to the constructor.
 
-	const GAuth::Secrets & clientSecrets() const ;
+	const GAuth::SaslClientSecrets & clientSecrets() const ;
 		///< Returns a reference to the client secrets object, as passed
 		///< in to the constructor. This is a client-side secrets file,
 		///< used to authenticate ourselves with a remote server.
@@ -166,7 +171,7 @@ public:
 			///< users might be interested in.
 
 protected:
-	std::unique_ptr<GNet::ServerPeer> newPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo , GNet::MultiServer::ServerInfo ) override ;
+	std::unique_ptr<GNet::ServerPeer> newPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo && , GNet::MultiServer::ServerInfo ) override ;
 		///< Override from GNet::MultiServer.
 
 public:
@@ -182,9 +187,9 @@ private:
 	GNet::Timer<AdminServer> m_forward_timer ;
 	MessageStore & m_store ;
 	FilterFactory & m_ff ;
-	G::Slot::Signal<std::string> & m_forward_request ;
-	GSmtp::Client::Config m_client_config ;
-	const GAuth::Secrets & m_client_secrets ;
+	G::Slot::Signal<const std::string&> & m_forward_request ;
+	GSmtp::Client::Config m_smtp_client_config ;
+	const GAuth::SaslClientSecrets & m_client_secrets ;
 	bool m_allow_remote ;
 	std::string m_remote_address ;
 	unsigned int m_connection_timeout ;

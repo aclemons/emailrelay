@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@
 #include "gtest.h"
 #include "gcontrol.h"
 #include "gdialog.h"
+#include "ggettext.h"
 #include "resource.h"
 
 namespace Main
@@ -146,7 +147,7 @@ bool Main::WinApp::onCreate()
 		}
 		catch( std::exception & e )
 		{
-			throw G::Exception( e.what() , "try using the --no-daemon option" ) ;
+			throw G::Exception( e.what() , txt("try using the --no-daemon option") ) ;
 		}
 	}
 	if( m_cfg.open_on_create )
@@ -329,9 +330,9 @@ void Main::WinApp::onWindowException( std::exception & e )
 	GGui::Window::onWindowException( e ) ;
 }
 
-G::Options::Layout Main::WinApp::outputLayout( bool verbose ) const
+G::OptionsOutputLayout Main::WinApp::outputLayout( bool verbose ) const
 {
-	G::Options::Layout layout ;
+	G::OptionsOutputLayout layout ;
 	layout.separator = "\t" ;
 	//layout.column
 	layout.width = PixelLayout(verbose).width() ;
@@ -353,7 +354,7 @@ void Main::WinApp::output( const std::string & text , bool , bool verbose )
 	if( !m_disable_output )
 	{
 		G::StringArray text_lines ;
-		G::Str::splitIntoFields( text , text_lines , "\r\n" ) ;
+		G::Str::splitIntoFields( G::Str::removedAll(text,'\r') , text_lines , '\n' ) ;
 		if( text_lines.size() > 10U ) // eg. "--help"
 		{
 			Box box( *this , text_lines , PixelLayout(verbose).tabstop() ) ;

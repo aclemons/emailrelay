@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,6 +21,8 @@
 #include "gdef.h"
 #include "gstr.h"
 #include "gfilterfactory.h"
+#include "gfilterchain.h"
+#include "gfilestore.h"
 #include "gnullfilter.h"
 #include "gnetworkfilter.h"
 #include "gexecutablefilter.h"
@@ -28,23 +30,21 @@
 #include "gexception.h"
 #include "gfactoryparser.h"
 
-GSmtp::FilterFactory::FilterFactory( FileStore & file_store ) :
+GSmtp::FilterFactoryFileStore::FilterFactoryFileStore( FileStore & file_store ) :
 	m_file_store(file_store)
 {
 }
 
-std::string GSmtp::FilterFactory::check( const std::string & identifier )
+std::unique_ptr<GSmtp::Filter> GSmtp::FilterFactoryFileStore::newFilter( GNet::ExceptionSink es ,
+	bool server_side , const std::string & spec , unsigned int timeout )
 {
-	return FactoryParser::check( identifier , true ) ;
-}
-
-std::unique_ptr<GSmtp::Filter> GSmtp::FilterFactory::newFilter( GNet::ExceptionSink es ,
-	bool server_side , const std::string & identifier , unsigned int timeout )
-{
-	FactoryParser::Result p = FactoryParser::parse( identifier , true ) ;
-	if( p.first.empty() )
+	const bool allow_spam = true ;
+	const bool allow_chain = true ;
+	FactoryParser::Result p = FactoryParser::parse( spec , allow_spam , allow_chain ) ;
+	if( p.first == "chain" )
 	{
-		return std::make_unique<NullFilter>( es , server_side ) ; // up-cast
+		// (recursive -- FilterChain::ctor calls newFilter())
+		return std::make_unique<FilterChain>( es , m_file_store , *this , server_side , p.second , timeout ) ;
 	}
 	else if( p.first == "spam" )
 	{
@@ -53,19 +53,20 @@ std::unique_ptr<GSmtp::Filter> GSmtp::FilterFactory::newFilter( GNet::ExceptionS
 		bool edit = p.third == 1 ;
 		bool read_only = !edit ;
 		bool always_pass = edit ;
-		return std::make_unique<SpamFilter>( es , m_file_store , p.second , read_only , always_pass , timeout , timeout ) ; // up-cast
+		return std::make_unique<SpamFilter>( es , m_file_store , p.second , read_only , always_pass , timeout , timeout ) ;
 	}
 	else if( p.first == "net" )
 	{
-		return std::make_unique<NetworkFilter>( es , m_file_store , p.second , timeout , timeout ) ; // up-cast
+		return std::make_unique<NetworkFilter>( es , m_file_store , p.second , timeout , timeout ) ;
 	}
 	else if( p.first == "exit" )
 	{
-		return std::make_unique<NullFilter>( es , server_side , G::Str::toUInt(p.second) ) ; // up-cast
+		return std::make_unique<NullFilter>( es , server_side , G::Str::toUInt(p.second) ) ;
 	}
 	else
 	{
-		return std::make_unique<ExecutableFilter>( es , m_file_store , server_side , p.second , timeout ) ; // up-cast
+		G_ASSERT( p.first == "file" ) ;
+		return std::make_unique<ExecutableFilter>( es , m_file_store , server_side , p.second , timeout ) ;
 	}
 }
 

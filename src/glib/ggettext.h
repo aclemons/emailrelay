@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,11 +23,6 @@
 
 #include "gdef.h"
 #include <string>
-#include <clocale>
-
-#if GCONFIG_HAVE_GETTEXT
-#include <libintl.h>
-#endif
 
 namespace G
 {
@@ -36,43 +31,34 @@ namespace G
 		///< to set the CTYPE and MESSAGES facets of the global C locale as a
 		///< side-effect.
 
-	constexpr const char * gettext_noop( const char * p ) ;
-		///< Marks a string for translation at build-time, but no translation is
-		///< applied at run-time.
-
-	const char * gettext( const char * ) ;
+	const char * gettext( const char * ) noexcept ;
 		///< Returns the message translation in the current locale's codeset,
-		///< eg. ISO8859-1 or UTF-8, transcoding from the catalogue as
-		///< necessary.
-}
+		///< eg. ISO-8859-1 or UTF-8, transcoding from the catalogue as
+		///< necessary. See also txt().
 
-#if GCONFIG_HAVE_GETTEXT
-inline void G::gettext_init( const std::string & localedir , const std::string & appname )
-{
-	if( !appname.empty() )
-	{
-		std::setlocale( LC_MESSAGES , "" ) ;
-		std::setlocale( LC_CTYPE , "" ) ;
-		if( !localedir.empty() )
-            bindtextdomain( appname.c_str() , localedir.c_str() ) ;
-		textdomain( appname.c_str() ) ;
-	}
+	constexpr const char * gettext_noop( const char * p ) ;
+		///< Marks a string for potential translation at build-time (see xgettext),
+		///< but no translation is applied at run-time. See also tx().
+
+	const char * txt( const char * p ) ;
+		///< Calls G::gettext(). Typically used unscoped by virtue of
+		///< a 'using' declaration, for the benefit of xgettext.
+
+	constexpr const char * tx( const char * p ) ;
+		///< Returns the parameter. Used as a marker for xgettext.
 }
-inline const char * G::gettext( const char * p )
-{
-		return ::gettext( p ) ;
-}
-#else
-inline void G::gettext_init( const std::string & , const std::string & )
-{
-}
-inline const char * G::gettext( const char * p )
-{
-		return p ;
-}
-#endif
 
 constexpr const char * G::gettext_noop( const char * p )
+{
+	return p ;
+}
+
+inline const char * G::txt( const char * p )
+{
+	return G::gettext( p ) ;
+}
+
+constexpr const char * G::tx( const char * p )
 {
 	return p ;
 }

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,7 +15,19 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
-/// \file geventhandlerlist.h
+/// \file gstringmap.h
 ///
 
-#error not used
+#ifndef G_STRING_MAP_H
+#define G_STRING_MAP_H
+
+#include "gdef.h"
+#include <string>
+#include <map>
+
+namespace G
+{
+	using StringMap = std::map<std::string,std::string> ; ///< A std::map of std::strings.
+}
+
+#endif

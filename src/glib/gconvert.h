@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -32,12 +32,9 @@ namespace G
 
 //| \class G::Convert
 /// A static class which provides string encoding conversion functions. Supported
-/// encodings are ISO-8859-15 eight-bit char, UTF-16 wchar, and UTF-8 multi-byte char.
-///
-/// On Windows the eight-bit char encoding uses the 'active code page', typically
-/// CP-1252, rather than ISO-8859-15. Note that the active code page is also used
-/// by the Win32 API "A()" functions when they have to convert from 'ansi' to UTF-16
-/// (UCS-2) wide characters (see GetACP()).
+/// encodings are a 'native' encoding (which might be a SBCS code page, DBCS, or
+/// UTF-8, and possibly related to locale environment variables), UTF-16 wchar,
+/// and UTF-8 multi-byte char.
 ///
 /// Conversions that can fail take a ThrowOnError parameter which is used to add
 /// context information to the G::Convert::Error exception that is thrown.
@@ -50,18 +47,18 @@ namespace G
 ///     G::Convert::convert( utf8_result , wide_input ) ;
 ///     return utf8_result.s ;
 /// }
-/// std::string to_ansi( const std::wstring & wide_input )
+/// std::string to_native( const std::wstring & wide_input )
 /// {
-///     std::string ansi_result ;
-///     G::Convert::convert( ansi_result , wide_input , G::Convert::ThrowOnError("to_ansi") ) ;
-///     return ansi_result ;
+///     std::string native_result ;
+///     G::Convert::convert( native_result , wide_input , G::Convert::ThrowOnError("to_native") ) ;
+///     return native_result ;
 /// }
 /// \endcode
 ///
 class G::Convert
 {
 public:
-	G_EXCEPTION_CLASS( Error , "string character-set conversion error" ) ;
+	G_EXCEPTION_CLASS( Error , tx("string character-set conversion error") ) ;
 	using tstring = std::basic_string<TCHAR> ;
 
 	struct utf8 /// A string wrapper that indicates UTF-8 encoding.
@@ -80,7 +77,7 @@ public:
 
 	static void convert( utf8 & utf_out , const std::string & in_ ) ;
 		///< Converts between string types/encodings:
-		///< ansi to utf8.
+		///< native to utf8.
 
 	static void convert( utf8 & utf_out , const utf8 & in_ ) ;
 		///< Converts between string types/encodings:
@@ -90,21 +87,21 @@ public:
 		///< Converts between string types/encodings:
 		///< utf16 to utf8.
 
-	static void convert( std::string & ansi_out , const std::string & in_ ) ;
+	static void convert( std::string & native_out , const std::string & in_ ) ;
 		///< Converts between string types/encodings:
-		///< ansi to ansi.
+		///< native to native.
 
-	static void convert( std::string & ansi_out , const utf8 & in_ , const ThrowOnError & ) ;
+	static void convert( std::string & native_out , const utf8 & in_ , const ThrowOnError & ) ;
 		///< Converts between string types/encodings:
-		///< utf8 to ansi.
+		///< utf8 to native.
 
-	static void convert( std::string & ansi_out , const std::wstring & in_ , const ThrowOnError & ) ;
+	static void convert( std::string & native_out , const std::wstring & in_ , const ThrowOnError & ) ;
 		///< Converts between string types/encodings:
-		///< utf16 to ansi.
+		///< utf16 to native.
 
-	static void convert( std::wstring & wide_out , const std::string & ansi_in ) ;
+	static void convert( std::wstring & wide_out , const std::string & native_in ) ;
 		///< Converts between string types/encodings:
-		///< ansi to utf16.
+		///< native to utf16.
 
 	static void convert( std::wstring & wide_out , const utf8 & utf_in ) ;
 		///< Converts between string types/encodings:
@@ -114,21 +111,21 @@ public:
 		///< Converts between string types/encodings:
 		///< utf16 to utf16.
 
-	static void convert( std::string & ansi_out , const std::string & in_ , const ThrowOnError & ) ;
+	static void convert( std::string & native_out , const std::string & in_ , const ThrowOnError & ) ;
 		///< An overload for TCHAR shenanigans on windows. Note that
 		///< a TCHAR can sometimes be a char, depending on the build
 		///< options, so this three-parameter overload allows for the
 		///< input to be a basic_string<TCHAR>, whatever the build.
 		///<
 		///< Converts between string types/encodings:
-		///< ansi to ansi.
+		///< native to native.
 
 public:
 	Convert() = delete ;
 
 private:
-	static std::string narrow( const std::wstring & s , bool is_utf8 , const std::string & = std::string() ) ;
-	static std::wstring widen( const std::string & s , bool is_utf8 , const std::string & = std::string() ) ;
+	static std::string narrow( const std::wstring & s , bool is_utf8 , const std::string & = {} ) ;
+	static std::wstring widen( const std::string & s , bool is_utf8 , const std::string & = {} ) ;
 } ;
 
 #endif

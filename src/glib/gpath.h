@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 #define G_PATH_H
 
 #include "gdef.h"
-#include "gstrings.h"
+#include "gstringarray.h"
 #include <string>
 #include <iostream>
 #include <initializer_list>
@@ -137,11 +137,15 @@ public:
 		///< "."; prefer withExtension() where appropriate to avoid
 		///< this.
 
+	Path withoutRoot() const ;
+		///< Returns a path without the root part. This has no effect
+		///< if the path isRelative().
+
 	bool isAbsolute() const ;
 		///< Returns !isRelative().
 
 	bool isRelative() const ;
-		///< Returns true if the path is a relative path.
+		///< Returns true if the path is a relative path or empty().
 
 	void pathAppend( const std::string & tail ) ;
 		///< Appends a filename or a relative path to this path.

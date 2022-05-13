@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@
 GSmtp::ProtocolMessageForward::ProtocolMessageForward( GNet::ExceptionSink es ,
 	MessageStore & store , FilterFactory & ff , std::unique_ptr<ProtocolMessage> pm ,
 	const GSmtp::Client::Config & client_config ,
-	const GAuth::Secrets & client_secrets , const std::string & server ) :
+	const GAuth::SaslClientSecrets & client_secrets , const std::string & server ) :
 		m_es(es) ,
 		m_store(store) ,
 		m_ff(ff) ,
@@ -75,14 +75,24 @@ void GSmtp::ProtocolMessageForward::clear()
 	m_pm->clear() ;
 }
 
-GSmtp::MessageId GSmtp::ProtocolMessageForward::setFrom( const std::string & from , const std::string & from_auth )
+GSmtp::MessageId GSmtp::ProtocolMessageForward::setFrom( const std::string & from , const FromInfo & from_info )
 {
-	return m_pm->setFrom( from , from_auth ) ;
+	return m_pm->setFrom( from , from_info ) ;
 }
 
-bool GSmtp::ProtocolMessageForward::addTo( const std::string & to , VerifierStatus to_status )
+GSmtp::ProtocolMessage::FromInfo GSmtp::ProtocolMessageForward::fromInfo() const
 {
-	return m_pm->addTo( to , to_status ) ;
+	return m_pm->fromInfo() ;
+}
+
+std::string GSmtp::ProtocolMessageForward::bodyType() const
+{
+	return m_pm->bodyType() ;
+}
+
+bool GSmtp::ProtocolMessageForward::addTo( VerifierStatus to_status )
+{
+	return m_pm->addTo( to_status ) ;
 }
 
 void GSmtp::ProtocolMessageForward::addReceived( const std::string & line )
@@ -90,9 +100,14 @@ void GSmtp::ProtocolMessageForward::addReceived( const std::string & line )
 	m_pm->addReceived( line ) ;
 }
 
-bool GSmtp::ProtocolMessageForward::addText( const char * line_data , std::size_t line_size )
+GSmtp::NewMessage::Status GSmtp::ProtocolMessageForward::addContent( const char * line_data , std::size_t line_size )
 {
-	return m_pm->addText( line_data , line_size ) ;
+	return m_pm->addContent( line_data , line_size ) ;
+}
+
+std::size_t GSmtp::ProtocolMessageForward::contentSize() const
+{
+	return m_pm->contentSize() ;
 }
 
 std::string GSmtp::ProtocolMessageForward::from() const
@@ -155,7 +170,7 @@ std::string GSmtp::ProtocolMessageForward::forward( const MessageId & id , bool 
 			if( m_client_ptr.get() == nullptr )
 			{
 				m_client_ptr.reset( std::make_unique<Client>( GNet::ExceptionSink(m_client_ptr,m_es.esrc()),
-					m_store , m_ff , m_client_location , m_client_secrets , m_client_config ) ) ;
+					m_ff , m_client_location , m_client_secrets , m_client_config ) ) ;
 				m_client_ptr->messageDoneSignal().connect( G::Slot::slot( *this ,
 					&GSmtp::ProtocolMessageForward::messageDone ) ) ;
 			}

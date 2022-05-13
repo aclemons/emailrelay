@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -79,12 +79,13 @@ public:
 		///< not found.
 
 	std::size_t find( const std::string & s , std::size_t startpos = 0U ) const ;
-		///< Finds the given sub-string. Returns npos if not
+		///< Finds the given string. Returns npos if not
 		///< found.
 
 	std::size_t findSubStringAtEnd( const std::string & s , std::size_t startpos = 0U ) const ;
-		///< Finds a non-empty leading substring 's' that
-		///< appears at the end of the data. Returns npos
+		///< Tries to find some leading sub-string of 's' that
+		///< appears right at the end of the data, starting
+		///< with the longest sub-string. Returns npos
 		///< if not found.
 
 	const char * data( std::size_t pos , std::size_t size ) const ;
@@ -107,8 +108,8 @@ public:
 	~LineStore() = default ;
 	LineStore( const LineStore & ) = delete ;
 	LineStore( LineStore && ) = delete ;
-	void operator=( const LineStore & ) = delete ;
-	void operator=( LineStore && ) = delete ;
+	LineStore & operator=( const LineStore & ) = delete ;
+	LineStore & operator=( LineStore && ) = delete ;
 
 private:
 	const char * dataimp( std::size_t pos , std::size_t size ) ;

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 #include "gdef.h"
 #include "gpath.h"
 #include "gexception.h"
-#include "gstrings.h"
+#include "gstringarray.h"
 #include <string>
 
 namespace G
@@ -40,16 +40,16 @@ namespace G
 class G::Link
 {
 public:
-	G_EXCEPTION( SaveError , "error saving desktop or menu link" ) ;
+	G_EXCEPTION( SaveError , tx("error saving desktop or menu link") ) ;
 
 	enum class Show { Default , Hide } ;
 
 	Link( const Path & target_path , const std::string & name , const std::string & description ,
 		const Path & working_dir , const StringArray & args = StringArray() ,
 		const Path & icon_source = Path() , Show show = Show::Default ,
-		const std::string & internal_comment_1 = std::string() ,
-		const std::string & internal_comment_2 = std::string() ,
-		const std::string & internal_comment_3 = std::string() ) ;
+		const std::string & internal_comment_1 = {} ,
+		const std::string & internal_comment_2 = {} ,
+		const std::string & internal_comment_3 = {} ) ;
 			///< Constructor. Note that the path of the link itself
 			///< is specified in saveAs(), not the constructor.
 			///< The "working_dir" is the current-working-directory

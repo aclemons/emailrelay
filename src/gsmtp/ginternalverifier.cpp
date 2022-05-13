@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,24 +25,16 @@
 GSmtp::InternalVerifier::InternalVerifier()
 = default;
 
-void GSmtp::InternalVerifier::verify( const std::string & to , const std::string & , const GNet::Address & ,
+void GSmtp::InternalVerifier::verify( Command command , const std::string & to ,
+	const std::string & , const GNet::Address & ,
 	const std::string & , const std::string & )
 {
-	VerifierStatus status = verifyInternal( to ) ;
-	doneSignal().emit( std::string(to) , status ) ;
-}
-
-GSmtp::VerifierStatus GSmtp::InternalVerifier::verifyInternal( const std::string & address ) const
-{
 	// accept all addresses as if remote
-	VerifierStatus status ;
-	status.is_valid = true ;
-	status.is_local = false ;
-	status.address = address ;
-	return status ;
+	VerifierStatus status = VerifierStatus::remote( to ) ;
+	doneSignal().emit( command , status ) ;
 }
 
-G::Slot::Signal<const std::string&,const GSmtp::VerifierStatus&> & GSmtp::InternalVerifier::doneSignal()
+G::Slot::Signal<GSmtp::Verifier::Command,const GSmtp::VerifierStatus&> & GSmtp::InternalVerifier::doneSignal()
 {
 	return m_done_signal ;
 }

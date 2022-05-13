@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+   Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
    
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -25,11 +25,19 @@
 #ifdef G_STR_IMP
 #undef G_STR_IMP
 #endif
-#define G_STR_IMP(X) #X
-
 #ifdef G_STR
 #undef G_STR
 #endif
-#define G_STR(X) G_STR_IMP(X)
+#ifdef G_STR_PASTE_IMP
+#undef G_STR_PASTE_IMP
+#endif
+#ifdef G_STR_PASTE
+#undef G_STR_PASTE
+#endif
+
+#define G_STR_IMP(a) #a
+#define G_STR(a) G_STR_IMP(a)
+#define G_STR_PASTE_IMP(a,b) a##b
+#define G_STR_PASTE(a,b) G_STR_PASTE_IMP(a,b)
 
 #endif

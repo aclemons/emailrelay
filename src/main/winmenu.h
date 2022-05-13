@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ namespace Main
 class Main::WinMenu
 {
 public:
-	G_EXCEPTION( Error , "menu error" ) ;
+	G_EXCEPTION( Error , tx("menu error") ) ;
 
 	explicit WinMenu( unsigned int resource_id ) ;
 		///< Constructor.

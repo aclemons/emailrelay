@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,9 +26,11 @@
 #include "geventhandler.h"
 #include "gexception.h"
 #include "gstringview.h"
+#include "glimits.h"
 #include <string>
-#include <vector>
+#include <memory>
 #include <utility>
+#include <vector>
 
 namespace GNet
 {
@@ -56,16 +58,25 @@ class GNet::SocketProtocol
 {
 public:
 	using Sink = SocketProtocolSink ;
-	G_EXCEPTION_CLASS( ReadError , "peer disconnected" ) ;
-	G_EXCEPTION( SendError , "peer disconnected" ) ;
-	G_EXCEPTION( ShutdownError , "shutdown error" ) ;
-	G_EXCEPTION( SecureConnectionTimeout , "secure connection timeout" ) ;
-	G_EXCEPTION( Shutdown , "peer shutdown" ) ;
-	G_EXCEPTION( OtherEventError , "network event" ) ;
+	G_EXCEPTION_CLASS( ReadError , tx("peer disconnected") ) ;
+	G_EXCEPTION( SendError , tx("peer disconnected") ) ;
+	G_EXCEPTION( ShutdownError , tx("shutdown error") ) ;
+	G_EXCEPTION( SecureConnectionTimeout , tx("secure connection timeout") ) ;
+	G_EXCEPTION( Shutdown , tx("peer shutdown") ) ;
+	G_EXCEPTION( OtherEventError , tx("network event") ) ;
+	G_EXCEPTION( ProtocolError , tx("socket protocol error") ) ;
 
-	SocketProtocol( EventHandler & , ExceptionSink ,
-		Sink & , StreamSocket & , unsigned int secure_connection_timeout ) ;
-			///< Constructor. The references are kept.
+	struct Config /// A configuration structure for GNet::SocketProtocol.
+	{
+		std::size_t read_buffer_size {G::Limits<>::net_buffer} ;
+		unsigned int secure_connection_timeout {0U} ;
+		Config & set_read_buffer_size( std::size_t n ) { read_buffer_size = n ; return *this ; }
+		Config & set_secure_connection_timeout( unsigned int t ) { secure_connection_timeout = t ; return *this ; }
+	} ;
+
+	SocketProtocol( EventHandler & , ExceptionSink , Sink & ,
+		StreamSocket & , const Config & ) ;
+			///< Constructor.
 
 	~SocketProtocol() ;
 		///< Destructor.
@@ -85,7 +96,7 @@ public:
 		///< is processed (see SocketProtocolSink::onData()) and the
 		///< socket is shutdown() before the exception is thrown.
 
-	bool send( const std::string & data , std::size_t offset = 0U ) ;
+	bool send( const std::string & data , std::size_t offset ) ;
 		///< Sends data. Returns false if flow control asserted before
 		///< all the data is sent. Returns true if all the data was sent,
 		///< or if the data passed in (taking the offset into account)
@@ -97,6 +108,9 @@ public:
 		///< the subsequent write-event is triggered the user should
 		///< call writeEvent(). There should be no new calls to send()
 		///< until writeEvent() returns true.
+
+	bool send( G::string_view data ) ;
+		///< Overload for string_view.
 
 	bool send( const std::vector<G::string_view> & data , std::size_t offset = 0U ) ;
 		///< Overload to send data using scatter-gather segments.
@@ -114,6 +128,7 @@ public:
 
 	void secureConnect() ;
 		///< Initiates the TLS/SSL handshake, acting as a client.
+		///< Any send() data blocked by flow control is discarded.
 
 	static bool secureAcceptCapable() ;
 		///< Returns true if the implementation supports TLS/SSL and a
@@ -121,6 +136,7 @@ public:
 
 	void secureAccept() ;
 		///< Waits for the TLS/SSL handshake protocol, acting as a server.
+		///< Any send() data blocked by flow control is discarded.
 
 	bool secure() const ;
 		///< Returns true if the connection is currently secure, ie. after
@@ -129,9 +145,6 @@ public:
 	std::string peerCertificate() const ;
 		///< Returns the peer's TLS/SSL certificate or the empty
 		///< string.
-
-	static void setReadBufferSize( std::size_t n ) ;
-		///< Sets the read buffer size. Used in testing.
 
 public:
 	SocketProtocol( const SocketProtocol & ) = delete ;

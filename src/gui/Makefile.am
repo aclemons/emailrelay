@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -52,6 +52,7 @@ LIB_SOURCES = \
 	boot.h \
 	dir.cpp \
 	dir.h \
+	gcominit.h \
 	glibsources.cpp \
 	glink.h \
 	installer.h \
@@ -59,6 +60,14 @@ LIB_SOURCES = \
 	legal.h \
 	serverconfiguration.cpp \
 	serverconfiguration.h
+
+TS_FILES = emailrelay_tr.no_NO.ts
+QM_IN_FILES = emailrelay.no.qm_in
+QM_FILES = emailrelay.no.qm
+
+emailrelay.no.qm: emailrelay.no.qm_in
+	-$(AWK) '/^[0123456789]/ {for(i=1;i<NF;i++){printf("%c",$$i)}}' $(srcdir)/emailrelay.no.qm_in > emailrelay.no.qm
+	@test -s $(QM_FILES)
 
 if GCONFIG_WINDOWS
 OS_EXTRA_DIST = $(MAC_SOURCES) $(UNIX_SOURCES)
@@ -77,8 +86,10 @@ endif
 endif
 
 EXTRA_DIST=\
+	$(TS_FILES) \
+	$(QM_IN_FILES) \
 	emailrelay-gui.exe.manifest \
-	gcominit.h \
+	emailrelay-gui.pro \
 	messages.mc \
 	$(OS_EXTRA_DIST)
 
@@ -90,12 +101,7 @@ MOC_OUTPUT=\
 	moc_gpage.cpp \
 	moc_pages.cpp
 
-MOC_OBJECTS=\
-	moc_gdialog.o \
-	moc_gpage.o \
-	moc_pages.o
-
-CLEANFILES = $(MOC_OUTPUT)
+CLEANFILES = $(MOC_OUTPUT) $(QM_FILES)
 DISTCLEANFILES = ./.deps/moc*
 
 AM_CPPFLAGS=\
@@ -127,18 +133,22 @@ moc_gpage.cpp: $(srcdir)/gpage.h
 moc_pages.cpp: $(srcdir)/pages.h
 	$(GCONFIG_QT_MOC) $(srcdir)/pages.h -o $@
 
+gdialog.o: moc_gdialog.cpp
+gpage.o: moc_gpage.cpp
+pages.o: moc_pages.cpp
+
 noinst_SCRIPTS = $(OS_NOINST)
 noinst_LIBRARIES = libguimain.a
 libguimain_a_SOURCES = $(LIB_SOURCES)
+e_tr_DATA = $(QM_FILES)
 
 if GCONFIG_WINDOWS
 
 sbin_PROGRAMS = emailrelay-gui
 
 emailrelay_gui_SOURCES = guimain.cpp $(QT_SOURCES)
-emailrelay_gui_DEPENDENCIES = $(MOC_OBJECTS) libguimain.a
+emailrelay_gui_DEPENDENCIES = libguimain.a
 emailrelay_gui_LDADD = \
-	$(MOC_OBJECTS) \
 	libguimain.a \
 	$(GCONFIG_QT_LIBS)
 
@@ -147,9 +157,8 @@ else
 sbin_PROGRAMS = emailrelay-gui.real
 
 emailrelay_gui_real_SOURCES = guimain.cpp $(QT_SOURCES)
-emailrelay_gui_real_DEPENDENCIES = $(MOC_OBJECTS) libguimain.a
+emailrelay_gui_real_DEPENDENCIES = libguimain.a
 emailrelay_gui_real_LDADD = \
-	$(MOC_OBJECTS) \
 	libguimain.a \
 	$(GCONFIG_QT_LIBS)
 
@@ -158,7 +167,7 @@ endif
 install-exec-hook:
 	-mkdir -p "$(DESTDIR)$(sbindir)" 2>/dev/null
 	@echo "#!/bin/sh" > "$(DESTDIR)$(sbindir)/emailrelay-gui"
-	@echo exec $(DESTDIR)$(sbindir)/emailrelay-gui.real \"$$\@\" \"$0\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"
+	@echo exec $(DESTDIR)$(sbindir)/emailrelay-gui.real --qmdir=$(DESTDIR)$(e_trdir) \"$$\@\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"
 	@echo "dir-install"=\"$(DESTDIR)/usr\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"
 	@echo "dir-spool"=\"$(DESTDIR)$(e_spooldir)\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"
 	@echo "dir-config"=\"$(DESTDIR)$(e_sysconfdir)\" >> "$(DESTDIR)$(sbindir)/emailrelay-gui"
@@ -169,15 +178,6 @@ uninstall-hook:
 
 clean-local:
 	-rm -f payload
-
-TS_FILE=emailrelay_tr.en_SC.ts
-QM_FILE=emailrelay_tr.en_SC.qm
-.PHONY: translate
-translate:
-	rm $(TS_FILE) 2>/dev/null || true
-	lupdate $(QT_SOURCES) --target-language en_SC -ts $(TS_FILE)
-	translate.pl $(TS_FILE)
-	lrelease $(TS_FILE)
 
 else
 
@@ -191,4 +191,8 @@ payload: $(top_srcdir)/bin/make-setup.sh
 	-mkdir payload 2>/dev/null
 	-@chmod +x $(top_srcdir)/bin/make-setup.sh
 	$(top_srcdir)/bin/make-setup.sh $(MAKE_SETUP_DEBUG) $@ "$(top_srcdir)/src/gui/emailrelay-icon.png"
+
+.PHONY: lrelease
+lrelease:
+	$(QT_LRELEASE) emailrelay_tr.no_NO.ts -qm emailrelay.no.qm
 

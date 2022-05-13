@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -57,7 +57,8 @@ namespace G
 	}
 }
 
-G::BrokenDownTime::BrokenDownTime()
+G::BrokenDownTime::BrokenDownTime() :
+	m_tm{}
 {
 	m_tm.tm_isdst = -1 ;
 }
@@ -65,9 +66,9 @@ G::BrokenDownTime::BrokenDownTime()
 G::BrokenDownTime::BrokenDownTime( const struct std::tm & tm_in ) :
 	m_tm(tm_in)
 {
+	// dont trust the dst flag passed in -- force mktime()
+	// to do the extra work (strftime() does anyway)
 	m_tm.tm_isdst = -1 ;
-	if( std::time_t(-1) == std::mktime( &m_tm ) ) // set wday and yday
-		throw DateTime::Error() ;
 }
 
 std::time_t G::BrokenDownTime::epochTimeFromLocal() const
@@ -97,7 +98,7 @@ std::time_t G::BrokenDownTime::epochTimeFromUtcImp() const
 std::time_t G::BrokenDownTime::epochTimeFromUtcImp( bool & diff_set , std::time_t & diff ) const
 {
 	constexpr int day = 24 * 60 * 60 ;
-	constexpr std::time_t dt = 60 * 15 ; // india 30mins, nepal 45mins
+	constexpr std::time_t dt = std::time_t(60) * 15 ; // india 30mins, nepal 45mins
 	constexpr std::time_t day_and_a_bit = day + dt ;
 	constexpr std::time_t t_rounding = 30 ;
 
@@ -132,22 +133,29 @@ std::time_t G::BrokenDownTime::epochTimeFromUtcImp( bool & diff_set , std::time_
 	return t_base + diff ;
 }
 
+G::BrokenDownTime G::BrokenDownTime::null()
+{
+	return {} ;
+}
+
 G::BrokenDownTime G::BrokenDownTime::local( SystemTime t )
 {
-	BrokenDownTime tm ;
+	BrokenDownTime bdt ;
 	std::time_t s = t.s() ;
-	if( ! localtime_r( &s , &tm.m_tm ) )
+	if( localtime_r( &s , &bdt.m_tm ) == nullptr )
 		throw DateTime::Error() ;
-	return tm ;
+	bdt.m_tm.tm_isdst = -1 ;
+	return bdt ;
 }
 
 G::BrokenDownTime G::BrokenDownTime::utc( SystemTime t )
 {
-	BrokenDownTime tm ;
+	BrokenDownTime bdt ;
 	std::time_t s = t.s() ;
-	if( ! gmtime_r( &s , &tm.m_tm ) )
+	if( gmtime_r( &s , &bdt.m_tm ) == nullptr )
 		throw DateTime::Error() ;
-	return tm ;
+	bdt.m_tm.tm_isdst = -1 ;
+	return bdt ;
 }
 
 G::BrokenDownTime::BrokenDownTime( int y , int mon , int d , int h , int min , int sec ) :
@@ -160,8 +168,8 @@ G::BrokenDownTime::BrokenDownTime( int y , int mon , int d , int h , int min , i
 	m_tm.tm_min = min ;
 	m_tm.tm_sec = sec ;
 	m_tm.tm_isdst = -1 ;
-	if( std::time_t(-1) == std::mktime( &m_tm ) ) // set wday and yday
-		throw DateTime::Error() ;
+	m_tm.tm_wday = 0 ;
+	m_tm.tm_yday = 0 ;
 }
 
 G::BrokenDownTime G::BrokenDownTime::midday( int year , int month , int day )
@@ -169,15 +177,24 @@ G::BrokenDownTime G::BrokenDownTime::midday( int year , int month , int day )
 	return { year , month , day , 12 , 0 , 0 } ;
 }
 
+G::BrokenDownTime G::BrokenDownTime::midnight( int year , int month , int day )
+{
+	return { year , month , day , 0 , 0 , 0 } ;
+}
+
 void G::BrokenDownTime::format( std::vector<char> & out , const char * fmt ) const
 {
 	for( const char * p = std::strchr(fmt,'%') ; p && p[1] ; p = std::strchr(p+1,'%') )
 	{
-		if( !std::strchr(DateTimeImp::good_format,p[1]) )
-			throw DateTime::Error() ;
+		if( std::strchr(DateTimeImp::good_format,p[1]) == nullptr )
+			throw DateTime::Error("bad format string") ;
 	}
 
-	if( std::strftime( &out[0] , out.size() , fmt , &m_tm ) == 0U )
+	std::tm tm_copy = m_tm ;
+	tm_copy.tm_isdst = -1 ;
+	(void) mktime( &tm_copy ) ; // fill in isdst, wday, yday
+
+	if( std::strftime( &out[0] , out.size() , fmt , &tm_copy ) == 0U )
 		throw DateTime::Error() ;
 }
 
@@ -195,7 +212,7 @@ std::string G::BrokenDownTime::str( const char * fmt ) const
 	std::vector<char> buffer( n ) ;
 	format( buffer , fmt ) ;
 	buffer.at(buffer.size()-1U) = '\0' ; // just in case
-	return std::string( &buffer[0] ) ;
+	return { &buffer[0] } ;
 }
 
 int G::BrokenDownTime::hour() const
@@ -364,7 +381,7 @@ void G::SystemTime::operator+=( TimeInterval i )
 
 void G::SystemTime::streamOut( std::ostream & stream ) const
 {
-	std::streamsize w = stream.width() ;
+	int w = static_cast<int>( stream.width() ) ;
 	char c = stream.fill() ;
 	stream
 		<< s() << "."
@@ -383,18 +400,13 @@ std::ostream & G::operator<<( std::ostream & stream , const SystemTime & t )
 
 G::TimerTime G::TimerTime::now()
 {
-	return TimerTime( std::chrono::steady_clock::now() , false ) ;
+	return { std::chrono::steady_clock::now() , false } ;
 }
 
 G::TimerTime G::TimerTime::zero()
 {
 	duration_type zero_duration{0} ;
-	return TimerTime( time_point_type(zero_duration) , true ) ;
-}
-
-G::TimerTime G::TimerTime::test( int s , int us )
-{
-	return TimerTime( time_point_type(std::chrono::seconds(s)+std::chrono::microseconds(us)) , s==0 && us==0 ) ;
+	return { time_point_type(zero_duration) , true } ;
 }
 
 G::TimerTime::TimerTime( time_point_type tp , bool is_zero ) :
@@ -403,16 +415,28 @@ G::TimerTime::TimerTime( time_point_type tp , bool is_zero ) :
 {
 }
 
-unsigned long G::TimerTime::test_s() const
+G::TimerTime G::TimerTime::test( int s , int us )
+{
+	return { time_point_type(std::chrono::seconds(s)+std::chrono::microseconds(us)) , s==0 && us==0 } ;
+}
+
+unsigned long G::TimerTime::s() const
 {
 	using namespace std::chrono ;
 	return static_cast<unsigned long>(duration_cast<seconds>(m_tp.time_since_epoch()).count()) ;
 }
 
-unsigned long G::TimerTime::test_us() const
+unsigned long G::TimerTime::us() const
 {
 	using namespace std::chrono ;
 	return static_cast<unsigned long>((duration_cast<microseconds>(m_tp.time_since_epoch()) % seconds(1)).count()) ;
+}
+
+std::string G::TimerTime::str() const
+{
+	std::ostringstream ss ;
+	ss << s() << '.' << std::setw(6) << std::setfill('0') << us() ;
+	return ss.str() ;
 }
 
 G::TimerTime G::TimerTime::operator+( const TimeInterval & interval ) const
@@ -630,7 +654,7 @@ void G::TimeInterval::operator-=( TimeInterval i )
 
 void G::TimeInterval::streamOut( std::ostream & stream ) const
 {
-	std::streamsize w = stream.width() ;
+	int w = static_cast<int>( stream.width() ) ;
 	char c = stream.fill() ;
 	stream
 		<< s() << "."

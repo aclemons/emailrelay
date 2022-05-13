@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
-/// \file geventloophandles.cpp
+/// \file geventloophandles_win32.cpp
 ///
 
 // From WaitForMultipleObjects() 'Remarks':
@@ -26,11 +26,15 @@
 //   handles into groups of MAXIMUM_WAIT_OBJECTS. (2) ..."
 
 #include "gdef.h"
-#if G_WINDOWS
-#include "geventloophandles.h"
+#include "geventloophandles_win32.h"
 #include "glog.h"
 #include <vector>
 #include <array>
+
+// threads are synchronised through 'event' objects, so it is
+// not clear that there is any need for more synchronisation
+// using critical sections
+#define EXTRA_SAFE 0
 
 #if 0
 #pragma message( "unsafe trace code enabled" )
@@ -50,12 +54,11 @@ namespace GNet
 	DWORD WINAPI threadFn( LPVOID arg ) ;
 	template <typename T> static void moveToRhs( T , std::size_t , std::size_t ) ;
 
-	static constexpr std::size_t wait_threads = 20U ; // 20*62=1240
+	static constexpr std::size_t wait_threads = 20U ; // tweakable up to ~30, 20*62=1240
 	static constexpr std::size_t main_thread_wait_limit = wait_limit ;
 	static constexpr std::size_t wait_thread_wait_limit = (MAXIMUM_WAIT_OBJECTS-1) ;
 
-	static_assert( wait_threads <= main_thread_wait_limit , "" ) ;
-	static_assert( wait_threads * (wait_thread_wait_limit-1U) > main_thread_wait_limit , "" ) ;
+	static_assert( (wait_threads*2U) <= main_thread_wait_limit , "" ) ;
 }
 
 class GNet::WaitThread
@@ -63,6 +66,7 @@ class GNet::WaitThread
 public:
 	using List = EventLoopImp::List ;
 	static constexpr std::size_t wait_limit = wait_thread_wait_limit ;
+	static constexpr DWORD wait_timeout_ms = 60000U ;
 
 public:
 	WaitThread( std::size_t id , std::size_t list_offset ) ;
@@ -70,6 +74,7 @@ public:
 	DWORD run() ;
 	HANDLE hindicate() const ;
 	HANDLE hthread() const ;
+	std::size_t id() const noexcept ;
 	std::size_t indication() ;
 	void markIfDifferent( std::size_t , List::iterator , std::size_t n ) ;
 	void updateIfMarked( std::size_t t , List::iterator , std::size_t n ) ;
@@ -77,6 +82,7 @@ public:
 	void stop() ;
 	std::size_t listOffset() const ;
 	void shuffle( std::size_t ) ;
+	void mark() noexcept ;
 	bool marked() const noexcept ;
 
 public:
@@ -96,8 +102,20 @@ private:
 	} ;
 	struct Lock
 	{
-		Lock( CriticalSection & cs ) noexcept : m_cs(cs) { EnterCriticalSection( &cs.m_cs ) ; }
-		~Lock() { LeaveCriticalSection( &m_cs.m_cs ) ; }
+		Lock( CriticalSection & cs ) noexcept : m_cs(cs) { enter() ; }
+		~Lock() { leave() ; }
+		void enter() noexcept
+		{
+			#if EXTRA_SAFE
+				EnterCriticalSection( &m_cs.m_cs ) ;
+			#endif
+		}
+		void leave() noexcept
+		{
+			#if EXTRA_SAFE
+				LeaveCriticalSection( &m_cs.m_cs ) ;
+			#endif
+		}
 		CriticalSection & m_cs ;
 	} ;
 	struct Event
@@ -107,17 +125,27 @@ private:
 		bool isSet() const noexcept { return WaitForSingleObject(m_handle,0) == WAIT_OBJECT_0 ; }
 		void set() noexcept { SetEvent( m_handle ) ; }
 		void clear() noexcept { ResetEvent( m_handle ) ; }
-		bool wait( std::nothrow_t ) noexcept { return WaitForSingleObject( m_handle , INFINITE ) == WAIT_OBJECT_0 ; }
-		void wait() { if( !wait(std::nothrow) ) throw WaitThread::ThreadError ; }
-		static bool wait( Event & a , Event & b )
+		void wait( Lock & lock )
+		{
+			bool ok = false ;
+			lock.leave() ;
+			ok = WaitForSingleObject( m_handle , wait_timeout_ms ) == WAIT_OBJECT_0 ;
+			lock.enter() ;
+			if( !ok )
+				throw EventLoop::Error( "wait error" ) ;
+		}
+		static bool wait( Lock & lock , Event & a , Event & b )
 		{
 			HANDLE h[2] = { a.m_handle , b.m_handle } ;
+			lock.leave() ;
 			DWORD rc = WaitForMultipleObjectsEx( 2U , h , FALSE , INFINITE , FALSE ) ;
-			if( rc < WAIT_OBJECT_0 || rc > (WAIT_OBJECT_0+1U) ) throw WaitThread::ThreadError ;
+			lock.enter() ;
+			if( rc < WAIT_OBJECT_0 || rc > (WAIT_OBJECT_0+1U) )
+				throw GetLastError() ;
 			return rc == WAIT_OBJECT_0 ;
 		}
 		HANDLE h() const noexcept { return m_handle ; }
-		HANDLE m_handle ;
+		const HANDLE m_handle ;
 	} ;
 
 private:
@@ -167,6 +195,8 @@ private:
 	void startMarkedThreads() ;
 	void stopMarkedThreads() ;
 	void forEachThread( UpdateFn , List & ) ;
+	void startCurrentThread( Rc ) ;
+	void markCurrentThread( Rc ) ;
 
 private:
 	std::vector<HANDLE> m_handles ; // hthread-s then hind-s
@@ -196,6 +226,7 @@ GNet::WaitThread::WaitThread( std::size_t id , std::size_t list_offset ) :
 	m_handles_size(1U)
 {
 	m_handles[0] = m_stop_req.h() ;
+	m_start_req.set() ;
 
 	DWORD stack_size = 64000 ;
 	m_hthread = CreateThread( nullptr , stack_size , &GNet::threadFn , this , 0 , nullptr ) ;
@@ -218,31 +249,43 @@ GNet::WaitThread::~WaitThread()
 
 DWORD WINAPI GNet::threadFn( LPVOID arg )
 {
+	WaitThread * wt = static_cast<WaitThread*>( arg ) ;
+	DWORD rc = 1 ;
 	try
 	{
-		WaitThread * wt = static_cast<WaitThread*>( arg ) ;
-		return wt->run() ;
+		rc = wt->run() ;
+	}
+	catch( DWORD e )
+	{
+		rc = e ;
 	}
 	catch(...) // thread function
 	{
 	}
-	return 1 ;
+	T_TRACE( "thread " << wt->id() << " finished: " << rc ) ;
+	return rc ;
 }
 
 DWORD GNet::WaitThread::run()
 {
-	m_start_req.set() ;
-	for(;;)
+	// thread function -- uses only inline Event methods and no runtime library
+
+#if EXTRA_SAFE
+	HANDLE handles[wait_limit] ;
+	DWORD handles_size = 0U ;
+#endif
+	for( bool terminated = false ; !terminated ; )
 	{
 		// wait for the main thread to start us once the handles have been updated
 		T_TRACE( "thread " << m_id << ": stopped" ) ;
-		for(;;)
+		for( bool started = false ; !started && !terminated ; )
 		{
-			bool start = Event::wait( m_start_req , m_stop_req ) ;
+			Lock lock( m_mutex ) ;
+			bool start = !Event::wait( lock , m_stop_req , m_start_req ) ;
 			if( start )
 			{
 				m_start_req.clear() ;
-				break ;
+				started = true ;
 			}
 			else
 			{
@@ -251,17 +294,32 @@ DWORD GNet::WaitThread::run()
 				T_TRACE( "thread " << m_id << ": stop request while stopped" ) ;
 				m_stop_req.clear() ;
 				m_stop_con.set() ;
-				if( m_terminate ) return 0 ;
+				if( m_terminate )
+					terminated = true ;
 			}
 		}
 
+#if EXTRA_SAFE
+		// copy the handles -- probably a pessimisation
+		{
+			Lock lock( m_mutex ) ;
+			CopyMemory( handles , &m_handles[0] , sizeof(HANDLE)*m_handles_size ) ;
+			handles_size = static_cast<DWORD>( m_handles_size ) ;
+		}
+#else
+		HANDLE * handles = &m_handles[0] ;
+		DWORD handles_size = static_cast<DWORD>( m_handles_size ) ;
+#endif
+
 		// wait on our stop event together with the event-loop's handles
-		T_TRACE( "thread " << m_id << ": waiting: " << m_handles_size << " handles" ) ;
-		DWORD handles_n = static_cast<DWORD>( m_handles_size ) ;
-		HANDLE * handles_p = handles_n ? &m_handles[0] : nullptr ;
-		DWORD rc = WaitForMultipleObjectsEx( handles_n , handles_p , FALSE , INFINITE , FALSE ) ;
-		if( rc < WAIT_OBJECT_0 || rc >= (WAIT_OBJECT_0+handles_n) )
-			throw ThreadError ;
+		T_TRACE( "thread " << m_id << ": waiting: " << handles_size << " handles" ) ;
+		DWORD rc = WaitForMultipleObjectsEx( handles_size , handles , FALSE , INFINITE , FALSE ) ;
+		if( rc < WAIT_OBJECT_0 || rc >= (WAIT_OBJECT_0+handles_size) )
+		{
+			DWORD e = GetLastError() ;
+			//if( e == ERROR_INVALID_HANDLE ) continue ;
+			throw e ;
+		}
 
 		std::size_t index = static_cast<std::size_t>( rc - WAIT_OBJECT_0 ) ;
 		if( index != 0U )
@@ -278,20 +336,22 @@ DWORD GNet::WaitThread::run()
 
 void GNet::WaitThread::shuffle( std::size_t i_in )
 {
-	std::size_t i = i_in + 1U ; // because m_handles[0] is internal
 	Lock lock( m_mutex ) ;
+	std::size_t i = i_in + 1U ; // because m_handles[0] is internal
 	moveToRhs( m_handles.begin() , i , m_handles_size ) ;
 }
 
 void GNet::WaitThread::stop()
 {
+	Lock lock( m_mutex ) ;
 	m_stop_req.set() ;
-	m_stop_con.wait() ;
+	m_stop_con.wait( lock ) ;
 	m_stop_con.clear() ;
 }
 
 void GNet::WaitThread::start()
 {
+	Lock lock( m_mutex ) ;
 	m_start_req.set() ;
 }
 
@@ -334,40 +394,46 @@ void GNet::WaitThread::markIfDifferent( std::size_t , List::iterator list_p , st
 	}
 }
 
+void GNet::WaitThread::mark() noexcept
+{
+	Lock lock( m_mutex ) ;
+	m_marked = true ;
+}
+
 bool GNet::WaitThread::marked() const noexcept
 {
-	volatile bool result = false ;
-	{
-		Lock lock( m_mutex ) ;
-		result = m_marked ;
-	}
-	return result ;
+	Lock lock( m_mutex ) ;
+	return m_marked ;
 }
 
 std::size_t GNet::WaitThread::indication()
 {
-	volatile std::size_t result = 0U ;
-	{
-		Lock lock( m_mutex ) ;
-		result = m_indication ;
-		m_indicate.clear() ;
-	}
-	return result ;
+	Lock lock( m_mutex ) ;
+	m_indicate.clear() ;
+	return m_indication ;
 }
 
 HANDLE GNet::WaitThread::hindicate() const
 {
+	Lock lock( m_mutex ) ;
 	return m_indicate.h() ;
 }
 
 HANDLE GNet::WaitThread::hthread() const
 {
+	Lock lock( m_mutex ) ;
 	return m_hthread ;
 }
 
 std::size_t GNet::WaitThread::listOffset() const
 {
+	Lock lock( m_mutex ) ;
 	return m_list_offset ;
+}
+
+std::size_t GNet::WaitThread::id() const noexcept
+{
+	return m_id ;
 }
 
 // ==
@@ -487,28 +553,33 @@ std::size_t GNet::EventLoopHandlesImp::shuffle( List & list , Rc rc )
 
 void GNet::EventLoopHandlesImp::update( List & list , bool updated , Rc rc )
 {
+	// stop threads and hand out blocks of handles
 	if( updated || m_full_update )
 	{
-		// stop threads, hand out blocks of handles and restart them
+		m_full_update = false ;
 		G_TRACE( "GNet::EventLoopHandlesImp::update: update" ) ;
 		forEachThread( &WaitThread::markIfDifferent , list ) ; // see what threads need restarting
 		stopMarkedThreads() ;
 		forEachThread( &WaitThread::updateIfMarked , list ) ;
+		markCurrentThread( rc ) ;
 		startMarkedThreads() ;
-		m_full_update = false ;
 	}
 	else
 	{
-		// if the list has not changed from the last go-round then
-		// we just need to release the current event's thread so
-		// that it starts waiting again
-		if( rc.type() == RcType::event )
-		{
-			G_TRACE( "GNet::EventLoopHandlesImp::update: no update: releasing thread " << rc.m_imp_2 ) ;
-			std::size_t thread_index = rc.m_imp_2 ;
-			m_threads.at(thread_index)->start() ;
-		}
+		startCurrentThread( rc ) ;
 	}
+}
+
+void GNet::EventLoopHandlesImp::startCurrentThread( Rc rc )
+{
+	if( rc.type() == RcType::event )
+		m_threads.at(rc.m_imp_2)->start() ;
+}
+
+void GNet::EventLoopHandlesImp::markCurrentThread( Rc rc )
+{
+	if( rc.type() == RcType::event )
+		m_threads.at(rc.m_imp_2)->mark() ;
 }
 
 void GNet::EventLoopHandlesImp::stopMarkedThreads()
@@ -603,11 +674,10 @@ bool GNet::EventLoopHandles::overflowImp( List & list , bool (*fn)(const ListIte
 		G_LOG( "GNet::EventLoopHandles: large number of open handles: switching event-loop" ) ;
 		m_imp = std::make_unique<EventLoopHandlesImp>( list , wait_threads ) ;
 
-		// no need for HandlesImp::init() because there will soon be garbage
+		// no need for HandlesImp::init() here because there will soon be garbage
 		// collection of the list and a full update() -- the new threads will
 		// start by waiting on an empty set of event-loop handles plus
 		// their stop event
-		//m_imp->init( list , fn ) ;
 	}
 	return m_imp->overflow( list , fn ) ;
 }
@@ -637,4 +707,3 @@ void GNet::EventLoopHandles::handleInternalEventImp( std::size_t index )
 	m_imp->handleInternalEvent( index ) ;
 }
 
-#endif

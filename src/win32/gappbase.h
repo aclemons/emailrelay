@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ namespace GGui
 }
 
 //| \class GGui::ApplicationBase
-/// The ApplicationBase class is a convienient GGui::Window for
+/// The ApplicationBase class is a convenient GGui::Window for
 /// the application's main window.
 ///
 /// It is initialised by calling createWindow() from WinMain().
@@ -62,8 +62,8 @@ namespace GGui
 class GGui::ApplicationBase : public ApplicationInstance , public Window
 {
 public:
-	G_EXCEPTION( RegisterError, "cannot register application's window class" ) ;
-	G_EXCEPTION( CreateError , "cannot create application window" ) ;
+	G_EXCEPTION( RegisterError, tx("cannot register application's window class") ) ;
+	G_EXCEPTION( CreateError , tx("cannot create application window") ) ;
 
 	ApplicationBase( HINSTANCE current, HINSTANCE previous, const std::string & name );
 		///< Constructor. Applications should instantiate a ApplicationBase-derived

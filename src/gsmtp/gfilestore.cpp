@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -79,14 +79,14 @@ std::unique_ptr<GSmtp::StoredMessage> GSmtp::FileIterator::next()
 	while( m_iter.more() )
 	{
 		auto message_ptr = std::make_unique<StoredFile>( m_store , m_iter.filePath() ) ;
+		if( !message_ptr->id().valid() )
+			continue ;
+
 		if( m_lock && !message_ptr->lock() )
 		{
 			G_WARNING( "GSmtp::MessageStore: cannot lock file: \"" << m_iter.filePath() << "\"" ) ;
 			continue ;
 		}
-
-		if( !message_ptr->id().valid() )
-			continue ;
 
 		std::string reason ;
 		const bool check_recipients = m_lock ; // check for no-remote-recipients
@@ -103,22 +103,12 @@ std::unique_ptr<GSmtp::StoredMessage> GSmtp::FileIterator::next()
 
 // ===
 
-GSmtp::FileStore::FileStore( const G::Path & dir , bool optimise ,
-	unsigned long max_size , bool test_for_eight_bit ) :
-		m_seq(0UL) ,
-		m_dir(dir) ,
-		m_optimise(optimise) ,
-		m_empty(false) ,
-		m_max_size(max_size) ,
-		m_test_for_eight_bit(test_for_eight_bit)
+GSmtp::FileStore::FileStore( const G::Path & dir , const Config & config ) :
+	m_seq(0UL) ,
+	m_dir(dir) ,
+	m_config(config)
 {
 	checkPath( dir ) ;
-
-	if( G::Test::enabled("message-store-with-8bit-test") )
-		m_test_for_eight_bit = true ;
-
-	if( G::Test::enabled("message-store-without-8bit-test") )
-		m_test_for_eight_bit = false ;
 
 	if( G::Test::enabled("message-store-unfail") )
 		unfailAllImp() ;
@@ -135,12 +125,14 @@ std::string GSmtp::FileStore::x()
 std::string GSmtp::FileStore::format( int generation )
 {
 	// use a weird prefix to help with file(1) and magic(5)
-	if( generation == -2 )
+	if( generation == -3 )
 		return "#2821.3" ; // original
-	else if( generation == -1 )
+	else if( generation == -2 )
 		return "#2821.4" ; // new for 1.9
-	else
+	else if( generation == -1 )
 		return "#2821.5" ; // new for 2.0
+	else
+		return "#2821.6" ; // new for 2.4
 }
 
 bool GSmtp::FileStore::knownFormat( const std::string & format_in )
@@ -148,7 +140,8 @@ bool GSmtp::FileStore::knownFormat( const std::string & format_in )
 	return
 		format_in == format(0) ||
 		format_in == format(-1) ||
-		format_in == format(-2) ;
+		format_in == format(-2) ||
+		format_in == format(-3) ;
 }
 
 void GSmtp::FileStore::checkPath( const G::Path & directory_path )
@@ -178,8 +171,8 @@ void GSmtp::FileStore::checkPath( const G::Path & directory_path )
 	if( !ok )
 	{
 		using G::format ;
-		using G::gettext ;
-		G_WARNING( "GSmtp::MessageStore: " << format(gettext("directory not writable: \"%1%\"")) % directory_path ) ;
+		using G::txt ;
+		G_WARNING( "GSmtp::MessageStore: " << format(txt("directory not writable: \"%1%\"")) % directory_path ) ;
 	}
 }
 
@@ -206,11 +199,11 @@ G::Path GSmtp::FileStore::contentPath( const MessageId & id ) const
 G::Path GSmtp::FileStore::envelopePath( const MessageId & id , State state ) const
 {
 	if( state == State::New )
-		return m_dir + ( id.str() + ".envelope.new" ) ;
+		return m_dir + id.str().append(".envelope.new") ;
 	else if( state == State::Locked )
-		return m_dir + ( id.str() + ".envelope.busy" ) ;
+		return m_dir + id.str().append(".envelope.busy") ;
 	else
-		return m_dir + ( id.str() + ".envelope" ) ;
+		return m_dir + id.str().append(".envelope") ;
 }
 
 GSmtp::MessageId GSmtp::FileStore::newId()
@@ -227,20 +220,6 @@ GSmtp::MessageId GSmtp::FileStore::newId()
 }
 
 bool GSmtp::FileStore::empty() const
-{
-	if( m_optimise )
-	{
-		if( !m_empty )
-			m_empty = emptyCore() ;
-		return m_empty ;
-	}
-	else
-	{
-		return emptyCore() ;
-	}
-}
-
-bool GSmtp::FileStore::emptyCore() const
 {
 	G::DirectoryList list ;
 	DirectoryReader claim_reader ;
@@ -284,11 +263,9 @@ std::unique_ptr<GSmtp::StoredMessage> GSmtp::FileStore::get( const MessageId & i
 }
 
 std::unique_ptr<GSmtp::NewMessage> GSmtp::FileStore::newMessage( const std::string & from ,
-	const std::string & from_auth_in , const std::string & from_auth_out )
+	const MessageStore::SmtpInfo & smtp_info , const std::string & from_auth_out )
 {
-	m_empty = false ;
-	return std::make_unique<NewFile>( *this , from , from_auth_in , from_auth_out ,
-		m_max_size , m_test_for_eight_bit ) ; // up-cast
+	return std::make_unique<NewFile>( *this , from , smtp_info , from_auth_out , m_config.max_size ) ;
 }
 
 void GSmtp::FileStore::updated()

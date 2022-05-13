@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ namespace G
 	{
 		inline char hex( unsigned int n )
 		{
-			static const char * map = "0123456789ABCDEF" ;
+			static constexpr char map[17] = "0123456789ABCDEF" ;
 			return map[n] ;
 		}
 		inline bool ishex( char c , bool allow_lowercase )
@@ -118,6 +118,7 @@ std::string G::Xtext::decode( const std::string & s )
 {
 	namespace imp = XtextImp ;
 	std::string result ;
+	result.reserve( s.size() ) ;
 	for( std::string::const_iterator p = s.begin() ; p != s.end() ; ++p )
 	{
 		if( *p == '+' )

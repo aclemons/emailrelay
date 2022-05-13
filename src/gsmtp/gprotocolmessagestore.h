@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -49,33 +49,20 @@ public:
 	~ProtocolMessageStore() override ;
 		///< Destructor.
 
-	ProtocolMessage::DoneSignal & doneSignal() override ;
-		///< Override from GSmtp::ProtocolMessage.
-
-	void reset() override ;
-		///< Override from GSmtp::ProtocolMessage.
-
-	void clear() override ;
-		///< Override from GSmtp::ProtocolMessage.
-
-	MessageId setFrom( const std::string & from_user , const std::string & ) override ;
-		///< Override from GSmtp::ProtocolMessage.
-
-	bool addTo( const std::string & to_user , VerifierStatus to_status ) override ;
-		///< Override from GSmtp::ProtocolMessage.
-
-	void addReceived( const std::string & ) override ;
-		///< Override from GSmtp::ProtocolMessage.
-
-	bool addText( const char * , std::size_t ) override ;
-		///< Override from GSmtp::ProtocolMessage.
-
-	std::string from() const override ;
-		///< Override from GSmtp::ProtocolMessage.
-
+private: // overrides
+	ProtocolMessage::DoneSignal & doneSignal() override ; // GSmtp::ProtocolMessage
+	void reset() override ; // GSmtp::ProtocolMessage
+	void clear() override ; // GSmtp::ProtocolMessage
+	MessageId setFrom( const std::string & , const FromInfo & ) override ; // GSmtp::ProtocolMessage
+	bool addTo( VerifierStatus to_status ) override ; // GSmtp::ProtocolMessage
+	void addReceived( const std::string & ) override ; // GSmtp::ProtocolMessage
+	NewMessage::Status addContent( const char * , std::size_t ) override ; // GSmtp::ProtocolMessage
+	std::size_t contentSize() const override ; // GSmtp::ProtocolMessage
+	std::string from() const override ; // GSmtp::ProtocolMessage
+	ProtocolMessage::FromInfo fromInfo() const override ; // GSmtp::ProtocolMessage
+	std::string bodyType() const override ; // GSmtp::ProtocolMessage
 	void process( const std::string & auth_id , const std::string & peer_socket_address ,
-		const std::string & peer_certificate ) override ;
-			///< Override from GSmtp::ProtocolMessage.
+		const std::string & peer_certificate ) override ; // GSmtp::ProtocolMessage
 
 public:
 	ProtocolMessageStore( const ProtocolMessageStore & ) = delete ;
@@ -91,6 +78,7 @@ private:
 	std::unique_ptr<Filter> m_filter ;
 	std::unique_ptr<NewMessage> m_new_msg ;
 	std::string m_from ;
+	FromInfo m_from_info ;
 	ProtocolMessage::DoneSignal m_done_signal ;
 } ;
 

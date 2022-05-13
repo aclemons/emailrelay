@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -128,13 +128,14 @@ private:
 ///
 /// Note that the ClientPtr exception handler ignores the ExceptionSource
 /// pointer, so it can be set to be the same as the higher-level object,
-/// for better event logging (as shown above).
+/// for better event logging (as shown above) (see
+/// GNet::ExceptionSource::exceptionSourceId()).
 ///
 template <typename T>
 class GNet::ClientPtr : public ClientPtrBase
 {
 public:
-	G_EXCEPTION( InvalidState , "invalid state of network client holder" ) ;
+	G_EXCEPTION( InvalidState , tx("invalid state of network client holder") ) ;
 
 	explicit ClientPtr( T * p = nullptr ) ;
 		///< Constructor. Takes ownership of the new-ed client.

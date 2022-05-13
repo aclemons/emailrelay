@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,6 +22,8 @@
 #define G_MSG_H
 
 #include "gdef.h"
+#include "gstringview.h"
+#include <vector>
 
 namespace G
 {
@@ -37,23 +39,29 @@ namespace G
 class G::Msg
 {
 public:
-	static ssize_t send( SOCKET , const void * , std::size_t , int ,
-		int fd_to_send = -1 ) noexcept ;
-			///< A send() replacement using sendmsg().
+	static ssize_t send( SOCKET , const void * , std::size_t , int flags ) noexcept ;
+		///< A send() wrapper.
 
-	static ssize_t sendto( SOCKET , const void * , std::size_t , int , const sockaddr * , socklen_t ,
-		int fd_to_send = -1 ) noexcept ;
-			///< A sendto() replacement using sendmsg().
+	static ssize_t sendto( SOCKET , const void * , std::size_t , int flags , const sockaddr * , socklen_t ) noexcept ;
+		///< A sendto() wrapper.
 
-	static ssize_t recv( SOCKET , void * , std::size_t , int ) ;
+	static ssize_t sendto( SOCKET , const void * , std::size_t , int flags , const sockaddr * , socklen_t ,
+		int fd_to_send ) ;
+			///< A sendmsg() wrapper.
+
+	static ssize_t sendto( SOCKET , const std::vector<string_view> & , int flags , const sockaddr * , socklen_t ) ;
+		///< A sendto() wrapper with scatter-gather data chunks.
+
+	static ssize_t recv( SOCKET , void * , std::size_t , int flags ) noexcept ;
 		///< A recv() wrapper.
 
-	static ssize_t recv( SOCKET , void * , std::size_t , int , int * fd_received_p ) ;
-		///< A recv() replacement using recvmsg().
+	static ssize_t recvfrom( SOCKET , void * , std::size_t , int , sockaddr * , socklen_t * ) noexcept ;
+		///< A recvfrom() wrapper.
 
 	static ssize_t recvfrom( SOCKET , void * , std::size_t , int , sockaddr * , socklen_t * ,
-		int * fd_received_p = nullptr ) ;
-			///< A recvfrom() replacement using recvmsg().
+		int * fd_received_p ) ;
+			///< A recvmsg() wrapper. The address and file descriptor pointers
+			///< can be null independently.
 
 	static bool fatal( int error ) noexcept ;
 		///< Returns true if the error value indicates a permanent

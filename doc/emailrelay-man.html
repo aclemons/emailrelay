@@ -195,7 +195,7 @@ Displays help text and then exits. Use with <I>--verbose</I> for more complete o
 <DT><B>-H, --hidden</B>
 
 <DD>
-Windows only. Hides the application window and disables all message boxes, overriding any <I></I><I>--show</I><I></I> option. This is useful when running  as a windows service.
+Windows only. Hides the application window and disables all message boxes, overriding any <I>--show</I> option. This is useful when running as a windows service.
 <DT><B>--idle-timeout </B><I>&lt;time&gt;</I>
 
 <DD>
@@ -211,7 +211,7 @@ Specifies the IP network addresses or interface names used to bind listening por
 <DT><B>--localedir </B><I>&lt;dir&gt;</I>
 
 <DD>
-Specifies a locale base directory where localisation message catalogues  can be found. An empty directory can be used for the built-in default.
+Enables localisation and specifies the locale base directory where message catalogues can be found. An empty directory can be used for the built-in default.
 <DT><B>-l, --log</B>
 
 <DD>
@@ -331,7 +331,7 @@ Selects and configures the low-level TLS library, using a comma-separated list o
 <DT><B>-u, --user </B><I>&lt;username&gt;</I>
 
 <DD>
-When started as root the program switches to an non-privileged effective user-id when idle. This option can be used to define which user-id is used. Specify <I>root</I> to disable all user-id switching. Ignored on Windows.
+When started as root the program switches to a non-privileged effective user-id when idle. This option can be used to define the idle user-id and also the group ownership of new files and sockets. Specify <I>root</I> to  disable all user-id switching. Ignored on Windows.
 <DT><B>-v, --verbose</B>
 
 <DD>
@@ -370,4 +370,4 @@ This document was created by
 using the manual pages.<BR>
 </BODY>
 </HTML>
-<!-- Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->
+<!-- Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->

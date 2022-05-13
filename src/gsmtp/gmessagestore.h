@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,8 +24,9 @@
 #include "gdef.h"
 #include "gexception.h"
 #include "gslot.h"
-#include "gstrings.h"
+#include "gstringarray.h"
 #include "gpath.h"
+#include <memory>
 
 namespace GSmtp
 {
@@ -55,6 +56,7 @@ public:
 
 private:
 	MessageId() = default ;
+	explicit MessageId( int ) = delete ;
 
 private:
 	std::string m_s ;
@@ -68,6 +70,18 @@ private:
 class GSmtp::MessageStore
 {
 public:
+	struct SmtpInfo /// Information on the SMTP options used when submitted.
+	{
+		std::string auth ; // AUTH=
+		std::string body ; // BODY=
+	} ;
+	enum class BodyType
+	{
+		Unknown = -1 ,
+		SevenBit ,
+		EightBitMime , // RFC-1652
+		BinaryMime // RFC-3030
+	} ;
 	struct Iterator /// A base class for GSmtp::MessageStore iterators.
 	{
 		virtual std::unique_ptr<StoredMessage> next() = 0 ;
@@ -85,7 +99,7 @@ public:
 		///< Destructor.
 
 	virtual std::unique_ptr<NewMessage> newMessage( const std::string & from ,
-		const std::string & from_auth_in , const std::string & from_auth_out ) = 0 ;
+		const SmtpInfo & smtp_info , const std::string & from_auth_out ) = 0 ;
 			///< Creates a new message.
 
 	virtual bool empty() const = 0 ;

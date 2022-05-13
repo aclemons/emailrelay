@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@
 #	$keyfile = $fs->infile( "alice.key" ) ;
 #	$pemfile = $fs->catfile( "alice.key" , "alice.crt" ) ;
 #
-# Each actor has a ".key" file for their private key and a ".csr"
+# Each actor has a ".key" file for their private key and a ".crt"
 # file for their certificate.
 #
 # When creating a concatenated certificate the component

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -30,6 +30,8 @@ GNet::TimerBase::TimerBase( ExceptionSink es ) :
 	m_time(G::TimerTime::zero())
 {
 	TimerList::instance().add( *this , es ) ;
+	G_ASSERT( !active() ) ;
+	G_ASSERT( history() < G::TimerTime::now() ) ;
 }
 
 GNet::TimerBase::~TimerBase()
@@ -56,7 +58,12 @@ bool GNet::TimerBase::expired( G::TimerTime & now ) const
 	}
 	else
 	{
-		if( now == G::TimerTime::zero() ) now = G::TimerTime::now() ; // lazy optimisation
+		// lazy evaluation of caller's idea of now -- no call
+		// to TimerTime::now() if there is a zero-length
+		// timer or no timers at all
+		if( now == G::TimerTime::zero() )
+			now = G::TimerTime::now() ;
+
 		return m_time <= now ;
 	}
 }
@@ -65,18 +72,19 @@ void GNet::TimerBase::startTimer( unsigned int time , unsigned int time_us )
 {
 	m_time = (time==0U && time_us==0U) ? history() : ( G::TimerTime::now() + G::TimeInterval(time,time_us) ) ;
 	TimerList::instance().updateOnStart( *this ) ; // adjust()
+	G_ASSERT( active() ) ;
 }
 
 void GNet::TimerBase::startTimer( const G::TimeInterval & i )
 {
 	m_time = i == G::TimeInterval(0U) ? history() : ( G::TimerTime::now() + i ) ;
 	TimerList::instance().updateOnStart( *this ) ; // adjust()
+	G_ASSERT( active() ) ;
 }
 
 G::TimerTime GNet::TimerBase::history()
 {
-	// base for an arbitrary historical one-second non-zero epoch
-	// time interval used for all immediate() timers
+	// an arbitrary historical non-zero epoch time used for all immediate() timers
 	return G::TimerTime::zero() + G::TimeInterval( 1U ) ;
 }
 
@@ -87,6 +95,8 @@ bool GNet::TimerBase::immediate() const
 
 void GNet::TimerBase::adjust( unsigned int us )
 {
+	G_ASSERT( immediate() ) ;
+	G_ASSERT( us == 0U || (history()+G::TimeInterval(0U,std::min(999999U,us))) != m_time ) ;
 	m_time = history() + G::TimeInterval( 0U , std::min( 999999U , us ) ) ;
 	G_ASSERT( immediate() ) ;
 }

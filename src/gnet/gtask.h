@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@
 #include "genvironment.h"
 #include "gnewprocess.h"
 #include "gexceptionsink.h"
+#include "gexception.h"
 #include "gidentity.h"
 #include "gexecutablecommand.h"
 #include <memory>
@@ -44,10 +45,10 @@ namespace GNet
 class GNet::Task
 {
 public:
-	G_EXCEPTION( Busy , "cannot execute command-line task: still busy from last time" ) ;
+	G_EXCEPTION( Busy , tx("cannot execute command-line task: still busy from last time") ) ;
 
 	Task( TaskCallback & , ExceptionSink es ,
-		const std::string & exec_error_format = std::string() ,
+		const std::string & exec_error_format = {} ,
 		const G::Identity & = G::Identity::invalid() ) ;
 			///< Constructor for an object that can be start()ed or run().
 			///< The two trailing parameters are passed to the G::NewProcess

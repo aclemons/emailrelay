@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,10 +27,11 @@
 
 namespace G
 {
+	template <typename T, typename State, typename Event, typename Arg> class StateMachine ;
+	class StateMachineImp ;
+}
 
-G_EXCEPTION_CLASS( StateMachine_Error , "invalid state machine transition" ) ;
-
-//| \class StateMachine
+//| \class G::StateMachine
 /// A finite state machine class template.
 ///
 /// The finite state machine has a persistant 'state'. When an 'event' is
@@ -105,11 +106,10 @@ G_EXCEPTION_CLASS( StateMachine_Error , "invalid state machine transition" ) ;
 /// \endcode
 ///
 template <typename T, typename State, typename Event, typename Arg>
-class StateMachine
+class G::StateMachine
 {
 public:
 	using Action = void (T::*)(Arg, bool &) ;
-	using Error = StateMachine_Error ;
 
 	StateMachine( State s_start , State s_end , State s_same , State s_any ) ;
 		///< Constructor.
@@ -145,6 +145,12 @@ public:
 	State reset( State new_state ) ;
 		///< Sets the current state. Returns the old state.
 
+	Event event() const ;
+		///< Returns the last-apply()d event.
+
+private:
+	static void throwError() ;
+
 private:
 	struct Transition /// A private structure used by G::StateMachine<>.
 	{
@@ -162,10 +168,22 @@ private:
 	State m_end ;
 	State m_same ;
 	State m_any ;
+	Event m_event{} ;
+} ;
+
+//| \class G::StateMachine
+/// A private non-template implementation class for G::StateMachine.
+///
+class G::StateMachineImp
+{
+public:
+	G_EXCEPTION( Error , tx("invalid state transition") ) ;
+	static void throwError() ;
+	StateMachineImp() = delete ;
 } ;
 
 template <typename T, typename State, typename Event, typename Arg>
-StateMachine<T,State,Event,Arg>::StateMachine( State s_start , State s_end , State s_same , State s_any ) :
+G::StateMachine<T,State,Event,Arg>::StateMachine( State s_start , State s_end , State s_same , State s_any ) :
 	m_state(s_start) ,
 	m_end(s_end) ,
 	m_same(s_same) ,
@@ -174,31 +192,24 @@ StateMachine<T,State,Event,Arg>::StateMachine( State s_start , State s_end , Sta
 }
 
 template <typename T, typename State, typename Event, typename Arg>
-void StateMachine<T,State,Event,Arg>::operator()( Event event , State from , State to , Action action )
+void G::StateMachine<T,State,Event,Arg>::operator()( Event event , State from , State to , Action action )
 {
 	operator()( event , from , to , action , to ) ;
 }
 
 template <typename T, typename State, typename Event, typename Arg>
-void StateMachine<T,State,Event,Arg>::operator()( Event event , State from , State to , Action action , State alt )
+void G::StateMachine<T,State,Event,Arg>::operator()( Event event , State from , State to , Action action , State alt )
 {
-	if( to == m_any || alt == m_any )
-		throw Error( "\"to any\" is invalid" ) ;
-
-	if( from == m_same )
-		throw Error( "\"from same\" is invalid" ) ;
-
-	if( to == m_end && alt != to )
-		throw Error( "predicates on end-state transitions are invalid" ) ;
-
-	if( alt == m_end && to != m_end )
-		throw Error( "false predicates cannot take you to the end state" ) ;
+	if( to == m_any || alt == m_any || from == m_same ||
+		( to == m_end && alt != to ) ||
+		( alt == m_end && to != m_end ) )
+			StateMachineImp::throwError() ;
 
 	m_map.insert( Map_value_type( event , Transition(from,to,action,alt) ) ) ;
 }
 
 template <typename T, typename State, typename Event, typename Arg>
-State StateMachine<T,State,Event,Arg>::reset( State new_state )
+State G::StateMachine<T,State,Event,Arg>::reset( State new_state )
 {
 	State old_state = m_state ;
 	m_state = new_state ;
@@ -206,14 +217,15 @@ State StateMachine<T,State,Event,Arg>::reset( State new_state )
 }
 
 template <typename T, typename State, typename Event, typename Arg>
-State StateMachine<T,State,Event,Arg>::state() const
+State G::StateMachine<T,State,Event,Arg>::state() const
 {
 	return m_state ;
 }
 
 template <typename T, typename State, typename Event, typename Arg>
-State StateMachine<T,State,Event,Arg>::apply( T & t , Event event , Arg arg )
+State G::StateMachine<T,State,Event,Arg>::apply( T & t , Event event , Arg arg )
 {
+	m_event = event ;
 	State state = m_state ;
 	auto p = m_map.find( event ) ; // look up in the multimap keyed on event + current-state
 	for( ; p != m_map.end() && (*p).first == event ; ++p )
@@ -240,6 +252,10 @@ State StateMachine<T,State,Event,Arg>::apply( T & t , Event event , Arg arg )
 	return m_any ;
 }
 
+template <typename T, typename State, typename Event, typename Arg>
+Event G::StateMachine<T,State,Event,Arg>::event() const
+{
+	return m_event ;
 }
 
 #endif

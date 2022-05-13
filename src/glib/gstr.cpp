@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -32,16 +32,19 @@
 #include <sstream>
 #include <cstring>
 #include <cerrno>
+#include <cmath>
 
 namespace G
 {
-	namespace StrImp /// An implementation namespace for G::Str.
+	namespace StrImp
 	{
 		static constexpr string_view chars_meta( "~<>[]*$|?\\(){}\"`'&;=" , nullptr ) ; // bash meta-chars plus "~"
 
-		static constexpr string_view chars_alnum( "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-			"0123456789" "abcdefghijklmnopqrstuvwxyz" , nullptr ) ;
-		static_assert( chars_alnum.size() == 26U+10U+26U , "" ) ;
+		static constexpr string_view chars_alnum_( "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+			"0123456789" "abcdefghijklmnopqrstuvwxyz_" , nullptr ) ;
+		static_assert( chars_alnum_.size() == 26U+10U+26U+1U , "" ) ;
+
+		static constexpr string_view chars_alnum( chars_alnum_.data() , chars_alnum_.size()-1U ) ;
 
 		static constexpr string_view chars_hexmap( "0123456789abcdef" , nullptr ) ;
 		static_assert( chars_hexmap.size() == 16U , "" ) ;
@@ -52,6 +55,7 @@ namespace G
 		bool isDigit( char c ) ;
 		bool isHex( char c ) ;
 		bool isPrintableAscii( char c ) ;
+		bool isSimple( char c ) ;
 		char toLower( char c )  ;
 		char toUpper( char c )  ;
 		unsigned short toUShort( const std::string & s , bool & overflow , bool & invalid ) ;
@@ -64,7 +68,9 @@ namespace G
 		void strncpy( char * , const char * , std::size_t ) noexcept ;
 		void escape( std::string & s , char c_escape , const char * specials_in , const char * specials_out ,
 			bool with_nul ) ;
-		void readLineFrom( std::istream & stream , const std::string & eol , std::string & line ) ;
+		bool replace( std::string & s , string_view from , string_view to , std::size_t * pos_p ) ;
+		unsigned int replaceAll( std::string & s , string_view from , string_view to ) ;
+		void readLineFrom( std::istream & stream , string_view eol , std::string & line ) ;
 		template <typename S, typename T, typename SV> void splitIntoTokens( const S & in , T & out , const SV & ws ) ;
 		template <typename S, typename T> void splitIntoTokens( const S & in , T & out , const S & ws , typename S::value_type esc ) ;
 		template <typename T> void splitIntoFields( const std::string & in , T & out , string_view ws ) ;
@@ -263,49 +269,65 @@ void G::Str:: replace( StringArray & a , char from , char to )
 
 bool G::Str::replace( std::string & s , const std::string & from , const std::string & to , std::size_t * pos_p )
 {
-	if( from.length() == 0 )
+	return StrImp::replace( s , {from.data(),from.size()} , {to.data(),to.size()} , pos_p ) ;
+}
+
+bool G::Str::replace( std::string & s , const char * from , const char * to , std::size_t * pos_p )
+{
+	return StrImp::replace( s , string_view(from) , string_view(to) , pos_p ) ;
+}
+
+bool G::Str::replace( std::string & s , string_view from , string_view to , std::size_t * pos_p )
+{
+	return StrImp::replace( s , from , to , pos_p ) ;
+}
+
+bool G::StrImp::replace( std::string & s , G::string_view from , G::string_view to , std::size_t * pos_p )
+{
+	if( from.empty() )
 		return false ;
 
 	std::size_t pos = pos_p == nullptr ? 0 : *pos_p ;
-	if( pos >= s.length() )
+	if( pos >= s.size() )
 		return false ;
 
-	pos = s.find( from , pos ) ;
+	pos = s.find( from.data() , pos , from.size() ) ;
 	if( pos == std::string::npos )
 	{
 		return false ;
 	}
 	else
 	{
-		s.replace( pos , from.length() , to ) ;
+		char to0 = '\0' ;
+		const char * to_data = to.empty() ? &to0 : to.data() ;
+		s.replace( pos , from.size() , to_data , to.size() ) ;
 		if( pos_p != nullptr )
-			*pos_p = pos + to.length() ;
+			*pos_p = pos + to.size() ;
 		return true ;
 	}
 }
 
 unsigned int G::Str::replaceAll( std::string & s , const std::string & from , const std::string & to )
 {
-	unsigned int count = 0U ;
-	for( std::size_t pos = 0U ; replace(s,from,to,&pos) ; count++ )
-		{;} // no-op
-	return count ;
+	return StrImp::replaceAll( s , {from.data(),from.size()} , {to.data(),to.size()} ) ;
 }
 
 unsigned int G::Str::replaceAll( std::string & s , const char * from , const char * to )
 {
-	if( s.find(from) != std::string::npos )
-	{
-		unsigned int count = 0U ;
-		std::string f( from ) ;
-		for( std::size_t pos = 0U ; replace(s,f,to,&pos) ; count++ )
-			{;} // no-op
-		return count ;
-	}
-	else
-	{
-		return 0U ;
-	}
+	return StrImp::replaceAll( s , string_view(from) , string_view(to) ) ;
+}
+
+unsigned int G::Str::replaceAll( std::string & s , string_view from , string_view to )
+{
+	return StrImp::replaceAll( s , from , to ) ;
+}
+
+unsigned int G::StrImp::replaceAll( std::string & s , string_view from , string_view to )
+{
+	unsigned int count = 0U ;
+	for( std::size_t pos = 0U ; replace(s,from,to,&pos) ; count++ )
+		{;} // no-op
+	return count ;
 }
 
 std::string G::Str::replaced( const std::string & s , char from , char to )
@@ -320,13 +342,20 @@ void G::Str::removeAll( std::string & s , char c )
 	s.erase( std::remove_if( s.begin() , s.end() , [c](char x){return x==c;} ) , s.end() ) ;
 }
 
-std::string G::Str::only( const std::string & chars , const std::string & s )
+std::string G::Str::removedAll( const std::string & s_in , char c )
+{
+	std::string s( s_in ) ;
+	removeAll( s , c ) ;
+	return s ;
+}
+
+std::string G::Str::only( string_view chars , const std::string & s )
 {
 	std::string result ;
 	result.reserve( s.size() ) ;
 	for( char c : s )
 	{
-		if( chars.find(c) != std::string::npos )
+		if( std::find(chars.begin(),chars.end(),c) != chars.end() )
 			result.append( 1U , c ) ;
 	}
 	return result ;
@@ -390,6 +419,14 @@ bool G::StrImp::isPrintableAscii( char c )
 	return uc >= 32U && uc < 127U ;
 }
 
+bool G::StrImp::isSimple( char c )
+{
+	auto uc = static_cast<unsigned char>(c) ;
+	return isDigit(c) || c == '-' || c == '_' ||
+		( uc >= 65U && uc <= 90U ) ||
+		( uc >= 97U && uc <= 122U ) ;
+}
+
 char G::StrImp::toLower( char c )
 {
 	const auto uc = static_cast<unsigned char>(c) ;
@@ -421,6 +458,12 @@ bool G::Str::isPrintableAscii( const std::string & s )
 {
 	namespace imp = G::StrImp ;
 	return std::all_of( s.begin() , s.end() , imp::isPrintableAscii ) ;
+}
+
+bool G::Str::isSimple( const std::string & s )
+{
+	namespace imp = G::StrImp ;
+	return std::all_of( s.begin() , s.end() , imp::isSimple ) ;
 }
 
 bool G::Str::isInt( const std::string & s )
@@ -466,6 +509,8 @@ std::string G::Str::fromBool( bool b )
 
 std::string G::Str::fromDouble( double d )
 {
+	if( std::isnan(d) ) return "nan" ;
+	if( std::isinf(d) ) return "inf" ;
 	std::ostringstream ss ;
 	ss << std::setprecision(16) << d ;
 	return ss.str() ;
@@ -490,7 +535,27 @@ double G::Str::toDouble( const std::string & s )
 	{
 		std::size_t end = 0U ;
 		double result = std::stod( s , &end ) ;
-		if( end == 0U || end == s.size() )
+		if( end != s.size() )
+			throw InvalidFormat( "expected floating point number" , s ) ;
+		return result ;
+	}
+	catch( std::invalid_argument & )
+	{
+		throw InvalidFormat( "expected floating point number" , s ) ;
+	}
+	catch( std::out_of_range & )
+	{
+	 	throw Overflow( s ) ;
+	}
+}
+
+float G::Str::toFloat( const std::string & s )
+{
+	try
+	{
+		std::size_t end = 0U ;
+		float result = std::stof( s , &end ) ;
+		if( end != s.size() )
 			throw InvalidFormat( "expected floating point number" , s ) ;
 		return result ;
 	}
@@ -515,6 +580,11 @@ int G::Str::toInt( const std::string & s )
 	if( overflow )
 		throw Overflow( s ) ;
 	return result ;
+}
+
+int G::Str::toInt( const std::string & s1 , const std::string & s2 )
+{
+	return !s1.empty() && isInt(s1) ? toInt(s1) : toInt(s2) ;
 }
 
 int G::StrImp::toInt( const std::string & s , bool & overflow , bool & invalid )
@@ -652,7 +722,7 @@ unsigned long G::StrImp::toULongHex( const std::string & s , bool limited )
 {
 	unsigned long n = 0U ;
 	if( s.empty() ) return 0U ;
-	size_t i0 = s.find_first_not_of('0') ;
+	std::size_t i0 = s.find_first_not_of('0') ;
 	if( i0 == std::string::npos ) i0 = 0U ;
 	if( (s.size()-i0) > (sizeof(unsigned long)*2U) )
 	{
@@ -666,7 +736,7 @@ unsigned long G::StrImp::toULongHex( const std::string & s , bool limited )
 		else if( c >= 65U && c <= 70U ) c -= 55U ;
 		else if( c >= 48U && c <= 57U ) c -= 48U ;
 		else throw Str::InvalidFormat( "invalid hexadecimal" , s ) ;
-		n <<= 4 ;
+		n <<= 4U ;
 		n += c ;
 	}
 	return n ;
@@ -764,8 +834,8 @@ std::size_t G::StrImp::outputHex( Tout out , char c )
 	namespace imp = G::StrImp ;
 	std::size_t n = static_cast<unsigned char>( c ) ;
 	n &= 0xFFU ;
-	*out++ = imp::chars_hexmap[(n>>4)%16U] ;
-	*out++ = imp::chars_hexmap[(n>>0)%16U] ;
+	*out++ = imp::chars_hexmap[(n>>4U)%16U] ;
+	*out++ = imp::chars_hexmap[(n>>0U)%16U] ;
 	return 2U ;
 }
 
@@ -776,10 +846,10 @@ std::size_t G::StrImp::outputHex( Tout out , wchar_t c )
 	using uwchar_t = typename std::make_unsigned<wchar_t>::type ;
 	std::size_t n = static_cast<uwchar_t>( c ) ;
 	n &= 0xFFFFU ;
-	*out++ = imp::chars_hexmap[(n>>12)%16U] ;
-	*out++ = imp::chars_hexmap[(n>>8)%16U] ;
-	*out++ = imp::chars_hexmap[(n>>4)%16U] ;
-	*out++ = imp::chars_hexmap[(n>>0)%16U] ;
+	*out++ = imp::chars_hexmap[(n>>12U)%16U] ;
+	*out++ = imp::chars_hexmap[(n>>8U)%16U] ;
+	*out++ = imp::chars_hexmap[(n>>4U)%16U] ;
+	*out++ = imp::chars_hexmap[(n>>0U)%16U] ;
 	return 4U ;
 }
 
@@ -831,12 +901,8 @@ std::size_t G::StrImp::outputPrintable( Tout out , Tchar c , Tchar escape_in , c
 }
 
 template <typename Tchar>
-struct G::StrImp::PrintableAppender /// A character appender used by G::Str.
+struct G::StrImp::PrintableAppender
 {
-	std::string & s ;
-	const Tchar escape_in ;
-	const char escape_out ;
-	const bool eight_bit ;
 	PrintableAppender( std::string & s_ , Tchar escape_in_ , char escape_out_ , bool eight_bit_ ) :
 		s(s_) ,
 		escape_in(escape_in_) ,
@@ -848,13 +914,15 @@ struct G::StrImp::PrintableAppender /// A character appender used by G::Str.
 	{
 		outputPrintable( std::back_inserter(s) , c , escape_in , escape_out , eight_bit ) ;
 	}
+private:
+	std::string & s ;
+	const Tchar escape_in ;
+	const char escape_out ;
+	const bool eight_bit ;
 } ;
 
-struct G::StrImp::InPlaceBackInserter /// A character appender used by G::Str.
+struct G::StrImp::InPlaceBackInserter
 {
-	std::string & m_s ;
-	std::size_t m_pos ;
-	std::size_t m_i{0U} ;
 	InPlaceBackInserter( std::string & s , std::size_t pos ) :
 		m_s(s) ,
 		m_pos(pos)
@@ -880,6 +948,10 @@ struct G::StrImp::InPlaceBackInserter /// A character appender used by G::Str.
 		return old ;
 	}
 	void operator++() = delete ;
+private:
+	std::string & m_s ;
+	std::size_t m_pos ;
+	std::size_t m_i{0U} ;
 } ;
 
 std::string G::Str::printable( const std::string & in , char escape )
@@ -900,6 +972,15 @@ std::string G::Str::printable( std::string && s , char escape )
 		pos += imp::outputPrintable( out , s.at(pos) , escape , escape , true ) ;
 	}
 	return std::move( s ) ;
+}
+
+std::string G::Str::printable( G::string_view in , char escape )
+{
+	namespace imp = G::StrImp ;
+	std::string result ;
+	result.reserve( in.length() + (in.length()/8U) + 1U ) ;
+	std::for_each( in.begin() , in.end() , imp::PrintableAppender<>(result,escape,escape,true) ) ;
+	return result ;
 }
 
 std::string G::Str::toPrintableAscii( const std::string & in , char escape )
@@ -924,65 +1005,33 @@ std::string G::Str::toPrintableAscii( const std::wstring & in , wchar_t escape )
 std::string G::Str::readLineFrom( std::istream & stream , const std::string & eol )
 {
 	std::string result ;
-	readLineFrom( stream , eol.empty() ? std::string(1U,'\n') : eol , result , true ) ;
+	readLineFrom( stream , eol.empty() ? string_view("\n",1U) : string_view(eol.data(),eol.size()) , result , true ) ;
 	return result ;
-}
-
-void G::StrImp::readLineFrom( std::istream & stream , const std::string & eol , std::string & line )
-{
-	const std::size_t limit = line.max_size() ;
-	const std::size_t eol_length = eol.length() ;
-	const char eol_final = eol.at( eol_length - 1U ) ;
-	std::size_t line_length = line.length() ;
-
-	bool changed = false ;
-	char c = '\0' ;
-	for(;;)
-	{
-		// (maybe optimise by hoisting the sentry and calling rdbuf() methods)
-		stream.get( c ) ;
-
-		if( stream.fail() ) // get(char) always sets the failbit at eof, not necessarily eofbit
-		{
-			// set eofbit, reset failbit -- cf. std::getline() in <string>
-			stream.clear( ( stream.rdstate() & ~std::ios_base::failbit ) | std::ios_base::eofbit ) ;
-			break ;
-		}
-
-		if( line_length == limit ) // pathological case -- see also std::getline()
-		{
-			stream.setstate( std::ios_base::failbit ) ;
-			break ;
-		}
-
-		line.append( 1U , c ) ;
-		changed = true ;
-		++line_length ;
-
-		if( line_length >= eol_length && c == eol_final )
-		{
-			const std::size_t offset = line_length - eol_length ;
-			if( line.find(eol,offset) == offset )
-			{
-				line.erase(offset) ;
-				break ;
-			}
-		}
-	}
-	if( !changed )
-		stream.setstate( std::ios_base::failbit ) ;
 }
 
 void G::Str::readLineFrom( std::istream & stream , const std::string & eol , std::string & line , bool pre_erase )
 {
+	if( eol.empty() ) throw InvalidEol() ;
+	readLineFrom( stream , string_view(eol.data(),eol.size()) , line , pre_erase ) ;
+}
+
+void G::Str::readLineFrom( std::istream & stream , const char * eol , std::string & line , bool pre_erase )
+{
+	if( eol == nullptr || eol[0] == '\0' ) throw InvalidEol() ;
+	readLineFrom( stream , string_view(eol) , line , pre_erase ) ;
+}
+
+void G::Str::readLineFrom( std::istream & stream , string_view eol , std::string & line , bool pre_erase )
+{
 	namespace imp = G::StrImp ;
-	G_ASSERT( eol.length() != 0U ) ;
+	if( eol.empty() )
+		throw InvalidEol() ;
 
 	if( pre_erase )
 		line.erase() ;
 
 	// this is a special speed optimisation for a two-character terminator with a one-character initial string ;-)
-	if( eol.length() == 2U && eol[0] != eol[1] && line.length() == 1U )
+	if( eol.size() == 2U && eol[0] != eol[1] && line.length() == 1U )
 	{
 		// save the initial character, use std::getline() for speed (terminating
 		// on the second character of the two-character terminator), check that the
@@ -1014,6 +1063,52 @@ void G::Str::readLineFrom( std::istream & stream , const std::string & eol , std
 	{
 		imp::readLineFrom( stream , eol , line ) ;
 	}
+}
+
+void G::StrImp::readLineFrom( std::istream & stream , string_view eol , std::string & line )
+{
+	G_ASSERT( !eol.empty() ) ;
+	const std::size_t limit = line.max_size() ;
+	const std::size_t eol_length = eol.size() ;
+	const char eol_final = eol.at( eol_length - 1U ) ;
+	std::size_t line_length = line.length() ;
+
+	bool changed = false ;
+	char c = '\0' ;
+	for(;;)
+	{
+		// (maybe optimise by hoisting the sentry and calling rdbuf() methods)
+		stream.get( c ) ;
+
+		if( stream.fail() ) // get(char) always sets the failbit at eof, not necessarily eofbit
+		{
+			// set eofbit, reset failbit -- cf. std::getline() in <string>
+			stream.clear( ( stream.rdstate() & ~std::ios_base::failbit ) | std::ios_base::eofbit ) ;
+			break ;
+		}
+
+		if( line_length == limit ) // pathological case -- see also std::getline()
+		{
+			stream.setstate( std::ios_base::failbit ) ;
+			break ;
+		}
+
+		line.append( 1U , c ) ;
+		changed = true ;
+		++line_length ;
+
+		if( line_length >= eol_length && c == eol_final )
+		{
+			const std::size_t offset = line_length - eol_length ;
+			if( line.find(eol.data(),offset,eol.size()) == offset )
+			{
+				line.erase(offset) ;
+				break ;
+			}
+		}
+	}
+	if( !changed )
+		stream.setstate( std::ios_base::failbit ) ;
 }
 
 template <typename S, typename T, typename SV>
@@ -1143,33 +1238,30 @@ void G::StrImp::splitIntoFields( const std::string & in_in , T & out , string_vi
 	}
 }
 
-void G::Str::splitIntoFields( const std::string & in , StringArray & out , string_view ws ,
+void G::Str::splitIntoFields( const std::string & in , StringArray & out , char sep ,
 	char escape , bool remove_escapes )
 {
 	namespace imp = G::StrImp ;
-	imp::splitIntoFields( in , out , ws , escape , remove_escapes ) ;
+	imp::splitIntoFields( in , out , string_view(&sep,1U) , escape , remove_escapes ) ;
 }
 
-G::StringArray G::Str::splitIntoFields( const std::string & in , string_view ws )
+G::StringArray G::Str::splitIntoFields( const std::string & in , char sep )
 {
 	namespace imp = G::StrImp ;
 	G::StringArray out ;
-	imp::splitIntoFields( in , out , ws ) ;
+	imp::splitIntoFields( in , out , string_view(&sep,1U) ) ;
 	return out ;
 }
 
 template <typename T>
-struct G::StrImp::Joiner /// A sub-string joiner used by G::Str.
+struct G::StrImp::Joiner
 {
-	T & result ;
-	const T & sep ;
-	bool & first ;
 	Joiner( T & result_ , const T & sep_ , bool & first_ ) :
 		result(result_) ,
 		sep(sep_) ,
 		first(first_)
 	{
-		first = true ;
+		first_ = true ;
 	}
 	void operator()( const T & s )
 	{
@@ -1177,6 +1269,10 @@ struct G::StrImp::Joiner /// A sub-string joiner used by G::Str.
 		result.append( s ) ;
 		first = false ;
 	}
+private:
+	T & result ;
+	const T & sep ;
+	bool & first ;
 } ;
 
 std::string G::Str::join( const std::string & sep , const StringMap & map ,
@@ -1264,6 +1360,12 @@ G::string_view G::Str::alnum()
 	return imp::chars_alnum ;
 }
 
+G::string_view G::Str::alnum_()
+{
+	namespace imp = G::StrImp ;
+	return imp::chars_alnum_ ;
+}
+
 G::string_view G::Str::meta()
 {
 	namespace imp = G::StrImp ;
@@ -1275,13 +1377,27 @@ std::string G::Str::head( const std::string & in , std::size_t pos , const std::
 	return
 		pos == std::string::npos ?
 			default_ :
-			( pos == 0U ? std::string() : ( pos >= in.length() ? in : in.substr(0U,pos) ) ) ;
+			( pos == 0U ? std::string() : ( pos >= in.size() ? in : in.substr(0U,pos) ) ) ;
 }
 
 std::string G::Str::head( const std::string & in , const std::string & sep , bool default_empty )
 {
 	std::size_t pos = sep.empty() ? std::string::npos : in.find( sep ) ;
 	return head( in , pos , default_empty ? std::string() : in ) ;
+}
+
+G::string_view G::Str::head( string_view in , std::size_t pos , string_view default_ )
+{
+	return
+		pos == std::string::npos ?
+			default_ :
+			( pos == 0U ? string_view(in.data(),std::size_t(0U)) : ( pos >= in.size() ? in : in.substr(0U,pos) ) ) ;
+}
+
+G::string_view G::Str::head( string_view in , string_view sep , bool default_empty )
+{
+	std::size_t pos = sep.empty() ? std::string::npos : in.find( sep ) ;
+	return head( in , pos , default_empty ? string_view(in.data(),std::size_t(0U)) : in ) ;
 }
 
 std::string G::Str::tail( const std::string & in , std::size_t pos , const std::string & default_ )
@@ -1340,7 +1456,7 @@ std::string G::Str::headMatchResidue( const StringArray & in , const std::string
 		if( headMatch( *p , head ) )
 			return (*p).substr( head.length() ) ;
 	}
-	return std::string() ;
+	return {} ;
 }
 
 std::string G::Str::positive()
@@ -1418,6 +1534,7 @@ bool G::Str::imatch( char c1 , char c2 )
 
 bool G::StrImp::imatch( const std::string & a , const std::string & b )
 {
+	if( a.empty() || b.empty() ) return a.empty() == b.empty() ;
 	return a.size() == b.size() && equal4( a.begin() , a.end() , b.begin() , b.end() , imatchc ) ;
 }
 
@@ -1432,6 +1549,20 @@ bool G::Str::imatch( const std::string & a , const std::string & b )
 	return imp::imatch( a , b ) ;
 }
 
+bool G::Str::imatch( const std::string & a , const char * bp , std::size_t bn )
+{
+	if( a.empty() || bn == 0U ) return a.empty() && bn == 0U ;
+	G_ASSERT( bp ) ;
+	return a.size() == bn && StrImp::equal4( a.data() , a.data()+a.size() , bp , bp+bn , StrImp::imatchc ) ;
+}
+
+bool G::Str::imatch( const char * ap , std::size_t an , string_view b )
+{
+	if( an == 0U || b.empty() ) return an == b.size() ;
+	G_ASSERT( ap && b.data() ) ;
+	return an == b.size() && StrImp::equal4( ap , ap+an , b.data() , b.data()+b.size() , StrImp::imatchc ) ;
+}
+
 bool G::Str::imatch( const StringArray & a , const std::string & b )
 {
 	namespace imp = G::StrImp ;
@@ -1439,11 +1570,29 @@ bool G::Str::imatch( const StringArray & a , const std::string & b )
 	return std::any_of( a.begin() , a.end() , std::bind(imp::imatch,_1,std::cref(b)) ) ;
 }
 
-std::size_t G::Str::ifind( const std::string & s , const std::string & key , std::size_t pos )
+std::size_t G::Str::ifind( const std::string & s , const std::string & key )
+{
+	return ifindat( s , key , 0U ) ;
+}
+
+std::size_t G::Str::ifindat( const std::string & s , const std::string & key , std::size_t pos )
 {
 	namespace imp = G::StrImp ;
-	if( s.empty() || key.empty() || pos > s.length() ) return std::string::npos ;
-	auto p = std::search( s.begin()+pos , s.end() , key.begin() , key.end() , imp::imatchc ) ;
+	if( s.empty() || key.empty() || pos >= s.size() ) return std::string::npos ;
+	auto p = std::search( s.begin()+pos , s.end() , key.begin() , key.end() , imp::imatchc ) ; // NOLINT narrowing
+	return p == s.end() ? std::string::npos : std::distance(s.begin(),p) ;
+}
+
+std::size_t G::Str::ifind( string_view s , string_view key )
+{
+	return ifindat( s , key , 0U ) ;
+}
+
+std::size_t G::Str::ifindat( string_view s , string_view key , std::size_t pos )
+{
+	namespace imp = G::StrImp ;
+	if( s.empty() || key.empty() || pos >= s.size() ) return std::string::npos ;
+	auto p = std::search( s.data()+pos , s.data()+s.size() , key.data() , key.data()+key.size() , imp::imatchc ) ; // NOLINT narrowing
 	return p == s.end() ? std::string::npos : std::distance(s.begin(),p) ;
 }
 
@@ -1500,9 +1649,11 @@ G::StringArray::iterator G::Str::keepMatch( StringArray::iterator begin , String
 {
 	namespace imp = G::StrImp ;
 	using namespace std::placeholders ;
-	if( match_list.empty() ) return end ;
-	return std::remove_if( begin , end ,
-		std::bind(imp::notInList,match_list.begin(),match_list.end(),_1,ignore_case) ) ;
+	if( match_list.empty() )
+		return end ;
+	else
+		return std::remove_if( begin , end ,
+			std::bind(imp::notInList,match_list.begin(),match_list.end(),_1,ignore_case) ) ;
 }
 
 G::StringArray::iterator G::Str::removeMatch( StringArray::iterator begin , StringArray::iterator end ,

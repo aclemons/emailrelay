@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,7 +24,6 @@
 #include "gpath.h"
 #include "gprocess.h"
 #include "gstr.h"
-#include "glog.h"
 #include <algorithm> // std::sort
 #include <functional>
 #include <iterator> // std::distance
@@ -87,18 +86,18 @@ void G::DirectoryList::readAll( const G::Path & dir )
 
 void G::DirectoryList::readType( const G::Path & dir , const std::string & suffix , unsigned int limit )
 {
-	// we do our own filename matching here so as to
-	// reduce our dependency on glob()
 	Directory directory( dir ) ;
 	DirectoryIterator iter( directory ) ;
 	for( unsigned int i = 0U ; iter.more() && !iter.error() ; ++i )
 	{
+		// (we do our own filename matching here to avoid glob())
 		if( suffix.empty() || Str::tailMatch(iter.fileName(),suffix) )
 		{
 			if( limit == 0U || m_list.size() < limit )
 			{
 				Item item ;
 				item.m_is_dir = iter.isDir() ;
+				item.m_is_link = iter.isLink() ;
 				item.m_path = iter.filePath() ;
 				item.m_name = iter.fileName() ;
 				m_list.push_back( item ) ;
@@ -123,6 +122,11 @@ bool G::DirectoryList::more()
 		more = m_index < m_list.size() ;
 	}
 	return more ;
+}
+
+bool G::DirectoryList::isLink() const
+{
+	return m_list.at(m_index).m_is_link ;
 }
 
 bool G::DirectoryList::isDir() const

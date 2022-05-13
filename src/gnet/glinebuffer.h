@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,7 +24,9 @@
 #include "gdef.h"
 #include "gexception.h"
 #include "glinestore.h"
+#include "gstringview.h"
 #include "gcall.h"
+#include <functional>
 #include <string>
 
 namespace GNet
@@ -49,9 +51,8 @@ namespace GNet
 ///   buffer.add("def\nABC\nDE") ;
 ///   buffer.add("F\n") ;
 ///
-///   GNet::LineBufferIterator iter( buffer ) ;
-///   while( iter.more() )
-///     cout << iter.line() << endl ;
+///   while( buffer.more() )
+///     cout << std::string_view(buffer.data(),buffer.size()) << endl ;
 /// }
 /// \endcode
 ///
@@ -82,7 +83,10 @@ namespace GNet
 class GNet::LineBuffer
 {
 public:
-	G_EXCEPTION( ErrorOverflow , "line buffer overflow" ) ;
+	G_EXCEPTION( ErrorOverflow , tx("line buffer overflow") ) ;
+	using SinkArgs = std::tuple<const char*,std::size_t,std::size_t,std::size_t,char,bool> ;
+	using SinkFn = std::function<bool(const SinkArgs&)> ;
+	using FragmentsFn = std::function<bool()> ;
 
 	explicit LineBuffer( const LineBufferConfig & ) ;
 		///< Constructor.
@@ -112,8 +116,8 @@ public:
 		///<
 		///< A parameter value of std::size_t(-1) can be used to represent
 		///< an infinite expectation that is never fully satisfied.
-		///< This is only sensible when extracting fragments and
-		///< results in full transparency.
+		///< This is only sensible when extracting fragments with
+		///< apply(), and it results in full transparency.
 
 	std::string eol() const ;
 		///< Returns the end-of-line string as passed in to the
@@ -143,25 +147,37 @@ public:
 		///< \endcode
 
 	template <typename Tsink, typename Tmemfun>
-	void apply( Tsink sink_p , Tmemfun sink_memfun , const char * data , std::size_t data_size , bool fragments = false ) ;
-		///< Overload that calls out to a member function.
-		///<
-		///< \code
-		///< void Foo::onData( const char * data , std::size_t size )
-		///< {
-		///<   apply( this , &Foo::onLine , data , size , false ) ;
-		///< }
-		///< bool Foo::onLine( const char * data , std::size_t size , std::size_t , std::size_t , char )
-		///< {
-		///<   process( std::string(data,size) ) ;
-		///< }
-		///< \endcode
+	void apply( Tsink sink_p , Tmemfun sink_memfun , const char * data , std::size_t data_size ,
+		bool fragments = false ) ;
+			///< Overload that calls out to a member function.
+			///<
+			///< \code
+			///< void Foo::onData( const char * data , std::size_t size )
+			///< {
+			///<   apply( this , &Foo::onLine , data , size , false ) ;
+			///< }
+			///< bool Foo::onLine( const char * data , std::size_t size , std::size_t , std::size_t , char )
+			///< {
+			///<   process( std::string(data,size) ) ;
+			///< }
+			///< \endcode
 
 	template <typename Tsink, typename Tmemfun, typename Tmemfun2>
-	void apply( Tsink sink_p , Tmemfun sink_memfun , const char * data , std::size_t data_size , Tmemfun2 fragments_memfun ) ;
-		///< Overload where the 'fragments' flag comes from calling a member
-		///< function on the sink object, allowing the flag to change
-		///< dynamically as each line is delivered.
+	void apply( Tsink sink_p , Tmemfun sink_memfun , const char * data , std::size_t data_size ,
+		Tmemfun2 fragments_memfun ) ;
+			///< Overload where the 'fragments' flag comes from calling a member
+			///< function on the sink object, allowing the flag to change
+			///< dynamically as each line is delivered.
+
+	bool apply( SinkFn sink_fn , G::string_view data , FragmentsFn fragments_fn ) ;
+		///< Overload for std::function.
+		///<
+		///< This overload provides extra parameter 'more' to the
+		///< sink function that is true if there is another complete
+		///< line buffered-up after the current one (and eolsize is
+		///< non-zero).
+		///<
+		///< Returns false iff the sink function returned false.
 
 	template <typename Tfn>
 	void apply( const std::string & , Tfn sink_fn , bool fragments = false ) ;
@@ -187,9 +203,6 @@ public:
 		///< Returns the size of the current data(), excluding the
 		///< line ending.
 		///< Precondition: more()
-
-	bool empty() const ;
-		///< Returns state().empty().
 
 	std::size_t eolsize() const ;
 		///< Returns the size of line-ending associated with the
@@ -220,6 +233,14 @@ public:
 	LineBufferState state() const ;
 		///< Returns information about the current state of the
 		///< line-buffer.
+
+	std::size_t buffersize() const ;
+		///< Returns the total number of bytes buffered up.
+
+	bool peekmore() const ;
+		///< Returns true if there is a line available after the
+		///< current line or expect()ation.
+		///< Precondition: more()
 
 public:
 	void extensionStart( const char * , std::size_t ) ;
@@ -264,12 +285,10 @@ public:
 
 private:
 	friend class LineBufferState ;
-	void check( const Output & ) ;
 	void output( std::size_t size , std::size_t eolsize , bool = false ) ;
 	bool detect() ;
 	bool trivial( std::size_t pos ) const ;
 	bool finite() const ;
-	std::size_t insize() const ; // for LineBufferState
 	std::string head() const ; // for LineBufferState
 
 private:
@@ -284,41 +303,6 @@ private:
 	LineStore m_in ;
 	Output m_out ;
 	std::size_t m_pos ;
-} ;
-
-//| \class GNet::LineBufferIterator
-/// Syntactic sugar for calling GNet::LineBuffer iteration methods.
-///
-class GNet::LineBufferIterator
-{
-public:
-	explicit LineBufferIterator( LineBuffer & buffer ) ;
-		///< Constructor.
-
-	bool more() ;
-		///< See LineBuffer::more().
-
-	const char * data() const ;
-		///< See LineBuffer::data().
-
-	std::size_t size() const ;
-		///< See LineBuffer::size().
-
-	std::size_t eolsize() const ;
-		///< See LineBuffer::eolsize().
-
-	std::string line() const ;
-		///< Returns the current line (of length size()).
-
-public:
-	~LineBufferIterator() = default ;
-	LineBufferIterator( const LineBufferIterator & ) = delete ;
-	LineBufferIterator( LineBufferIterator && ) = delete ;
-	void operator=( const LineBufferIterator & ) = delete ;
-	void operator=( LineBufferIterator && ) = delete ;
-
-private:
-	LineBuffer & m_line_buffer ;
 } ;
 
 //| \class GNet::LineBufferConfig
@@ -350,6 +334,9 @@ public:
 
 	std::size_t expect() const ;
 		///< Returns the initial expect value, as passed to the constructor.
+
+	bool operator==( const LineBufferConfig & ) const ;
+		///< Equality operator.
 
 	static LineBufferConfig transparent() ;
 		///< Convenience factory function.
@@ -404,8 +391,13 @@ public:
 		///< Returns the first bytes of buffered data up to a limit
 		///< of sixteen bytes.
 
+	bool peekmore() const ;
+		///< Returns true if another complete line is available
+		///< after the current line or current expect() block.
+
 private:
 	bool m_transparent ;
+	bool m_peekmore ;
 	std::string m_eol ;
 	std::size_t m_size ;
 	std::string m_head ;
@@ -443,7 +435,7 @@ std::size_t GNet::LineBuffer::size() const
 }
 
 inline
-std::size_t GNet::LineBuffer::insize() const
+std::size_t GNet::LineBuffer::buffersize() const
 {
 	return m_in.size() ;
 }
@@ -505,6 +497,18 @@ void GNet::LineBuffer::apply( Tsink sink_p , Tmemfun memfun , const char * data_
 	}
 }
 
+inline
+bool GNet::LineBuffer::apply( SinkFn sink_fn , G::string_view data_in , FragmentsFn fragments_fn )
+{
+	Extension e( this , data_in.data() , data_in.size() ) ;
+	while( e.valid() && more( fragments_fn() ) )
+	{
+		if( !sink_fn( SinkArgs(data(),size(),eolsize(),linesize(),c0(),peekmore()) ) )
+			return false ;
+	}
+	return true ;
+}
+
 template <typename T>
 inline
 void GNet::LineBuffer::apply( const std::string & data , T sink , bool with_fragments )
@@ -541,48 +545,11 @@ std::size_t GNet::LineBufferConfig::expect() const
 // ==
 
 inline
-GNet::LineBufferIterator::LineBufferIterator( LineBuffer & line_buffer ) :
-	m_line_buffer(line_buffer)
-{
-}
-
-inline
-bool GNet::LineBufferIterator::more()
-{
-	return m_line_buffer.more() ;
-}
-
-inline
-std::string GNet::LineBufferIterator::line() const
-{
-	return std::string( m_line_buffer.data() , m_line_buffer.size() ) ;
-}
-
-inline
-const char * GNet::LineBufferIterator::data() const
-{
-	return m_line_buffer.data() ;
-}
-
-inline
-std::size_t GNet::LineBufferIterator::size() const
-{
-	return m_line_buffer.size() ;
-}
-
-inline
-std::size_t GNet::LineBufferIterator::eolsize() const
-{
-	return m_line_buffer.eolsize() ;
-}
-
-// ==
-
-inline
 GNet::LineBufferState::LineBufferState( const LineBuffer & line_buffer ) :
 	m_transparent(line_buffer.transparent()) ,
+	m_peekmore(line_buffer.peekmore()) ,
 	m_eol(line_buffer.eol()) ,
-	m_size(line_buffer.insize()) ,
+	m_size(line_buffer.buffersize()) ,
 	m_head(line_buffer.head())
 {
 }
@@ -615,6 +582,12 @@ inline
 std::string GNet::LineBufferState::head() const
 {
 	return m_head ;
+}
+
+inline
+bool GNet::LineBufferState::peekmore() const
+{
+	return m_peekmore ;
 }
 
 #endif

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,22 +29,23 @@ GNet::EventEmitter::EventEmitter( EventHandler * handler , ExceptionSink es ) no
 {
 }
 
-void GNet::EventEmitter::raiseReadEvent()
+void GNet::EventEmitter::raiseReadEvent( Descriptor fd )
 {
-	raiseEvent( &EventHandler::readEvent ) ;
+	raiseEvent( &EventHandler::readEvent , fd ) ;
 }
 
-void GNet::EventEmitter::raiseWriteEvent()
+void GNet::EventEmitter::raiseWriteEvent( Descriptor fd )
 {
-	raiseEvent( &EventHandler::writeEvent ) ;
+	raiseEvent( &EventHandler::writeEvent , fd ) ;
 }
 
-void GNet::EventEmitter::raiseOtherEvent( EventHandler::Reason reason )
+void GNet::EventEmitter::raiseOtherEvent( Descriptor fd , EventHandler::Reason reason )
 {
-	raiseEvent( &EventHandler::otherEvent , reason ) ;
+	raiseEvent( &EventHandler::otherEvent , fd , reason ) ;
 }
 
-void GNet::EventEmitter::raiseEvent( void (EventHandler::*method)() )
+void GNet::EventEmitter::raiseEvent( void (EventHandler::*method)(Descriptor) ,
+	Descriptor fd )
 {
 	// see also: std::make_exception_ptr, std::rethrow_exception
 
@@ -52,7 +53,7 @@ void GNet::EventEmitter::raiseEvent( void (EventHandler::*method)() )
 	try
 	{
 		if( m_handler != nullptr )
-			(m_handler->*method)() ; // EventHandler::readEvent()/writeEvent()
+			(m_handler->*method)( fd ) ; // EventHandler::readEvent()/writeEvent()
 	}
 	catch( GNet::Done & e )
 	{
@@ -70,14 +71,14 @@ void GNet::EventEmitter::raiseEvent( void (EventHandler::*method)() )
 	}
 }
 
-void GNet::EventEmitter::raiseEvent( void (EventHandler::*method)(EventHandler::Reason) ,
-	EventHandler::Reason reason )
+void GNet::EventEmitter::raiseEvent( void (EventHandler::*method)(Descriptor,EventHandler::Reason) ,
+	Descriptor fd , EventHandler::Reason reason )
 {
 	EventLoggingContext set_logging_context( m_handler && m_es.set() ? m_es.esrc() : nullptr ) ;
 	try
 	{
 		if( m_handler != nullptr )
-			(m_handler->*method)( reason ) ; // EventHandler::otherEvent()
+			(m_handler->*method)( fd , reason ) ; // EventHandler::otherEvent()
 	}
 	catch( GNet::Done & e )
 	{

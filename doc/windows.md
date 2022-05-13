@@ -9,6 +9,9 @@ setup program `emailrelay-setup.exe` and its associated `payload` files.
 Run `emailrelay-setup.exe` as an administrator if you are going to be installing
 into protected directories like `Program Files`.
 
+You may need to run `vc_redist.x64.exe` first to install the Microsoft C++
+run-time files.
+
 The setup GUI will take you through the installation options and then install
 the run-time files into your chosen locations.
 

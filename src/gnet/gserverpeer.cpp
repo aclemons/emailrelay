@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,14 +25,13 @@
 #include "gassert.h"
 #include <sstream>
 
-GNet::ServerPeer::ServerPeer( ExceptionSink es , const ServerPeerInfo & peer_info ,
-	const LineBufferConfig & line_buffer_config ) :
-		m_address(peer_info.m_address) ,
-		m_socket(peer_info.m_socket) ,
-		m_sp(*this,es,*this,*m_socket,0U) ,
-		m_line_buffer(line_buffer_config) ,
-		m_config(peer_info.m_config) ,
-		m_idle_timer(*this,&ServerPeer::onIdleTimeout,es)
+GNet::ServerPeer::ServerPeer( ExceptionSink es , ServerPeerInfo && peer_info , LineBufferConfig line_buffer_config ) :
+	m_address(peer_info.m_address) ,
+	m_socket(std::move(peer_info.m_socket)) ,
+	m_sp(*this,es,*this,*m_socket,peer_info.m_server_peer_config.socket_protocol_config) ,
+	m_line_buffer(line_buffer_config) ,
+	m_config(peer_info.m_server_peer_config) ,
+	m_idle_timer(*this,&ServerPeer::onIdleTimeout,es)
 {
 	G_ASSERT( peer_info.m_server != nullptr ) ;
 	G_ASSERT( m_socket.get() ) ;
@@ -42,9 +41,13 @@ GNet::ServerPeer::ServerPeer( ExceptionSink es , const ServerPeerInfo & peer_inf
 	if( m_config.idle_timeout )
 		m_idle_timer.startTimer( m_config.idle_timeout ) ;
 
+	if( m_config.socket_linger_onoff >= 0 )
+		m_socket->setOptionLinger( m_config.socket_linger_onoff , m_config.socket_linger_time ) ;
+
 	m_socket->addReadHandler( *this , es ) ;
 	m_socket->addOtherHandler( *this , es ) ;
 	Monitor::addServerPeer( *this ) ;
+
 }
 
 GNet::ServerPeer::~ServerPeer()
@@ -69,12 +72,12 @@ GNet::StreamSocket & GNet::ServerPeer::socket()
 	return *m_socket ;
 }
 
-void GNet::ServerPeer::otherEvent( EventHandler::Reason reason )
+void GNet::ServerPeer::otherEvent( Descriptor , EventHandler::Reason reason )
 {
 	m_sp.otherEvent( reason ) ;
 }
 
-void GNet::ServerPeer::readEvent()
+void GNet::ServerPeer::readEvent( Descriptor )
 {
 	m_sp.readEvent() ;
 }
@@ -100,17 +103,22 @@ std::string GNet::ServerPeer::peerCertificate() const
 	return m_sp.peerCertificate() ;
 }
 
-bool GNet::ServerPeer::send( const std::string & data , std::string::size_type offset )
+bool GNet::ServerPeer::send( const std::string & data )
 {
-	return m_sp.send( data , offset ) ;
+	return m_sp.send( data , 0U ) ;
 }
 
-bool GNet::ServerPeer::send( const std::vector<G::string_view> & segments )
+bool GNet::ServerPeer::send( G::string_view data )
 {
-	return m_sp.send( segments ) ;
+	return m_sp.send( data ) ;
 }
 
-void GNet::ServerPeer::writeEvent()
+bool GNet::ServerPeer::send( const std::vector<G::string_view> & segments , std::size_t offset )
+{
+	return m_sp.send( segments , offset ) ;
+}
+
+void GNet::ServerPeer::writeEvent( Descriptor )
 {
 	if( m_sp.writeEvent() )
 		onSendComplete() ;
@@ -168,17 +176,10 @@ void GNet::ServerPeer::setIdleTimeout( unsigned int s )
 
 // ==
 
-GNet::ServerPeerConfig::ServerPeerConfig()
-= default;
-
-GNet::ServerPeerConfig::ServerPeerConfig( unsigned int idle_timeout_in ) :
-	idle_timeout(idle_timeout_in)
+GNet::ServerPeer::Config & GNet::ServerPeer::Config::set_socket_linger( std::pair<int,int> pair )
 {
-}
-
-GNet::ServerPeerConfig & GNet::ServerPeerConfig::set_idle_timeout( unsigned int t )
-{
-	idle_timeout = t ;
+	socket_linger_onoff = pair.first ;
+	socket_linger_time = pair.second ;
 	return *this ;
 }
 

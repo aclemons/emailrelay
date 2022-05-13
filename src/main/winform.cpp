@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,12 +24,15 @@
 #include "gstringwrap.h"
 #include "gmonitor.h"
 #include "gtime.h"
+#include "ggettext.h"
+#include "gconvert.h"
 #include "run.h"
 #include "winform.h"
 #include "news.h"
 #include "licence.h"
 #include "legal.h"
 #include "resource.h"
+#include <cstring>
 
 Main::WinForm::WinForm( HINSTANCE hinstance , const Main::Configuration & cfg ,
 	HWND parent , HWND hnotify , std::pair<DWORD,DWORD> style ,
@@ -40,16 +43,16 @@ Main::WinForm::WinForm( HINSTANCE hinstance , const Main::Configuration & cfg ,
 		m_closed(false) ,
 		m_cfg(cfg)
 {
-  	addPage( "Configuration" , IDD_PROPPAGE_1 ) ;
-  	addPage( "Licence" , IDD_PROPPAGE_1 ) ;
-  	addPage( "Version" , IDD_PROPPAGE_1 ) ;
-  	addPage( "Status" , IDD_PROPPAGE_1 ) ;
+  	addPage( txt("Configuration") , IDD_PROPPAGE_1 ) ;
+  	addPage( txt("Licence") , IDD_PROPPAGE_1 ) ;
+  	addPage( txt("Version") , IDD_PROPPAGE_1 ) ;
+  	addPage( txt("Status") , IDD_PROPPAGE_1 ) ;
 
 	// create the stack
   	create( parent , "E-MailRelay" , with_icon?IDI_ICON1:0 , hnotify , GGui::Cracker::wm_user_other() ) ;
 
 	if( with_system_menu_quit )
-		addSystemMenuItem( "Quit" , 0x10 ) ;
+		addSystemMenuItem( txt("Quit") , 0x10 ) ;
 }
 
 void Main::WinForm::addSystemMenuItem( const char * name , unsigned int id )
@@ -58,13 +61,14 @@ void Main::WinForm::addSystemMenuItem( const char * name , unsigned int id )
 	HMENU hmenu = GetSystemMenu( handle() , FALSE ) ;
 	if( hmenu )
 	{
-		MENUITEMINFO item{} ;
+		MENUITEMINFOA item{} ;
 		item.cbSize = sizeof( item ) ;
-		item.fMask = MIIM_STRING | MIIM_ID ;
+		item.fMask = MIIM_STRING | MIIM_ID ; // setting dwTypeData & wID
 		item.fType = MFT_STRING ;
 		item.wID = id ;
 		item.dwTypeData = const_cast<LPSTR>(name) ;
-		InsertMenuItem( hmenu , 0 , TRUE , &item ) ;
+		item.cch = static_cast<UINT>( std::strlen(name) ) ;
+		InsertMenuItemA( hmenu , 0 , TRUE , &item ) ;
 	}
 }
 
@@ -252,7 +256,7 @@ G::StringArray Main::WinForm::statusData() const
 G::StringArray Main::WinForm::split( const std::string & s )
 {
 	G::StringArray list ;
-	G::Str::splitIntoFields( s , list , "\n" ) ;
+	G::Str::splitIntoFields( s , list , '\n' ) ;
 	return list ;
 }
 

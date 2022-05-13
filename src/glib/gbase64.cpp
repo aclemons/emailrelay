@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -86,14 +86,29 @@ std::string G::Base64::encode( const std::string & s , const std::string & eol )
 	return Base64Imp::encode( {s.data(),s.size()} , {eol.data(),eol.size()} ) ;
 }
 
+std::string G::Base64::encode( G::string_view sv , const std::string & eol )
+{
+	return Base64Imp::encode( sv , {eol.data(),eol.size()} ) ;
+}
+
 std::string G::Base64::decode( const std::string & s , bool do_throw , bool strict )
 {
 	return Base64Imp::decode( {s.data(),s.size()} , do_throw , strict ) ;
 }
 
+std::string G::Base64::decode( G::string_view sv , bool do_throw , bool strict )
+{
+	return Base64Imp::decode( sv , do_throw , strict ) ;
+}
+
 bool G::Base64::valid( const std::string & s , bool strict )
 {
 	return Base64Imp::valid( {s.data(),s.size()} , strict ) ;
+}
+
+bool G::Base64::valid( G::string_view sv , bool strict )
+{
+	return Base64Imp::valid( sv , strict ) ;
 }
 
 // ==
@@ -112,7 +127,7 @@ void G::Base64Imp::encode_imp( iterator_out result_p , string_in input , string_
 	auto const end = input.end() ;
 	for( auto p = input.begin() ; p != end ; blocks++ )
 	{
-		if( !eol.empty() && blocks && (blocks % blocks_per_line) == 0U )
+		if( !eol.empty() && blocks != 0U && (blocks % blocks_per_line) == 0U )
 			std::copy( eol.begin() , eol.end() , result_p ) ;
 
 		uint32_type n = 0UL ;
@@ -252,7 +267,7 @@ void G::Base64Imp::generate_8( g_uint32_t & n , std::size_t & bits , iterator_ou
 		*result++ = to_char(hi_8(n)) ;
 		n <<= 8U ;
 	}
-	else if( hi_8(n) )
+	else if( hi_8(n) != 0U )
 	{
 		error = true ;
 	}
@@ -261,7 +276,7 @@ void G::Base64Imp::generate_8( g_uint32_t & n , std::size_t & bits , iterator_ou
 std::size_t G::Base64Imp::index( char c , bool & error ) noexcept
 {
 	std::size_t pos = character_map.find( c ) ;
-	error = error || !c || pos == std::string::npos ;
+	error = error || (c=='\0') || pos == std::string::npos ;
 	return pos == std::string::npos ? std::size_t(0) : pos ;
 }
 

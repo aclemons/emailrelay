@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,8 +23,10 @@
 #include "gsaslserver.h"
 #include "gsaslserverbasic.h"
 
-std::unique_ptr<GAuth::SaslServer> GAuth::SaslServerFactory::newSaslServer( const SaslServerSecrets & secrets , const std::string & config , bool allow_apop )
+std::unique_ptr<GAuth::SaslServer> GAuth::SaslServerFactory::newSaslServer( const SaslServerSecrets & secrets ,
+	bool allow_pop , const std::string & config ,
+	std::pair<bool,std::string> config_secure , std::pair<bool,std::string> config_insecure )
 {
-	return std::make_unique<SaslServerBasic>( secrets , config , allow_apop ) ; // up-cast
+	return std::make_unique<SaslServerBasic>( secrets , allow_pop , config , config_secure , config_insecure ) ; // up-cast
 }
 

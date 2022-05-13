@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,10 +26,7 @@
 
 void GAuth::Secrets::check( const std::string & p1 , const std::string & p2 , const std::string & p3 )
 {
-	G::StringArray list ;
-	list.push_back( p1 ) ;
-	list.push_back( p2 ) ;
-	list.push_back( p3 ) ;
+	G::StringArray list { p1 , p2 , p3 } ;
 	list.erase( std::remove(list.begin(),list.end(),std::string()) , list.end() ) ;
 	list.erase( std::remove(list.begin(),list.end(),"/pam") , list.end() ) ;
 	std::sort( list.begin() , list.end() ) ;
@@ -37,18 +34,18 @@ void GAuth::Secrets::check( const std::string & p1 , const std::string & p2 , co
 	std::for_each( list.begin() , list.end() , &SecretsFile::check ) ;
 }
 
-GAuth::Secrets::Secrets( const std::string & path , const std::string & name , const std::string & type ) :
+GAuth::Secrets::Secrets( const std::string & path , const std::string & log_name ) :
 	m_source(path)
 {
 	G_DEBUG( "GAuth::Secrets:ctor: [" << path << "]" ) ;
 	if( m_source != "/pam" )
-		m_imp = std::make_unique<SecretsFile>( path , true , name , type ) ;
+		m_imp = std::make_unique<SecretsFile>( path , true , log_name ) ;
 }
 
 GAuth::Secrets::Secrets()
 {
 	if( m_source != "/pam" )
-		m_imp = std::make_unique<SecretsFile>( std::string() , true , std::string() , std::string() ) ;
+		m_imp = std::make_unique<SecretsFile>( std::string() , false , std::string() ) ;
 }
 
 GAuth::Secrets::~Secrets()
@@ -64,14 +61,14 @@ bool GAuth::Secrets::valid() const
 	return m_source == "/pam" || m_imp->valid() ;
 }
 
-GAuth::Secret GAuth::Secrets::clientSecret( const std::string & mechanism ) const
+GAuth::Secret GAuth::Secrets::clientSecret( const std::string & type ) const
 {
-	return valid() ? m_imp->clientSecret(mechanism) : Secret::none() ;
+	return valid() ? m_imp->clientSecret(type) : Secret::none() ;
 }
 
-GAuth::Secret GAuth::Secrets::serverSecret( const std::string & mechanism , const std::string & id ) const
+GAuth::Secret GAuth::Secrets::serverSecret( const std::string & type , const std::string & id ) const
 {
-	return valid() ? m_imp->serverSecret( mechanism , id ) : Secret::none() ;
+	return valid() ? m_imp->serverSecret( type , id ) : Secret::none() ;
 }
 
 std::pair<std::string,std::string> GAuth::Secrets::serverTrust( const std::string & address_range ) const
@@ -79,8 +76,8 @@ std::pair<std::string,std::string> GAuth::Secrets::serverTrust( const std::strin
 	return valid() ? m_imp->serverTrust( address_range ) : std::make_pair(std::string(),std::string()) ;
 }
 
-bool GAuth::Secrets::contains( const std::string & mechanism ) const
+bool GAuth::Secrets::contains( const std::string & type , const std::string & id ) const
 {
-	return valid() ? m_imp->contains( mechanism ) : false ;
+	return valid() ? m_imp->contains( type , id ) : false ;
 }
 

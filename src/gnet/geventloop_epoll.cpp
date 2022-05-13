@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ namespace GNet
 class GNet::EventLoopImp : public EventLoop
 {
 public:
-	G_EXCEPTION( Error , "epoll error" ) ;
+	G_EXCEPTION( Error , tx("epoll error") ) ;
 	EventLoopImp() ;
 	~EventLoopImp() override ;
 
@@ -68,9 +68,8 @@ public:
 private:
 	struct ListItem
 	{
-		ListItem() ;
-		int m_fd ;
-		int m_events ;
+		int m_fd{-1} ;
+		unsigned int m_events{0U} ;
 		EventEmitter m_read_emitter ;
 		EventEmitter m_write_emitter ;
 	} ;
@@ -79,12 +78,12 @@ private:
 private:
 	void runOnce() ;
 	ListItem * find( int fd ) noexcept ;
-	ListItem * findOrCreate( int fd , EventHandler & , ExceptionSink , int new_events ) ;
-	void addReadWrite( int fd , EventHandler & , ExceptionSink , int new_events ) ;
-	void dropReadWrite( int , int old_events ) noexcept ;
-	void eadd( int fd , int events ) ;
-	void emodify( int fd , int events ) ;
-	int emodify( int fd , int events , std::nothrow_t ) noexcept ;
+	ListItem * findOrCreate( int fd , EventHandler & , ExceptionSink , unsigned int new_events ) ;
+	void addReadWrite( int fd , EventHandler & , ExceptionSink , unsigned int new_events ) ;
+	void dropReadWrite( int , unsigned int old_events ) noexcept ;
+	void eadd( int fd , unsigned int events ) ;
+	void emodify( int fd , unsigned int events ) ;
+	int emodify( int fd , unsigned int events , std::nothrow_t ) noexcept ;
 	void eremove( int fd ) noexcept ;
 	int ms() const ;
 	static int ms( unsigned int , unsigned int ) ;
@@ -101,22 +100,14 @@ private:
 
 // ===
 
-GNet::EventLoopImp::ListItem::ListItem() :
-	m_fd(-1) ,
-	m_events(0)
-{
-}
-
-// ===
-
 std::unique_ptr<GNet::EventLoop> GNet::EventLoop::create()
 {
 	return std::make_unique<EventLoopImp>() ;
 }
 
-GNet::EventLoopImp::EventLoopImp()
+GNet::EventLoopImp::EventLoopImp() :
+	m_fd(epoll_create1(EPOLL_CLOEXEC))
 {
-	m_fd = epoll_create1( EPOLL_CLOEXEC ) ;
 	if( m_fd == -1 )
 		throw Error( "epoll_create" ) ;
 }
@@ -128,11 +119,11 @@ GNet::EventLoopImp::~EventLoopImp()
 
 std::string GNet::EventLoopImp::run()
 {
-	G::ScopeExitSetFalse _( m_running = true ) ;
-	while( !m_quit )
+	G::ScopeExitSetFalse running( m_running = true ) ;
+	do
 	{
 		runOnce() ;
-	}
+	} while( !m_quit ) ;
 	std::string quit_reason = m_quit_reason ;
 	m_quit_reason.clear() ;
 	m_quit = false ;
@@ -164,24 +155,26 @@ void GNet::EventLoopImp::runOnce()
 	// handle read events
 	for( int i = 0 ; m_wait_rc > 0 && i < m_wait_rc ; i++ )
 	{
-		int e = m_wait_events[i].events ;
+		unsigned int e = m_wait_events[i].events ;
 		if( e & EPOLLIN )
 		{
-			ListItem * item = find( m_wait_events[i].data.fd ) ;
+			int fd = m_wait_events[i].data.fd ;
+			ListItem * item = find( fd ) ;
 			if( item )
-				item->m_read_emitter.raiseReadEvent() ;
+				item->m_read_emitter.raiseReadEvent( Descriptor(fd) ) ;
 		}
 	}
 
 	// handle write events
 	for( int i = 0 ; m_wait_rc > 0 && i < m_wait_rc ; i++ )
 	{
-		int e = m_wait_events[i].events ;
+		unsigned int e = m_wait_events[i].events ;
 		if( e & EPOLLOUT )
 		{
-			ListItem * item = find( m_wait_events[i].data.fd ) ;
+			int fd = m_wait_events[i].data.fd ;
+			ListItem * item = find( fd ) ;
 			if( item )
-				item->m_write_emitter.raiseWriteEvent() ;
+				item->m_write_emitter.raiseWriteEvent( Descriptor(fd) ) ;
 		}
 	}
 }
@@ -191,12 +184,12 @@ int GNet::EventLoopImp::ms() const
 	if( TimerList::ptr() )
 	{
 		auto pair = TimerList::instance().interval() ;
-		if( pair.second )
+		if( pair.second ) // infinite
 			return -1 ;
 		else if( pair.first.s() == 0 && pair.first.us() == 0U )
 			return 0 ;
 		else
-			return std::min( 1 , ms( pair.first.s() , pair.first.us() ) ) ;
+			return std::max( 1 , ms( pair.first.s() , pair.first.us() ) ) ;
 	}
 	else
 	{
@@ -207,6 +200,7 @@ int GNet::EventLoopImp::ms() const
 int GNet::EventLoopImp::ms( unsigned int s , unsigned int us )
 {
 	constexpr unsigned int s_max = static_cast<unsigned int>( std::numeric_limits<int>::max()/1000 - 1 ) ;
+	static_assert( s_max > 600 , "" ) ; // sanity check that clipping at more than ten mins
 	return
 		s >= s_max ?
 			std::numeric_limits<int>::max() :
@@ -236,7 +230,7 @@ GNet::EventLoopImp::ListItem * GNet::EventLoopImp::find( int fd ) noexcept
 }
 
 GNet::EventLoopImp::ListItem * GNet::EventLoopImp::findOrCreate( int fd ,
-	EventHandler & handler , ExceptionSink es , int new_events )
+	EventHandler & handler , ExceptionSink es , unsigned int new_events )
 {
 	ListItem * p = find( fd ) ;
 	if( p == nullptr )
@@ -244,10 +238,7 @@ GNet::EventLoopImp::ListItem * GNet::EventLoopImp::findOrCreate( int fd ,
 		unsigned int ufd = static_cast<unsigned int>(fd) ;
 		m_list.resize( std::max(m_list.size(),std::size_t(ufd+1U)) ) ;
 		p = &m_list[ufd] ;
-		G_ASSERT( p->m_fd == -1 ) ;
-		G_ASSERT( p->m_events == 0 ) ;
-		G_ASSERT( p->m_read_emitter.handler() == nullptr ) ;
-		G_ASSERT( p->m_write_emitter.handler() == nullptr ) ;
+		*p = ListItem() ;
 	}
 	G_ASSERT( p->m_fd == -1 || p->m_fd == fd ) ;
 	EventEmitter & emitter = ( new_events & EPOLLIN ) ? p->m_read_emitter : p->m_write_emitter ;
@@ -270,7 +261,7 @@ void GNet::EventLoopImp::addOther( Descriptor , EventHandler & , ExceptionSink )
 	// no-op
 }
 
-void GNet::EventLoopImp::addReadWrite( int fd , EventHandler & handler , ExceptionSink es , int new_events )
+void GNet::EventLoopImp::addReadWrite( int fd , EventHandler & handler , ExceptionSink es , unsigned int new_events )
 {
 	G_ASSERT( fd >= 0 ) ;
 	ListItem * item = findOrCreate( fd , handler , es , new_events ) ;
@@ -302,12 +293,12 @@ void GNet::EventLoopImp::dropOther( Descriptor ) noexcept
 	// no-op
 }
 
-void GNet::EventLoopImp::dropReadWrite( int fd , int old_events ) noexcept
+void GNet::EventLoopImp::dropReadWrite( int fd , unsigned int old_events ) noexcept
 {
 	ListItem * item = find( fd ) ;
 	if( item && ( item->m_events & old_events ) )
 	{
-		int new_events = item->m_events & ~old_events ;
+		unsigned int new_events = item->m_events & ~old_events ;
 		if( new_events == 0 )
 		{
 			eremove( fd ) ;
@@ -332,7 +323,7 @@ void GNet::EventLoopImp::disarm( ExceptionHandler * p ) noexcept
 	}
 }
 
-void GNet::EventLoopImp::eadd( int fd , int events )
+void GNet::EventLoopImp::eadd( int fd , unsigned int events )
 {
 	epoll_event event {} ;
 	event.data.fd = fd ;
@@ -345,7 +336,7 @@ void GNet::EventLoopImp::eadd( int fd , int events )
 	}
 }
 
-void GNet::EventLoopImp::emodify( int fd , int events )
+void GNet::EventLoopImp::emodify( int fd , unsigned int events )
 {
 	epoll_event event {} ;
 	event.data.fd = fd ;
@@ -358,7 +349,7 @@ void GNet::EventLoopImp::emodify( int fd , int events )
 	}
 }
 
-int GNet::EventLoopImp::emodify( int fd , int events , std::nothrow_t ) noexcept
+int GNet::EventLoopImp::emodify( int fd , unsigned int events , std::nothrow_t ) noexcept
 {
 	epoll_event event {} ;
 	event.data.fd = fd ;

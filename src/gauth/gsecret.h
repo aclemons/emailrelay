@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -36,17 +36,17 @@ namespace GAuth
 /// by a hash function. If masked then it can only be verified by an hmac
 /// operation using the matching hash function. However, the hmac hash function
 /// must be capable of accepting an intermediate hash state, and this is might
-/// only be available for md5.
+/// only be the case for md5.
 ///
 class GAuth::Secret
 {
 public:
-	G_EXCEPTION( Error , "invalid authorisation secret" ) ;
-	G_EXCEPTION( BadId , "invalid authorisation id" ) ;
+	G_EXCEPTION( Error , tx("invalid authorisation secret") ) ;
+	G_EXCEPTION( BadId , tx("invalid authorisation id") ) ;
 
 	Secret( const std::string & secret , const std::string & secret_encoding ,
 		const std::string & id , bool id_encoding_xtext ,
-		const std::string & context = std::string() ) ;
+		const std::string & context = {} ) ;
 			///< Constructor used by the SecretsFile class. Throws on error,
 			///< including if the encodings are invalid.
 
@@ -79,7 +79,7 @@ public:
 		///< Factory function that returns a secret that is not valid() and
 		///< has an empty id().
 
-	std::string info( const std::string & id = std::string() ) const ;
+	std::string info( const std::string & id = {} ) const ;
 		///< Returns information for logging, excluding anything
 		///< sensitive. The secret may be in-valid().
 

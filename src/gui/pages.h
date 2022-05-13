@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 #include "gdef.h"
 #include "gmapfile.h"
 #include "gpath.h"
-#include "gstrings.h"
+#include "gstringarray.h"
 #include "gqt.h"
 #include "gdialog.h"
 #include "gpage.h"
@@ -80,7 +80,7 @@ class DirectoryPage : public GPage
 public:
 	DirectoryPage( GDialog & dialog , const G::MapFile & , const std::string & name ,
 		const std::string & next_1 , const std::string & next_2 ,
-		bool installing , bool is_mac ) ;
+		bool installing , bool is_windows , bool is_mac ) ;
 
 	G::Path installDir() const ;
 	G::Path spoolDir() const ;
@@ -105,22 +105,18 @@ private:
 
 private:
 	bool m_installing ;
-	QLabel * m_install_dir_title ;
 	QLabel * m_install_dir_label ;
 	QString m_install_dir_start ;
 	QLineEdit * m_install_dir_edit_box ;
 	QPushButton * m_install_dir_browse_button ;
-	QLabel * m_spool_dir_title ;
 	QLabel * m_spool_dir_label ;
 	QString m_spool_dir_start ;
 	QLineEdit * m_spool_dir_edit_box ;
 	QPushButton * m_spool_dir_browse_button ;
-	QLabel * m_config_dir_title ;
 	QLabel * m_config_dir_label ;
 	QString m_config_dir_start ;
 	QLineEdit * m_config_dir_edit_box ;
 	QPushButton * m_config_dir_browse_button ;
-	QLabel * m_runtime_dir_title ;
 	QLabel * m_runtime_dir_label ;
 	QString m_runtime_dir_start ;
 	QLineEdit * m_runtime_dir_edit_box ;
@@ -214,7 +210,6 @@ private:
 	QPushButton * m_tls_browse_button ;
 	QLabel * m_tls_certificate_label ;
 	QLineEdit * m_tls_certificate_edit_box ;
-	QHBoxLayout * m_tls_inner_layout ;
 
 private slots:
 	void onToggle() ;
@@ -296,7 +291,7 @@ class StartupPage : public GPage
 public:
 	StartupPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
 		const std::string & next_1 , const std::string & next_2 ,
-		bool start_on_boot_able , bool is_mac ) ;
+		bool is_mac ) ;
 
 	std::string nextPage() override ;
 	void dump( std::ostream & , bool ) const override ;
@@ -345,7 +340,7 @@ class ListeningPage : public GPage
 {Q_OBJECT
 public:
 	ListeningPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
-		const std::string & next_1 , const std::string & next_2 ) ;
+		const std::string & next_1 , const std::string & next_2 , bool next_is_next2 ) ;
 
 	std::string nextPage() override ;
 	void dump( std::ostream & , bool ) const override ;
@@ -357,6 +352,7 @@ private slots:
 	void onTextChanged() ;
 
 private:
+	bool m_next_is_next2 ;
 	QCheckBox * m_remote_checkbox ;
 	QRadioButton * m_all_checkbox ;
 	QRadioButton * m_ipv4_checkbox ;
@@ -405,7 +401,7 @@ class ProgressPage : public GPage
 {Q_OBJECT
 public:
 	ProgressPage( GDialog & dialog , const G::MapFile & config , const std::string & name , const std::string & next_1 ,
-		const std::string & next_2 , Installer & ) ;
+		const std::string & next_2 , Installer & , bool installing ) ;
 
 	std::string nextPage() override ;
 	void dump( std::ostream & , bool ) const override ;

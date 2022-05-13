@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -43,7 +43,8 @@ GSmtp::SpamClient::SpamClient( GNet::ExceptionSink es , const GNet::Location & l
 
 GNet::Client::Config GSmtp::SpamClient::netConfig( unsigned int connect_timeout , unsigned int response_timeout )
 {
-	GNet::Client::Config net_config( GNet::LineBufferConfig::newline() ) ;
+	GNet::Client::Config net_config ;
+	net_config.line_buffer_config = GNet::LineBufferConfig::newline() ;
 	net_config.connection_timeout = connect_timeout ;
 	net_config.response_timeout = response_timeout ;
 	return net_config ;
@@ -147,7 +148,7 @@ void GSmtp::SpamClient::Request::send( const std::string & path , const std::str
 
 bool GSmtp::SpamClient::Request::sendMore()
 {
-	m_stream.read( &m_buffer[0] , m_buffer.size() ) ;
+	m_stream.read( &m_buffer[0] , m_buffer.size() ) ; // NOLINT narrowing
 	std::streamsize n = m_stream.gcount() ;
 	if( n <= 0 )
 	{
@@ -157,7 +158,7 @@ bool GSmtp::SpamClient::Request::sendMore()
 	else
 	{
 		G_DEBUG( "GSmtp::SpamClient::Request::sendMore: spam request sending " << n << " bytes" ) ;
-		return m_client->send( std::string(&m_buffer[0],static_cast<std::size_t>(n)) ) ;
+		return m_client->send( G::string_view(&m_buffer[0],static_cast<std::size_t>(n)) ) ;
 	}
 }
 

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 #include "gdef.h"
 #include "gssl.h"
 #include "gexception.h"
+#include <memory>
 #include <utility>
 
 GSsl::Library * GSsl::Library::m_this = nullptr ;
@@ -58,7 +59,7 @@ bool GSsl::Library::generateKeyAvailable() const
 
 std::string GSsl::Library::generateKey( const std::string & ) const
 {
-	return std::string() ;
+	return {} ;
 }
 
 GSsl::Library * GSsl::Library::instance()
@@ -93,7 +94,7 @@ bool GSsl::Library::enabledAs( const std::string & )
 
 std::string GSsl::Library::credit( const std::string & , const std::string & , const std::string & )
 {
-	return std::string() ;
+	return {} ;
 }
 
 std::string GSsl::Library::ids()
@@ -103,7 +104,7 @@ std::string GSsl::Library::ids()
 
 G::StringArray GSsl::Library::digesters( bool )
 {
-	return G::StringArray() ;
+	return {} ;
 }
 
 GSsl::Digester GSsl::Library::digester( const std::string & , const std::string & , bool ) const
@@ -148,27 +149,27 @@ GSsl::Protocol::Result GSsl::Protocol::write( const char * , std::size_t , ssize
 
 std::string GSsl::Protocol::str( Protocol::Result )
 {
-	return std::string() ;
+	return {} ;
 }
 
 std::string GSsl::Protocol::peerCertificate() const
 {
-	return std::string() ;
+	return {} ;
 }
 
 std::string GSsl::Protocol::peerCertificateChain() const
 {
-	return std::string() ;
+	return {} ;
 }
 
 std::string GSsl::Protocol::protocol() const
 {
-	return std::string() ;
+	return {} ;
 }
 
 std::string GSsl::Protocol::cipher() const
 {
-	return std::string() ;
+	return {} ;
 }
 
 bool GSsl::Protocol::verified() const
@@ -189,12 +190,12 @@ void GSsl::Digester::add( const std::string & )
 
 std::string GSsl::Digester::value()
 {
-	return std::string() ;
+	return {} ;
 }
 
 std::string GSsl::Digester::state()
 {
-	return std::string() ;
+	return {} ;
 }
 
 std::size_t GSsl::Digester::blocksize() const

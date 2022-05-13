@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,12 +23,13 @@
 
 #include "gdef.h"
 #include "gaddress.h"
-#include "gstrings.h"
+#include "gstringarray.h"
 #include "gexceptionsink.h"
 #include "geventhandler.h"
 #include "gfutureevent.h"
 #include "gsocket.h"
 #include <string>
+#include <memory>
 #include <vector>
 
 namespace GNet
@@ -46,8 +47,9 @@ class GNet::Interfaces : public EventHandler , public FutureEventHandler
 public:
 	struct Item /// Used by GNet::Interfaces to describe an interface address binding.
 	{
-		std::string name ;
+		std::string name ; // interface name
 		std::string altname ; // windows friendly name, utf8
+		int ifindex{0} ; // interface 1-based index, 0 on error, family-specific on windows
 		unsigned int address_family{0} ;
 		bool valid_address{false} ;
 		Address address ;
@@ -105,13 +107,17 @@ public:
 			///< found or if found but not up. Does lazy load()ing.
 
 	std::vector<Address> addresses( const G::StringArray & names , unsigned int port ,
-		G::StringArray & used_names , G::StringArray & empty_names ) const ;
+		G::StringArray & used_names , G::StringArray & empty_names ,
+		G::StringArray & bad_names ) const ;
 			///< Treats each name given as an address or interface name and
 			///< returns the total set of addresses. Returns by reference
-			///< lists of interface names with and without addresses.
+			///< (1) names that are, or have, addresses, (2) names that might
+			///< be interfaces with no bound addresses, and (3) the remainder,
+			///< ie. names that are not addresses and cannot be a valid
+			///< interface name.
 
 private: // overrides
-	void readEvent() override ; // GNet::EventHandler
+	void readEvent( Descriptor ) override ; // GNet::EventHandler
 	void onFutureEvent() override ; // GNet::FutureEventHandler
 
 public:
@@ -123,6 +129,7 @@ public:
 private:
 	using AddressList = std::vector<Address> ;
 	void loadImp( ExceptionSink , std::vector<Item> & list ) ;
+	static int index( const std::string & ) ;
 
 private:
 	ExceptionSink m_es ;

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // Copying and distribution of this file, with or without modification,
 // are permitted in any medium without royalty provided the copyright
@@ -11,6 +11,9 @@
 //
 // An example "--filter" script that edits the content originator fields
 // (ie. From, Sender and Reply-To) to a fixed value.
+//
+// Also consider setting the envelope-from field by editing the envelope
+// file, as in emailrelay-edit-envelope.js.
 //
 // See also: emailrelay-set-from.pl, RFC-2822
 //
@@ -83,7 +86,7 @@ try
 
 	WScript.Quit( 0 ) ;
 }
-catch
+catch( e )
 {
 	WScript.StdOut.WriteLine( "<<edit failed>>" ) ;
 	WScript.StdOut.WriteLine( "<<" + e + ">>" ) ;

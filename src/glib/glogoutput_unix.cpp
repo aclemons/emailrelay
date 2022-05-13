@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -30,53 +30,53 @@ namespace G
 	{
 		int decode( G::LogOutput::SyslogFacility facility )
 		{
-			if( facility == G::LogOutput::SyslogFacility::User ) return LOG_USER ;
-			if( facility == G::LogOutput::SyslogFacility::Daemon ) return LOG_DAEMON ;
-			if( facility == G::LogOutput::SyslogFacility::Mail ) return LOG_MAIL ;
-			if( facility == G::LogOutput::SyslogFacility::Cron ) return LOG_CRON ;
-			if( facility == G::LogOutput::SyslogFacility::Local0 ) return LOG_LOCAL0 ;
-			if( facility == G::LogOutput::SyslogFacility::Local1 ) return LOG_LOCAL1 ;
-			if( facility == G::LogOutput::SyslogFacility::Local2 ) return LOG_LOCAL2 ;
-			if( facility == G::LogOutput::SyslogFacility::Local3 ) return LOG_LOCAL3 ;
-			if( facility == G::LogOutput::SyslogFacility::Local4 ) return LOG_LOCAL4 ;
-			if( facility == G::LogOutput::SyslogFacility::Local5 ) return LOG_LOCAL5 ;
-			if( facility == G::LogOutput::SyslogFacility::Local6 ) return LOG_LOCAL6 ;
-			if( facility == G::LogOutput::SyslogFacility::Local7 ) return LOG_LOCAL7 ;
-			return LOG_USER ;
+			if( facility == G::LogOutput::SyslogFacility::User ) return LOG_USER ; // NOLINT
+			if( facility == G::LogOutput::SyslogFacility::Daemon ) return LOG_DAEMON ; // NOLINT
+			if( facility == G::LogOutput::SyslogFacility::Mail ) return LOG_MAIL ; // NOLINT
+			if( facility == G::LogOutput::SyslogFacility::Cron ) return LOG_CRON ; // NOLINT
+			if( facility == G::LogOutput::SyslogFacility::Local0 ) return LOG_LOCAL0 ; // NOLINT
+			if( facility == G::LogOutput::SyslogFacility::Local1 ) return LOG_LOCAL1 ; // NOLINT
+			if( facility == G::LogOutput::SyslogFacility::Local2 ) return LOG_LOCAL2 ; // NOLINT
+			if( facility == G::LogOutput::SyslogFacility::Local3 ) return LOG_LOCAL3 ; // NOLINT
+			if( facility == G::LogOutput::SyslogFacility::Local4 ) return LOG_LOCAL4 ; // NOLINT
+			if( facility == G::LogOutput::SyslogFacility::Local5 ) return LOG_LOCAL5 ; // NOLINT
+			if( facility == G::LogOutput::SyslogFacility::Local6 ) return LOG_LOCAL6 ; // NOLINT
+			if( facility == G::LogOutput::SyslogFacility::Local7 ) return LOG_LOCAL7 ; // NOLINT
+			return LOG_USER ; // NOLINT
 		}
 		int decode( G::Log::Severity severity )
 		{
-			if( severity == G::Log::Severity::s_Warning ) return LOG_WARNING ;
-			if( severity == G::Log::Severity::s_Error ) return LOG_ERR ;
-			if( severity == G::Log::Severity::s_InfoSummary ) return LOG_INFO ;
-			if( severity == G::Log::Severity::s_InfoVerbose ) return LOG_INFO ;
+			if( severity == G::Log::Severity::Warning ) return LOG_WARNING ;
+			if( severity == G::Log::Severity::Error ) return LOG_ERR ;
+			if( severity == G::Log::Severity::InfoSummary ) return LOG_INFO ;
+			if( severity == G::Log::Severity::InfoVerbose ) return LOG_INFO ;
 			return LOG_CRIT ;
 		}
 		int mode( G::LogOutput::SyslogFacility facility , G::Log::Severity severity )
 		{
-			return decode(facility) | decode(severity) ;
+			return decode(facility) | decode(severity) ; // NOLINT
 		}
 	}
 }
 
 void G::LogOutput::osoutput( int fd , G::Log::Severity severity , char * message , std::size_t n )
 {
-	if( m_config.m_use_syslog && severity != Log::Severity::s_Debug )
+	if( m_config.m_use_syslog && severity != Log::Severity::Debug )
 	{
-		message[n] = '\0' ;
-		::syslog( LogOutputImp::mode(m_config.m_facility,severity) , "%s" , message ) ;
+		message[n] = '\0' ; // sic
+		::syslog( LogOutputImp::mode(m_config.m_facility,severity) , "%s" , message ) ; // NOLINT
 	}
 
 	if( m_config.m_quiet_stderr && (
-		severity == Log::Severity::s_Debug ||
-		severity == Log::Severity::s_InfoVerbose ||
-		severity == Log::Severity::s_InfoSummary ) )
+		severity == Log::Severity::Debug ||
+		severity == Log::Severity::InfoVerbose ||
+		severity == Log::Severity::InfoSummary ) )
 	{
 		;
 	}
 	else
 	{
-		message[n] = '\n' ;
+		message[n] = '\n' ; // sic
 		GDEF_IGNORE_RETURN ::write( fd , message , n+1U ) ;
 	}
 }

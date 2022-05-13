@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@
 #include <vector>
 #include <iomanip>
 #include <sstream>
+#include <stdexcept>
 
 GNet::DnsMessageRequest::DnsMessageRequest( const std::string & type , const std::string & hostname , unsigned int id )
 {
@@ -49,7 +50,7 @@ GNet::DnsMessageRequest::DnsMessageRequest( const std::string & type , const std
 void GNet::DnsMessageRequest::q( const std::string & domain , char sep )
 {
 	G::StringArray parts ;
-	G::Str::splitIntoFields( domain , parts , {&sep,1U} ) ;
+	G::Str::splitIntoFields( domain , parts , sep ) ;
 	for( const auto & part : parts )
 	{
 		q( part ) ;
@@ -224,10 +225,14 @@ GNet::DnsMessage GNet::DnsMessage::rejection( const DnsMessage & message , unsig
 
 void GNet::DnsMessage::reject( unsigned int rcode )
 {
-	m_buffer.at(2U) |= 0x80 ; // QR
-	m_buffer.at(3U) &= 0xf0 ; m_buffer.at(3U) |= ( rcode & 0x0f ) ; // RCODE
-	m_buffer.at(6U) = 0U ; m_buffer.at(7U) = 0U ; // ANCOUNT
-	m_buffer.at(8U) = 0U ; m_buffer.at(9U) = 0U ; // NSCOUNT
+	if( m_buffer.size() < 10U )
+		throw std::out_of_range( "dns message buffer too small" ) ;
+
+	unsigned char * buffer = reinterpret_cast<unsigned char*>(&m_buffer[0]) ;
+	buffer[2U] |= 0x80U ; // QR
+	buffer[3U] &= 0xf0U ; buffer[3U] |= ( rcode & 0x0fU ) ; // RCODE
+	buffer[6U] = 0U ; buffer[7U] = 0U ; // ANCOUNT
+	buffer[8U] = 0U ; buffer[9U] = 0U ; // NSCOUNT
 
 	// chop off RRs
 	unsigned int new_size = 12U ; // HEADER size
@@ -266,7 +271,8 @@ GNet::Address GNet::DnsMessage::rrAddress( unsigned int record_index ) const
 
 // ==
 
-GNet::DnsMessageQuestion::DnsMessageQuestion( const DnsMessage & msg , unsigned int offset )
+GNet::DnsMessageQuestion::DnsMessageQuestion( const DnsMessage & msg , unsigned int offset ) :
+	m_size(0U)
 {
 	m_qname = DnsMessageNameParser::read( msg , offset ) ;
 	m_size = DnsMessageNameParser::size( msg , offset ) + 2U + 2U ; // QNAME + QTYPE + QCLASS
@@ -341,6 +347,7 @@ GNet::DnsMessageRR::DnsMessageRR( const DnsMessage & msg , unsigned int offset )
 	m_offset(offset) ,
 	m_size(0U) ,
 	m_type(0U) ,
+	m_class(0U) ,
 	m_rdata_offset(0U) ,
 	m_rdata_size(0U)
 {
@@ -439,7 +446,7 @@ GNet::Address GNet::DnsMessageRR::address() const
 	{
 		throw DnsMessage::Error( "not an address" ) ;
 	}
-	return Address( ss.str() ) ;
+	return Address::parse( ss.str() , Address::NotLocal() ) ;
 }
 
 // ==

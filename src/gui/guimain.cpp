@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -124,6 +124,7 @@
 #include "gpath.h"
 #include "gstr.h"
 #include "gstringwrap.h"
+#include "gformat.h"
 #include <string>
 #include <iostream>
 #include <stdexcept>
@@ -150,18 +151,25 @@ static int height()
 	return 490 ;
 }
 
-static void error( const std::string & what )
+static void errorBox( const std::string & what )
 {
 	QString title( GQt::qstr("E-MailRelay") ) ;
+	QString qwhat = GQt::qstr( what ) ;
 	QMessageBox::critical( nullptr , title ,
-		QMessageBox::tr("Failed with the following exception: %1").arg(what.c_str()) ,
+		QMessageBox::tr("Failed with the following exception: %1").arg(qwhat) ,
 		QMessageBox::Abort , QMessageBox::NoButton , QMessageBox::NoButton ) ;
 }
 
-static void info( const std::string & text )
+static QString tr( const char * text )
+{
+	return QCoreApplication::translate( "main" , text ) ;
+}
+
+static void infoBox( const std::string & text )
 {
 	QString title( GQt::qstr("E-MailRelay") ) ;
-	QMessageBox::information( nullptr , title , QString::fromLatin1(text.c_str()) ,
+	QString qtext = GQt::qstr( text ) ;
+	QMessageBox::information( nullptr , title , qtext ,
 		QMessageBox::Ok , QMessageBox::NoButton , QMessageBox::NoButton ) ;
 }
 
@@ -202,9 +210,9 @@ bool Application::notify( QObject * p1 , QEvent * p2 )
 	catch( std::exception & e )
 	{
 		G_ERROR( "exception: " << e.what() ) ;
-		error( e.what() ) ;
+		errorBox( e.what() ) ;
 		std::string message = G::StringWrap::wrap( e.what() , "" , "" , 40U ) ;
-		qCritical( "exception: %s" , message.c_str() ) ;
+		qCritical( message.find(' ')==std::string::npos ? "exception: %s" : "%s" , message.c_str() ) ;
 		exit( 3 ) ;
 	}
 	return false ;
@@ -258,7 +266,7 @@ int main( int argc , char * argv [] )
 			const char * sep = "" ;
 			for( int i = 2 ; i < argc ; i++ , sep = " " )
 				ss << sep << argv[i] ;
-			info( ss.str() ) ;
+			infoBox( ss.str() ) ;
 			return 1 ;
 		}
 		G::LogOutput log_ouptut( "" ,
@@ -284,11 +292,14 @@ int main( int argc , char * argv [] )
 				G_LOG( "main: locale: " << GQt::stdstr(QLocale::system().name()) ) ; // eg. "en_GB"
 				bool loaded = false ;
 				G::Path qmfile = value( args , "--qm" ) ;
+				G::Path qmdir = value( args , "--qmdir" ) ;
+				if( qmdir.empty() )
+					qmdir = argv0.dirname() + "translations" ;
 				if( !qmfile.empty() )
-					loaded = translator.load( GQt::qstr(qmfile.str()) ) ;
+					loaded = translator.load( GQt::qstr(qmfile) ) ;
 				if( !loaded )
 					loaded = translator.load( QLocale() , GQt::qstr("emailrelay") , GQt::qstr(".") ,
-						GQt::qstr((argv0.dirname()+"translations").str()) ) ;
+						GQt::qstr(qmdir.str()) , GQt::qstr(".qm") ) ;
 				if( loaded )
 					QCoreApplication::installTranslator( &translator ) ;
 				else
@@ -296,7 +307,7 @@ int main( int argc , char * argv [] )
 			}
 
 			// test-mode -- create a minimal payload, make it easier to
-			// click through and write install variables to installer.txt
+			// click through, and write install variables to installer.txt
 			if( args.contains("--test") )
 			{
 				G::Path pdir = argv0.dirname() + "payload" ;
@@ -339,10 +350,14 @@ int main( int argc , char * argv [] )
 
 			// fail if no payload and no pointer file
 			if( configure_mode && pointer_file.empty() )
-				throw std::runtime_error( "cannot find a 'payload' directory for installation or a "
-					"'" + pointerFilename(argv0) + "' pointer file to allow reconfiguration: "
+			{
+				QString message_format = tr( "cannot find a 'payload' directory for installation or a "
+					"'%1%' pointer file to allow reconfiguration: "
 					"this program has probably been moved away from its original location: "
 					"please configure the emailrelay server manually" ) ;
+				QString message = message_format.arg( GQt::qstr( pointerFilename(argv0) , GQt::Path ) ) ;
+				throw std::runtime_error( GQt::stdstr( message , GQt::Utf8 ) ) ;
+			}
 
 			// load the pointer file
 			G::MapFile pointer_map ;
@@ -351,7 +366,7 @@ int main( int argc , char * argv [] )
 				if( G::File::exists(pointer_file) )
 				{
 					G_LOG_S( "main: reading directories from [" << pointer_file << "]" ) ;
-					pointer_map = G::MapFile( pointer_file ) ;
+					pointer_map = G::MapFile( pointer_file , "pointer" ) ;
 				}
 				else
 				{
@@ -406,10 +421,13 @@ int main( int argc , char * argv [] )
 
 			// set up the gui pages' config map
 			G::MapFile pages_config = server_config_map ;
-			if( !pages_config.contains("spool-dir") ) pages_config.add( "spool-dir" , Dir::spool().str() ) ;
 			pages_config.add( "=dir-config" , dir_config.str() ) ;
 			pages_config.add( "=dir-install" , dir_install.str() ) ;
 			pages_config.add( "=dir-run" , dir_run.str() ) ;
+			pages_config.add( "=dir-boot" , Dir::boot().str() ) ;
+			pages_config.add( "=dir-boot-enabled" , Boot::installable(Dir::boot()) ? "y" : "n" ) ;
+			if( !pages_config.contains("spool-dir") )
+				pages_config.add( "spool-dir" , Dir::spool().str() ) ;
 
 			// set widget states based on the current file-system state
 			if( configure_mode )
@@ -426,20 +444,24 @@ int main( int argc , char * argv [] )
 			{
 				if( G::File::exists(server_config_file) )
 				{
-					std::string more_help = isWindows() ? " or run as administrator" : "" ;
 					std::ofstream f ;
 					G::File::open( f , server_config_file , G::File::Append() ) ;
 					if( !f.good() )
-						throw std::runtime_error( "cannot write [" + server_config_file.str() + "]"
-							": check file permissions" + more_help ) ;
+					{
+						QString message_format = tr( "cannot write [%1%]: check file permissions%2%" ) ;
+						QString more_help = isWindows() ? tr( " or run as administrator" ) : QString() ;
+						QString message = message_format.arg(GQt::qstr(server_config_file.str())).arg(more_help) ;
+						throw std::runtime_error( GQt::stdstr( message , GQt::Utf8 ) ) ;
+					}
 				}
 				else if( !G::Directory(server_config_file.dirname()).valid(true) )
 				{
-					std::string gerund_article = pointer_map.contains("dir-config") ? "changing the" : "adding a" ;
-					std::string preposition = pointer_map.contains("dir-config") ? "in" : "to" ;
-					throw std::runtime_error( "cannot create files in [" + server_config_file.dirname().str() + "]: "
-						"try " + gerund_article + " \"dir-config\" entry " + preposition + " the configuration file "
-						"[" + pointer_file.str() + "]" ) ;
+					bool exists = pointer_map.contains( "dir-config" ) ;
+					QString message_format = exists ?
+						tr( "cannot create files in [%1]: try changing the \"dir-config\" entry in the configuration file [%2]" ) :
+						tr( "cannot create files in [%1]: try adding a \"dir-config\" entry to the configuration file [%2]" ) ;
+					QString message = message_format.arg(GQt::qstr(server_config_file.dirname())).arg(GQt::qstr(pointer_file)) ;
+					throw std::runtime_error( GQt::stdstr( message , GQt::Utf8 ) ) ;
 				}
 			}
 
@@ -465,22 +487,21 @@ int main( int argc , char * argv [] )
 			// create the dialog and all its pages
 			const bool licence_accepted = run_before ;
 			const bool with_launch = !configure_mode ;
+			const bool skip_startup_page = configure_mode && !isWindows() ;
 			GDialog d( virgin_flag_file , with_launch ) ;
-			//d.enableHelpButton() ;
-			//d.enableLaunchButton() ;
 			d.add( new TitlePage(d,pages_config,"title","license","") ) ;
 			d.add( new LicensePage(d,pages_config,"license","directory","",licence_accepted) ) ;
-			d.add( new DirectoryPage(d,pages_config,"directory","dowhat","",!configure_mode,is_mac) ) ;
+			d.add( new DirectoryPage(d,pages_config,"directory","dowhat","",!configure_mode,isWindows(),is_mac) ) ;
 			d.add( new DoWhatPage(d,pages_config,"dowhat","pop","smtpserver") ) ;
 			d.add( new PopPage(d,pages_config,"pop","smtpserver","logging",configure_mode) ) ;
 			d.add( new SmtpServerPage(d,pages_config,"smtpserver","smtpclient","",configure_mode,can_generate&&!configure_mode) ) ;
 			d.add( new SmtpClientPage(d,pages_config,"smtpclient","filter","",configure_mode) ) ;
 			d.add( new FilterPage(d,pages_config,"filter","logging","",!configure_mode,isWindows()) ) ;
-			d.add( new ListeningPage(d,pages_config,"listening","startup","") ) ;
 			d.add( new LoggingPage(d,pages_config,"logging","listening","") ) ;
-			d.add( new StartupPage(d,pages_config,"startup","ready","",Boot::able(Dir::boot()),is_mac) ) ;
+			d.add( new ListeningPage(d,pages_config,"listening","startup","ready",skip_startup_page) ) ;
+			d.add( new StartupPage(d,pages_config,"startup","ready","",is_mac) ) ;
 			d.add( new ReadyPage(d,pages_config,"ready","progress","",!configure_mode) ) ;
-			d.add( new ProgressPage(d,pages_config,"progress","","",installer) ) ;
+			d.add( new ProgressPage(d,pages_config,"progress","","",installer,!configure_mode) ) ;
 			d.add() ;
 
 			// set the dialog dimensions
@@ -495,13 +516,13 @@ int main( int argc , char * argv [] )
 		}
 		catch( std::exception & e )
 		{
-			error( e.what() ) ;
+			errorBox( e.what() ) ;
 			std::string message = G::StringWrap::wrap( e.what() , "" , "" , 40 ) ;
-			qCritical( "exception: %s" , message.c_str() ) ;
+			qCritical( "%s" , message.c_str() ) ;
 		}
 		catch(...)
 		{
-			error( "unknown exception" ) ;
+			errorBox( "unknown exception" ) ;
 			qCritical( "%s" , "unknown exception" ) ;
 		}
 		return 1 ;
@@ -509,7 +530,7 @@ int main( int argc , char * argv [] )
 	catch( std::exception & e )
 	{
 		std::string message = G::StringWrap::wrap( e.what() , "" , "" , 40U ) ;
-		qCritical( "exception: %s" , message.c_str() ) ;
+		qCritical( "%s" , message.c_str() ) ;
 	}
 	catch(...)
 	{

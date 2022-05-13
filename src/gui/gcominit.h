@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,12 +26,13 @@
 #include <objbase.h>
 struct GComInit
 {
-	GComInit() { GDEF_UNUSED HRESULT h = CoInitializeEx(0,0) ; }
+	static void init() { GDEF_UNUSED HRESULT h = CoInitializeEx(0,0) ; }
+	GComInit() { init() ; }
 	~GComInit() { CoUninitialize() ; }
 	GComInit( const GComInit & ) = delete ;
 	GComInit( GComInit && ) = delete ;
-	void operator=( const GComInit & ) = delete ;
-	void operator=( GComInit && ) = delete ;
+	GComInit & operator=( const GComInit & ) = delete ;
+	GComInit & operator=( GComInit && ) = delete ;
 } ;
 #else
 struct GComInit

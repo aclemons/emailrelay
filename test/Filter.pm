@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 #	use Filter ;
 #	Filter::create( $path ,
 #		{
-#			edit => 1 ,
+#			edit => 1 , # add a snippet to edit the envelope-from
 #		} ,
 #		{
 #			unix => [

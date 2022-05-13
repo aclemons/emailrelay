@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ namespace GNet
 class GNet::LineStoreIterator : public std::iterator<std::bidirectional_iterator_tag,char,ptrdiff_t>
 {
 public:
-	G_EXCEPTION( Error , "line buffer internal error" ) ;
+	G_EXCEPTION( Error , tx("line buffer internal error") ) ;
 	LineStoreIterator() = default;
 	~LineStoreIterator() = default;
 	explicit LineStoreIterator( const LineStore & line_store , bool end = false ) :
@@ -105,16 +105,12 @@ public:
 	}
 	char operator*() const
 	{
-		G_ASSERT( m_p != nullptr ) ;
-		if( m_p == nullptr )
-			throw Error() ;
+		G_ASSERT_OR_DO( m_p != nullptr , throw Error() ) ;
 		return m_p->at( m_pos ) ;
 	}
 	char operator[]( std::size_t n ) const
 	{
-		G_ASSERT( m_p != nullptr ) ;
-		if( m_p == nullptr )
-			throw Error() ;
+		G_ASSERT_OR_DO( m_p != nullptr , throw Error() ) ;
 		return m_p->at( m_pos + n ) ;
 	}
 	void operator+=( ptrdiff_t n )
@@ -336,7 +332,7 @@ std::size_t GNet::LineStore::find( const std::string & s , std::size_t startpos 
 std::size_t GNet::LineStore::search( std::string::const_iterator begin , std::string::const_iterator end ,
 	std::size_t startpos ) const
 {
-	return std::search( LineStoreIterator(*this)+startpos , LineStoreIterator(*this,true) , begin , end ).pos() ;
+	return std::search( LineStoreIterator(*this)+startpos , LineStoreIterator(*this,true) , begin , end ).pos() ; // NOLINT narrowing
 }
 
 std::size_t GNet::LineStore::findSubStringAtEnd( const std::string & s , std::size_t startpos ) const
@@ -359,7 +355,7 @@ std::size_t GNet::LineStore::findSubStringAtEnd( const std::string & s , std::si
 			{
 				// compare leading substring with the end of the store
 				const LineStoreIterator end( *this , true ) ;
-				LineStoreIterator p = end - s_size ;
+				LineStoreIterator p = end - s_size ; // NOLINT narrowing
 				if( imp::std_equal(s_start,s_end,p,end) )
 				{
 					result = p.pos() ;

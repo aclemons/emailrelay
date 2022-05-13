@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -65,10 +65,10 @@ namespace GNet
 /// } ;
 /// \endcode
 ///
-/// The ExceptionSinkUnbound class is used as syntactic sugar
-/// to force factory methods to plumb-in an ExceptionSource
-/// pointer to the newly-created object as soon as its address
-/// is available (ie. before the constructor body runs).
+/// The ExceptionSinkUnbound class is used as a device to force
+/// factory methods to plumb-in an ExceptionSource pointer to
+/// the newly-created object as soon as its address is available
+/// (ie. before the constructor body runs).
 ///
 /// \code
 /// class FooServerPeer : public ServerPeer
@@ -119,7 +119,7 @@ public:
 		///< Deleted override to prohibit a null ExceptionHandler.
 
 	static ExceptionSink logOnly() ;
-		///< A factory function for an exception sink that logs the
+		///< A factory function for an exception handler that logs the
 		///< exception as an error but does not re-throw. This can
 		///< be a convenient alternative to a try/catch block for
 		///< code that might throw but should not terminate a

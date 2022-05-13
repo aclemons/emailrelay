@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,10 +25,10 @@
 #include "gvalid.h"
 #include "gexception.h"
 #include "gaddress.h"
-#include "gstrings.h"
+#include "gstringarray.h"
 #include "gpath.h"
-#include <map>
 #include <memory>
+#include <utility>
 
 namespace GAuth
 {
@@ -44,24 +44,34 @@ namespace GAuth
 /// Usage:
 /// \code
 /// SaslServer sasl( secrets ) ;
-/// peer.advertise( sasl.mechanisms() ) ;
-/// if( sasl.init(peer.preferred()) )
+/// if( !sasl.mechanisms(peer.secure()).empty() )
 /// {
-///   if( peer.haveInitialResponse() && sasl.mustChallenge() ) throw ProtocolError() ;
-///   bool done = false ;
-///   string challenge = peer.haveInitialResponse() ?
-///     sasl.apply(peer.initialResponse(),done) : sasl.initialChallenge() ;
-///   while( !done )
+///   peer.advertise( sasl.mechanisms(peer.secure()) ) ;
+///   if( sasl.init(peer.secure(),peer.preferred()) )
 ///   {
-///     peer.send( challenge ) ;
-///     string response = peer.receive() ;
-///     challenge = sasl.apply( response , done ) ;
+///     if( peer.haveInitialResponse() && sasl.mustChallenge() )
+///       throw ProtocolError() ;
+///     bool done = false ;
+///     string challenge = peer.haveInitialResponse() ?
+///       sasl.apply(peer.initialResponse(),done) : sasl.initialChallenge() ;
+///     while( !done )
+///     {
+///       peer.send( challenge ) ;
+///       string response = peer.receive() ;
+///       challenge = sasl.apply( response , done ) ;
+///     }
+///     bool ok = sasl.authenticated() ;
 ///   }
-///   bool ok = sasl.authenticated() ;
 /// }
 /// \endcode
 ///
 /// \see GAuth::SaslClient, RFC-2554, RFC-4422
+///
+/// Available mechanisms depend on the encryption state ('secure'). In practice
+/// there can often be no mechanisms when in the insecure state. If there are no
+/// mechanisms then the protocol might advertise a mechanism that always fails
+/// to authenticate, returning a 'secure connection required' error to the
+/// client -- but that behaviour is out of scope at this interface.
 ///
 class GAuth::SaslServer
 {
@@ -69,33 +79,35 @@ public:
 	virtual ~SaslServer() = default ;
 		///< Destructor.
 
-	virtual bool requiresEncryption() const = 0 ;
-		///< Returns true if the implementation requires that
-		///< the challenge/response dialog should only take
-		///< place over an encrypted transport.
-
-	virtual bool active() const = 0 ;
-		///< Returns true if the constructor's "secrets" object
-		///< was valid. See also Secrets::valid().
-
-	virtual std::string mechanisms( char space_separator ) const = 0 ;
-		///< Returns a list of supported, standard mechanisms
-		///< that can be advertised to the client.
+	virtual G::StringArray mechanisms( bool secure ) const = 0 ;
+		///< Returns a list of supported, standard mechanisms that
+		///< can be advertised to the client. The parameter
+		///< indicates whether the transport connection is currently
+		///< encrypted.
 		///<
-		///< Some mechanisms (like "APOP") may be accepted by
-		///< init() even though they are not advertised.
+		///< Returns the empty set if authentication is not possible
+		///< for the given encryption state.
 
-	virtual bool init( const std::string & mechanism ) = 0 ;
-		///< Initialiser. Returns true if the mechanism is in the
-		///< mechanisms() list, or if it is some other supported
-		///< mechanism (like "APOP") that the derived-class object
-		///< allows implicitly. May be used more than once.
-		///< The initialChallenge() is re-initialised on each
-		///< successful init().
+	virtual void reset() = 0 ;
+		///< Clears the internal state as if just constructed.
+		///< Postcondition: mechanism().empty() && id().empty() && !authenticated() && !trusted()
+
+	virtual bool init( bool secure , const std::string & mechanism ) = 0 ;
+		///< Initialiser for the given mechanism. Returns true iff
+		///< the requested mechanism is in the mechanisms() list.
+		///< May be used more than once. The initialChallenge() is
+		///< re-initialised on each successful init().
 
 	virtual std::string mechanism() const = 0 ;
-		///< Returns the mechanism, as passed to the last init()
-		///< call to return true.
+		///< Returns the current mechanism, as selected by the last
+		///< successful init().
+
+	virtual std::string preferredMechanism( bool secure ) const = 0 ;
+		///< Returns a preferred mechanism if authentication with the
+		///< current mechanism has failed. Returns the empty string if
+		///< there is no preference. This allows the negotiation of the
+		///< mechanism to be user-specific, perhaps by having the
+		///< first probe mechanism fail for all users.
 
 	virtual bool mustChallenge() const = 0 ;
 		///< Returns true if authentication using the current mechanism
@@ -133,8 +145,8 @@ public:
 		///< empty string if not authenticated and not trusted.
 
 	virtual bool trusted( const GNet::Address & ) const = 0 ;
-		///< Returns true if a trusted client that
-		///< does not need to authenticate.
+		///< Returns true if a trusted client that does not need
+		///< to authenticate.
 } ;
 
 #endif

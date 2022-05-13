@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -33,13 +33,14 @@ namespace GAuth
 //| \class GAuth::SaslClientSecrets
 /// An interface used by GAuth::SaslClient to obtain a client id and
 /// its authentication secret. Conceptually there is one client and
-/// they can have a secrets encoded in multiple ways.
+/// they can have secrets encoded in multiple ways.
 ///
 class GAuth::SaslClientSecrets : public virtual Valid
 {
 public:
-	virtual Secret clientSecret( const std::string & encoding_type ) const = 0 ;
-		///< Returns the client secret for the given encoding type.
+	virtual Secret clientSecret( const std::string & type ) const = 0 ;
+		///< Returns the client secret for the given type.
+		///< The type is "plain" or the CRAM hash algorithm or "oauth".
 		///< Returns an invalid secret if none.
 } ;
 

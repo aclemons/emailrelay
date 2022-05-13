@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,28 +23,49 @@
 #include "gnetdone.h"
 #include "gmonitor.h"
 #include "geventloggingcontext.h"
+#include "gcleanup.h"
 #include "glimits.h"
 #include "groot.h"
 #include "glog.h"
 #include "gassert.h"
+#include <algorithm>
 
 GNet::Server::Server( ExceptionSink es , const Address & listening_address ,
-	ServerPeerConfig server_peer_config ) :
+	ServerPeer::Config server_peer_config , Config server_config ) :
 		m_es(es) ,
 		m_server_peer_config(server_peer_config) ,
-		m_socket(listening_address.domain(),StreamSocket::Listener())
+		m_socket(listening_address.family(),StreamSocket::Listener())
 {
 	G_DEBUG( "GNet::Server::ctor: listening on socket " << m_socket.asString()
 		<< " with address " << listening_address.displayString() ) ;
 
+	bool uds = listening_address.family() == Address::Family::local ;
+	if( uds )
+	{
+		bool open = server_config.uds_open_permissions ;
+		using Mode = G::Process::Umask::Mode ;
+		G::Root claim_root( false ) ; // group ownership from the effective group-id
+		G::Process::Umask set_umask( open ? Mode::Open : Mode::Tighter ) ;
+		m_socket.bind( listening_address ) ;
+	}
+	else
 	{
 		G::Root claim_root ;
 		m_socket.bind( listening_address ) ;
 	}
 
-	m_socket.listen( G::limits::net_listen_queue ) ;
+	m_socket.listen( std::max(1,server_config.listen_queue) ) ;
 	m_socket.addReadHandler( *this , m_es ) ;
 	Monitor::addServer( *this ) ;
+
+	if( uds )
+	{
+		std::string path = listening_address.hostPartString( true ) ;
+		if( path.size() > 1U && path.at(0U) == '/' ) // just in case
+		{
+			G::Cleanup::add( &Server::unlink , G::Cleanup::strdup(path) ) ;
+		}
+	}
 }
 
 GNet::Server::~Server()
@@ -54,15 +75,14 @@ GNet::Server::~Server()
 
 bool GNet::Server::canBind( const Address & address , bool do_throw )
 {
-	StreamSocket socket( address.domain() ) ;
-	bool ok = false ;
+	std::string reason ;
 	{
 		G::Root claim_root ;
-		ok = socket.canBindHint( address ) ;
+		reason = Socket::canBindHint( address ) ;
 	}
-	if( !ok && do_throw )
-		throw CannotBind( address.displayString() , socket.reason() ) ;
-	return ok ;
+	if( !reason.empty() && do_throw )
+		throw CannotBind( address.displayString() , reason ) ;
+	return reason.empty() ;
 }
 
 GNet::Address GNet::Server::address() const
@@ -74,7 +94,7 @@ GNet::Address GNet::Server::address() const
 	return result ;
 }
 
-void GNet::Server::readEvent()
+void GNet::Server::readEvent( Descriptor )
 {
 	// read-event-on-listening-port => new connection to accept
 	G_DEBUG( "GNet::Server::readEvent: " << this ) ;
@@ -83,14 +103,15 @@ void GNet::Server::readEvent()
 	//
 	ServerPeerInfo peer_info( this , m_server_peer_config ) ;
 	accept( peer_info ) ;
+	Address peer_address = peer_info.m_address ;
 
 	// do an early set of the logging context so that it applies
 	// during the newPeer() construction process -- it is then set
 	// more normally by the event hander list when handing out events
 	// with a well-defined ExceptionSource
 	//
-	EventLoggingContext event_logging_context( peer_info.m_address.hostPartString() ) ;
-	G_DEBUG( "GNet::Server::readEvent: new connection from " << peer_info.m_address.displayString()
+	EventLoggingContext event_logging_context( peer_address.hostPartString() ) ;
+	G_DEBUG( "GNet::Server::readEvent: new connection from " << peer_address.displayString()
 		<< " on " << peer_info.m_socket->asString() ) ;
 
 	// create the peer object -- newPeer() implementations will normally catch
@@ -100,12 +121,12 @@ void GNet::Server::readEvent()
 	// 'unbound' to force the peer object to set themselves as the exception
 	// source
 	//
-	std::unique_ptr<ServerPeer> peer = newPeer( ExceptionSinkUnbound(this) , peer_info ) ;
+	std::unique_ptr<ServerPeer> peer = newPeer( ExceptionSinkUnbound(this) , std::move(peer_info) ) ;
 
 	// commit or roll back
 	if( peer == nullptr )
 	{
-		G_WARNING( "GNet::Server::readEvent: connection rejected from " << peer_info.m_address.displayString() ) ;
+		G_WARNING( "GNet::Server::readEvent: connection rejected from " << peer_address.displayString() ) ;
 	}
 	else
 	{
@@ -116,13 +137,13 @@ void GNet::Server::readEvent()
 
 void GNet::Server::accept( ServerPeerInfo & peer_info )
 {
-	AcceptPair accept_pair ;
+	AcceptInfo accept_info ;
 	{
 		G::Root claim_root ;
-		accept_pair = m_socket.accept() ;
+		accept_info = m_socket.accept() ;
 	}
-	peer_info.m_socket = accept_pair.first ;
-	peer_info.m_address = accept_pair.second ;
+	peer_info.m_address = accept_info.address ;
+	peer_info.m_socket = std::move( accept_info.socket_ptr ) ;
 }
 
 void GNet::Server::onException( ExceptionSource * esrc , std::exception & e , bool done )
@@ -160,9 +181,9 @@ bool GNet::Server::hasPeers() const
 	return !m_peer_list.empty() ;
 }
 
-std::vector<std::weak_ptr<GNet::ServerPeer> > GNet::Server::peers()
+std::vector<std::weak_ptr<GNet::ServerPeer>> GNet::Server::peers()
 {
-	using Peers = std::vector<std::weak_ptr<ServerPeer> > ;
+	using Peers = std::vector<std::weak_ptr<ServerPeer>> ;
 	Peers result ;
 	result.reserve( m_peer_list.size() ) ;
 	for( auto & peer : m_peer_list )
@@ -170,16 +191,21 @@ std::vector<std::weak_ptr<GNet::ServerPeer> > GNet::Server::peers()
 	return result ;
 }
 
-void GNet::Server::writeEvent()
+void GNet::Server::writeEvent( Descriptor )
 {
 	G_DEBUG( "GNet::Server::writeEvent" ) ;
 }
 
+bool GNet::Server::unlink( G::SignalSafe , const char * path ) noexcept
+{
+	return path ? ( std::remove(path) == 0 ) : true ;
+}
+
 // ===
 
-GNet::ServerPeerInfo::ServerPeerInfo( Server * server , ServerPeerConfig config ) :
+GNet::ServerPeerInfo::ServerPeerInfo( Server * server , ServerPeer::Config server_peer_config ) :
 	m_address(Address::defaultAddress()) ,
-	m_config(config) ,
+	m_server_peer_config(server_peer_config) ,
 	m_server(server)
 {
 }

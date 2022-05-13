@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -46,10 +46,10 @@ public:
 		///< Destructor.
 
 private: // overrides
-	void verify( const std::string & rcpt_to_parameter ,
+	void verify( Command , const std::string & rcpt_to_parameter ,
 		const std::string & mail_from_parameter , const GNet::Address & client_ip ,
 		const std::string & auth_mechanism , const std::string & auth_extra ) override ; // Override from GSmtp::Verifier.
-	G::Slot::Signal<const std::string&,const VerifierStatus&> & doneSignal() override ; // Override from GSmtp::Verifier.
+	G::Slot::Signal<Command,const VerifierStatus&> & doneSignal() override ; // Override from GSmtp::Verifier.
 	void cancel() override ; // Override from GSmtp::Verifier.
 
 public:
@@ -64,12 +64,13 @@ private:
 
 private:
 	GNet::ExceptionSink m_es ;
-	G::Slot::Signal<const std::string&,const VerifierStatus&> m_done_signal ;
+	G::Slot::Signal<Command,const VerifierStatus&> m_done_signal ;
 	GNet::Location m_location ;
 	unsigned int m_connection_timeout ;
 	unsigned int m_response_timeout ;
 	GNet::ClientPtr<RequestClient> m_client_ptr ;
 	std::string m_to_address ;
+	Command m_command ;
 } ;
 
 #endif

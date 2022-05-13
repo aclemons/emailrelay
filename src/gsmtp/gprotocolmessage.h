@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,8 +23,9 @@
 
 #include "gdef.h"
 #include "gmessagestore.h"
+#include "gnewmessage.h"
 #include "gslot.h"
-#include "gstrings.h"
+#include "gstringarray.h"
 #include "gverifier.h"
 #include "gexception.h"
 #include <string>
@@ -53,7 +54,7 @@ namespace GSmtp
 /// - setFrom()
 /// - addTo() [1..n]
 /// - addReceived() [0..n]
-/// - addText() [0..n]
+/// - addContent() [0..n]
 /// - process() -> doneSignal() [async]
 ///
 /// The process() method is asynchronous, but note that the
@@ -64,6 +65,12 @@ class GSmtp::ProtocolMessage
 {
 public:
 	using DoneSignal = G::Slot::Signal<bool,const MessageId&,const std::string&,const std::string&> ;
+	struct FromInfo /// Extra information from the SMTP MAIL-FROM command passed to setFrom().
+	{
+		std::string auth ; // RFC-2554 MAIL-FROM with AUTH= ie. 'auth-in' (xtext or "<>")
+		std::string body ; // RFC-1652 MAIL-FROM with BODY={7BIT|8BITMIME|BINARYMIME}
+		bool smtputf8 ; // RFC-6531 MAIL-FROM with SMTPUTF8
+	} ;
 
 	virtual ~ProtocolMessage() = default ;
 		///< Destructor.
@@ -74,23 +81,26 @@ public:
 		///<
 		///< The signal parameters are 'success', 'id', 'short-response' and
 		///< 'full-reason'. As a special case, if success is true and id
-		///< is zero then the message processing was either abandoned
+		///< is invalid then the message processing was either abandoned
 		///< or it only had local-mailbox recipients.
 
 	virtual void reset() = 0 ;
-		///< Resets the object state as if just constructed.
+		///< Clears the message state, terminates any asynchronous message
+		///< processing and resets the object as if just constructed.
+		///< (In practice this is clear() plus the disconnection of any
+		///< forwarding client).
 
 	virtual void clear() = 0 ;
 		///< Clears the message state and terminates any asynchronous
 		///< message processing.
 
-	virtual MessageId setFrom( const std::string & from_user , const std::string & from_auth ) = 0 ;
-		///< Sets the message envelope 'from'. Returns a unique message id.
+	virtual MessageId setFrom( const std::string & from_user , const FromInfo & ) = 0 ;
+		///< Sets the message envelope 'from' address etc. Returns a unique
+		///< message id.
 
-	virtual bool addTo( const std::string & to_user , VerifierStatus to_status ) = 0 ;
-		///< Adds an envelope 'to'. The 'to_status' parameter comes
-		///< from GSmtp::Verifier.verify(). Returns false if an
-		///< invalid user.
+	virtual bool addTo( VerifierStatus to_status ) = 0 ;
+		///< Adds an envelope 'to'. See also GSmtp::Verifier::verify().
+		///< Returns false if an invalid user.
 		///<
 		///< Precondition: setFrom() called since clear() or process().
 
@@ -98,24 +108,36 @@ public:
 		///< Adds a 'received' line to the start of the content.
 		///< Precondition: at least one successful addTo() call
 
-	virtual bool addText( const char * , std::size_t ) = 0 ;
-		///< Adds text. The text should normally end in CR-LF. Returns
-		///< false on error, typically because a size limit is reached.
+	virtual NewMessage::Status addContent( const char * , std::size_t ) = 0 ;
+		///< Adds content. The text should normally end in CR-LF. Returns
+		///< an error enum, but error processing can be deferred
+		///< until a final addContent(0) or until process().
 		///<
 		///< Precondition: at least one successful addTo() call
 
-	bool addTextLine( const std::string & ) ;
-		///< A convenience function that calls addText() taking
+	void addContentLine( const std::string & ) ;
+		///< A convenience function that calls addContent() taking
 		///< a string parameter and adding CR-LF.
+
+	virtual std::size_t contentSize() const = 0 ;
+		///< Returns the current content size. Returns the maximum
+		///< std::size_t value on overflow.
 
 	virtual std::string from() const = 0 ;
 		///< Returns the setFrom() user string.
+
+	virtual FromInfo fromInfo() const = 0 ;
+		///< Returns the setFrom() extra info.
+
+	virtual std::string bodyType() const = 0 ;
+		///< Returns the setFrom() body type, fromInfo().body.
 
 	virtual void process( const std::string & session_auth_id , const std::string & peer_socket_address ,
 		const std::string & peer_certificate ) = 0 ;
 			///< Starts asynchronous processing of the message. Once processing
 			///< is complete the message state is cleared and the doneSignal()
-			///< is raised. The signal may be raised before process() returns.
+			///< is raised. All errors are also signalled via the doneSignal().
+			///< The doneSignal() may be emitted before process() returns.
 			///<
 			///< The session-auth-id parameter is used to propagate authentication
 			///< information from the SMTP AUTH command into individual messages.

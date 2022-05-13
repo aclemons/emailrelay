@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -45,9 +45,9 @@ public:
 		///< undefined.
 
 	static bool valid( const std::string & , bool strict = false ) ;
-		///< Returns true if a valid encoding. If strict
-		///< then 'equals' and 'space' are disallowed and
-		///< hex characters must be uppercase (eg. "+1A").
+		///< Returns true if a valid encoding, or empty. If
+		///< strict then 'equals' and 'space' are disallowed
+		///< and hex characters must be uppercase (eg. "+1A").
 
 public:
 	Xtext() = delete ;

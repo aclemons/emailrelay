@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -23,29 +23,8 @@ OS_SOURCES=gmessagestore_unix.cpp
 OS_SOURCES_EXTRA_DIST=gmessagestore_win32.cpp
 endif
 
-ADMIN_SOURCES = gadminserver.cpp gadminserver.h
-ADMIN_EXTRA_DIST =
-
-EXEC_SOURCES = \
-	gexecutablefilter.cpp \
-	gexecutablefilter.h \
-	gexecutableverifier.cpp \
-	gexecutableverifier.h \
-	gnetworkfilter.cpp \
-	gnetworkfilter.h \
-	gnetworkverifier.cpp \
-	gnetworkverifier.h \
-	gfilterfactory.cpp \
-	grequestclient.cpp \
-	grequestclient.h \
-	gspamclient.cpp \
-	gspamclient.h \
-	gspamfilter.cpp \
-	gspamfilter.h \
-	gverifierfactory.cpp
 
 EXTRA_DIST=\
-	$(ADMIN_EXTRA_DIST) \
 	$(OS_SOURCES_EXTRA_DIST)
 
 AM_CPPFLAGS = \
@@ -58,9 +37,27 @@ AM_CPPFLAGS = \
 noinst_LIBRARIES = libgsmtp.a
 
 libgsmtp_a_SOURCES = \
-	$(ADMIN_SOURCES) \
-	$(EXEC_SOURCES) \
 	$(OS_SOURCES) \
+	gadminserver.cpp \
+	gadminserver.h \
+	gexecutablefilter.cpp \
+	gexecutablefilter.h \
+	gexecutableverifier.cpp \
+	gexecutableverifier.h \
+	gnetworkfilter.cpp \
+	gnetworkfilter.h \
+	gnetworkverifier.cpp \
+	gnetworkverifier.h \
+	gfilterchain.cpp \
+	gfilterchain.h \
+	gfilterfactory.cpp \
+	grequestclient.cpp \
+	grequestclient.h \
+	gspamclient.cpp \
+	gspamclient.h \
+	gspamfilter.cpp \
+	gspamfilter.h \
+	gverifierfactory.cpp \
 	genvelope.cpp \
 	genvelope.h \
 	gfactoryparser.cpp \
@@ -90,10 +87,21 @@ libgsmtp_a_SOURCES = \
 	gsmtpclient.h \
 	gsmtpclientprotocol.cpp \
 	gsmtpclientprotocol.h \
+	gsmtpclientreply.cpp \
+	gsmtpclientreply.h \
 	gsmtpserver.cpp \
 	gsmtpserver.h \
+	gsmtpserverbuffer.cpp \
+	gsmtpserverbuffer.h \
+	gsmtpserverparser.cpp \
+	gsmtpserverparser.h \
 	gsmtpserverprotocol.cpp \
 	gsmtpserverprotocol.h \
+	gsmtpserversend.cpp \
+	gsmtpserversend.h \
+	gsmtpserversender.h \
+	gsmtpservertext.cpp \
+	gsmtpservertext.h \
 	gstoredfile.cpp \
 	gstoredfile.h \
 	gstoredmessage.cpp \

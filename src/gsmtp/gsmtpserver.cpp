@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 #include "gdef.h"
 #include "gsmtpserver.h"
-#include "gresolver.h"
+#include "gsmtpservertext.h"
 #include "gdnsblock.h"
 #include "gprotocolmessagestore.h"
 #include "gprotocolmessageforward.h"
@@ -31,42 +31,44 @@
 #include "gformat.h"
 #include "glog.h"
 #include "gassert.h"
-#include "gtest.h"
 #include <string>
 #include <functional>
 
 namespace GSmtp
 {
-	struct AnonymousText : public ServerProtocol::Text /// Provides anodyne SMTP protocol text.
+	namespace SmtpServerImp
 	{
-		explicit AnonymousText( const std::string & = std::string() ) ;
-		std::string greeting() const override ;
-		std::string hello( const std::string & peer_name ) const override ;
-		std::string received( const std::string & smtp_peer_name ,
-			bool auth , bool secure , const std::string & protocol ,
-			const std::string & cipher ) const override ;
-		std::string m_thishost ;
-	} ;
+		struct AnonymousText : public ServerProtocol::Text
+		{
+			explicit AnonymousText( const std::string & = std::string() ) ;
+			std::string greeting() const override ;
+			std::string hello( const std::string & peer_name ) const override ;
+			std::string received( const std::string & smtp_peer_name ,
+				bool auth , bool secure , const std::string & protocol ,
+				const std::string & cipher ) const override ;
+			std::string m_thishost ;
+		} ;
+	}
 }
 
-GSmtp::AnonymousText::AnonymousText( const std::string & thishost ) :
+GSmtp::SmtpServerImp::AnonymousText::AnonymousText( const std::string & thishost ) :
 	m_thishost(thishost)
 {
 	if( m_thishost.empty() )
 		m_thishost = "smtp" ;
 }
 
-std::string GSmtp::AnonymousText::greeting() const
+std::string GSmtp::SmtpServerImp::AnonymousText::greeting() const
 {
 	return "ready" ;
 }
 
-std::string GSmtp::AnonymousText::hello( const std::string & ) const
+std::string GSmtp::SmtpServerImp::AnonymousText::hello( const std::string & ) const
 {
 	return m_thishost + " says hello" ;
 }
 
-std::string GSmtp::AnonymousText::received( const std::string & , bool , bool ,
+std::string GSmtp::SmtpServerImp::AnonymousText::received( const std::string & , bool , bool ,
 	const std::string & , const std::string & ) const
 {
 	return std::string() ; // no Received line
@@ -75,27 +77,32 @@ std::string GSmtp::AnonymousText::received( const std::string & , bool , bool ,
 // ===
 
 GSmtp::ServerPeer::ServerPeer( GNet::ExceptionSinkUnbound esu ,
-	const GNet::ServerPeerInfo & peer_info , Server & server ,
-	const GAuth::Secrets & server_secrets , const Server::Config & server_config ,
+	GNet::ServerPeerInfo && peer_info , Server & server ,
+	const GAuth::SaslServerSecrets & server_secrets , const Server::Config & server_config ,
 	std::unique_ptr<ServerProtocol::Text> ptext ) :
-		GNet::ServerPeer(esu.bind(this),peer_info,GNet::LineBufferConfig::transparent()) ,
+		GNet::ServerPeer(esu.bind(this),std::move(peer_info),GNet::LineBufferConfig::transparent()) ,
 		m_server(server) ,
+		m_server_config(server_config) ,
 		m_block(*this,esu.bind(this),server_config.dnsbl_config) ,
-		m_flush_timer(*this,&ServerPeer::onFlushTimeout,esu.bind(this)) ,
 		m_check_timer(*this,&ServerPeer::onCheckTimeout,esu.bind(this)) ,
 		m_verifier(VerifierFactory::newVerifier(esu.bind(this),
 			server_config.verifier_address,server_config.verifier_timeout)) ,
 		m_pmessage(server.newProtocolMessage(esu.bind(this))) ,
 		m_ptext(ptext.release()) ,
-		m_line_buffer(GNet::LineBufferConfig::smtp()) ,
-		m_protocol(*this,*m_verifier,*m_pmessage,server_secrets,server_config.sasl_server_config,
-			*m_ptext,peer_info.m_address,server_config.protocol_config)
+		m_protocol(*this,*m_verifier,*m_pmessage,server_secrets,
+			server_config.sasl_server_config,
+			*m_ptext,peerAddress(),
+			server_config.protocol_config) ,
+		m_protocol_buffer(esu.bind(this),m_protocol,*this,
+			server_config.line_buffer_limit,
+			server_config.pipelining_buffer_limit,
+			server_config.protocol_config.advertise_pipelining)
 {
-	G_LOG_S( "GSmtp::ServerPeer: smtp connection from " << peer_info.m_address.displayString() ) ;
+	G_LOG_S( "GSmtp::ServerPeer: smtp connection from " << peerAddress().displayString() ) ;
 	if( server_config.dnsbl_config.empty() )
 		m_protocol.init() ;
 	else
-		m_block.start( peer_info.m_address ) ;
+		m_block.start( peerAddress() ) ;
 
 	if( !server_config.protocol_config.tls_connection )
 		m_check_timer.startTimer( 1U ) ;
@@ -109,48 +116,30 @@ void GSmtp::ServerPeer::onDelete( const std::string & reason )
 	m_server.eventSignal().emit( "done" , std::string(reason) ) ;
 }
 
-void GSmtp::ServerPeer::onSendComplete()
-{
-	// never gets here -- see protocolSend()
-}
-
 void GSmtp::ServerPeer::onData( const char * data , std::size_t size )
 {
-	// discard anything received before we have even sent an initial greeting
+	// this override intercepts incoming data before it is applied to the
+	// base class's line buffer so that we can discard anything received
+	// before we have even sent an initial greeting
 	if( m_block.busy() )
 		return ;
 
-	// just buffer up anything received in a half-duplex busy state
-	if( m_protocol.halfDuplexBusy(data,size) )
-	{
-		m_line_buffer.add( data , size ) ;
-		return ;
-	}
-
+	// the base class's line buffer is configured as transparent so
+	// this is effectively a direct call to onReceive() -- we go via
+	// the base class only in order to kick its idle-timeout timer
 	GNet::ServerPeer::onData( data , size ) ;
 }
 
 bool GSmtp::ServerPeer::onReceive( const char * data , std::size_t size , std::size_t , std::size_t , char )
 {
-	G_ASSERT( size != 0U ) ; if( size == 0U ) return true ;
-	m_line_buffer.apply( &m_protocol , &ServerProtocol::apply , data , size , &ServerProtocol::inDataState ) ;
-
-	// bad clients can send multiple commands at once, so if we have any
-	// residue in the line buffer we have to deal with it once the protocol
-	// has finished with the current one -- see protocolSend()
-	if( m_protocol.halfDuplexBusy() && !m_line_buffer.state().empty() )
-	{
-		G_WARNING( "GSmtp::ServerPeer::onReceive: smtp client protocol violation: pipelining detected" ) ;
-		m_flush_timer.startTimer( G::TimeInterval::limit() ) ; // heat-death timeout
-	}
-
+	G_ASSERT( size != 0U ) ;
+	m_protocol_buffer.apply( data , size ) ;
 	return true ;
 }
 
-void GSmtp::ServerPeer::onFlushTimeout()
+void GSmtp::ServerPeer::protocolSecure()
 {
-	m_line_buffer.apply( &m_protocol , &ServerProtocol::apply , nullptr ,
-		std::size_t(0U) , &ServerProtocol::inDataState ) ;
+	secureAccept() ;
 }
 
 void GSmtp::ServerPeer::onSecure( const std::string & certificate , const std::string & protocol ,
@@ -159,25 +148,25 @@ void GSmtp::ServerPeer::onSecure( const std::string & certificate , const std::s
 	m_protocol.secure( certificate , protocol , cipher ) ;
 }
 
-void GSmtp::ServerPeer::protocolSend( const std::string & line , bool go_secure )
+bool GSmtp::ServerPeer::protocolSend( const std::string & line , bool )
 {
-	if( !send( line , 0U ) ) // GNet::ServerPeer::send()
-		throw SendError() ; // we only send short half-duplex responses, so treat flow control as fatal
-
-	if( go_secure )
-		secureAccept() ;
-
-	if( m_flush_timer.active() )
-	{
-		G_DEBUG( "GSmtp::ServerPeer::protocolSend: pipeline released (" << m_line_buffer.state().size() << ")" ) ;
-		m_flush_timer.startTimer( 0U ) ;
-	}
+	return send( line ) ; // GNet::ServerPeer::send()
 }
 
-void GSmtp::ServerPeer::protocolShutdown()
+void GSmtp::ServerPeer::onSendComplete()
 {
-	m_flush_timer.cancelTimer() ;
-	socket().shutdown() ; // fwiw
+	m_protocol_buffer.sendComplete() ;
+}
+
+void GSmtp::ServerPeer::protocolShutdown( int how )
+{
+	if( how >= 0 )
+		socket().shutdown( how ) ;
+}
+
+void GSmtp::ServerPeer::protocolExpect( std::size_t )
+{
+	// never gets here -- see ServerProtocolBuffer
 }
 
 void GSmtp::ServerPeer::onDnsBlockResult( const GNet::DnsBlockResult & result )
@@ -194,7 +183,7 @@ void GSmtp::ServerPeer::onCheckTimeout()
 {
 	// do a better-than-nothing check for an unexpected TLS ClientHello -- false
 	// positives are possible but extremely unlikely
-	std::string head = m_line_buffer.state().head() ;
+	std::string head = m_protocol_buffer.head() ;
 	if( head.size() > 6U && head.at(0U) == '\x16' && head.at(1U) == '\x03' &&
 		( head.at(2U) == '\x03' || head.at(2U) == '\x02' || head.at(2U) == '\01' ) )
 			G_WARNING( "GSmtp::ServerPeer::doCheck: received unexpected tls handshake packet from remote client: "
@@ -204,10 +193,12 @@ void GSmtp::ServerPeer::onCheckTimeout()
 // ===
 
 GSmtp::Server::Server( GNet::ExceptionSink es , MessageStore & store , FilterFactory & ff ,
-	const GAuth::Secrets & client_secrets , const GAuth::Secrets & server_secrets ,
+	const GAuth::SaslClientSecrets & client_secrets , const GAuth::SaslServerSecrets & server_secrets ,
 	const Config & server_config , const std::string & forward_to ,
 	const GSmtp::Client::Config & client_config ) :
-		GNet::MultiServer(es,server_config.interfaces,server_config.port,"smtp",server_config.server_peer_config) ,
+		GNet::MultiServer(es,server_config.interfaces,server_config.port,"smtp",
+			server_config.net_server_peer_config,
+			server_config.net_server_config) ,
 		m_store(store) ,
 		m_ff(ff) ,
 		m_server_config(server_config) ,
@@ -234,10 +225,10 @@ void GSmtp::Server::report() const
 }
 
 std::unique_ptr<GNet::ServerPeer> GSmtp::Server::newPeer( GNet::ExceptionSinkUnbound esu ,
-	GNet::ServerPeerInfo peer_info , GNet::MultiServer::ServerInfo )
+	GNet::ServerPeerInfo && peer_info , GNet::MultiServer::ServerInfo )
 {
 	using G::format ;
-	using G::gettext ;
+	using G::txt ;
 	std::unique_ptr<ServerPeer> ptr ;
 	try
 	{
@@ -245,13 +236,14 @@ std::unique_ptr<GNet::ServerPeer> GSmtp::Server::newPeer( GNet::ExceptionSinkUnb
 		if( ! m_server_config.allow_remote && ! GNet::Local::isLocal(peer_info.m_address,reason) )
 		{
 			G_WARNING( "GSmtp::Server: "
-				<< format(gettext("configured to reject non-local smtp connection: %1%")) % reason ) ;
+				<< format(txt("configured to reject non-local smtp connection: %1%")) % reason ) ;
 		}
 		else
 		{
-			ptr = std::make_unique<ServerPeer>( esu , peer_info , *this ,
+			GNet::Address peer_address = peer_info.m_address ;
+			ptr = std::make_unique<ServerPeer>( esu , std::move(peer_info) , *this ,
 				m_server_secrets , m_server_config ,
-				newProtocolText(m_server_config.anonymous,peer_info.m_address) ) ;
+				newProtocolText(m_server_config.anonymous,peer_address) ) ;
 		}
 	}
 	catch( std::exception & e ) // newPeer()
@@ -265,9 +257,9 @@ std::unique_ptr<GSmtp::ServerProtocol::Text> GSmtp::Server::newProtocolText( boo
 	const GNet::Address & peer_address ) const
 {
 	if( anonymous )
-		return std::make_unique<AnonymousText>() ; // up-cast
+		return std::make_unique<SmtpServerImp::AnonymousText>() ; // up-cast
 	else
-		return std::make_unique<ServerProtocolText>( m_server_config.ident ,
+		return std::make_unique<ServerText>( m_server_config.ident ,
 			GNet::Local::canonicalName() , peer_address ) ; // up-cast
 }
 
@@ -295,37 +287,5 @@ std::unique_ptr<GSmtp::ProtocolMessage> GSmtp::Server::newProtocolMessage( GNet:
 	return do_forward ?
 		newProtocolMessageForward( es , newProtocolMessageStore(newFilter(es)) ) :
 		newProtocolMessageStore( newFilter(es) ) ;
-}
-
-// ===
-
-GSmtp::Server::Config::Config()
-= default;
-
-GSmtp::Server::Config::Config( bool allow_remote_ , const G::StringArray & interfaces_ ,
-	unsigned int port_ ,
-	const std::string & ident_ , bool anonymous_ ,
-	const std::string & filter_address_ ,
-	unsigned int filter_timeout_ ,
-	const std::string & verifier_address_ ,
-	unsigned int verifier_timeout_ ,
-	GNet::ServerPeerConfig server_peer_config_ ,
-	ServerProtocol::Config protocol_config_ ,
-	const std::string & sasl_server_config_ ,
-	const std::string & dnsbl_config_ ) :
-		allow_remote(allow_remote_) ,
-		interfaces(interfaces_) ,
-		port(port_) ,
-		ident(ident_) ,
-		anonymous(anonymous_) ,
-		filter_address(filter_address_) ,
-		filter_timeout(filter_timeout_) ,
-		verifier_address(verifier_address_) ,
-		verifier_timeout(verifier_timeout_) ,
-		server_peer_config(server_peer_config_) ,
-		protocol_config(protocol_config_) ,
-		sasl_server_config(sasl_server_config_) ,
-		dnsbl_config(dnsbl_config_)
-{
 }
 

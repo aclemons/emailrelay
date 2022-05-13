@@ -1,4 +1,4 @@
-dnl Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+dnl Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 dnl 
 dnl This program is free software: you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
@@ -19,11 +19,11 @@ dnl
 dnl Process this file with autoconf to produce a configure script.
 dnl
 
-AC_INIT([E-MailRelay],[2.3dev1],[],[emailrelay])
+AC_INIT([E-MailRelay],[2.4dev1],[],[emailrelay])
 AC_CONFIG_SRCDIR([src/glib/gdef.h])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([no-define])
-AC_CONFIG_HEADERS([gconfig_defs.h])
+AC_CONFIG_HEADERS([src/gconfig_defs.h])
 AM_MAINTAINER_MODE
 AC_DISABLE_OPTION_CHECKING
 
@@ -59,21 +59,17 @@ GCONFIG_FN_CHECK_CXX
 GCONFIG_FN_CHECK_NET
 GCONFIG_FN_CHECK_FUNCTIONS
 
-dnl check for packages
-dnl
-GCONFIG_FN_QT
-GCONFIG_FN_TLS_OPENSSL
-GCONFIG_FN_TLS_MBEDTLS
-
 dnl initialise aclocal/pkg.m4
 dnl
 # if the configure script fails in this area then you are probably missing pkg.m4
 PKG_PROG_PKG_CONFIG([0.9.0])
 
-dnl possibly enable full gettext support -- uncomment this after running
-dnl 'gettextize' and remove the other gettext lines below
+dnl check for packages
 dnl
-dnl AM_GNU_GETTEXT([external])
+GCONFIG_FN_QT
+GCONFIG_FN_QT_BUILD
+GCONFIG_FN_TLS_OPENSSL
+GCONFIG_FN_TLS_MBEDTLS
 
 dnl "--enable-whatever"
 dnl
@@ -81,7 +77,7 @@ AC_ARG_ENABLE([bsd],AS_HELP_STRING([--enable-bsd],[enable building for bsd (defa
 GCONFIG_FN_ENABLE_BSD
 AC_ARG_ENABLE([debug],AS_HELP_STRING([--enable-debug],[enable extra debug messages at compile-time (default no)]))
 GCONFIG_FN_ENABLE_DEBUG
-AC_ARG_ENABLE([epoll],AS_HELP_STRING([--enable-epoll],[enable epoll (default no)]))
+AC_ARG_ENABLE([epoll],AS_HELP_STRING([--enable-epoll],[enable epoll (default auto)]))
 GCONFIG_FN_ENABLE_EPOLL
 AC_ARG_ENABLE([gui],AS_HELP_STRING([--enable-gui],[enable configuration gui (requires Qt) (default auto)]))
 GCONFIG_FN_ENABLE_GUI
@@ -106,7 +102,7 @@ dnl "--with-whatever"
 dnl
 AC_ARG_WITH([doxygen],AS_HELP_STRING([--with-doxygen],[generate source code documentation with doxygen (default auto)]))
 GCONFIG_FN_WITH_DOXYGEN
-AC_ARG_WITH([gettext],AS_HELP_STRING([--with-gettext],[use GNU gettext (default no)]))
+AC_ARG_WITH([gettext],AS_HELP_STRING([--with-gettext],[use gettext (default auto)]))
 GCONFIG_FN_WITH_GETTEXT
 AC_ARG_WITH([man2html],AS_HELP_STRING([--with-man2html],[convert man pages to html using man2html (default auto)]))
 GCONFIG_FN_WITH_MAN2HTML
@@ -115,6 +111,8 @@ AC_ARG_WITH([mbedtls],AS_HELP_STRING([--with-mbedtls],[use mbedtls for tls layer
 GCONFIG_FN_TLS
 AC_ARG_WITH([pam],AS_HELP_STRING([--with-pam],[use linux pam for authentication (default auto)]))
 GCONFIG_FN_WITH_PAM
+AC_ARG_WITH([uds],AS_HELP_STRING([--with-uds],[enable unix domain sockets (default auto)]))
+GCONFIG_FN_WITH_UDS
 
 dnl directory tweaking -- define e_ prefixed directory variables
 dnl

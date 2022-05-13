@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ namespace G
 	class DirectoryIteratorImp ;
 }
 
-int G::Directory::usable( bool for_creation ) const
+int G::Directory::usable( bool /*for_creation*/ ) const
 {
 	DWORD attributes = ::GetFileAttributesA( m_path.cstr() ) ;
 	if( attributes == INVALID_FILE_ATTRIBUTES )
@@ -54,10 +54,7 @@ int G::Directory::usable( bool for_creation ) const
 bool G::Directory::writeable( const std::string & filename ) const
 {
 	Path path( m_path , filename.empty() ? tmp() : filename ) ;
-	int fd = -1 ;
-	const int oflags = _O_WRONLY | _O_CREAT | _O_EXCL | _O_TEMPORARY ;
-	errno_t e = _sopen_s( &fd , path.cstr() , oflags , _SH_DENYNO , _S_IWRITE ) ;
-	return e == 0 && fd != -1 && 0 == _close( fd ) ; // close and delete
+	return File::probe( path.cstr() ) ;
 }
 
 // ===
@@ -121,6 +118,11 @@ std::string G::DirectoryIterator::fileName() const
 bool G::DirectoryIterator::isDir() const
 {
 	return m_imp->isDir() ;
+}
+
+bool G::DirectoryIterator::isLink() const
+{
+	return false ;
 }
 
 std::string G::DirectoryIterator::sizeString() const

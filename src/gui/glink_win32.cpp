@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 #include "glink.h"
 #include "gstr.h"
 #include "gfile.h"
+#include "gcominit.h"
 #include <stdexcept>
 #include <string>
 #include <sstream>
@@ -76,6 +77,7 @@ private:
 	void setShow( int ) ;
 
 private:
+	GComInit m_com_init ;
 	ComPtr<IShellLink> m_ilink ;
 	ComPtr<IPersistFile> m_ipf ;
 

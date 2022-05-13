@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -69,7 +69,7 @@ my $cmake_args = {
 } ;
 
 # version
-chomp( my $version = eval { FileHandle->new("VERSION")->gets() } || "2.2" ) ;
+chomp( my $version = eval { FileHandle->new("VERSION")->gets() } || "2.4" ) ;
 
 # makefile conditionals
 my %switches = (
@@ -102,6 +102,7 @@ my %vars = (
 	e_bsdinitdir => "c:/emailrelay" ,
 	e_rundir => "c:/emailrelay" ,
 	e_icondir => "c:/emailrelay" ,
+	e_trdir => "c:/emailrelay" ,
 	e_examplesdir => "c:/emailrelay" ,
 	e_libexecdir => "c:/emailrelay" ,
 	e_pamdir => "c:/emailrelay" ,
@@ -152,7 +153,7 @@ if( $no_cmake || $no_msbuild || $no_qt || $no_mbedtls )
 {
 	warn "error: missing prerequisites: please install the missing components" ,
 		( ($no_qt||$no_mbedtls) ? " or unset configuration items in winbuild.pl\n" : "\n" ) ;
-	die "error: missing prerequisites\n" ;
+	die "error: missing prerequisites\n" unless ( scalar(@ARGV) > 0 && $ARGV[0] eq "mingw" ) ;
 }
 
 # choose what to run ...
@@ -242,8 +243,8 @@ for my $part ( @run_parts )
 	}
 	elsif( $part eq "install" )
 	{
-		install( $install_x64 , "x64" , $switches{GCONFIG_GUI} ) ;
-		install( $install_x86 , "x86" , $switches{GCONFIG_GUI} ) ;
+		install( $install_x64 , "x64" , $qt_dirs , $switches{GCONFIG_GUI} ) ;
+		install( $install_x86 , "x86" , $qt_dirs , $switches{GCONFIG_GUI} ) ;
 	}
 	elsif( $part eq "mingw" )
 	{
@@ -291,7 +292,6 @@ sub create_cmake_file
 		if( $switches{GCONFIG_GUI} )
 		{
 			# see https://doc.qt.io/qt-5/cmake-get-started.html
-			#was print $fh "find_package(Qt5 CONFIG REQUIRED Widgets Gui Core OpenGL)\n" ;
 			print $fh "find_package(Qt5 COMPONENTS Widgets Gui Core OpenGL REQUIRED)\n" ;
 		}
 		if( $switches{GCONFIG_TLS_USE_MBEDTLS} || $switches{GCONFIG_TLS_USE_BOTH} )
@@ -476,6 +476,7 @@ sub run_generate
 sub run_cmake
 {
 	my ( $cmake , $mbedtls , $qt_dirs , $arch ) = @_ ;
+	$mbedtls ||= "." ;
 	$arch ||= "x64" ;
 
 	# (only full paths work here)
@@ -589,7 +590,7 @@ sub clean_mbedtls_files
 
 sub install
 {
-	my ( $install , $arch , $with_gui ) = @_ ;
+	my ( $install , $arch , $qt_dirs , $with_gui ) = @_ ;
 
 	my $msvc_base = winbuild::find_msvc_base( $arch ) ;
 	print "msvc-base=[$msvc_base]\n" ;
@@ -617,6 +618,10 @@ sub install
 		install_gui_dependencies( $msvc_base , $arch ,
 			{ exe => "$install/emailrelay-setup.exe" } ,
 			{ exe => "$install/payload/files/emailrelay-gui.exe" } ) ;
+
+		winbuild::translate( $arch , $qt_dirs , "no_NO" , "no" ) ;
+		install_copy( "src/gui/emailrelay.no.qm" , "$install/translations" ) ;
+		install_copy( "src/gui/emailrelay.no.qm" , "$install/payload/files/translations" ) ;
 	}
 
 	install_runtime( $runtime , $arch , $install ) ;
@@ -676,9 +681,9 @@ sub install_mingw
 		my $fh = new FileHandle( "$install_mingw/emailrelay-submit-test.bat" , "w" ) or die ;
 		my $cmd = "\@echo off\r\n" ;
 		$cmd .= "emailrelay-submit.exe -n -s \@app --from postmaster " ;
-		$cmd .= "-c U3ViamVjdDogdGVzdA== " ; # subject
-		$cmd .= "-c = " ;
-		$cmd .= "-c VGVzdCBtZXNzYWdl " ; # body
+		$cmd .= "-C U3ViamVjdDogdGVzdA== " ; # subject
+		$cmd .= "-C = " ;
+		$cmd .= "-C VGVzdCBtZXNzYWdl " ; # body
 		$cmd .= "-d -F -t " ;
 		$cmd .= "postmaster" ; # to
 		print $fh "$cmd\r\n" ;

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,70 +27,67 @@
 #include "gfile.h"
 #include "glog.h"
 
-GSmtp::FactoryParser::Result GSmtp::FactoryParser::parse( const std::string & identifier , bool allow_spam )
+GSmtp::FactoryParser::Result GSmtp::FactoryParser::parse( const std::string & spec , bool allow_spam , bool allow_chain )
 {
-	G_DEBUG( "GSmtp::FactoryParser::parse: [" << identifier << "]" ) ;
-	if( identifier.find("net:") == 0U )
+	G_DEBUG( "GSmtp::FactoryParser::parse: [" << spec << "]" ) ;
+	if( spec.empty() )
 	{
-		return Result( "net" , G::Str::tail(identifier,":") ) ;
+		return Result( "exit" , "0" ) ;
 	}
-	else if( allow_spam && identifier.find("spam:") == 0U )
+	else if( allow_chain && spec.find(',') != std::string::npos )
 	{
-		return Result( "spam" , G::Str::tail(identifier,":") , 0 ) ;
+		G::StringArray parts = G::Str::splitIntoTokens( spec , {",",1U} ) ;
+		for( const auto & sub : parts )
+			parse( sub , allow_spam , false ) ;
+		return Result( "chain" , spec ) ;
 	}
-	else if( allow_spam && identifier.find("spam-edit:") == 0U )
+	else if( spec.find("net:") == 0U )
 	{
-		return Result( "spam" , G::Str::tail(identifier,":") , 1 ) ;
+		return Result( "net" , G::Str::tail(spec,":") ) ;
 	}
-	else if( identifier.find("file:") == 0U )
+	else if( allow_spam && spec.find("spam:") == 0U )
 	{
-		return Result( "file" , G::Str::tail(identifier,":") ) ;
+		return Result( "spam" , G::Str::tail(spec,":") , 0 ) ;
 	}
-	else if( identifier.find("exit:") == 0U )
+	else if( allow_spam && spec.find("spam-edit:") == 0U )
 	{
-		return Result( "exit" , G::Str::tail(identifier,":") ) ;
+		return Result( "spam" , G::Str::tail(spec,":") , 1 ) ;
 	}
-	else if( !identifier.empty() )
+	else if( spec.find("exit:") == 0U )
 	{
-		return Result( "file" , identifier ) ;
+		return Result( "exit" , checkExit(G::Str::tail(spec,":")) ) ;
+	}
+	else if( spec.find("file:") == 0U )
+	{
+		std::string path = G::Str::tail( spec , ":" ) ;
+		checkFile( path ) ;
+		return Result( "file" , path ) ;
 	}
 	else
 	{
-		return Result() ;
+		checkFile( spec ) ;
+		return Result( "file" , spec ) ;
 	}
 }
 
-std::string GSmtp::FactoryParser::check( const std::string & identifier , bool allow_spam )
+void GSmtp::FactoryParser::checkFile( const G::Path & exe )
 {
-	Result p = parse( identifier , allow_spam ) ;
-	if( p.first == "net" || ( allow_spam && p.first == "spam" ) )
-	{
-		return std::string() ;
-	}
-	else if( p.first == "file" )
-	{
-		G::Path exe = p.second ;
-		if( !G::File::exists(exe,std::nothrow) )
-			return "no such file" ;
-		else if( !G::is_windows() && !G::File::isExecutable(exe,std::nothrow) )
-			return "probably not executable" ;
-		else if( !exe.isAbsolute() )
-			return "not an absolute path" ;
-		else
-			return std::string() ;
-	}
-	else if( p.first == "exit" )
-	{
-		if( !G::Str::isUInt(p.second) )
-			return "not a numeric exit code" ;
-		else
-			return std::string() ;
-	}
-	else
-	{
-		return std::string() ;
-	}
+	if( !G::File::exists(exe,std::nothrow) )
+		throw Error( "no such file" , G::Str::printable(exe.str()) ) ;
+	else if( !G::is_windows() && !G::File::isExecutable(exe,std::nothrow) )
+		throw Error( "probably not executable" , G::Str::printable(exe.str()) ) ;
+	else if( !exe.isAbsolute() )
+		throw Error( "not an absolute path" , G::Str::printable(exe.str()) ) ;
 }
+
+std::string GSmtp::FactoryParser::checkExit( const std::string & s )
+{
+	if( !G::Str::isUInt(s) )
+		throw Error( "not a numeric exit code" , G::Str::printable(s) ) ;
+	return s ;
+}
+
+// ==
 
 GSmtp::FactoryParser::Result::Result()
 = default ;

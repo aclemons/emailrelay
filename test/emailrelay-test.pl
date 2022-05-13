@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -113,6 +113,11 @@ sub requireUnix
 {
 	die "skipped: not unix\n"
 		if !System::unix() ;
+}
+
+sub requireUnixDomainSockets
+{
+	requireUnix() ; # could do better -- assumes '--with-uds'
 }
 
 sub requireRoot
@@ -481,7 +486,6 @@ sub _testServerSmtpSubmit
 	Check::fileNotEmpty( $content ) ;
 	Check::fileLineCount( $content , 1 , "Received" ) ;
 	Check::fileLineCount( $content , 100 , $line ) ;
-	Check::fileContains( $server->stderr() , "client protocol violation" ) if $pipelined_quit ;
 
 	# tear down
 	$server->kill() ;
@@ -821,7 +825,7 @@ sub testServerSizeLimit
 	Check::that( $rsp =~ m/^552 / , "large message submission did not fail as it should have" ) ;
 	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.content" , 0 ) ;
 	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.envelope*" , 0 ) ;
-	Check::fileContains( $server->stderr() , "552 message exceeds fixed maximum message size" ) ;
+	Check::fileContains( $server->stderr() , "552 message size exceeds fixed maximum message size" ) ;
 
 	# tear down
 	$server->kill() ;
@@ -1248,7 +1252,7 @@ sub testScannerPass
 		Scanner => 1 ,
 	) ;
 	my $server = new Server() ;
-	my $scanner = new Scanner( $server->scannerPort() ) ;
+	my $scanner = new Scanner( $server->scannerAddress() ) ;
 	Check::ok( $server->run(\%args) , "failed to run" , $server->message() ) ;
 	Check::running( $server->pid() , $server->message() ) ;
 	$scanner->run() ;
@@ -1284,7 +1288,7 @@ sub testScannerBlock
 		Scanner => 1 ,
 	) ;
 	my $server = new Server() ;
-	my $scanner = new Scanner( $server->scannerPort() ) ;
+	my $scanner = new Scanner( $server->scannerAddress() ) ;
 	Check::ok( $server->run(\%args) , "failed to run" , $server->message() ) ;
 	Check::running( $server->pid() , $server->message() ) ;
 	$scanner->run() ;
@@ -1320,7 +1324,7 @@ sub testScannerTimeout
 		FilterTimeout => 1 ,
 	) ;
 	my $server = new Server() ;
-	my $scanner = new Scanner( $server->scannerPort() ) ;
+	my $scanner = new Scanner( $server->scannerAddress() ) ;
 	Check::ok( $server->run(\%args) , "failed to run" , $server->message() ) ;
 	Check::running( $server->pid() , $server->message() ) ;
 	$scanner->run() ;
@@ -1335,6 +1339,44 @@ sub testScannerTimeout
 	Check::fileDoesNotContain( $server->stderr() , "452 foobar" ) ;
 	Check::fileContains( $server->stderr() , "filter done: ok=0 response=.failed. reason=.*timeout" ) ;
 	Check::fileContains( $server->stderr() , "452 failed" ) ;
+
+	# tear down
+	$server->kill() ;
+	$scanner->kill() ;
+	$scanner->cleanup() ;
+	$server->cleanup() ;
+}
+
+sub testScannerOverUnixDomainSockets
+{
+	# setup
+	my %args = (
+		Log => 1 ,
+		Verbose => 1 ,
+		Domain => 1 ,
+		Port => 1 ,
+		SpoolDir => 1 ,
+		PidFile => 1 ,
+		Scanner => 1 ,
+	) ;
+	requireUnixDomainSockets() ;
+	my $server = new Server() ;
+	$server->set_scannerAddress( System::tempfile() ) ;
+	my $scanner = new Scanner( $server->scannerAddress() ) ;
+	Check::ok( $server->run(\%args) , "failed to run" , $server->message() ) ;
+	Check::running( $server->pid() , $server->message() ) ;
+	$scanner->run() ;
+	my $smtp_client = new SmtpClient( $server->smtpPort() , $System::localhost ) ;
+	Check::ok( $smtp_client->open() ) ;
+
+	# test that the scanner is used
+	$smtp_client->submit_start() ;
+	$smtp_client->submit_line( "send ok" ) ; # (the test scanner treats the message body as a script)
+	$smtp_client->submit_end() ;
+	Check::fileContains( $scanner->logfile() , "new connection from (/|\\\\0)" ) ;
+	Check::fileContains( $scanner->logfile() , "send ok" ) ;
+	Check::fileDoesNotContain( $server->stderr() , "452 " ) ;
+	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.envelope" , 1 ) ;
 
 	# tear down
 	$server->kill() ;

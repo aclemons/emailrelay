@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -37,22 +37,26 @@ namespace GAuth
 class GAuth::SaslServerPamImp
 {
 public:
-	SaslServerPamImp( bool valid , const std::string & config , bool allow_apop ) ;
+	SaslServerPamImp( bool valid , bool with_apop ) ;
 	virtual ~SaslServerPamImp() ;
-	bool active() const ;
-	bool init( const std::string & mechanism ) ;
+	G::StringArray mechanisms() const ;
+	std::string mechanism() const ;
+	void reset() ;
+	bool init( bool , const std::string & mechanism ) ;
 	std::string apply( const std::string & pwd , bool & done ) ;
 	std::string id() const ;
 	bool authenticated() const ;
 
-private:
-	SaslServerPamImp( const SaslServerPamImp & ) ;
-	void operator=( const SaslServerPamImp & ) ;
+public:
+	SaslServerPamImp( const SaslServerPamImp & ) = delete ;
+	SaslServerPamImp( SaslServerPamImp && ) = delete ;
+	SaslServerPamImp & operator=( const SaslServerPamImp & ) = delete ;
+	SaslServerPamImp & operator=( SaslServerPamImp && ) = delete ;
 
 private:
-	bool m_active ;
-	bool m_allow_apop ;
 	std::unique_ptr<PamImp> m_pam ;
+	G::StringArray m_mechanisms ;
+	std::string m_mechanism ;
 } ;
 
 //| \class GAuth::PamImp
@@ -64,7 +68,7 @@ class GAuth::PamImp : public G::Pam
 {
 public:
 	using ItemArray = GAuth::PamImp::ItemArray ;
-	G_EXCEPTION_CLASS( NoPrompt , "no password prompt received from pam module" ) ;
+	G_EXCEPTION_CLASS( NoPrompt , tx("no password prompt received from pam module") ) ;
 
 	PamImp( const std::string & app , const std::string & id ) ;
 	~PamImp() override ;
@@ -76,9 +80,11 @@ protected:
 	void converse( ItemArray & ) override ;
 	void delay( unsigned int usec ) override ;
 
-private:
-	PamImp( const PamImp & ) ;
-	void operator=( const PamImp & ) ;
+public:
+	PamImp( const PamImp & ) = delete ;
+	PamImp( PamImp && ) = delete ;
+	PamImp & operator=( const PamImp & ) = delete ;
+	PamImp & operator=( PamImp && ) = delete ;
 
 private:
 	std::string m_app ;
@@ -136,30 +142,44 @@ void GAuth::PamImp::delay( unsigned int )
 
 // ==
 
-GAuth::SaslServerPamImp::SaslServerPamImp( bool active , const std::string & /*config*/ , bool allow_apop ) :
-	m_active(active) ,
-	m_allow_apop(allow_apop)
+GAuth::SaslServerPamImp::SaslServerPamImp( bool active , bool with_apop )
 {
+	if( active )
+	{
+		m_mechanisms.push_back( "PLAIN" ) ;
+		if( with_apop )
+			m_mechanisms.push_back( "APOP" ) ;
+	}
 }
 
 GAuth::SaslServerPamImp::~SaslServerPamImp()
 = default;
 
-bool GAuth::SaslServerPamImp::active() const
+G::StringArray GAuth::SaslServerPamImp::mechanisms() const
 {
-	return m_active ;
+	return m_mechanisms ;
 }
 
-bool GAuth::SaslServerPamImp::init( const std::string & mechanism )
+std::string GAuth::SaslServerPamImp::mechanism() const
 {
-	return
-		G::Str::upper(mechanism) == "PLAIN" ||
-		( m_allow_apop && G::Str::upper(mechanism) == "APOP" ) ;
+	return m_mechanism ;
+}
+
+void GAuth::SaslServerPamImp::reset()
+{
+	m_mechanism.clear() ;
+	m_pam.reset() ;
+}
+
+bool GAuth::SaslServerPamImp::init( bool , const std::string & mechanism )
+{
+	m_mechanism = G::Str::upper( mechanism ) ;
+	return std::find( m_mechanisms.begin() , m_mechanisms.end() , m_mechanism ) != m_mechanisms.end() ;
 }
 
 std::string GAuth::SaslServerPamImp::id() const
 {
-	return m_pam.get() ? m_pam->id() : std::string() ;
+	return m_pam ? m_pam->id() : std::string() ;
 }
 
 std::string GAuth::SaslServerPamImp::apply( const std::string & response , bool & done )
@@ -193,22 +213,27 @@ std::string GAuth::SaslServerPamImp::apply( const std::string & response , bool 
 
 // ==
 
-GAuth::SaslServerPam::SaslServerPam( const SaslServerSecrets & secrets , const std::string & config , bool allow_apop ) :
-	m_imp(std::make_unique<SaslServerPamImp>(secrets.valid(),config,allow_apop))
+GAuth::SaslServerPam::SaslServerPam( const SaslServerSecrets & secrets , bool with_apop ) :
+	m_imp(std::make_unique<SaslServerPamImp>(secrets.valid(),with_apop))
 {
 }
 
 GAuth::SaslServerPam::~SaslServerPam()
 = default ;
 
-std::string GAuth::SaslServerPam::mechanisms( char ) const
+G::StringArray GAuth::SaslServerPam::mechanisms( bool /*secure*/ ) const
 {
-	return "PLAIN" ;
+	return m_imp->mechanisms() ;
 }
 
 std::string GAuth::SaslServerPam::mechanism() const
 {
-	return "PLAIN" ;
+	return m_imp->mechanism() ;
+}
+
+std::string GAuth::SaslServerPam::preferredMechanism( bool ) const
+{
+	return std::string() ;
 }
 
 bool GAuth::SaslServerPam::trusted( const GNet::Address & ) const
@@ -216,19 +241,19 @@ bool GAuth::SaslServerPam::trusted( const GNet::Address & ) const
 	return false ;
 }
 
-bool GAuth::SaslServerPam::active() const
-{
-	return m_imp->active() ;
-}
-
 bool GAuth::SaslServerPam::mustChallenge() const
 {
 	return false ;
 }
 
-bool GAuth::SaslServerPam::init( const std::string & mechanism )
+void GAuth::SaslServerPam::reset()
 {
-	return m_imp->init( mechanism ) ;
+	return m_imp->reset() ;
+}
+
+bool GAuth::SaslServerPam::init( bool secure , const std::string & mechanism )
+{
+	return m_imp->init( secure , mechanism ) ;
 }
 
 std::string GAuth::SaslServerPam::initialChallenge() const
@@ -249,10 +274,5 @@ bool GAuth::SaslServerPam::authenticated() const
 std::string GAuth::SaslServerPam::id() const
 {
 	return m_imp->id() ;
-}
-
-bool GAuth::SaslServerPam::requiresEncryption() const
-{
-	return true ;
 }
 

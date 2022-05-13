@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -53,7 +53,7 @@ public:
 		// Extracts the event-object handle.
 
 private: // overrides
-	void readEvent() override ; // GNet::EventHandler
+	void readEvent( Descriptor ) override ; // GNet::EventHandler
 
 public:
 	FutureEventImp( const FutureEventImp & ) = delete ;
@@ -137,7 +137,7 @@ bool GNet::FutureEventImp::send( HANDLE handle , bool close ) noexcept
 	return ok ;
 }
 
-void GNet::FutureEventImp::readEvent()
+void GNet::FutureEventImp::readEvent( Descriptor )
 {
 	G_DEBUG( "GNet::FutureEventImp::readEvent: future event: h=" << m_h.h ) ;
 	m_handler.onFutureEvent() ;

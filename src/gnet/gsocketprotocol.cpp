@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -44,27 +44,26 @@ public:
 	using Segments = std::vector<Segment> ;
 	struct Position /// A pointer into the scatter/gather payload of GNet::SocketProtocolImp::send().
 	{
+		Position() = default ;
+		Position( std::size_t s , std::size_t o ) : segment(s) , offset(o) {}
 		std::size_t segment{0U} ;
 		std::size_t offset{0U} ;
-		Position( std::size_t segment_ , std::size_t offset_ ) : segment(segment_) , offset(offset_) {}
-		Position() = default ;
 	} ;
 
 public:
 	SocketProtocolImp( EventHandler & , ExceptionSink , SocketProtocol::Sink & ,
-		StreamSocket & , unsigned int secure_connection_timeout ) ;
+		StreamSocket & , const SocketProtocol::Config & ) ;
 	~SocketProtocolImp() ;
 	void readEvent() ;
 	bool writeEvent() ;
 	void otherEvent( EventHandler::Reason ) ;
-	bool send( const std::string & data , std::size_t offset ) ;
+	bool send( G::string_view data , std::size_t offset ) ;
 	bool send( const Segments & , std::size_t ) ;
 	void shutdown() ;
 	void secureConnect() ;
 	void secureAccept() ;
 	bool secure() const ;
 	std::string peerCertificate() const ;
-	static void setReadBufferSize( std::size_t ) ;
 
 public:
 	SocketProtocolImp( const SocketProtocolImp & ) = delete ;
@@ -82,6 +81,7 @@ private:
 	void rawOtherEvent() ;
 	bool rawSend( const Segments & , Position , bool = false ) ;
 	bool rawSendImp( const Segments & , Position , Position & ) ;
+	void rawReset() ;
 	void sslReadImp() ;
 	bool sslSend( const Segments & segments , Position pos ) ;
 	bool sslSendImp() ;
@@ -104,7 +104,7 @@ private:
 	SocketProtocol::Sink & m_sink ;
 	StreamSocket & m_socket ;
 	G::CallStack m_stack ;
-	unsigned int m_secure_connection_timeout ;
+	SocketProtocol::Config m_config ;
 	Segments m_one_segment ;
 	Segments m_segments ;
 	Position m_position ;
@@ -116,7 +116,7 @@ private:
 	ssize_t m_read_buffer_n ;
 	Timer<SocketProtocolImp> m_secure_connection_timer ;
 	std::string m_peer_certificate ;
-	static std::size_t m_read_buffer_size ;
+	static constexpr std::size_t m_read_buffer_size = G::Limits<>::net_buffer ;
 } ;
 
 namespace GNet
@@ -141,15 +141,13 @@ namespace GNet
 	}
 }
 
-std::size_t GNet::SocketProtocolImp::m_read_buffer_size = G::limits::net_buffer ;
-
 GNet::SocketProtocolImp::SocketProtocolImp( EventHandler & handler , ExceptionSink es ,
-	SocketProtocol::Sink & sink , StreamSocket & socket , unsigned int secure_connection_timeout ) :
+	SocketProtocol::Sink & sink , StreamSocket & socket , const SocketProtocol::Config & config ) :
 		m_handler(handler) ,
 		m_es(es) ,
 		m_sink(sink) ,
 		m_socket(socket) ,
-		m_secure_connection_timeout(secure_connection_timeout) ,
+		m_config(config) ,
 		m_one_segment(1U) ,
 		m_failed(false) ,
 		m_state(State::raw) ,
@@ -157,18 +155,10 @@ GNet::SocketProtocolImp::SocketProtocolImp( EventHandler & handler , ExceptionSi
 		m_read_buffer_n(0) ,
 		m_secure_connection_timer(*this,&SocketProtocolImp::onSecureConnectionTimeout,es)
 {
-	G_ASSERT( m_read_buffer.size() == m_read_buffer_size ) ;
 }
 
 GNet::SocketProtocolImp::~SocketProtocolImp()
 = default;
-
-void GNet::SocketProtocolImp::setReadBufferSize( std::size_t n )
-{
-	m_read_buffer_size = n ;
-	if( m_read_buffer_size == 0U )
-		m_read_buffer_size = 1U ;
-}
 
 void GNet::SocketProtocolImp::onSecureConnectionTimeout()
 {
@@ -256,16 +246,16 @@ G::string_view GNet::SocketProtocolImp::chunk( const Segments & s , Position pos
 	return s.at(pos.segment).substr( pos.offset ) ;
 }
 
-bool GNet::SocketProtocolImp::send( const std::string & data , std::size_t offset )
+bool GNet::SocketProtocolImp::send( G::string_view data , std::size_t offset )
 {
-	if( data.empty() || offset >= data.length() )
+	if( data.empty() || offset >= data.size() )
 		return true ;
 
 	bool rc = true ;
 	if( m_state == State::raw )
 	{
 		G_ASSERT( m_one_segment.size() == 1U ) ;
-		m_one_segment[0] = G::string_view( data.data() , data.size() ) ;
+		m_one_segment[0] = data ;
 		rc = rawSend( m_one_segment , Position(0U,offset) , true/*copy*/ ) ;
 	}
 	else if( m_state == State::connecting || m_state == State::accepting )
@@ -283,7 +273,7 @@ bool GNet::SocketProtocolImp::send( const std::string & data , std::size_t offse
 	else
 	{
 		// make a copy here because we have to do retries with the same pointer
-		m_data_copy = data.substr( offset ) ;
+		m_data_copy.assign( data.data()+offset , data.size()-offset ) ;
 		G_ASSERT( m_one_segment.size() == 1U ) ;
 		m_one_segment[0] = G::string_view( m_data_copy.data() , m_data_copy.size() ) ;
 		rc = sslSend( m_one_segment , Position() ) ;
@@ -293,7 +283,7 @@ bool GNet::SocketProtocolImp::send( const std::string & data , std::size_t offse
 
 bool GNet::SocketProtocolImp::send( const Segments & segments , std::size_t offset )
 {
-	if( segments.empty() || size(segments) == 0U )
+	if( segments.empty() || offset >= size(segments) )
 		return true ;
 
 	bool rc = true ;
@@ -362,12 +352,16 @@ bool GNet::SocketProtocolImp::secure() const
 void GNet::SocketProtocolImp::secureConnect()
 {
 	G_DEBUG( "SocketProtocolImp::secureConnect" ) ;
+	G_ASSERT( m_state == State::raw ) ;
 	G_ASSERT( m_ssl == nullptr ) ;
+	if( m_state != State::raw || m_ssl != nullptr )
+		throw SocketProtocol::ProtocolError() ;
 
+	rawReset() ;
 	m_ssl = newProtocol( "client" ) ;
 	m_state = State::connecting ;
-	if( m_secure_connection_timeout != 0U )
-		m_secure_connection_timer.startTimer( m_secure_connection_timeout ) ;
+	if( m_config.secure_connection_timeout != 0U )
+		m_secure_connection_timer.startTimer( m_config.secure_connection_timeout ) ;
 	secureConnectImp() ;
 }
 
@@ -397,7 +391,7 @@ void GNet::SocketProtocolImp::secureConnectImp()
 	{
 		m_socket.dropWriteHandler() ;
 		m_state = State::idle ;
-		if( m_secure_connection_timeout != 0U )
+		if( m_config.secure_connection_timeout != 0U )
 			m_secure_connection_timer.cancelTimer() ;
 		m_peer_certificate = m_ssl->peerCertificate() ;
 		std::string protocol = m_ssl->protocol() ;
@@ -410,8 +404,12 @@ void GNet::SocketProtocolImp::secureConnectImp()
 void GNet::SocketProtocolImp::secureAccept()
 {
 	G_DEBUG( "SocketProtocolImp::secureAccept" ) ;
+	G_ASSERT( m_state == State::raw ) ;
 	G_ASSERT( m_ssl == nullptr ) ;
+	if( m_state != State::raw || m_ssl != nullptr )
+		throw SocketProtocol::ProtocolError() ;
 
+	rawReset() ;
 	m_ssl = newProtocol( "server" ) ;
 	m_state = State::accepting ;
 	secureAcceptImp() ;
@@ -714,6 +712,14 @@ bool GNet::SocketProtocolImp::rawSendImp( const Segments & segments , Position p
 	return true ; // all sent
 }
 
+void GNet::SocketProtocolImp::rawReset()
+{
+	m_segments.clear() ;
+	m_position = Position() ;
+	m_data_copy.clear() ;
+	m_socket.dropWriteHandler() ;
+}
+
 std::unique_ptr<GSsl::Protocol> GNet::SocketProtocolImp::newProtocol( const std::string & profile_name )
 {
 	GSsl::Library * library = GSsl::Library::instance() ;
@@ -760,8 +766,8 @@ void GNet::SocketProtocolImp::logSecure( const std::string & protocol , const st
 //
 
 GNet::SocketProtocol::SocketProtocol( EventHandler & handler , ExceptionSink es ,
-	Sink & sink , StreamSocket & socket , unsigned int secure_connection_timeout ) :
-		m_imp(std::make_unique<SocketProtocolImp>(handler,es,sink,socket,secure_connection_timeout))
+	Sink & sink , StreamSocket & socket , const Config & config ) :
+		m_imp(std::make_unique<SocketProtocolImp>(handler,es,sink,socket,config))
 {
 }
 
@@ -785,7 +791,12 @@ void GNet::SocketProtocol::otherEvent( EventHandler::Reason reason )
 
 bool GNet::SocketProtocol::send( const std::string & data , std::size_t offset )
 {
-	return m_imp->send( data , offset ) ;
+	return m_imp->send( G::string_view(data.data(),data.size()) , offset ) ;
+}
+
+bool GNet::SocketProtocol::send( G::string_view data )
+{
+	return m_imp->send( data , 0U ) ;
 }
 
 bool GNet::SocketProtocol::send( const std::vector<G::string_view> & data , std::size_t offset )
@@ -821,10 +832,5 @@ void GNet::SocketProtocol::secureAccept()
 std::string GNet::SocketProtocol::peerCertificate() const
 {
 	return m_imp->peerCertificate() ;
-}
-
-void GNet::SocketProtocol::setReadBufferSize( std::size_t n )
-{
-	SocketProtocolImp::setReadBufferSize( n ) ;
 }
 

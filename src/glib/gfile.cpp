@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -118,14 +118,14 @@ std::string G::File::copy( const Path & from , const Path & to , int )
 	if( out.fail() && !empty )
 		return "write error" ;
 
-	return std::string() ;
+	return {} ;
 }
 
 void G::File::copy( std::istream & in , std::ostream & out , std::streamsize limit , std::string::size_type block )
 {
 	std::ios_base::iostate in_state = in.rdstate() ;
 
-	block = block ? block : static_cast<std::string::size_type>(limits::file_buffer) ;
+	block = block ? block : static_cast<std::string::size_type>(Limits<>::file_buffer) ;
 	std::vector<char> buffer ;
 	buffer.reserve( block ) ;
 
@@ -180,7 +180,7 @@ bool G::File::exists( const Path & path , bool error_return_value , bool do_thro
 
 bool G::File::isLink( const Path & path , std::nothrow_t )
 {
-	Stat s = statImp( path.cstr() ) ;
+	Stat s = statImp( path.cstr() , true ) ;
 	return 0 == s.error && s.is_link ;
 }
 
@@ -274,13 +274,14 @@ bool G::File::mkdirsr( int * ep , const Path & path , int limit )
 bool G::File::mkdirs( const Path & path , std::nothrow_t , int limit )
 {
 	int e = 0 ;
-	return mkdirsr( &e , path , limit ) ;
+	bool ok = mkdirsr( &e , path , limit ) ;
+	return ok || e == EEXIST ;
 }
 
 void G::File::mkdirs( const Path & path , int limit )
 {
 	int e = 0 ;
-	if( !mkdirsr(&e,path,limit) )
+	if( !mkdirsr(&e,path,limit) && e != EEXIST )
 		throw CannotMkdir( path.str() , e ? G::Process::strerror(e) : std::string() ) ;
 }
 

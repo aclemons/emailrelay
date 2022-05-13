@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -86,7 +86,7 @@ public:
 		///< Returns the total repeat count for all matching entries.
 		///< See G::OptionValue::count().
 
-	std::string value( const std::string & key , const std::string & default_ = std::string() ) const ;
+	std::string value( const std::string & key , const std::string & default_ = {} ) const ;
 		///< Returns the matching value, with concatentation into a comma-separated
 		///< list if multivalued. If there are any on/off option-values matching
 		///< the key then a single value is returned corresponding to the first

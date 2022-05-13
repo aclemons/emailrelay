@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+   Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
    
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -85,53 +85,8 @@
 
 	/* Apply GCONFIG defaults in case of no autoconf
 	 */
-	#if !defined(GCONFIG_HAVE_CXX_NULLPTR)
-		#define GCONFIG_HAVE_CXX_NULLPTR 1
-	#endif
-	#if !defined(GCONFIG_HAVE_CXX_CONSTEXPR)
-		#define GCONFIG_HAVE_CXX_CONSTEXPR 1
-	#endif
-	#if !defined(GCONFIG_HAVE_CXX_ENUM_CLASS)
-		#define GCONFIG_HAVE_CXX_ENUM_CLASS 1
-	#endif
-	#if !defined(GCONFIG_HAVE_CXX_NOEXCEPT)
-		#define GCONFIG_HAVE_CXX_NOEXCEPT 1
-	#endif
-	#if !defined(GCONFIG_HAVE_CXX_OVERRIDE)
-		#define GCONFIG_HAVE_CXX_OVERRIDE 1
-	#endif
-	#if !defined(GCONFIG_HAVE_CXX_FINAL)
-		#define GCONFIG_HAVE_CXX_FINAL 1
-	#endif
 	#if !defined(GCONFIG_HAVE_CXX_ALIGNMENT)
 		#define GCONFIG_HAVE_CXX_ALIGNMENT 1
-	#endif
-	#if !defined(GCONFIG_HAVE_CXX_SHARED_PTR)
-		#define GCONFIG_HAVE_CXX_SHARED_PTR 1
-	#endif
-	#if !defined(GCONFIG_HAVE_CXX_STD_THREAD)
-		#define GCONFIG_HAVE_CXX_STD_THREAD 1
-	#endif
-	#if !defined(GCONFIG_HAVE_CXX_TYPE_TRAITS_MAKE_UNSIGNED)
-		#define GCONFIG_HAVE_CXX_TYPE_TRAITS_MAKE_UNSIGNED 1
-	#endif
-	#if !defined(GCONFIG_HAVE_CXX_EMPLACE)
-		#define GCONFIG_HAVE_CXX_EMPLACE 1
-	#endif
-	#if !defined(GCONFIG_HAVE_CXX_MOVE)
-		#define GCONFIG_HAVE_CXX_MOVE 1
-	#endif
-	#if !defined(GCONFIG_HAVE_CXX_DELETED)
-		#define GCONFIG_HAVE_CXX_DELETED 1
-	#endif
-	#if !defined(GCONFIG_HAVE_CXX_DEFAULTED)
-		#define GCONFIG_HAVE_CXX_DEFAULTED
-	#endif
-	#if !defined(GCONFIG_HAVE_CXX_INITIALIZER_LIST)
-		#define GCONFIG_HAVE_CXX_INITIALIZER_LIST 1
-	#endif
-	#if !defined(GCONFIG_HAVE_CXX_STD_WSTRING)
-		#define GCONFIG_HAVE_CXX_STD_WSTRING 1
 	#endif
 	#if !defined(GCONFIG_HAVE_CXX_STD_MAKE_UNIQUE)
 		#if defined(_MSC_VER)
@@ -542,7 +497,12 @@
 		#define GCONFIG_HAVE_LIBV4L 0
 	#endif
 	#if !defined(GCONFIG_HAVE_GETTEXT)
-		#define GCONFIG_HAVE_GETTEXT 0
+		/* see AM_GNU_GETTEXT */
+		#if defined(ENABLE_NLS) && ENABLE_NLS == 1
+			#define GCONFIG_HAVE_GETTEXT 1
+		#else
+			#define GCONFIG_HAVE_GETTEXT 0
+		#endif
 	#endif
 	#if !defined(GCONFIG_ENABLE_IPV6)
 		#define GCONFIG_ENABLE_IPV6 GCONFIG_HAVE_IPV6
@@ -702,6 +662,27 @@
 			#define GCONFIG_HAVE_PTHREAD_SIGMASK 1
 		#else
 			#define GCONFIG_HAVE_PTHREAD_SIGMASK 0
+		#endif
+	#endif
+	#if !defined(GCONFIG_HAVE_DIRENT_D_TYPE)
+		#if defined(_DIRENT_HAVE_D_TYPE)
+			#define GCONFIG_HAVE_DIRENT_D_TYPE 1
+		#else
+			#define GCONFIG_HAVE_DIRENT_D_TYPE 0
+		#endif
+	#endif
+	#if !defined(GCONFIG_HAVE_IOVEC_SIMPLE)
+		#ifdef G_UNIX
+			#define GCONFIG_HAVE_IOVEC_SIMPLE 1
+		#else
+			#define GCONFIG_HAVE_IOVEC_SIMPLE 0
+		#endif
+	#endif
+	#if !defined(GCONFIG_HAVE_UDS)
+		#ifdef G_UNIX
+			#define GCONFIG_HAVE_UDS 1
+		#else
+			#define GCONFIG_HAVE_UDS 0
 		#endif
 	#endif
 
@@ -937,23 +918,29 @@
 		/* Attributes
 	 	*/
 		#if __cplusplus >= 201700L
+			#define GDEF_NORETURN1 [[noreturn]]
+			#define GDEF_NORETURN2
 			#define GDEF_UNUSED [[maybe_unused]]
-			#define GDEF_NORETURN [[noreturn]]
-			#define GDEF_FALLTHROUGH [[fallthrough]]
+			#define GDEF_FALLTHROUGH [[fallthrough]];
 		#else
 			#if defined(__GNUC__) || defined(__clang__)
-				#define GDEF_UNUSED __attribute__((__unused__))
-				#define GDEF_NORETURN __attribute__((__noreturn__))
+				#define GDEF_NORETURN1
+				#define GDEF_NORETURN2 __attribute__((noreturn))
+				#define GDEF_UNUSED __attribute__((unused))
+				#if defined(__GNUC__) && __GNUC__ >= 7
+					#define GDEF_FALLTHROUGH __attribute__((fallthrough));
+				#endif
+				#if defined(__clang__) && __clang_major__ >= 10
+					#define GDEF_FALLTHROUGH __attribute__((fallthrough));
+				#endif
 			#endif
-			#ifdef _MSC_VER
-				/* __declspec(noreturn) goes on the lhs :( */
-			#endif
+		#endif
+		#ifndef GDEF_NORETURN
+			/* MSVC __declspec(noreturn) goes on the lhs :( */
+			#define GDEF_NORETURN
 		#endif
 		#ifndef GDEF_UNUSED
 			#define GDEF_UNUSED
-		#endif
-		#ifndef GDEF_NORETURN
-			#define GDEF_NORETURN
 		#endif
 		#ifndef GDEF_FALLTHROUGH
 			#define GDEF_FALLTHROUGH
@@ -963,6 +950,7 @@
 		#define GDEF_IGNORE_PARAMS(...) G::gdef_ignore(__VA_ARGS__)
 		#define GDEF_IGNORE_RETURN std::ignore =
 		#define GDEF_IGNORE_PARAM(name) std::ignore = name
+		#define GDEF_IGNORE_VARIABLE(name) std::ignore = name
 
 		/* C++ language backwards compatibility
 	 	*/

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -98,19 +98,33 @@ std::vector<GNet::Address> GNet::Interfaces::find( const std::string & name_in ,
 }
 
 std::vector<GNet::Address> GNet::Interfaces::addresses( const G::StringArray & names , unsigned int port ,
-	G::StringArray & used_names , G::StringArray & empty_names ) const
+	G::StringArray & used_names , G::StringArray & empty_names , G::StringArray & bad_names ) const
 {
 	AddressList result ;
 	for( const auto & name : names )
 	{
-		if( Address::validStrings(name,G::Str::fromUInt(port)) )
+		if( Address::validStrings( name , G::Str::fromUInt(port) ) )
 		{
-			result.push_back( Address(name,port) ) ;
+			result.push_back( Address::parse(name,port) ) ;
 		}
 		else
 		{
+			// 'name' is not an address so treat it as an interface name having
+			// bound addresses -- reject file system paths as 'bad' unless
+			// they are under "/dev" (bsd)
 			AddressList list = find( name , port , true ) ;
-			(list.empty()?empty_names:used_names).push_back( name ) ;
+			if( list.empty() && ( name.empty() || ( name.find('/') != std::string::npos && name.find("/dev/") != 0U ) ) )
+			{
+				bad_names.push_back( name ) ;
+			}
+			else if( list.empty() )
+			{
+				empty_names.push_back( name ) ;
+			}
+			else
+			{
+				used_names.push_back( name ) ;
+			}
 			result.insert( result.end() , list.begin() , list.end() ) ;
 		}
 	}
@@ -140,7 +154,7 @@ GNet::Interfaces::const_iterator GNet::Interfaces::end() const
 	return m_list.end() ;
 }
 
-void GNet::Interfaces::readEvent()
+void GNet::Interfaces::readEvent( Descriptor )
 {
 	if( m_notifier )
 	{

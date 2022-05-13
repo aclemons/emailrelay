@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -32,28 +32,50 @@ namespace GSmtp
 //| \class GSmtp::NewMessage
 /// An abstract class to allow the creation of a new message in
 /// the message store.
+///
+/// \code
+/// auto msg = make_unique<NewMessageImp>( envelope_from ) ;
+/// msg->addTo( envelope_to_1 ) ;
+/// msg->addTo( envelope_to_2 ) ;
+/// for( auto line : content )
+///   msg->addContent( line ) ;
+/// if( msg->prepare(...) )
+///   msg->commit( true ) ;
+/// \endcode
+///
 /// \see GSmtp::MessageStore
 ///
 class GSmtp::NewMessage
 {
 public:
+	enum class Status
+	{
+		Ok ,
+		TooBig ,
+		Error
+	} ;
+
 	virtual void addTo( const std::string & to , bool local ) = 0 ;
 		///< Adds a 'to' address.
 
-	virtual bool addText( const char * , std::size_t ) = 0 ;
+	virtual Status addContent( const char * , std::size_t ) = 0 ;
 		///< Adds a line of content, typically ending with CR-LF.
-		///< Returns false on overflow.
+		///< Returns an error enum, but errors accumulate internally
+		///< and thrown by prepare(). Adding zero bytes in order
+		///< to test the current status is allowed.
 
 	virtual bool prepare( const std::string & session_auth_id ,
 		const std::string & peer_socket_address , const std::string & peer_certificate ) = 0 ;
 			///< Prepares to store the message in the message store.
-			///< Returns true if a local-mailbox only message that
-			///< has been fully written and needs no commit().
+			///< Throws on error, including any errors that accumulated
+			///< while adding content. Returns true if a local-mailbox
+			///< only message that has been fully written and needs
+			///< no commit().
 
-	virtual void commit( bool strict ) = 0 ;
-		///< Commits the prepare()d message to the store. Errors are
-		///< ignored (eg. missing files) if the 'strict' parameter
-		///< is false.
+	virtual void commit( bool throw_on_error ) = 0 ;
+		///< Commits the prepare()d message to the store and disables
+		///< the cleanup otherwise performed by the destructor.
+		///< Either throws or ignores commit errors.
 
 	virtual MessageId id() const = 0 ;
 		///< Returns the message's unique identifier.
@@ -61,8 +83,12 @@ public:
 	virtual std::string location() const = 0 ;
 		///< Returns the message's unique location.
 
-	bool addTextLine( const std::string & ) ;
-		///< A convenience function that calls addText() taking
+	virtual std::size_t contentSize() const = 0 ;
+		///< Returns the content size. Returns the maximum size_t value
+		///< on overflow.
+
+	void addContentLine( const std::string & ) ;
+		///< A convenience function that calls addContent() taking
 		///< a string parameter and adding CR-LF.
 
 	virtual ~NewMessage() = default ;

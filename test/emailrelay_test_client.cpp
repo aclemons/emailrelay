@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -181,7 +181,7 @@ void Test::sendMessage( int lines , int length , bool last )
 	send( "DATA\r\n" ) ;
 	waitline() ;
 
-	std::vector<char> buffer( static_cast<unsigned>(length+2) ) ;
+	std::vector<char> buffer( static_cast<std::size_t>(length)+2U ) ;
 	std::fill( buffer.begin() , buffer.end() , 't' ) ;
 	buffer[buffer.size()-1U] = '\n' ;
 	buffer[buffer.size()-2U] = '\r' ;

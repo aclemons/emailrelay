@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +19,9 @@
 # Helper.pm
 #
 # A wrapper for running test helper programs such as
-# "emailrelay-test-scanner".
+# "emailrelay-test-scanner" that use command-line
+# options such as "--port", "--log-file", "--pid-file"
+# etc.
 #
 # Synopsis:
 #

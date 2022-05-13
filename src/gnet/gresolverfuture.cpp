@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@
 
 GNet::ResolverFuture::ResolverFuture( const std::string & host , const std::string & service , int family ,
 	bool dgram , bool for_async_hint ) :
-		m_numeric_service(false) ,
+		m_numeric_service(!service.empty() && G::Str::isNumeric(service)) ,
 		m_socktype(dgram?SOCK_DGRAM:SOCK_STREAM) ,
 		m_host(host) ,
 		m_host_p(m_host.c_str()) ,
@@ -40,9 +40,8 @@ GNet::ResolverFuture::ResolverFuture( const std::string & host , const std::stri
 		m_rc(0) ,
 		m_ai(nullptr)
 {
-	m_numeric_service = !service.empty() && G::Str::isNumeric(service) ;
 	std::memset( &m_ai_hint , 0 , sizeof(m_ai_hint) ) ;
-	m_ai_hint.ai_flags = AI_CANONNAME |
+	m_ai_hint.ai_flags = AI_CANONNAME | // NOLINT
 		( family == AF_UNSPEC ? AI_ADDRCONFIG : 0 ) |
 		( m_numeric_service ? AI_NUMERICSERV : 0 ) ;
 	m_ai_hint.ai_family = family ;
@@ -78,7 +77,7 @@ std::string GNet::ResolverFuture::failure() const
 
 std::string GNet::ResolverFuture::ipvx() const
 {
-	if( m_family == AF_UNSPEC ) return std::string() ;
+	if( m_family == AF_UNSPEC ) return {} ;
 	if( m_family == AF_INET ) return "ipv4 " ;
 	return "ipv6 " ; // AF_INET6 possibly undefined
 }

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -44,6 +44,7 @@
 #include <sstream>
 #include <utility>
 #include <algorithm>
+#include <memory>
 
 GSsl::OpenSSL::LibraryImp::LibraryImp( G::StringArray & library_config , Library::LogFn log_fn , bool verbose ) :
 	m_log_fn(log_fn) ,
@@ -326,7 +327,7 @@ GSsl::OpenSSL::ProfileImp::ProfileImp( const LibraryImp & library_imp , bool is_
 		m_ssl_ctx(nullptr,std::function<void(SSL_CTX*)>(deleter))
 {
 	using G::format ;
-	using G::gettext ;
+	using G::txt ;
 	Config extra_config = m_library_imp.config() ;
 	if( !profile_config.empty() )
 	{
@@ -352,7 +353,7 @@ GSsl::OpenSSL::ProfileImp::ProfileImp( const LibraryImp & library_imp , bool is_
 	{
 		G::Root claim_root ;
 		if( !G::File::exists(key_file) )
-			G_WARNING( "GSsl::Profile: " << format(gettext("cannot open ssl key file: %1%")) % key_file ) ;
+			G_WARNING( "GSsl::Profile: " << format(txt("cannot open ssl key file: %1%")) % key_file ) ;
 
 		check( SSL_CTX_use_PrivateKey_file(m_ssl_ctx.get(),key_file.c_str(),SSL_FILETYPE_PEM) ,
 			"use_PrivateKey_file" , key_file ) ;
@@ -362,7 +363,7 @@ GSsl::OpenSSL::ProfileImp::ProfileImp( const LibraryImp & library_imp , bool is_
 	{
 		G::Root claim_root ;
 		if( !G::File::exists(cert_file) )
-			G_WARNING( "GSsl::Profile: " << format(gettext("cannot open ssl certificate file: %1%")) % cert_file ) ;
+			G_WARNING( "GSsl::Profile: " << format(txt("cannot open ssl certificate file: %1%")) % cert_file ) ;
 
 		check( SSL_CTX_use_certificate_chain_file(m_ssl_ctx.get(),cert_file.c_str()) ,
 			"use_certificate_chain_file" , cert_file ) ;
@@ -714,7 +715,7 @@ std::string GSsl::OpenSSL::ProtocolImp::cipher() const
 {
 	const SSL_CIPHER * cipher = SSL_get_current_cipher( const_cast<SSL*>(m_ssl.get()) ) ;
 	const char * name = cipher ? SSL_CIPHER_get_name(cipher) : nullptr ;
-	return name ? G::Str::printable(name) : std::string() ;
+	return name ? G::Str::printable(std::string(name)) : std::string() ;
 }
 
 std::string GSsl::OpenSSL::ProtocolImp::protocol() const

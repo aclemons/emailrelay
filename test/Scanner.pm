@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,8 +30,8 @@ package Scanner ;
 
 sub new
 {
-	my ( $classname , $port ) = @_ ;
-	return bless { h => new Helper( "emailrelay-test-scanner" , $port ) } , $classname ;
+	my ( $classname , $address ) = @_ ;
+	return bless { h => new Helper( "emailrelay-test-scanner" , $address ) } , $classname ; # "--port <address>"
 }
 
 sub port { return shift->{h}->port(@_) }

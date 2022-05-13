@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,17 +23,17 @@
 #include "gexception.h"
 #include "glog.h"
 
-void GNet::EventHandler::readEvent()
+void GNet::EventHandler::readEvent( Descriptor )
 {
 	G_DEBUG( "GNet::EventHandler::readEvent: no override" ) ;
 }
 
-void GNet::EventHandler::writeEvent()
+void GNet::EventHandler::writeEvent( Descriptor )
 {
 	G_DEBUG( "GNet::EventHandler::writeEvent: no override" ) ;
 }
 
-void GNet::EventHandler::otherEvent( EventHandler::Reason reason )
+void GNet::EventHandler::otherEvent( Descriptor , EventHandler::Reason reason )
 {
 	// this event is mostly relevant to windows -- the default action here
 	// is to throw an exception, but overrides can check for Reason::closed
@@ -52,6 +52,6 @@ std::string GNet::EventHandler::str( EventHandler::Reason reason )
 	if( reason == EventHandler::Reason::down ) return "network down" ;
 	if( reason == EventHandler::Reason::reset ) return "connection reset by peer" ;
 	if( reason == EventHandler::Reason::abort ) return "connection aborted" ;
-	return std::string() ;
+	return {} ;
 }
 

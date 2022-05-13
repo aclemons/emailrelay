@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -47,13 +47,13 @@ public:
 	EventEmitter( EventHandler * , ExceptionSink ) noexcept ;
 		///< Constructor.
 
-	void raiseReadEvent() ;
+	void raiseReadEvent( Descriptor ) ;
 		///< Calls the EventHandler readEvent() method.
 
-	void raiseWriteEvent() ;
+	void raiseWriteEvent( Descriptor ) ;
 		///< Calls the EventHandler writeEvent() method.
 
-	void raiseOtherEvent( EventHandler::Reason ) ;
+	void raiseOtherEvent( Descriptor , EventHandler::Reason ) ;
 		///< Calls the EventHandler otherEvent() method.
 
 	EventHandler * handler() const ;
@@ -73,8 +73,8 @@ public:
 		///< of the event loop and back to main().
 
 private:
-	void raiseEvent( void (EventHandler::*method)() ) ;
-	void raiseEvent( void (EventHandler::*method)( EventHandler::Reason ) , EventHandler::Reason ) ;
+	void raiseEvent( void (EventHandler::*method)(Descriptor) , Descriptor ) ;
+	void raiseEvent( void (EventHandler::*method)(Descriptor,EventHandler::Reason) , Descriptor , EventHandler::Reason ) ;
 
 private:
 	EventHandler * m_handler ; // handler for the event

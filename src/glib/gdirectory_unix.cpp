@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -46,6 +46,7 @@ public:
 	explicit DirectoryIteratorImp( const Directory & dir ) ;
 	~DirectoryIteratorImp() ;
 	bool isDir() const ;
+	bool isLink() const ;
 	bool more() ;
 	bool error() const ;
 	std::string sizeString() const ;
@@ -64,6 +65,7 @@ private:
 	Directory m_dir ;
 	bool m_error ;
 	bool m_is_dir ;
+	bool m_is_link ;
 } ;
 
 //
@@ -79,11 +81,11 @@ int G::Directory::usable( bool for_creation ) const
 	std::string path_dot = m_path.str() + (m_path.str()=="/"?"":"/") + "." ;
 
 	DIR * p = ::opendir( path_dot.c_str() ) ;
-	int error = p ? 0 : Process::errno_() ;
-	if( p )
+	int error = p == nullptr ? Process::errno_() : 0 ;
+	if( p != nullptr )
 		::closedir( p ) ;
 
-	if( !error && for_creation )
+	if( error == 0 && for_creation )
 	{
 		// (not definitive -- see also GNU/Linux ::euidaccess())
 		int rc = ::access( m_path.cstr() , W_OK ) ;
@@ -94,14 +96,8 @@ int G::Directory::usable( bool for_creation ) const
 
 bool G::Directory::writeable( const std::string & filename ) const
 {
-	// use open(2) so we can use O_EXCL, ie. fail if it already exists
 	Path path( m_path , filename.empty() ? tmp() : filename ) ;
-	int fd = ::open( path.cstr() , O_WRONLY | O_CREAT | O_EXCL , S_IRWXU ) ;
-	if( fd == -1 )
-		return false ;
-
-	::close( fd ) ;
-	return 0 == std::remove( path.cstr() ) ;
+	return File::probe( path.cstr() ) ;
 }
 
 // ===
@@ -134,6 +130,11 @@ std::string G::DirectoryIterator::fileName() const
 	return m_imp->fileName() ;
 }
 
+bool G::DirectoryIterator::isLink() const
+{
+	return m_imp->isLink() ;
+}
+
 bool G::DirectoryIterator::isDir() const
 {
 	return m_imp->isDir() ;
@@ -151,7 +152,8 @@ G::DirectoryIteratorImp::DirectoryIteratorImp( const Directory & dir ) :
 	m_dp(nullptr) ,
 	m_dir(dir) ,
 	m_error(true) ,
-	m_is_dir(false)
+	m_is_dir(false) ,
+	m_is_link(false)
 {
 	m_d = ::opendir( dir.path().cstr() ) ;
 	m_error = m_d == nullptr ;
@@ -168,8 +170,33 @@ bool G::DirectoryIteratorImp::more()
 	{
 		m_dp = ::readdir( m_d ) ;
 		m_error = m_dp == nullptr ;
-		bool special = !m_error && ( fileName() == "." || fileName() == ".." ) ;
-		m_is_dir = !m_error && ( special || File::isDirectory(filePath(),std::nothrow) ) ;
+		if( m_error )
+			break ;
+
+		static_assert( sizeof(dirent::d_name) > 2U , "" ) ;
+		bool special = m_dp->d_name[0] == '.' && (
+			( m_dp->d_name[1] == '\0' ) ||
+			( m_dp->d_name[1] == '.' && m_dp->d_name[2] == '\0' ) ) ;
+
+		if( special )
+		{
+			m_is_dir = true ;
+			m_is_link = false ;
+		}
+		#if GCONFIG_HAVE_DIRENT_D_TYPE
+		else if( m_dp->d_type != DT_UNKNOWN )
+		{
+			m_is_dir = m_dp->d_type == DT_DIR ;
+			m_is_link = m_dp->d_type == DT_LNK ;
+			if( m_is_link )
+				m_is_dir = File::isDirectory(filePath(),std::nothrow) ;
+		}
+		#endif
+		else
+		{
+			m_is_dir = File::isDirectory(filePath(),std::nothrow) ;
+			m_is_link = File::isLink(filePath(),std::nothrow) ;
+		}
 		if( !special )
 			break ;
 	}
@@ -189,6 +216,11 @@ std::string G::DirectoryIteratorImp::fileName() const
 bool G::DirectoryIteratorImp::isDir() const
 {
 	return m_is_dir ;
+}
+
+bool G::DirectoryIteratorImp::isLink() const
+{
+	return m_is_link ;
 }
 
 G::DirectoryIteratorImp::~DirectoryIteratorImp()

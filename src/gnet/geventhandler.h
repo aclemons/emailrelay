@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -40,8 +40,8 @@ namespace GNet
 /// An event handler object has its virtual methods called when an
 /// event is detected on the relevant file descriptor.
 ///
-/// The EventHandlerList class ensures that if an exception is thrown
-/// out of an event handler it is caught and delivered to an associated
+/// The EventEmitter class ensures that if an exception is thrown out
+/// of an event handler it is caught and delivered to an associated
 /// ExceptionHandler interface (if any).
 ///
 class GNet::EventHandler
@@ -59,15 +59,16 @@ public:
 	virtual ~EventHandler() = default ;
 		///< Destructor.
 
-	virtual void readEvent() ;
+	virtual void readEvent( Descriptor ) ;
 		///< Called for a read event. Overridable. The default
-		///< implementation does nothing.
+		///< implementation does nothing. The descriptor might
+		///< not be valid() if a non-socket event on windows.
 
-	virtual void writeEvent() ;
+	virtual void writeEvent( Descriptor ) ;
 		///< Called for a write event. Overrideable. The default
 		///< implementation does nothing.
 
-	virtual void otherEvent( Reason ) ;
+	virtual void otherEvent( Descriptor , Reason ) ;
 		///< Called for a socket-exception event, or a socket-close
 		///< event on windows. Overridable. The default
 		///< implementation throws an exception.

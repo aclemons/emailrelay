@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 #include "gdef.h"
 #include "geventloop_win32.h"
-#include "geventloophandles.h"
+#include "geventloophandles_win32.h"
 #include "gevent.h"
 #include "gpump.h"
 #include "gexception.h"
@@ -81,7 +81,6 @@ std::string GNet::EventLoopImp::run()
 			// rc indicates left-most event -- move it to the rhs to avoid starvation
 			std::size_t list_index = handles.shuffle( m_list , rc ) ;
 
-			// handle only one event each time round the loop
 			ListItem & list_item = m_list[list_index] ;
 			if( list_item.m_type == ListItemType::socket )
 				handleSocketEvent( list_index ) ;
@@ -131,7 +130,7 @@ bool GNet::EventLoopImp::isValid( const ListItem & item )
 void GNet::EventLoopImp::handleSimpleEvent( ListItem & item )
 {
 	ResetEvent( item.m_handle ) ; // manual-reset event-object -- see GNet::FutureEvent
-	item.m_read_emitter.raiseReadEvent() ;
+	item.m_read_emitter.raiseReadEvent( Descriptor(INVALID_SOCKET,item.m_handle) ) ;
 }
 
 void GNet::EventLoopImp::handleSocketEvent( std::size_t index )
@@ -144,9 +143,7 @@ void GNet::EventLoopImp::handleSocketEvent( std::size_t index )
 	if( rc != 0 && !(e_not_sock = (WSAGetLastError()==WSAENOTSOCK)) )
 		throw Error( "enum-network-events failed" ) ;
 
-	G_ASSERT( !e_not_sock ) ;
-	if( e_not_sock )
-		throw Error( "enum-network-events failed: not a socket" ) ;
+	G_ASSERT_OR_DO( !e_not_sock , throw Error("enum-network-events failed: not a socket") ) ;
 
 	// we might do more than one raiseEvent() here and m_list can change
 	// between each call, potentially invalidating our ListItem pointer --
@@ -156,25 +153,26 @@ void GNet::EventLoopImp::handleSocketEvent( std::size_t index )
 	long events = events_info.lNetworkEvents ;
 	if( events & READ_EVENTS )
 	{
-		item->m_read_emitter.raiseReadEvent() ;
+		item->m_read_emitter.raiseReadEvent( item->fd() ) ;
 		item = nullptr ;
 	}
 	if( events & WRITE_EVENTS )
 	{
 		item = item ? item : &m_list[index] ;
-		item->m_write_emitter.raiseWriteEvent() ;
+		item->m_write_emitter.raiseWriteEvent( item->fd() ) ;
 		item = nullptr ;
 	}
 	if( events & EXCEPTION_EVENTS )
 	{
+		static_assert( EXCEPTION_EVENTS == FD_CLOSE , "" ) ;
 		item = item ? item : &m_list[index] ;
-		int e = events_info.iErrorCode[FD_CLOSE_BIT] ; G_ASSERT( EXCEPTION_EVENTS == FD_CLOSE ) ;
+		int e = events_info.iErrorCode[FD_CLOSE_BIT] ;
 		EventHandler::Reason reason = EventHandler::Reason::other ;
 		if( e == 0 ) reason = EventHandler::Reason::closed ;
 		if( e == WSAENETDOWN ) reason = EventHandler::Reason::down ;
 		if( e == WSAECONNRESET ) reason = EventHandler::Reason::reset ;
 		if( e == WSAECONNABORTED ) reason = EventHandler::Reason::abort ;
-		item->m_other_emitter.raiseOtherEvent( reason ) ;
+		item->m_other_emitter.raiseOtherEvent( item->fd() , reason ) ;
 	}
 }
 
@@ -235,7 +233,7 @@ void GNet::EventLoopImp::addOther( Descriptor fdd , EventHandler & handler , Exc
 
 void GNet::EventLoopImp::checkForOverflow( const ListItem & item )
 {
-	G_ASSERT( m_handles != nullptr ) ; if( !m_handles ) return ;
+	G_ASSERT_OR_DO( m_handles != nullptr , return ) ;
 	const bool is_new = item.m_events == 0L ;
 	if( is_new && m_handles->overflow( m_list , &EventLoopImp::isValid ) )
 	{
@@ -320,7 +318,7 @@ DWORD GNet::EventLoopImp::ms()
 	else if( pair.first.s() == 0 && pair.first.us() == 0U )
 		return 0 ;
 	else
-		return std::min( DWORD(1) , ms(pair.first.s(),pair.first.us()) ) ;
+		return std::max( DWORD(1) , ms(pair.first.s(),pair.first.us()) ) ;
 }
 
 DWORD GNet::EventLoopImp::ms( s_type s , us_type us ) noexcept

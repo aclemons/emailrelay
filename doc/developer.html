@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "%-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<!DOCTYPE html>
 <html>
  <head>
   <title>E-MailRelay Developer Guide</title>
@@ -8,7 +8,7 @@
  <body>
   <!-- index:0::::E-MailRelay Developer Guide -->
  <div class="div-main">
-  <h1><a class="a-header" name="H_1">E-MailRelay Developer Guide</a></h1> <!-- index:1:H:1::E-MailRelay Developer Guide -->
+  <h1><a class="a-header" name="H_1">E-MailRelay Developer Guide</a></h1> <!-- index:1:H:E-MailRelay Developer Guide -->
    <h2><a class="a-header" name="SH_1_1">Principles</a></h2> <!-- index:2:SH:1:1:Principles -->
     <p>
      The main principles in the design of E-MailRelay can be summarised as:
@@ -172,10 +172,10 @@
     </p>
 
     <p>
-     The protocol, processor and message-store interfaces are brought together by the
-     high-level <em>GSmtp::Server</em> and <em>GSmtp::Client</em> classes. Dependency injection is
-     used to create the concrete instances of the <em>ProtocolMessage</em> and <em>Filter</em>
-     interfaces.
+     The protocol, processor and message-store interfaces are brought together by
+     the high-level <em>GSmtp::Server</em> and <em>GSmtp::Client</em> classes. Dependency
+     injection is used to create the concrete instances of the <em>ProtocolMessage</em> and
+     <em>Filter</em> interfaces.
     </p>
    <h2><a class="a-header" name="SH_1_7">Event handling and exceptions</a></h2> <!-- index:2:SH:1:7:Event handling and exceptions -->
     <p>
@@ -189,12 +189,13 @@
 
     <p>
      The event loop delivers asynchronous socket events to the <em>EventHandler</em>
-     interface, timer events to the <em>TimerBase</em> interface, and 'future' events to the
-     <em>FutureEventCallback</em> interface. If any of the these event handlers throws an
-     exception then the event loop catches it and delivers it back to an exception
-     handler through the <em>onException()</em> method of an associated <em>ExceptionHandler</em>
-     interface. If an exception is thrown out of _this_ callback then the event loop
-     code lets it propagate back to <em>main()</em>, typically terminating the program.
+     interface, timer events to the <em>TimerBase</em> interface, and 'future' events to
+     the <em>FutureEventCallback</em> interface. If any of the these event handlers throws
+     an exception then the event loop catches it and delivers it back to an
+     exception handler through the <em>onException()</em> method of an associated
+     <em>ExceptionHandler</em> interface. If an exception is thrown out of _this_ callback
+     then the event loop code lets it propagate back to <em>main()</em>, typically
+     terminating the program.
     </p>
 
     <p>
@@ -260,13 +261,22 @@
      bundle, and it contains a configuration file to tell the installer where
      to copy its files.
     </p>
+
+    <p>
+     When building the GUI program the library code shared with the main server
+     executable is compiled separately so that different GUI-specific compiler
+     options can be used. This is done as a 'unity build', concatenating the shared
+     code into one source file and compiling that for the GUI. (This technique
+     requires that private 'detail' namespaces are named rather than anonymous so
+     that there cannot be any name clashes within the combined anonymous namespace.)
+    </p>
    <h2><a class="a-header" name="SH_1_10">Windows build</a></h2> <!-- index:2:SH:1:10:Windows build -->
     <p>
      E-MailRelay can be compiled on Windows using Microsoft Visual Studio C++ (MSVC)
-     or mingw-w64. For MSVC builds there is a perl script (<em>winbuild.pl</em>) that creates
-     <em>cmake</em> files from the autotools makefiles, runs <em>cmake</em> to create the MSVC
-     project files and then runs <em>msbuild</em> to compile E-MailRelay. If perl, cmake,
-     MSVC, Qt and mbedTLS source are installed in the right way then the
+     or mingw-w64. For MSVC builds there is a perl script (<em>winbuild.pl</em>) that
+     creates <em>cmake</em> files from the autotools makefiles, runs <em>cmake</em> to create the
+     MSVC project files and then runs <em>msbuild</em> to compile E-MailRelay. If perl,
+     cmake, MSVC, Qt and mbedTLS source are installed in the right way then the
      <em>winbuild.bat</em> batch file should be able to do a complete MSVC release build
      in one go.
     </p>
@@ -316,10 +326,15 @@
     </p>
 
     <p>
-     The non-GUI code has minimal i18n support using gettext(), mostly for startup
-     error messages and usage help. This is disabled by default and requires a
-     configure-script option (<em>--with-gettext</em>) to enable it at build-time and
-     a <em>--localedir</em> option at run-time. See also <em>po/Makefile.am</em>.
+     The non-GUI code has some i18n support by using gettext() via the inline txt()
+     and tx() functions defined in <em>src/glib/ggettext.h</em>. The configure script
+     detects gettext support in the C run-time library, but without trying different
+     compile and link options.  See also <em>po/Makefile.am</em>.
+    </p>
+
+    <p>
+     On Windows the main server executable has a tabbed dialog-box as its user
+     interface, but that does not have any support for i18n.
     </p>
    <h2><a class="a-header" name="SH_1_14">Source control</a></h2> <!-- index:2:SH:1:14:Source control -->
     <p>
@@ -353,10 +368,10 @@
 
     <div class="div-footer">
      <p>
-      Copyright (C) 2001-2021 Graeme Walker
+      Copyright (C) 2001-2022 Graeme Walker
      </p>
     </div><!-- div-footer -->
  </div> <!-- div-main -->
  </body>
 </html>
-<!-- Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->
+<!-- Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->

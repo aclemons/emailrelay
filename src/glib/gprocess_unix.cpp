@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -38,6 +38,8 @@ namespace G
 {
 	namespace ProcessImp
 	{
+		G_EXCEPTION_CLASS( DevNullError , tx("cannot open /dev/null") ) ;
+		G_EXCEPTION_CLASS( IdentityError , tx("cannot change process identity") ) ;
 		void noCloseOnExec( int fd ) noexcept ;
 		void reopen( int fd , int mode ) ;
 		mode_t umaskValue( G::Process::Umask::Mode mode ) ;
@@ -58,10 +60,12 @@ namespace G
 	}
 }
 
-class G::Process::UmaskImp /// A private implemetation class for G::Process::Umask that hides mode_t.
+class G::Process::UmaskImp
 {
 public:
 	mode_t m_old_mode ;
+	static mode_t set( Process::Umask::Mode ) noexcept ;
+	static void set( mode_t ) noexcept ;
 } ;
 
 // ==
@@ -115,6 +119,11 @@ void G::Process::closeOtherFiles( int fd_keep )
 int G::Process::errno_( const SignalSafe & ) noexcept
 {
 	return errno ; // possible macro, not ::errno or std::errno
+}
+
+void G::Process::errno_( int e_new ) noexcept
+{
+	errno = e_new ;
 }
 
 int G::Process::errno_( const SignalSafe & , int e_new ) noexcept
@@ -180,7 +189,7 @@ void G::Process::setEffectiveGroup( Identity id )
 std::string G::Process::cwd( bool no_throw )
 {
 	std::string result ;
-	std::array<std::size_t,2U> sizes = {{ G::limits::path_buffer , PATH_MAX+1U }} ;
+	std::array<std::size_t,2U> sizes = {{ G::Limits<>::path_buffer , PATH_MAX+1U }} ;
 	for( std::size_t n : sizes )
 	{
 		std::vector<char> buffer( n ) ;
@@ -198,7 +207,7 @@ std::string G::Process::cwd( bool no_throw )
 		}
 	}
 	if( result.empty() && !no_throw )
-		throw std::runtime_error( "getcwd() failed" ) ;
+		throw GetCwdError() ;
 	return result ;
 }
 
@@ -235,9 +244,9 @@ std::string G::Process::exe()
 
 // ==
 
-G::Process::Id::Id() noexcept
+G::Process::Id::Id() noexcept :
+	m_pid(::getpid())
 {
-	m_pid = ::getpid() ;
 }
 
 std::string G::Process::Id::str() const
@@ -259,25 +268,55 @@ bool G::Process::Id::operator!=( const Id & other ) const noexcept
 
 // ==
 
+void G::Process::UmaskImp::set( mode_t mode ) noexcept
+{
+	GDEF_IGNORE_RETURN ::umask( mode ) ;
+}
+
+mode_t G::Process::UmaskImp::set( Umask::Mode mode ) noexcept
+{
+	mode_t old = ::umask( 2 ) ;
+	mode_t new_ = old ;
+	if( mode == Umask::Mode::Tightest )
+		new_ = 0177 ; // -rw-------
+	else if( mode == Umask::Mode::Tighter )
+		new_ = 0117 ;  // -rw-rw----
+	else if( mode == Umask::Mode::Readable )
+		new_ = 0133 ; // -rw-r--r--
+	else if( mode == Umask::Mode::GroupOpen )
+		new_ = 0113 ; // -rw-rw-r--
+	else if( mode == Umask::Mode::TightenOther )
+		new_ = old | mode_t(007) ;
+	else if( mode == Umask::Mode::LoosenGroup )
+		new_ = ( old | mode_t(007) ) & ~mode_t(060) ;
+	set( new_ ) ;
+	return old ;
+}
+
 G::Process::Umask::Umask( Mode mode ) :
 	m_imp(std::make_unique<UmaskImp>())
 {
-	m_imp->m_old_mode = ::umask( ProcessImp::umaskValue(mode) ) ;
+	m_imp->m_old_mode = UmaskImp::set( mode ) ;
 }
 
 G::Process::Umask::~Umask()
 {
-	GDEF_IGNORE_RETURN ::umask( m_imp->m_old_mode ) ;
+	UmaskImp::set( m_imp->m_old_mode ) ;
 }
 
 void G::Process::Umask::set( Mode mode )
 {
-	GDEF_IGNORE_RETURN ::umask( ProcessImp::umaskValue(mode) ) ;
+	UmaskImp::set( mode ) ;
 }
 
-void G::Process::Umask::tighten()
+void G::Process::Umask::tightenOther()
 {
-	::umask( ::umask(2) | mode_t(7) ) ; // -xxxxxx---
+	set( Mode::TightenOther ) ;
+}
+
+void G::Process::Umask::loosenGroup()
+{
+	set( Mode::LoosenGroup ) ;
 }
 
 // ==
@@ -289,8 +328,8 @@ void G::ProcessImp::noCloseOnExec( int fd ) noexcept
 
 void G::ProcessImp::reopen( int fd , int mode )
 {
-	int fd_null = ::open( Path::nullDevice().cstr() , mode ) ;
-	if( fd_null < 0 ) throw std::runtime_error( "cannot open /dev/null" ) ;
+	int fd_null = ::open( Path::nullDevice().cstr() , mode ) ; // NOLINT
+	if( fd_null < 0 ) throw DevNullError() ;
 	::dup2( fd_null , fd ) ;
 	::close( fd_null ) ;
 }
@@ -307,7 +346,7 @@ mode_t G::ProcessImp::umaskValue( Process::Umask::Mode mode )
 
 bool G::ProcessImp::readlink_( const char * path , std::string & value )
 {
-	Path target = File::readlink( path , std::nothrow ) ;
+	Path target = File::readlink( Path(path) , std::nothrow ) ;
 	if( !target.empty() ) value = target.str() ;
 	return !target.empty() ;
 }
@@ -427,7 +466,7 @@ bool G::ProcessImp::setEffectiveGroup( Identity id , std::nothrow_t ) noexcept
 void G::ProcessImp::throwError()
 {
 	// typically we are about to std::terminate() so make sure there is an error message
-	G_ERROR( "G::ProcessImp::throwError: failed to give up process privileges" ) ;
-	throw G::Exception( "cannot give up process privileges" ) ;
+	G_ERROR( "G::ProcessImp::throwError: failed to change process identity" ) ;
+	throw IdentityError() ;
 }
 

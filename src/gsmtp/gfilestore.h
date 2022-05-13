@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -54,28 +54,23 @@ namespace GSmtp
 class GSmtp::FileStore : public MessageStore
 {
 public:
-	G_EXCEPTION( InvalidDirectory , "invalid spool directory" ) ;
-	G_EXCEPTION( GetError , "error reading specific message" ) ;
+	G_EXCEPTION( InvalidDirectory , tx("invalid spool directory") ) ;
+	G_EXCEPTION( GetError , tx("error reading specific message") ) ;
 	enum class State // see GSmtp::FileStore::envelopePath()
 	{
 		Normal ,
 		New ,
 		Locked
 	} ;
+	struct Config /// Configuration structure for GSmtp::FileStore.
+	{
+		std::size_t max_size ; // SIZE in EHLO response
+		Config & set_max_size( std::size_t ) noexcept ;
+	} ;
 
-	FileStore( const G::Path & dir , bool optimise_empty_test ,
-		unsigned long max_size , bool test_for_eight_bit ) ;
-			///< Constructor. Throws an exception if the storage directory
-			///< is invalid.
-			///<
-			///< If the optimise flag is set then the implementation of
-			///< empty() will be efficient for an empty filestore
-			///< (ignoring failed and local-delivery messages). This
-			///< might be useful for applications in which the main
-			///< event loop is used to check for pending jobs. The
-			///< disadvantage is that this process will not be
-			///< sensititive to messages deposited into its spool
-			///< directory by other processes.
+	FileStore( const G::Path & dir , const Config & config ) ;
+		///< Constructor. Throws an exception if the storage directory
+		///< is invalid.
 
 	MessageId newId() ;
 		///< Hands out a new unique message id.
@@ -106,7 +101,7 @@ private: // overrides
 	std::unique_ptr<StoredMessage> get( const MessageId & ) override ;
 	std::shared_ptr<MessageStore::Iterator> iterator( bool lock ) override ;
 	std::shared_ptr<MessageStore::Iterator> failures() override ;
-	std::unique_ptr<NewMessage> newMessage( const std::string & , const std::string & , const std::string & ) override ;
+	std::unique_ptr<NewMessage> newMessage( const std::string & , const MessageStore::SmtpInfo & , const std::string & ) override ;
 	void updated() override ;
 	G::Slot::Signal<> & messageStoreUpdateSignal() override ;
 	G::Slot::Signal<> & messageStoreRescanSignal() override ;
@@ -134,10 +129,7 @@ private:
 private:
 	unsigned long m_seq ;
 	G::Path m_dir ;
-	bool m_optimise ;
-	mutable bool m_empty ;
-	unsigned long m_max_size ;
-	bool m_test_for_eight_bit ;
+	const Config m_config ;
 	G::Slot::Signal<> m_update_signal ;
 	G::Slot::Signal<> m_rescan_signal ;
 } ;
@@ -207,5 +199,7 @@ public:
 	void operator=( const FileWriter & ) = delete ;
 	void operator=( FileWriter && ) = delete ;
 } ;
+
+inline GSmtp::FileStore::Config & GSmtp::FileStore::Config::set_max_size( std::size_t n ) noexcept { max_size = n ; return *this ; }
 
 #endif

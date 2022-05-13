@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,11 +24,11 @@
 #include "gdef.h"
 #include "garg.h"
 #include "ggetopt.h"
-#include "goptions.h"
+#include "goption.h"
 #include "output.h"
 #include "configuration.h"
 #include "output.h"
-#include "gstrings.h"
+#include "gstringarray.h"
 #include <string>
 
 namespace Main
@@ -55,8 +55,8 @@ public:
 	const G::OptionMap & map() const ;
 		///< Exposes the option-map sub-object.
 
-	const G::Options & options() const ;
-		///< Exposes the options sub-object.
+	const std::vector<G::Option> & options() const ;
+		///< Exposes the command-line options.
 
 	std::size_t argc() const ;
 		///< Returns the number of non-option arguments on the command line.
@@ -88,10 +88,10 @@ public:
 	void showVersion( bool error_stream = false ) const ;
 		///< Writes the version number.
 
-	void showBanner( bool error_stream = false , const std::string & = std::string() ) const ;
+	void showBanner( bool error_stream = false , const std::string & = {} ) const ;
 		///< Writes a startup banner.
 
-	void showCopyright( bool error_stream = false , const std::string & = std::string() ) const ;
+	void showCopyright( bool error_stream = false , const std::string & = {} ) const ;
 		///< Writes a copyright message.
 
 	void showSemanticError( const std::string & semantic_error ) const ;
@@ -113,10 +113,10 @@ private:
 	void showUsage( bool e ) const ;
 	void showShortHelp( bool e ) const ;
 	void showExtraHelp( bool e ) const ;
-	void showWarranty( bool e = false , const std::string & eot = std::string() ) const ;
-	void showSslCredit( bool e = false , const std::string & eot = std::string() ) const ;
-	void showSslVersion( bool e = false , const std::string & eot = std::string() ) const ;
-	void showThreading( bool e = false , const std::string & eot = std::string() ) const ;
+	void showWarranty( bool e = false , const std::string & eot = {} ) const ;
+	void showSslCredit( bool e = false , const std::string & eot = {} ) const ;
+	void showSslVersion( bool e = false , const std::string & eot = {} ) const ;
+	void showThreading( bool e = false , const std::string & eot = {} ) const ;
 	bool sanityCheck( const G::Path & ) ;
 
 private:

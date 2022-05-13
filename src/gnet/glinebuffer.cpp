@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -44,12 +44,7 @@ void GNet::LineBuffer::clear()
 	if( !transparent() )
 		m_expect = 0U ;
 
-	G_ASSERT( m_in.empty() && empty() ) ;
-}
-
-bool GNet::LineBuffer::empty() const
-{
-	return state().empty() ;
+	G_ASSERT( m_in.empty() && state().empty() ) ;
 }
 
 void GNet::LineBuffer::add( const char * data , std::size_t size )
@@ -144,6 +139,11 @@ bool GNet::LineBuffer::more( bool fragments )
 	}
 }
 
+bool GNet::LineBuffer::peekmore() const
+{
+	return !m_in.empty() && !m_eol.empty() && m_in.find(m_eol,m_pos) != std::string::npos ;
+}
+
 bool GNet::LineBuffer::trivial( std::size_t pos ) const
 {
 	pos = pos == std::string::npos ? m_in.size() : pos ;
@@ -159,9 +159,9 @@ bool GNet::LineBuffer::detect()
 		if( pos != npos )
 		{
 			if( pos > 0U && m_in.at(pos-1U) == '\r' )
-				m_eol = std::string( "\r\n" , 2U ) ;
+				m_eol.assign( "\r\n" , 2U ) ;
 			else
-				m_eol = std::string( 1U , '\n' ) ;
+				m_eol.assign( 1U , '\n' ) ;
 			m_auto = false ;
 		}
 	}
@@ -186,17 +186,15 @@ std::string GNet::LineBuffer::eol() const
 void GNet::LineBuffer::output( std::size_t size , std::size_t eolsize , bool force_next_is_start_of_line )
 {
 	G_ASSERT( (size+eolsize) != 0U ) ;
+
 	m_pos += m_out.set( m_in , m_pos , size , eolsize ) ;
+
 	if( force_next_is_start_of_line )
 		m_out.m_first = true ;
-	check( m_out ) ;
-}
 
-void GNet::LineBuffer::check( const Output & out )
-{
-	if( !m_warned && m_warn_limit != 0U && out.m_size > m_warn_limit )
+	if( m_out.m_eolsize && m_out.m_size > m_warn_limit && !m_warned && m_warn_limit != 0U )
 	{
-		G_WARNING( "GNet::LineBuffer::check: very long line detected: " << out.m_size << " > " << m_warn_limit ) ;
+		G_WARNING( "GNet::LineBuffer::output: very long line detected: " << m_out.m_size << " > " << m_warn_limit ) ;
 		m_warned = true ;
 	}
 }
@@ -242,10 +240,19 @@ GNet::LineBufferConfig::LineBufferConfig( const std::string & eol , std::size_t 
 {
 }
 
+bool GNet::LineBufferConfig::operator==( const LineBufferConfig & other ) const
+{
+	return
+		m_eol == other.m_eol &&
+		m_warn == other.m_warn &&
+		m_fmin == other.m_fmin &&
+		m_expect == other.m_expect ;
+}
+
 GNet::LineBufferConfig GNet::LineBufferConfig::transparent()
 {
-	const std::size_t inf = ~(std::size_t(0)) ;
-	//G_ASSERT( (inf+1U) == 0U ) ;
+	static constexpr std::size_t inf = ~(std::size_t(0)) ;
+	static_assert( (inf+1U) == 0U , "" ) ;
 	return LineBufferConfig( std::string(1U,'\n') , 0U , 0U , inf ) ;
 }
 

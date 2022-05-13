@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,6 +26,8 @@
 #include "gexception.h"
 #include "gsaslserversecrets.h"
 #include "gsaslclientsecrets.h"
+#include <memory>
+#include <string>
 
 namespace GAuth
 {
@@ -40,27 +42,17 @@ namespace GAuth
 class GAuth::Secrets : public SaslClientSecrets , public SaslServerSecrets
 {
 public:
-	G_EXCEPTION( OpenError , "cannot read secrets file" ) ;
+	G_EXCEPTION( OpenError , tx("cannot read secrets file") ) ;
 
 	static void check( const std::string & , const std::string & , const std::string & ) ;
 		///< Checks the given secret sources. Logs warnings and throws
 		///< an exception if there are any fatal errors.
 
-	Secrets( const std::string & source_storage_path , const std::string & debug_name ,
-		const std::string & server_type = std::string() ) ;
-			///< Constructor. The connection string is a secrets file path
-			///< or "/pam".
-			///<
-			///< The 'debug-name' is used in log and error messages to
-			///< identify the repository.
-			///<
-			///< The 'server-type' parameter can be used to select
-			///< a different set of server-side authentication records
-			///< that may be stored in the same repository such as
-			///< "smtp" or "pop". The default is "server".
-			///<
-			///< Throws on error, although an empty path is not
-			///< considered an error: see valid().
+	Secrets( const std::string & source_storage_path , const std::string & log_name ) ;
+		///< Constructor. The path is a secrets file path or "/pam".
+		///< The 'log-name' is used in log and error messages.
+		///< Throws on error, although an empty path is not
+		///< considered an error: see valid().
 
 	Secrets() ;
 		///< Default constructor for an in-valid(), empty-path object.
@@ -68,10 +60,10 @@ public:
 	bool valid() const override ;
 		///< Override from GAuth::Valid virtual base.
 
-	Secret serverSecret( const std::string & mechanism , const std::string & id ) const override ;
+	Secret serverSecret( const std::string & type , const std::string & id ) const override ;
 		///< Override from GAuth::SaslServerSecrets.
 
-	bool contains( const std::string & mechanism ) const override ;
+	bool contains( const std::string & type , const std::string & id ) const override ;
 		///< Override from GAuth::SaslServerSecrets.
 
 public:
@@ -83,7 +75,7 @@ public:
 
 private: // overrides
 	std::string source() const override ; // Override from GAuth::SaslServerSecrets.
-	Secret clientSecret( const std::string & mechanism ) const override ; // Override from GAuth::SaslClientSecrets.
+	Secret clientSecret( const std::string & ) const override ; // Override from GAuth::SaslClientSecrets.
 	std::pair<std::string,std::string> serverTrust( const std::string & address_range ) const override ; // Override from GAuth::SaslServerSecrets.
 
 private:

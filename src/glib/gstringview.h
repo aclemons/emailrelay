@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -97,7 +97,7 @@ public:
 	}
 	constexpr static bool same( basic_string_view a , basic_string_view b ) noexcept
 	{
-		return a.size() == b.size() && StringViewImp::same( a.size() , a.data() , b.data() ) ;
+		return a.size() == b.size() && ( a.empty() || StringViewImp::same( a.size() , a.data() , b.data() ) ) ;
 	}
 	constexpr std::size_t size() const noexcept { return m_n ; }
 	constexpr std::size_t length() const noexcept { return m_n ; }
@@ -106,10 +106,10 @@ public:
 	void swap( basic_string_view<Tchar> & other ) noexcept { std::swap(m_p,other.m_p) ; std::swap(m_n,other.m_n) ; }
 	constexpr const Tchar & operator[]( std::size_t i ) const { return m_p[i] ; }
 	const Tchar & at( std::size_t i ) const { if( i >= m_n ) throw std::out_of_range("string_view") ; return m_p[i] ; }
-	const Tchar * begin() const noexcept { return m_p ; }
-	const Tchar * cbegin() const noexcept { return m_p ; }
-	const Tchar * end() const noexcept { return m_p + m_n ; }
-	const Tchar * cend() const noexcept { return m_p + m_n ; }
+	const Tchar * begin() const noexcept { return empty() ? nullptr : m_p ; }
+	const Tchar * cbegin() const noexcept { return empty() ? nullptr : m_p ; }
+	const Tchar * end() const noexcept { return empty() ? nullptr : (m_p+m_n) ; }
+	const Tchar * cend() const noexcept { return empty() ? nullptr : (m_p+m_n) ; }
 	bool operator==( const basic_string_view<Tchar> & other ) const noexcept { return compare(other) == 0 ; }
 	bool operator!=( const basic_string_view<Tchar> & other ) const noexcept { return compare(other) != 0 ; }
 	bool operator<( const basic_string_view<Tchar> & other ) const noexcept { return compare(other) < 0 ; }
@@ -118,30 +118,49 @@ public:
 	bool operator>=( const basic_string_view<Tchar> & other ) const noexcept { return compare(other) >= 0 ; }
 	int compare( const basic_string_view<Tchar> & other ) const noexcept
 	{
-		int rc = std::char_traits<Tchar>::compare( m_p , other.m_p , std::min(m_n,other.m_n) ) ;
+		int rc = ( empty() || other.empty() ) ? 0 : std::char_traits<Tchar>::compare( m_p , other.m_p , std::min(m_n,other.m_n) ) ;
 		return rc == 0 ? ( m_n < other.m_n ? -1 : (m_n==other.m_n?0:1) ) : rc ;
 	}
 	string_view substr( std::size_t pos , std::size_t count = npos ) const
 	{
-		if( pos > m_n ) throw std::out_of_range( "string_view" ) ;
+		if( empty() || pos > m_n ) throw std::out_of_range( "string_view" ) ;
+		if( pos == m_n ) return string_view( m_p , std::size_t(0U) ) ; // (more than the standard requires)
 		return string_view( m_p + pos , std::min(m_n-pos,count) ) ;
 	}
-	std::size_t find( Tchar c ) const noexcept
+	std::size_t find( Tchar c , std::size_t pos = 0U ) const noexcept
 	{
-		const Tchar * p = m_p ;
-		std::size_t n = m_n ;
-		for( std::size_t pos = 0U ; n ; p++ , n-- , pos++ )
+		if( empty() || pos >= m_n ) return std::string::npos ;
+		const Tchar * p = m_p + pos ;
+		std::size_t n = m_n - pos ;
+		for( ; n ; p++ , n-- , pos++ )
 		{
 			if( *p == c )
 				return pos ;
 		}
 		return std::string::npos ;
 	}
-	std::size_t find_first_of( basic_string_view<Tchar> chars ) const noexcept
+	std::size_t find( const Tchar * substr_p , std::size_t pos , std::size_t substr_n ) const
 	{
-		const Tchar * p = m_p ;
-		std::size_t n = m_n ;
-		for( std::size_t pos = 0U ; n ; p++ , n-- , pos++ )
+		return find( basic_string_view<Tchar>(substr_p,substr_n) , pos ) ;
+	}
+	std::size_t find( basic_string_view<Tchar> substr , std::size_t pos = 0U ) const
+	{
+		if( empty() || pos >= m_n ) return std::string::npos ;
+		if( substr.empty() ) return pos ;
+		auto const end = m_p + m_n ;
+		auto p = std::search( m_p+pos , end , substr.m_p , substr.m_p+substr.m_n ) ;
+		return p == end ? std::string::npos : std::distance(m_p,p) ;
+	}
+	std::size_t find_first_of( const Tchar * chars , std::size_t pos , std::size_t chars_size ) const noexcept
+	{
+		return find_first_of( basic_string_view<Tchar>(chars,chars_size) , pos ) ;
+	}
+	std::size_t find_first_of( basic_string_view<Tchar> chars , std::size_t pos = 0U ) const noexcept
+	{
+		if( empty() || pos >= m_n || chars.empty() ) return std::string::npos ;
+		const Tchar * p = m_p + pos ;
+		std::size_t n = m_n - pos ;
+		for( ; n ; p++ , n-- , pos++ )
 		{
 			const std::size_t i_end = chars.size() ;
 			for( std::size_t i = 0U ; i < i_end ; i++ )
@@ -152,11 +171,16 @@ public:
 		}
 		return std::string::npos ;
 	}
-	std::size_t find_first_not_of( basic_string_view<Tchar> chars ) const noexcept
+	std::size_t find_first_not_of( const Tchar * chars , std::size_t pos , std::size_t chars_size ) const noexcept
 	{
-		const Tchar * p = m_p ;
-		std::size_t n = m_n ;
-		for( std::size_t pos = 0U ; n ; p++ , n-- , pos++ )
+		return find_first_not_of( basic_string_view<Tchar>(chars,chars_size) , pos ) ;
+	}
+	std::size_t find_first_not_of( basic_string_view<Tchar> chars , std::size_t pos = 0U ) const noexcept
+	{
+		if( empty() || pos >= m_n || chars.empty() ) return std::string::npos ;
+		const Tchar * p = m_p + pos ;
+		std::size_t n = m_n - pos ;
+		for( ; n ; p++ , n-- , pos++ )
 		{
 			bool match = false ;
 			const std::size_t i_end = chars.size() ;
@@ -172,7 +196,7 @@ public:
 	}
 	std::basic_string<Tchar> sv_to_string_imp() const
 	{
-		return std::basic_string<Tchar>( m_p , m_n ) ;
+		return empty() ? std::basic_string<Tchar>() : std::basic_string<Tchar>( m_p , m_n ) ;
 	}
 
 private:
@@ -189,11 +213,15 @@ namespace G
 	}
 	inline std::ostream & operator<<( std::ostream & stream , const string_view & sv )
 	{
-		return stream.write( sv.data() , sv.size() ) ;
+		if( !sv.empty() )
+			stream.write( sv.data() , sv.size() ) ; // NOLINT narrowing
+		return stream ;
 	}
 	inline std::wostream & operator<<( std::wostream & stream , const wstring_view & sv )
 	{
-		return stream.write( sv.data() , sv.size() ) ;
+		if( !sv.empty() )
+			stream.write( sv.data() , sv.size() ) ; // NOLINT narrowing
+		return stream ;
 	}
 	template <typename Tchar> void swap( basic_string_view<Tchar> & a , basic_string_view<Tchar> b ) noexcept
 	{
@@ -201,19 +229,19 @@ namespace G
 	}
 	inline bool operator==( const std::string & s , string_view sv )
 	{
-		return 0 == s.compare( 0 , s.size() , sv.data() , sv.size() ) ;
+		return sv.empty() ? s.empty() : ( 0 == s.compare( 0 , s.size() , sv.data() , sv.size() ) ) ;
 	}
 	inline bool operator==( string_view sv , const std::string & s )
 	{
-		return 0 == s.compare( 0 , s.size() , sv.data() , sv.size() ) ;
+		return sv.empty() ? s.empty() : ( 0 == s.compare( 0 , s.size() , sv.data() , sv.size() ) ) ;
 	}
 	inline bool operator!=( const std::string & s , string_view sv )
 	{
-		return 0 != s.compare( 0 , s.size() , sv.data() , sv.size() ) ;
+		return !(s == sv) ;
 	}
 	inline bool operator!=( string_view sv , const std::string & s )
 	{
-		return 0 != s.compare( 0 , s.size() , sv.data() , sv.size() ) ;
+		return !(sv == s) ;
 	}
 }
 

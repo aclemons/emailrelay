@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -39,8 +39,9 @@ namespace GAuth
 class GAuth::SaslServerSecrets : public virtual Valid
 {
 public:
-	virtual Secret serverSecret( const std::string & encoding_type , const std::string & id ) const = 0 ;
+	virtual Secret serverSecret( const std::string & type , const std::string & id ) const = 0 ;
 		///< Returns the server secret for the given client id.
+		///< The type is "plain" or the CRAM hash algorithm.
 		///< Returns an invalid secret if not found.
 
 	virtual std::pair<std::string,std::string> serverTrust( const std::string & address_range ) const = 0 ;
@@ -51,9 +52,10 @@ public:
 	virtual std::string source() const = 0 ;
 		///< Returns the source identifier (eg. file name).
 
-	virtual bool contains( const std::string & mechanism ) const = 0 ;
-		///< Returns true if any user has a secret encoded for
-		///< the given mechanism.
+	virtual bool contains( const std::string & type , const std::string & id ) const = 0 ;
+		///< Returns true if there is a secret of the given type
+		///< either for one user in particular or for any user if
+		///< the id is empty.
 } ;
 
 #endif

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,6 +23,8 @@
 #include "options.h"
 #include "gbatchfile.h"
 #include "gfile.h"
+#include "gstringarray.h"
+#include "gstringmap.h"
 #include "goptionparser.h"
 #include "glog.h"
 
@@ -45,19 +47,18 @@ G::MapFile ServerConfiguration::read( const G::Path & config_file )
 	{
 		// read the batch file and parse the command-line
 		G::BatchFile batch_file( config_file , std::nothrow ) ;
-		G::StringArray const args = batch_file.args() ;
-		if( args.size() != 0U )
+		if( !batch_file.args().empty() )
 		{
 			G::OptionMap option_map ;
 			G::Options options = Main::Options::spec( G::is_windows() ) ;
 			G::OptionParser parser( options , option_map ) ;
-			parser.parse( args , 1U ) ; // ignore errors
+			parser.parse( batch_file.args() , 1U ) ; // ignore errors
 			config = G::MapFile( option_map , G::Str::positive() ) ;
 		}
 	}
 	else
 	{
-		config = G::MapFile( config_file ) ;
+		config = G::MapFile( config_file , "config" ) ;
 	}
 
 	// normalise by expanding "--as-whatever" etc.

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@ class Main::App : public Main::Output
 {
 private: // overrides
 	void output( const std::string & text , bool e , bool ) override ;
-	G::Options::Layout outputLayout( bool verbose ) const override ;
+	G::OptionsOutputLayout outputLayout( bool verbose ) const override ;
 	bool outputSimple() const override ;
 } ;
 
@@ -45,7 +45,7 @@ void Main::App::output( const std::string & text , bool e , bool )
 	s << text << std::flush ;
 }
 
-G::Options::Layout Main::App::outputLayout( bool ) const
+G::OptionsOutputLayout Main::App::outputLayout( bool ) const
 {
 	return {} ;
 }

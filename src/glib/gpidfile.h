@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@ namespace G
 class G::PidFile
 {
 public:
-	G_EXCEPTION( Error , "invalid pid file" ) ;
+	G_EXCEPTION( Error , tx("invalid pid file") ) ;
 
 	static bool cleanup( SignalSafe , const char * path ) noexcept ;
 		///< Deletes the specified pid file if it contains this
@@ -70,45 +70,40 @@ public:
 		///< Signal-safe, reentrant implementation.
 
 	explicit PidFile( const Path & pid_file_path ) ;
-		///< Constructor. The path should normally be an
-		///< absolute path. Use commit() to actually create
-		///< the file.
+		///< Constructor. A relative path is converted to
+		///< an absolute path using the cwd. Use commit()
+		///< to actually create the file.
 
 	PidFile() ;
 		///< Default constructor. Constructs a do-nothing
-		///< object. Initialise with init().
-
-	void init( const Path & pid_file_path ) ;
-		///< Used after default construction to make the object
-		///< active. Use commit() to actually create the file.
+		///< object.
 
 	~PidFile() ;
 		///< Destructor. Calls cleanup() to delete the file.
 
+	void mkdirs() ;
+		///< Creates the directory if it does not already
+		///< exist. Throws on error, but not just because
+		///< the directory already exists.
+		///<
+		///< The caller should switch effective user-id and
+		///< umask as necessary.
+
 	void commit() ;
-		///< Creates the file and installs signal handlers to
-		///< cleanup() the file on abnormal process termination.
+		///< Creates the pid file if a path has been defined.
+		///< Also installs signal handlers to cleanup() the
+		///< file on abnormal process termination. Throws
+		///< on error.
 		///<
-		///< Does nothing if no pid file path has been defined.
-		///< Throws on error.
-		///<
-		///< The caller is responsible for setting the file
-		///< ownership and permissions by switching effecive
-		///< user-id and umask.
+		///< The caller should switch effective user-id and
+		///< umask as necessary.
 
 	bool committed() const ;
 		///< Returns true if commit() has been called with
 		///< a valid path().
 
-	void check() ;
-		///< Throws an exception if the path is not absolute.
-		///< The use of G::Daemon normally requires an absolute
-		///< path because it may change the current working
-		///< directory.
-
 	Path path() const ;
-		///< Returns the path as supplied to the constructor
-		///< or init().
+		///< Returns the path as supplied to the constructor.
 
 public:
 	PidFile( const PidFile & ) = delete ;
@@ -118,7 +113,6 @@ public:
 
 private:
 	static void create( const Path & pid_file ) ;
-	static std::string * new_string_ignore_leak( const std::string & ) ;
 	static Process::Id read( SignalSafe , const char * path ) noexcept ;
 	bool valid() const ;
 

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,10 +27,10 @@
 #include "gsaslserver.h"
 #include "gexception.h"
 #include "gaddress.h"
-#include "gstrings.h"
+#include "gstringarray.h"
 #include "gpath.h"
-#include <map>
 #include <memory>
+#include <utility>
 
 namespace GAuth
 {
@@ -45,10 +45,11 @@ namespace GAuth
 class GAuth::SaslServerBasic : public SaslServer
 {
 public:
-	G_EXCEPTION( NoMechanisms , "no server authentication mechanisms available" ) ;
-
-	explicit SaslServerBasic( const SaslServerSecrets & , const std::string & config , bool allow_apop ) ;
-		///< Constructor.
+	explicit SaslServerBasic( const SaslServerSecrets & , bool allow_pop ,
+		const std::string & config , std::pair<bool,std::string> config_secure ,
+		std::pair<bool,std::string> config_insecure ) ;
+			///< Constructor. The 'config' parameters can be used to reduce the
+			///< set of available authentication mechanisms.
 
 public:
 	~SaslServerBasic() override ;
@@ -58,11 +59,11 @@ public:
 	void operator=( SaslServerBasic && ) = delete ;
 
 private: // overrides
-	bool requiresEncryption() const override ; // Override from GAuth::SaslServer.
-	bool active() const override ; // Override from GAuth::SaslServer.
-	std::string mechanisms( char sep ) const override ; // Override from GAuth::SaslServer.
-	bool init( const std::string & mechanism ) override ; // Override from GAuth::SaslServer.
+	void reset() override ; // Override from GAuth::SaslServer.
+	G::StringArray mechanisms( bool ) const override ; // Override from GAuth::SaslServer.
+	bool init( bool , const std::string & mechanism ) override ; // Override from GAuth::SaslServer.
 	std::string mechanism() const override ; // Override from GAuth::SaslServer.
+	std::string preferredMechanism( bool ) const override ; // Override from GAuth::SaslServer.
 	bool mustChallenge() const override ; // Override from GAuth::SaslServer.
 	std::string initialChallenge() const override ; // Override from GAuth::SaslServer.
 	std::string apply( const std::string & response , bool & done ) override ; // Override from GAuth::SaslServer.

@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # Copying and distribution of this file, with or without modification,
 # are permitted in any medium without royalty provided the copyright
@@ -31,7 +31,7 @@ while(<$fh_in>)
 
 	if( $in_header && ( $line =~ m/^\s/ ) && scalar(@headers) ) # folding
 	{
-		@headers[-1] .= "\r\n$line" ;
+		$headers[-1] .= "\r\n$line" ;
 	}
 	elsif( $in_header && ( $line =~ m/^$/ ) )
 	{

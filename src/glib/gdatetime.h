@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -50,8 +50,15 @@ public:
 	BrokenDownTime( int year , int month , int day , int hh , int mm , int ss ) ;
 		///< Constructor.
 
+	static BrokenDownTime null() ;
+		///< Factory function for an unusable object with bogus
+		///< component values.
+
 	static BrokenDownTime midday( int year , int month , int day ) ;
 		///< Factory function for midday on the given date.
+
+	static BrokenDownTime midnight( int year , int month , int day ) ;
+		///< Factory function for midnight starting the given date.
 
 	static BrokenDownTime local( SystemTime ) ;
 		///< Factory function for the locale-dependent local time of the
@@ -267,8 +274,9 @@ private:
 	using time_point_type = std::chrono::time_point<std::chrono::steady_clock> ;
 	TimerTime( time_point_type , bool ) ;
 	static TimerTime test( int , int ) ;
-	unsigned long test_s() const ;
-	unsigned long test_us() const ;
+	unsigned long s() const ; // DateTimeTest
+	unsigned long us() const ; // DateTimeTest
+	std::string str() const ; // DateTimeTest
 
 private:
 	bool m_is_zero ;
@@ -369,7 +377,7 @@ namespace G
 class G::DateTime
 {
 public:
-	G_EXCEPTION_CLASS( Error , "date/time error" ) ;
+	G_EXCEPTION_CLASS( Error , tx("date/time error") ) ;
 	using Offset = std::pair<bool,unsigned int> ;
 
 	static Offset offset( SystemTime ) ;

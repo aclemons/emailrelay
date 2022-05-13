@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,6 +23,8 @@
 
 #include "gdef.h"
 #include "glog.h"
+#include "gexception.h"
+#include "gstringview.h"
 #include <string>
 #include <vector>
 #include <fstream>
@@ -49,7 +51,11 @@ namespace G
 class G::LogOutput
 {
 public:
- 	enum class SyslogFacility {
+	G_EXCEPTION( LogFileError , tx("cannot open log file") ) ;
+	G_EXCEPTION( EventLogError , tx("cannot access the system event log") ) ;
+
+	enum class SyslogFacility
+	{
 		User ,
 		Daemon ,
 		Mail ,
@@ -61,7 +67,8 @@ public:
 		Local4 ,
 		Local5 ,
 		Local6 ,
-		Local7 } ;
+		Local7
+	} ;
 
 	struct Config /// A configuration structure for G::LogOutput.
 	{
@@ -93,12 +100,12 @@ public:
 	} ;
 
 	LogOutput( const std::string & exename , const Config & config ,
-		const std::string & filename = std::string() ) ;
+		const std::string & filename = {} ) ;
 			///< Constructor. If there is no LogOutput object, or if
 			///< 'config.output_enabled' is false, then there is no
-			///< output at all except for assertions to stderr.
-			///< Otherwise at least warning and error messages are
-			///< generated.
+			///< output at all except for assertions to stderr in a
+			///< debug build. Otherwise at least warning and error
+			///< messages are generated.
 			///<
 			///< If 'config.summary_info' is true then log-summary
 			///< messages are output. If 'config.verbose_info' is true
@@ -118,7 +125,7 @@ public:
 
 	explicit LogOutput( bool output_enabled_and_summary_info ,
 		bool verbose_info_and_debug = true ,
-		const std::string & filename = std::string() ) ;
+		const std::string & filename = {} ) ;
 			///< Constructor for test programs. Only generates output if the
 			///< first parameter is true. Never uses syslog.
 
@@ -137,7 +144,6 @@ public:
 
 	bool at( Log::Severity ) const noexcept ;
 		///< Returns true if logging should occur for the given severity level.
-		///< Returns false if there is no LogOutput instance.
 
 	static void context( std::string (*fn)(void*) = nullptr , void * fn_arg = nullptr ) noexcept ;
 		///< Sets a functor that is used to provide a context string for
@@ -169,7 +175,7 @@ public:
 	static void assertionFailure( const char * file , int line , const char * test_expression ) noexcept ;
 		///< Reports an assertion failure.
 
-	static void assertionAbort() GDEF_NORETURN ;
+	GDEF_NORETURN1 static void assertionAbort() GDEF_NORETURN2 ;
 		///< Aborts the program when an assertion has failed.
 
 	static void register_( const std::string & exe ) ;
@@ -198,7 +204,7 @@ private:
 	void oscleanup() const noexcept ;
 	bool updateTime() ;
 	void appendTimeTo( std::ostream & ) ;
-	static const char * levelString( Log::Severity ) noexcept ;
+	static G::string_view levelString( Log::Severity ) noexcept ;
 	static const char * basename( const char * ) noexcept ;
 
 private:
@@ -211,8 +217,8 @@ private:
 	HANDLE m_handle{0} ; // windows
 	std::string m_path ;
 	int m_fd{-1} ;
-	unsigned int m_depth{1U} ;
-	Log::Severity m_severity{Log::Severity::s_Debug} ;
+	unsigned int m_depth{0U} ;
+	Log::Severity m_severity{Log::Severity::Debug} ;
 	std::size_t m_start_pos{0U} ;
 	std::string (*m_context_fn)(void *){nullptr} ;
 	void * m_context_fn_arg{nullptr} ;

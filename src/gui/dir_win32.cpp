@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -54,15 +54,14 @@ G::Path Dir::os_spool()
 	return special("data") + "E-MailRelay" + "spool" ;
 }
 
-G::Path Dir::os_pid( const G::Path & config_dir )
+G::Path Dir::os_pid( const G::Path & /*config_dir*/ )
 {
 	return special("data") + "E-MailRelay" ;
 }
 
 G::Path Dir::os_boot()
 {
-	// empty implies no access (see call to Boot::able() in pages.cpp),
-	// so the default has to be a bogus value
+	// the default has to be any non-empty string
 	return "services" ;
 }
 

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -100,7 +100,7 @@ void GNet::TimerList::remove( TimerBase & timer ) noexcept
 
 void GNet::TimerList::removeFrom( List & list , TimerBase * timer_p ) noexcept
 {
-	for( auto & value : list)
+	for( auto & value : list )
 		value.resetIf( timer_p ) ;
 }
 
@@ -121,12 +121,16 @@ void GNet::TimerList::updateOnStart( TimerBase & timer )
 	if( timer.immediate() )
 		timer.adjust( m_adjust++ ) ; // well-defined t() order for immediate timers
 
+	if( m_soonest == &timer )
+		m_soonest = nullptr ;
+
 	if( m_soonest != nullptr && timer.t() < m_soonest->t() )
 		m_soonest = &timer ;
 }
 
 void GNet::TimerList::updateOnCancel( TimerBase & timer )
 {
+	G_ASSERT( !timer.active() ) ;
 	if( m_soonest == &timer )
 		m_soonest = nullptr ;
 }
@@ -135,11 +139,10 @@ const GNet::TimerBase * GNet::TimerList::findSoonest() const
 {
 	G_ASSERT( !m_locked ) ;
 	TimerBase * result = nullptr ;
-	auto end = m_list.cend() ;
-	for( auto p = m_list.cbegin() ; p != end ; ++p )
+	for( const auto & t : m_list )
 	{
-		if( (*p).m_timer != nullptr && (*p).m_timer->active() && ( result == nullptr || (*p).m_timer->t() < result->t() ) )
-			result = (*p).m_timer ;
+		if( t.m_timer != nullptr && t.m_timer->active() && ( result == nullptr || t.m_timer->t() < result->t() ) )
+			result = t.m_timer ;
 	}
 	return result ;
 }
@@ -212,7 +215,7 @@ void GNet::TimerList::purgeRemoved()
 	if( m_removed )
 	{
 		m_removed = false ;
-		m_list.erase( std::remove( m_list.begin() , m_list.end() , Value(nullptr,ExceptionSink()) ) , m_list.end() ) ;
+		m_list.erase( std::remove( m_list.begin() , m_list.end() , Value(nullptr,{}) ) , m_list.end() ) ;
 	}
 }
 
@@ -222,39 +225,44 @@ void GNet::TimerList::doTimeouts()
 	Lock lock( *this ) ;
 	m_adjust = 0 ;
 	G::TimerTime now = G::TimerTime::zero() ; // lazy initialisation to G::TimerTime::now() in G::Timer::expired()
-	for( auto & value : m_list )
+
+	auto expired_end = std::partition( m_list.begin() , m_list.end() ,
+		[&now](Value &value){ return value.m_timer != nullptr && value.m_timer->active() && value.m_timer->expired(now) ; } ) ;
+
+	std::sort( m_list.begin() , expired_end ,
+		[](Value &a,Value &b){ return a.m_timer->t() < b.m_timer->t() ; } ) ;
+
+	for( List::iterator value_p = m_list.begin() ; value_p != expired_end ; ++value_p )
 	{
-		if( value.m_timer != nullptr && value.m_timer->active() && value.m_timer->expired(now) )
-		{
-			EventLoggingContext set_logging_context( value.m_es.esrc() ) ;
-			try
-			{
-				if( value.m_timer == m_soonest ) m_soonest = nullptr ;
-				value.m_timer->doTimeout() ;
-			}
-			catch( GNet::Done & e ) // (caught separately to avoid requiring rtti)
-			{
-				if( value.m_es.set() )
-					value.m_es.call( e , true ) ; // call onException()
-				else
-					throw ; // (new)
-			}
-			catch( std::exception & e )
-			{
-				if( value.m_es.set() )
-					value.m_es.call( e , false ) ; // call onException()
-				else
-					throw ; // (new)
-			}
-		}
+		if( value_p->m_timer == m_soonest )
+			m_soonest = nullptr ;
+
+		doTimeout( *value_p ) ;
 	}
+
 	unlock() ; // avoid doing possibly-throwing operations in Lock dtor
 }
 
-std::string GNet::TimerList::report() const
+void GNet::TimerList::doTimeout( Value & value )
 {
-	std::ostringstream ss ;
-	ss << m_list.size() ;
-	return ss.str() ;
+	EventLoggingContext set_logging_context( value.m_es.esrc() ) ;
+	try
+	{
+		value.m_timer->doTimeout() ;
+	}
+	catch( GNet::Done & e ) // (caught separately to avoid requiring rtti)
+	{
+		if( value.m_es.set() )
+			value.m_es.call( e , true ) ; // call onException()
+		else
+			throw ; // (new)
+	}
+	catch( std::exception & e )
+	{
+		if( value.m_es.set() )
+			value.m_es.call( e , false ) ; // call onException()
+		else
+			throw ; // (new)
+	}
 }
 

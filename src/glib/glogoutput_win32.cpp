@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -74,16 +74,19 @@ void G::LogOutput::osoutput( int fd , G::Log::Severity severity , char * message
 {
 	// event log
 	//
-	if( m_config.m_use_syslog && severity != Log::Severity::s_Debug && m_handle != HNULL )
+	if( m_config.m_use_syslog &&
+		severity != Log::Severity::Debug &&
+		severity != Log::Severity::InfoVerbose &&
+		m_handle != HNULL )
 	{
 		DWORD id = 0x400003E9L ; // 1001
 		WORD type = EVENTLOG_INFORMATION_TYPE ;
-		if( severity == Log::Severity::s_Warning )
+		if( severity == Log::Severity::Warning )
 		{
 			id = 0x800003EAL ; // 1002
 			type = EVENTLOG_WARNING_TYPE ;
 		}
-		else if( severity == Log::Severity::s_Error || severity == Log::Severity::s_Assertion )
+		else if( severity == Log::Severity::Error || severity == Log::Severity::Assertion )
 		{
 			id = 0xC00003EBL ; // 1003
 			type = EVENTLOG_ERROR_TYPE ;
@@ -96,7 +99,8 @@ void G::LogOutput::osoutput( int fd , G::Log::Severity severity , char * message
 
 		message[n] = '\0' ;
 		const char * p[] = { message , nullptr } ;
-		GDEF_UNUSED BOOL rc = ReportEventA( m_handle , type , 0 , id , nullptr , 1 , 0 , p , nullptr ) ;
+		BOOL rc = ReportEventA( m_handle , type , 0 , id , nullptr , 1 , 0 , p , nullptr ) ;
+		GDEF_IGNORE_VARIABLE( rc ) ;
 	}
 
 	// standard error or log file -- note that stderr is not accessible if a gui
@@ -118,7 +122,7 @@ void G::LogOutput::osinit()
 			G::LogOutput::register_( this_exe ) ;
 			m_handle = RegisterEventSourceA( nullptr , this_name.c_str() ) ;
 			if( m_handle == HNULL && !m_config.m_allow_bad_syslog )
-				throw std::runtime_error( "cannot access the system event log" ) ;
+				throw EventLogError() ;
 		}
 	}
 }

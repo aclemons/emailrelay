@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -58,9 +58,11 @@ class GNet::InterfacesNotifierImp : public InterfacesNotifier
 public:
 	static bool active() ;
 	InterfacesNotifierImp( Interfaces * , ExceptionSink es ) ;
+	template <typename T> std::pair<T*,std::size_t> readSocket() ;
+
+public: // overrides
 	std::string readEvent() override ; // unix
 	std::string onFutureEvent() override ; // windows
-	template <typename T> std::pair<T*,std::size_t> readSocket() ;
 
 public:
 	G::Buffer<char> m_buffer ;
@@ -108,6 +110,7 @@ void GNet::Interfaces::loadImp( ExceptionSink es , std::vector<Item> & list )
 
 		Item item ;
 		item.name = std::string( info_p->ifa_name ) ;
+		item.ifindex = index( item.name ) ;
 		item.address_family = info_p->ifa_addr->sa_family ;
 		item.address = Address( info_p->ifa_addr , nmax , scope_id_fixup ) ;
 		item.valid_address = !item.address.isAny() ; // just in case
@@ -127,6 +130,27 @@ void GNet::Interfaces::loadImp( ExceptionSink es , std::vector<Item> & list )
 		list.push_back( item ) ;
 	}
 }
+
+// TODO feature test for conditional compilation
+#if 1
+#include <sys/ioctl.h>
+#include <net/if.h>
+int GNet::Interfaces::index( const std::string & name )
+{
+	struct ifreq req {} ;
+	G::Str::strncpy_s( req.ifr_name , sizeof(req.ifr_name) , name.c_str() , G::Str::truncate ) ;
+	int fd = socket( AF_INET , SOCK_DGRAM , 0 ) ; // man netdevice(7): "any socket.. regardless of.. family or type"
+	if( fd < 0 ) return 0 ;
+	int rc = ioctl( fd , SIOCGIFINDEX , &req , sizeof(req) ) ;
+	close( fd ) ;
+	return rc ? 0 : req.ifr_ifindex ;
+}
+#else
+int GNet::Interfaces::index( const std::string & )
+{
+	return 0 ;
+}
+#endif
 
 // ==
 
@@ -183,7 +207,7 @@ GNet::InterfacesNotifierImp::InterfacesNotifierImp( Interfaces * outer , Excepti
 		#endif
 		{
 			G::Root claim_root ;
-			m_socket = std::make_unique<RawSocket>( AF_NETLINK , NETLINK_ROUTE ) ;
+			m_socket = std::make_unique<RawSocket>( AF_NETLINK , SOCK_RAW , NETLINK_ROUTE ) ;
 			int rc = ::bind( m_socket->fd() , &address.generic , sizeof(address.specific) ) ;
 			int e = G::Process::errno_() ;
 			if( rc < 0 )
@@ -251,7 +275,7 @@ GNet::InterfacesNotifierImp::InterfacesNotifierImp( Interfaces * outer , Excepti
 	{
 		{
 			G::Root claim_root ;
-			m_socket = std::make_unique<RawSocket>( PF_ROUTE , AF_UNSPEC ) ;
+			m_socket = std::make_unique<RawSocket>( PF_ROUTE , SOCK_RAW , AF_UNSPEC ) ;
 		}
 		m_socket->addReadHandler( *outer , es ) ;
 	}

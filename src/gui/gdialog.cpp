@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,16 +26,25 @@
 #include <algorithm>
 #include <stdexcept>
 
+#include "moc_gdialog.cpp"
+
+
 GDialog::GDialog( const G::Path & virgin_flag_file , bool with_launch ) :
 	QDialog(nullptr) ,
 	m_first(true) ,
 	m_with_launch(with_launch) ,
 	m_next_is_launch(false) ,
+	m_help_button(nullptr) ,
 	m_cancel_button(nullptr) ,
 	m_back_button(nullptr) ,
 	m_next_button(nullptr) ,
 	m_finish_button(nullptr) ,
+	m_button_layout(nullptr) ,
+	m_main_layout(nullptr) ,
 	m_finishing(false) ,
+	m_back_state(false) ,
+	m_next_state(false) ,
+	m_finish_state(false) ,
 	m_virgin_flag_file(virgin_flag_file)
 {
 	m_cancel_button = new QPushButton(tr("Cancel")) ;
@@ -235,7 +244,7 @@ std::string GDialog::currentPageName() const
 
 GPage & GDialog::previousPage( unsigned int distance )
 {
-	if( m_history.size() < (distance+1U) ) throw std::runtime_error("internal error") ;
+	if( m_history.size() < (std::size_t(distance)+1U) ) throw std::runtime_error("internal error") ;
 	auto p = m_history.rbegin() ;
 	while( distance-- ) ++p ;
 	G_DEBUG( "GDialog::previousPage: " << currentPageName() << " -> " << *p ) ;

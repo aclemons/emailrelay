@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@
 #include "goptionvalue.h"
 #include "goptionparser.h"
 #include "gstr.h"
+#include "gstringmap.h"
 #include "gassert.h"
 #include "glog.h"
 #include <fstream>
@@ -73,6 +74,19 @@ void G::GetOpt::parseArgs( std::size_t ignore_non_options )
 	m_args = Arg( new_args ) ;
 }
 
+bool G::GetOpt::addOptionsFromFile( std::size_t n , const StringArray & block )
+{
+	if( n < m_args.c() )
+	{
+		G::Path path = m_args.v( n ) ;
+		if( std::find( block.begin() , block.end() , path.extension() ) != block.end() )
+			return false ;
+		m_args.removeAt( n ) ;
+		addOptionsFromFile( path ) ;
+	}
+	return true ;
+}
+
 void G::GetOpt::addOptionsFromFile( std::size_t n , const std::string & varkey , const std::string & varvalue )
 {
 	if( n < m_args.c() )
@@ -110,9 +124,9 @@ void G::GetOpt::addOptionsFromFile( const G::Path & filename )
 	OptionParser::parse( optionsFromFile(m_spec,filename) , m_spec , m_map , &m_errors , 0U ) ;
 }
 
-const G::Options & G::GetOpt::options() const
+const std::vector<G::Option> & G::GetOpt::options() const
 {
-	return m_spec ;
+	return m_spec.list() ;
 }
 
 const G::OptionMap & G::GetOpt::map() const

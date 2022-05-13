@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -53,7 +53,7 @@ bool GSmtp::ExecutableFilter::simple() const
 
 std::string GSmtp::ExecutableFilter::id() const
 {
-	return m_path.str() ;
+	return m_path.basename() ; // was .str()
 }
 
 bool GSmtp::ExecutableFilter::special() const
@@ -140,25 +140,25 @@ std::pair<std::string,std::string> GSmtp::ExecutableFilter::parseOutput( std::st
 {
 	G_DEBUG( "GSmtp::ExecutableFilter::parseOutput: in: \"" << G::Str::printable(s) << "\"" ) ;
 
-	const std::string start_1("<<") ;
-	const std::string end_1(">>") ;
-	const std::string start_2("[[") ;
-	const std::string end_2("]]") ;
+	static constexpr auto start_1 = "<<"_sv ;
+	static constexpr auto end_1 = ">>"_sv ;
+	static constexpr auto start_2 = "[["_sv ;
+	static constexpr auto end_2 = "]]"_sv ;
 
 	G::StringArray lines ;
 	while( G::Str::replaceAll( s , "\r\n" , "\n" ) ) {;}
 	G::Str::replaceAll( s , "\r" , "\n" ) ;
-	G::Str::splitIntoFields( s , lines , "\n" ) ;
+	G::Str::splitIntoFields( s , lines , '\n' ) ;
 
 	for( auto p = lines.begin() ; p != lines.end() ; )
 	{
 		const std::string & line = *p ;
-		std::size_t pos_start = line.find( start_1 ) ;
-		std::size_t pos_end = line.find( end_1 ) ;
+		std::size_t pos_start = line.find( start_1.data() , 0U , start_1.size() ) ;
+		std::size_t pos_end = line.find( end_1.data() , 0U , end_1.size() ) ;
 		if( pos_start != 0U )
 		{
-			pos_start = line.find( start_2 ) ;
-			pos_end = line.find( end_2 ) ;
+			pos_start = line.find( start_2.data() , 0U , start_2.size() ) ;
+			pos_end = line.find( end_2.data() , 0U , end_2.size() ) ;
 		}
 		if( pos_start == 0U && pos_end != std::string::npos )
 		{
@@ -174,7 +174,7 @@ std::pair<std::string,std::string> GSmtp::ExecutableFilter::parseOutput( std::st
 
 	std::string response = ( !lines.empty() && !lines.at(0U).empty() ) ? lines.at(0U) : default_ ;
 	std::string reason = ( lines.size() > 1U && !lines.at(1U).empty() ) ? lines.at(1U) : response ;
-	return std::make_pair( response , reason ) ;
+	return { response , reason } ;
 }
 
 G::Slot::Signal<int> & GSmtp::ExecutableFilter::doneSignal()

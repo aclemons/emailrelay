@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -48,7 +48,9 @@
 #include "gprocess.h"
 #include "ggettext.h"
 #include "gstrmacros.h"
+#include "gstringmap.h"
 #include "gformat.h"
+#include "glimits.h"
 #include "gtest.h"
 #include "glogoutput.h"
 #include "glog.h"
@@ -68,7 +70,7 @@ namespace { std::string localedir() { return std::string() ; } }
 
 std::string Main::Run::versionNumber()
 {
-	return "2.3dev1" ;
+	return "2.4dev1" ;
 }
 
 Main::Run::Run( Main::Output & output , const G::Arg & arg , bool is_windows , bool has_gui ) :
@@ -83,7 +85,7 @@ Main::Run::Run( Main::Output & output , const G::Arg & arg , bool is_windows , b
 	m_client_ptr.eventSignal().connect( G::Slot::slot(*this,&Run::onClientEvent) ) ;
 	m_forward_request_signal.connect( G::Slot::slot(*this,&Run::onForwardRequest) ) ;
 
-	// initialise gettext() early iff "--localedir" is used
+	// initialise gettext() early, before G::GetOpt
 	std::string ldir = localedir() ;
 	std::size_t pos = m_arg.index( "--localedir" , 1U ) ;
 	std::size_t mpos = m_arg.match( "--localedir=" ) ;
@@ -91,7 +93,7 @@ Main::Run::Run( Main::Output & output , const G::Arg & arg , bool is_windows , b
 		ldir = m_arg.removeAt( pos , 1U ) ;
 	else if( mpos )
 		ldir = G::Str::tail( m_arg.removeAt(mpos) , "=" ) ;
-	if( pos || mpos ) // moot, but avoid surprising regressions
+	if( !ldir.empty() )
 		G::gettext_init( ldir , "emailrelay" ) ;
 }
 
@@ -160,7 +162,7 @@ bool Main::Run::runnable()
 void Main::Run::run()
 {
 	using G::format ;
-	using G::gettext ;
+	using G::txt ;
 
 	if( commandline().map().contains("help") || commandline().map().contains("version") )
 		return ;
@@ -202,14 +204,16 @@ void Main::Run::run()
 			.set_facility(configuration().syslogFacility()) ,
 		configuration().logFile().str() // stderr-replacement
 	) ;
-	G::LogOutput::translate( gettext("info: ") , gettext("warning: ") , gettext("error: ") , gettext("fatal: ") ) ;
 
 	// if we are going to close stderr soon then make stderr logging
 	// less verbose so that startup scripts are cleaner, but without
 	// affecting syslog output
+	//
 	if( configuration().useSyslog() && configuration().daemon() &&
 		configuration().closeStderr() && configuration().logFile().empty() )
-			m_log_output->configure( m_log_output->config().set_quiet_stderr() ) ;
+	{
+		m_log_output->configure( m_log_output->config().set_quiet_stderr() ) ;
+	}
 
 	// log command-line warnings
 	//
@@ -221,14 +225,16 @@ void Main::Run::run()
 	// release root privileges and extra group memberships
 	//
 	if( configuration().user() != "root" )
+	{
 		G::Root::init( configuration().user() ) ;
+	}
 
 	// create event loop singletons
 	//
 	m_event_loop = GNet::EventLoop::create() ;
 	m_timer_list = std::make_unique<GNet::TimerList>() ;
 
-	// hook up the timer callbacks now we have a timer list
+	// hook up the timer callbacks now that we have a timer list
 	//
 	using Timer = GNet::Timer<Run> ;
 	GNet::ExceptionSink es_log_only = GNet::ExceptionSink::logOnly() ;
@@ -239,10 +245,6 @@ void Main::Run::run()
 	// early check on socket bindability
 	//
 	checkPorts() ;
-
-	// early check on script executablity
-	//
-	checkScripts() ;
 
 	// early check on multi-threading behaviour
 	//
@@ -279,7 +281,7 @@ void Main::Run::run()
 			configuration().clientTlsPeerHostName() ) ;
 
 	if( need_tls && !m_tls_library->enabled() )
-		throw G::Exception( gettext("cannot do tls/ssl: tls library not built in: "
+		throw G::Exception( txt("cannot do tls/ssl: tls library not built in: "
 			"remove tls options from the command-line or "
 			"rebuild the emailrelay executable with a supported tls library") ) ;
 
@@ -288,22 +290,25 @@ void Main::Run::run()
 	m_monitor = std::make_unique<GNet::Monitor>() ;
 	m_monitor->signal().connect( G::Slot::slot(*this,&Run::onNetworkEvent) ) ;
 
-	// early check of the forward-to address
+	// early check that the forward-to address can be resolved
 	//
-	if( configuration().log() && !configuration().serverAddress().empty() && !configuration().forwardOnStartup() )
+	if( configuration().log() && !configuration().serverAddress().empty() && !configuration().forwardOnStartup() &&
+		!GNet::Address::isFamilyLocal( configuration().serverAddress() ) )
 	{
 		GNet::Location location( configuration().serverAddress() , resolverFamily() ) ;
 		std::string error = GNet::Resolver::resolve( location ) ;
 		if( !error.empty() )
-			G_WARNING( "Main::Run::run: " << format(gettext("dns lookup of forward-to address failed: %1%")) % error ) ;
+			G_WARNING( "Main::Run::run: " << format(txt("dns lookup of forward-to address failed: %1%")) % error ) ;
 		else
-			G_LOG( "Main::Run::run: " << format(gettext("forwarding address %1%")) % location.displayString() ) ;
+			G_LOG( "Main::Run::run: " << format(txt("forwarding address %1%")) % location.displayString() ) ;
 	}
 
 	// early check on the DNSBL configuration string
 	//
 	if( !configuration().dnsbl().empty() )
+	{
 		GNet::DnsBlock::checkConfig( configuration().dnsbl() ) ;
+	}
 
 	// figure out what we're doing
 	//
@@ -322,15 +327,20 @@ void Main::Run::run()
 
 	// create message store singletons
 	//
-	m_file_store = std::make_unique<GSmtp::FileStore>( configuration().spoolDir() , false ,
-		configuration().maxSize() , configuration().eightBitTest() ) ;
-	m_filter_factory = std::make_unique<GSmtp::FilterFactory>( *m_file_store ) ;
+	m_file_store = std::make_unique<GSmtp::FileStore>( configuration().spoolDir() ,
+		GSmtp::FileStore::Config()
+			.set_max_size( configuration().maxSize() )  ) ; // see also ServerProtocol::Config
+	m_filter_factory = std::make_unique<GSmtp::FilterFactoryFileStore>( *m_file_store ) ;
 	store().messageStoreRescanSignal().connect( G::Slot::slot(*this,&Run::onStoreRescanEvent) ) ;
 	if( do_pop )
 	{
 		m_pop_store = std::make_unique<GPop::Store>( configuration().spoolDir() ,
 			configuration().popByName() , ! configuration().popNoDelete() ) ;
 	}
+
+	// early check on script executablity
+	//
+	checkScripts() ;
 
 	// authentication secrets
 	//
@@ -343,16 +353,16 @@ void Main::Run::run()
 
 	// daemonise
 	//
-	G::PidFile pid_file ;
-	if( configuration().usePidFile() ) pid_file.init( G::Path(configuration().pidFile()) ) ;
-	if( configuration().daemon() ) G::Daemon::detach( pid_file ) ;
+	G::PidFile pid_file( configuration().usePidFile() ? G::Path(configuration().pidFile()) : G::Path() ) ;
+	if( configuration().daemon() )
+		G::Daemon::detach() ;
 
 	// create the smtp server
 	//
 	if( do_smtp )
 	{
 		if( configuration().immediate() )
-			G_WARNING( "Run::doServing: " << gettext("using --immediate can result in client timeout errors: "
+			G_WARNING( "Run::doServing: " << txt("using --immediate can result in client timeout errors: "
 				"try --forward-on-disconnect instead") ) ;
 
 		G_ASSERT( m_file_store != nullptr ) ;
@@ -364,9 +374,9 @@ void Main::Run::run()
 			*m_filter_factory ,
 			*m_client_secrets ,
 			*m_server_secrets ,
-			serverConfig() ,
+			smtpServerConfig() ,
 			configuration().immediate() ? configuration().serverAddress() : std::string() ,
-			clientConfig() ) ;
+			smtpClientConfig() ) ;
 
 		m_smtp_server->eventSignal().connect( G::Slot::slot(*this,&Run::onServerEvent) ) ;
 	}
@@ -381,7 +391,7 @@ void Main::Run::run()
 			GNet::ExceptionSink() ,
 			*m_pop_store ,
 			*m_pop_secrets ,
-			popConfig() ) ;
+			popServerConfig() ) ;
 	}
 
 	// create the admin server
@@ -390,16 +400,36 @@ void Main::Run::run()
 	{
 		G_ASSERT( m_file_store != nullptr ) ;
 		G_ASSERT( m_client_secrets != nullptr ) ;
-		m_admin_server = newAdminServer(
+
+		G::StringMap info_map ;
+		info_map["version"] = versionNumber() ;
+		info_map["warranty"] = Legal::warranty("","\n") ;
+		info_map["credit"] = GSsl::Library::credit("","\n","") ;
+		info_map["copyright"] = Legal::copyright() ;
+
+		G::StringMap config_map ;
+		//config_map["forward-to"] = cfg.serverAddress() ;
+		//config_map["spool-dir"] = cfg.spoolDir().str() ;
+
+		m_admin_server = std::make_unique<GSmtp::AdminServer>(
 			GNet::ExceptionSink() ,
-			configuration() ,
 			*m_file_store ,
 			*m_filter_factory ,
 			m_forward_request_signal ,
-			GNet::ServerPeerConfig(0U) ,
-			clientConfig() ,
+				GNet::ServerPeer::Config()
+					.set_socket_linger( configuration().adminSocketLinger() )
+					.set_idle_timeout( 0U ) ,
+			netServerConfig() ,
+			smtpClientConfig() ,
 			*m_client_secrets ,
-			versionNumber() ) ;
+			configuration().listeningAddresses("admin") ,
+			configuration().adminPort() ,
+			configuration().allowRemoteClients() ,
+			configuration().serverAddress() ,
+			configuration().connectionTimeout() ,
+			info_map ,
+			config_map ,
+			configuration().withTerminate() ) ;
 	}
 
 	// do serving and/or forwarding
@@ -479,31 +509,24 @@ void Main::Run::checkPort( bool check , const std::string & ip , unsigned int po
 	if( check )
 	{
 		const bool do_throw = true ;
-		try
+		if( ip.empty() )
 		{
-			if( ip.empty() )
+			if( GNet::Address::supports( GNet::Address::Family::ipv6 ) &&
+				GNet::StreamSocket::supports( GNet::Address::Family::ipv6 ) )
 			{
-				if( GNet::Address::supports( GNet::Address::Family::ipv6 ) &&
-					GNet::StreamSocket::supports( GNet::Address::Family::ipv6 ) )
-				{
-					GNet::Address address( GNet::Address::Family::ipv6 , port ) ;
-					GNet::Server::canBind( address , do_throw ) ;
-				}
-				if( GNet::Address::supports( GNet::Address::Family::ipv4 ) )
-				{
-					GNet::Address address( GNet::Address::Family::ipv4 , port ) ;
-					GNet::Server::canBind( address , do_throw ) ;
-				}
+				GNet::Address address( GNet::Address::Family::ipv6 , port ) ;
+				GNet::Server::canBind( address , do_throw ) ;
 			}
-			else if( GNet::Address::validStrings(ip,"0") )
+			if( GNet::Address::supports( GNet::Address::Family::ipv4 ) )
 			{
-				GNet::Address address( ip , port ) ;
+				GNet::Address address( GNet::Address::Family::ipv4 , port ) ;
 				GNet::Server::canBind( address , do_throw ) ;
 			}
 		}
-		catch( G::Exception & e )
+		else if( GNet::Address::validStrings(ip,"0") )
 		{
-			throw e.translated() ;
+			GNet::Address address = GNet::Address::parse( ip , port ) ;
+			GNet::Server::canBind( address , do_throw ) ;
 		}
 	}
 }
@@ -545,20 +568,32 @@ void Main::Run::commit( G::PidFile & pid_file )
 	}
 }
 
-GSmtp::ServerProtocol::Config Main::Run::serverProtocolConfig() const
+GSmtp::ServerProtocol::Config Main::Run::smtpServerProtocolConfig() const
 {
 	return
 		GSmtp::ServerProtocol::Config()
 			.set_with_vrfy( !configuration().anonymous() )
-			.set_max_size( configuration().maxSize() )
+			.set_max_size( configuration().maxSize() ) // see also FileStore::ctor
+			.set_shutdown_how_on_quit( configuration().shutdownHowOnQuit() )
+			.set_mail_requires_authentication( m_server_secrets->valid() )
 			.set_authentication_requires_encryption( configuration().serverTlsRequired() )
 			.set_mail_requires_encryption( configuration().serverTlsRequired() )
 			.set_tls_starttls( configuration().serverTls() )
 			.set_tls_connection( configuration().serverTlsConnection() )
-			.set_allow_pipelining( configuration().smtpPipelining() ) ;
+			.set_advertise_pipelining( !G::Limits<>::small ) ;
+			//.set_advertise_smtputf8() // TODO
+			//.set_advertise_chunking() ; // TODO
 }
 
-GSmtp::Server::Config Main::Run::serverConfig() const
+GNet::Server::Config Main::Run::netServerConfig() const
+{
+	bool open = configuration().user().empty() || configuration().user() == "root" ;
+	return
+		GNet::Server::Config()
+			.set_uds_open_permissions( open ) ;
+}
+
+GSmtp::Server::Config Main::Run::smtpServerConfig() const
 {
 	return
 		GSmtp::Server::Config()
@@ -571,26 +606,32 @@ GSmtp::Server::Config Main::Run::serverConfig() const
 			.set_filter_timeout( configuration().filterTimeout() )
 			.set_verifier_address( configuration().verifier().str() )
 			.set_verifier_timeout( configuration().filterTimeout() )
-			.set_server_peer_config( GNet::ServerPeerConfig(configuration().idleTimeout()) )
-			.set_protocol_config( serverProtocolConfig() )
+			.set_net_server_peer_config(
+				GNet::ServerPeer::Config()
+					.set_socket_linger( configuration().socketLinger() )
+					.set_idle_timeout( configuration().idleTimeout() ) )
+			.set_net_server_config( netServerConfig() )
+			.set_protocol_config( smtpServerProtocolConfig() )
 			.set_sasl_server_config( configuration().smtpSaslServerConfig() )
 			.set_dnsbl_config( configuration().dnsbl() ) ;
 }
 
-GPop::Server::Config Main::Run::popConfig() const
+GPop::Server::Config Main::Run::popServerConfig() const
 {
 	return
 		GPop::Server::Config()
 			.set_allow_remote( configuration().allowRemoteClients() )
 			.set_port( configuration().popPort() )
 			.set_addresses( configuration().listeningAddresses("pop") )
-			.set_server_peer_config(
-				GNet::ServerPeerConfig()
-					.set_idle_timeout( configuration().idleTimeout()) )
+			.set_net_server_peer_config(
+				GNet::ServerPeer::Config()
+					.set_socket_linger( configuration().popSocketLinger() )
+					.set_idle_timeout( configuration().idleTimeout() ) )
+			.set_net_server_config( netServerConfig() )
 			.set_sasl_server_config( configuration().popSaslServerConfig() ) ;
 }
 
-GSmtp::Client::Config Main::Run::clientConfig() const
+GSmtp::Client::Config Main::Run::smtpClientConfig() const
 {
 	return
 		GSmtp::Client::Config()
@@ -603,13 +644,14 @@ GSmtp::Client::Config Main::Run::clientConfig() const
 					.set_thishost_name( GNet::Local::canonicalName() )
 					.set_response_timeout( configuration().responseTimeout() )
 					.set_ready_timeout( configuration().promptTimeout() )
-					.set_filter_timeout( configuration().filterTimeout() )
 					.set_use_starttls_if_possible( configuration().clientTls() && !configuration().clientOverTls() )
 					.set_must_use_tls( configuration().clientTlsRequired() && !configuration().clientOverTls() )
-					.set_must_authenticate( true )
-					.set_anonymous( configuration().anonymous() )
+					.set_must_authenticate( true ) // since free to have no client secret
 					.set_must_accept_all_recipients( !configuration().forwardToSome() )
-					.set_eight_bit_strict( false ) )
+					.set_pipelining( !G::Limits<>::small )
+					.set_utf8_strict( true ) // see Configuration::utf8Test()
+					.set_eightbit_strict( false )
+					.set_binarymime_strict( false ) )
 			.set_connection_timeout( configuration().connectionTimeout() )
 			.set_secure_connection_timeout( configuration().secureConnectionTimeout() )
 			.set_secure_tunnel( configuration().clientOverTls() )
@@ -621,7 +663,7 @@ GNet::Address Main::Run::asAddress( const std::string & s )
 	// (port number is optional)
 	return s.empty() ?
 		GNet::Address::defaultAddress() :
-		( GNet::Address::validString(s) ? GNet::Address(s) : GNet::Address(s,0U) ) ;
+		( GNet::Address::validString(s,GNet::Address::NotLocal()) ? GNet::Address::parse(s,GNet::Address::NotLocal()) : GNet::Address::parse(s,0U) ) ;
 }
 
 void Main::Run::onPollTimeout()
@@ -631,7 +673,7 @@ void Main::Run::onPollTimeout()
 	requestForwarding( "poll" ) ;
 }
 
-void Main::Run::onForwardRequest( std::string reason )
+void Main::Run::onForwardRequest( const std::string & reason )
 {
 	requestForwarding( reason ) ;
 }
@@ -647,11 +689,11 @@ void Main::Run::requestForwarding( const std::string & reason )
 void Main::Run::onRequestForwardingTimeout()
 {
 	using G::format ;
-	using G::gettext ;
+	using G::txt ;
 	if( m_client_ptr.busy() )
 	{
 		G_LOG( "Main::Run::onRequestForwardingTimeout: "
-			<< format(gettext("forwarding: [%1%]: still busy from last time")) % m_forwarding_reason ) ;
+			<< format(txt("forwarding: [%1%]: still busy from last time")) % m_forwarding_reason ) ;
 		m_forwarding_pending = true ;
 	}
 	else
@@ -659,7 +701,7 @@ void Main::Run::onRequestForwardingTimeout()
 		if( logForwarding() )
 		{
 			G_LOG( "Main::Run::onRequestForwardingTimeout: "
-				<< format(gettext("forwarding: [%1%]")) % m_forwarding_reason ) ;
+				<< format(txt("forwarding: [%1%]")) % m_forwarding_reason ) ;
 		}
 
 		emit( "forward" , "start" ) ;
@@ -672,19 +714,19 @@ void Main::Run::onRequestForwardingTimeout()
 bool Main::Run::logForwarding() const
 {
 	return m_forwarding_reason != "poll" || configuration().pollingLog() ||
-		( G::LogOutput::instance() && G::LogOutput::instance()->at( G::Log::Severity::s_Debug ) ) ;
+		( G::LogOutput::instance() && G::LogOutput::instance()->at( G::Log::Severity::Debug ) ) ;
 }
 
 std::string Main::Run::startForwarding()
 {
-	using G::gettext ;
+	using G::txt ;
 	try
 	{
 		G_ASSERT( m_file_store != nullptr ) ;
 		if( store().empty() )
 		{
 			if( logForwarding() )
-				G_LOG( "Main::Run::startForwarding: " << gettext("forwarding: no messages to send") ) ;
+				G_LOG( "Main::Run::startForwarding: " << txt("forwarding: no messages to send") ) ;
 			return "no messages" ;
 		}
 		else
@@ -696,15 +738,13 @@ std::string Main::Run::startForwarding()
 				*m_filter_factory ,
 				GNet::Location(configuration().serverAddress(),resolverFamily()) ,
 				*m_client_secrets ,
-				clientConfig() ) ) ;
-
-			m_client_ptr->sendAllMessages() ; // once connected
+				smtpClientConfig() ) ) ;
 			return std::string() ;
 		}
 	}
 	catch( std::exception & e )
 	{
-		G_ERROR( "Main::Run::startForwarding: " << gettext("forwarding failure") << ": " << e.what() ) ;
+		G_ERROR( "Main::Run::startForwarding: " << txt("forwarding failure") << ": " << e.what() ) ;
 		return e.what() ;
 	}
 }
@@ -712,7 +752,7 @@ std::string Main::Run::startForwarding()
 void Main::Run::onClientDone( const std::string & reason )
 {
 	using G::format ;
-	using G::gettext ;
+	using G::txt ;
 	G_DEBUG( "Main::Run::onClientDone: reason=[" << reason << "]" ) ;
 	if( m_quit_when_sent )
 	{
@@ -723,14 +763,14 @@ void Main::Run::onClientDone( const std::string & reason )
 	else
 	{
 		if( ! reason.empty() )
-			G_ERROR( "Main::Run::onClientDone: " << format(gettext("forwarding: %1%")) % reason ) ;
+			G_ERROR( "Main::Run::onClientDone: " << format(txt("forwarding: %1%")) % reason ) ;
 
 		// go round again if necessary
 		if( m_forwarding_pending )
 		{
 			m_forwarding_pending = false ;
 			G_LOG( "Main::Run::onClientDone: "
-				<< format(gettext("forwarding: queued request [%1%]")) % m_forwarding_reason ) ;
+				<< format(txt("forwarding: queued request [%1%]")) % m_forwarding_reason ) ;
 			requestForwarding() ;
 		}
 	}
@@ -762,7 +802,6 @@ void Main::Run::emit( const std::string & s0 , const std::string & s1 ,
 	const std::string & s2 , const std::string & s3 )
 {
 	// use an asynchronous queue to avoid side-effects from callbacks
-	using G::gettext ;
 	bool notifying = m_admin_server && m_admin_server->notifying() ;
 	if( notifying || m_has_gui )
 	{
@@ -772,7 +811,8 @@ void Main::Run::emit( const std::string & s0 , const std::string & s1 ,
 
 		while( m_queue.size() > 100U )
 		{
-			G_WARNING_ONCE( "Main::Run::emit: " << gettext("too many notification events: discarding old ones") ) ;
+			using G::txt ;
+			G_WARNING_ONCE( "Main::Run::emit: " << txt("too many notification events: discarding old ones") ) ;
 			m_queue.pop_front() ;
 		}
 
@@ -807,49 +847,58 @@ int Main::Run::resolverFamily() const
 {
 	// choose an address family for the DNS lookup based on the "--client-interface" address
 	std::string client_bind_address = configuration().clientBindAddress() ;
-	return
-		client_bind_address.empty() ?
-			AF_UNSPEC :
-			asAddress(client_bind_address).domain() ;
+	if( client_bind_address.empty() )
+		return AF_UNSPEC ;
+
+	GNet::Address address = asAddress( client_bind_address ) ;
+	return ( address.af() == AF_INET || address.af() == AF_INET6 ) ? address.af() : AF_UNSPEC ;
 }
 
 void Main::Run::checkScripts() const
 {
-	checkFilterScript( configuration().filter().str() ) ;
-	checkFilterScript( configuration().clientFilter().str() ) ;
-	checkVerifierScript( configuration().verifier().str() ) ;
+	checkFilter( configuration().filter().str() , true ) ;
+	checkFilter( configuration().clientFilter().str() , false ) ;
+	checkVerifier( configuration().verifier().str() ) ;
 }
 
-void Main::Run::checkVerifierScript( const std::string & script ) const
+void Main::Run::checkVerifier( const std::string & spec ) const
 {
-	using G::format ;
-	using G::gettext ;
-	std::string reason = GSmtp::VerifierFactory::check( script ) ;
-	if( !reason.empty() )
+	try
 	{
-		G_WARNING( "Main::Run::checkVerifierScript: " << format(gettext("invalid verifier \"%1%\": %2%"))%script%reason ) ;
+		if( !spec.empty() )
+			GSmtp::VerifierFactory::newVerifier( GNet::ExceptionSink() , spec , 1U ) ;
+	}
+	catch( std::exception & e )
+	{
+		using G::format ;
+		using G::txt ;
+		std::string reason = e.what() ;
+		G_WARNING( "Main::Run::checkVerifier: " << format(txt("invalid verifier: %1%"))%reason ) ;
 	}
 }
 
-void Main::Run::checkFilterScript( const std::string & script ) const
+void Main::Run::checkFilter( const std::string & spec , bool server_side ) const
 {
-	using G::format ;
-	using G::gettext ;
-	std::string reason = GSmtp::FilterFactory::check( script ) ;
-	if( !reason.empty() )
+	try
 	{
-		G_WARNING( "Main::Run::checkFilterScript: " << format(gettext("invalid filter \"%1%\": %2%"))%script%reason ) ;
+		G_ASSERT( m_filter_factory.get() != nullptr ) ;
+		if( !spec.empty() )
+			m_filter_factory->newFilter( GNet::ExceptionSink() , server_side , spec , 1U ) ;
+	}
+	catch( std::exception & e )
+	{
+		using G::format ;
+		using G::txt ;
+		std::string reason = e.what() ;
+		G_WARNING( "Main::Run::checkFilter: " << format(txt("invalid filter: %1%"))%reason ) ;
 	}
 }
 
 void Main::Run::checkThreading() const
 {
-	if( G::threading::using_std_thread && (
-		GSmtp::FactoryParser::parse(configuration().filter().str(),true).first == "file" ||
-		GSmtp::FactoryParser::parse(configuration().clientFilter().str(),true).first == "file" ||
-		GSmtp::FactoryParser::parse(configuration().clientFilter().str(),true).first == "file" ) )
+	if( G::threading::using_std_thread )
 	{
-		// ignore the result here -- we are just trying to provoke an early weak-symbol linking failure
+		// try to provoke an early weak-symbol linking failure
 		G::threading::works() ;
 	}
 }
@@ -863,41 +912,6 @@ G::Path Main::Run::appDir() const
 		return this_exe.dirname().dirname().dirname() ; // .app
 	else
 		return this_exe.dirname() ;
-}
-
-std::unique_ptr<GSmtp::AdminServer> Main::Run::newAdminServer( GNet::ExceptionSink es ,
-	const Configuration & cfg , GSmtp::MessageStore & store , GSmtp::FilterFactory & filter_factory ,
-	G::Slot::Signal<std::string> & forward_request_signal ,
-	const GNet::ServerPeerConfig & server_peer_config ,
-	const GSmtp::Client::Config & client_config , const GAuth::Secrets & client_secrets ,
-	const std::string & version_number )
-{
-	G::StringMap info_map ;
-	info_map["version"] = version_number ;
-	info_map["warranty"] = Legal::warranty("","\n") ;
-	info_map["credit"] = GSsl::Library::credit("","\n","") ;
-	info_map["copyright"] = Legal::copyright() ;
-
-	G::StringMap config_map ;
-	//config_map["forward-to"] = cfg.serverAddress() ;
-	//config_map["spool-dir"] = cfg.spoolDir().str() ;
-
-	return std::make_unique<GSmtp::AdminServer>(
-		es ,
-		store ,
-		filter_factory ,
-		forward_request_signal ,
-		server_peer_config ,
-		client_config ,
-		client_secrets ,
-		cfg.listeningAddresses("admin") ,
-		cfg.adminPort() ,
-		cfg.allowRemoteClients() ,
-		cfg.serverAddress() ,
-		cfg.connectionTimeout() ,
-		info_map ,
-		config_map ,
-		cfg.withTerminate() ) ;
 }
 
 GSmtp::MessageStore & Main::Run::store()

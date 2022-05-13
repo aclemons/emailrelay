@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -142,8 +142,8 @@ if GCONFIG_WINDOWS
 	$(top_builddir)/src/win32/libextra.a \
 	$(top_builddir)/src/glib/libglib.a \
 	$(RESOURCES) \
-	$(GCONFIG_STATIC_START) $(GCONFIG_TLS_LIBS) $(GCONFIG_STATIC_END) \
-	-lgdi32 -lws2_32 -liphlpapi -ladvapi32 -lcomctl32
+	$(GCONFIG_TLS_LIBS) \
+	-lws2_32 -liphlpapi -lcomctl32
 else
  emailrelay_SOURCES = $(TEXTMODE_MAIN_SOURCES) $(OTHER_SOURCES)
  emailrelay_LDFLAGS =
@@ -155,7 +155,7 @@ else
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gssl/libgssl.a \
 	$(top_builddir)/src/glib/libglib.a \
-	$(GCONFIG_STATIC_START) $(GCONFIG_TLS_LIBS) $(GCONFIG_STATIC_END)
+	$(GCONFIG_TLS_LIBS)
 endif
 
 if GCONFIG_WINDOWS
@@ -170,7 +170,7 @@ if GCONFIG_WINDOWS
 	$(top_builddir)/src/gssl/libgssl.a \
 	$(top_builddir)/src/win32/libextra.a \
 	$(top_builddir)/src/glib/libglib.a \
-	$(GCONFIG_STATIC_START) $(GCONFIG_TLS_LIBS) $(GCONFIG_STATIC_END) \
+	$(GCONFIG_TLS_LIBS) \
 	-lws2_32 -liphlpapi -lcomctl32
 endif
 
@@ -180,14 +180,14 @@ if GCONFIG_WINDOWS
  emailrelay_passwd_LDADD = \
 	$(top_builddir)/src/gssl/libgssl.a \
 	$(top_builddir)/src/glib/libglib.a \
-	$(GCONFIG_STATIC_START) $(GCONFIG_TLS_LIBS) $(GCONFIG_STATIC_END) \
+	$(GCONFIG_TLS_LIBS) \
 	-lws2_32 -liphlpapi -lcomctl32
 else
  emailrelay_passwd_LDFLAGS =
  emailrelay_passwd_LDADD =  \
 	$(top_builddir)/src/gssl/libgssl.a \
 	$(top_builddir)/src/glib/libglib.a \
-	$(GCONFIG_STATIC_START) $(GCONFIG_TLS_LIBS) $(GCONFIG_STATIC_END)
+	$(GCONFIG_TLS_LIBS)
 endif
 
 emailrelay_submit_SOURCES = submit.cpp legal.cpp legal.h

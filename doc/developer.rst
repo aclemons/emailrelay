@@ -134,10 +134,10 @@ Message filtering (\ *--filter*\ ) is implemented via an abstract *Filter*
 interface. Concrete implementations are provided for doing nothing, running an
 external executable program and talking to an external network server.
 
-The protocol, processor and message-store interfaces are brought together by the
-high-level *GSmtp::Server* and *GSmtp::Client* classes. Dependency injection is
-used to create the concrete instances of the *ProtocolMessage* and *Filter*
-interfaces.
+The protocol, processor and message-store interfaces are brought together by
+the high-level *GSmtp::Server* and *GSmtp::Client* classes. Dependency
+injection is used to create the concrete instances of the *ProtocolMessage* and
+*Filter* interfaces.
 
 Event handling and exceptions
 =============================
@@ -149,12 +149,13 @@ because it is not possible to put a single catch block around a particular
 high-level feature.
 
 The event loop delivers asynchronous socket events to the *EventHandler*
-interface, timer events to the *TimerBase* interface, and 'future' events to the
-*FutureEventCallback* interface. If any of the these event handlers throws an
-exception then the event loop catches it and delivers it back to an exception
-handler through the *onException()* method of an associated *ExceptionHandler*
-interface. If an exception is thrown out of _this_ callback then the event loop
-code lets it propagate back to *main()*, typically terminating the program.
+interface, timer events to the *TimerBase* interface, and 'future' events to
+the *FutureEventCallback* interface. If any of the these event handlers throws
+an exception then the event loop catches it and delivers it back to an
+exception handler through the *onException()* method of an associated
+*ExceptionHandler* interface. If an exception is thrown out of _this_ callback
+then the event loop code lets it propagate back to *main()*, typically
+terminating the program.
 
 However, sometimes there are objects that need to be more resilient to
 exceptions. In particular, a network server should not terminate just because
@@ -208,13 +209,20 @@ tree that lives alongside the GUI exectuable or inside the Mac application
 bundle, and it contains a configuration file to tell the installer where
 to copy its files.
 
+When building the GUI program the library code shared with the main server
+executable is compiled separately so that different GUI-specific compiler
+options can be used. This is done as a 'unity build', concatenating the shared
+code into one source file and compiling that for the GUI. (This technique
+requires that private 'detail' namespaces are named rather than anonymous so
+that there cannot be any name clashes within the combined anonymous namespace.)
+
 Windows build
 =============
 E-MailRelay can be compiled on Windows using Microsoft Visual Studio C++ (MSVC)
-or mingw-w64. For MSVC builds there is a perl script (\ *winbuild.pl*\ ) that creates
-*cmake* files from the autotools makefiles, runs *cmake* to create the MSVC
-project files and then runs *msbuild* to compile E-MailRelay. If perl, cmake,
-MSVC, Qt and mbedTLS source are installed in the right way then the
+or mingw-w64. For MSVC builds there is a perl script (\ *winbuild.pl*\ ) that
+creates *cmake* files from the autotools makefiles, runs *cmake* to create the
+MSVC project files and then runs *msbuild* to compile E-MailRelay. If perl,
+cmake, MSVC, Qt and mbedTLS source are installed in the right way then the
 *winbuild.bat* batch file should be able to do a complete MSVC release build
 in one go.
 
@@ -254,10 +262,13 @@ from the *translations* sub-directory (relative to the executable), although
 that can be overridden with the *--qm* command-line option. Qt's *-reverse*
 option can also be used to reverse the widgets when using RTL languages.
 
-The non-GUI code has minimal i18n support using gettext(), mostly for startup
-error messages and usage help. This is disabled by default and requires a
-configure-script option (\ *--with-gettext*\ ) to enable it at build-time and
-a *--localedir* option at run-time. See also *po/Makefile.am*.
+The non-GUI code has some i18n support by using gettext() via the inline txt()
+and tx() functions defined in *src/glib/ggettext.h*. The configure script
+detects gettext support in the C run-time library, but without trying different
+compile and link options.  See also *po/Makefile.am*.
+
+On Windows the main server executable has a tabbed dialog-box as its user
+interface, but that does not have any support for i18n.
 
 Source control
 ==============
@@ -290,4 +301,4 @@ Use *./configure --help* to see a complete list of options.
 .. _SMTP: https://en.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol
 .. _TLS: https://en.wikipedia.org/wiki/Transport_Layer_Security
 
-.. footer:: Copyright (C) 2001-2021 Graeme Walker
+.. footer:: Copyright (C) 2001-2022 Graeme Walker

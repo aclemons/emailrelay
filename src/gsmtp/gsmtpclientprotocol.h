@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,132 +22,25 @@
 #define G_SMTP_CLIENT_PROTOCOL_H
 
 #include "gdef.h"
+#include "gsmtpclientreply.h"
 #include "gmessagestore.h"
 #include "gstoredmessage.h"
 #include "gsaslclient.h"
-#include "gsecrets.h"
+#include "gsaslclientsecrets.h"
 #include "gslot.h"
-#include "gstrings.h"
+#include "gstringarray.h"
+#include "gstringview.h"
+#include "glimits.h"
 #include "gtimer.h"
 #include "gexception.h"
+#include <vector>
 #include <memory>
 #include <iostream>
 
 namespace GSmtp
 {
 	class ClientProtocol ;
-	class ClientProtocolReply ;
 }
-
-//| \class GSmtp::ClientProtocolReply
-/// A private implementation class used by ClientProtocol.
-///
-class GSmtp::ClientProtocolReply
-{
-public:
-	enum class Type
-	{
-		PositivePreliminary = 1 ,
-		PositiveCompletion = 2 ,
-		PositiveIntermediate = 3 ,
-		TransientNegative = 4 ,
-		PermanentNegative = 5
-	} ;
-	enum class SubType
-	{
-		Syntax = 0 ,
-		Information = 1 ,
-		Connections = 2 ,
-		MailSystem = 3 ,
-		Invalid_SubType = 4
-	} ;
-	enum class Value
-	{
-		Internal_filter_ok = 222 ,
-		Internal_filter_abandon = 223 ,
-		Internal_secure = 224 ,
-		ServiceReady_220 = 220 ,
-		Ok_250 = 250 ,
-		Authenticated_235 = 235 ,
-		Challenge_334 = 334 ,
-		OkForData_354 = 354 ,
-		SyntaxError_500 = 500 ,
-		SyntaxError_501 = 501 ,
-		NotImplemented_502 = 502 ,
-		BadSequence_503 = 503 ,
-		Internal_filter_error = 590 ,
-		NotAuthenticated_535 = 535 ,
-		NotAvailable_454 = 454 ,
-		Invalid = 0
-	} ;
-
-	static ClientProtocolReply ok() ;
-		///< Factory function for an ok reply.
-
-	static ClientProtocolReply ok( Value , const std::string & = std::string() ) ;
-		///< Factory function for an ok reply with a specific 2xx value.
-
-	static ClientProtocolReply error( Value , const std::string & response , const std::string & error_reason ) ;
-		///< Factory function for an error reply with a specific 5xx value.
-
-	explicit ClientProtocolReply( const std::string & line = std::string() ) ;
-		///< Constructor for one line of text.
-
-	bool add( const ClientProtocolReply & other ) ;
-		///< Adds more lines to this reply. Returns false if the
-		///< numeric values are different.
-
-	bool incomplete() const ;
-		///< Returns true if the reply is incomplete.
-
-	bool validFormat() const ;
-		///< Returns true if a valid format.
-
-	bool positive() const ;
-		///< Returns true if the numeric value of the
-		///< reply is less that four hundred.
-
-	bool is( Value v ) const ;
-		///< Returns true if the reply value is 'v'.
-
-	int value() const ;
-		///< Returns the numeric value of the reply.
-
-	std::string text() const ;
-		///< Returns the text of the reply, excluding the numeric part,
-		///< and with embedded newlines.
-
-	std::string errorText() const ;
-		///< Returns the text() string, plus any error reason, but with
-		///< the guarantee that the returned string is empty if and only
-		///< if the reply value is 2xx.
-
-	std::string errorReason() const ;
-		///< Returns an error reason string, as passed to error().
-
-	bool textContains( std::string s ) const ;
-		///< Returns true if the text() contains the given substring.
-
-	std::string textLine( const std::string & prefix ) const ;
-		///< Returns a line of text() which starts with
-		///< prefix.
-
-	Type type() const ;
-		///< Returns the reply type (category).
-
-	SubType subType() const ;
-		///< Returns the reply sub-type.
-
-private:
-	static bool is_digit( char ) ;
-
-private:
-	bool m_complete{false} ;
-	bool m_valid{false} ;
-	int m_value{0} ;
-	std::string m_text ;
-	std::string m_reason ; // additional error reason
-} ;
 
 //| \class GSmtp::ClientProtocol
 /// Implements the client-side SMTP protocol.
@@ -155,22 +48,22 @@ private:
 class GSmtp::ClientProtocol : private GNet::TimerBase
 {
 public:
-	G_EXCEPTION( NotReady , "not ready" ) ;
-	G_EXCEPTION( TlsError , "tls/ssl error" ) ;
-	G_EXCEPTION_CLASS( SmtpError , "smtp error" ) ;
-	using Reply = ClientProtocolReply ;
+	G_EXCEPTION( NotReady , tx("not ready") ) ;
+	G_EXCEPTION( TlsError , tx("tls/ssl error") ) ;
+	G_EXCEPTION_CLASS( SmtpError , tx("smtp error") ) ;
+	using Reply = ClientReply ;
 
 	class Sender /// An interface used by ClientProtocol to send protocol messages.
 	{
 	public:
-		virtual bool protocolSend( const std::string & , std::size_t offset , bool go_secure ) = 0 ;
+		virtual bool protocolSend( G::string_view , std::size_t offset , bool go_secure ) = 0 ;
 			///< Called by the Protocol class to send network data to
 			///< the peer.
 			///<
 			///< The offset gives the location of the payload within the
 			///< string buffer.
 			///<
-			///< Returns false if not all of the string was send due to
+			///< Returns false if not all of the string was sent due to
 			///< flow control. In this case ClientProtocol::sendComplete() should
 			///< be called as soon as the full string has been sent.
 			///<
@@ -183,35 +76,39 @@ public:
 	struct Config /// A structure containing GSmtp::ClientProtocol configuration parameters.
 	{
 		std::string thishost_name ; // EHLO parameter
-		unsigned int response_timeout{0U} ;
-		unsigned int ready_timeout{0U} ;
-		unsigned int filter_timeout{0U} ;
-		bool use_starttls_if_possible{false} ;
-		bool must_use_tls{false} ;
-		bool must_authenticate{false} ;
-		bool anonymous{false} ; // MAIL..AUTH=
-		bool must_accept_all_recipients{false} ;
-		bool eight_bit_strict{false} ; // fail 8bit messages to 7bit server
+		unsigned int response_timeout {0U} ;
+		unsigned int ready_timeout {0U} ;
+		bool use_starttls_if_possible {false} ;
+		bool must_use_tls {false} ;
+		bool must_authenticate {false} ;
+		bool must_accept_all_recipients {false} ;
+		bool eightbit_strict {false} ; // fail 8bit messages to non-8bitmime server
+		bool binarymime_strict {false} ; // fail binarymime messages to non-chunking server
+		bool utf8_strict {false} ; // fail utf8 mailbox names via non-smtputf8 server
+		bool pipelining {false} ; // send mail-to and all rcpt-to commands together
+		bool lmtp {false} ; // LMTP -- start with LHLO
+		bool allow_lmtp {true} ; // fallback if no EHLO/HELO
+		std::size_t reply_size_limit {G::Limits<>::net_buffer} ; // sanity check
+		std::size_t bdat_chunk_size {1000000} ; // n, TPDU size N=n+7+ndigits, ndigits=(int(log10(n))+1)
 		Config() ;
-		Config( const std::string & name , unsigned int response_timeout ,
-			unsigned int ready_timeout , unsigned int filter_timeout ,
-			bool use_starttls_if_possible , bool must_use_tls ,
-			bool must_authenticate , bool anonymous ,
-			bool must_accept_all_recipients , bool eight_bit_strict ) ;
 		Config & set_thishost_name( const std::string & ) ;
 		Config & set_response_timeout( unsigned int ) ;
 		Config & set_ready_timeout( unsigned int ) ;
-		Config & set_filter_timeout( unsigned int ) ;
 		Config & set_use_starttls_if_possible( bool = true ) ;
 		Config & set_must_use_tls( bool = true ) ;
 		Config & set_must_authenticate( bool = true ) ;
-		Config & set_anonymous( bool = true ) ;
 		Config & set_must_accept_all_recipients( bool = true ) ;
-		Config & set_eight_bit_strict( bool = true ) ;
+		Config & set_eightbit_strict( bool = true ) ;
+		Config & set_binarymime_strict( bool = true ) ;
+		Config & set_utf8_strict( bool = true ) ;
+		Config & set_pipelining( bool = true ) ;
+		Config & set_lmtp( bool = true ) ;
+		Config & set_allow_lmtp( bool = true ) ;
+		Config & set_reply_size_limit( std::size_t ) ;
 	} ;
 
 	ClientProtocol( GNet::ExceptionSink , Sender & sender ,
-		const GAuth::Secrets & secrets , const std::string & sasl_client_config ,
+		const GAuth::SaslClientSecrets & secrets , const std::string & sasl_client_config ,
 		const Config & config , bool in_secure_tunnel ) ;
 			///< Constructor. The Sender interface is used to send protocol
 			///< messages to the peer. The references are kept.
@@ -226,9 +123,9 @@ public:
 		///< of failed addressees (see 'must_accept_all_recipients').
 
 	G::Slot::Signal<> & filterSignal() ;
-		///< Returns a signal that is raised when the protocol
-		///< needs to do message filtering. The callee must call
-		///< filterDone() when finished.
+		///< Returns a signal that is raised when the protocol needs
+		///< to do message filtering. The signal callee must call
+		///< filterDone() when the filter has finished.
 
 	void start( std::weak_ptr<StoredMessage> ) ;
 		///< Starts transmission of the given message. The doneSignal()
@@ -266,91 +163,133 @@ public:
 	void operator=( const ClientProtocol & ) = delete ;
 	void operator=( ClientProtocol && ) = delete ;
 
-private:
-	struct AuthError : public SmtpError
-	{
-		AuthError( const GAuth::SaslClient & , const ClientProtocolReply & ) ;
-		std::string str() const ;
-	} ;
-
 private: // overrides
 	void onTimeout() override ; // Override from GNet::TimerBase.
 
 private:
-	std::shared_ptr<StoredMessage> message() ;
-	void send( const char * ) ;
-	void send( const char * , const std::string & ) ;
-	void send( const char * , const std::string & , const std::string & ) ;
-	bool send( const std::string & , bool eot , bool sensitive = false ) ;
-	bool sendLine( std::string & ) ;
-	std::size_t sendLines() ;
-	void sendEhlo() ;
-	void sendHelo() ;
-	void sendMail() ;
-	void sendMailCore() ;
-	bool endOfContent() ;
-	bool applyEvent( const Reply & event , bool is_start_event = false ) ;
-	static bool parseReply( Reply & , const std::string & , std::string & ) ;
-	void raiseDoneSignal( int , const std::string & , const std::string & = std::string() ) ;
-	bool serverAuth( const ClientProtocolReply & reply ) const ;
-	G::StringArray serverAuthMechanisms( const ClientProtocolReply & reply ) const ;
-	void startFiltering() ;
-	static std::string initialResponse( const GAuth::SaslClient & ) ;
-
-private:
-	enum class State {
-		sInit ,
-		sStarted ,
-		sServiceReady ,
-		sSentEhlo ,
-		sSentHelo ,
-		sAuth ,
-		sSentMail ,
-		sFiltering ,
-		sSentRcpt ,
-		sSentData ,
-		sSentDataStub ,
-		sData ,
-		sSentDot ,
-		sStartTls ,
-		sSentTlsEhlo ,
-		sMessageDone ,
-		sQuitting
+	enum class State
+	{
+		Init ,
+		Started ,
+		ServiceReady ,
+		SentEhlo ,
+		SentHelo ,
+		SentLhlo ,
+		Auth ,
+		SentMail ,
+		Filtering ,
+		SentRcpt ,
+		SentData ,
+		SentDataStub ,
+		SentBdatMore ,
+		SentBdatLast ,
+		Data ,
+		SentDot ,
+		StartTls ,
+		SentTlsEhlo ,
+		SentTlsLhlo ,
+		MessageDone ,
+		Lmtp ,
+		Quitting
+	} ;
+	struct ServerInfo
+	{
+		bool has_starttls {false} ;
+		bool has_auth {false} ;
+		bool secure {false} ;
+		bool has_8bitmime {false} ;
+		bool has_binarymime {false} ; // RFC-3030
+		bool has_chunking {false} ; // RFC-3030
+		bool has_pipelining {false} ;
+		bool has_smtputf8 {false} ;
+		G::StringArray auth_mechanisms ;
+	} ;
+	struct MessageState
+	{
+		std::weak_ptr<StoredMessage> ptr ;
+		std::size_t content_size {0U} ;
+		std::size_t to_index {0U} ;
+		std::size_t to_accepted {0U} ;
+		G::StringArray to_rejected ;
+		std::vector<bool> to_lmtp_delivered ;
+		std::size_t chunk_data_size {0U} ;
+		std::string chunk_data_size_str ;
+	} ;
+	struct SessionState
+	{
+		ServerInfo server ;
+		bool secure {false} ;
+		bool authenticated_with_server {false} ;
+		std::string auth_mechanism ;
+	} ;
+	struct Protocol
+	{
+		State state {State::Init} ;
+		bool is_lmtp {false} ;
+		G::StringArray reply_lines ;
+		std::size_t replySize() const ;
 	} ;
 
 private:
+	using BodyType = MessageStore::BodyType ;
+	std::shared_ptr<StoredMessage> message() ;
+	std::string checkSendable() ;
+	bool endOfContent() ;
+	bool applyEvent( const Reply & event ) ;
+	void raiseDoneSignal( int , const std::string & , const std::string & = {} ) ;
+	void startFiltering() ;
+	static std::string initialResponse( const GAuth::SaslClient & ) ;
+	//
+	void sendEot() ;
+	void sendCommandLines( const std::string & ) ;
+	void sendRsp( const GAuth::SaslClient::Response & ) ;
+	void send( G::string_view ) ;
+	void send( G::string_view , const std::string & , G::string_view = {} ) ;
+	void send( G::string_view , const std::string & , const std::string & , G::string_view = {} ) ;
+	void send( G::string_view , G::string_view , G::string_view = {} , G::string_view = {} ) ;
+	std::size_t sendContentLines() ;
+	bool sendNextContentLine( std::string & ) ;
+	void sendEhlo() ;
+	void sendHelo() ;
+	void sendLhlo() ;
+	bool sendMailFrom() ;
+	void sendRcptTo() ;
+	bool sendBdatAndChunk( std::size_t , const std::string & , bool ) ;
+	//
+	bool sendContentLineImp( const std::string & , std::size_t ) ;
+	void sendChunkImp( const char * , std::size_t ) ;
+	bool sendImp( G::string_view , bool sensitive = false ) ;
+
+private:
 	Sender & m_sender ;
-	const GAuth::Secrets & m_secrets ;
 	std::unique_ptr<GAuth::SaslClient> m_sasl ;
-	std::weak_ptr<StoredMessage> m_message ;
 	Config m_config ;
-	State m_state ;
-	std::size_t m_to_index ;
-	std::size_t m_to_accepted ;
-	G::StringArray m_to_rejected ;
-	bool m_server_has_starttls ;
-	bool m_server_has_auth ;
-	bool m_server_secure ;
-	bool m_server_has_8bitmime ;
-	G::StringArray m_server_auth_mechanisms ;
-	bool m_authenticated_with_server ;
-	std::string m_auth_mechanism ;
-	bool m_in_secure_tunnel ;
-	bool m_warned ;
-	Reply m_reply ;
+	const bool m_in_secure_tunnel ;
+	bool m_eightbit_warned ;
+	bool m_binarymime_warned ;
+	bool m_utf8_warned ;
 	G::Slot::Signal<int,const std::string&,const std::string&,const G::StringArray&> m_done_signal ;
 	G::Slot::Signal<> m_filter_signal ;
+	Protocol m_protocol ;
+	MessageState m_message ;
+	std::vector<char> m_message_buffer ;
+	std::string m_message_line ;
+	SessionState m_session ;
 } ;
 
 inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_thishost_name( const std::string & s ) { thishost_name = s ; return *this ; }
 inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_response_timeout( unsigned int t ) { response_timeout = t ; return *this ; }
 inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_ready_timeout( unsigned int t ) { ready_timeout = t ; return *this ; }
-inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_filter_timeout( unsigned int t ) { filter_timeout = t ; return *this ; }
 inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_use_starttls_if_possible( bool b ) { use_starttls_if_possible = b ; return *this ; }
 inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_must_use_tls( bool b ) { must_use_tls = b ; return *this ; }
 inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_must_authenticate( bool b ) { must_authenticate = b ; return *this ; }
-inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_anonymous( bool b ) { anonymous = b ; return *this ; }
 inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_must_accept_all_recipients( bool b ) { must_accept_all_recipients = b ; return *this ; }
-inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_eight_bit_strict( bool b ) { eight_bit_strict = b ; return *this ; }
+inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_eightbit_strict( bool b ) { eightbit_strict = b ; return *this ; }
+inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_binarymime_strict( bool b ) { binarymime_strict = b ; return *this ; }
+inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_utf8_strict( bool b ) { utf8_strict = b ; return *this ; }
+inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_pipelining( bool b ) { pipelining = b ; return *this ; }
+inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_lmtp( bool b ) { lmtp = b ; return *this ; }
+inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_allow_lmtp( bool b ) { allow_lmtp = b ; return *this ; }
+inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_reply_size_limit( std::size_t n ) { reply_size_limit = n ; return *this ; }
 
 #endif

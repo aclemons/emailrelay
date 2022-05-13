@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 
 #include "gdef.h"
 #include "gmonitor.h"
+#include "ggettext.h"
 #include "gstr.h"
 #include "gassert.h"
 #include <map>
@@ -47,7 +48,6 @@ private:
 	struct ConnectionInfo
 	{
 		bool is_client ;
-		explicit ConnectionInfo( bool is_client_ ) noexcept : is_client(is_client_) {}
 	} ;
 	using ConnectionMap = std::map<const Connection*,ConnectionInfo> ;
 	using ServerMap = std::map<const Listener*,Address> ;
@@ -182,7 +182,7 @@ GNet::MonitorImp::MonitorImp( Monitor & ) :
 
 void GNet::MonitorImp::add( const Connection & connection , bool is_client )
 {
-	bool inserted = m_connections.insert(ConnectionMap::value_type(&connection,ConnectionInfo(is_client))).second ;
+	bool inserted = m_connections.insert(ConnectionMap::value_type(&connection,ConnectionInfo{is_client})).second ;
 	if( inserted )
 	{
 		if( is_client )
@@ -227,35 +227,36 @@ void GNet::MonitorImp::remove( const Listener & server ) noexcept
 
 void GNet::MonitorImp::report( std::ostream & s , const std::string & px , const std::string & eol ) const
 {
+	using G::txt ;
 	for( const auto & server : m_servers )
 	{
-		s << px << "LISTEN: " << server.second.displayString(true) << eol ;
+		s << px << txt("LISTEN: ") << server.second.displayString(true) << eol ;
 	}
 
-	s << px << "OUT started: " << m_client_adds << eol ;
-	s << px << "OUT finished: " << m_client_removes << eol ;
+	s << px << txt("OUT started: ") << m_client_adds << eol ;
+	s << px << txt("OUT finished: ") << m_client_removes << eol ;
 	{
 		for( const auto & connection : m_connections )
 		{
 			if( connection.second.is_client )
 			{
 				s << px
-					<< "OUT: "
+					<< txt("OUT: ")
 					<< connection.first->localAddress().displayString() << " -> "
 					<< connection.first->connectionState() << eol ;
 			}
 		}
 	}
 
-	s << px << "IN started: " << m_server_peer_adds << eol ;
-	s << px << "IN finished: " << m_server_peer_removes << eol ;
+	s << px << txt("IN started: ") << m_server_peer_adds << eol ;
+	s << px << txt("IN finished: ") << m_server_peer_removes << eol ;
 	{
 		for( const auto & connection : m_connections )
 		{
 			if( !connection.second.is_client )
 			{
 				s << px
-					<< "IN: "
+					<< txt("IN: ")
 					<< connection.first->localAddress().displayString() << " <- "
 					<< connection.first->peerAddress().displayString() << eol ;
 			}
@@ -268,20 +269,21 @@ void GNet::MonitorImp::report( G::StringArray & out ) const
 	for( const auto & server : m_servers )
 		add( out , "Listening address" , server.second.displayString() ) ;
 
-	add( out , "Outgoing connections" , m_client_adds , "started" , m_client_removes , "finished" ) ;
-	add( out , "Incoming connections" , m_server_peer_adds , "started" , m_server_peer_removes , "finished" ) ;
+	using G::txt ;
+	add( out , txt("Outgoing connections") , m_client_adds , txt("started") , m_client_removes , txt("finished") ) ;
+	add( out , txt("Incoming connections") , m_server_peer_adds , txt("started") , m_server_peer_removes , txt("finished") ) ;
 	for( const auto & connection : m_connections )
 	{
 		if( connection.second.is_client )
 		{
-			add( out , "Outgoing connection" , connection.first->localAddress().displayString() , "-->" ,
+			add( out , txt("Outgoing connection") , connection.first->localAddress().displayString() , "-->" ,
 				connection.first->connectionState() , "" ) ;
 		}
 	}
 	for( const auto & connection : m_connections )
 	{
 		if( !connection.second.is_client )
-			add( out , "Incoming connection" , connection.first->localAddress().displayString() , "<--" ,
+			add( out , txt("Incoming connection") , connection.first->localAddress().displayString() , "<--" ,
 				connection.first->peerAddress().displayString() , "" ) ;
 	}
 }

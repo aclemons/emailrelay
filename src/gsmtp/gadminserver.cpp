@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,13 +29,14 @@
 #include "gmonitor.h"
 #include "gslot.h"
 #include "gstr.h"
+#include "gstringarray.h"
 #include <utility>
 
-GSmtp::AdminServerPeer::AdminServerPeer( GNet::ExceptionSinkUnbound esu , const GNet::ServerPeerInfo & peer_info ,
+GSmtp::AdminServerPeer::AdminServerPeer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo && peer_info ,
 	AdminServer & server , const std::string & remote_address ,
 	const G::StringMap & info_commands , const G::StringMap & config_commands ,
 	bool with_terminate ) :
-		GNet::ServerPeer(esu.bind(this),peer_info,GNet::LineBufferConfig::autodetect()) ,
+		GNet::ServerPeer(esu.bind(this),std::move(peer_info),GNet::LineBufferConfig::autodetect()),
 		m_es(esu.bind(this)) ,
 		m_server(server) ,
 		m_prompt("E-MailRelay> ") ,
@@ -46,7 +47,7 @@ GSmtp::AdminServerPeer::AdminServerPeer( GNet::ExceptionSinkUnbound esu , const 
 		m_config_commands(config_commands) ,
 		m_with_terminate(with_terminate)
 {
-	G_LOG_S( "GSmtp::AdminServerPeer: admin connection from " << peer_info.m_address.displayString() ) ;
+	G_LOG_S( "GSmtp::AdminServerPeer: admin connection from " << peerAddress().displayString() ) ;
 	m_client_ptr.deletedSignal().connect( G::Slot::slot(*this,&AdminServerPeer::clientDone) ) ;
 	// dont prompt here -- it confuses some clients
 }
@@ -181,9 +182,9 @@ std::pair<bool,std::string> GSmtp::AdminServerPeer::find( const std::string & li
 	for( const auto & item : map )
 	{
 		if( is(line,item.first) )
-			return std::make_pair(true,item.second) ;
+			return { true , item.second } ;
 	}
-	return std::make_pair(false,std::string()) ;
+	return { false , {} } ;
 }
 
 void GSmtp::AdminServerPeer::help()
@@ -225,8 +226,6 @@ void GSmtp::AdminServerPeer::flush()
 		m_client_ptr.reset( std::make_unique<GSmtp::Client>( GNet::ExceptionSink(m_client_ptr,m_es.esrc()) ,
 			m_server.store() , m_server.ff() , GNet::Location(m_remote_address) ,
 			m_server.clientSecrets() , m_server.clientConfig() ) ) ;
-
-		m_client_ptr->sendAllMessages() ; // once connected
 		// no sendLine() -- sends "OK" or "error:" when complete -- see AdminServerPeer::clientDone()
 	}
 }
@@ -275,7 +274,7 @@ void GSmtp::AdminServerPeer::send_( const std::string & s )
 	}
 	else
 	{
-		m_blocked = ! send( s ) ; // GNet::SocketProtocol
+		m_blocked = !send( s ) ; // GNet::ServerPeer::send()
 	}
 }
 
@@ -342,19 +341,21 @@ bool GSmtp::AdminServerPeer::notifying() const
 // ===
 
 GSmtp::AdminServer::AdminServer( GNet::ExceptionSink es , MessageStore & store ,
-	FilterFactory & ff , G::Slot::Signal<std::string> & forward_request ,
-	const GNet::ServerPeerConfig & server_peer_config ,
-	const GSmtp::Client::Config & client_config , const GAuth::Secrets & client_secrets ,
+	FilterFactory & ff , G::Slot::Signal<const std::string&> & forward_request ,
+	const GNet::ServerPeer::Config & net_server_peer_config ,
+	const GNet::Server::Config & net_server_config ,
+	const GSmtp::Client::Config & smtp_client_config ,
+	const GAuth::SaslClientSecrets & client_secrets ,
 	const G::StringArray & interfaces , unsigned int port , bool allow_remote ,
 	const std::string & remote_address , unsigned int connection_timeout ,
 	const G::StringMap & info_commands , const G::StringMap & config_commands ,
 	bool with_terminate ) :
-		GNet::MultiServer(es,interfaces,port,"admin",server_peer_config) ,
+		GNet::MultiServer(es,interfaces,port,"admin",net_server_peer_config,net_server_config) ,
 		m_forward_timer(*this,&AdminServer::onForwardTimeout,es) ,
 		m_store(store) ,
 		m_ff(ff) ,
 		m_forward_request(forward_request) ,
-		m_client_config(client_config) ,
+		m_smtp_client_config(smtp_client_config) ,
 		m_client_secrets(client_secrets) ,
 		m_allow_remote(allow_remote) ,
 		m_remote_address(remote_address) ,
@@ -371,7 +372,7 @@ GSmtp::AdminServer::~AdminServer()
 }
 
 std::unique_ptr<GNet::ServerPeer> GSmtp::AdminServer::newPeer( GNet::ExceptionSinkUnbound esu ,
-	GNet::ServerPeerInfo peer_info , GNet::MultiServer::ServerInfo )
+	GNet::ServerPeerInfo && peer_info , GNet::MultiServer::ServerInfo )
 {
 	std::unique_ptr<GNet::ServerPeer> ptr ;
 	try
@@ -383,7 +384,7 @@ std::unique_ptr<GNet::ServerPeer> GSmtp::AdminServer::newPeer( GNet::ExceptionSi
 		}
 		else
 		{
-			ptr = std::make_unique<AdminServerPeer>( esu , peer_info , *this , m_remote_address ,
+			ptr = std::make_unique<AdminServerPeer>( esu , std::move(peer_info) , *this , m_remote_address ,
 				m_info_commands , m_config_commands , m_with_terminate ) ; // up-cast
 		}
 	}
@@ -445,7 +446,7 @@ GSmtp::FilterFactory & GSmtp::AdminServer::ff()
 	return m_ff ;
 }
 
-const GAuth::Secrets & GSmtp::AdminServer::clientSecrets() const
+const GAuth::SaslClientSecrets & GSmtp::AdminServer::clientSecrets() const
 {
 	return m_client_secrets ;
 }
@@ -457,7 +458,7 @@ unsigned int GSmtp::AdminServer::connectionTimeout() const
 
 GSmtp::Client::Config GSmtp::AdminServer::clientConfig() const
 {
-	return m_client_config ;
+	return m_smtp_client_config ;
 }
 
 bool GSmtp::AdminServer::notifying() const

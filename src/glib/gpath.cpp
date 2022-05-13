@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 #include "gdef.h"
 #include "gpath.h"
 #include "gstr.h"
-#include "gstrings.h"
+#include "gstringarray.h"
 #include "gstringview.h"
 #include "gassert.h"
 #include <algorithm> // std::swap()
@@ -40,7 +40,7 @@ public:
 
 	static string_view windows_sep()
 	{
-		return {"\\",1U} ;
+		return { "\\" , 1U } ;
 	}
 	static pos_t windows_slashpos( const std::string & s )
 	{
@@ -73,15 +73,15 @@ public:
 			return 3U ; // C:|...
 		if( s.length() >= 2U && s.at(1U) == ':' )
 			return 2U ; // C:...
-		if( s.find("\\\\?\\UNC\\") == 0U )
+		if( s.find(R"(\\?\UNC\)",0U,8U) == 0U )
 			return windows_rootsize(s,8U,2U) ; // ||?|UNC|server|volume|...
-		if( s.find("\\\\?\\") == 0U && s.size() > 5U && s.at(5U) == ':' )
+		if( s.find(R"(\\?\)",0U,4U) == 0U && s.size() > 5U && s.at(5U) == ':' )
 			return windows_rootsize(s,4U,1U) ; // ||?|C:|...
-		if( s.find("\\\\?\\") == 0U )
+		if( s.find(R"(\\?\)",0U,4U) == 0U )
 			return windows_rootsize(s,4U,2U) ; // ||?|server|volume|...
-		if( s.find("\\\\.\\") == 0U )
+		if( s.find(R"(\\.\)",0U,4U) == 0U )
 			return windows_rootsize(s,4U,1U) ; // ||.|dev|...
-		if( s.find("\\\\") == 0U )
+		if( s.find("\\\\",0U,2U) == 0U )
 			return windows_rootsize(s,2U,2U) ; // ||server|volume|...
 		if( s.find('\\') == 0U )
 			return 1U ; // |...
@@ -89,10 +89,10 @@ public:
 	}
 	static void windows_normalise( std::string & s )
 	{
-		Str::replaceAll( s , "/" , "\\" ) ;
-		bool special = s.find("\\\\") == 0U ;
-		while( Str::replaceAll( s , "\\\\" , "\\" ) ) {;}
-		if( special ) s = "\\" + s ;
+		Str::replaceAll( s , "/"_sv , "\\"_sv ) ;
+		bool special = s.find("\\\\",0U,2U) == 0U ;
+		while( Str::replaceAll( s , "\\\\"_sv , "\\"_sv ) ) {;}
+		if( special ) s.insert( 0U , 1U , '\\' ) ;
 
 		while( s.length() > 1U )
 		{
@@ -110,7 +110,7 @@ public:
 
 	static string_view posix_sep()
 	{
-		return {"/",1U} ;
+		return { "/" , 1U } ;
 	}
 	static pos_t posix_slashpos( const std::string & s )
 	{
@@ -122,7 +122,7 @@ public:
 	}
 	static void posix_normalise( std::string & s )
 	{
-		while( Str::replaceAll( s , "//" , "/" ) ) {;}
+		while( Str::replaceAll( s , "//"_sv , "/"_sv ) ) {;}
 		while( s.length() > 1U && s.at(s.length()-1U) == '/' ) s.resize(s.length()-1U) ;
 	}
 	static bool posix_absolute( const std::string & s )
@@ -307,7 +307,7 @@ G::Path::Path( std::initializer_list<std::string> args )
 
 G::Path G::Path::nullDevice()
 {
-	return Path( PathImp::null() ) ;
+	return { PathImp::null() } ;
 }
 
 bool G::Path::simple() const
@@ -338,7 +338,7 @@ G::Path G::Path::dirname() const
 	StringArray a ;
 	PathImp::splitInto( m_str , a ) ;
 	PathImp::purge( a ) ;
-	if( a.empty() ) return Path() ;
+	if( a.empty() ) return {} ;
 	a.pop_back() ;
 	return join( a ) ;
 }
@@ -353,7 +353,7 @@ G::Path G::Path::withoutExtension() const
 		result.resize( dp ) ;
 		if( (sp == std::string::npos && dp == 0U) || ((sp+1U) == dp) )
 			result.append(".") ; // special case
-		return Path( result ) ;
+		return { result } ;
 	}
 	else
 	{
@@ -369,7 +369,23 @@ G::Path G::Path::withExtension( const std::string & ext ) const
 		result.resize( dp ) ;
 	result.append( 1U , '.' ) ;
 	result.append( ext ) ;
-	return Path( result ) ;
+	return { result } ;
+}
+
+G::Path G::Path::withoutRoot() const
+{
+	if( isAbsolute() )
+	{
+		StringArray a ;
+		PathImp::splitInto( m_str , a ) ;
+		G_ASSERT( !a.empty() ) ;
+		a.erase( a.begin() ) ;
+		return a.empty() ? Path(".") : join( a ) ;
+	}
+	else
+	{
+		return *this ;
+	}
 }
 
 void G::Path::pathAppend( const std::string & tail )
@@ -407,8 +423,8 @@ G::StringArray G::Path::split() const
 
 G::Path G::Path::join( const G::StringArray & a )
 {
-	if( a.empty() ) return Path() ;
-	return Path( PathImp::join(a) ) ;
+	if( a.empty() ) return {} ;
+	return { PathImp::join(a) } ;
 }
 
 G::Path G::Path::join( const G::Path & p1 , const G::Path & p2 )
@@ -500,16 +516,16 @@ G::Path G::Path::difference( const G::Path & root_in , const G::Path & path_in )
 	if( path_parts.size() == 1U && path_parts.at(0U) == "." ) path_parts.clear() ;
 
 	if( path_parts.size() < root_parts.size() )
-		return Path() ;
+		return {} ;
 
 	using Pair = std::pair<StringArray::iterator,StringArray::iterator> ;
 	Pair p = std::mismatch( root_parts.begin() , root_parts.end() , path_parts.begin() ) ;
 
 	if( p.first == root_parts.end() && p.second == path_parts.end() )
-		return Path(".") ;
+		return { "." } ;
 	else if( p.first != root_parts.end() )
-		return Path() ;
+		return {} ;
 	else
-		return Path( PathImp::join(p.second,path_parts.end()) ) ;
+		return { PathImp::join(p.second,path_parts.end()) } ;
 }
 

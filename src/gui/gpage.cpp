@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,6 +25,8 @@
 #include "gdialog.h"
 #include "gmapfile.h"
 #include "glog.h"
+
+#include "moc_gpage.cpp"
 
 int GPage::m_test_mode = 0 ;
 
@@ -136,7 +138,7 @@ std::string GPage::stdstr( const QString & s )
 std::string GPage::stdstr_utf8( const QString & s )
 {
 	// (userids and passwords are in utf8 (RFC-4954) and then either xtext-ed or hashed)
-	return GQt::stdstr( s , GQt::Utf8() ) ;
+	return GQt::stdstr( s , GQt::Utf8 ) ;
 }
 
 QString GPage::qstr( const std::string & s )

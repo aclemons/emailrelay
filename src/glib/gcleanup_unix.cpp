@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 #include "gprocess.h"
 #include "groot.h"
 #include "glog.h"
+#include <cstring> // ::strdup()
 #include <csignal> // ::sigaction() etc
 #include <array>
 
@@ -70,6 +71,9 @@ public:
 
 	static void release() noexcept ;
 		// Releases blocked signals.
+
+	static const char * strdup_ignore_leaks( const char * p ) ;
+		// A strdup() function.
 
 private:
 	struct Link /// A private linked-list structure used by G::CleanupImp.
@@ -129,6 +133,16 @@ void G::Cleanup::release() noexcept
 	CleanupImp::release() ;
 }
 
+const char * G::Cleanup::strdup( const char * p )
+{
+	return CleanupImp::strdup_ignore_leaks( p ) ;
+}
+
+const char * G::Cleanup::strdup( const std::string & s )
+{
+	return CleanupImp::strdup_ignore_leaks( s.c_str() ) ;
+}
+
 // ===
 
 void G::CleanupImp::init()
@@ -172,9 +186,9 @@ void G::CleanupImp::installHandler( int signum )
 bool G::CleanupImp::ignored( int signum )
 {
 	struct ::sigaction action {} ;
-	if( ::sigaction( signum , nullptr , &action ) )
+	if( ::sigaction( signum , nullptr , &action ) != 0 )
 		throw Cleanup::Error( "sigaction" ) ;
-	return action.sa_handler == SIG_IGN ;
+	return action.sa_handler == SIG_IGN ; // NOLINT
 }
 
 void G::CleanupImp::installDefault( int signum )
@@ -189,7 +203,7 @@ void G::CleanupImp::installDefault( const G::SignalSafe & , int signum )
 
 void G::CleanupImp::installIgnore( int signum )
 {
-	install( signum , SIG_IGN , true ) ;
+	install( signum , SIG_IGN , true ) ; // NOLINT
 }
 
 void G::CleanupImp::install( int signum , Handler fn , bool do_throw )
@@ -197,7 +211,7 @@ void G::CleanupImp::install( int signum , Handler fn , bool do_throw )
 	// install the given handler, or the system default if null
 	struct ::sigaction action {} ;
 	action.sa_handler = fn ;
-	if( ::sigaction( signum , &action , nullptr ) && do_throw )
+	if( ::sigaction( signum , &action , nullptr ) != 0 && do_throw )
 		throw Cleanup::Error( "sigaction" ) ;
 }
 
@@ -281,5 +295,10 @@ void G::CleanupImp::release() noexcept
 		sigdelset( &set , s ) ;
 	}
 	gdef_pthread_sigmask( SIG_SETMASK , &set , nullptr ) ;
+}
+
+const char * G::CleanupImp::strdup_ignore_leaks( const char * p )
+{
+	return ::strdup( p ) ; // NOLINT
 }
 

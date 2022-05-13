@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@
 #include "glocal.h"
 #include "ghostname.h"
 #include "gresolver.h"
-#include "ginterfaces.h"
 #include "glog.h"
 #include <sstream>
 
@@ -44,7 +43,7 @@ std::string GNet::Local::resolvedHostname()
 	if( first )
 	{
 		first = false ;
-		static Location location( hostname() , "0" ) ;
+		static Location location( hostname().append(":0") ) ;
 		bool ok = Resolver::resolve(location).empty() && !location.name().empty() ;
 		result = ok ? location.name() : (hostname()+".localnet") ;
 	}

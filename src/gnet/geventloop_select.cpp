@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@ namespace GNet
 class GNet::EventLoopImp : public EventLoop
 {
 public:
-	G_EXCEPTION( Error , "select error" ) ;
+	G_EXCEPTION( Error , tx("select error") ) ;
 	EventLoopImp() ;
 
 private: // overrides
@@ -65,6 +65,7 @@ private: // overrides
 	void disarm( ExceptionHandler * ) noexcept override ;
 
 public:
+	~EventLoopImp() override = default ;
 	EventLoopImp( const EventLoopImp & ) = delete ;
 	EventLoopImp( EventLoopImp && ) = delete ;
 	void operator=( const EventLoopImp & ) = delete ;
@@ -84,9 +85,9 @@ private:
 	std::string m_quit_reason ;
 	bool m_running{false} ;
 	int m_nfds{0} ;
-	fd_set m_read_set ;
-	fd_set m_write_set ;
-	fd_set m_other_set ;
+	fd_set m_read_set ; // NOLINT cppcoreguidelines-pro-type-member-init
+	fd_set m_write_set ; // NOLINT cppcoreguidelines-pro-type-member-init
+	fd_set m_other_set ; // NOLINT cppcoreguidelines-pro-type-member-init
 	Emitters m_read_emitters ;
 	Emitters m_write_emitters ;
 	Emitters m_other_emitters ;
@@ -104,7 +105,7 @@ std::unique_ptr<GNet::EventLoop> GNet::EventLoop::create()
 
 // ===
 
-GNet::EventLoopImp::EventLoopImp()
+GNet::EventLoopImp::EventLoopImp() // NOLINT cppcoreguidelines-pro-type-member-init
 {
 	FD_ZERO( &m_read_set ) ;
 	FD_ZERO( &m_write_set ) ;
@@ -209,19 +210,19 @@ void GNet::EventLoopImp::runOnce()
 		{
 			ecount++ ;
 			G_ASSERT( static_cast<unsigned int>(fd) < m_read_emitters.size() ) ;
-			m_read_emitters[fd].raiseReadEvent() ;
+			m_read_emitters[fd].raiseReadEvent( Descriptor(fd) ) ;
 		}
 		if( FD_ISSET(fd,&m_write_set_copy) )
 		{
 			ecount++ ;
 			G_ASSERT( static_cast<unsigned int>(fd) < m_write_emitters.size() ) ;
-			m_write_emitters[fd].raiseWriteEvent() ;
+			m_write_emitters[fd].raiseWriteEvent( Descriptor(fd) ) ;
 		}
 		if( FD_ISSET(fd,&m_other_set_copy) )
 		{
 			ecount++ ;
 			G_ASSERT( static_cast<unsigned int>(fd) < m_other_emitters.size() ) ;
-			m_other_emitters[fd].raiseOtherEvent( EventHandler::Reason::other ) ;
+			m_other_emitters[fd].raiseOtherEvent( Descriptor(fd) , EventHandler::Reason::other ) ;
 		}
 	}
 
@@ -296,6 +297,7 @@ void GNet::EventLoopImp::dropOther( Descriptor fd ) noexcept
 
 void GNet::EventLoopImp::dropImp( int fd , Emitters & ) noexcept
 {
+	G_ASSERT( (fd+1) <= m_nfds ) ;
 	if( m_nfds && fd >= 0 && (fd+1) >= m_nfds ) // if dropping biggest fd
 	{
 		// count defunct fds at the top of the fd range

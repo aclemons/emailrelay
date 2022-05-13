@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,7 +25,6 @@
 #include "gstr.h"
 #include "glog.h"
 #include <algorithm>
-#include <map>
 #include <sstream>
 #include <stdexcept>
 #include <utility>
@@ -228,7 +227,7 @@ bool G::OptionParser::isAnOptionSet( const std::string & arg )
 void G::OptionParser::errorDubiousValue( const std::string & name , const std::string & value )
 {
 	std::string s = str(
-		format(G::gettext("%1% is probably a mistake, use %2% or %3%")) %
+		format(txt("%1% is probably a mistake, use %2% or %3%")) %
 			("\"--"+name+" "+value+"\"") %
 			("\"--"+name+"=... "+value+"\"") %
 			("\"--"+name+"="+value+"\"") ) ;
@@ -237,47 +236,47 @@ void G::OptionParser::errorDubiousValue( const std::string & name , const std::s
 
 void G::OptionParser::errorDuplicate( char c )
 {
-	error( str( format(gettext("duplicate use of %1%")) % ("\"-"+std::string(1U,c)+"\"") ) ) ;
+	error( str( format(txt("duplicate use of %1%")) % ("\"-"+std::string(1U,c)+"\"") ) ) ;
 }
 
 void G::OptionParser::errorDuplicate( const std::string & name )
 {
-	error( str( format(gettext("duplicate use of %1%")) % ("\"--"+name+"\"") ) ) ;
+	error( str( format(txt("duplicate use of %1%")) % ("\"--"+name+"\"") ) ) ;
 }
 
 void G::OptionParser::errorExtraValue( char c , const std::string & )
 {
-	error( str( format(gettext("cannot give a value with %1%")) % ("\"-"+std::string(1U,c)+"\"") ) ) ;
+	error( str( format(txt("cannot give a value with %1%")) % ("\"-"+std::string(1U,c)+"\"") ) ) ;
 }
 
 void G::OptionParser::errorExtraValue( const std::string & name , const std::string & value )
 {
-	error( str( format(gettext("cannot give a value with %1% (%2%)")) % ("\"--"+name+"\"") % value ) ) ;
+	error( str( format(txt("cannot give a value with %1% (%2%)")) % ("\"--"+name+"\"") % value ) ) ;
 }
 
 void G::OptionParser::errorNoValue( char c )
 {
-	error( str( format(gettext("no value supplied for %1%")) % ("-"+std::string(1U,c)) ) ) ;
+	error( str( format(txt("no value supplied for %1%")) % ("-"+std::string(1U,c)) ) ) ;
 }
 
 void G::OptionParser::errorNoValue( const std::string & name )
 {
-	error( str( format(gettext("no value supplied for %1%")) % ("\"--"+name+"\"") ) ) ;
+	error( str( format(txt("no value supplied for %1%")) % ("\"--"+name+"\"") ) ) ;
 }
 
 void G::OptionParser::errorUnknownOption( char c )
 {
-	error( str( format(gettext("invalid option: %1%")) % ("\"-"+std::string(1U,c)+"\"") ) ) ;
+	error( str( format(txt("invalid option: %1%")) % ("\"-"+std::string(1U,c)+"\"") ) ) ;
 }
 
 void G::OptionParser::errorUnknownOption( const std::string & name )
 {
-	error( str( format(gettext("invalid option: %1%")) % ("\"--"+name+"\"") ) ) ;
+	error( str( format(txt("invalid option: %1%")) % ("\"--"+name+"\"") ) ) ;
 }
 
 void G::OptionParser::errorConflict( const std::string & name )
 {
-	error( str( format(gettext("conflicting values: %1%")) % ("\"--"+name+"\"") ) ) ;
+	error( str( format(txt("conflicting values: %1%")) % ("\"--"+name+"\"") ) ) ;
 }
 
 void G::OptionParser::error( const std::string & s )

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 #include "gmsg.h"
 #include "gprocess.h"
 #include "gstr.h"
+#include "gfile.h"
 #include "gcleanup.h"
 #include "glog.h"
 #include <cerrno> // EWOULDBLOCK etc
@@ -30,9 +31,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-bool GNet::SocketBase::supports( int domain , int type , int protocol )
+bool GNet::SocketBase::supports( Address::Family af , int type , int protocol )
 {
-	int fd = ::socket( domain , type , protocol ) ;
+	int fd = ::socket( Address::domain(af) , type , protocol ) ;
 	if( fd < 0 )
 		return false ;
 	::close( fd ) ;
@@ -59,7 +60,7 @@ bool GNet::SocketBase::prepare( bool /*accepted*/ )
 		G::Cleanup::init() ; // ignore SIGPIPE
 	}
 
-	if( !setNonBlock() )
+	if( !setNonBlocking() )
 	{
 		saveReason() ;
 		return false ;
@@ -69,7 +70,26 @@ bool GNet::SocketBase::prepare( bool /*accepted*/ )
 
 void GNet::SocketBase::destroy() noexcept
 {
+	if( m_domain == PF_UNIX && !m_accepted ) unlink() ;
 	::close( m_fd.fd() ) ;
+}
+
+void GNet::SocketBase::unlink() noexcept
+{
+	try
+	{
+		AddressStorage address_storage ;
+		int rc = ::getsockname( m_fd.fd() , address_storage.p1() , address_storage.p2() ) ;
+		std::string path = rc == 0 ? Address(address_storage).hostPartString() : std::string() ;
+		if( !path.empty() && path.at(0U) == '/' )
+		{
+			G_DEBUG( "GNet::SocketBase::unlink: deleting unix-domain socket: fd=" << m_fd.fd() << " path=[" << G::Str::printable(path) << "]" ) ;
+			G::File::remove( path , std::nothrow ) ; // best-effort -- see also G::Root
+		}
+	}
+	catch(...)
+	{
+	}
 }
 
 bool GNet::SocketBase::error( int rc )
@@ -80,16 +100,15 @@ bool GNet::SocketBase::error( int rc )
 void GNet::SocketBase::saveReason()
 {
 	m_reason = G::Process::errno_() ;
-	m_reason_string = reasonString( m_reason ) ;
 }
 
-bool GNet::SocketBase::setNonBlock()
+bool GNet::SocketBase::setNonBlocking()
 {
-	int mode = ::fcntl( m_fd.fd() , F_GETFL ) ;
+	int mode = ::fcntl( m_fd.fd() , F_GETFL ) ; // NOLINT
 	if( mode < 0 )
 		return false ;
 
-	int rc = ::fcntl( m_fd.fd() , F_SETFL , mode | O_NONBLOCK ) ;
+	int rc = ::fcntl( m_fd.fd() , F_SETFL , mode | O_NONBLOCK ) ; // NOLINT
 	return rc == 0 ;
 }
 
@@ -125,14 +144,30 @@ bool GNet::SocketBase::eTooMany() const
 
 std::string GNet::SocketBase::reasonString( int e )
 {
-	return G::Str::lower(G::Process::strerror(e)) ;
+	return G::Process::strerror( e ) ;
 }
 
 // ==
 
-bool GNet::Socket::canBindHint( const Address & address )
+std::string GNet::Socket::canBindHint( const Address & address , bool stream )
 {
-	return bind( address , std::nothrow ) ;
+	if( address.family() == Address::Family::ipv4 || address.family() == Address::Family::ipv6 )
+	{
+		if( stream )
+		{
+			StreamSocket s( address.family() ) ;
+			return s.bind( address , std::nothrow ) ? std::string() : s.reason() ;
+		}
+		else
+		{
+			DatagramSocket s( address.family() ) ;
+			return s.bind( address , std::nothrow ) ? std::string() : s.reason() ;
+		}
+	}
+	else
+	{
+		return {} ; // could do better
+	}
 }
 
 void GNet::Socket::setOptionReuse()
@@ -146,23 +181,19 @@ void GNet::Socket::setOptionExclusive()
 	// no-op
 }
 
-void GNet::Socket::setOptionPureV6( bool active )
+void GNet::Socket::setOptionPureV6()
 {
 	#if GCONFIG_HAVE_IPV6
-		if( active )
-			setOption( IPPROTO_IPV6 , "ipv6_v6only" , IPV6_V6ONLY , 1 ) ;
+		setOption( IPPROTO_IPV6 , "ipv6_v6only" , IPV6_V6ONLY , 1 ) ;
 	#else
-		if( active )
-			throw SocketError( "cannot set socket option for pure ipv6" ) ;
+		throw SocketError( "cannot set socket option for pure ipv6" ) ;
 	#endif
 }
 
-bool GNet::Socket::setOptionPureV6( bool active , std::nothrow_t )
+bool GNet::Socket::setOptionPureV6( std::nothrow_t )
 {
 	#if GCONFIG_HAVE_IPV6
-		return active ? setOption( IPPROTO_IPV6 , "ipv6_v6only" , IPV6_V6ONLY , 1 , std::nothrow ) : true ;
-	#else
-		return !active ;
+		return setOption( IPPROTO_IPV6 , "ipv6_v6only" , IPV6_V6ONLY , 1 , std::nothrow ) ;
 	#endif
 }
 
@@ -174,8 +205,8 @@ bool GNet::Socket::setOptionImp( int level , int op , const void * arg , socklen
 
 // ==
 
-GNet::RawSocket::RawSocket( int domain , int protocol ) :
-	SocketBase(domain,SOCK_RAW,protocol)
+GNet::RawSocket::RawSocket( int domain , int type , int protocol ) :
+	SocketBase(SocketBase::Raw(),domain,type,protocol)
 {
 }
 
@@ -196,5 +227,30 @@ GNet::SocketBase::ssize_type GNet::RawSocket::read( char * buffer , size_type le
 GNet::SocketBase::ssize_type GNet::RawSocket::write( const char * buffer , size_type length )
 {
 	return writeImp( buffer , length ) ; // SocketBase
+}
+
+// ==
+
+std::size_t GNet::DatagramSocket::limit() const
+{
+	int value = 0 ;
+	socklen_t size = sizeof(int) ;
+	int rc = ::getsockopt( fd() , SOL_SOCKET , SO_SNDBUF , &value , &size ) ;
+	if( rc == 0 && size == sizeof(int) && value > 1024 )
+		return static_cast<std::size_t>(value) ;
+	else
+		return 1024U ;
+}
+
+GNet::Socket::ssize_type GNet::DatagramSocket::writeto( const std::vector<G::string_view> & data , const Address & dst )
+{
+	ssize_type nsent = G::Msg::sendto( fd() , data , MSG_NOSIGNAL , dst.address() , dst.length() ) ;
+	if( nsent < 0 )
+	{
+		saveReason() ;
+		G_DEBUG( "GNet::DatagramSocket::write: write error " << reason() ) ;
+		return -1 ;
+	}
+	return nsent ;
 }
 

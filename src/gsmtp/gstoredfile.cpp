@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,6 +27,8 @@
 #include "glog.h"
 #include "gassert.h"
 #include <fstream>
+#include <type_traits>
+#include <limits>
 
 GSmtp::StoredFile::StoredFile( FileStore & store , const G::Path & path ) :
 	m_store(store) ,
@@ -80,15 +82,15 @@ G::Path GSmtp::StoredFile::cpath() const
 G::Path GSmtp::StoredFile::epath( State state ) const
 {
 	if( state == State::Locked )
-		return m_store.envelopePath(m_id).str() + ".busy" ;
+		return m_store.envelopePath(m_id).str().append(".busy") ;
 	else if( state == State::Bad )
-		return m_store.envelopePath(m_id).str() + ".bad" ;
+		return m_store.envelopePath(m_id).str().append(".bad") ;
 	return m_store.envelopePath( m_id ) ;
 }
 
-int GSmtp::StoredFile::eightBit() const
+GSmtp::MessageStore::BodyType GSmtp::StoredFile::bodyType() const
 {
-	return m_env.m_eight_bit ;
+	return m_env.m_body_type ;
 }
 
 void GSmtp::StoredFile::close()
@@ -198,7 +200,7 @@ void GSmtp::StoredFile::edit( const G::StringArray & rejectees )
 	env_copy.m_to_remote = rejectees ;
 
 	const G::Path path_in = epath( m_state ) ;
-	const G::Path path_out = epath(m_state).str() + ".tmp" ;
+	const G::Path path_out = epath(m_state).str().append(".tmp") ;
 
 	// create new file
 	std::ofstream out ;
@@ -231,7 +233,7 @@ void GSmtp::StoredFile::edit( const G::StringArray & rejectees )
 		G_WARNING( "GSmtp::StoredFile::edit: unexpected change to envelope file detected: " << path_in ) ;
 
 	// copy the existing file's tail to the new file
-	in.seekg( env_check.m_endpos ) ;
+	in.seekg( env_check.m_endpos ) ; // NOLINT narrowing
 	if( !in.good() )
 		throw EditError( path_in.str() ) ;
 	GSmtp::Envelope::copy( in , out ) ;
@@ -311,6 +313,9 @@ void GSmtp::StoredFile::addReason( const G::Path & path , const std::string & re
 		FileWriter claim_writer ;
 		G::File::open( file , path , G::File::Append() ) ;
 	}
+	if( !file.is_open() )
+		G_ERROR( "GSmtp::StoredFile::addReason: cannot re-open envelope file to append the failure reason: " << path ) ;
+
 	file << FileStore::x() << "Reason: " << G::Str::toPrintableAscii(reason) << eol() ;
 	file << FileStore::x() << "ReasonCode:" ; if( reason_code ) file << " " << reason_code ; file << eol() ;
 }
@@ -346,12 +351,31 @@ std::size_t GSmtp::StoredFile::toCount() const
 	return m_env.m_to_remote.size() ;
 }
 
-std::istream & GSmtp::StoredFile::contentStream()
+std::size_t GSmtp::StoredFile::contentSize() const
 {
 	G_ASSERT( m_content != nullptr ) ;
-	if( m_content == nullptr )
-		m_content = std::make_unique<std::ifstream>() ; // up-cast
 
+	auto pos0 = m_content->tellg() ; // original
+	m_content->seekg( 0 , std::ios_base::end ) ;
+	auto pos1 = m_content->tellg() ; // end
+	m_content->seekg( pos0 , std::ios_base::beg ) ; // restore
+	auto pos2 = m_content->tellg() ; // final
+	if( m_content->fail() || pos0 < 0 || pos1 < 0 || pos2 < 0 || pos2 != pos0 )
+		throw SizeError() ;
+
+	std::streamoff size = pos1 ;
+	if( size < 0 )
+		throw SizeError() ;
+
+	if( static_cast<std::make_unsigned<std::streamoff>::type>(size) > std::numeric_limits<std::size_t>::max() )
+		throw SizeError( "too big" ) ;
+
+	return static_cast<std::size_t>(pos1) ;
+}
+
+std::istream & GSmtp::StoredFile::contentStream()
+{
+	G_ASSERT_OR_DO( m_content != nullptr , m_content=std::make_unique<std::ifstream>() ) ;
 	return *m_content ;
 }
 
@@ -363,6 +387,11 @@ std::string GSmtp::StoredFile::authentication() const
 std::string GSmtp::StoredFile::fromAuthIn() const
 {
 	return m_env.m_from_auth_in ;
+}
+
+bool GSmtp::StoredFile::utf8Mailboxes() const
+{
+	return m_env.m_utf8_mailboxes ;
 }
 
 std::string GSmtp::StoredFile::fromAuthOut() const

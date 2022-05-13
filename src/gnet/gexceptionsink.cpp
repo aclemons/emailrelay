@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@
 
 namespace GNet
 {
-	namespace ExceptionSinkImp // An implementation namespace for GNet::ExceptionSink.
+	namespace ExceptionSinkImp /// An implementation namespace for GNet::ExceptionSink.
 	{
 		struct LogExceptionHandler : ExceptionHandler /// A GNet::ExceptionHandler that just logs.
 		{
@@ -56,7 +56,7 @@ GNet::ExceptionSink::ExceptionSink( ExceptionHandler * eh , ExceptionSource * es
 GNet::ExceptionSink GNet::ExceptionSink::logOnly()
 {
 	static ExceptionSinkImp::LogExceptionHandler log_only_exception_handler ;
-	return ExceptionSink( log_only_exception_handler , nullptr ) ;
+	return { log_only_exception_handler , nullptr } ;
 }
 
 GNet::ExceptionHandler * GNet::ExceptionSink::eh() const noexcept
@@ -71,17 +71,8 @@ GNet::ExceptionSource * GNet::ExceptionSink::esrc() const noexcept
 
 void GNet::ExceptionSink::call( std::exception & e , bool done )
 {
-	G_ASSERT( m_eh != nullptr ) ; // precondition
-	if( m_eh == nullptr )
-	{
-		// never gets here -- see EventEmitter and TimerList
-		G_ASSERT( std::current_exception() != std::exception_ptr() ) ;
-		throw ;
-	}
-	else
-	{
-		m_eh->onException( m_esrc , e , done ) ;
-	}
+	G_ASSERT_OR_DO( m_eh != nullptr , throw ) ; // precondition -- see EventEmitter and TimerList
+	m_eh->onException( m_esrc , e , done ) ;
 }
 
 void GNet::ExceptionSink::reset() noexcept
@@ -110,6 +101,6 @@ GNet::ExceptionSinkUnbound::ExceptionSinkUnbound( ExceptionHandler * eh ) :
 
 GNet::ExceptionSink GNet::ExceptionSinkUnbound::bind( ExceptionSource * source ) const
 {
-	return ExceptionSink{ m_eh , source } ;
+	return { m_eh , source } ;
 }
 

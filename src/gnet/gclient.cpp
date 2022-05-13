@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 #include "gassert.h"
 #include "gtest.h"
 #include "glog.h"
+#include <numeric>
 #include <sstream>
 #include <cstdlib>
 
@@ -39,8 +40,8 @@ GNet::Client::Client( ExceptionSink es , const Location & remote , const Config 
 	m_remote_location(remote) ,
 	m_bind_local_address(config.bind_local_address) ,
 	m_local_address(config.local_address) ,
+	m_socket_protocol_config(config.socket_protocol_config) ,
 	m_sync_dns(config.sync_dns) ,
-	m_secure_connection_timeout(config.secure_connection_timeout) ,
 	m_connection_timeout(config.connection_timeout) ,
 	m_response_timeout(config.response_timeout) ,
 	m_idle_timeout(config.idle_timeout) ,
@@ -178,14 +179,14 @@ void GNet::Client::startConnecting()
 	// create and open a socket
 	//
 	m_sp.reset() ;
-	m_socket = std::make_unique<StreamSocket>( m_remote_location.address().domain() ) ;
+	m_socket = std::make_unique<StreamSocket>( m_remote_location.address().family() ) ;
 	socket().addWriteHandler( *this , m_es ) ;
 
 	// create a socket protocol object
 	//
 	EventHandler & eh = *this ;
 	SocketProtocolSink & sp_sink = *this ;
-	m_sp = std::make_unique<SocketProtocol>( eh , m_es , sp_sink , *m_socket , m_secure_connection_timeout ) ;
+	m_sp = std::make_unique<SocketProtocol>( eh , m_es , sp_sink , *m_socket , m_socket_protocol_config ) ;
 
 	// bind a local address to the socket (throws on failure)
 	//
@@ -196,7 +197,7 @@ void GNet::Client::startConnecting()
 	//
 	bool immediate = false ;
 	if( !socket().connect( m_remote_location.address() , &immediate ) )
-		throw ConnectError( "cannot connect to " + m_remote_location.address().displayString() ) ;
+		throw ConnectError( "cannot connect to " + m_remote_location.address().displayString() + ": " + socket().reason() ) ;
 
 	// deal with immediate connection (typically if connecting locally)
 	//
@@ -272,7 +273,7 @@ void GNet::Client::onConnectedTimeout()
 	onWriteable() ;
 }
 
-void GNet::Client::writeEvent()
+void GNet::Client::writeEvent( Descriptor )
 {
 	G_DEBUG( "GNet::Client::writeEvent" ) ;
 	onWriteable() ;
@@ -349,15 +350,15 @@ void GNet::Client::doOnConnect()
 	emit( "connected" ) ;
 }
 
-void GNet::Client::otherEvent( EventHandler::Reason reason )
+void GNet::Client::otherEvent( Descriptor fd , EventHandler::Reason reason )
 {
 	if( m_state == State::Socksing || m_sp == nullptr )
-		EventHandler::otherEvent( reason ) ; // default implementation
+		EventHandler::otherEvent( fd , reason ) ; // default implementation
 	else
 		m_sp->otherEvent( reason ) ;
 }
 
-void GNet::Client::readEvent()
+void GNet::Client::readEvent( Descriptor )
 {
 	if( m_state == State::Socksing )
 	{
@@ -371,9 +372,8 @@ void GNet::Client::readEvent()
 	}
 	else
 	{
-		G_ASSERT( m_sp != nullptr ) ;
-		if( m_sp != nullptr )
-			m_sp->readEvent() ;
+		G_ASSERT_OR_DO( m_sp != nullptr , return ) ;
+		m_sp->readEvent() ;
 	}
 }
 
@@ -466,16 +466,25 @@ void GNet::Client::secureConnect()
 	m_sp->secureConnect() ;
 }
 
-bool GNet::Client::send( const std::string & data , std::size_t offset )
+bool GNet::Client::send( const std::string & data )
 {
-	if( m_response_timeout && data.size() > offset )
+	if( m_response_timeout )
 		m_response_timer.startTimer( m_response_timeout ) ;
-	return m_sp->send( data , offset ) ;
+	return m_sp->send( data , 0U ) ;
+}
+
+bool GNet::Client::send( G::string_view data )
+{
+	if( m_response_timeout )
+		m_response_timer.startTimer( m_response_timeout ) ;
+	return m_sp->send( data ) ;
 }
 
 bool GNet::Client::send( const std::vector<G::string_view> & data , std::size_t offset )
 {
-	if( m_response_timeout && data.size() > offset )
+    std::size_t total_size = std::accumulate( data.begin() , data.end() , std::size_t(0) ,
+        [](std::size_t n,G::string_view s){return n+s.size();} ) ;
+	if( m_response_timeout && offset < total_size )
 		m_response_timer.startTimer( m_response_timeout ) ;
 	return m_sp->send( data , offset ) ;
 }
@@ -487,61 +496,10 @@ GNet::LineBufferState GNet::Client::lineBuffer() const
 
 // ==
 
-namespace GNet
-{
-	namespace ClientImp
-	{
-		bool sync_default()
-		{
-			if( G::Test::enabled("client-dns-asynchronous") ) return false ;
-			if( G::Test::enabled("client-dns-synchronous") ) return true ;
-			return false ;
-		}
-	}
-}
-
-GNet::Client::Config::Config() :
-	local_address(Address::defaultAddress()) ,
-	line_buffer_config(LineBufferConfig::transparent()) ,
-	sync_dns(ClientImp::sync_default())
-{
-}
-
-GNet::Client::Config::Config( const LineBufferConfig & lbc ) :
-	local_address(Address::defaultAddress()) ,
-	line_buffer_config(lbc) ,
-	sync_dns(ClientImp::sync_default())
-{
-}
-
-GNet::Client::Config::Config( const LineBufferConfig & lbc , unsigned int connection_timeout_in ,
-	unsigned int secure_connection_timeout_in , unsigned int response_timeout_in ,
-	unsigned int idle_timeout_in ) :
-		local_address(Address::defaultAddress()) ,
-		line_buffer_config(lbc) ,
-		sync_dns(ClientImp::sync_default()) ,
-		connection_timeout(connection_timeout_in) ,
-		secure_connection_timeout(secure_connection_timeout_in) ,
-		response_timeout(response_timeout_in) ,
-		idle_timeout(idle_timeout_in)
-{
-}
-
-GNet::Client::Config::Config( const LineBufferConfig & lbc , unsigned int all_timeouts ) :
-	local_address(Address::defaultAddress()) ,
-	line_buffer_config(lbc) ,
-	sync_dns(ClientImp::sync_default()) ,
-	connection_timeout(all_timeouts) ,
-	secure_connection_timeout(all_timeouts) ,
-	response_timeout(all_timeouts) ,
-	idle_timeout(all_timeouts*2U)
-{
-}
-
 GNet::Client::Config & GNet::Client::Config::set_all_timeouts( unsigned int all_timeouts )
 {
+	socket_protocol_config.secure_connection_timeout = all_timeouts ;
 	connection_timeout = all_timeouts ;
-	secure_connection_timeout = all_timeouts ;
 	response_timeout = all_timeouts ;
 	idle_timeout = all_timeouts * 2U ;
 	return *this ;

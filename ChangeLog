@@ -1,14 +1,25 @@
 E-MailRelay Change Log
 ======================
 
-2.2 -> 2.3
-----------
-* New admin 'forward' command to trigger forwarding without waiting.
+2.3 -> 2.4
+------------
+* SMTP PIPELINING extension (RFC-2920).
+* SMTP CHUNKING/8BITMIME extension (RFC-3030).
+* SMTPUTF8 support added (RFC-6531).
+* AUTH not advertised if "--server-tls-required" and no TLS (RFC-4954 6).
 * More simultaneous connections supported on Windows.
-* EPIPELINE SMTP extension (todo)
-* Windows event log not used for verbose logging (todo)
-* Uses epoll by default on Linux (todo)
-* No 7-bit/8-bit check by default (todo)
+* No 7-bit/8-bit check on received message content (see NEWS fle).
+* Multiple "--filter" options allowed.
+* Shorter default filter timeout.
+* Uses epoll by default on Linux.
+
+2.2 -> 2.3
+------------
+* Unix domain sockets supported (eg. "--interface=/tmp/smtp.s").
+* Windows event log not used for verbose logging (prefer "--log-file").
+* New admin "forward" command to trigger forwarding without waiting.
+* Optional base64 encoding of passwords in secrets files ("plain:b").
+* Support for MbedTLS version 3.
 
 2.1 -> 2.2
 ----------
@@ -33,7 +44,7 @@ E-MailRelay Change Log
 * New "--idle-timeout" option for server-side connections.
 * Support for RFC-5782 DNSBL blocking ("--dnsbl").
 * Filter scripts are given the path of the envelope file in argv2.
-* Message files can be editied by "--client-filter" scripts.
+* Message files can be edited by "--client-filter" scripts.
 * Better support for CRAM-SHAx authentication.
 * New "--client-auth-config" and "--server-auth-config" options.
 * New "--show" option on windows to better control the user interface style.

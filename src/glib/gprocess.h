@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,9 +26,12 @@
 #include "gidentity.h"
 #include "gpath.h"
 #include "gstr.h"
-#include "gstrings.h"
+#include "gstringarray.h"
 #include "gsignalsafe.h"
+#include <memory>
 #include <iostream>
+#include <limits>
+#include <type_traits>
 #include <string>
 #include <new>
 
@@ -45,10 +48,11 @@ namespace G
 class G::Process
 {
 public:
-	G_EXCEPTION( CannotChangeDirectory , "cannot change directory" ) ;
-	G_EXCEPTION( InvalidId , "invalid process-id string" ) ;
-	G_EXCEPTION( UidError , "cannot set uid" ) ;
-	G_EXCEPTION( GidError , "cannot set gid" ) ;
+	G_EXCEPTION( CannotChangeDirectory , tx("cannot change directory") ) ;
+	G_EXCEPTION( InvalidId , tx("invalid process-id string") ) ;
+	G_EXCEPTION( UidError , tx("cannot set uid") ) ;
+	G_EXCEPTION( GidError , tx("cannot set gid") ) ;
+	G_EXCEPTION( GetCwdError , tx("cannot get current working directory") ) ;
 	class Id ;
 	class Umask ;
 	class UmaskImp ;
@@ -75,9 +79,12 @@ public:
 		///< (Beware of destructors of c++ temporaries disrupting
 		///< the global errno value.)
 
+	static void errno_( int e_new ) noexcept ;
+		///< Sets the process's 'errno' value.
+
 	static int errno_( const SignalSafe & , int e_new ) noexcept ;
 		///< Sets the process's 'errno' value. Returns the old
-		///< value. Used in signal handlers.
+		///< value. Typicaly used in signal handlers.
 
 	static std::string strerror( int errno_ ) ;
 		///< Translates an 'errno' value into a meaningful diagnostic string.
@@ -147,6 +154,18 @@ public:
 		std::string str() const ;
 		bool operator==( const Id & ) const noexcept ;
 		bool operator!=( const Id & ) const noexcept ;
+		template <typename T> T value(
+			typename std::enable_if
+				<std::numeric_limits<T>::max() >= std::numeric_limits<pid_t>::max()>
+			::type * = 0 ) const noexcept
+		{
+			static_assert( sizeof(T) >= sizeof(pid_t) , "" ) ;
+			return static_cast<T>( m_pid ) ;
+		}
+		template <typename T> T seed() const noexcept
+		{
+			return static_cast<T>( m_pid ) ;
+		}
 
 	private:
 		friend class NewProcess ;
@@ -157,16 +176,29 @@ public:
 	class Umask /// Used to temporarily modify the process umask.
 	{
 	public:
-		enum class Mode { Readable , Tighter , Tightest , GroupOpen } ;
+		enum class Mode
+		{
+			NoChange , // so typically 0022 -rwxr-xr-x
+			TightenOther , // see Umask::tightenOther()
+			LoosenGroup , // see Umask::loosenGroup()
+			Readable , // 0133 -rw-r--r--
+			Tighter ,  // 0117 -rw-rw----
+			Tightest , // 0177 -rw-------
+			GroupOpen ,// 0113 -rw-rw-r--
+			Open       // 0111 -rw-rw-rw-
+		} ;
 		explicit Umask( Mode ) ;
 		~Umask() ;
 		static void set( Mode ) ;
-		static void tighten() ; // no "other" access, user and group unchanged
+		static void tightenOther() ; // deny "other" access, user and group unchanged
+		static void loosenGroup() ; // allow group read/write, user and "other" unchanged
 		Umask( const Umask & ) = delete ;
 		Umask( Umask && ) = delete ;
 		void operator=( const Umask & ) = delete ;
 		void operator=( Umask && ) = delete ;
-		private: std::unique_ptr<UmaskImp> m_imp ;
+
+	private:
+		std::unique_ptr<UmaskImp> m_imp ;
 	} ;
 
 public:

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,12 +23,12 @@
 
 #include "gdef.h"
 #include "gpath.h"
-#include "gstrings.h"
+#include "gstringarray.h"
+#include "gstringmap.h"
 #include "gexception.h"
 #include "goptions.h"
 #include "goptionvalue.h"
 #include "goptionmap.h"
-#include <map>
 #include <string>
 #include <iostream>
 
@@ -67,7 +67,7 @@ public:
 	explicit MapFile( const G::StringMap & map ) ;
 		///< Constructor that initialises from a string map.
 
-	explicit MapFile( const OptionMap & map , const std::string & yes = std::string() ) ;
+	explicit MapFile( const OptionMap & map , const std::string & yes = {} ) ;
 		///< Constructor that initialises from an option value map,
 		///< typically parsed out from a command-line. Unvalued 'on'
 		///< options in the option value map are loaded into this
@@ -76,11 +76,13 @@ public:
 		///< Multi-valued options are loaded as a comma-separated
 		///< list.
 
-	explicit MapFile( const G::Path & , const std::string & kind = std::string() ) ;
+	explicit MapFile( const G::Path & , const std::string & kind = {} ) ;
 		///< Constructor that reads from a file. Lines can have a key
 		///< and no value (see booleanValue()). Comments must be at
 		///< the start of the line. Values are left and right-trimmed,
-		///< but can otherwise contain whitespace.
+		///< but can otherwise contain whitespace. The trailing parameter
+		///< is used in error messages to describe the kind of file,
+		///< defaulting to "map".
 
 	explicit MapFile( std::istream & ) ;
 		///< Constructor that reads from a stream.
@@ -88,7 +90,7 @@ public:
 	const G::StringArray & keys() const ;
 		///< Returns a reference to the internal ordered list of keys.
 
-	static void check( const G::Path & , const std::string & kind = std::string() ) ;
+	static void check( const G::Path & , const std::string & kind = {} ) ;
 		///< Throws if the file is invalid. This is equivalent to
 		///< constructing a temporary MapFile object, but it
 		///< specifically does not do any logging.
@@ -122,7 +124,7 @@ public:
 	unsigned int numericValue( const std::string & key , unsigned int default_ ) const ;
 		///< Returns a numeric value from the map.
 
-	std::string value( const std::string & key , const std::string & default_ = std::string() ) const ;
+	std::string value( const std::string & key , const std::string & default_ = {} ) const ;
 		///< Returns a string value from the map. Returns the default
 		///< if there is no such key or if the value is empty.
 
@@ -140,7 +142,7 @@ public:
 	const G::StringMap & map() const ;
 		///< Returns a reference to the internal map.
 
-	void log( const std::string & prefix = std::string() ) const ;
+	void log( const std::string & prefix = {} ) const ;
 		///< Logs the contents.
 
 	std::string expand( const std::string & value ) const ;
@@ -175,7 +177,7 @@ private:
 	static std::string ekind( const std::string & ) ;
 	static std::string epath( const G::Path & ) ;
 	static Error readError( const G::Path & , const std::string & ) ;
-	static Error writeError( const G::Path & , const std::string & = std::string() ) ;
+	static Error writeError( const G::Path & , const std::string & = {} ) ;
 	static Error missingValueError( const G::Path & , const std::string & , const std::string & ) ;
 
 private:

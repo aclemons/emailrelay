@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -70,7 +70,7 @@ namespace G
 	///   std::function<void(int)> m_signal ;
 	///   void Source::raiseEvent()
 	///   {
-	///     if( m_signal ) m_signal( 123 ) ; // emit()
+	///     if( m_signal ) m_signal( 123 ) ;
 	///   }
 	/// } ;
 	///
@@ -79,12 +79,12 @@ namespace G
 	///   void onEvent( int n ) ;
 	///   Sink( Source & source ) : m_source(source)
 	///   {
-	///     check( !source.m_signal ) ; // throw if already connected
-	///     source.m_signal = std::bind_front(&Sink::onEvent,this) ; // connect(slot())
+	///     throw_if( !source.m_signal ) ;
+	///     source.m_signal = std::bind_front(&Sink::onEvent,this) ;
 	///   }
 	///   ~Sink()
 	///   {
-	///     m_source.m_signal = nullptr ; // disconnect()
+	///     m_source.m_signal = nullptr ;
 	///   }
 	///   Source & m_source ;
 	/// } ;
@@ -145,7 +145,7 @@ namespace G
 		///
 		struct SignalImp
 		{
-			G_EXCEPTION_CLASS( AlreadyConnected , "already connected" ) ;
+			G_EXCEPTION_CLASS( AlreadyConnected , tx("already connected") ) ;
 			SignalImp() = delete ;
 		} ;
 
@@ -203,20 +203,6 @@ namespace G
 			// or c++20: return std::function<void(Args...)>( std::bind_front(method,&sink) )
 			return Slot<Args...>( sink , method ) ;
 		}
-
-		// backwards compatible names...
-		using Signal0 = Signal<> ;
-		template <typename T> using Signal1 = Signal<T> ;
-		template <typename T1, typename T2> using Signal2 = Signal<T1,T2> ;
-		template <typename T1, typename T2, typename T3> using Signal3 = Signal<T1,T2,T3> ;
-		template <typename T1, typename T2, typename T3, typename T4> using Signal4 = Signal<T1,T2,T3,T4> ;
-		template <typename T1, typename T2, typename T3, typename T4, typename T5> using Signal5 = Signal<T1,T2,T3,T4,T5> ;
-		using Slot0 = Slot<> ;
-		template <typename T> using Slot1 = Slot<T> ;
-		template <typename T1, typename T2> using Slot2 = Slot<T1,T2> ;
-		template <typename T1, typename T2, typename T3> using Slot3 = Slot<T1,T2,T3> ;
-		template <typename T1, typename T2, typename T3, typename T4> using Slot4 = Slot<T1,T2,T3,T4> ;
-		template <typename T1, typename T2, typename T3, typename T4, typename T5> using Slot5 = Slot<T1,T2,T3,T4,T5> ;
 	}
 }
 #endif

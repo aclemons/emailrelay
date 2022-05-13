@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -90,7 +90,7 @@ private slots:
 private:
 	void dump( std::ostream & , bool for_install ) const ;
 	void setFirstPage( GPage & ) ;
-	void switchPage( const std::string & new_page_name , const std::string & old_page_name = std::string() , bool back = false ) ;
+	void switchPage( const std::string & new_page_name , const std::string & old_page_name = {} , bool back = false ) ;
 
 private:
 	using History = std::list<std::string> ;

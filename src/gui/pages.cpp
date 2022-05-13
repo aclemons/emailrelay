@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -34,23 +34,19 @@
 #include "gbase64.h"
 #include "gxtext.h"
 #include "gstringview.h"
+#include "genvironment.h"
 #include "glog.h"
 #include <stdexcept>
 #include <fstream>
 #include <cstring>
 
+#include "moc_pages.cpp"
+
 namespace
 {
-	std::string encode( const std::string & pwd_utf8 , const std::string & mechanism )
-	{
-		return
-			mechanism == "CRAM-MD5" ?
-				G::Base64::encode( G::Hash::mask(G::Md5::predigest,G::Md5::digest2,G::Md5::blocksize(),pwd_utf8) ) :
-				G::Xtext::encode( pwd_utf8 ) ;
-	}
 	std::string encode( const std::string & id_utf8 )
 	{
-		return G::Xtext::encode( id_utf8 ) ;
+		return G::Base64::encode( id_utf8 ) ;
 	}
 }
 
@@ -144,7 +140,7 @@ std::string LicensePage::helpUrl( const std::string & language ) const
 
 DirectoryPage::DirectoryPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
 	const std::string & next_1 , const std::string & next_2 ,
-	bool installing , bool is_mac ) :
+	bool installing , bool is_windows , bool is_mac ) :
 		GPage(dialog,name,next_1,next_2) ,
 		m_installing(installing) ,
 		m_is_mac(is_mac) ,
@@ -268,8 +264,16 @@ DirectoryPage::DirectoryPage( GDialog & dialog , const G::MapFile & config , con
 		connect( m_spool_dir_edit_box , SIGNAL(textChanged(QString)), this, SLOT(onOtherDirChange()) );
 		connect( m_config_dir_edit_box , SIGNAL(textChanged(QString)), this, SLOT(onOtherDirChange()) );
 		connect( m_runtime_dir_edit_box , SIGNAL(textChanged(QString)), this, SLOT(onOtherDirChange()) );
-		if( testMode() ) // todo not if windows
-			m_install_dir_edit_box->setText( qstr("/tmp/") + qstr(G::Process::Id().str()) + m_install_dir_edit_box->text() ) ;
+		if( testMode() )
+		{
+			QString old_value = m_install_dir_edit_box->text() ;
+			G::Path tmp_base = is_windows ? G::Path(G::Environment::get("TEMP","c:/temp")) : G::Path("/tmp" ) ;
+			G::Path tmp_dir = tmp_base + G::Process::Id().str() ;
+			G::Path old_path = GQt::stdstr( old_value , GQt::Path ) ;
+			G::Path new_path = G::Path::join( tmp_dir , old_path.withoutRoot() ) ;
+			QString new_value = GQt::qstr( new_path ) ;
+			m_install_dir_edit_box->setText( new_value ) ;
+		}
 	}
 
 	connect( m_install_dir_edit_box , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()));
@@ -712,16 +716,15 @@ void PopPage::dump( std::ostream & stream , bool for_install ) const
 	dumpItem( stream , for_install , "pop-shared-no-delete" , value(m_no_delete_checkbox) ) ;
 	dumpItem( stream , for_install , "pop-by-name" , value(m_pop_by_name) ) ;
 
-	std::string mechanism( "plain" ) ;
-	dumpItem( stream , for_install , "pop-auth-mechanism" , mechanism ) ;
+	dumpItem( stream , for_install , "pop-auth-mechanism" , std::string("plain:b") ) ;
 	if( for_install )
 	{
 		dumpItem( stream , for_install , "pop-account-1-name" , encode(value_utf8(m_name_1)) ) ;
-		dumpItem( stream , for_install , "pop-account-1-password" , encode(value_utf8(m_pwd_1),mechanism) ) ;
+		dumpItem( stream , for_install , "pop-account-1-password" , encode(value_utf8(m_pwd_1)) ) ;
 		dumpItem( stream , for_install , "pop-account-2-name" , encode(value_utf8(m_name_2)) ) ;
-		dumpItem( stream , for_install , "pop-account-2-password" , encode(value_utf8(m_pwd_2),mechanism) ) ;
+		dumpItem( stream , for_install , "pop-account-2-password" , encode(value_utf8(m_pwd_2)) ) ;
 		dumpItem( stream , for_install , "pop-account-3-name" , encode(value_utf8(m_name_3)) ) ;
-		dumpItem( stream , for_install , "pop-account-3-password" , encode(value_utf8(m_pwd_3),mechanism) ) ;
+		dumpItem( stream , for_install , "pop-account-3-password" , encode(value_utf8(m_pwd_3)) ) ;
 	}
 }
 
@@ -929,15 +932,14 @@ std::string SmtpServerPage::nextPage()
 
 void SmtpServerPage::dump( std::ostream & stream , bool for_install ) const
 {
-	std::string mechanism = "plain" ; // was value(m_mechanism_combo)
 	GPage::dump( stream , for_install ) ;
 	dumpItem( stream , for_install , "smtp-server-port" , value(m_port_edit_box) ) ;
 	dumpItem( stream , for_install , "smtp-server-auth" , value(m_auth_checkbox) ) ;
-	dumpItem( stream , for_install , "smtp-server-auth-mechanism" , mechanism ) ;
+	dumpItem( stream , for_install , "smtp-server-auth-mechanism" , std::string("plain:b") ) ;
 	if( for_install )
 	{
 		dumpItem( stream , for_install , "smtp-server-account-name" , encode(value_utf8(m_account_name)) ) ;
-		dumpItem( stream , for_install , "smtp-server-account-password" , encode(value_utf8(m_account_pwd),mechanism) ) ;
+		dumpItem( stream , for_install , "smtp-server-account-password" , encode(value_utf8(m_account_pwd)) ) ;
 	}
 	dumpItem( stream , for_install , "smtp-server-trust" , value(m_trust_address) ) ;
 	dumpItem( stream , for_install , "smtp-server-tls" , value(m_tls_checkbox->isChecked() && m_tls_starttls->isChecked()) ) ;
@@ -1361,17 +1363,16 @@ std::string SmtpClientPage::nextPage()
 void SmtpClientPage::dump( std::ostream & stream , bool for_install ) const
 {
 	GPage::dump( stream , for_install ) ;
-	std::string mechanism = "plain" ; // was value(m_mechanism_combo)
 	dumpItem( stream , for_install , "smtp-client-host" , value(m_server_edit_box) ) ;
 	dumpItem( stream , for_install , "smtp-client-port" , value(m_port_edit_box) ) ;
 	dumpItem( stream , for_install , "smtp-client-tls" , value(m_tls_checkbox->isChecked()&&!m_tls_tunnel->isChecked()) ) ;
 	dumpItem( stream , for_install , "smtp-client-tls-connection" , value(m_tls_checkbox->isChecked()&&m_tls_tunnel->isChecked()) ) ;
 	dumpItem( stream , for_install , "smtp-client-auth" , value(m_auth_checkbox) ) ;
-	dumpItem( stream , for_install , "smtp-client-auth-mechanism" , mechanism ) ;
+	dumpItem( stream , for_install , "smtp-client-auth-mechanism" , std::string("plain:b") ) ;
 	if( for_install )
 	{
 		dumpItem( stream , for_install , "smtp-client-account-name" , encode(value_utf8(m_account_name)) ) ;
-		dumpItem( stream , for_install , "smtp-client-account-password" , encode(value_utf8(m_account_pwd),mechanism) ) ;
+		dumpItem( stream , for_install , "smtp-client-account-password" , encode(value_utf8(m_account_pwd)) ) ;
 	}
 }
 
@@ -1488,10 +1489,10 @@ std::string LoggingPage::nextPage()
 
 bool LoggingPage::isComplete()
 {
-    G_DEBUG( "LoggingPage::isComplete: " << m_log_output_file_checkbox->isChecked() << " " << value(m_log_output_file_edit_box) ) ;
-    return
-        !m_log_output_file_checkbox->isChecked() ||
-        !m_log_output_file_edit_box->text().trimmed().isEmpty() ;
+	G_DEBUG( "LoggingPage::isComplete: " << m_log_output_file_checkbox->isChecked() << " " << value(m_log_output_file_edit_box) ) ;
+	return
+		!m_log_output_file_checkbox->isChecked() ||
+		!m_log_output_file_edit_box->text().trimmed().isEmpty() ;
 }
 
 void LoggingPage::browseLogFile()
@@ -1545,8 +1546,9 @@ void LoggingPage::dump( std::ostream & stream , bool for_install ) const
 // ==
 
 ListeningPage::ListeningPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
-	const std::string & next_1 , const std::string & next_2 ) :
-		GPage(dialog,name,next_1,next_2)
+	const std::string & next_1 , const std::string & next_2 , bool next_is_next2 ) :
+		GPage(dialog,name,next_1,next_2) ,
+		m_next_is_next2(next_is_next2)
 {
 	//: server listening-address options...
 	m_all_checkbox = new QRadioButton( tr("Any address") ) ;
@@ -1647,7 +1649,7 @@ ListeningPage::ListeningPage( GDialog & dialog , const G::MapFile & config , con
 
 std::string ListeningPage::nextPage()
 {
-	return next1() ;
+	return m_next_is_next2 ? next2() : next1() ;
 }
 
 void ListeningPage::onTextChanged()
@@ -1698,8 +1700,7 @@ void ListeningPage::dump( std::ostream & stream , bool for_install ) const
 // ==
 
 StartupPage::StartupPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
-	const std::string & next_1 , const std::string & next_2 ,
-	bool start_on_boot_able , bool is_mac ) :
+	const std::string & next_1 , const std::string & next_2 , bool is_mac ) :
 		GPage(dialog,name,next_1,next_2) ,
 		m_is_mac(is_mac)
 {
@@ -1722,12 +1723,12 @@ StartupPage::StartupPage( GDialog & dialog , const G::MapFile & config , const s
 		m_add_desktop_item_checkbox->setEnabled( false ) ;
 	}
 	m_at_login_checkbox->setEnabled( !Dir::autostart().str().empty() ) ;
-	m_on_boot_checkbox->setEnabled( start_on_boot_able ) ;
+	m_on_boot_checkbox->setEnabled( config.booleanValue("=dir-boot-enabled",false) ) ;
 
 	m_at_login_checkbox->setChecked( !Dir::autostart().str().empty() && config.booleanValue("start-at-login",false) ) ;
 	m_add_menu_item_checkbox->setChecked( !m_is_mac && config.booleanValue("start-link-menu",true) ) ;
 	m_add_desktop_item_checkbox->setChecked( !m_is_mac && config.booleanValue("start-link-desktop",false) ) ;
-	m_on_boot_checkbox->setChecked( start_on_boot_able && config.booleanValue("start-on-boot",false) ) ;
+	m_on_boot_checkbox->setChecked( config.booleanValue("start-on-boot",false) ) ;
 
 	QGroupBox * auto_group = new QGroupBox( tr("Automatic") ) ;
 	auto_group->setLayout( auto_layout ) ;
@@ -1760,6 +1761,8 @@ std::string StartupPage::nextPage()
 void StartupPage::dump( std::ostream & stream , bool for_install ) const
 {
 	GPage::dump( stream , for_install ) ;
+	dumpItem( stream , for_install , "start-page" , std::string("y") ) ; // since not necessarily used at all -- see guimain.cpp
+	dumpItem( stream , for_install , "start-on-boot-enabled" , std::string(m_on_boot_checkbox->isEnabled()?"y":"n") ) ;
 	dumpItem( stream , for_install , "start-on-boot" , value(m_on_boot_checkbox) ) ;
 	dumpItem( stream , for_install , "start-at-login" , value(m_at_login_checkbox) ) ;
 	dumpItem( stream , for_install , "start-link-menu" , value(m_add_menu_item_checkbox) ) ;
@@ -1845,7 +1848,7 @@ void LogWatchThread::run()
 
 ProgressPage::ProgressPage( GDialog & dialog , const G::MapFile & , const std::string & name ,
 	const std::string & next_1 , const std::string & next_2 ,
-	Installer & installer ) :
+	Installer & installer , bool installing ) :
 		GPage(dialog,name,next_1,next_2) ,
 		m_text_pos(0) ,
 		m_installer(installer) ,
@@ -1858,8 +1861,8 @@ ProgressPage::ProgressPage( GDialog & dialog , const G::MapFile & , const std::s
 	//m_text_edit->setFontFamily( "courier" ) ;
 
 	auto * layout = new QVBoxLayout ;
-	//: page title of installation progress page
-	layout->addWidget( newTitle(tr("Installing")) ) ;
+	//: page title of installation-or-reconfiguration progress page
+	layout->addWidget( newTitle(installing?tr("Installing"):tr("Configuring")) ) ;
 	layout->addWidget(m_text_edit) ;
 	setLayout( layout ) ;
 }
@@ -1947,7 +1950,7 @@ void ProgressPage::onInstallTimeout()
 			if( m_installer.failed() )
 			{
 				if( m_state == 2 )
-					addLine( GQt::qstr(m_installer.failedText(),GQt::Utf8()) ) ;
+					addLine( GQt::qstr(m_installer.failedText(),GQt::Utf8) ) ;
 				else
 					m_installer.back() ;
 				m_state += 1 ;
@@ -1955,7 +1958,7 @@ void ProgressPage::onInstallTimeout()
 			else
 			{
 				if( m_state == 2 )
-					addLine( GQt::qstr(m_installer.finishedText(),GQt::Utf8()) ) ;
+					addLine( GQt::qstr(m_installer.finishedText(),GQt::Utf8) ) ;
 				m_state += 2 ;
 				if( m_logwatch_thread )
 					m_logwatch_thread->start() ;
@@ -1988,10 +1991,10 @@ void ProgressPage::addOutput( const Installer::Output & output )
 
 QString ProgressPage::format( const Installer::Output & output )
 {
-	QString action_tr = GQt::qstr( output.action_utf8 , GQt::Utf8() ) ;
+	QString action_tr = GQt::qstr( output.action_utf8 , GQt::Utf8 ) ;
 	QString subject_native = GQt::qstr( output.subject ) ;
-	QString result_tr = GQt::qstr( output.result_utf8 , GQt::Utf8() ) ;
-	QString error_tr = GQt::qstr( output.error_utf8 , GQt::Utf8() ) ;
+	QString result_tr = GQt::qstr( output.result_utf8 , GQt::Utf8 ) ;
+	QString error_tr = GQt::qstr( output.error_utf8 , GQt::Utf8 ) ;
 	QString error_native = GQt::qstr( output.error ) ;
 
 	// use the translation mechanism to format the line because
@@ -2032,7 +2035,7 @@ QString ProgressPage::format( const Installer::Output & output )
 			return tr("%1... %2","7").arg(action_tr,error_native) ;
 		else
 			//: installer progress item, untranslated subject, with native error result
-			return tr("%1 [%3]... %2","8").arg(action_tr,error_native,subject_native)  ;
+			return tr("%1 [%3]... %2","8").arg(action_tr,error_native,subject_native) ;
 	}
 	else
 	{
@@ -2041,7 +2044,7 @@ QString ProgressPage::format( const Installer::Output & output )
 			return tr("%1... %2: %3","9").arg(action_tr,error_tr,error_native) ;
 		else
 			//: installer progress item, untranslated subject, with translated error result and untranslated error subject
-			return tr("%1 [%3]... %2: %4","10").arg(action_tr,error_tr,subject_native,error_native)  ;
+			return tr("%1 [%3]... %2: %4","10").arg(action_tr,error_tr,subject_native,error_native) ;
 	}
 }
 

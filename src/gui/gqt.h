@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,6 +21,11 @@
 #ifndef G_MAIN_GUI_QT_H
 #define G_MAIN_GUI_QT_H
 
+#include "gdef.h"
+#include "gpath.h"
+#include <string>
+#include <cstring>
+
 #ifdef MemoryBarrier
 #undef MemoryBarrier
 #endif
@@ -33,27 +38,46 @@
 #include <QtWidgets/QtWidgets>
 #include <QtCore/QtPlugin>
 
-#include <string>
 namespace GQt
 {
-	struct Utf8 {} ;
+	struct Utf8Overload {} ;
+	extern const Utf8Overload Utf8 ;
+	struct PathOverload {} ;
+	extern const PathOverload Path ;
 	inline std::string stdstr( QString q )
 	{
 		QByteArray a = q.toLocal8Bit() ;
 		return std::string( a.constData() , a.length() ) ;
 	}
-	inline std::string stdstr( QString q , Utf8 )
+	inline std::string stdstr( QString q , Utf8Overload )
 	{
 		QByteArray a = q.toUtf8() ;
 		return std::string( a.constData() , a.length() ) ;
+	}
+	inline std::string stdstr( QString q , PathOverload )
+	{
+		QByteArray a = q.toLocal8Bit() ;
+		return std::string( a.constData() , a.length() ) ;
+	}
+	inline QString qstr( const char * p )
+	{
+		return QString::fromLocal8Bit( p , std::strlen(p) ) ;
 	}
 	inline QString qstr( const std::string & s )
 	{
 		return QString::fromLocal8Bit( s.data() , static_cast<int>(s.size()) ) ;
 	}
-	inline QString qstr( const std::string & s , Utf8 )
+	inline QString qstr( const std::string & s , Utf8Overload )
 	{
 		return QString::fromUtf8( s.data() , static_cast<int>(s.size()) ) ;
+	}
+	inline QString qstr( const std::string & s , PathOverload )
+	{
+		return QString::fromLocal8Bit( s.data() , static_cast<int>(s.size()) ) ;
+	}
+	inline QString qstr( const G::Path & p )
+	{
+		return qstr( p.str() , Path ) ;
 	}
 }
 

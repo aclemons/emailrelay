@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,8 +26,10 @@
 #include "gserver.h"
 #include "gtimer.h"
 #include "ginterfaces.h"
-#include <vector>
+#include "gexception.h"
+#include <memory>
 #include <utility> // std::pair<>
+#include <vector>
 
 namespace GNet
 {
@@ -44,8 +46,9 @@ namespace GNet
 class GNet::MultiServer : private InterfacesHandler
 {
 public:
+	G_EXCEPTION( NoListeningAddresses , tx("no listening addresses") ) ;
+	G_EXCEPTION( InvalidName , tx("invalid address or interface name") ) ;
 	using AddressList = std::vector<Address> ;
-	G_EXCEPTION( NoListeningAddresses , "no listening addresses" ) ;
 
 	struct ServerInfo /// A structure used in GNet::MultiServer::newPeer().
 	{
@@ -54,7 +57,8 @@ public:
 	} ;
 
 	MultiServer( ExceptionSink listener_exception_sink , const G::StringArray & addresses ,
-		unsigned int port , const std::string & server_type , ServerPeerConfig server_peer_config ) ;
+		unsigned int port , const std::string & server_type ,
+		ServerPeer::Config server_peer_config , Server::Config server_config ) ;
 			///< Constructor. The server listens on on the specific local
 			///< addresses, given as either interface names (eg. "eth0")
 			///< or IP network addresses (eg. "::1") together with a
@@ -68,7 +72,7 @@ public:
 	bool hasPeers() const ;
 		///< Returns true if peers() is not empty.
 
-	std::vector<std::weak_ptr<ServerPeer> > peers() ;
+	std::vector<std::weak_ptr<ServerPeer>> peers() ;
 		///< Returns the list of ServerPeer-derived objects.
 
 	static bool canBind( const AddressList & listening_address_list , bool do_throw ) ;
@@ -76,11 +80,11 @@ public:
 		///< bound. Throws CannotBind if any of those addresses
 		///< cannot be bound and 'do_throw' is true.
 
-	std::unique_ptr<ServerPeer> doNewPeer( ExceptionSinkUnbound , const ServerPeerInfo & , const ServerInfo & ) ;
+	std::unique_ptr<ServerPeer> doNewPeer( ExceptionSinkUnbound , ServerPeerInfo && , const ServerInfo & ) ;
 		///< Pseudo-private method used by the pimple class.
 
 protected:
-	virtual std::unique_ptr<ServerPeer> newPeer( ExceptionSinkUnbound , ServerPeerInfo , ServerInfo ) = 0 ;
+	virtual std::unique_ptr<ServerPeer> newPeer( ExceptionSinkUnbound , ServerPeerInfo && , ServerInfo ) = 0 ;
 		///< A factory method which new()s a ServerPeer-derived
 		///< object. See GNet::Server for the details.
 
@@ -105,8 +109,8 @@ public:
 private:
 	friend class GNet::MultiServerImp ;
 	AddressList addresses( unsigned int ) const ;
-	AddressList addresses( unsigned int , G::StringArray & , G::StringArray & ) const ;
-	void init( const AddressList & address_list , ServerPeerConfig ) ;
+	AddressList addresses( unsigned int , G::StringArray & , G::StringArray & , G::StringArray & ) const ;
+	void init( const AddressList & address_list ) ;
 	bool gotServerFor( const Address & ) const ;
 	void onInterfaceEventTimeout() ;
 	static bool match( const Address & , const Address & ) ;
@@ -119,7 +123,8 @@ private:
 	G::StringArray m_interfaces ;
 	unsigned int m_port ;
 	std::string m_server_type ;
-	ServerPeerConfig m_server_peer_config ;
+	ServerPeer::Config m_server_peer_config ;
+	Server::Config m_server_config ;
 	Interfaces m_if ;
 	ServerList m_server_list ;
 	Timer<MultiServer> m_interface_event_timer ;
@@ -131,13 +136,13 @@ private:
 class GNet::MultiServerImp : public GNet::Server
 {
 public:
-	MultiServerImp( MultiServer & , ExceptionSink , const Address & , ServerPeerConfig ) ;
+	MultiServerImp( MultiServer & , ExceptionSink , const Address & , ServerPeer::Config , Server::Config ) ;
 		///< Constructor.
 
 	~MultiServerImp() override ;
 		///< Destructor.
 
-	std::unique_ptr<ServerPeer> newPeer( ExceptionSinkUnbound , ServerPeerInfo ) final ;
+	std::unique_ptr<ServerPeer> newPeer( ExceptionSinkUnbound , ServerPeerInfo&& ) final ;
 		///< Called by the base class to create a new ServerPeer.
 
 	void cleanup() ;

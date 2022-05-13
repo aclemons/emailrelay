@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ namespace G
 class G::Cleanup
 {
 public:
-	G_EXCEPTION( Error , "cleanup error" ) ;
+	G_EXCEPTION( Error , tx("cleanup error") ) ;
 	struct Block /// A RAII class to temporarily block signal delivery.
 	{
 		explicit Block( bool active = true ) noexcept ;
@@ -75,6 +75,14 @@ public:
 
 	static void release() noexcept ;
 		///< Releases block()ed signals.
+
+	static const char * strdup( const char * ) ;
+		///< A strdup() function that makes it clear in the stack trace
+		///< that leaks are expected.
+
+	static const char * strdup( const std::string & ) ;
+		///< A strdup() function that makes it clear in the stack trace
+		///< that leaks are expected.
 
 public:
 	Cleanup() = delete ;

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -142,7 +142,7 @@ void G::NewProcess::kill( bool yield ) noexcept
 	if( yield )
 	{
 		G::threading::yield() ;
-		::close( ::open( "/dev/null" , O_RDONLY ) ) ; // hmm
+		::close( ::open( "/dev/null" , O_RDONLY ) ) ; // hmm // NOLINT
 		G::threading::yield() ;
 	}
 }
@@ -177,7 +177,7 @@ G::NewProcessImp::NewProcessImp( const Path & exe , const StringArray & args , c
 		{
 			// change directory
 			if( !cd.empty() )
-				Process::cd( cd ) ;
+				Process::cd( cd ) ; // throws on error
 
 			// set real id
 			if( run_as_id != Identity::invalid() )
@@ -236,7 +236,7 @@ std::pair<bool,pid_t> G::NewProcessImp::fork()
 	if( !ok ) throw NewProcess::CannotFork() ;
 	bool in_child = rc == 0 ;
 	auto child_pid = static_cast<pid_t>(rc) ;
-	return std::make_pair( in_child , child_pid ) ;
+	return { in_child , child_pid } ;
 }
 
 void G::NewProcessImp::printError( int stdxxx , const std::string & s )
@@ -322,7 +322,7 @@ bool G::NewProcessImp::duplicate( Fd fd , int fd_std )
 	G_ASSERT( !(fd==Fd::pipe()) ) ;
 	if( fd == Fd::devnull() )
 	{
-		int fd_null = ::open( G::Path::nullDevice().cstr() , fd_std == STDIN_FILENO ? O_RDONLY : O_WRONLY ) ;
+		int fd_null = ::open( G::Path::nullDevice().cstr() , fd_std == STDIN_FILENO ? O_RDONLY : O_WRONLY ) ; // NOLINT
 		if( fd_null < 0 ) throw NewProcess::Error( "failed to open /dev/null" ) ;
 		::dup2( fd_null , fd_std ) ;
 		return true ;
@@ -429,7 +429,7 @@ G::NewProcessWaitable & G::NewProcessWaitable::wait()
 {
 	// (worker thread - keep it simple - never throws - does read then waitpid)
 	{
-		std::array<char,64U> discard ; // NOLINT cppcoreguidelines-pro-type-member-init
+		std::array<char,64U> discard {} ;
 		char * p = &m_buffer[0] ;
 		std::size_t space = m_buffer.size() ;
 		std::size_t size = 0U ;
@@ -469,7 +469,7 @@ G::NewProcessWaitable & G::NewProcessWaitable::wait()
 		errno = 0 ;
 		m_rc = ::waitpid( m_pid , &m_status , 0 ) ;
 		m_error = errno ;
-		if( m_rc >= 0 && ( WIFSTOPPED(m_status) || WIFCONTINUED(m_status) ) )
+		if( m_rc >= 0 && ( WIFSTOPPED(m_status) || WIFCONTINUED(m_status) ) ) // NOLINT
 			; // keep waiting
 		else if( m_rc == -1 && m_error == EINTR )
 			; // keep waiting
@@ -498,18 +498,18 @@ int G::NewProcessWaitable::get() const
 			ss << "errno=" << (m_read_error?m_read_error:m_error) ;
 			throw NewProcess::WaitError( ss.str() ) ;
 		}
-		else if( !WIFEXITED(m_status) )
+		else if( !WIFEXITED(m_status) ) // NOLINT
 		{
 			// uncaught signal
 			std::ostringstream ss ;
 			ss << "pid=" << m_pid ;
-			if( WIFSIGNALED(m_status) )
-				ss << " signal=" << WTERMSIG(m_status) ;
+			if( WIFSIGNALED(m_status) ) // NOLINT
+				ss << " signal=" << WTERMSIG(m_status) ; // NOLINT
 			throw NewProcess::ChildError( ss.str() ) ;
 		}
 		else
 		{
-			result = WEXITSTATUS( m_status ) ;
+			result = WEXITSTATUS( m_status ) ; // NOLINT
 		}
 	}
 	return result ;
@@ -522,10 +522,10 @@ int G::NewProcessWaitable::get( std::nothrow_t , int ec ) const
 	{
 		if( m_error || m_read_error )
 			result = ec ;
-		else if( !WIFEXITED(m_status) )
-			result = 128 + WTERMSIG(m_status) ;
+		else if( !WIFEXITED(m_status) ) // NOLINT
+			result = 128 + WTERMSIG(m_status) ; // NOLINT
 		else
-			result = WEXITSTATUS( m_status ) ;
+			result = WEXITSTATUS( m_status ) ; // NOLINT
 	}
 	return result ;
 }
@@ -533,8 +533,8 @@ int G::NewProcessWaitable::get( std::nothrow_t , int ec ) const
 std::string G::NewProcessWaitable::output() const
 {
 	if( m_fd < 0 || m_read_error != 0 )
-		return std::string() ;
+		return {} ;
 	else
-		return std::string( &m_buffer[0] , m_buffer.size() ) ;
+		return { &m_buffer[0] , m_buffer.size() } ;
 }
 

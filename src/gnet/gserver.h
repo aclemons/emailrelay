@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,8 +25,11 @@
 #include "ggettext.h"
 #include "gserverpeer.h"
 #include "gexceptionsink.h"
+#include "gexception.h"
 #include "gsocket.h"
 #include "glistener.h"
+#include "glimits.h"
+#include "gprocess.h"
 #include "gevent.h"
 #include <utility>
 #include <memory>
@@ -36,7 +39,6 @@ namespace GNet
 {
 	class Server ;
 	class ServerPeer ;
-	class ServerPeerConfig ;
 	class ServerPeerInfo ;
 }
 
@@ -48,9 +50,16 @@ namespace GNet
 class GNet::Server : public Listener, private EventHandler, private ExceptionHandler
 {
 public:
-	G_EXCEPTION( CannotBind , G::gettext_noop("cannot bind the listening port") ) ;
+	G_EXCEPTION( CannotBind , tx("cannot bind the listening port") ) ;
 
-	Server( ExceptionSink , const Address & listening_address , ServerPeerConfig ) ;
+	struct Config /// A configuration structure for GNet::Server.
+	{
+		int listen_queue { G::Limits<>::net_listen_queue } ; // Socket::listen() 'backlog'
+		bool uds_open_permissions {true} ;
+		Config & set_uds_open_permissions( bool b = true ) ;
+	} ;
+
+	Server( ExceptionSink , const Address & listening_address , ServerPeer::Config , Config ) ;
 		///< Constructor. The server listens on the given address,
 		///< which can be the 'any' address. The ExceptionSink
 		///< is used for exceptions relating to the listening
@@ -68,21 +77,21 @@ public:
 		///< bound. Throws CannotBind if the address cannot
 		///< be bound and 'do_throw' is true.
 
-	std::vector<std::weak_ptr<GNet::ServerPeer> > peers() ;
+	std::vector<std::weak_ptr<GNet::ServerPeer>> peers() ;
 		///< Returns the list of ServerPeer objects.
 
 	bool hasPeers() const ;
 		///< Returns true if peers() is not empty.
 
 protected:
-	virtual std::unique_ptr<ServerPeer> newPeer( ExceptionSinkUnbound , ServerPeerInfo ) = 0 ;
+	virtual std::unique_ptr<ServerPeer> newPeer( ExceptionSinkUnbound , ServerPeerInfo && ) = 0 ;
 		///< A factory method which new()s a ServerPeer-derived
 		///< object. This method is called when a new connection
 		///< comes in to this server. The new ServerPeer object
 		///< is used to represent the state of the client/server
 		///< connection.
 		///<
-		///< The implementation should pass the 'ServerPeerInfo'
+		///< The implementation should std::move the 'ServerPeerInfo'
 		///< parameter through to the ServerPeer base-class
 		///< constructor.
 		///<
@@ -100,8 +109,8 @@ protected:
 		///< most-derived Server.
 
 private: // overrides
-	void readEvent() override ; // Override from GNet::EventHandler.
-	void writeEvent() override ; // Override from GNet::EventHandler.
+	void readEvent( Descriptor ) override ; // Override from GNet::EventHandler.
+	void writeEvent( Descriptor ) override ; // Override from GNet::EventHandler.
 	void onException( ExceptionSource * , std::exception & , bool ) override ; // Override from GNet::ExceptionHandler.
 
 public:
@@ -112,26 +121,30 @@ public:
 
 private:
 	void accept( ServerPeerInfo & ) ;
+	static bool unlink( G::SignalSafe , const char * ) noexcept ;
 
 private:
-	using PeerList = std::vector<std::shared_ptr<ServerPeer> > ;
+	using PeerList = std::vector<std::shared_ptr<ServerPeer>> ;
 	ExceptionSink m_es ;
-	ServerPeerConfig m_server_peer_config ;
+	ServerPeer::Config m_server_peer_config ;
 	StreamSocket m_socket ; // listening socket
 	PeerList m_peer_list ;
 } ;
 
 //| \class GNet::ServerPeerInfo
-/// A structure used in GNet::Server::newPeer().
+/// A move-only structure used in GNet::Server::newPeer() and
+/// containing the new socket.
 ///
 class GNet::ServerPeerInfo
 {
 public:
-	std::shared_ptr<StreamSocket> m_socket ;
+	std::unique_ptr<StreamSocket> m_socket ;
 	Address m_address ;
-	ServerPeerConfig m_config ;
+	ServerPeer::Config m_server_peer_config ;
 	Server * m_server ;
-	ServerPeerInfo( Server * , ServerPeerConfig ) ;
+	ServerPeerInfo( Server * , ServerPeer::Config ) ;
 } ;
+
+inline GNet::Server::Config & GNet::Server::Config::set_uds_open_permissions( bool b ) { uds_open_permissions = b ; return *this ; }
 
 #endif

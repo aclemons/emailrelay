@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -17,12 +17,12 @@
 #
 # Makefile.am
 #
-# This makefile does not build or install anything by default.
+# By default this makefile does nothing.
 #
 # Consider using 'gettextize' to convert the project files canonically, and
 # after that this makefile should not be used.
 #
-# This makefile can be used for testing, something like this:
+# For testing do something like this:
 #
 #   $ apt-get install locales-all # or equivalent
 #   $ ./configure.sh --with-gettext --disable-gui --without-doxygen
@@ -39,8 +39,8 @@
 # baked-in from the configure script's '--localedir' path, which is in turn
 # based on its '--prefix' directory (eg. /usr/local). However, when
 # installing with DESTDIR the emailrelay program needs the '--localedir'
-# command-line option, as shown above, in order to find them
-# (see src/main/run.cpp).
+# command-line option, as shown above, in order to find them (see
+# src/main/run.cpp).
 #
 
 EXTRA_DIST = Makevars POTFILES.in
@@ -65,7 +65,7 @@ mo: emailrelay.$(LANG).mo
 
 emailrelay.pot:
 	@rm emailrelay.pot 2>/dev/null || true
-	xgettext -i --no-wrap --package-name=$(PACKAGE_NAME) --package-version=$(PACKAGE_VERSION) --c++ -o emailrelay.pot `find $(top_srcdir)/src -name *.cpp -o -name *.h | grep -v gui/`
+	cd $(top_srcdir)/src ; xgettext -i --no-wrap --keyword=txt --keyword=tx --package-name=$(PACKAGE_NAME) --package-version=$(PACKAGE_VERSION) --c++ --force-po -o ../po/emailrelay.pot `find . -name *.cpp -o -name *.h`
 
 emailrelay.$(LANG).mo: emailrelay.$(LANG).po
 	msgfmt -o $@ $<

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,34 +20,39 @@
 
 #include "gdef.h"
 #include "gfilestore.h"
+#include "gsmtpserverparser.h"
 #include "gnewfile.h"
 #include "gprocess.h"
 #include "groot.h"
 #include "gfile.h"
 #include "gstr.h"
 #include "gxtext.h"
-#include "geightbit.h"
 #include "gassert.h"
 #include "glog.h"
 #include <functional>
+#include <limits>
 #include <algorithm>
 #include <iostream>
 #include <fstream>
 
 GSmtp::NewFile::NewFile( FileStore & store , const std::string & from ,
-	const std::string & from_auth_in , const std::string & from_auth_out ,
-	std::size_t max_size , bool test_for_eight_bit ) :
+	const MessageStore::SmtpInfo & smtp_info , const std::string & from_auth_out ,
+	std::size_t max_size ) :
 		m_store(store) ,
 		m_id(store.newId()) ,
 		m_committed(false) ,
-		m_test_for_eight_bit(test_for_eight_bit) ,
 		m_saved(false) ,
-		m_size(0UL) ,
+		m_size(0U) ,
 		m_max_size(max_size)
 {
+	G_ASSERT( ServerParser::mailboxStyle(from) != ServerParser::MailboxStyle::Invalid ) ;
+	bool utf8 = ServerParser::mailboxStyle(from) == ServerParser::MailboxStyle::Utf8 ;
+
+	m_env.m_body_type = Envelope::parseSmtpBodyType( smtp_info.body ) ;
 	m_env.m_from = from ;
-	m_env.m_from_auth_in = from_auth_in ;
+	m_env.m_from_auth_in = smtp_info.auth ;
 	m_env.m_from_auth_out = from_auth_out ;
+	m_env.m_utf8_mailboxes = utf8 ;
 
 	// ask the store for a content stream
 	G_LOG( "GSmtp::NewMessage: content file: " << cpath() ) ;
@@ -80,11 +85,13 @@ bool GSmtp::NewFile::prepare( const std::string & session_auth_id ,
 	const std::string & peer_socket_address , const std::string & peer_certificate )
 {
 	// flush and close the content file
-	//
-	flushContent() ;
+	G_ASSERT( m_content != nullptr ) ;
+	m_content->close() ;
+	if( m_content->fail() ) // trap failbit/badbit
+		throw FileError( "cannot write content file " + cpath().str() ) ;
+	m_content.reset() ;
 
 	// write the envelope
-	//
 	m_env.m_authentication = session_auth_id ;
 	m_env.m_client_socket_address = peer_socket_address ;
 	m_env.m_client_certificate = peer_certificate ;
@@ -92,7 +99,6 @@ bool GSmtp::NewFile::prepare( const std::string & session_auth_id ,
 		throw FileError( "cannot write envelope file " + epath(State::New).str() ) ;
 
 	// copy or move aside for local mailboxes
-	//
 	if( !m_env.m_to_local.empty() && m_env.m_to_remote.empty() )
 	{
 		moveToLocal( cpath() , epath(State::New) , epath(State::Normal) ) ;
@@ -110,11 +116,11 @@ bool GSmtp::NewFile::prepare( const std::string & session_auth_id ,
 	}
 }
 
-void GSmtp::NewFile::commit( bool strict )
+void GSmtp::NewFile::commit( bool throw_on_error )
 {
 	m_committed = true ;
 	bool ok = commitEnvelope() ;
-	if( !ok && strict )
+	if( !ok && throw_on_error )
 		throw FileError( "cannot rename envelope file to " + epath(State::Normal).str() ) ;
 	if( ok )
 		static_cast<MessageStore&>(m_store).updated() ;
@@ -123,39 +129,48 @@ void GSmtp::NewFile::commit( bool strict )
 void GSmtp::NewFile::addTo( const std::string & to , bool local )
 {
 	if( local )
+	{
 		m_env.m_to_local.push_back( to ) ;
+	}
 	else
+	{
 		m_env.m_to_remote.push_back( to ) ;
+		if( ServerParser::mailboxStyle(to) == ServerParser::MailboxStyle::Utf8 )
+			m_env.m_utf8_mailboxes = true ;
+	}
 }
 
-bool GSmtp::NewFile::addText( const char * line_data , std::size_t line_size )
+GSmtp::NewMessage::Status GSmtp::NewFile::addContent( const char * data , std::size_t data_size )
 {
-	m_size += static_cast<unsigned long>( line_size ) ;
+	std::size_t old_size = m_size ;
+	std::size_t new_size = m_size + data_size ;
+	if( new_size < m_size )
+		new_size = std::numeric_limits<std::size_t>::max() ;
 
-	// testing for eight-bit content can be relatively slow -- not testing
-	// the content is implied by RFC-2821 ("a relay should ... relay
-	// [messages] without inspecting [the] content"), but RFC-6152
-	// disallows sending eight-bit content to a seven-bit server --
-	// here we optionally do the test on each line of content -- the
-	// final result is written into the envelope file, allowing an
-	// external program to change it before forwarding
-	//
-	if( m_test_for_eight_bit && m_env.m_eight_bit != 1 )
-		m_env.m_eight_bit = isEightBit(line_data,line_size) ? 1 : 0 ;
+	m_size = new_size ;
 
-	std::ostream & stream = *m_content ;
-	stream.write( line_data , line_size ) ;
+	// truncate to m_max_size bytes
+	if( m_max_size && new_size >= m_max_size )
+		data_size = std::max(m_max_size,old_size) - old_size ;
 
-	return m_max_size == 0UL || m_size < m_max_size ;
+	if( data_size )
+	{
+		std::ostream & stream = *m_content ;
+		stream.write( data , data_size ) ; // NOLINT narrowing
+	}
+
+	if( m_content->fail() )
+		return NewMessage::Status::Error ;
+	else if( m_max_size && m_size >= m_max_size )
+		return NewMessage::Status::TooBig ;
+	else
+		return NewMessage::Status::Ok ;
 }
 
-void GSmtp::NewFile::flushContent()
+std::size_t GSmtp::NewFile::contentSize() const
 {
-	G_ASSERT( m_content != nullptr ) ;
-	m_content->close() ;
-	if( m_content->fail() ) // trap failbit/badbit
-		throw FileError( "cannot write content file " + cpath().str() ) ;
-	m_content.reset() ;
+	// wrt addContent() -- counts beyond max_size -- not valid if stream.fail()
+	return m_size ;
 }
 
 void GSmtp::NewFile::discardContent()
@@ -173,11 +188,6 @@ void GSmtp::NewFile::deleteEnvelope()
 {
 	FileWriter claim_writer ;
 	G::File::remove( epath(State::New) , std::nothrow ) ;
-}
-
-bool GSmtp::NewFile::isEightBit( const char * line_data , std::size_t line_size )
-{
-	return G::eightbit( line_data , line_size ) ;
 }
 
 bool GSmtp::NewFile::saveEnvelope()

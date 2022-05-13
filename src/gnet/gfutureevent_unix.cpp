@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@ public:
 	void operator=( FutureEventImp && ) = delete ;
 
 private: // overrides
-	void readEvent() override ; // Override from GNet::EventHandler.
+	void readEvent( Descriptor ) override ; // Override from GNet::EventHandler.
 
 private:
 	static int init( int ) ;
@@ -99,7 +99,7 @@ GNet::FutureEventImp::FutureEventImp( FutureEventHandler & handler , ExceptionSi
 
 int GNet::FutureEventImp::init( int fd )
 {
-	GDEF_IGNORE_RETURN ::fcntl( fd , F_SETFL , ::fcntl(fd,F_GETFL) | O_NONBLOCK ) ;
+	GDEF_IGNORE_RETURN ::fcntl( fd , F_SETFL , ::fcntl(fd,F_GETFL) | O_NONBLOCK ) ; // NOLINT
 	return fd ;
 }
 
@@ -136,7 +136,7 @@ bool GNet::FutureEventImp::send( HANDLE handle , bool close ) noexcept
 	return ok ;
 }
 
-void GNet::FutureEventImp::readEvent()
+void GNet::FutureEventImp::readEvent( Descriptor )
 {
 	receive() ;
 	if( !m_triggered )

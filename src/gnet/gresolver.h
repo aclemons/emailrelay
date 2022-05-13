@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,8 +25,10 @@
 #include "glocation.h"
 #include "geventhandler.h"
 #include "gexceptionsink.h"
+#include "gexception.h"
 #include "gaddress.h"
 #include <vector>
+#include <memory>
 
 namespace GNet
 {
@@ -43,9 +45,9 @@ namespace GNet
 class GNet::Resolver
 {
 public:
+	G_EXCEPTION( Error , tx("asynchronous resolver error") ) ;
+	G_EXCEPTION( BusyError , tx("asynchronous resolver still busy") ) ;
 	using AddressList = std::vector<Address> ;
-	G_EXCEPTION( Error , "asynchronous resolver error" ) ;
-	G_EXCEPTION( BusyError , "asynchronous resolver still busy" ) ;
 	struct Callback /// An interface used for GNet::Resolver callbacks.
 	{
 		virtual ~Callback() = default ;

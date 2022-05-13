@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # Copying and distribution of this file, with or without modification,
 # are permitted in any medium without royalty provided the copyright
@@ -30,7 +30,7 @@ use strict ;
 use FileHandle ;
 $SIG{__DIE__} = sub { (my $e = join(" ",@_)) =~ s/\n/ /g ; print "<<error: $e>>\n" ; exit 99 } ;
 
-my $content = @ARGV[0] or die "usage error\n" ;
+my $content = $ARGV[0] or die "usage error\n" ;
 my $verbose = 1 ;
 
 # read the bcc list from the content file

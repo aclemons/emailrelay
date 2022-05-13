@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@
 #include "gstr.h"
 #include "garg.h"
 #include "ggetopt.h"
+#include "goptionsoutput.h"
 #include "gpath.h"
 #include "gserver.h"
 #include "gserverpeer.h"
@@ -59,7 +60,7 @@ namespace
 	}
 }
 
-struct Config
+struct TestServerConfig
 {
 	bool m_ipv6 ;
 	unsigned int m_port ;
@@ -74,7 +75,7 @@ struct Config
 	bool m_tls ;
 	bool m_quiet ;
 	unsigned int m_idle_timeout ;
-	Config( bool ipv6 , unsigned int port , bool auth_foo_bar , bool auth_cram , bool auth_login , bool auth_plain ,
+	TestServerConfig( bool ipv6 , unsigned int port , bool auth_foo_bar , bool auth_cram , bool auth_login , bool auth_plain ,
 		bool auth_ok , bool slow , int fail_at , bool drop , bool tls , bool quiet , unsigned int idle_timeout ) :
 			m_ipv6(ipv6) ,
 			m_port(port) ,
@@ -96,7 +97,7 @@ struct Config
 class Peer : public GNet::ServerPeer
 {
 public:
-	Peer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo , Config ) ;
+	Peer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo && , TestServerConfig ) ;
 	void onDelete( const std::string & ) override ;
 	void onSendComplete() override ;
 	bool onReceive( const char * , std::size_t , std::size_t , std::size_t , char ) override ;
@@ -108,7 +109,7 @@ private:
 
 private:
 	GNet::ExceptionSink m_es ;
-	Config m_config ;
+	TestServerConfig m_config ;
 	GNet::Timer<Peer> m_slow_timer ;
 	bool m_in_data ;
 	bool m_in_auth_1 ;
@@ -119,18 +120,21 @@ private:
 class Server : public GNet::Server
 {
 public:
-	Server( GNet::ExceptionSink , Config c ) ;
+	Server( GNet::ExceptionSink , TestServerConfig ) ;
 	~Server() override ;
-	std::unique_ptr<GNet::ServerPeer> newPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo ) override ;
-	Config m_config ;
+	std::unique_ptr<GNet::ServerPeer> newPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo && ) override ;
+	TestServerConfig m_config ;
 } ;
 
-Server::Server( GNet::ExceptionSink es , Config config ) :
-	GNet::Server(es,GNet::Address(config.m_ipv6?GNet::Address::Family::ipv6:GNet::Address::Family::ipv4,config.m_port),GNet::ServerPeerConfig(config.m_idle_timeout)) ,
+Server::Server( GNet::ExceptionSink es , TestServerConfig config ) :
+	GNet::Server(es,
+		GNet::Address(config.m_ipv6?GNet::Address::Family::ipv6:GNet::Address::Family::ipv4,config.m_port),
+		GNet::ServerPeer::Config()
+			.set_read_buffer_size(config.m_slow?3U:0U)
+			.set_idle_timeout(config.m_idle_timeout),
+		GNet::Server::Config()) ,
 	m_config(config)
 {
-	if( m_config.m_slow )
-		GNet::SocketProtocol::setReadBufferSize( 3U ) ;
 }
 
 Server::~Server()
@@ -138,12 +142,12 @@ Server::~Server()
 	serverCleanup() ; // base class early cleanup
 }
 
-std::unique_ptr<GNet::ServerPeer> Server::newPeer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo info )
+std::unique_ptr<GNet::ServerPeer> Server::newPeer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo && peer_info )
 {
 	try
 	{
-		G_LOG_S( "Server::newPeer: new connection from " << info.m_address.displayString() ) ;
-		return std::unique_ptr<GNet::ServerPeer>( new Peer( esu , info , m_config ) ) ;
+		G_LOG_S( "Server::newPeer: new connection from " << peer_info.m_address.displayString() ) ;
+		return std::unique_ptr<GNet::ServerPeer>( new Peer( esu , std::move(peer_info) , m_config ) ) ;
 	}
 	catch( std::exception & e )
 	{
@@ -154,8 +158,8 @@ std::unique_ptr<GNet::ServerPeer> Server::newPeer( GNet::ExceptionSinkUnbound es
 
 //
 
-Peer::Peer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo info , Config config ) :
-	GNet::ServerPeer(esu.bind(this),info,GNet::LineBufferConfig::smtp()) ,
+Peer::Peer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo && peer_info , TestServerConfig config ) :
+	GNet::ServerPeer(esu.bind(this),std::move(peer_info),GNet::LineBufferConfig::smtp()) ,
 	m_es(esu.bind(this)) ,
 	m_config(config) ,
 	m_slow_timer(*this,&Peer::onSlowTimeout,m_es) ,
@@ -164,7 +168,7 @@ Peer::Peer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo info , Config 
 	m_in_auth_2(false) ,
 	m_message(0)
 {
-	send( "220 test server\r\n" ) ;
+	send( "220 test server\r\n"_sv ) ;
 	if( m_config.m_slow )
 		m_slow_timer.startTimer( 0U ) ;
 }
@@ -308,11 +312,13 @@ bool Peer::onReceive( const char * line_data , std::size_t line_size , std::size
 
 void Peer::tx( const std::string & s )
 {
-	std::string ss( s ) ;
-	G::Str::trimRight( ss , "\n\r" ) ;
 	if( !m_config.m_quiet )
+	{
+		std::string ss( s ) ;
+		G::Str::trimRight( ss , "\n\r" ) ;
 		std::cout << "tx>>: [" << ss << "]" << std::endl ;
-	send( s ) ;
+	}
+	send( s ) ; // GNet::ServerPeer::send()
 }
 
 //
@@ -334,7 +340,7 @@ int main( int argc , char * argv [] )
 			"q!quiet!less logging!!0!!1" "|"
 			"f!fail-at!fail from the n'th message! of the session (zero-based index)!1!n!1" "|"
 			"d!drop!drop the connection when content has DROP or when failing!!0!!1" "|"
-			"i!idle-timeout!idle timeout!!1!<seconds>!1" "|"
+			"i!idle-timeout!idle timeout!!1!seconds!1" "|"
 			"P!port!port number!!1!port!1" "|"
 			"f!pid-file!pid file!!1!path!1" "|"
 			"6!ipv6!use ipv6!!0!!1" "|"
@@ -346,7 +352,7 @@ int main( int argc , char * argv [] )
 		}
 		if( opt.contains("help") )
 		{
-			opt.options().showUsage( {} , std::cout , arg.prefix() ) ;
+			G::OptionsOutput(opt.options()).showUsage( {} , std::cout , arg.prefix() ) ;
 			return 0 ;
 		}
 
@@ -388,7 +394,7 @@ int main( int argc , char * argv [] )
 		std::unique_ptr<GNet::EventLoop> event_loop = GNet::EventLoop::create() ;
 		GNet::ExceptionSink es ;
 		GNet::TimerList timer_list ;
-		Server server( es , Config(ipv6,port,auth_foo_bar,auth_cram,auth_login,auth_plain,auth_ok,slow,fail_at,drop,tls,quiet,idle_timeout) ) ;
+		Server server( es , TestServerConfig(ipv6,port,auth_foo_bar,auth_cram,auth_login,auth_plain,auth_ok,slow,fail_at,drop,tls,quiet,idle_timeout) ) ;
 
 		event_loop->run() ;
 

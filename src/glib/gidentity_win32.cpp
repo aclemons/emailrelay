@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ G::Identity::Identity( const std::string & , const std::string & ) :
 
 std::pair<uid_t,gid_t> G::Identity::lookupUser( const std::string & )
 {
-	return {0,0} ;
+	return { 0 , 0 } ;
 }
 
 gid_t G::Identity::lookupGroup( const std::string & )
@@ -98,12 +98,12 @@ bool G::Identity::isRoot() const noexcept
 	return false ;
 }
 
-bool G::Identity::operator==( const Identity & other ) const noexcept
+bool G::Identity::operator==( const Identity & ) const noexcept
 {
 	return true ;
 }
 
-bool G::Identity::operator!=( const Identity & other ) const noexcept
+bool G::Identity::operator!=( const Identity & ) const noexcept
 {
 	return false ;
 }

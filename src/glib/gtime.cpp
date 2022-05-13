@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,43 +31,31 @@ G::Time::Time( int hh , int mm , int ss ) :
 {
 }
 
-G::Time::Time( const BrokenDownTime & tm )
+G::Time::Time( const BrokenDownTime & tm ) :
+	m_hh(tm.hour()) ,
+	m_mm(tm.min()) ,
+	m_ss(tm.sec())
 {
-	m_hh = tm.hour() ;
-	m_mm = tm.min() ;
-	m_ss = tm.sec() ;
 }
 
-G::Time::Time()
+G::Time::Time() :
+	Time(SystemTime::now().utc())
 {
-	BrokenDownTime tm = SystemTime::now().utc() ;
-	m_hh = tm.hour() ;
-	m_mm = tm.min() ;
-	m_ss = tm.sec() ;
 }
 
-G::Time::Time( SystemTime t )
+G::Time::Time( SystemTime t ) :
+	Time(t.utc())
 {
-	BrokenDownTime tm = t.utc() ;
-	m_hh = tm.hour() ;
-	m_mm = tm.min() ;
-	m_ss = tm.sec() ;
 }
 
-G::Time::Time( const LocalTime & )
+G::Time::Time( const LocalTime & ) :
+	Time(SystemTime::now().local())
 {
-	BrokenDownTime tm = SystemTime::now().local() ;
-	m_hh = tm.hour() ;
-	m_mm = tm.min() ;
-	m_ss = tm.sec() ;
 }
 
-G::Time::Time( SystemTime t , const LocalTime & )
+G::Time::Time( SystemTime t , const LocalTime & ) :
+	Time(t.local())
 {
-	BrokenDownTime tm = t.local() ;
-	m_hh = tm.hour() ;
-	m_mm = tm.min() ;
-	m_ss = tm.sec() ;
 }
 
 int G::Time::hours() const
@@ -121,9 +109,9 @@ G::Time G::Time::at( unsigned int s )
 	unsigned int hh = s / 3600U ;
 	unsigned int mm_ss = s - (hh*3600U) ;
 	return {
-		std::max(0,std::min(static_cast<int>(hh),23)) ,
-		std::max(0,std::min(static_cast<int>(mm_ss/60U),59)) ,
-		std::max(0,std::min(static_cast<int>(mm_ss%60U),59)) } ;
+		std::max(0,std::min(23,static_cast<int>(hh))) ,
+		std::max(0,std::min(59,static_cast<int>(mm_ss/60U))) ,
+		std::max(0,std::min(59,static_cast<int>(mm_ss%60U))) } ;
 }
 
 bool G::Time::operator==( const Time & other ) const

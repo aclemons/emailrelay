@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ const char * Legal::text()
 		"MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
 		"GNU General Public License for more details.\n"
 		"\n\n"
-		"Copyright (C) 2001-2021 Graeme Walker" ;
+		"Copyright (C) 2001-2022 Graeme Walker" ;
 }
 
 std::vector<std::string> Legal::credits()

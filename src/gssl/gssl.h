@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,9 +24,11 @@
 #define G_SSL_H
 
 #include "gdef.h"
-#include "gstrings.h"
+#include "gstringarray.h"
+#include "gexception.h"
 #include "greadwrite.h"
 #include <string>
+#include <memory>
 #include <utility>
 
 namespace GSsl
@@ -73,8 +75,8 @@ public:
 		more
 	} ;
 
-	explicit Protocol( const Profile & , const std::string & peer_certificate_name = std::string() ,
-		const std::string & peer_host_name = std::string() ) ;
+	explicit Protocol( const Profile & , const std::string & peer_certificate_name = {} ,
+		const std::string & peer_host_name = {} ) ;
 			///< Constructor.
 			///<
 			///< The optional "peer-certificate-name" parameter is used as an
@@ -251,9 +253,11 @@ private:
 class GSsl::Library
 {
 public:
+	G_EXCEPTION( NoInstance , tx("no tls library object") ) ;
+	G_EXCEPTION( BadProfileName , tx("invalid tls profile name") ) ;
 	using LogFn = void (*)(int, const std::string &) ;
 
-	explicit Library( bool active = true , const std::string & library_config = std::string() ,
+	explicit Library( bool active = true , const std::string & library_config = {} ,
 		LogFn = Library::log , bool verbose = true ) ;
 			///< Constructor.
 			///<
@@ -278,11 +282,11 @@ public:
 		///< Returns a pointer to a library object, if any.
 
 	void addProfile( const std::string & profile_name , bool is_server_profile ,
-		const std::string & key_file = std::string() , const std::string & cert_file = std::string() ,
-		const std::string & ca_path = std::string() ,
-		const std::string & default_peer_certificate_name = std::string() ,
-		const std::string & default_peer_host_name = std::string() ,
-		const std::string & profile_config = std::string() ) ;
+		const std::string & key_file = {} , const std::string & cert_file = {} ,
+		const std::string & ca_path = {} ,
+		const std::string & default_peer_certificate_name = {} ,
+		const std::string & default_peer_host_name = {} ,
+		const std::string & profile_config = {} ) ;
 			///< Creates a named Profile object that can be retrieved by profile().
 			///<
 			///< A typical application will have two profiles named "client" and "server".
@@ -362,7 +366,7 @@ public:
 		///< hash functions that can generate and be initialised with an
 		///< intermediate state.
 
-	Digester digester( const std::string & name , const std::string & state = std::string() , bool need_state = false ) const ;
+	Digester digester( const std::string & name , const std::string & state = {} , bool need_state = false ) const ;
 		///< Returns a digester object.
 
 public:
@@ -432,7 +436,7 @@ public:
 		///< Destructor.
 
 	virtual std::unique_ptr<ProtocolImpBase> newProtocol( const std::string & , const std::string & ) const = 0 ;
-		///< Factory method for a new Protocol object on the heap.
+		///< Factory method for a new Protocol object.
 } ;
 
 //| \class GSsl::ProtocolImpBase

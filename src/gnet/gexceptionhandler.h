@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -50,7 +50,8 @@ public:
 	virtual void onException( ExceptionSource * source , std::exception & e , bool done ) = 0 ;
 		///< Called by the event loop when an exception is thrown out
 		///< of an event loop callback. The exception is still active
-		///< so it can be rethrown with "throw".
+		///< so it can be rethrown with "throw" or captured with
+		///< std::current_exception().
 		///<
 		///< The source parameter can be used to point to the object
 		///< that received the original event loop callback. This

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 #include <openssl/md5.h>
 #include <openssl/sha.h>
 #include <openssl/evp.h>
+#include <memory>
 #include <stdexcept>
 #include <functional>
 #include <map>
@@ -163,7 +164,7 @@ public:
 	void operator=( ProfileImp && ) = delete ;
 
 private:
-	static void check( int , const std::string & , const std::string & = std::string() ) ;
+	static void check( int , const std::string & , const std::string & = {} ) ;
 	static int verifyPass( int , X509_STORE_CTX * ) ;
 	static int verifyPeerName( int , X509_STORE_CTX * ) ;
 	static std::string name( X509_NAME * ) ;

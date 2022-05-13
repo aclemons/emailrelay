@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -145,12 +145,14 @@ bool GAuth::Secret::isDotted( const std::string & s )
 	return
 		s.length() >= 15U &&
 		s.find_first_not_of("0123456789.") == std::string::npos &&
-		G::Str::splitIntoFields(s,".").size() == 8U ;
+		G::Str::splitIntoFields(s,'.').size() == 8U ;
 }
 
 std::string GAuth::Secret::undotted( const std::string & s )
 {
-	G::StringArray decimals = G::Str::splitIntoFields( s , "." ) ; decimals.resize( 8U ) ;
+	G::StringArray decimals = G::Str::splitIntoFields( s , '.' ) ;
+	decimals.resize( 8U ) ;
+
 	std::string result ;
 	for( std::size_t i = 0U ; i < 8U ; i++ )
 	{

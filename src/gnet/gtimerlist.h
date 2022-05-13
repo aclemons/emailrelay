@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -75,7 +75,7 @@ namespace GNet
 class GNet::TimerList
 {
 public:
-	G_EXCEPTION( NoInstance , "no TimerList instance" ) ;
+	G_EXCEPTION( NoInstance , tx("no TimerList instance") ) ;
 
 	TimerList() ;
 		///< Default constructor.
@@ -118,19 +118,21 @@ public:
 	static TimerList & instance() ;
 		///< Singleton access. Throws an exception if none.
 
-	std::string report() const ;
-		///< Returns a line of text reporting the status of the timer list.
-		///< Used in debugging and diagnostics.
-
 	void disarm( ExceptionHandler * ) noexcept ;
 		///< Resets any matching ExceptionHandler pointers.
+
+public:
+	TimerList( const TimerList & ) = delete ;
+	TimerList( TimerList && ) = delete ;
+	void operator=( const TimerList & ) = delete ;
+	void operator=( TimerList && ) = delete ;
 
 private:
 	struct Value /// A value type for the GNet::TimerList.
 	{
 		TimerBase * m_timer{nullptr} ; // handler for the timeout event
 		ExceptionSink m_es ; // handler for any exception thrown
-		Value() ; // for uclibc++
+		Value() ; // for uclibc++ std::vector
 		Value( TimerBase * t , ExceptionSink es ) ;
 		bool operator==( const Value & v ) const noexcept ;
 		void resetIf( TimerBase * p ) noexcept ;
@@ -147,21 +149,16 @@ private:
 		void operator=( Lock && ) = delete ;
 		TimerList & m_timer_list ;
 	} ;
-
-public:
-	TimerList( const TimerList & ) = delete ;
-	TimerList( TimerList && ) = delete ;
-	void operator=( const TimerList & ) = delete ;
-	void operator=( TimerList && ) = delete ;
-
-private:
 	friend class GNet::TimerListTest ;
 	friend struct Lock ;
+
+private:
 	const TimerBase * findSoonest() const ;
 	void lock() ;
 	void unlock() ;
 	void purgeRemoved() ;
 	void mergeAdded() ;
+	void doTimeout( Value & ) ;
 	static void removeFrom( List & , TimerBase * ) noexcept ;
 	static void disarmIn( List & , ExceptionHandler * ) noexcept ;
 

@@ -16,6 +16,7 @@
 
 # Name: address-verifier
 # Format: address-verifier <program>
+# Tags: smtp server
 # Description: Runs the specified external program to verify a message
 # recipent's e-mail address. A network verifier can be specified as
 # "net:<transport-address>".
@@ -24,6 +25,7 @@
 
 # Name: admin
 # Format: admin <admin-port>
+# Tags: server admin
 # Description: Enables an administration interface on the specified listening
 # port number. Use telnet or something similar to connect. The administration
 # interface can be used to trigger forwarding of spooled mail messages if the
@@ -33,6 +35,7 @@
 
 # Name: admin-terminate
 # Format: admin-terminate
+# Tags: server admin process
 # Description: Enables the "terminate" command in the administration
 # interface.
 #
@@ -40,6 +43,7 @@
 
 # Name: anonymous
 # Format: anonymous
+# Tags: smtp server
 # Description: Disables the server's SMTP VRFY command, sends less verbose
 # SMTP responses and SMTP greeting, and stops "Received" lines being added to
 # mail message content files.
@@ -48,6 +52,7 @@
 
 # Name: as-client
 # Format: as-client <host:port>
+# Tags: smtp client
 # Description: This is equivalent to "--log", "--no-syslog", "--no-daemon",
 # "--dont-serve", "--forward" and "--forward-to". It is a convenient way of
 # running a forwarding agent that forwards spooled mail messages and then
@@ -57,6 +62,7 @@
 
 # Name: as-proxy
 # Format: as-proxy <host:port>
+# Tags: smtp
 # Description: This is equivalent to "--log", "--close-stderr",
 # "--forward-on-disconnect" and "--forward-to". It is a convenient way of
 # running a store-and-forward daemon. Use "--log", "--forward-on-disconnect"
@@ -67,6 +73,7 @@
 
 # Name: as-server
 # Format: as-server
+# Tags: smtp server
 # Description: This is equivalent to "--log" and "--close-stderr". It is a
 # convenient way of running a background storage daemon that accepts mail
 # messages and spools them. Use "--log" instead of "--as-server" to keep
@@ -76,6 +83,7 @@
 
 # Name: client-auth
 # Format: client-auth <file>
+# Tags: smtp client auth
 # Description: Enables SMTP client authentication with the remote server,
 # using the client account details taken from the specified secrets file. The
 # secrets file should normally contain one line that starts with "client" and
@@ -90,6 +98,7 @@
 
 # Name: client-auth-config
 # Format: client-auth-config <config>
+# Tags: smtp client auth
 # Description: Configures the SMTP client authentication module using a
 # semicolon-separated list of configuration items. Each item is a
 # single-character key, followed by a colon and then a comma-separated list.
@@ -100,6 +109,7 @@
 
 # Name: client-filter
 # Format: client-filter <program>
+# Tags: smtp client
 # Description: Runs the specified external filter program whenever a mail
 # message is forwarded. The filter is passed the name of the message file in
 # the spool directory so that it can edit it as required. A network filter
@@ -113,6 +123,7 @@
 
 # Name: client-interface
 # Format: client-interface <ip-address>
+# Tags: smtp client
 # Description: Specifies the IP network address to be used to bind the local
 # end of outgoing SMTP connections. By default the address will depend on the
 # routing tables in the normal way. Use "0.0.0.0" to use only IPv4 addresses
@@ -122,6 +133,7 @@
 
 # Name: client-tls
 # Format: client-tls
+# Tags: smtp client tls
 # Description: Enables negotiated TLS for outgoing SMTP connections; the SMTP
 # STARTTLS command will be issued if the remote server supports it.
 #
@@ -129,6 +141,7 @@
 
 # Name: client-tls-certificate
 # Format: client-tls-certificate <pem-file>
+# Tags: smtp client tls
 # Description: Defines the TLS certificate file when acting as a SMTP client.
 # This file must contain the client's private key and certificate chain using
 # the PEM file format. Keep the file permissions tight to avoid accidental
@@ -138,6 +151,7 @@
 
 # Name: client-tls-connection
 # Format: client-tls-connection
+# Tags: smtp client tls
 # Description: Enables the use of a TLS tunnel for outgoing SMTP connections.
 # This is for SMTP over TLS (SMTPS), not TLS negotiated within SMTP using
 # STARTTLS.
@@ -146,6 +160,7 @@
 
 # Name: client-tls-required
 # Format: client-tls-required
+# Tags: smtp client tls
 # Description: Makes the use of TLS mandatory for outgoing SMTP connections.
 # The SMTP STARTTLS command will be used before mail messages are sent out.
 # If the remote server does not allow STARTTLS then the SMTP connection will
@@ -155,6 +170,7 @@
 
 # Name: client-tls-server-name
 # Format: client-tls-server-name <hostname>
+# Tags: smtp client tls
 # Description: Defines the target server hostname in the TLS handshake. With
 # "--client-tls-connection" this can be used for SNI, allowing the remote
 # server to adopt an appropriate identity.
@@ -163,6 +179,7 @@
 
 # Name: client-tls-verify
 # Format: client-tls-verify <ca-list>
+# Tags: smtp client tls
 # Description: Enables verification of the remote SMTP server's certificate
 # against any of the trusted CA certificates in the specified file or
 # directory. In many use cases this should be a file containing just your
@@ -172,6 +189,7 @@
 
 # Name: client-tls-verify-name
 # Format: client-tls-verify-name <cname>
+# Tags: smtp client tls
 # Description: Enables verification of the CNAME within the remote SMTP
 # server's certificate.
 #
@@ -179,6 +197,7 @@
 
 # Name: close-stderr
 # Format: close-stderr
+# Tags: logging process
 # Description: Causes the standard error stream to be closed soon after
 # start-up. This is useful when operating as a backgroud daemon and it is
 # therefore implied by "--as-server" and "--as-proxy".
@@ -187,6 +206,7 @@
 
 # Name: connection-timeout
 # Format: connection-timeout <time>
+# Tags: smtp client
 # Description: Specifies a timeout (in seconds) for establishing a TCP
 # connection to remote SMTP servers. The default is 40 seconds.
 #
@@ -194,6 +214,7 @@
 
 # Name: debug
 # Format: debug
+# Tags: logging
 # Description: Enables debug level logging, if built in. Debug messages are
 # usually only useful when cross-referenced with the source code and they may
 # expose plaintext passwords and mail message content.
@@ -202,6 +223,7 @@
 
 # Name: dnsbl
 # Format: dnsbl <config>
+# Tags: smtp server
 # Description: Specifies a list of DNSBL servers that are used to reject SMTP
 # connections from blocked addresses. The configuration string is made up of
 # comma-separated fields: the DNS server's transport address, a timeout in
@@ -211,6 +233,7 @@
 
 # Name: domain
 # Format: domain <fqdn>
+# Tags: smtp server process
 # Description: Specifies the network name that is used in SMTP EHLO commands,
 # "Received" lines, and for generating authentication challenges. The default
 # is derived from a DNS lookup of the local hostname.
@@ -219,6 +242,7 @@
 
 # Name: dont-serve
 # Format: dont-serve
+# Tags: server process
 # Description: Disables all network serving, including SMTP, POP and
 # administration interfaces. The program will terminate as soon as any
 # initial forwarding is complete.
@@ -227,6 +251,7 @@
 
 # Name: filter
 # Format: filter <program>
+# Tags: smtp server filter
 # Description: Runs the specified external filter program whenever a mail
 # message is stored. The filter is passed the name of the message file in the
 # spool directory so that it can edit it as required. The mail message is
@@ -241,6 +266,7 @@
 
 # Name: filter-timeout
 # Format: filter-timeout <time>
+# Tags: smtp server filter
 # Description: Specifies a timeout (in seconds) for running a "--filter"
 # program. The default is 300 seconds.
 #
@@ -248,6 +274,7 @@
 
 # Name: forward
 # Format: forward
+# Tags: smtp client
 # Description: Causes spooled mail messages to be forwarded when the program
 # first starts.
 #
@@ -255,6 +282,7 @@
 
 # Name: forward-on-disconnect
 # Format: forward-on-disconnect
+# Tags: smtp client
 # Description: Causes spooled mail messages to be forwarded whenever a SMTP
 # client connection disconnects.
 #
@@ -262,6 +290,7 @@
 
 # Name: forward-to
 # Format: forward-to <host:port>
+# Tags: smtp client
 # Description: Specifies the transport address of the remote SMTP server that
 # is use for mail message forwarding.
 #
@@ -269,6 +298,7 @@
 
 # Name: forward-to-some
 # Format: forward-to-some
+# Tags: smtp client
 # Description: Allow forwarding to continue even if some recipient addresses
 # on an e-mail envelope are rejected by the remote server.
 #
@@ -276,14 +306,16 @@
 
 # Name: hidden
 # Format: hidden
+# Tags: process
 # Description: Windows only. Hides the application window and disables all
-# message boxes, overriding any ""--show"" option. This is useful when
-# running  as a windows service.
+# message boxes, overriding any "--show" option. This is useful when running
+# as a windows service.
 #
 #hidden
 
 # Name: idle-timeout
 # Format: idle-timeout <time>
+# Tags: smtp client
 # Description: Specifies a timeout (in seconds) for receiving network traffic
 # from remote SMTP and POP clients. The default is 1800 seconds.
 #
@@ -291,6 +323,7 @@
 
 # Name: immediate
 # Format: immediate
+# Tags: smtp client server
 # Description: Causes mail messages to be forwarded as they are received,
 # even before they have been accepted. This can be used to do proxying
 # without store-and-forward, but in practice clients tend to to time out
@@ -300,6 +333,7 @@
 
 # Name: interface
 # Format: interface <ip-address-list>
+# Tags: server admin pop smtp
 # Description: Specifies the IP network addresses or interface names used to
 # bind listening ports. By default listening ports for incoming SMTP, POP and
 # administration connections will bind the 'any' address for IPv4 and for
@@ -317,14 +351,16 @@
 
 # Name: localedir
 # Format: localedir <dir>
-# Description: Specifies a locale base directory where localisation message
-# catalogues  can be found. An empty directory can be used for the built-in
-# default.
+# Tags: process
+# Description: Enables localisation and specifies the locale base directory
+# where message catalogues can be found. An empty directory can be used for
+# the built-in default.
 #
 #localedir /opt/share/locale
 
 # Name: log
 # Format: log
+# Tags: logging
 # Description: Enables logging to the standard error stream and to the
 # syslog. The "--close-stderr" and "--no-syslog" options can be used to
 # disable output to standard error stream and the syslog separately. Note
@@ -335,6 +371,7 @@
 
 # Name: log-address
 # Format: log-address
+# Tags: logging
 # Description: Adds the network address of remote clients to the logging
 # output.
 #
@@ -342,6 +379,7 @@
 
 # Name: log-file
 # Format: log-file <file>
+# Tags: logging
 # Description: Redirects standard-error logging to the specified file.
 # Logging to the log file is not affected by "--close-stderr". The filename
 # can include "%d" to get daily log files; the "%d" is replaced by the
@@ -351,6 +389,7 @@
 
 # Name: log-time
 # Format: log-time
+# Tags: logging
 # Description: Adds a timestamp to the logging output using the local
 # timezone.
 #
@@ -358,6 +397,7 @@
 
 # Name: no-daemon
 # Format: no-daemon
+# Tags: process
 # Description: Disables the normal backgrounding at startup so that the
 # program runs in the foreground, without forking or detaching from the
 # terminal.  On Windows this disables the system tray icon so the program
@@ -367,12 +407,14 @@
 
 # Name: no-smtp
 # Format: no-smtp
+# Tags: server
 # Description: Disables listening for incoming SMTP connections.
 #
 #no-smtp
 
 # Name: no-syslog
 # Format: no-syslog
+# Tags: logging
 # Description: Disables logging to the syslog. Note that "--as-client"
 # implies "--no-syslog".
 #
@@ -380,6 +422,7 @@
 
 # Name: pid-file
 # Format: pid-file <pid-file>
+# Tags: process
 # Description: Causes the process-id to be written into the specified file
 # when the program starts up, typically after it has become a backgroud
 # daemon.
@@ -388,6 +431,7 @@
 
 # Name: poll
 # Format: poll <period>
+# Tags: smtp client
 # Description: Causes forwarding of spooled mail messages to happen at
 # regular intervals (with the time given in seconds).
 #
@@ -395,6 +439,7 @@
 
 # Name: pop
 # Format: pop
+# Tags: pop server
 # Description: Enables the POP server listening, by default on port 110,
 # providing access to spooled mail messages. Negotiated TLS using the POP
 # "STLS" command will be enabled if the "--server-tls" option is also given.
@@ -403,6 +448,7 @@
 
 # Name: pop-auth
 # Format: pop-auth <file>
+# Tags: pop server auth
 # Description: Specifies a file containing valid POP account details. The
 # file format is the same as for the SMTP server secrets file, ie. lines
 # starting with "server", with user-id and password in the third and fourth
@@ -413,6 +459,7 @@
 
 # Name: pop-by-name
 # Format: pop-by-name
+# Tags: pop server
 # Description: Modifies the spool directory used by the POP server to be a
 # sub-directory with the same name as the POP authentication user-id. This
 # allows multiple POP clients to read the spooled messages without
@@ -426,6 +473,7 @@
 
 # Name: pop-no-delete
 # Format: pop-no-delete
+# Tags: pop server
 # Description: Disables the POP DELE command so that the command appears to
 # succeed but mail messages are not deleted from the spool directory.
 #
@@ -433,12 +481,14 @@
 
 # Name: pop-port
 # Format: pop-port <port>
+# Tags: pop server
 # Description: Sets the POP server's listening port number.
 #
 #pop-port 995
 
 # Name: port
 # Format: port <port>
+# Tags: smtp server
 # Description: Sets the port number used for listening for incoming SMTP
 # connections.
 #
@@ -446,6 +496,7 @@
 
 # Name: prompt-timeout
 # Format: prompt-timeout <time>
+# Tags: smtp server
 # Description: Specifies a timeout (in seconds) for getting the initial
 # prompt from a remote SMTP server. If no prompt is received after this time
 # then the SMTP dialog goes ahead without it.
@@ -454,6 +505,7 @@
 
 # Name: remote-clients
 # Format: remote-clients
+# Tags: smtp server
 # Description: Allows incoming connections from addresses that are not local.
 # The default behaviour is to reject connections that are not local in order
 # to prevent accidental exposure to the public internet, although a firewall
@@ -464,6 +516,7 @@
 
 # Name: response-timeout
 # Format: response-timeout <time>
+# Tags: smtp client
 # Description: Specifies a timeout (in seconds) for getting responses from
 # remote SMTP servers. The default is 1800 seconds.
 #
@@ -471,6 +524,7 @@
 
 # Name: server-auth
 # Format: server-auth <file>
+# Tags: server auth
 # Description: Enables SMTP server authentication of remote SMTP clients.
 # Account names and passwords are taken from the specified secrets file. The
 # secrets file should contain lines that have four space-separated fields,
@@ -484,6 +538,7 @@
 
 # Name: server-auth-config
 # Format: server-auth-config <config>
+# Tags: server auth
 # Description: Configures the SMTP server authentication module using a
 # semicolon-separated list of configuration items. Each item is a
 # single-character key, followed by a colon and then a comma-separated list.
@@ -494,6 +549,7 @@
 
 # Name: server-tls
 # Format: server-tls
+# Tags: smtp server tls
 # Description: Enables TLS for incoming SMTP and POP connections. SMTP
 # clients can then request TLS encryption by issuing the STARTTLS command.
 # The "--server-tls-certificate" option must be used to define the server
@@ -503,6 +559,7 @@
 
 # Name: server-tls-certificate
 # Format: server-tls-certificate <pem-file>
+# Tags: server tls
 # Description: Defines the TLS certificate file when acting as a SMTP or POP
 # server. This file must contain the server's private key and certificate
 # chain using the PEM file format. Keep the file permissions tight to avoid
@@ -512,6 +569,7 @@
 
 # Name: server-tls-connection
 # Format: server-tls-connection
+# Tags: smtp server tls
 # Description: Enables SMTP over TLS when acting as an SMTP server. This is
 # for SMTP over TLS (SMTPS), not TLS negotiated within SMTP using STARTTLS.
 #
@@ -519,6 +577,7 @@
 
 # Name: server-tls-required
 # Format: server-tls-required
+# Tags: server tls
 # Description: Makes the use of TLS mandatory for any incoming SMTP and POP
 # connections. SMTP clients must use the STARTTLS command to establish a TLS
 # session before they can issue SMTP AUTH or SMTP MAIL-TO commands.
@@ -527,6 +586,7 @@
 
 # Name: server-tls-verify
 # Format: server-tls-verify <ca-list>
+# Tags: smtp server tls
 # Description: Enables verification of remote SMTP and POP clients'
 # certificates against any of the trusted CA certificates in the specified
 # file or directory. In many use cases this should be a file containing just
@@ -536,6 +596,7 @@
 
 # Name: size
 # Format: size <bytes>
+# Tags: smtp server
 # Description: Limits the size of mail messages that can be submitted over
 # SMTP.
 #
@@ -543,6 +604,7 @@
 
 # Name: spool-dir
 # Format: spool-dir <dir>
+# Tags: smtp
 # Description: Specifies the directory used for holding mail messages that
 # have been received but not yet forwarded.
 #
@@ -550,6 +612,7 @@
 
 # Name: syslog
 # Format: syslog[=<facility>]
+# Tags: logging
 # Description: When used with "--log" this option enables logging to the
 # syslog even if the "--no-syslog" option is also used. This is typically
 # used as a convenient override when using "--as-client".
@@ -558,6 +621,7 @@
 
 # Name: tls-config
 # Format: tls-config <options>
+# Tags: tls
 # Description: Selects and configures the low-level TLS library, using a
 # comma-separated list of keywords. If OpenSSL and mbedTLS are both built in
 # then keywords of "openssl" and "mbedtls" will select one or the other.
@@ -568,15 +632,17 @@
 
 # Name: user
 # Format: user <username>
-# Description: When started as root the program switches to an non-privileged
-# effective user-id when idle. This option can be used to define which
-# user-id is used. Specify "root" to disable all user-id switching. Ignored
-# on Windows.
+# Tags: process
+# Description: When started as root the program switches to a non-privileged
+# effective user-id when idle. This option can be used to define the idle
+# user-id and also the group ownership of new files and sockets. Specify
+# "root" to  disable all user-id switching. Ignored on Windows.
 #
 #user nobody
 
 # Name: verbose
 # Format: verbose
+# Tags: logging
 # Description: Enables more verbose logging when used with "--log", and more
 # verbose help when used with "--help".
 #

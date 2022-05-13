@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "%-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<!DOCTYPE html>
 <html>
  <head>
   <title>E-MailRelay User Guide</title>
@@ -8,7 +8,7 @@
  <body>
   <!-- index:0::::E-MailRelay User Guide -->
  <div class="div-main">
-  <h1><a class="a-header" name="H_1">E-MailRelay User Guide</a></h1> <!-- index:1:H:1::E-MailRelay User Guide -->
+  <h1><a class="a-header" name="H_1">E-MailRelay User Guide</a></h1> <!-- index:1:H:E-MailRelay User Guide -->
    <h2><a class="a-header" name="SH_1_1">What is it?</a></h2> <!-- index:2:SH:1:1:What is it? -->
     <p>
      E-MailRelay is an e-mail store-and-forward message transfer agent and proxy
@@ -431,7 +431,7 @@ WScript.Quit( 0 ) ;
 
       <div class="div-pre">
        <pre>#!/bin/sh
-spamassassin "$1" > "$1.tmp"
+spamassassin "$1" &gt; "$1.tmp"
 mv "$1.tmp" "$1"
 exit 0
 </pre>
@@ -441,7 +441,7 @@ exit 0
     </p>
 
       <div class="div-pre">
-       <pre>c:\perl\site\bin\spamassassin.bat %1 > %1.tmp
+       <pre>c:\perl\site\bin\spamassassin.bat %1 &gt; %1.tmp
 ren %1.tmp %1
 exit 0</pre>
       </div><!-- div-pre -->
@@ -515,4 +515,4 @@ exit 0</pre>
  </div> <!-- div-main -->
  </body>
 </html>
-<!-- Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->
+<!-- Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->

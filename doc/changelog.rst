@@ -2,22 +2,34 @@
 E-MailRelay Change Log
 **********************
 
+2.3 -> 2.4
+==========
+
+* SMTP_ PIPELINING extension (RFC-2920_).
+* SMTP CHUNKING/8BITMIME extension (RFC-3030_).
+* SMTPUTF8 support added (RFC-6531_).
+* AUTH not advertised if *--server-tls-required* and no TLS_ (RFC-4954_ 6).
+* More simultaneous connections supported on Windows.
+* No 7-bit/8-bit check on received message content (see NEWS fle).
+* Multiple *--filter* options allowed.
+* Shorter default filter timeout.
+* Uses epoll by default on Linux.
+
 2.2 -> 2.3
 ==========
 
-* New admin 'forward' command to trigger forwarding without waiting.
-* More simultaneous connections supported on Windows.
-* EPIPELINE SMTP_ extension (todo)
-* Windows event log not used for verbose logging (todo)
-* Uses epoll by default on Linux (todo)
-* No 7-bit/8-bit check by default (todo)
+* Unix domain sockets supported (eg. *--interface=/tmp/smtp.s*).
+* Windows event log not used for verbose logging (prefer *--log-file*).
+* New admin *forward* command to trigger forwarding without waiting.
+* Optional base64 encoding of passwords in secrets files (\ *plain:b*\ ).
+* Support for MbedTLS version 3.
 
 2.1 -> 2.2
 ==========
 
 * Connections from IPv4 'private use' addresses are allowed by default (see *--remote-clients*).
 * Interface names can be used with *--interface* (eg. *--interface=eth0*).
-* New *--server-tls-connection* option for server-side implicit TLS_.
+* New *--server-tls-connection* option for server-side implicit TLS.
 * New *--forward-to-some* option to permit some message recipients to be rejected.
 * New *--log-address* option to aid adaptive firewalling.
 * Dynamic log file rolling when using *--log-file=%d*.
@@ -37,7 +49,7 @@ E-MailRelay Change Log
 * New *--idle-timeout* option for server-side connections.
 * Support for RFC-5782_ DNSBL_ blocking (\ *--dnsbl*\ ).
 * Filter scripts are given the path of the envelope file in argv2.
-* Message files can be editied by *--client-filter* scripts.
+* Message files can be edited by *--client-filter* scripts.
 * Better support for CRAM-SHAx authentication.
 * New *--client-auth-config* and *--server-auth-config* options.
 * New *--show* option on windows to better control the user interface style.
@@ -445,8 +457,12 @@ Windows fixes and improvements...
 .. _FHS: https://wiki.linuxfoundation.org/lsb/fhs
 .. _PAM: https://en.wikipedia.org/wiki/Linux_PAM
 .. _POP: https://en.wikipedia.org/wiki/Post_Office_Protocol
+.. _RFC-2920: https://tools.ietf.org/html/rfc2920
+.. _RFC-3030: https://tools.ietf.org/html/rfc3030
 .. _RFC-3848: https://tools.ietf.org/html/rfc3848
+.. _RFC-4954: https://tools.ietf.org/html/rfc4954
 .. _RFC-5782: https://tools.ietf.org/html/rfc5782
+.. _RFC-6531: https://tools.ietf.org/html/rfc6531
 .. _RFC-8314: https://tools.ietf.org/html/rfc8314
 .. _SMTP: https://en.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol
 .. _SOCKS: https://en.wikipedia.org/wiki/SOCKS

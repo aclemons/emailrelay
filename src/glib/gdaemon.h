@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -45,19 +45,7 @@ public:
 	static void detach() ;
 		///< Detaches from the parent environment. This typically
 		///< involves fork()ing, std::_Exit()ing the parent, and calling
-		///< setsid() in the child.
-
-	static void detach( PidFile & pid_file ) ;
-		///< An overload which allows for a delayed write of the
-		///< new process-id to a file.
-		///<
-		///< A delayed write is useful for network daemons that open
-		///< a listening port. A second instance of the process will
-		///< fail on startup, and should not overwrite the pid file
-		///< of the running server. In this situation PidFile::commit()
-		///< should be called just before entering the event loop.
-		///<
-		///< Throws PidFile::Error on error.
+		///< setsid() in the child. See also G::PidFile.
 
 public:
 	Daemon() = delete ;

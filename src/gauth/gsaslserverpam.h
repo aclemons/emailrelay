@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,7 +28,6 @@
 #include "gexception.h"
 #include "gaddress.h"
 #include "gpath.h"
-#include <map>
 #include <memory>
 
 namespace GAuth
@@ -38,33 +37,33 @@ namespace GAuth
 }
 
 //| \class GAuth::SaslServerPam
-/// An implementation of the SaslServer interface using PAM as
-/// the authentication mechanism.
+/// An implementation of the SaslServer interface using PAM as the
+/// authentication mechanism.
 ///
 /// This class tries to match up the PAM interface with the SASL server
-/// interface. The match is not perfect; only single-challenge PAM mechanisms
-/// are supported, the PAM delay feature is not implemented, and PAM sessions
-/// are not part of the SASL interface.
+/// interface. The match is not perfect; only single-challenge PAM
+/// mechanisms are supported, the PAM delay feature is not implemented,
+/// and PAM sessions are not part of the SASL interface.
 ///
 class GAuth::SaslServerPam : public SaslServer
 {
 public:
-	SaslServerPam( const SaslServerSecrets & , const std::string & config , bool allow_apop ) ;
+	SaslServerPam( const SaslServerSecrets & , bool with_apop ) ;
 		///< Constructor.
 
 public:
-	~SaslServerPam() ;
+	~SaslServerPam() override ;
 	SaslServerPam( const SaslServerPam & ) = delete ;
 	SaslServerPam( SaslServerPam && ) = delete ;
-	void operator=( const SaslServerPam & ) = delete ;
-	void operator=( SaslServerPam && ) = delete ;
+	SaslServerPam & operator=( const SaslServerPam & ) = delete ;
+	SaslServerPam & operator=( SaslServerPam && ) = delete ;
 
 private: // overrides
-	bool requiresEncryption() const override ; // Override from GAuth::SaslServer.
-	bool active() const override ; // Override from GAuth::SaslServer.
-	std::string mechanisms( char sep ) const override ; // Override from GAuth::SaslServer.
-	bool init( const std::string & mechanism ) override ; // Override from GAuth::SaslServer.
+	G::StringArray mechanisms( bool ) const override ; // Override from GAuth::SaslServer.
+	void reset() override ; // Override from GAuth::SaslServer.
+	bool init( bool , const std::string & mechanism ) override ; // Override from GAuth::SaslServer.
 	std::string mechanism() const override ; // Override from GAuth::SaslServer.
+	std::string preferredMechanism( bool ) const override ; // Override from GAuth::SaslServer.
 	bool mustChallenge() const override ; // Override from GAuth::SaslServer.
 	std::string initialChallenge() const override ; // Override from GAuth::SaslServer.
 	std::string apply( const std::string & response , bool & done ) override ; // Override from GAuth::SaslServer.

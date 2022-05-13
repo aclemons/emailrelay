@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -42,7 +42,9 @@ namespace GSmtp
 class GSmtp::Verifier
 {
 public:
-	virtual void verify( const std::string & rcpt_to_parameter ,
+	enum class Command { VRFY , RCPT } ;
+
+	virtual void verify( Command , const std::string & rcpt_to_parameter ,
 		const std::string & mail_from_parameter , const GNet::Address & client_ip ,
 		const std::string & auth_mechanism , const std::string & auth_extra ) = 0 ;
 			///< Checks a recipient address and asynchronously returns a
@@ -52,10 +54,9 @@ public:
 			///< The 'mail-from' address is passed in for RCPT commands, but
 			///< not VRFY.
 
-	virtual G::Slot::Signal<const std::string&,const VerifierStatus&> & doneSignal() = 0 ;
+	virtual G::Slot::Signal<Command,const VerifierStatus&> & doneSignal() = 0 ;
 		///< Returns a signal that is emit()ed when the verify() request
-		///< is complete. The first signal parameter is the mailbox
-		///< name (ie. rcpt_to_parameter).
+		///< is complete.
 
 	virtual void cancel() = 0 ;
 		///< Aborts any current processing.

@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -483,14 +483,14 @@ sub matchOne
 
 sub submitSmallMessage
 {
-	# Submits a small message using emailrelay-submit.
+	# Submits a small message using the "emailrelay-submit" utility.
 	my ( $spool_dir , @to ) = @_ ;
 	submitMessage( $spool_dir , 10 , @to ) ;
 }
 
 sub submitMessage
 {
-	# Submits a message of 'n' lines.
+    # Submits a message of 'n' lines using the "emailrelay-submit" utility.
 	my ( $spool_dir , $n , @to ) = @_ ;
 	push @to , "me\@there.localnet" if( scalar(@to) == 0 ) ;
 	my $path = _createMessageFile( tempfile("message") , $n ) ;
@@ -502,7 +502,7 @@ sub submitMessage
 
 sub submitMessages
 {
-	# Submits 'n' message of 'm' lines using the "emailrelay-submit" utility.
+	# Submits 'n' messages of 'm' lines using the "emailrelay-submit" utility.
 	my ( $spool_dir , $n , $m ) = @_ ;
 	for my $i ( 1 .. $n )
 	{
@@ -736,6 +736,10 @@ sub processIsRunning
 
 sub nextPort
 {
+	# Returns the next port number in sequence. The implementation
+	# uses a state file, which is created if necessary with a random
+	# port number. O/s file locking is used to avoid races on the
+	# state file contents.
 	my $first = 16000 ;
 	my $last = 32000 ;
 	my $file = ".tmp.port" ;

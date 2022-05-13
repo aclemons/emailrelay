@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -42,6 +42,7 @@
 #include "gstr.h"
 #include "gxtext.h"
 #include "ggetopt.h"
+#include "goptionsoutput.h"
 #include "gpath.h"
 #include "gverifier.h"
 #include "gfilestore.h"
@@ -57,30 +58,36 @@
 #include <exception>
 #include <iostream>
 #include <sstream>
-#include <tuple>
 #include <memory>
 #include <cstdlib>
 
-G_EXCEPTION_CLASS( NoBody , "no body text" ) ;
+G_EXCEPTION_CLASS( NoBody , tx("no body text") ) ;
+
+std::string versionNumber()
+{
+	return "2.4dev1" ;
+}
 
 static std::pair<G::Path,G::Path> writeFiles( const G::Path & spool_dir ,
-	const G::StringArray & to_list , const std::string & from ,
+	const G::StringArray & envelope_to_list , const std::string & from ,
 	const std::string & from_auth_in , const std::string & from_auth_out ,
 	const G::StringArray & content , std::istream & instream )
 {
 	// create the output file
 	//
 	std::string envelope_from = from.empty() ? "anonymous" : from ;
-	GSmtp::FileStore file_store( spool_dir , /*optimise_empty_test=*/true , /*max_size=*/0U , /*test_for_eight_bit=*/true ) ;
+	GSmtp::FileStore file_store( spool_dir , {} ) ;
 	GSmtp::MessageStore & store = file_store ;
-	std::unique_ptr<GSmtp::NewMessage> msg = store.newMessage( envelope_from , from_auth_in , from_auth_out ) ;
+	GSmtp::MessageStore::SmtpInfo smtp_info ;
+	smtp_info.auth = from_auth_in ;
+	std::unique_ptr<GSmtp::NewMessage> msg = store.newMessage( envelope_from , smtp_info , from_auth_out ) ;
 
 	// add "To:" lines to the envelope
 	//
-	for( auto to : to_list )
+	for( auto to : envelope_to_list )
 	{
 		G::Str::trim( to , {" \t\r\n",4U} ) ;
-		GSmtp::VerifierStatus status( to ) ;
+		GSmtp::VerifierStatus status = GSmtp::VerifierStatus::remote( to ) ;
 		msg->addTo( status.address , status.is_local ) ;
 	}
 
@@ -90,10 +97,10 @@ static std::pair<G::Path,G::Path> writeFiles( const G::Path & spool_dir ,
 		for( const auto & line : content )
 		{
 			eoh_in_content = eoh_in_content || line.empty() ;
-			msg->addTextLine( line ) ;
+			msg->addContentLine( line ) ;
 		}
 		if( !eoh_in_content )
-			msg->addTextLine( std::string() ) ;
+			msg->addContentLine( std::string() ) ;
 	}
 
 	// read and stream out more content body
@@ -104,7 +111,7 @@ static std::pair<G::Path,G::Path> writeFiles( const G::Path & spool_dir ,
 		G::Str::trimRight( line , {"\r",1U} , 1U ) ;
 		if( instream.fail() || line == "." )
 			break ;
-		msg->addTextLine( line ) ;
+		msg->addContentLine( line ) ;
 	}
 
 	// commit the file
@@ -114,9 +121,9 @@ static std::pair<G::Path,G::Path> writeFiles( const G::Path & spool_dir ,
 	msg->prepare( auth_id , ip.hostPartString() , std::string() ) ;
 	msg->commit( true ) ;
 
-	return std::make_pair(
+	return {
 		file_store.contentPath(msg->id()) ,
-		file_store.envelopePath(msg->id()) ) ;
+		file_store.envelopePath(msg->id()) } ;
 }
 
 static void copyIntoSubDirectories( const G::Path & envelope_path )
@@ -125,7 +132,7 @@ static void copyIntoSubDirectories( const G::Path & envelope_path )
 	std::string envelope_filename = envelope_path.basename() ;
 	G::Path src = spool_dir.path() + envelope_filename ;
 
-	G::Process::Umask::set( G::Process::Umask::Mode::Tighter ) ; // 0117 => -rw-rw----
+	G::Process::Umask set_umask( G::Process::Umask::Mode::Tighter ) ; // 0117 => -rw-rw----
 	unsigned int dir_count = 0U ;
 	unsigned int copy_count = 0U ;
 	G::DirectoryIterator iter( spool_dir ) ;
@@ -171,7 +178,8 @@ static void run( const G::Arg & arg )
 		"i!from-auth-in!sets the envelope from-auth-in value!!1!name!3|"
 		"o!from-auth-out!sets the envelope from-auth-out value!!1!name!3|"
 
-		"h!help!shows this help!!0!!2"
+		"h!help!shows this help!!0!!2|"
+		"V!version!prints the version and exits!!0!!2|"
 	) ;
 
 	if( opt.hasErrors() )
@@ -181,12 +189,12 @@ static void run( const G::Arg & arg )
 	else if( opt.contains("help") )
 	{
 		std::ostream & stream = std::cerr ;
-		G::OptionsLayout layout ;
+		G::OptionsOutputLayout layout ;
 		if( opt.contains("verbose") )
 			layout.set_level( 3U ) ;
 		else
 			layout.set_level(1U).set_alt_usage() ;
-		opt.options().showUsage( layout , stream , arg.prefix() , " <to-address> [<to-address> ...]" ) ;
+		G::OptionsOutput(opt.options()).showUsage( layout , stream , arg.prefix() , " <to-address> [<to-address> ...]" ) ;
 		if( !opt.contains("verbose") )
 			stream << "\nFor complete usage information run \"emailrelay-submit --help --verbose\"" << std::endl ;
 		stream
@@ -196,15 +204,19 @@ static void run( const G::Arg & arg )
 			<< Main::Legal::copyright()
 			<< std::endl ;
 	}
+	else if( opt.contains("version") )
+	{
+		std::cout << versionNumber() << std::endl ;
+	}
 	else if( opt.args().c() == 1U )
 	{
 		std::cerr
-			<< opt.options().usageSummary( {} , arg.prefix() , " <to-address> [<to-address> ...]" )
+			<< G::OptionsOutput(opt.options()).usageSummary( {} , arg.prefix() , " <to-address> [<to-address> ...]" )
 			<< std::endl ;
 	}
 	else
 	{
-		// parse the command-line options
+		// unpack the command-line options
 		bool opt_copy = opt.contains( "copy" ) ;
 		std::string opt_spool_dir = opt.value( "spool-dir" , GSmtp::MessageStore::defaultDirectory().str() ) ;
 		std::string opt_from = opt.value( "from" ) ;
@@ -219,9 +231,9 @@ static void run( const G::Arg & arg )
 			( opt.value("from-auth-out","").empty() ? std::string("<>") : G::Xtext::encode(opt.value("from-auth-out","")) ) :
 			std::string() ;
 
-		// prepare the to-list
-		G::StringArray opt_to_list = opt.args().array(1U) ;
-		std::for_each( opt_to_list.begin() , opt_to_list.end() ,
+		// prepare the envelope-to-list from command-line args
+		G::StringArray envelope_to_list = opt.args().array(1U) ;
+		std::for_each( envelope_to_list.begin() , envelope_to_list.end() ,
 			[](std::string &to){if(!to.empty()&&to[0]=='\\')to=to.substr(1U);} ) ;
 
 		// allow @app in the spool-dir
@@ -251,7 +263,7 @@ static void run( const G::Arg & arg )
 			}
 		}
 
-		// find the 'from' address if necessary from the headers
+		// find an 'envelope-from' address if necessary from the headers
 		std::string from = opt_from ;
 		bool from_in_headers = false ;
 		if( from.empty() )
@@ -274,17 +286,27 @@ static void run( const G::Arg & arg )
 		// add synthetic content headers
 		if( opt_content_date )
 		{
-			auto now = G::SystemTime::now() ;
-			auto tm = now.local() ;
-			G::Date date( tm ) ;
-			std::string zone = G::DateTime::offsetString( G::DateTime::offset(now) ) ;
-			std::string date_str = date.dd() + " " + date.monthName(true) + " " + date.yyyy() ;
-			std::string time_str = G::Time(tm).hhmmss(":") ;
-			content.insert( content.begin() , G::Str::join(" ","Date:",date_str,time_str,zone) ) ;
+			bool have_date = false ;
+			for( const auto & line : content )
+			{
+				have_date = line.find("Date: ") == 0U ;
+				if( have_date || line.empty() )
+					break ;
+			}
+			if( !have_date )
+			{
+				auto now = G::SystemTime::now() ;
+				auto tm = now.local() ;
+				G::Date date( tm ) ;
+				std::string zone = G::DateTime::offsetString( G::DateTime::offset(now) ) ;
+				std::string date_str = date.dd() + " " + date.monthName(true) + " " + date.yyyy() ;
+				std::string time_str = G::Time(tm).hhmmss(":") ;
+				content.insert( content.begin() , G::Str::join(" ","Date:",date_str,time_str,zone) ) ;
+			}
 		}
-		if( opt_content_to )
+		if( opt_content_to ) // add 'envelope-to' addresses as content To: headers
 		{
-			for( const auto & to : opt_to_list )
+			for( const auto & to : envelope_to_list )
 				content.insert( content.begin() , "To: "+to ) ;
 		}
 		if( opt_content_from && !from_in_headers )
@@ -297,7 +319,7 @@ static void run( const G::Arg & arg )
 		G::Path new_content ;
 		G::Path new_envelope ;
 		std::tie( new_content , new_envelope ) = writeFiles( opt_spool_dir ,
-			opt_to_list , from ,
+			envelope_to_list , from ,
 			opt_from_auth_in , opt_from_auth_out , content ,
 			opt.contains("content") ? empty : std::cin ) ;
 

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -42,6 +42,7 @@
 #include "gserverpeer.h"
 #include "gfile.h"
 #include "ggetopt.h"
+#include "goptionsoutput.h"
 #include "garg.h"
 #include "gsleep.h"
 #include "glogoutput.h"
@@ -59,7 +60,7 @@ namespace Main
 class Main::VerifierPeer : public GNet::ServerPeer
 {
 public:
-	VerifierPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo info ) ;
+	VerifierPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo && ) ;
 private:
 	void onDelete( const std::string & ) override ;
 	bool onReceive( const char * , std::size_t , std::size_t , std::size_t , char ) override ;
@@ -68,10 +69,10 @@ private:
 	bool processLine( std::string ) ;
 } ;
 
-Main::VerifierPeer::VerifierPeer( GNet::ExceptionSinkUnbound ebu , GNet::ServerPeerInfo info ) :
-	GNet::ServerPeer( ebu.bind(this) , info , GNet::LineBufferConfig::newline() )
+Main::VerifierPeer::VerifierPeer( GNet::ExceptionSinkUnbound ebu , GNet::ServerPeerInfo && peer_info ) :
+	GNet::ServerPeer( ebu.bind(this) , std::move(peer_info) , GNet::LineBufferConfig::newline() )
 {
-	G_LOG_S( "VerifierPeer::ctor: new connection from " << info.m_address.displayString() ) ;
+	G_LOG_S( "VerifierPeer::ctor: new connection from " << peerAddress().displayString() ) ;
 }
 
 void Main::VerifierPeer::onDelete( const std::string & )
@@ -96,7 +97,7 @@ bool Main::VerifierPeer::processLine( std::string line )
 	G_LOG_S( "VerifierPeer::processLine: line: \"" << line << "\"" ) ;
 
 	G::StringArray part ;
-	G::Str::splitIntoFields( line , part , "|" ) ;
+	G::Str::splitIntoFields( line , part , '|' ) ;
 	std::string to = part.at(0U) ;
 
 	bool local = to.find("L") != std::string::npos ;
@@ -108,7 +109,7 @@ bool Main::VerifierPeer::processLine( std::string line )
 	if( abort )
 	{
 		G_LOG_S( "VerifierPeer::processLine: sending 100" ) ;
-		send( "100\n" ) ;
+		send( "100\n"_sv ) ; // GNet::ServerPeer::send()
 	}
 	else if( blackhole )
 	{
@@ -121,17 +122,17 @@ bool Main::VerifierPeer::processLine( std::string line )
 	else if( valid && local )
 	{
 		G_LOG_S( "VerifierPeer::processLine: sending postmaster" ) ;
-		send( "0|postmaster|Postmaster <postmaster@localhost>\n" ) ;
+		send( "0|postmaster|Postmaster <postmaster@localhost>\n"_sv ) ; // GNet::ServerPeer::send()
 	}
 	else if( valid )
 	{
 		G_LOG_S( "VerifierPeer::processLine: sending valid" ) ;
-		send( "1|" + to + "\n" ) ;
+		send( "1|" + to + "\n" ) ; // GNet::ServerPeer::send()
 	}
 	else
 	{
 		G_LOG_S( "VerifierPeer::processLine: sending error" ) ;
-		send( "2|VerifierError\n" ) ;
+		send( "2|VerifierError\n"_sv ) ; // GNet::ServerPeer::send()
 	}
 	return true ;
 }
@@ -143,11 +144,15 @@ class Main::Verifier : public GNet::Server
 public:
 	Verifier( GNet::ExceptionSink , bool ipv6 , unsigned int port , unsigned int idle_timeout ) ;
 	~Verifier() override ;
-	std::unique_ptr<GNet::ServerPeer> newPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo ) override ;
+	std::unique_ptr<GNet::ServerPeer> newPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo && ) override ;
 } ;
 
 Main::Verifier::Verifier( GNet::ExceptionSink es , bool ipv6 , unsigned int port , unsigned int idle_timeout ) :
-	GNet::Server( es , GNet::Address(ipv6?GNet::Address::Family::ipv6:GNet::Address::Family::ipv4,port) , GNet::ServerPeerConfig(idle_timeout) )
+	GNet::Server(es,
+		GNet::Address(ipv6?GNet::Address::Family::ipv6:GNet::Address::Family::ipv4,port),
+		GNet::ServerPeer::Config()
+			.set_all_timeouts(idle_timeout),
+		GNet::Server::Config())
 {
 }
 
@@ -156,11 +161,11 @@ Main::Verifier::~Verifier()
 	serverCleanup() ; // base class early cleanup
 }
 
-std::unique_ptr<GNet::ServerPeer> Main::Verifier::newPeer( GNet::ExceptionSinkUnbound ebu , GNet::ServerPeerInfo info )
+std::unique_ptr<GNet::ServerPeer> Main::Verifier::newPeer( GNet::ExceptionSinkUnbound ebu , GNet::ServerPeerInfo && peer_info )
 {
 	try
 	{
-		return std::unique_ptr<GNet::ServerPeer>( new VerifierPeer( ebu , info ) ) ;
+		return std::unique_ptr<GNet::ServerPeer>( new VerifierPeer( ebu , std::move(peer_info) ) ) ;
 	}
 	catch( std::exception & e )
 	{
@@ -202,7 +207,7 @@ int main( int argc , char * argv [] )
 		}
 		if( opt.contains("help") )
 		{
-			opt.options().showUsage( {} , std::cout , arg.prefix() ) ;
+			G::OptionsOutput(opt.options()).showUsage( {} , std::cout , arg.prefix() ) ;
 			return 0 ;
 		}
 		bool log = opt.contains("log") ;

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -32,6 +32,7 @@
 #include "gmd5.h"
 #include "ghash.h"
 #include "ggetopt.h"
+#include "goptionsoutput.h"
 #include "gbase64.h"
 #include "gxtext.h"
 #include "gssl.h"
@@ -109,11 +110,11 @@ int main( int argc , char * argv [] )
 		}
 		if( opt.contains("help") )
 		{
-			G::OptionsLayout layout ;
+			G::OptionsOutputLayout layout ;
 			if( !opt.contains("verbose") )
 				layout.set_level( 1U ) ;
 
-			opt.options().showUsage( layout , std::cout , arg.prefix() ) ;
+			G::OptionsOutput(opt.options()).showUsage( layout , std::cout , arg.prefix() ) ;
 
 			std::cout
 				<< "\n"
@@ -209,10 +210,10 @@ std::string as_dotted( const std::string & masked_key )
 	for( int i = 0 ; i < 8 ; i++ )
 	{
 		G::Md5::big_t d = 0U ;
-		for( int j = 0 ; j < 4 ; j++ )
+		for( unsigned int j = 0U ; j < 4U ; j++ )
 		{
 			G::Md5::big_t n = static_cast<unsigned char>( *p++ ) ;
-			n <<= (8*j) ;
+			n <<= (j*8U) ;
 			d |= n ;
 		}
 		ss << (i==0?"":".") << d ;

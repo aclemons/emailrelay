@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -41,10 +41,10 @@ public:
 		///< Constructor.
 
 private: // overrides
-	G::Slot::Signal<const std::string&,const VerifierStatus&> & doneSignal() override ; // Override from GSmtp::Verifier.
+	G::Slot::Signal<Command,const VerifierStatus&> & doneSignal() override ; // Override from GSmtp::Verifier.
 	void cancel() override ; // Override from GSmtp::Verifier.
 	void onTaskDone( int , const std::string & ) override ; // override from GNet::TaskCallback
-	void verify( const std::string & rcpt_to_parameter ,
+	void verify( Verifier::Command , const std::string & rcpt_to_parameter ,
 		const std::string & mail_from_parameter , const GNet::Address & client_ip ,
 		const std::string & auth_mechanism , const std::string & auth_extra ) override ; // Override from GSmtp::Verifier.
 
@@ -56,8 +56,9 @@ public:
 	void operator=( ExecutableVerifier && ) = delete ;
 
 private:
+	Command m_command ;
 	G::Path m_path ;
-	G::Slot::Signal<const std::string&,const VerifierStatus&> m_done_signal ;
+	G::Slot::Signal<Command,const VerifierStatus&> m_done_signal ;
 	std::string m_to_address ;
 	GNet::Task m_task ;
 } ;

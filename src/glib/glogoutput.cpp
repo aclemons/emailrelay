@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,7 +23,9 @@
 #include "gdatetime.h"
 #include "gscope.h"
 #include "gfile.h"
+#include "ggettext.h"
 #include "gomembuf.h"
+#include "gstringview.h"
 #include "glimits.h"
 #include <algorithm>
 #include <sstream>
@@ -34,19 +36,15 @@
 
 namespace G
 {
-	namespace LogOutputImp /// An implementation namespace for G::LogOutput.
+	namespace LogOutputImp
 	{
-		static std::string s_info ;
-		static std::string s_warning ;
-		static std::string s_error ;
-		static std::string s_fatal ;
 		constexpr int stderr_fileno = 2 ; // STDERR_FILENO
 		LogOutput * this_ = nullptr ;
 		constexpr std::size_t margin = 7U ;
-		constexpr std::size_t buffer_base_size = limits::log + 40U ;
-		std::array<char,buffer_base_size+margin> buffer_1 ;
-		std::array<char,8> buffer_2 ;
-		struct ostream : std::ostream /// An ostream using a G::omembuf streambuf.
+		constexpr std::size_t buffer_base_size = Limits<>::log + 40U ;
+		std::array<char,buffer_base_size+margin> buffer_1 {} ;
+		std::array<char,8> buffer_2 {} ;
+		struct ostream : std::ostream
 		{
 			explicit ostream( G::omembuf * p ) : std::ostream(p) {}
 			void reset() { clear() ; seekp(0) ; }
@@ -71,6 +69,26 @@ namespace G
 			s.clear() ;
 			return static_cast<std::size_t>( std::max( std::streampos(0) , s.tellp() ) ) ;
 		}
+		G::string_view info()
+		{
+			static std::string s( txt("info: ") ) ;
+			return {s.data(),s.size()} ;
+		}
+		G::string_view warning()
+		{
+			static std::string s( txt("warning: ") ) ;
+			return {s.data(),s.size()} ;
+		}
+		G::string_view error()
+		{
+			static std::string s( txt("error: ") ) ;
+			return {s.data(),s.size()} ;
+		}
+		G::string_view fatal()
+		{
+			static std::string s( txt("fatal: ") ) ;
+			return {s.data(),s.size()} ;
+		}
 	}
 }
 
@@ -83,7 +101,6 @@ G::LogOutput::LogOutput( const std::string & exename , const Config & config ,
 	updateTime() ;
 	open( m_path , true ) ;
 	osinit() ;
-	m_depth = 0U ;
 	if( LogOutputImp::this_ == nullptr )
 		LogOutputImp::this_ = this ;
 }
@@ -101,7 +118,6 @@ G::LogOutput::LogOutput( bool output_enabled_and_summary_info ,
 	updateTime() ;
 	open( m_path , true ) ;
 	osinit() ;
-	m_depth = 0U ;
 	if( LogOutputImp::this_ == nullptr )
 		LogOutputImp::this_ = this ;
 }
@@ -149,11 +165,11 @@ void * G::LogOutput::contextarg() noexcept
 bool G::LogOutput::at( Log::Severity severity ) const noexcept
 {
 	bool do_output = m_config.m_output_enabled ;
-	if( severity == Log::Severity::s_Debug )
+	if( severity == Log::Severity::Debug )
 		do_output = m_config.m_output_enabled && m_config.m_debug ;
-	else if( severity == Log::Severity::s_InfoSummary )
+	else if( severity == Log::Severity::InfoSummary )
 		do_output = m_config.m_output_enabled && m_config.m_summary_info ;
-	else if( severity == Log::Severity::s_InfoVerbose )
+	else if( severity == Log::Severity::InfoVerbose )
 		do_output = m_config.m_output_enabled && m_config.m_verbose_info ;
 	return do_output ;
 }
@@ -188,7 +204,7 @@ void G::LogOutput::open( std::string path , bool do_throw )
 		if( fd < 0 )
 		{
 			if( do_throw )
-				throw std::runtime_error( "cannot open log file: " + path ) ;
+				throw LogFileError( path ) ;
 		}
 		else
 		{
@@ -209,6 +225,7 @@ std::ostream & G::LogOutput::start( Log::Severity severity )
 		open( m_path , false ) ;
 
 	std::ostream & ss = LogOutputImp::ostream1() ;
+	ss << std::dec ;
 	if( m_exename.length() )
 		ss << m_exename << ": " ;
 	if( m_config.m_with_timestamp )
@@ -274,14 +291,14 @@ void G::LogOutput::assertionFailure( const char * file , int line , const char *
 	if( instance() )
 	{
 		std::ostream & ss = LogOutputImp::ostream1() ;
-		ss << "assertion error: " << basename(file) << "(" << line << "): " << test_expression ;
+		ss << txt("assertion error: ") << basename(file) << "(" << line << "): " << test_expression ;
 		char * p = &LogOutputImp::buffer_1[0] ;
 		std::size_t n = LogOutputImp::tellp( ss ) ;
-		instance()->osoutput( instance()->m_fd , Log::Severity::s_Assertion , p , n ) ;
+		instance()->osoutput( instance()->m_fd , Log::Severity::Assertion , p , n ) ;
 	}
 	else
 	{
-		std::cerr << "assertion error: " << basename(file) << "(" << line << "): " << test_expression << std::endl ;
+		std::cerr << txt("assertion error: ") << basename(file) << "(" << line << "): " << test_expression << std::endl ;
 	}
 }
 
@@ -325,26 +342,16 @@ const char * G::LogOutput::basename( const char * file ) noexcept
 	return p1 > p2 ? (p1+1) : (p2?(p2+1):file) ;
 }
 
-const char * G::LogOutput::levelString( Log::Severity s ) noexcept
+G::string_view G::LogOutput::levelString( Log::Severity s ) noexcept
 {
 	namespace imp = LogOutputImp ;
-	if( s == Log::Severity::s_Debug ) return "debug: " ;
-	else if( s == Log::Severity::s_InfoSummary ) return imp::s_info.empty() ? "info: " : imp::s_info.c_str() ;
-	else if( s == Log::Severity::s_InfoVerbose ) return imp::s_info.empty() ? "info: " : imp::s_info.c_str() ;
-	else if( s == Log::Severity::s_Warning ) return imp::s_warning.empty() ? "warning: " : imp::s_warning.c_str() ;
-	else if( s == Log::Severity::s_Error ) return imp::s_error.empty() ? "error: " : imp::s_error.c_str() ;
-	else if( s == Log::Severity::s_Assertion ) return imp::s_fatal.empty() ? "fatal: " : imp::s_fatal.c_str() ;
+	if( s == Log::Severity::Debug ) return "debug: "_sv ;
+	else if( s == Log::Severity::InfoSummary ) return imp::info() ;
+	else if( s == Log::Severity::InfoVerbose ) return imp::info() ;
+	else if( s == Log::Severity::Warning ) return imp::warning() ;
+	else if( s == Log::Severity::Error ) return imp::error() ;
+	else if( s == Log::Severity::Assertion ) return imp::fatal() ;
 	return "" ;
-}
-
-void G::LogOutput::translate( const std::string & info , const std::string & warning ,
-	const std::string & error , const std::string & fatal )
-{
-	namespace imp = LogOutputImp ;
-	imp::s_info = info ;
-	imp::s_warning = warning ;
-	imp::s_error = error ;
-	imp::s_fatal = fatal ;
 }
 
 // ==
