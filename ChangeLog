@@ -1,11 +1,15 @@
 E-MailRelay Change Log
 ======================
 
+2.3 -> 2.3.1
+------------
+* Hourly log file rotation using "%h" (eg. "--log-file=log.%d.%h").
+
 2.2 -> 2.3
 ----------
 * Unix domain sockets supported (eg. "--interface=/tmp/smtp.s").
 * Windows event log not used for verbose logging (prefer "--log-file").
-* New admin 'forward' command to trigger forwarding without waiting.
+* New admin "forward" command to trigger forwarding without waiting.
 * Optional base64 encoding of passwords in secrets files ("plain:b").
 * Support for MbedTLS version 3.
 

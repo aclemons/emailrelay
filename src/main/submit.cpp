@@ -64,7 +64,7 @@ G_EXCEPTION_CLASS( NoBody , "no body text" ) ;
 
 std::string versionNumber()
 {
-	return "2.3" ;
+	return "2.3.1" ;
 }
 
 static std::string writeFiles( const G::Path & spool_dir ,

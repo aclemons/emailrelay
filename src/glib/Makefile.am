@@ -103,6 +103,7 @@ libglib_a_SOURCES = \
 	gnewprocess.h \
 	gnewprocess_win32.cpp \
 	gomembuf.h \
+	goptional.h \
 	goptionmap.h \
 	goptionmap.cpp \
 	goptionparser.h \
@@ -233,6 +234,7 @@ libglib_a_SOURCES = \
 	gnewprocess.h \
 	gnewprocess_unix.cpp \
 	gomembuf.h \
+	goptional.h \
 	goptionmap.h \
 	goptionmap.cpp \
 	goptionparser.h \

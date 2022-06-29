@@ -2,6 +2,11 @@
 E-MailRelay Change Log
 **********************
 
+2.3 -> 2.3.1
+============
+
+* Hourly log file rotation using *%h* (eg. *--log-file=log.%d.%h*).
+
 2.2 -> 2.3
 ==========
 

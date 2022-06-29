@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -50,8 +50,15 @@ public:
 	BrokenDownTime( int year , int month , int day , int hh , int mm , int ss ) ;
 		///< Constructor.
 
+	static BrokenDownTime null() ;
+		///< Factory function for an unusable object with bogus
+		///< component values.
+
 	static BrokenDownTime midday( int year , int month , int day ) ;
 		///< Factory function for midday on the given date.
+
+	static BrokenDownTime midnight( int year , int month , int day ) ;
+		///< Factory function for midnight starting the given date.
 
 	static BrokenDownTime local( SystemTime ) ;
 		///< Factory function for the locale-dependent local time of the
@@ -61,11 +68,16 @@ public:
 		///< Factory function for the utc time of the given epoch time.
 		///< See also SystemTime::utc().
 
-	void format( std::vector<char> & out , const char * fmt ) const ;
+	bool format( char * out , std::size_t out_size , const char * fmt ) const ;
 		///< Puts the formatted date, including a terminating null character,
-		///< into the given buffer. Only simple non-locale-dependent format
-		///< specifiers are allowed, and these allowed specifiers explicitly
-		///< exclude '%z' and '%Z'.
+		///< into the given output buffer. Returns false if the output buffer
+		///< is too small. Only simple non-locale-dependent format specifiers
+		///< are allowed, and these allowed specifiers explicitly exclude
+		///< '%z' and '%Z'.
+
+	void format( std::vector<char> & out , const char * fmt ) const ;
+		///< Overload for an output vector. Throws if the vector is
+		///< too small for the result (with its null terminator).
 
 	std::string str( const char * fmt ) const ;
 		///< Returns the formatted date, with the same restrictions
@@ -103,15 +115,13 @@ public:
 		///< Uses std::mktime() to convert this locale-dependent
 		///< local broken-down time into epoch time.
 
-	bool sameMinute( const BrokenDownTime & other ) const ;
+	bool sameMinute( const BrokenDownTime & other ) const noexcept ;
 		///< Returns true if this and the other broken-down
 		///< times are the same, at minute resolution with
 		///< no rounding.
 
 private:
 	BrokenDownTime() ;
-	std::time_t epochTimeFromUtcImp( bool & , std::time_t & ) const ;
-	std::time_t epochTimeFromUtcImp() const ;
 
 private:
 	friend class G::DateTimeTest ;
@@ -267,8 +277,9 @@ private:
 	using time_point_type = std::chrono::time_point<std::chrono::steady_clock> ;
 	TimerTime( time_point_type , bool ) ;
 	static TimerTime test( int , int ) ;
-	unsigned long test_s() const ;
-	unsigned long test_us() const ;
+	unsigned long s() const ; // DateTimeTest
+	unsigned long us() const ; // DateTimeTest
+	std::string str() const ; // DateTimeTest
 
 private:
 	bool m_is_zero ;

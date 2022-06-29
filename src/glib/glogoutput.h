@@ -191,12 +191,13 @@ public:
 
 private:
 	void osinit() ;
-	void open( std::string , bool ) ;
+	void open( const std::string & , bool ) ;
 	std::ostream & start( Log::Severity ) ;
 	void output( std::ostream & , int ) ;
 	void osoutput( int , Log::Severity , char * , std::size_t ) ;
 	void oscleanup() const noexcept ;
 	bool updateTime() ;
+	bool updatePath() ;
 	void appendTimeTo( std::ostream & ) ;
 	static const char * levelString( Log::Severity ) noexcept ;
 	static const char * basename( const char * ) noexcept ;
@@ -207,9 +208,10 @@ private:
 	std::time_t m_time_s{0} ;
 	unsigned int m_time_us{0U} ;
 	std::vector<char> m_time_buffer ;
-	std::array<char,8U> m_date_buffer {} ;
+	std::array<char,17U> m_time_change_buffer {} ;
 	HANDLE m_handle{0} ; // windows
 	std::string m_path ;
+	std::string m_real_path ;
 	int m_fd{-1} ;
 	unsigned int m_depth{1U} ;
 	Log::Severity m_severity{Log::Severity::s_Debug} ;

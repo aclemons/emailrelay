@@ -23,6 +23,7 @@
 #include "gdatetime.h"
 #include "gscope.h"
 #include "gfile.h"
+#include "groot.h"
 #include "gomembuf.h"
 #include "glimits.h"
 #include <algorithm>
@@ -81,7 +82,8 @@ G::LogOutput::LogOutput( const std::string & exename , const Config & config ,
 		m_path(path)
 {
 	updateTime() ;
-	open( m_path , true ) ;
+	updatePath() ;
+	open( m_real_path , true ) ;
 	osinit() ;
 	m_depth = 0U ;
 	if( LogOutputImp::this_ == nullptr )
@@ -99,7 +101,8 @@ G::LogOutput::LogOutput( bool output_enabled_and_summary_info ,
 		.set_debug(verbose_info_and_debug) ;
 
 	updateTime() ;
-	open( m_path , true ) ;
+	updatePath() ;
+	open( m_real_path , true ) ;
 	osinit() ;
 	m_depth = 0U ;
 	if( LogOutputImp::this_ == nullptr )
@@ -172,7 +175,24 @@ void G::LogOutput::output( std::ostream & ss )
 		instance()->output( ss , 0 ) ;
 }
 
-void G::LogOutput::open( std::string path , bool do_throw )
+bool G::LogOutput::updatePath()
+{
+	std::string real_path = m_path ;
+	std::size_t pos = 0U ;
+	if( (pos=real_path.find("%h")) != std::string::npos )
+	{
+		real_path[pos] = m_time_buffer[9] ;
+		real_path[pos+1] = m_time_buffer[10] ;
+	}
+	if( (pos=real_path.find("%d")) != std::string::npos )
+	{
+		real_path.replace( pos , 2U , std::string(&m_time_buffer[0],8U) ) ;
+	}
+	real_path.swap( m_real_path ) ;
+	return real_path != m_real_path ;
+}
+
+void G::LogOutput::open( const std::string & path , bool do_throw )
 {
 	if( path.empty() )
 	{
@@ -180,11 +200,11 @@ void G::LogOutput::open( std::string path , bool do_throw )
 	}
 	else
 	{
-		std::size_t pos = path.find( "%d" ) ;
-		if( pos != std::string::npos )
-			path.replace( pos , 2U , std::string(&m_time_buffer[0],8U) ) ;
-
-		int fd = File::open( path.c_str() , File::InOutAppend::Append ) ;
+		int fd = -1 ;
+		{
+			Root claim_root ;
+			fd = File::open( path.c_str() , File::InOutAppend::Append ) ;
+		}
 		if( fd < 0 )
 		{
 			if( do_throw )
@@ -205,8 +225,8 @@ std::ostream & G::LogOutput::start( Log::Severity severity )
 	if( m_depth > 1 )
 		return LogOutputImp::ostream2() ;
 
-	if( updateTime() )
-		open( m_path , false ) ;
+	if( updateTime() && updatePath() )
+		open( m_real_path , false ) ;
 
 	std::ostream & ss = LogOutputImp::ostream1() ;
 	ss << std::dec ;
@@ -295,17 +315,17 @@ bool G::LogOutput::updateTime()
 {
 	SystemTime now = SystemTime::now() ;
 	m_time_us = now.us() ;
-	bool new_day = false ;
+	bool new_hour = false ;
 	if( m_time_s == 0 || m_time_s != now.s() || m_time_buffer.empty() )
 	{
 		m_time_s = now.s() ;
 		m_time_buffer.resize( 17U ) ;
 		now.local().format( m_time_buffer , "%Y%m%d.%H%M%S." ) ;
 		m_time_buffer[16U] = '\0' ;
-		new_day = 0 != std::memcmp( &m_date_buffer[0] , &m_time_buffer[0] , m_date_buffer.size() ) ;
-		std::memcpy( &m_date_buffer[0] , &m_time_buffer[0] , m_date_buffer.size() ) ;
+		new_hour = 0 != std::memcmp( &m_time_change_buffer[0] , &m_time_buffer[0] , 11U ) ;
+		std::memcpy( &m_time_change_buffer[0] , &m_time_buffer[0] , m_time_change_buffer.size() ) ;
 	}
-	return new_day ;
+	return new_hour ;
 }
 
 void G::LogOutput::appendTimeTo( std::ostream & ss )
