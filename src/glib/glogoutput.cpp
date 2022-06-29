@@ -25,6 +25,7 @@
 #include "gfile.h"
 #include "gomembuf.h"
 #include "glimits.h"
+#include "groot.h"
 #include <algorithm>
 #include <sstream>
 #include <stdexcept>
@@ -184,7 +185,11 @@ void G::LogOutput::open( std::string path , bool do_throw )
 		if( pos != std::string::npos )
 			path.replace( pos , 2U , std::string(&m_time_buffer[0],8U) ) ;
 
-		int fd = File::open( path.c_str() , File::InOutAppend::Append ) ;
+		int fd = -1 ;
+		{
+			Root claim_root ;
+			fd = File::open( path.c_str() , File::InOutAppend::Append ) ;
+		}
 		if( fd < 0 )
 		{
 			if( do_throw )

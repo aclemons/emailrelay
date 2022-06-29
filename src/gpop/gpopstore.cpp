@@ -169,6 +169,7 @@ bool GPop::StoreLock::File::operator<( const File & rhs ) const
 
 GPop::StoreLock::Size GPop::StoreLock::File::toSize( const std::string & s )
 {
+	if( !G::Str::isULong(s) ) return 0 ;
 	return G::Str::toULong( s , G::Str::Limited() ) ;
 }
 
@@ -198,7 +199,8 @@ void GPop::StoreLock::lock( const std::string & user )
 		while( iter.more() )
 		{
 			File file( contentPath(iter.fileName()) ) ;
-			m_initial.insert( file ) ;
+			if( file.size )
+				m_initial.insert( file ) ;
 		}
 	}
 

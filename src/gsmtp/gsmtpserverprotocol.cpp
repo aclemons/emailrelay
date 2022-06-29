@@ -994,7 +994,11 @@ std::pair<std::string,std::string> GSmtp::ServerProtocol::parseAddress( const st
 
 std::string GSmtp::ServerProtocol::parsePeerName( const std::string & line ) const
 {
-	std::size_t pos = line.find_first_of( " \t" ) ;
+	std::size_t pos = line.find_first_not_of( " \t" ) ;
+	if( pos == std::string::npos )
+		return std::string() ;
+
+	pos = line.find_first_of( " \t" , pos ) ;
 	if( pos == std::string::npos )
 		return std::string() ;
 

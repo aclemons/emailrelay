@@ -214,7 +214,7 @@ static void run( const G::Arg & arg )
 		bool opt_copy = opt.contains( "copy" ) ;
 		std::string opt_spool_dir = opt.value( "spool-dir" , GSmtp::MessageStore::defaultDirectory().str() ) ;
 		std::string opt_from = opt.value( "from" ) ;
-		G::StringArray opt_content = G::Str::splitIntoTokens( opt.value("content") , "," ) ;
+		G::StringArray opt_content = G::Str::splitIntoFields( opt.value("content") , ',' ) ;
 		bool opt_content_date = opt.contains( "content-date" ) ;
 		bool opt_content_from = opt.contains( "content-from" ) ;
 		bool opt_content_to = opt.contains( "content-to" ) ;

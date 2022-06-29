@@ -90,7 +90,7 @@ if test "0$opt_debug" -eq 1
 then
 	export CFLAGS="-O0 -g"
 	export CXXFLAGS="-O0 -g"
-	if expr "x$*" : '.*enable.debug' ; then : ; else enable_debug="--enable-debug" ; fi
+	if expr "x$*" : '.*enable.debug' > /dev/null ; then : ; else enable_debug="--enable-debug" ; fi
 :
 elif expr "x$*" : '.*enable.debug' >/dev/null
 then
