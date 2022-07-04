@@ -101,8 +101,9 @@ where \<option\> is:
 
     Defines the TLS certificate file when acting as a SMTP client. This file must
     contain the client's private key and certificate chain using the PEM file
-    format. Keep the file permissions tight to avoid accidental exposure of the
-    private key.
+    format. Alternatively, use this option twice with the first one specifying 
+    the key file and the second the certificate file. Keep the file permissions 
+    tight to avoid accidental exposure of the private key.
 
 *   --client-tls-connection (-b)
 
@@ -126,7 +127,8 @@ where \<option\> is:
     Enables verification of the remote SMTP server's certificate against any of
     the trusted CA certificates in the specified file or directory. In many use
     cases this should be a file containing just your self-signed root
-    certificate.
+    certificate. Specify *\<default\>* for the TLS library's default set of
+    trusted CAs.
 
 *   --client-tls-verify-name \<cname\>
 
@@ -136,7 +138,7 @@ where \<option\> is:
 *   --close-stderr (-e)
 
     Causes the standard error stream to be closed soon after start-up. This is
-    useful when operating as a backgroud daemon and it is therefore implied by
+    useful when operating as a background daemon and it is therefore implied by
     *--as-server* and *--as-proxy*.
 
 *   --connection-timeout \<time\> (-U)
@@ -290,7 +292,7 @@ where \<option\> is:
 *   --pid-file \<pid-file\> (-i)
 
     Causes the process-id to be written into the specified file when the program
-    starts up, typically after it has become a backgroud daemon.
+    starts up, typically after it has become a background daemon.
 
 *   --poll \<period\> (-O)
 
@@ -381,8 +383,9 @@ where \<option\> is:
 
     Defines the TLS certificate file when acting as a SMTP or POP server. This
     file must contain the server's private key and certificate chain using the
-    PEM file format. Keep the file permissions tight to avoid accidental
-    exposure of the private key.
+    PEM file format. Alternatively, use this option twice with the first one 
+    specifying the key file and the second the certificate file. Keep the file 
+    permissions tight to avoid accidental exposure of the private key.
 
 *   --server-tls-connection
 
@@ -400,7 +403,8 @@ where \<option\> is:
     Enables verification of remote SMTP and POP clients' certificates against any
     of the trusted CA certificates in the specified file or directory. In many
     use cases this should be a file containing just your self-signed root
-    certificate.
+    certificate. Specify *\<default\>* for the TLS library's default  set of
+    trusted CAs.
 
 *   --size \<bytes\> (-M)
 

@@ -281,11 +281,17 @@ public:
 	std::string tlsConfig() const ;
 		///< Returns low-level TLS configuration options.
 
+	G::Path serverTlsPrivateKey() const ;
+		///< Returns the server-side TLS private key file.
+
 	G::Path serverTlsCertificate() const ;
 		///< Returns the server-side TLS certificate file.
 
 	G::Path serverTlsCaList() const ;
 		///< Returns the server-side TLS CA file-or-directory.
+
+	G::Path clientTlsPrivateKey() const ;
+		///< Returns the client-side TLS private key file.
 
 	G::Path clientTlsCertificate() const ;
 		///< Returns the client-side TLS certificate file.
@@ -319,13 +325,16 @@ public:
 		///< sub-string.
 
 private:
-	G::Path pathValue( const std::string & ) const ;
+	G::Path pathValue( const std::string & option ) const ;
+	G::Path pathValueImp( const std::string & value ) const ;
+	G::Path keyFile( const std::string & option ) const ;
+	G::Path certificateFile( const std::string & option ) const ;
 	std::string semanticError( bool & ) const ;
-	bool pathlike( const std::string & ) const ;
-	bool filterType( const std::string & ) const ;
-	bool specialFilterValue( const std::string & ) const ;
-	bool verifyType( const std::string & ) const ;
-	bool specialVerifyValue( const std::string & ) const ;
+	static bool pathlike( const std::string & ) ;
+	static bool filterType( const std::string & ) ;
+	static bool specialFilterValue( const std::string & ) ;
+	static bool verifyType( const std::string & ) ;
+	static bool specialVerifyValue( const std::string & ) ;
 	G::StringArray semantics( bool ) const ;
 	bool validSyslogFacility() const ;
 

@@ -267,14 +267,14 @@ void Main::Run::run()
 
 	if( configuration().serverTls() || configuration().serverTlsConnection() )
 		m_tls_library->addProfile( "server" , true ,
-			configuration().serverTlsCertificate().str() , // key
-			configuration().serverTlsCertificate().str() , // cert
+			configuration().serverTlsPrivateKey().str() ,
+			configuration().serverTlsCertificate().str() ,
 			configuration().serverTlsCaList().str() ) ;
 
 	if( configuration().clientTls() || configuration().clientOverTls() )
 		m_tls_library->addProfile( "client" , false ,
-			configuration().clientTlsCertificate().str() , // key
-			configuration().clientTlsCertificate().str() , // cert
+			configuration().clientTlsPrivateKey().str() ,
+			configuration().clientTlsCertificate().str() ,
 			configuration().clientTlsCaList().str() ,
 			configuration().clientTlsPeerCertificateName() ,
 			configuration().clientTlsPeerHostName() ) ;

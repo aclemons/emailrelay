@@ -93,7 +93,7 @@ G::Options Main::Options::spec( bool is_windows )
 				//example: nobody
 				// When started as root the program switches to a non-privileged effective
 				// user-id when idle. This option can be used to define the idle user-id and
-				// also the group ownership of new files and sockets. Specify "root" to 
+				// also the group ownership of new files and sockets. Specify "root" to
 				// disable all user-id switching. Ignored on Windows.
 
 		opt.add( { "k" , "syslog" ,
@@ -216,12 +216,14 @@ G::Options Main::Options::spec( bool is_windows )
 		opt.add( { "" , "server-tls-certificate" ,
 			gettext("specifies a private TLS key+certificate file for --server-tls! "
 				"or --server-tls-connection") ,
-			"1" , "pem-file" , "3" } , '!' ) ;
+			"2" , "pem-file" , "3" } , '!' ) ;
 				//example: /etc/ssl/certs/emailrelay.pem
 				//example: C:/ProgramData/E-MailRelay/emailrelay.pem
 				// Defines the TLS certificate file when acting as a SMTP or POP server.
 				// This file must contain the server's private key and certificate chain
-				// using the PEM file format. Keep the file permissions tight to avoid
+				// using the PEM file format. Alternatively, use this option twice
+				// with the first one specifying the key file and the second the
+				// certificate file. Keep the file permissions tight to avoid
 				// accidental exposure of the private key.
 
 		opt.add( { "" , "server-tls-verify" ,
@@ -251,13 +253,15 @@ G::Options Main::Options::spec( bool is_windows )
 
 		opt.add( { "" , "client-tls-certificate" ,
 			gettext("specifies a private TLS key+certificate file for --client-tls") ,
-			"1" , "pem-file" , "3" } , '!' ) ;
+			"2" , "pem-file" , "3" } , '!' ) ;
 				//example: /etc/ssl/certs/emailrelay.pem
 				//example: C:/ProgramData/E-MailRelay/emailrelay.pem
 				// Defines the TLS certificate file when acting as a SMTP client. This file
 				// must contain the client's private key and certificate chain using the
-				// PEM file format. Keep the file permissions tight to avoid accidental
-				// exposure of the private key.
+				// PEM file format. Alternatively, use this option twice with the first
+                // one specifying the key file and the second the certificate file.
+				// Keep the file permissions tight to avoid accidental exposure of the
+				// private key.
 
 		opt.add( { "" , "client-tls-verify" ,
 			gettext("enables verification of remote server's certificate! "

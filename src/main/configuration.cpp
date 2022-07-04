@@ -373,9 +373,14 @@ std::string Main::Configuration::tlsConfig() const
 	return m_map.value( "tls-config" ) ;
 }
 
+G::Path Main::Configuration::serverTlsPrivateKey() const
+{
+	return keyFile( "server-tls-certificate" ) ;
+}
+
 G::Path Main::Configuration::serverTlsCertificate() const
 {
-	return m_map.contains("server-tls-certificate") ? pathValue("server-tls-certificate") : G::Path() ;
+	return certificateFile( "server-tls-certificate" ) ;
 }
 
 G::Path Main::Configuration::serverTlsCaList() const
@@ -393,9 +398,26 @@ std::string Main::Configuration::clientTlsPeerHostName() const
 	return m_map.value( "client-tls-server-name" ) ;
 }
 
+G::Path Main::Configuration::clientTlsPrivateKey() const
+{
+	return keyFile( "client-tls-certificate" ) ;
+}
+
 G::Path Main::Configuration::clientTlsCertificate() const
 {
-	return m_map.contains("client-tls-certificate") ? pathValue("client-tls-certificate") : G::Path() ;
+	return certificateFile( "client-tls-certificate" ) ;
+}
+
+G::Path Main::Configuration::keyFile( const std::string & option_name ) const
+{
+	std::string value = m_map.value( option_name ) ;
+	return value.empty() ? G::Path() : pathValueImp( G::Str::head(value,",",false) ) ;
+}
+
+G::Path Main::Configuration::certificateFile( const std::string & option_name ) const
+{
+	std::string value = m_map.value( option_name ) ;
+	return value.empty() ? G::Path() : pathValueImp( G::Str::tail(value,",",false) ) ;
 }
 
 G::Path Main::Configuration::clientTlsCaList() const
@@ -693,6 +715,16 @@ G::StringArray Main::Configuration::semantics( bool want_errors ) const
 			gettext("the --client-tls- options require --client-tls or --client-tls-connection") ) ;
 	}
 
+	if( m_map.count("server-tls-certificate") > 2U )
+	{
+		return tx("the --server-tls-certificate option cannot be used more than twice")  ;
+	}
+
+	if( m_map.count("client-tls-certificate") > 2U )
+	{
+		return tx("the --client-tls-certificate option cannot be used more than twice")  ;
+	}
+
 	if( m_map.contains("client-tls-verify-name") && !m_map.contains("client-tls-verify") )
 	{
 		errors.push_back(
@@ -786,14 +818,20 @@ G::Path Main::Configuration::pathValue( const std::string & option_name ) const
 	}
 	else
 	{
-		if( value.find("@app") == 0U && !m_app_dir.empty() )
-			G::Str::replace( value , "@app" , m_app_dir.str() ) ;
-
-		return G::Path(value).isAbsolute() ? G::Path(value) : ( daemon() ? (m_base_dir+value) : value ) ;
+		return pathValueImp( value ) ;
 	}
 }
 
-bool Main::Configuration::pathlike( const std::string & option_name ) const
+G::Path Main::Configuration::pathValueImp( const std::string & value_in ) const
+{
+	std::string value = value_in ;
+	if( value.find("@app") == 0U && !m_app_dir.empty() )
+		G::Str::replace( value , "@app" , m_app_dir.str() ) ;
+
+	return G::Path(value).isAbsolute() ? G::Path(value) : ( daemon() ? (m_base_dir+value) : value ) ;
+}
+
+bool Main::Configuration::pathlike( const std::string & option_name )
 {
 	return
 		option_name == "log-file" ||
@@ -812,7 +850,7 @@ bool Main::Configuration::pathlike( const std::string & option_name ) const
 		false ;
 }
 
-bool Main::Configuration::filterType( const std::string & option_name ) const
+bool Main::Configuration::filterType( const std::string & option_name )
 {
 	return
 		option_name == "filter" ||
@@ -820,21 +858,21 @@ bool Main::Configuration::filterType( const std::string & option_name ) const
 		option_name == "address-verifier" ;
 }
 
-bool Main::Configuration::specialFilterValue( const std::string & value ) const
+bool Main::Configuration::specialFilterValue( const std::string & value )
 {
 	return
 		value.find(':') != std::string::npos &&
 		value.find(':') >= 3U ;
 }
 
-bool Main::Configuration::verifyType( const std::string & option_name ) const
+bool Main::Configuration::verifyType( const std::string & option_name )
 {
 	return
 		option_name == "server-tls-verify" ||
 		option_name == "client-tls-verify" ;
 }
 
-bool Main::Configuration::specialVerifyValue( const std::string & value ) const
+bool Main::Configuration::specialVerifyValue( const std::string & value )
 {
 	return !value.empty() && value.at(0U) == '<' && value.at(value.length()-1U) == '>' ;
 }

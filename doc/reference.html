@@ -112,8 +112,9 @@
       <dd>
        Defines the TLS certificate file when acting as a SMTP client. This file must
        contain the client's private key and certificate chain using the PEM file
-       format. Keep the file permissions tight to avoid accidental exposure of the
-       private key.
+       format. Alternatively, use this option twice with the first one specifying 
+       the key file and the second the certificate file. Keep the file permissions 
+       tight to avoid accidental exposure of the private key.
       </dd>
      <dt>--client-tls-connection (-b)</dt>
       <dd>
@@ -137,7 +138,8 @@
        Enables verification of the remote SMTP server's certificate against any of
        the trusted CA certificates in the specified file or directory. In many use
        cases this should be a file containing just your self-signed root
-       certificate.
+       certificate. Specify <em>&lt;default&gt;</em> for the TLS library's default set of
+       trusted CAs.
       </dd>
      <dt>--client-tls-verify-name &lt;cname&gt;</dt>
       <dd>
@@ -147,7 +149,7 @@
      <dt>--close-stderr (-e)</dt>
       <dd>
        Causes the standard error stream to be closed soon after start-up. This is
-       useful when operating as a backgroud daemon and it is therefore implied by
+       useful when operating as a background daemon and it is therefore implied by
        <em>--as-server</em> and <em>--as-proxy</em>.
       </dd>
      <dt>--connection-timeout &lt;time&gt; (-U)</dt>
@@ -301,7 +303,7 @@
      <dt>--pid-file &lt;pid-file&gt; (-i)</dt>
       <dd>
        Causes the process-id to be written into the specified file when the program
-       starts up, typically after it has become a backgroud daemon.
+       starts up, typically after it has become a background daemon.
       </dd>
      <dt>--poll &lt;period&gt; (-O)</dt>
       <dd>
@@ -392,8 +394,9 @@
       <dd>
        Defines the TLS certificate file when acting as a SMTP or POP server. This
        file must contain the server's private key and certificate chain using the
-       PEM file format. Keep the file permissions tight to avoid accidental
-       exposure of the private key.
+       PEM file format. Alternatively, use this option twice with the first one 
+       specifying the key file and the second the certificate file. Keep the file 
+       permissions tight to avoid accidental exposure of the private key.
       </dd>
      <dt>--server-tls-connection</dt>
       <dd>
@@ -411,7 +414,8 @@
        Enables verification of remote SMTP and POP clients' certificates against any
        of the trusted CA certificates in the specified file or directory. In many
        use cases this should be a file containing just your self-signed root
-       certificate.
+       certificate. Specify <em>&lt;default&gt;</em> for the TLS library's default set of
+       trusted CAs.
       </dd>
      <dt>--size &lt;bytes&gt; (-M)</dt>
       <dd>

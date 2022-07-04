@@ -119,7 +119,7 @@ Enables negotiated TLS for outgoing SMTP connections; the SMTP STARTTLS command 
 <DT><B>--client-tls-certificate </B><I>&lt;pem-file&gt;</I>
 
 <DD>
-Defines the TLS certificate file when acting as a SMTP client. This file must contain the client's private key and certificate chain using the PEM file format. Keep the file permissions tight to avoid accidental exposure of the private key.
+Defines the TLS certificate file when acting as a SMTP client. This file must contain the client's private key and certificate chain using the PEM file format. Alternatively, use this option twice with the first one specifying the key file and the second the certificate file. Keep the file permissions tight to avoid accidental exposure of the private key.
 <DT><B>-b, --client-tls-connection</B>
 
 <DD>
@@ -135,7 +135,7 @@ Defines the target server hostname in the TLS handshake. With <I>--client-tls-co
 <DT><B>--client-tls-verify </B><I>&lt;ca-list&gt;</I>
 
 <DD>
-Enables verification of the remote SMTP server's certificate against any of the trusted CA certificates in the specified file or directory. In many use cases this should be a file containing just your self-signed root certificate.
+Enables verification of the remote SMTP server's certificate against any of the trusted CA certificates in the specified file or directory. In many use cases this should be a file containing just your self-signed root certificate. Specify <I>&lt;default&gt;</I> for the TLS library's default set of trusted CAs.
 <DT><B>--client-tls-verify-name </B><I>&lt;cname&gt;</I>
 
 <DD>
@@ -143,7 +143,7 @@ Enables verification of the CNAME within the remote SMTP server's certificate.
 <DT><B>-e, --close-stderr</B>
 
 <DD>
-Causes the standard error stream to be closed soon after start-up. This is useful when operating as a backgroud daemon and it is therefore implied by <I>--as-server</I> and <I>--as-proxy</I>.
+Causes the standard error stream to be closed soon after start-up. This is useful when operating as a background daemon and it is therefore implied by <I>--as-server</I> and <I>--as-proxy</I>.
 <DT><B>-U, --connection-timeout </B><I>&lt;time&gt;</I>
 
 <DD>
@@ -243,7 +243,7 @@ Disables logging to the syslog. Note that <I>--as-client</I> implies <I>--no-sys
 <DT><B>-i, --pid-file </B><I>&lt;pid-file&gt;</I>
 
 <DD>
-Causes the process-id to be written into the specified file when the program starts up, typically after it has become a backgroud daemon.
+Causes the process-id to be written into the specified file when the program starts up, typically after it has become a background daemon.
 <DT><B>-O, --poll </B><I>&lt;period&gt;</I>
 
 <DD>
@@ -299,7 +299,7 @@ Enables TLS for incoming SMTP and POP connections. SMTP clients can then request
 <DT><B>--server-tls-certificate </B><I>&lt;pem-file&gt;</I>
 
 <DD>
-Defines the TLS certificate file when acting as a SMTP or POP server. This file must contain the server's private key and certificate chain using the PEM file format. Keep the file permissions tight to avoid accidental exposure of the private key.
+Defines the TLS certificate file when acting as a SMTP or POP server. This file must contain the server's private key and certificate chain using the PEM file format. Alternatively, use this option twice with the first one specifying the key file and the second the certificate file. Keep the file permissions tight to avoid accidental exposure of the private key.
 <DT><B>--server-tls-connection</B>
 
 <DD>
@@ -311,7 +311,7 @@ Makes the use of TLS mandatory for any incoming SMTP and POP connections. SMTP c
 <DT><B>--server-tls-verify </B><I>&lt;ca-list&gt;</I>
 
 <DD>
-Enables verification of remote SMTP and POP clients' certificates against any of the trusted CA certificates in the specified file or directory. In many use cases this should be a file containing just your self-signed root certificate.
+Enables verification of remote SMTP and POP clients' certificates against any of the trusted CA certificates in the specified file or directory. In many use cases this should be a file containing just your self-signed root certificate. Specify <I>&lt;default&gt;</I> for the TLS library's default set of trusted CAs.
 <DT><B>-M, --size </B><I>&lt;bytes&gt;</I>
 
 <DD>

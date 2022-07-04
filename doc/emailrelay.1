@@ -89,7 +89,7 @@ Specifies the IP network address to be used to bind the local end of outgoing SM
 Enables negotiated TLS for outgoing SMTP connections; the SMTP STARTTLS command will be issued if the remote server supports it.
 .TP
 .B --client-tls-certificate \fI<pem-file>\fR
-Defines the TLS certificate file when acting as a SMTP client. This file must contain the client's private key and certificate chain using the PEM file format. Keep the file permissions tight to avoid accidental exposure of the private key.
+Defines the TLS certificate file when acting as a SMTP client. This file must contain the client's private key and certificate chain using the PEM file format. Alternatively, use this option twice with the first one specifying the key file and the second the certificate file. Keep the file permissions tight to avoid accidental exposure of the private key.
 .TP
 .B \-b, --client-tls-connection
 Enables the use of a TLS tunnel for outgoing SMTP connections. This is for SMTP over TLS (SMTPS), not TLS negotiated within SMTP using STARTTLS.
@@ -101,13 +101,13 @@ Makes the use of TLS mandatory for outgoing SMTP connections. The SMTP STARTTLS 
 Defines the target server hostname in the TLS handshake. With \fI--client-tls-connection\fR this can be used for SNI, allowing the remote server to adopt an appropriate identity.
 .TP
 .B --client-tls-verify \fI<ca-list>\fR
-Enables verification of the remote SMTP server's certificate against any of the trusted CA certificates in the specified file or directory. In many use cases this should be a file containing just your self-signed root certificate.
+Enables verification of the remote SMTP server's certificate against any of the trusted CA certificates in the specified file or directory. In many use cases this should be a file containing just your self-signed root certificate. Specify \fI<default>\fR for the TLS library's default set of trusted CAs.
 .TP
 .B --client-tls-verify-name \fI<cname>\fR
 Enables verification of the CNAME within the remote SMTP server's certificate.
 .TP
 .B \-e, --close-stderr
-Causes the standard error stream to be closed soon after start-up. This is useful when operating as a backgroud daemon and it is therefore implied by \fI--as-server\fR and \fI--as-proxy\fR.
+Causes the standard error stream to be closed soon after start-up. This is useful when operating as a background daemon and it is therefore implied by \fI--as-server\fR and \fI--as-proxy\fR.
 .TP
 .B \-U, --connection-timeout \fI<time>\fR
 Specifies a timeout (in seconds) for establishing a TCP connection to remote SMTP servers. The default is 40 seconds.
@@ -182,7 +182,7 @@ Disables listening for incoming SMTP connections.
 Disables logging to the syslog. Note that \fI--as-client\fR implies \fI--no-syslog\fR.
 .TP
 .B \-i, --pid-file \fI<pid-file>\fR
-Causes the process-id to be written into the specified file when the program starts up, typically after it has become a backgroud daemon.
+Causes the process-id to be written into the specified file when the program starts up, typically after it has become a background daemon.
 .TP
 .B \-O, --poll \fI<period>\fR
 Causes forwarding of spooled mail messages to happen at regular intervals (with the time given in seconds).
@@ -224,7 +224,7 @@ Configures the SMTP server authentication module using a semicolon-separated lis
 Enables TLS for incoming SMTP and POP connections. SMTP clients can then request TLS encryption by issuing the STARTTLS command. The \fI--server-tls-certificate\fR option must be used to define the server certificate.
 .TP
 .B --server-tls-certificate \fI<pem-file>\fR
-Defines the TLS certificate file when acting as a SMTP or POP server. This file must contain the server's private key and certificate chain using the PEM file format. Keep the file permissions tight to avoid accidental exposure of the private key.
+Defines the TLS certificate file when acting as a SMTP or POP server. This file must contain the server's private key and certificate chain using the PEM file format. Alternatively, use this option twice with the first one specifying the key file and the second the certificate file. Keep the file permissions tight to avoid accidental exposure of the private key.
 .TP
 .B --server-tls-connection
 Enables SMTP over TLS when acting as an SMTP server. This is for SMTP over TLS (SMTPS), not TLS negotiated within SMTP using STARTTLS.
@@ -233,7 +233,7 @@ Enables SMTP over TLS when acting as an SMTP server. This is for SMTP over TLS (
 Makes the use of TLS mandatory for any incoming SMTP and POP connections. SMTP clients must use the STARTTLS command to establish a TLS session before they can issue SMTP AUTH or SMTP MAIL-TO commands.
 .TP
 .B --server-tls-verify \fI<ca-list>\fR
-Enables verification of remote SMTP and POP clients' certificates against any of the trusted CA certificates in the specified file or directory. In many use cases this should be a file containing just your self-signed root certificate.
+Enables verification of remote SMTP and POP clients' certificates against any of the trusted CA certificates in the specified file or directory. In many use cases this should be a file containing just your self-signed root certificate. Specify \fI<default>\fR for the TLS library's default set of trusted CAs.
 .TP
 .B \-M, --size \fI<bytes>\fR
 Limits the size of mail messages that can be submitted over SMTP.
