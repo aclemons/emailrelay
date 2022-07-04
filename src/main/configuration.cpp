@@ -717,12 +717,14 @@ G::StringArray Main::Configuration::semantics( bool want_errors ) const
 
 	if( m_map.count("server-tls-certificate") > 2U )
 	{
-		return tx("the --server-tls-certificate option cannot be used more than twice")  ;
+		errors.push_back(
+			gettext("the --server-tls-certificate option cannot be used more than twice") ) ;
 	}
 
 	if( m_map.count("client-tls-certificate") > 2U )
 	{
-		return tx("the --client-tls-certificate option cannot be used more than twice")  ;
+		errors.push_back(
+			gettext("the --client-tls-certificate option cannot be used more than twice") ) ;
 	}
 
 	if( m_map.contains("client-tls-verify-name") && !m_map.contains("client-tls-verify") )
