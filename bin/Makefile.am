@@ -17,6 +17,8 @@
 
 example_scripts_static = \
 	emailrelay-bcc-check.pl \
+	emailrelay-check-ipaddress.js \
+	emailrelay-check-ipaddress.pl \
 	emailrelay-ldap-verify.py \
 	emailrelay-multicast.sh \
 	emailrelay-rot13.pl \

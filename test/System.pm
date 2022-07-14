@@ -500,6 +500,25 @@ sub submitMessage
 	System::unlink( $path ) ;
 }
 
+sub submitMessageText
+{
+    # Submits a message using emailrelay-submit.
+	my ( $spool_dir , @lines ) = @_ ;
+	my $to = "me\@there.localnet" ;
+	my $path = tempfile( "message" ) ;
+	my $fh = new FileHandle( $path , "w" ) or die ;
+	print $fh "Subject: test\r\n\r\n" ;
+	for my $line ( @lines )
+	{
+		print $fh $line , "\r\n" ;
+	}
+	$fh->close() or die ;
+	my $rc = system( sanepath(exe($bin_dir,"emailrelay-submit")) . " --from me\@here.localnet " .
+		"--spool-dir $spool_dir $to < $path" ) ;
+	Check::that( $rc == 0 , "failed to submit" ) ;
+	System::unlink( $path ) ;
+}
+
 sub submitMessages
 {
 	# Submits 'n' message of 'm' lines using the "emailrelay-submit" utility.

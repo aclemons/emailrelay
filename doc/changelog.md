@@ -5,6 +5,8 @@ E-MailRelay Change Log
 ------------
 
 * Hourly log file rotation using `%h` (eg. `--log-file=log.%d.%h`).
+* TLS key and certificate files can be specified separately.
+* Fixed error handling for network client filters (`--client-filter=net:...`) [bug-id #50].
 
 2.2 -> 2.3
 ----------

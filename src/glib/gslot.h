@@ -181,13 +181,21 @@ namespace G
 						m_slot.m_fn( args... ) ;
 				}
 			}
-			void reset()
+			void reset() noexcept
 			{
 				m_emitted = false ;
 			}
 			bool connected() const
 			{
 				return !! m_slot.m_fn ;
+			}
+			bool emitted() const noexcept
+			{
+				return m_emitted ;
+			}
+			void emitted( bool emitted ) noexcept
+			{
+				m_emitted = emitted ;
 			}
 			~Signal() = default ;
 			Signal( const Signal & ) = delete ;

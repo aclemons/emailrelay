@@ -182,8 +182,9 @@ sub _switches
 		( exists($sw{Filter}) ? "--filter __FILTER__ " : "" ) .
 		( exists($sw{FilterTimeout}) ? "--filter-timeout 1 " : "" ) .
 		( exists($sw{ConnectionTimeout}) ? "--connection-timeout 1 " : "" ) .
-		( exists($sw{ClientFilter}) ? "--client-filter __CLIENT_FILTER__ " : "" ) .
 		( exists($sw{Immediate}) ? "--immediate " : "" ) .
+		( exists($sw{ClientFilter}) ? "--client-filter __CLIENT_FILTER__ " : "" ) .
+		( exists($sw{ClientFilterNet}) ? "--client-filter __SCANNER__ " : "" ) .
 		( exists($sw{Scanner}) ? "--filter __SCANNER__ " : "" ) .
 		( exists($sw{Verifier}) ? "--address-verifier __VERIFIER__ " : "" ) .
 		( exists($sw{DontServe}) ? "--dont-serve " : "" ) .

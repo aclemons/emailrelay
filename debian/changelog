@@ -1,5 +1,7 @@
 emailrelay (2.3.1) unstable; urgency=low
   * Hourly log file rotation using "%h" (eg. "--log-file=log.%d.%h").
+  * TLS key and certificate files can be specified separately.
+  * Fixed error handling for network client filters ("--client-filter=net:...") [bug-id 50].
  -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Thu, 30 Jun 2022 00:00:00 +0000
 
 emailrelay (2.3) unstable; urgency=low

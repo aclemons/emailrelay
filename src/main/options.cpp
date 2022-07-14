@@ -259,7 +259,7 @@ G::Options Main::Options::spec( bool is_windows )
 				// Defines the TLS certificate file when acting as a SMTP client. This file
 				// must contain the client's private key and certificate chain using the
 				// PEM file format. Alternatively, use this option twice with the first
-                // one specifying the key file and the second the certificate file.
+				// one specifying the key file and the second the certificate file.
 				// Keep the file permissions tight to avoid accidental exposure of the
 				// private key.
 

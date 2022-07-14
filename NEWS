@@ -4,8 +4,4 @@ Version 2.3 is a relatively minor release. The main functional change is to
 support unix domain sockets. Non-functional code changes include better
 separation of interface and implementation in the SMTP message store.
 
-Version 2.3.1 is a point release that includes the ability to specify the TLS
-private key and certificate chain in separate files by using the
-"--server-tls-certificate" or "--client-tls-certificate" option twice. The
-first time for the private key file and the second time for the certificate
-chain file.
+Version 2.3.1 is a point release principally to fix bug-id #50.

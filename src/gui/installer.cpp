@@ -1260,7 +1260,7 @@ void Launcher::run()
 		// doesn't work well because stderr is not always inherited 
 		// and then closed cleanly)
 		std::string s = m_cmd.exe().str() ;
-		(void) system( s.c_str() ) ;
+		(void) system( s.c_str() ) ; // NOLINT
 	}
 }
 

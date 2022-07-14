@@ -27,18 +27,18 @@ GSmtp::NetworkFilter::NetworkFilter( GNet::ExceptionSink es , FileStore & file_s
 	const std::string & server , unsigned int connection_timeout , unsigned int response_timeout ) :
 		m_es(es) ,
 		m_file_store(file_store) ,
+		m_timer(*this,&NetworkFilter::onTimeout,m_es) ,
+		m_done_signal(true) , // one-shot until reset()
 		m_location(server) ,
 		m_connection_timeout(connection_timeout) ,
 		m_response_timeout(response_timeout)
 {
 	m_client_ptr.eventSignal().connect( G::Slot::slot(*this,&GSmtp::NetworkFilter::clientEvent) ) ;
-	m_client_ptr.deletedSignal().connect( G::Slot::slot(*this,&GSmtp::NetworkFilter::clientDeleted) ) ;
 }
 
 GSmtp::NetworkFilter::~NetworkFilter()
 {
 	m_client_ptr.eventSignal().disconnect() ;
-	m_client_ptr.deletedSignal().disconnect() ;
 }
 
 std::string GSmtp::NetworkFilter::id() const
@@ -53,33 +53,49 @@ bool GSmtp::NetworkFilter::simple() const
 
 void GSmtp::NetworkFilter::start( const MessageId & message_id )
 {
-	m_text.erase() ;
-	if( m_client_ptr.get() == nullptr )
+	m_text.clear() ;
+	m_timer.cancelTimer() ;
+	m_done_signal.reset() ;
+	if( m_client_ptr.get() == nullptr || m_client_ptr->busy() )
 	{
 		m_client_ptr.reset( std::make_unique<RequestClient>(
-			GNet::ExceptionSink(m_client_ptr,m_es.esrc()),
+			GNet::ExceptionSink(*this,&m_client_ptr),
 			"scanner" , "ok" ,
 			m_location , m_connection_timeout , m_response_timeout ) ) ;
 	}
 	m_client_ptr->request( m_file_store.contentPath(message_id).str() ) ; // (no need to wait for connection)
 }
 
-void GSmtp::NetworkFilter::clientDeleted( const std::string & reason )
+void GSmtp::NetworkFilter::onException( GNet::ExceptionSource * , std::exception & e , bool done )
 {
-	if( !reason.empty() )
-	{
-		m_text = "failed" "\t" + reason ;
-		m_done_signal.emit( 2 ) ;
-	}
+	if( m_client_ptr.get() )
+		m_client_ptr->doOnDelete( e.what() , done ) ;
+	m_client_ptr.reset() ;
+
+	sendResult( std::string("failed\t").append(e.what()) ) ;
 }
 
 void GSmtp::NetworkFilter::clientEvent( const std::string & s1 , const std::string & s2 , const std::string & )
 {
 	if( s1 == "scanner" ) // ie. this is the response received by the RequestClient
 	{
-		m_text = s2 ;
-		m_done_signal.emit( m_text.empty() ? 0 : 2 ) ;
+		sendResult( s2 ) ;
 	}
+}
+
+void GSmtp::NetworkFilter::sendResult( const std::string & reason )
+{
+	if( !m_text.has_value() )
+	{
+		m_text = reason ;
+		m_timer.startTimer( 0 ) ;
+	}
+}
+
+void GSmtp::NetworkFilter::onTimeout()
+{
+	if( m_text.has_value() )
+		m_done_signal.emit( m_text.value().empty() ? 0 : 2 ) ;
 }
 
 bool GSmtp::NetworkFilter::special() const
@@ -90,12 +106,12 @@ bool GSmtp::NetworkFilter::special() const
 std::string GSmtp::NetworkFilter::response() const
 {
 	// allow "<response><tab><reason>"
-	return G::Str::printable( G::Str::head( m_text , "\t" , false ) ) ;
+	return G::Str::printable( G::Str::head( m_text.value_or({}) , "\t" , false ) ) ;
 }
 
 std::string GSmtp::NetworkFilter::reason() const
 {
-	return G::Str::printable( G::Str::tail( m_text , "\t" , false ) ) ;
+	return G::Str::printable( G::Str::tail( m_text.value_or({}) , "\t" , false ) ) ;
 }
 
 G::Slot::Signal<int> & GSmtp::NetworkFilter::doneSignal()
@@ -105,11 +121,14 @@ G::Slot::Signal<int> & GSmtp::NetworkFilter::doneSignal()
 
 void GSmtp::NetworkFilter::cancel()
 {
+	m_text.clear() ;
+	m_timer.cancelTimer() ;
+	m_done_signal.emitted( true ) ;
 	m_client_ptr.reset() ;
-	m_text.erase() ;
 }
 
 bool GSmtp::NetworkFilter::abandoned() const
 {
 	return false ;
 }
+

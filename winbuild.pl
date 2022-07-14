@@ -483,7 +483,7 @@ sub run_cmake
 	my $mbedtls_dir = Cwd::realpath( $mbedtls ) ;
 	my $mbedtls_include_dir = "$mbedtls_dir/include" ;
 	my $mbedtls_lib_dir = "$mbedtls_dir/$arch/library/Release" ; # fixed up to Debug elsewhere
-	my $qt_dir = Cwd::realpath( $qt_dirs->{$arch} ) ;
+	my $qt_dir = defined($qt_dirs) ? Cwd::realpath( $qt_dirs->{$arch} ) : "." ;
 	my $module_path = Cwd::realpath( "." ) ;
 
 	my @arch_args = @{$cmake_args->{$arch}} ;

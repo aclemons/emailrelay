@@ -27,6 +27,7 @@
 //  * sleep [<time>]
 //  * delete-content
 //  * delete-envelope
+//  * shutdown
 //  * disconnect
 //  * terminate
 //
@@ -148,10 +149,12 @@ bool Main::ScannerPeer::processFile( std::string path , std::string eol )
 			G_LOG_S( "ScannerPeer::processFile: sleeping: " << sleep_time ) ;
 			::sleep( sleep_time ) ;
 		}
+		if( line.find("shutdown") == 0U )
+		{
+			socket().shutdown() ;
+		}
 		if( line.find("disconnect") == 0U )
 		{
-			if( sent )
-				::sleep( 1U ) ; // allow the data to get down the pipe
 			return false ;
 		}
 		if( line.find("terminate") == 0U )
@@ -231,7 +234,7 @@ int main( int argc , char * argv [] )
 		std::string log_file = arg.index("--log-file",1U) ? arg.v(arg.index("--log-file",1U)+1U) : std::string() ;
 		std::string port_str = arg.index("--port",1U) ? arg.v(arg.index("--port",1U)+1U) : std::string("10020") ;
 		std::string pid_file = arg.index("--pid-file",1U) ? arg.v(arg.index("--pid-file",1U)+1U) : std::string() ;
-		unsigned int idle_timeout = 30U ;
+		unsigned int idle_timeout = 10U ;
 
 		GNet::Address address = G::Str::isNumeric(port_str) ?
 			GNet::Address( GNet::Address::Family::ipv4 , G::Str::toUInt(port_str) ) :
@@ -244,7 +247,15 @@ int main( int argc , char * argv [] )
 			file << G::Process::Id().str() << std::endl ;
 		}
 
-		G::LogOutput log_output( log , debug , log_file ) ;
+		G::LogOutput log_output( arg.prefix() ,
+			G::LogOutput::Config()
+				.set_output_enabled()
+				.set_summary_info(log||debug)
+				.set_verbose_info(log||debug)
+				.set_debug(debug)
+				.set_with_level(true) ,
+			log_file ) ;
+
 		int rc = run( address , idle_timeout ) ;
 		std::cout << "done" << std::endl ;
 		return rc ;

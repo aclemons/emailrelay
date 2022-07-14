@@ -37,13 +37,14 @@ template <typename T>
 class G::optional
 {
 public:
-	constexpr optional() noexcept ;
+	optional() noexcept(noexcept(T())) ;
 	explicit optional( const T & ) ;
 	optional( bool has_value , const T & value ) ; // not in std::optional()
+	void clear() noexcept ; // not in std::optional()
 	bool has_value() const noexcept ;
-	constexpr explicit operator bool() const noexcept ;
-	constexpr const T & value() const ;
-	constexpr T value_or( const T & ) const ;
+	explicit operator bool() const noexcept ;
+	const T & value() const ;
+	T value_or( const T & ) const ;
 	optional<T> & operator=( const T & ) ;
 
 public:
@@ -57,12 +58,12 @@ private:
 	void doThrow() const ;
 
 private:
-	T m_value ;
+	T m_value {} ;
 	bool m_has_value {false} ;
 } ;
 
 template <typename T>
-constexpr G::optional<T>::optional() noexcept
+G::optional<T>::optional() noexcept(noexcept(T()))
 = default ;
 
 template <typename T>
@@ -80,19 +81,25 @@ G::optional<T>::optional( bool has_value , const T & value ) :
 }
 
 template <typename T>
+void G::optional<T>::clear() noexcept
+{
+	m_has_value = false ;
+}
+
+template <typename T>
 bool G::optional<T>::has_value() const noexcept
 {
 	return m_has_value ;
 }
 
 template <typename T>
-constexpr G::optional<T>::operator bool() const noexcept
+G::optional<T>::operator bool() const noexcept
 {
 	return m_has_value ;
 }
 
 template <typename T>
-constexpr const T & G::optional<T>::value() const
+const T & G::optional<T>::value() const
 {
 	return m_has_value ? m_value : ( doThrow() , m_value ) ;
 }
@@ -104,7 +111,7 @@ void G::optional<T>::doThrow() const
 }
 
 template <typename T>
-constexpr T G::optional<T>::value_or( const T & default_ ) const
+T G::optional<T>::value_or( const T & default_ ) const
 {
 	return m_has_value ? m_value : default_ ;
 }

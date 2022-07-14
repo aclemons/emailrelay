@@ -1604,6 +1604,68 @@ sub testClientFilterBlock
 	System::unlink( $outputfile ) ;
 }
 
+sub testClientNetworkFilter
+{
+	# setup
+	my %args = (
+		Log => 1 ,
+		LogFile => 1 ,
+		Verbose => 1 ,
+		Domain => 1 ,
+		SpoolDir => 1 ,
+		Forward => 1 ,
+		ForwardTo => 1 ,
+		ClientFilterNet => 1 ,
+		FilterTimeout => 1 ,
+		Hidden => 1 ,
+		Port => 1 ,
+		PidFile => 1 ,
+	) ;
+	my %server_args = (
+		Log => 1 ,
+		LogFile => 1 ,
+		Verbose => 1 ,
+		Domain => 1 ,
+		SpoolDir => 1 ,
+		Hidden => 1 ,
+		Port => 1 ,
+		PidFile => 1 ,
+	) ;
+	my $spool_dir_1 = System::createSpoolDir( "spool-1" ) ;
+	my $spool_dir_2 = System::createSpoolDir( "spool-2" ) ;
+	System::submitMessageText( $spool_dir_1 , "send ok" ) ;
+	System::submitMessageText( $spool_dir_1 , "send ok" , "shutdown" ) ;
+	System::submitMessageText( $spool_dir_1 , "send ok" , "shutdown" ) ;
+	System::submitMessageText( $spool_dir_1 , "send _failed_" ) ;
+	System::submitMessageText( $spool_dir_1 , "send ok" ) ;
+	Check::fileMatchCount( $spool_dir_1 ."/emailrelay.*.envelope", 5 ) ;
+	my $server_1 = new Server(undef,undef,undef,$spool_dir_1) ;
+	my $server_2 = new Server(System::nextPort(),undef,System::nextPort(),$spool_dir_2) ;
+	my $scanner = new Scanner( $server_1->scannerAddress() ) ;
+	$scanner->run() ;
+	Check::ok( $server_2->run(\%server_args) , "failed to run" , $server_2->message() ) ;
+	Check::running( $server_2->pid() , $server_2->message() ) ;
+	$server_1->set_dst( $server_2->smtpPort() ) ;
+	Check::ok( $server_1->run(\%args) , "failed to run" , $server_1->message() ) ;
+
+	# test that the messages are fowarded or not according to the filter
+	System::waitForFiles( $spool_dir_2."/emailrelay.*.envelope", 4 ) ;
+	System::waitForFiles( $spool_dir_1."/emailrelay.*.envelope.bad", 1 ) ;
+	Check::allFilesContain( $spool_dir_1."/emailrelay.*.envelope.bad" , "_failed_" ) ;
+	Check::fileContains( $scanner->logfile() , "info:.*new connection" , undef , 3 ) ;
+	Check::fileContains( $scanner->logfile() , "info:.*file: " , undef , 5 ) ;
+
+	# tear down
+	$server_1->kill() ;
+	$server_2->kill() ;
+	$server_1->cleanup() ;
+	$server_2->cleanup() ;
+	$scanner->kill() ;
+	$scanner->cleanup() ;
+	System::deleteSpoolDir( $spool_dir_1 , 1 ) ;
+	System::deleteSpoolDir( $spool_dir_2 , 1 ) ;
+}
+
 sub testClientGivenUnknownMechanisms
 {
 	# setup
