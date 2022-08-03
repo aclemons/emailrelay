@@ -77,12 +77,12 @@ public:
 		///< Releases block()ed signals.
 
 	static const char * strdup( const char * ) ;
-		// A strdup() function that makes it clear in the stack trace
-		// that leaks are expected.
+		///< A strdup() function that makes it clear in the stack trace
+		///< that leaks are expected.
 
 	static const char * strdup( const std::string & ) ;
-		// A strdup() function that makes it clear in the stack trace
-		// that leaks are expected.
+		///< A strdup() function that makes it clear in the stack trace
+		///< that leaks are expected.
 
 public:
 	Cleanup() = delete ;

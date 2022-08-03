@@ -93,7 +93,7 @@ std::filebuf * G::File::open( std::filebuf & fb , const Path & path , InOut inou
 	inout == InOut::In ?
 		FileImp::open( fb , path.cstr() , std::ios_base::in | std::ios_base::binary ) :
 		FileImp::open( fb , path.cstr() , std::ios_base::out | std::ios_base::binary ) ;
-	return &fb ;
+	return fb.is_open() ? &fb : nullptr ;
 }
 
 int G::File::open( const char * path , InOutAppend mode ) noexcept

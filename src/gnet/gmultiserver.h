@@ -46,6 +46,7 @@ class GNet::MultiServer : private InterfacesHandler
 public:
 	using AddressList = std::vector<Address> ;
 	G_EXCEPTION( NoListeningAddresses , "no listening addresses" ) ;
+	G_EXCEPTION( InvalidName , "invalid address or interface name" ) ;
 
 	struct ServerInfo /// A structure used in GNet::MultiServer::newPeer().
 	{
@@ -106,7 +107,7 @@ public:
 private:
 	friend class GNet::MultiServerImp ;
 	AddressList addresses( unsigned int ) const ;
-	AddressList addresses( unsigned int , G::StringArray & , G::StringArray & ) const ;
+	AddressList addresses( unsigned int , G::StringArray & , G::StringArray & , G::StringArray & ) const ;
 	void init( const AddressList & address_list ) ;
 	bool gotServerFor( const Address & ) const ;
 	void onInterfaceEventTimeout() ;

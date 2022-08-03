@@ -54,12 +54,9 @@ test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
 %files
 
 /etc/emailrelay.auth.template
-/etc/emailrelay.auth.template
 %config /etc/emailrelay.conf
 /etc/emailrelay.conf.template
-/etc/emailrelay.conf.template
 /etc/init.d/emailrelay
-%config /etc/pam.d/emailrelay
 %config /etc/pam.d/emailrelay
 %dir /usr/lib/emailrelay
 %attr(2755, root, daemon) /usr/lib/emailrelay/emailrelay-filter-copy
@@ -68,8 +65,6 @@ test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
 /usr/lib/emailrelay/examples/emailrelay-bcc-check.pl
 /usr/lib/emailrelay/examples/emailrelay-deliver.sh
 /usr/lib/emailrelay/examples/emailrelay-fail2ban-filter
-/usr/lib/emailrelay/examples/emailrelay-fail2ban-filter
-/usr/lib/emailrelay/examples/emailrelay-fail2ban-jail
 /usr/lib/emailrelay/examples/emailrelay-fail2ban-jail
 /usr/lib/emailrelay/examples/emailrelay-ldap-verify.py
 /usr/lib/emailrelay/examples/emailrelay-multicast.sh

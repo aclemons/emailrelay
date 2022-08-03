@@ -98,7 +98,7 @@ std::vector<GNet::Address> GNet::Interfaces::find( const std::string & name_in ,
 }
 
 std::vector<GNet::Address> GNet::Interfaces::addresses( const G::StringArray & names , unsigned int port ,
-	G::StringArray & used_names , G::StringArray & empty_names ) const
+	G::StringArray & used_names , G::StringArray & empty_names , G::StringArray & bad_names ) const
 {
 	AddressList result ;
 	for( const auto & name : names )
@@ -109,8 +109,22 @@ std::vector<GNet::Address> GNet::Interfaces::addresses( const G::StringArray & n
 		}
 		else
 		{
+			// 'name' is not an address so treat it as an interface name having
+			// bound addresses -- reject file system paths as 'bad' unless 
+			// they are under "/dev" (bsd)
 			AddressList list = find( name , port , true ) ;
-			(list.empty()?empty_names:used_names).push_back( name ) ;
+			if( list.empty() && ( name.empty() || ( name.find('/') != std::string::npos && name.find("/dev/") != 0U ) ) )
+			{
+				bad_names.push_back( name ) ;
+			}
+			else if( list.empty() )
+			{
+				empty_names.push_back( name ) ;
+			}
+			else
+			{
+				used_names.push_back( name ) ;
+			}
 			result.insert( result.end() , list.begin() , list.end() ) ;
 		}
 	}

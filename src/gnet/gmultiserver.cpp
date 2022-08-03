@@ -46,7 +46,12 @@ GNet::MultiServer::MultiServer( ExceptionSink es , const G::StringArray & interf
 	// build a listening address list from explicit addresses and/or interface names
 	G::StringArray empty_names ; // interface names having no addresses
 	G::StringArray used_names ; // interface names having one or more addresses
-	AddressList address_list = addresses( port , used_names , empty_names ) ;
+	G::StringArray bad_names ; // non-address non-interface names
+	AddressList address_list = addresses( port , used_names , empty_names , bad_names ) ;
+
+	// fail if any bad names
+	if( !bad_names.empty() )
+		throw InvalidName( bad_names.at(0) ) ;
 
 	// fail if no addresses and no prospect of getting any
 	if( address_list.empty() && ( empty_names.empty() || !Interfaces::active() ) )
@@ -91,11 +96,12 @@ std::vector<GNet::Address> GNet::MultiServer::addresses( unsigned int port ) con
 	AddressList result ;
 	G::StringArray empty_names ;
 	G::StringArray used_names ;
-	return addresses( port , used_names , empty_names ) ;
+	G::StringArray bad_names ;
+	return addresses( port , used_names , empty_names , bad_names ) ;
 }
 
 std::vector<GNet::Address> GNet::MultiServer::addresses( unsigned int port , G::StringArray & used_names ,
-	G::StringArray & empty_names ) const
+	G::StringArray & empty_names , G::StringArray & bad_names ) const
 {
 	AddressList result ;
 	if( m_interfaces.empty() )
@@ -107,7 +113,7 @@ std::vector<GNet::Address> GNet::MultiServer::addresses( unsigned int port , G::
 	}
 	else
 	{
-		result = m_if.addresses( m_interfaces , port , used_names , empty_names ) ;
+		result = m_if.addresses( m_interfaces , port , used_names , empty_names , bad_names ) ;
 	}
 	return result ;
 }

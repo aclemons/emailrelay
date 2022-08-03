@@ -120,6 +120,7 @@
 ./src/gnet/geventloop_epoll.cpp
 ./src/gnet/geventloop.cpp
 ./src/gnet/ginterfaces_common.cpp
+./src/gnet/gaddresslocal_unix.cpp
 ./src/gnet/gmonitor.cpp
 ./src/gnet/ginterfaces_unix.cpp
 ./src/gnet/gclientptr.cpp
@@ -131,6 +132,7 @@
 ./src/gnet/gaddress4.cpp
 ./src/gnet/gresolver.cpp
 ./src/gnet/glinebuffer.cpp
+./src/gnet/gaddresslocal_none.cpp
 ./src/gnet/gsocket.cpp
 ./src/gnet/glocal.cpp
 ./src/gnet/glocation.cpp
