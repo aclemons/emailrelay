@@ -96,6 +96,9 @@ public:
 		///< Comparison operator.
 
 private:
+	static std::string xx( int ) ;
+
+private:
 	int m_hh ;
 	int m_mm ;
 	int m_ss ;

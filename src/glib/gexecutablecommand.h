@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,8 +23,7 @@
 
 #include "gdef.h"
 #include "gpath.h"
-#include "gstringarray.h"
-#include "gexception.h"
+#include "gstrings.h"
 #include <string>
 
 namespace G
@@ -44,9 +43,7 @@ namespace G
 class G::ExecutableCommand
 {
 public:
-	G_EXCEPTION( WindowsError , tx("cannot determine the windows directory") ) ;
-
-	explicit ExecutableCommand( const std::string & command_line = {} ) ;
+	explicit ExecutableCommand( const std::string & command_line = std::string() ) ;
 		///< Constructor taking a complete command-line. The command-line
 		///< is split up on unescaped-and-unquoted space characters.
 

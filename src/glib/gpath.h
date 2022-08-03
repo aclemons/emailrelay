@@ -23,6 +23,7 @@
 
 #include "gdef.h"
 #include "gstringarray.h"
+#include "gstringview.h"
 #include <string>
 #include <iostream>
 #include <initializer_list>
@@ -30,7 +31,7 @@
 namespace G
 {
 	class Path ;
-	class PathImp ;
+	class PathFriend ;
 }
 
 //| \class G::Path
@@ -78,8 +79,11 @@ public:
 	Path( const std::string & path ) ;
 		///< Implicit constructor from a string.
 
+	Path( string_view path ) ;
+		///< Implicit constructor from a string view.
+
 	Path( const char * path ) ;
-		///< Implicit constructor from a c-style string.
+		///< Implicit constructor from a c string.
 
 	Path( const Path & path , const std::string & tail ) ;
 		///< Constructor with an implicit pathAppend().
@@ -141,10 +145,10 @@ public:
 		///< Returns a path without the root part. This has no effect
 		///< if the path isRelative().
 
-	bool isAbsolute() const ;
+	bool isAbsolute() const noexcept ;
 		///< Returns !isRelative().
 
-	bool isRelative() const ;
+	bool isRelative() const noexcept ;
 		///< Returns true if the path is a relative path or empty().
 
 	void pathAppend( const std::string & tail ) ;
@@ -200,7 +204,7 @@ public:
 		///< UTF-8 paths.
 
 private:
-	friend class G::PathImp ;
+	friend class G::PathFriend ;
 	std::string m_str ;
 } ;
 

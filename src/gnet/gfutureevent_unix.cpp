@@ -56,7 +56,7 @@ public:
 	void operator=( FutureEventImp && ) = delete ;
 
 private: // overrides
-	void readEvent( Descriptor ) override ; // Override from GNet::EventHandler.
+	void readEvent() override ; // Override from GNet::EventHandler.
 
 private:
 	static int init( int ) ;
@@ -136,7 +136,7 @@ bool GNet::FutureEventImp::send( HANDLE handle , bool close ) noexcept
 	return ok ;
 }
 
-void GNet::FutureEventImp::readEvent( Descriptor )
+void GNet::FutureEventImp::readEvent()
 {
 	receive() ;
 	if( !m_triggered )

@@ -25,12 +25,11 @@
 #include "gsaslserverpam.h"
 
 std::unique_ptr<GAuth::SaslServer> GAuth::SaslServerFactory::newSaslServer( const SaslServerSecrets & secrets ,
-	bool with_apop , const std::string & config ,
-	std::pair<bool,std::string> config_secure , std::pair<bool,std::string> config_insecure )
+	bool allow_pop , const std::string & config , bool no_insecure_mechanisms )
 {
 	if( secrets.source() == "/pam" )
-		return std::make_unique<SaslServerPam>( secrets , with_apop ) ; // up-cast
+		return std::make_unique<SaslServerPam>( secrets , allow_pop ) ;
 	else
-		return std::make_unique<SaslServerBasic>( secrets , with_apop , config , config_secure , config_insecure ) ; // up-cast
+		return std::make_unique<SaslServerBasic>( secrets , allow_pop , config , no_insecure_mechanisms ) ;
 }
 

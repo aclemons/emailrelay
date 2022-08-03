@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -92,7 +92,7 @@ void G::MapFile::readFrom( std::istream & stream )
 	std::string line ;
 	while( stream.good() )
 	{
-		Str::readLineFrom( stream , "\n"_sv , line ) ;
+		Str::readLineFrom( stream , "\n" , line ) ;
 		Str::trimRight( line , {"\r",1U} ) ;
 		if( line.empty() )
 			continue ;
@@ -129,7 +129,10 @@ bool G::MapFile::ignore( const std::string & line ) const
 		return true ;
 
 	std::string::size_type pos_hash = line.find('#') ;
-	return pos_hash != std::string::npos && pos_hash < pos_interesting ;
+	if( pos_hash != std::string::npos && pos_hash < pos_interesting )
+		return true ;
+
+	return false ;
 }
 
 void G::MapFile::check( const G::Path & path , const std::string & kind )
@@ -294,22 +297,22 @@ std::string G::MapFile::mandatoryValue( const std::string & key ) const
 
 G::Path G::MapFile::pathValue( const std::string & key ) const
 {
-	return { mandatoryValue(key) } ;
+	return Path( mandatoryValue(key) ) ;
 }
 
 G::Path G::MapFile::expandedPathValue( const std::string & key ) const
 {
-	return { expand(mandatoryValue(key)) } ;
+	return Path( expand(mandatoryValue(key)) ) ;
 }
 
 G::Path G::MapFile::pathValue( const std::string & key , const G::Path & default_ ) const
 {
-	return { value(key,default_.str()) } ;
+	return Path( value(key,default_.str()) ) ;
 }
 
 G::Path G::MapFile::expandedPathValue( const std::string & key , const G::Path & default_ ) const
 {
-	return { expand(value(key,default_.str())) } ;
+	return Path( expand(value(key,default_.str())) ) ;
 }
 
 unsigned int G::MapFile::numericValue( const std::string & key , unsigned int default_ ) const

@@ -20,6 +20,7 @@
 
 #include "gdef.h"
 #include "gstr.h"
+#include "ggettext.h"
 #include "goptions.h"
 #include <algorithm>
 
@@ -47,41 +48,38 @@ void G::Options::parseSpec( const std::string & spec , char sep_major , char sep
 		inner_parts.reserve( 10U ) ;
 		Str::splitIntoFields( spec_item , inner_parts , sep_minor , escape ) ;
 
-		add( inner_parts ) ;
+		if( inner_parts.size() < 7U )
+			throw InvalidSpecification( std::string(1U,'[').append(G::Str::join(",",inner_parts)).append(1U,']') ) ;
+
+		std::string short_form = inner_parts[0] ;
+		char c = short_form.empty() ? '\0' : short_form[0U] ;
+		unsigned int level = Str::toUInt( inner_parts[6U] ) ;
+		StringArray tags( inner_parts.begin()+7U , inner_parts.end() ) ;
+
+		Option::Multiplicity multiplicity = Option::decode( inner_parts[4U] ) ;
+		if( multiplicity == Option::Multiplicity::error )
+			throw InvalidSpecification( std::string(1U,'[').append(G::Str::join(",",inner_parts)).append(1U,']') ) ;
+
+		Option opt( c , inner_parts[1U] , inner_parts[2U] , inner_parts[3U] ,
+			multiplicity , inner_parts[5U] , level , tags ) ;
+
+		addOption( opt , sep_minor , escape ) ;
 	}
 }
 
-void G::Options::add( const StringArray & spec_parts )
+void G::Options::add( Options & options , char c , const char * name , const char * text ,
+	const char * more , Option::Multiplicity m , const char * argname ,
+	unsigned int level , unsigned int flags )
 {
-	add( spec_parts , '\0' , '\0' ) ;
-}
-
-void G::Options::add( const StringArray & spec_parts , char sep , char escape )
-{
-	if( spec_parts.size() < 7U )
-		throw InvalidSpecification( "[" + G::Str::join(",",spec_parts) + "]" ) ;
-
-	std::string short_form = spec_parts[0] ;
-	char c = short_form.empty() ? '\0' : short_form.at(0U) ;
-	unsigned int level = Str::toUInt( spec_parts[6U] ) ;
-	StringArray tags( spec_parts.begin()+7U , spec_parts.end() ) ;
-
-	Option::Multiplicity multiplicity = Option::decode( spec_parts[4U] ) ;
-	if( multiplicity == Option::Multiplicity::error )
-		throw InvalidSpecification( "[" + G::Str::join(",",spec_parts) + "]" ) ;
-
-	Option opt( c , spec_parts[1U] , spec_parts[2U] , spec_parts[3U] ,
-		multiplicity , spec_parts[5U] , level , tags ) ;
-
-	addImp( opt , sep , escape ) ;
+	options.add( Option(c,name,G::gettext(text),more,m,argname,level,flags) ) ;
 }
 
 void G::Options::add( const Option & opt , char sep , char escape )
 {
-	addImp( opt , sep , escape ) ;
+	addOption( opt , sep , escape ) ;
 }
 
-void G::Options::addImp( Option opt , char sep , char escape )
+void G::Options::addOption( Option opt , char sep , char escape )
 {
 	if( sep )
 	{

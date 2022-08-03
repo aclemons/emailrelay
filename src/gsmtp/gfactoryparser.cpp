@@ -23,11 +23,22 @@
 #include "gaddress.h"
 #include "gresolver.h"
 #include "gexecutablecommand.h"
+#include "gstringtoken.h"
 #include "gstr.h"
 #include "gfile.h"
 #include "glog.h"
 
-GSmtp::FactoryParser::Result GSmtp::FactoryParser::parse( const std::string & spec , bool allow_spam , bool allow_chain )
+// TODO -- restructure FactoryParser
+// so that parsing and normalising are both done
+// up-front and the result passed as an object
+// through the various Config classes
+
+GSmtp::FactoryParser::Result GSmtp::FactoryParser::parse( const std::string & spec , bool is_filter )
+{
+	return parse( spec , is_filter , is_filter , true ) ;
+}
+
+GSmtp::FactoryParser::Result GSmtp::FactoryParser::parse( const std::string & spec , bool allow_spam , bool allow_chain , bool do_check_file )
 {
 	G_DEBUG( "GSmtp::FactoryParser::parse: [" << spec << "]" ) ;
 	if( spec.empty() )
@@ -36,9 +47,8 @@ GSmtp::FactoryParser::Result GSmtp::FactoryParser::parse( const std::string & sp
 	}
 	else if( allow_chain && spec.find(',') != std::string::npos )
 	{
-		G::StringArray parts = G::Str::splitIntoTokens( spec , {",",1U} ) ;
-		for( const auto & sub : parts )
-			parse( sub , allow_spam , false ) ;
+		for( G::StringToken t( spec , ","_sv ) ; t ; ++t )
+			parse( t() , allow_spam , false , do_check_file ) ;
 		return Result( "chain" , spec ) ;
 	}
 	else if( spec.find("net:") == 0U )
@@ -60,13 +70,54 @@ GSmtp::FactoryParser::Result GSmtp::FactoryParser::parse( const std::string & sp
 	else if( spec.find("file:") == 0U )
 	{
 		std::string path = G::Str::tail( spec , ":" ) ;
-		checkFile( path ) ;
+		if( do_check_file )
+			checkFile( path ) ;
 		return Result( "file" , path ) ;
 	}
 	else
 	{
-		checkFile( spec ) ;
+		if( do_check_file )
+			checkFile( spec ) ;
 		return Result( "file" , spec ) ;
+	}
+}
+
+std::string GSmtp::FactoryParser::normalise( const std::string & spec , bool is_filter ,
+	const G::Path & base_dir , const G::Path & app_dir )
+{
+	if( is_filter && spec.find(',') != std::string::npos )
+	{
+		G::StringArray results ;
+		for( G::StringToken t( spec , ","_sv ) ; t ; ++t )
+		{
+			Result result = parse( t() , is_filter , is_filter , false ) ;
+			normalise( result , is_filter , base_dir , app_dir ) ;
+			results.push_back( result.first.append(1U,':').append(result.second) ) ;
+		}
+		return G::Str::join( "," , results ) ;
+	}
+	else
+	{
+		Result result = parse( spec , is_filter , is_filter , false ) ;
+		if( result.first == "file" )
+			normalise( result , is_filter , base_dir , app_dir ) ;
+		return result.first.append(1U,':').append(result.second) ;
+	}
+}
+
+void GSmtp::FactoryParser::normalise( Result & result , bool /*is_filter_spec*/ ,
+	const G::Path & base_dir , const G::Path & app_dir )
+{
+	if( result.first == "file" )
+	{
+		if( !app_dir.empty() && result.second.find("@app") == 0U )
+		{
+			G::Str::replace( result.second , "@app" , app_dir.str() ) ;
+		}
+		else if( !base_dir.empty() && G::Path(result.second).isRelative() )
+		{
+			result.second = (base_dir+result.second).str() ;
+		}
 	}
 }
 

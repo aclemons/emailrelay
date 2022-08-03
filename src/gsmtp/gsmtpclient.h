@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,19 +23,19 @@
 
 #include "gdef.h"
 #include "glocation.h"
-#include "gsaslclientsecrets.h"
+#include "gsecrets.h"
 #include "glinebuffer.h"
 #include "gclient.h"
 #include "gsmtpclientprotocol.h"
 #include "gmessagestore.h"
 #include "gstoredmessage.h"
-#include "gfilterfactory.h"
 #include "gfilter.h"
+#include "gfilterfactory.h"
 #include "gcall.h"
 #include "gsocket.h"
 #include "gslot.h"
 #include "gtimer.h"
-#include "gstringarray.h"
+#include "gstrings.h"
 #include "gexception.h"
 #include <memory>
 #include <iostream>
@@ -83,30 +83,27 @@ public:
 		Config & set_sasl_client_config( const std::string & ) ;
 	} ;
 
-	Client( GNet::ExceptionSink , MessageStore & ,
-		FilterFactory & , const GNet::Location & remote ,
-		const GAuth::SaslClientSecrets & , const Config & config ) ;
-			///< Constructor. Starts connecting immediately and
-			///< sends messages from the store once connected.
+	Client( GNet::ExceptionSink , FilterFactory & , const GNet::Location & remote , 
+		const GAuth::SaslClientSecrets & client_secrets , const Config & config ) ;
+			///< Constructor. Starts connecting immediately.
 			///<
-			///< Once all messages have been sent the client will
-			///< throw GNet::Done. See GNet::ClientPtr.
-			///<
-			///< Do not use sendMessage(). The messageDoneSignal()
-			///< is not emitted.
-
-	Client( GNet::ExceptionSink ,
-		FilterFactory & , const GNet::Location & remote ,
-		const GAuth::SaslClientSecrets & , const Config & config ) ;
-			///< Constructor. Starts connecting immediately and
-			///< expects sendMessage() immediately after construction.
-			///<
-			///< A messageDoneSignal() is emitted when the message
-			///< has been sent, allowing the next sendMessage().
-			///< Use quitAndFinish() at the end.
+			///< Use sendMessagesFrom() once, or use sendMessage()
+			///< repeatedly. Wait for a messageDoneSignal() between
+			///< each sendMessage().
 
 	~Client() override ;
 		///< Destructor.
+
+	void sendMessagesFrom( MessageStore & store ) ;
+		///< Sends all messages from the given message store once
+		///< connected. This must be used immediately after
+		///< construction with a non-empty message store.
+		///<
+		///< Once all messages have been sent the client will throw
+		///< GNet::Done. See GNet::ClientPtr.
+		///<
+		///< The messageDoneSignal() is not used when sending
+		///< messages using this method.
 
 	void sendMessage( std::unique_ptr<StoredMessage> message ) ;
 		///< Starts sending the given message. Cannot be called
@@ -121,9 +118,6 @@ public:
 		///<
 		///< Does nothing if there are no message recipients.
 
-	void quitAndFinish() ;
-		///< Finishes a sendMessage() sequence.
-
 	G::Slot::Signal<const std::string&> & messageDoneSignal() ;
 		///< Returns a signal that indicates that sendMessage()
 		///< has completed or failed.
@@ -134,7 +128,7 @@ private: // overrides
 	void onDelete( const std::string & ) override ; // Override from GNet::HeapClient.
 	void onSendComplete() override ; // Override from GNet::BufferedClient.
 	void onSecure( const std::string & , const std::string & , const std::string & ) override ; // Override from GNet::SocketProtocol.
-	bool protocolSend( G::string_view , std::size_t , bool ) override ; // Override from ClientProtocol::Sender.
+	bool protocolSend( const std::string & , std::size_t , bool ) override ; // Override from ClientProtocol::Sender.
 
 public:
 	Client( const Client & ) = delete ;
@@ -149,21 +143,22 @@ private:
 	void filterDone( int ) ;
 	bool sendNext() ;
 	void start() ;
-	void messageFail( int = 0 , const std::string & = {} ) ;
+	void messageFail( int = 0 , const std::string & = std::string() ) ;
 	void messageDestroy() ;
 	void startSending() ;
+	void quitAndFinish() ;
 	static GNet::Client::Config netConfig( const Config & smtp_config ) ;
 
 private:
 	MessageStore * m_store ;
-	std::shared_ptr<StoredMessage> m_message ;
+	G::CallStack m_stack ;
 	std::unique_ptr<Filter> m_filter ;
+	std::shared_ptr<StoredMessage> m_message ;
 	std::shared_ptr<MessageStore::Iterator> m_iter ;
 	ClientProtocol m_protocol ;
 	bool m_secure_tunnel ;
 	G::Slot::Signal<const std::string&> m_message_done_signal ;
 	unsigned int m_message_count ;
-	G::CallStack m_stack ;
 } ;
 
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_filter_address( const std::string & s ) { filter_address = s ; return *this ; }

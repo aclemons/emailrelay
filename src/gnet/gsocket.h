@@ -257,7 +257,7 @@ public:
 		///< datagrams.
 
 	void shutdown( int how = 1 ) ;
-		///< Modifies the local socket state so that so that new
+		///< Modifies the local socket state so that new
 		///< sends (1 or 2) and/or receives (0 or 2) will fail.
 		///<
 		///< If receives are shut-down then anything received

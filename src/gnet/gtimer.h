@@ -72,18 +72,22 @@ public:
 
 	G::TimerTime t() const ;
 		///< Used by TimerList to get the expiry epoch time. Zero-length
-		///< timers return a value corresponding to some time in ancient
-		///< history.
+		///< timers return TimerTime::zero() plus any adjust()ment,
+		///< ~guaranteed to be less than the t() of any non-immediate
+		///< timer.
 
-	void adjust( unsigned int us ) ;
-		///< Used by TimerList to set the fractional part of the expiry
-		///< time of immediate() timers so that t() is ordered by
-		///< startTimer() time.
+	const G::TimerTime & tref() const noexcept ;
+		///< An inline noexcept alternative to t().
+
+	void adjust( unsigned long ) ;
+		///< Used by TimerList to set the order of immedate() timer
+		///< expiry.
 
 	bool expired( G::TimerTime & ) const ;
 		///< Used by TimerList. Returns true if expired when compared
-		///< to the given epoch time. If the given epoch time is zero
-		///< then it is typically initialised with TimerTime::now().
+		///< to the given epoch time. If the given epoch time is 
+		///< TimerTime::zero() then it is initialised with 
+		///< TimerTime::now().
 
 protected:
 	virtual void onTimeout() = 0 ;
@@ -92,19 +96,28 @@ protected:
 public:
 	TimerBase( const TimerBase & ) = delete ;
 	TimerBase( TimerBase && ) = delete ;
-	void operator=( const TimerBase & ) = delete ;
-	void operator=( TimerBase && ) = delete ;
+	TimerBase & operator=( const TimerBase & ) = delete ;
+	TimerBase & operator=( TimerBase && ) = delete ;
 
 private:
 	static G::TimerTime history() ;
 
 private:
+	bool m_active ;
+	bool m_immediate ;
 	G::TimerTime m_time ;
 } ;
 
-inline bool GNet::TimerBase::active() const noexcept
+inline
+const G::TimerTime & GNet::TimerBase::tref() const noexcept
 {
-	return !m_time.isZero() ;
+	return m_time ;
+}
+
+inline
+bool GNet::TimerBase::active() const noexcept
+{
+	return m_active ;
 }
 
 //| \class GNet::Timer
@@ -188,15 +201,15 @@ void GNet::Timer<T>::cancelTimer()
 }
 
 template <typename T>
-bool GNet::Timer<T>::active() const noexcept
-{
-	return TimerBase::active() ;
-}
-
-template <typename T>
 void GNet::Timer<T>::onTimeout()
 {
 	(m_t.*m_m)() ;
+}
+
+template <typename T>
+bool GNet::Timer<T>::active() const noexcept
+{
+	return TimerBase::active() ;
 }
 
 #endif

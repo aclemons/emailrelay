@@ -24,6 +24,7 @@
 #include "gdef.h"
 #include "gsaslclientsecrets.h"
 #include "gexception.h"
+#include "gstringview.h"
 #include "gstringarray.h"
 #include <memory>
 
@@ -57,7 +58,7 @@ public:
 	bool active() const ;
 		///< Returns true if the constructor's secrets object is valid.
 
-	Response response( const std::string & mechanism , const std::string & challenge ) const ;
+	Response response( G::string_view mechanism , G::string_view challenge ) const ;
 		///< Returns a response to the given challenge. The mechanism is
 		///< used to choose the appropriate entry in the secrets file.
 
@@ -97,8 +98,8 @@ public:
 public:
 	SaslClient( const SaslClient & ) = delete ;
 	SaslClient( SaslClient && ) = delete ;
-	void operator=( const SaslClient & ) = delete ;
-	void operator=( SaslClient && ) = delete ;
+	SaslClient & operator=( const SaslClient & ) = delete ;
+	SaslClient & operator=( SaslClient && ) = delete ;
 
 private:
 	std::unique_ptr<SaslClientImp> m_imp ;

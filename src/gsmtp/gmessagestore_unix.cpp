@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@
 
 G::Path GSmtp::MessageStore::defaultDirectory()
 {
-	std::string spooldir( G_STR(G_SPOOLDIR) ) ;
+	std::string spooldir = G_STR(G_SPOOLDIR) ; // NOLINT readability-redundant-string-init
 	if( spooldir.empty() )
 		spooldir = "/var/spool/emailrelay" ;
 	return G::Path( spooldir ) ;

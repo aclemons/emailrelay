@@ -60,7 +60,7 @@ public:
 		// message string. Do not use add() with this
 		// constructor.
 
-	explicit digest( const char * , std::size_t ) ;
+	explicit digest( G::string_view ) ;
 		// Constuctor. Calculates a digest for the given
 		// message data. Do not use add() with this
 		// constructor.
@@ -200,14 +200,14 @@ G::Md5Imp::digest::digest( const std::string & s ) :
 	}
 }
 
-G::Md5Imp::digest::digest( const char * p , std::size_t n ) :
+G::Md5Imp::digest::digest( string_view sv ) :
 	digest_state{}
 {
 	init() ;
-	small_t nblocks = block::blocks( n ) ;
+	small_t nblocks = block::blocks( sv.size() ) ;
 	for( small_t i = 0U ; i < nblocks ; ++i )
 	{
-		block blk( p , n , i , block::end(n) ) ;
+		block blk( sv.data() , sv.size() , i , block::end(sv.size()) ) ;
 		add( blk ) ;
 	}
 }
@@ -344,7 +344,7 @@ G::Md5Imp::big_t G::Md5Imp::digest::T( small_t i )
 {
 	// T = static_cast<big_t>( 4294967296.0 * std::fabs(std::sin(static_cast<double>(i))) ) for 1 <= i <= 64
 	//
-	static std::array<big_t,64U> t_map {{
+	static constexpr std::array<big_t,64U> t_map {{
 		0xd76aa478UL ,
 		0xe8c7b756UL ,
 		0x242070dbUL ,
@@ -568,9 +568,9 @@ std::string G::Md5::digest( const std::string & input )
 	return Md5Imp::format::encode( dd.state() ) ;
 }
 
-std::string G::Md5::digest( const char * input , std::size_t input_size )
+std::string G::Md5::digest( string_view input )
 {
-	Md5Imp::digest dd( input , input_size ) ;
+	Md5Imp::digest dd( input ) ;
 	return Md5Imp::format::encode( dd.state() ) ;
 }
 
@@ -579,6 +579,14 @@ std::string G::Md5::digest( const std::string & input_1 , const std::string & in
 	G::Md5 x ;
 	x.add( input_1 ) ;
 	x.add( input_2 ) ;
+	return x.value() ;
+}
+
+std::string G::Md5::digest( G::string_view input_1 , G::string_view input_2 )
+{
+	G::Md5 x ;
+	x.add( input_1.data() , input_1.size() ) ;
+	x.add( input_2.data() , input_2.size() ) ;
 	return x.value() ;
 }
 

@@ -41,9 +41,9 @@
 namespace GQt
 {
 	struct Utf8Overload {} ;
-	extern const Utf8Overload Utf8 ;
+	constexpr Utf8Overload Utf8 ;
 	struct PathOverload {} ;
-	extern const PathOverload Path ;
+	constexpr PathOverload Path ;
 	inline std::string stdstr( QString q )
 	{
 		QByteArray a = q.toLocal8Bit() ;
@@ -61,7 +61,7 @@ namespace GQt
 	}
 	inline QString qstr( const char * p )
 	{
-		return QString::fromLocal8Bit( p , std::strlen(p) ) ;
+		return QString::fromLocal8Bit( p , static_cast<int>(std::strlen(p)) ) ;
 	}
 	inline QString qstr( const std::string & s )
 	{

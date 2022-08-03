@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -181,8 +181,8 @@ GPop::StoreLock::StoreLock( Store & store ) :
 
 void GPop::StoreLock::lock( const std::string & user )
 {
-	G_ASSERT( !locked() ) ;
-	G_ASSERT( !user.empty() ) ;
+	G_ASSERT( ! locked() ) ;
+	G_ASSERT( ! user.empty() ) ;
 	G_ASSERT( m_store != nullptr ) ;
 
 	m_user = user ;

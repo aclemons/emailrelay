@@ -49,9 +49,6 @@ public:
 	Directory() ;
 		///< Default constructor for the current directory.
 
-	explicit Directory( const char * path ) ;
-		///< Constructor.
-
 	explicit Directory( const Path & path ) ;
 		///< Constructor.
 
@@ -143,8 +140,9 @@ private:
 
 //| \class G::DirectoryList
 /// A iterator similar to G::DirectoryIterator but doing all file
-/// i/o in one go. This is useful when temporarily adopting
-/// additional process privileges to read a directory.
+/// i/o in one go and providing a sorted result. This can be useful
+/// when temporarily adopting additional process privileges to
+/// read a directory.
 ///
 class G::DirectoryList
 {
@@ -155,6 +153,7 @@ public:
 		bool m_is_link{false} ;
 		Path m_path ;
 		std::string m_name ;
+		bool operator<( const Item & ) const noexcept ;
 	} ;
 
 	DirectoryList() ;
@@ -163,9 +162,9 @@ public:
 
 	void readAll( const Path & dir ) ;
 		///< An initialiser that is to be used after default construction.
-		///< Reads all files in the directory (unsorted, but see sort()).
+		///< Reads all files in the directory.
 
-	void readType( const Path & dir , const std::string & suffix , unsigned int limit = 0U ) ;
+	void readType( const Path & dir , string_view suffix , unsigned int limit = 0U ) ;
 		///< An initialiser that is to be used after default
 		///< construction. Reads all files that have the given
 		///< suffix (unsorted).
@@ -187,20 +186,19 @@ public:
 		///< that cannot be represented in the active code page are
 		///< replaced by '?'.
 
-	void sort() ;
-		///< Sorts the files lexicographically.
-
-	static void readAll( const Path & dir , std::vector<Item> & out , bool sorted ) ;
+	static void readAll( const Path & dir , std::vector<Item> & out ) ;
 		///< A static overload returning by reference a collection
-		///< of Items, optionally sorted by name.
-
-private:
-	static bool compare( const Item & , const Item & ) ;
+		///< of Items, sorted by name.
 
 private:
 	bool m_first{true} ;
 	unsigned int m_index{0U} ;
 	std::vector<Item> m_list ;
 } ;
+
+inline bool G::DirectoryList::Item::operator<( const Item & other ) const noexcept
+{
+	return m_name < other.m_name ;
+}
 
 #endif

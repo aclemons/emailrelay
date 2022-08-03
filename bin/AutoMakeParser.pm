@@ -40,6 +40,24 @@
 #  $makefile->our_libs('foo') ;
 #  $makefile->sys_libs('foo') ;
 #
+# Typical directories in a autoconf vpath build (see includes()):
+#
+#    project <-- $(top_srcdir)        <-------+-+ "base_to_top"
+#       |                                     | |
+#       +----src  <-- readall() base        --+ | <---+ base()
+#       |     |                                 |     |
+#       |     +-- sub1  <-- path()              | ----+
+#       |                                       |
+#       +----bin                                |
+#       |                                       |
+#       +--build <-- $(top_builddir)            |  <-- $(top_builddir)
+#            |                                  |
+#            +-- src                          --+  <--+ base()
+#                 |                                   |
+#                 +-- sub1  <-- c++ cwd         ------+
+#
+# See also ConfigStatus.pm.
+#
 
 use strict ;
 use FileHandle ;
@@ -104,11 +122,11 @@ sub depth
 	return $this->{m_depth} ;
 }
 
-sub top
+sub base
 {
 	# Returns the relative path up to the first readall()
-	# makefile, which might be different from $(top_srcdir).
-	# The returned value will be something like "../../../".
+	# makefile. The returned value will be something like
+	# "../../../". See also includes().
 	#
 	my ( $this ) = @_ ;
 	my $depth = $this->{m_depth} ;
@@ -237,46 +255,47 @@ sub _definitions_imp
 
 sub includes
 {
-	# Returns a list of include directories, so for example
-	# "-I$(top_srcdir)/one/two -I$(top_srcdir)/three"
-	# with the 'top_srcdir' variable defined as "." gives
-	# ("./one/two","./three").
+	# Returns a list of include directories derived from the
+	# AM_CPPFLAGS and CXXFLAGS macros. The returned list also
+	# optionally starts with the autoconf header directory,
+	# obtained by expanding top_srcdir.
 	#
-	# However, since the 'top_srcdir' expansion is fixed, and
-	# relative include paths need to vary through the source
-	# tree, a prefix parameter ('top') should be passed in as
-	# the current value for expanding "$(top_srcdir)". So then
-	# "-I$(top_srcdir)/one/two" becomes "<top>/./one/two".
-	# (Absolute paths do not get the 'top' prefixed by 'top'.)
+	# Include paths need to vary through the source tree,
+	# so a 'base' parameter is provided here which is used
+	# as a prefix for all relative paths from the AM_CPPFLAGS
+	# and CXXFLAGS expansions and as a suffix for the
+	# autoconf header directory.
 	#
-	# The "top()" method provides a candidate for the 'top'
-	# parameter but will only work if readall() started at the
-	# 'top_srcdir' directory and the 'top_srcdir' variable is
-	# defined as ".". Otherwise, a simple approach is to still
-	# use top() for the 'top' parameter but define the 'top_srcdir'
-	# variable as the difference between the readall() base and
-	# the actual 'top_srcdir' directory.
+	# For example, if CXXFLAGS is "-I$(top_srcdir)/src/sub"
+	# and top_srcdir is "." then includes(base()) will
+	# will yield ("./..",".././src/sub") for one makefile and
+	# ("./../..",../.././src/sub") for another.
 	#
-	my ( $this , $top , $full_paths , $no_top_dir ) = @_ ;
-	$top ||= "" ;
-	my $add_top = !$no_top_dir ;
-	my $real_top = simplepath( join( "/" , $this->value("top_srcdir") , $top ) ) ;
-	my @a = $this->_includes_imp( $top , "AM_CPPFLAGS" , $this->{m_vars} , $full_paths ) ;
-	my @b = $this->_includes_imp( $top , "CXXFLAGS" , $this->{m_vars} , $full_paths ) ;
-	my @c = ( $real_top && $add_top ) ? ( $real_top ) : () ;
+	# In practice the value for top_srcdir should be carefully
+	# chosen as some "base-to-top" relative path that makes things
+	# work correctly if readall() was not based at top_srcdir
+	# or when targeting vpath builds. See above.
+	#
+	my ( $this , $base , $full_paths , $no_autoconf_dir ) = @_ ;
+	$base ||= "" ;
+	my $add_autoconf_dir = !$no_autoconf_dir ;
+	my $autoconf_dir = simplepath( join( "/" , $this->value("top_srcdir") , $base ) ) ;
+	my @a = $this->_includes_imp( $base , "AM_CPPFLAGS" , $this->{m_vars} , $full_paths ) ;
+	my @b = $this->_includes_imp( $base , "CXXFLAGS" , $this->{m_vars} , $full_paths ) ;
+	my @c = ( $autoconf_dir && $add_autoconf_dir ) ? ( $autoconf_dir ) : () ;
 	my @incs = ( @c , @a , @b ) ;
 	return wantarray ? @incs : join(" ",@incs) ;
 }
 
 sub _includes_imp
 {
-	my ( $this , $top , $var , $vars , $full_paths ) = @_ ;
+	my ( $this , $base , $var , $vars , $full_paths ) = @_ ;
 	my $s = protect_quoted_spaces( simple_spaces( $vars->{$var} ) ) ;
 	$s =~ s/-I /-I/g ;
 	return
 		map { $full_paths?$this->fullpath($_):$_ }
 		map { simplepath($_) }
-		map { my $p=$_ ; ($top&&($p!~m;^/;))?join("/",$top,$p):$p }
+		map { my $p=$_ ; ($base&&($p!~m;^/;))?join("/",$base,$p):$p }
 		map { s/\t/ /g ; $_ }
 		map { s:-I:: ; $_ } grep { m/-I\S+/ }
 		split( " " , $s ) ;

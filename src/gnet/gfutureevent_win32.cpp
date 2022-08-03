@@ -53,7 +53,7 @@ public:
 		// Extracts the event-object handle.
 
 private: // overrides
-	void readEvent( Descriptor ) override ; // GNet::EventHandler
+	void readEvent() override ; // GNet::EventHandler
 
 public:
 	FutureEventImp( const FutureEventImp & ) = delete ;
@@ -137,7 +137,7 @@ bool GNet::FutureEventImp::send( HANDLE handle , bool close ) noexcept
 	return ok ;
 }
 
-void GNet::FutureEventImp::readEvent( Descriptor )
+void GNet::FutureEventImp::readEvent()
 {
 	G_DEBUG( "GNet::FutureEventImp::readEvent: future event: h=" << m_h.h ) ;
 	m_handler.onFutureEvent() ;

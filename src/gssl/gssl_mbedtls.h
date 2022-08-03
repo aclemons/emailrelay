@@ -173,7 +173,7 @@ private:
 class GSsl::MbedTls::SecureFile
 {
 public:
-	SecureFile( const std::string & path , bool with_nul ) ;
+	SecureFile( const std::string & path , bool with_counted_nul ) ;
 	~SecureFile() ;
 	const char * p() const ;
 	const unsigned char * pu() const ;
@@ -211,7 +211,7 @@ public:
 	bool servernoverify() const ;
 
 private:
-	static bool consume( G::StringArray & , const std::string & ) ;
+	static bool consume( G::StringArray & , G::string_view ) ;
 
 private:
 	bool m_noverify ;
@@ -377,7 +377,7 @@ public:
 	~DigesterImp() override ;
 
 private: // overrides
-	void add( const std::string & ) override ;
+	void add( G::string_view ) override ;
 	std::string value() override ;
 	std::string state() override ;
 	std::size_t blocksize() const override ;

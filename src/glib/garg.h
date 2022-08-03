@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 #define G_ARG_H
 
 #include "gdef.h"
-#include "gstringarray.h"
+#include "gstrings.h"
 #include <vector>
 #include <string>
 
@@ -125,8 +125,7 @@ public:
 
 	std::string removeAt( std::size_t option_index , std::size_t option_args = 0U ) ;
 		///< Removes the given argument and the following 'option_args' ones.
-		///< Returns v(option_index+(option_args?1:0),""). Does nothing and
-		///< returns the empty string if the index is zero or out of range.
+		///< Returns v(option_index+(option_args?1:0),"").
 
 	StringArray array( unsigned int shift = 0U ) const ;
 		///< Returns the arguments as a string array, with an optional shift.
@@ -139,6 +138,7 @@ private:
 
 private:
 	StringArray m_array ;
+	static bool m_first ;
 	static std::string m_v0 ;
 	static std::string m_cwd ;
 } ;

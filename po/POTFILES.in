@@ -37,7 +37,6 @@
 ./src/gsmtp/gverifierfactory.cpp
 ./src/gsmtp/gnetworkverifier.cpp
 ./src/gsmtp/gstoredfile.cpp
-./src/gsmtp/gsmtpclientreply.cpp
 ./src/gsmtp/gverifier.cpp
 ./src/gsmtp/gprotocolmessage.cpp
 ./src/gsmtp/gnullfilter.cpp
@@ -50,16 +49,12 @@
 ./src/gsmtp/gsmtpclientprotocol.cpp
 ./src/gsmtp/gnewfile.cpp
 ./src/gsmtp/gfilter.cpp
-./src/gsmtp/gsmtpserverbuffer.cpp
-./src/gsmtp/gsmtpservertext.cpp
 ./src/gsmtp/gsmtpclient.cpp
-./src/gsmtp/gsmtpserversend.cpp
 ./src/gsmtp/ginternalverifier.cpp
 ./src/gsmtp/gadminserver.cpp
 ./src/gsmtp/gspamfilter.cpp
 ./src/gsmtp/gfilterchain.cpp
 ./src/gsmtp/gprotocolmessagestore.cpp
-./src/gsmtp/gsmtpserverparser.cpp
 ./src/gsmtp/gmessagestore_unix.cpp
 ./src/gsmtp/genvelope.cpp
 ./src/gsmtp/gmessagestore.cpp
@@ -73,6 +68,7 @@
 ./src/glib/gpath.cpp
 ./src/glib/gfile.cpp
 ./src/glib/ggettext_none.cpp
+./src/glib/gstringview.cpp
 ./src/glib/gprocess_unix.cpp
 ./src/glib/gidentity_unix.cpp
 ./src/glib/gexception.cpp
@@ -95,8 +91,8 @@
 ./src/glib/gmapfile.cpp
 ./src/glib/gstr.cpp
 ./src/glib/glogoutput.cpp
+./src/glib/gstringlist.cpp
 ./src/glib/goptionsoutput.cpp
-./src/glib/gstatemachine.cpp
 ./src/glib/gformat.cpp
 ./src/glib/garg.cpp
 ./src/glib/gmsg_unix.cpp
@@ -133,6 +129,7 @@
 ./src/gnet/ginterfaces_common.cpp
 ./src/gnet/gaddresslocal_unix.cpp
 ./src/gnet/gmonitor.cpp
+./src/gnet/gdnsbl_enabled.cpp
 ./src/gnet/ginterfaces_unix.cpp
 ./src/gnet/gclientptr.cpp
 ./src/gnet/geventhandler.cpp
@@ -146,6 +143,7 @@
 ./src/gnet/glinebuffer.cpp
 ./src/gnet/gaddresslocal_none.cpp
 ./src/gnet/gsocket.cpp
+./src/gnet/gdnsbl_disabled.cpp
 ./src/gnet/glocal.cpp
 ./src/gnet/glocation.cpp
 ./src/gnet/gtimer.cpp

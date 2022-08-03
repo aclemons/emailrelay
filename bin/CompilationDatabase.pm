@@ -26,7 +26,9 @@
 # Synopsis:
 #
 #    use CompilationDatabase ;
-#    my $cdb = new CompilationDatabase( $src_dir , {WINDOWS=>0,...} , {top_srcdir=>'..'} , {} ) ;
+#    my @makefiles = AutoMakeParser::readall( ... ) ;
+#    my $cdb = new CompilationDatabase( \@makefiles , {full_paths=>1} ) ;
+#    my $cdb = new CompilationDatabase( $src_dir , {WINDOWS=>0,...} , {top_srcdir=>'..'} , {full_paths=>1} ) ;
 #    my @files = $cdb->list() ;
 #    my @stanzas = $cdb->stanzas() ;
 #    $cdb->print() ;
@@ -41,28 +43,50 @@ our $debug = 0 ;
 
 sub new
 {
-	my ( $classname , $base_makefile_dir , $switches , $ro_vars , $config ) = @_ ;
-	$AutoMakeParser::debug = 1 if $debug > 1 ;
-	$config ||= {} ;
-	$config->{test_mode} ||= 0 ;
-	$config->{full_paths} ||= 0 ;
-	my %me = (
-		m_base_dir => $base_makefile_dir ,
-		m_switches => $switches ,
-		m_ro_vars => $ro_vars ,
-		m_config => $config ,
-	) ;
-	return bless \%me , $classname ;
+	if( ref($_[1]) )
+	{
+		# Parses a set of makefiles as given by an array of Makefile
+		# objects obtained from AutoMakeParser::readall().
+		#
+		my ( $classname , $makefiles_ref , $config ) = @_ ;
+		$config ||= {} ;
+		$config->{test_mode} ||= 0 ;
+		$config->{full_paths} ||= 0 ;
+		my %me = (
+			m_makefiles => $makefiles_ref ,
+			m_config => $config ,
+		) ;
+		return bless \%me , $classname ;
+	}
+	else
+	{
+		# Finds makefiles under the given base directory and parses
+		# them. The switches and read-only expansion variables can
+		# be hard-coded or extracted from a config.status file
+		# (see ConfigStatus).
+		#
+		my ( $classname , $base_makefile_dir , $switches , $ro_vars , $config ) = @_ ;
+		$AutoMakeParser::debug = 1 if $debug > 1 ;
+		$config ||= {} ;
+		$config->{test_mode} ||= 0 ;
+		$config->{full_paths} ||= 0 ;
+		my @makefiles = AutoMakeParser::readall( $base_makefile_dir , $switches , $ro_vars ) ;
+		my %me = (
+			m_makefiles => \@makefiles ,
+			m_config => $config ,
+		) ;
+		return bless \%me , $classname ;
+	}
 }
 
 sub list
 {
+	# Returns a list of all the source files in all the makefiles found under base-dir.
 	my ( $this ) = @_ ;
 
 	my @list = () ;
 	my $verbose = $debug ;
-	my @makefiles = AutoMakeParser::readall( $this->{m_base_dir} , $this->{m_switches} , $this->{m_ro_vars} , $verbose ) ;
-	for my $m ( @makefiles )
+	for my $m ( @{$this->{m_makefiles}} )
 	{
 		my $sub_dir = File::Basename::dirname( $m->path() ) ;
 		for my $library ( $m->libraries() )
@@ -79,6 +103,7 @@ sub list
 
 sub print
 {
+	# Prints the complete compilation database json structure to stdout.
 	my ( $this ) = @_ ;
 	print "[\n" ;
 	print join( ",\n" , $this->stanzas() ) ;
@@ -87,14 +112,15 @@ sub print
 
 sub stanzas
 {
+	# Returns a list of separate compilation database stanzas for all the source files
+	# in all the makefiles found under base-dir.
 	my ( $this ) = @_ ;
 
-	my @makefiles = AutoMakeParser::readall( $this->{m_base_dir} , $this->{m_switches} , $this->{m_ro_vars} ) ;
 	my @output = () ;
-	for my $m ( @makefiles )
+	for my $m ( @{$this->{m_makefiles}} )
 	{
 		my $dir = File::Basename::dirname( $m->path() ) ;
-		my @includes = map { "-I$_" } $m->includes( $m->top() , undef , undef , $this->{m_config}->{full_paths} ) ;
+		my @includes = map { "-I$_" } $m->includes( $m->base() , undef , undef , $this->{m_config}->{full_paths} ) ;
 		my @definitions = map { "-D$_" } $m->definitions() ;
 		my @compile_options = $m->compile_options() ;
 		my @link_options = $m->link_options() ;
@@ -102,7 +128,7 @@ sub stanzas
 		if( $debug )
 		{
 			print "cdb: makefile=" , $m->path() , "\n" ;
-			print "cdb:  top=",$m->top(),"\n" ;
+			print "cdb:  base=",$m->base(),"\n" ;
 			print "cdb:  \@includes=" , join("|",@includes) , "\n" ;
 			print "cdb:  \@definitions=" , join("|",@definitions) , "\n" ;
 			print "cdb:  \@compile_options=" , join("|",@compile_options) , "\n" ;

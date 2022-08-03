@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 #include "glocal.h"
 #include "glog.h"
 #include <string>
+#include <utility>
 
 GPop::ServerPeer::ServerPeer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo && peer_info , Store & store ,
 	const GAuth::SaslServerSecrets & server_secrets , const std::string & sasl_server_config ,
@@ -55,9 +56,9 @@ void GPop::ServerPeer::processLine( const std::string & line )
 
 bool GPop::ServerPeer::protocolSend( const std::string & line , std::size_t offset )
 {
-	offset = std::min( offset , line.size() ) ;
-	G::string_view line_view( line.data()+offset , line.size()-offset ) ;
-	return line_view.empty() ? true : send( line_view ) ; // GNet::ServerPeer::send()
+    offset = std::min( offset , line.size() ) ;
+    G::string_view data( line.data()+offset , line.size()-offset ) ;
+    return data.empty() ? true : send( data ) ; // GNet::ServerPeer::send()
 }
 
 void GPop::ServerPeer::onSendComplete()
@@ -86,7 +87,7 @@ void GPop::ServerPeer::onSecure( const std::string & , const std::string & , con
 // ===
 
 GPop::Server::Server( GNet::ExceptionSink es , Store & store , const GAuth::SaslServerSecrets & secrets , const Config & config ) :
-	GNet::MultiServer(es,config.addresses,config.port,"pop",config.net_server_peer_config,config.net_server_config) ,
+	GNet::MultiServer(es,config.addresses,config.port,"pop",config.server_peer_config,config.server_config) ,
 	m_config(config) ,
 	m_store(store) ,
 	m_secrets(secrets)
@@ -132,3 +133,4 @@ std::unique_ptr<GPop::ServerProtocol::Text> GPop::Server::newProtocolText( const
 {
 	return std::make_unique<ServerProtocolText>(peer_address) ; // up-cast
 }
+

@@ -498,7 +498,7 @@ void GNet::LineBuffer::apply( Tsink sink_p , Tmemfun memfun , const char * data_
 }
 
 inline
-bool GNet::LineBuffer::apply( SinkFn sink_fn , G::string_view data_in , FragmentsFn fragments_fn )
+bool GNet::LineBuffer::apply( SinkFn sink_fn , G::string_view data_in , FragmentsFn fragments_fn ) // NOLINT performance-unnecessary-value-param
 {
 	Extension e( this , data_in.data() , data_in.size() ) ;
 	while( e.valid() && more( fragments_fn() ) )

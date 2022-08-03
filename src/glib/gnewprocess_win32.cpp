@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -114,9 +114,9 @@ private:
 
 G::NewProcess::NewProcess( const Path & exe , const StringArray & args , const Environment & env ,
 	Fd fd_stdin , Fd fd_stdout , Fd fd_stderr , const G::Path & cd ,
-	bool /*strict_path*/ , Identity /*run_as_id*/ , bool /*strict_id*/ ,
-	int /*exec_error_exit*/ , const std::string & /*exec_error_format*/ ,
-	std::string (*)(std::string,int) ) :
+	bool strict_path , Identity run_as_id , bool strict_id ,
+	int exec_error_exit , const std::string & exec_error_format ,
+	std::string (*exec_error_format_fn)(std::string,int) ) :
 		m_imp(std::make_unique<NewProcessImp>(exe,args,env,fd_stdin,fd_stdout,fd_stderr,cd))
 {
 }
@@ -243,7 +243,7 @@ std::pair<HANDLE,DWORD> G::NewProcessImp::createProcess( const std::string & exe
 	G_DEBUG( "G::NewProcessImp::createProcess: thread-id=" << info.dwThreadId ) ;
 
 	CloseHandle( info.hThread ) ;
-	return { info.hProcess , info.dwProcessId } ;
+	return std::make_pair( info.hProcess , info.dwProcessId ) ;
 }
 
 std::string G::NewProcessImp::commandLine( const std::string & exe , const StringArray & args )
@@ -399,7 +399,7 @@ G::NewProcessWaitable & G::NewProcessWaitable::wait()
 	// (worker thread - keep it simple)
 	m_data_size = 0U ;
 	m_error = 0 ;
-	std::array<char,64U> discard_buffer {} ;
+	std::array<char,64U> discard_buffer ;
 	char * discard = &discard_buffer[0] ;
 	std::size_t discard_size = discard_buffer.size() ;
 	char * read_p = &m_buffer[0] ;

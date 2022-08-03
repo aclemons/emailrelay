@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@
 #include "gidentity.h"
 #include "gprocess.h"
 #include "gpath.h"
-#include "gstringarray.h"
+#include "gstrings.h"
 #include <memory>
 #include <new>
 #include <string>
@@ -91,7 +91,7 @@ public:
 		const G::Path & cd = G::Path() , bool strict_path = true ,
 		Identity run_as_id = Identity::invalid() , bool strict_id = true ,
 		int exec_error_exit = 127 ,
-		const std::string & exec_error_format = {} ,
+		const std::string & exec_error_format = std::string() ,
 		std::string (*exec_error_format_fn)(std::string,int) = nullptr ) ;
 			///< Constructor. Spawns the given program to run independently in a
 			///< child process.
@@ -251,8 +251,7 @@ private:
 } ;
 
 //| \class G::NewProcessConfig
-/// Packages up the parameters of the multi-parameter G::NewProcess
-/// constructor for its one-parameter overload.
+/// Provides syntactic sugar for the G::NewProcess constructor.
 ///
 struct G::NewProcessConfig
 {

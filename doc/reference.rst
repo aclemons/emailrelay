@@ -15,7 +15,7 @@ where \<option\> is:
 *   --address-verifier \<program\>
 
     Runs the specified external program to verify a message recipent's e-mail
-    address. A network verifier can be specified as *net:<transport-address>*.
+    address. A network verifier can be specified as *net:<tcp-address>*.
 
 *   --admin \<admin-port\> (-a)
 
@@ -72,18 +72,18 @@ where \<option\> is:
     list of configuration items. Each item is a single-character key, followed
     by a colon and then a comma-separated list. A 'm' character introduces an
     ordered list of authentication mechanisms, and an 'x' is used for
-    blocklisted mechanisms.
+    blocklisted mechanisms. Use one 'm' list and one 'a' list for mechanisms to
+    use before and after the activation of TLS_.
 
 *   --client-filter \<program\> (-Y)
 
     Runs the specified external filter program whenever a mail message is
     forwarded. The filter is passed the name of the message file in the spool
     directory so that it can edit it as required. A network filter can be
-    specified as *net:<transport-address>* and prefixes of *spam:*,
-    *spam-edit:* and *exit:* are also allowed. The *spam:* and *spam-edit:*
-    prefixes require a SpamAssassin daemon to be running. For store-and-forward
-    applications the *--filter* option is normally more useful than
-    \ *--client-filter*\ .
+    specified as *net:<tcp-address>* and prefixes of *spam:*, *spam-edit:* and
+    *exit:* are also allowed. The *spam:* and *spam-edit:* prefixes require a
+    SpamAssassin daemon to be running. For store-and-forward applications the
+    *--filter* option is normally more useful than *--client-filter*.
 
 *   --client-interface \<ip-address\> (-6)
 
@@ -94,15 +94,16 @@ where \<option\> is:
 
 *   --client-tls (-j)
 
-    Enables negotiated TLS_ for outgoing SMTP connections; the SMTP STARTTLS
+    Enables negotiated TLS for outgoing SMTP connections; the SMTP STARTTLS
     command will be issued if the remote server supports it.
 
 *   --client-tls-certificate \<pem-file\>
 
     Defines the TLS certificate file when acting as a SMTP client. This file must
     contain the client's private key and certificate chain using the PEM file
-    format. Keep the file permissions tight to avoid accidental exposure of the
-    private key.
+    format. Alternatively, use this option twice with the first one specifying
+    the key file and the second the certificate file. Keep the file permissions
+    tight to avoid accidental exposure of the private key.
 
 *   --client-tls-connection (-b)
 
@@ -126,7 +127,8 @@ where \<option\> is:
     Enables verification of the remote SMTP server's certificate against any of
     the trusted CA certificates in the specified file or directory. In many use
     cases this should be a file containing just your self-signed root
-    certificate.
+    certificate. Specify *<default>* for the TLS library's default set of
+    trusted CAs.
 
 *   --client-tls-verify-name \<cname\>
 
@@ -136,7 +138,7 @@ where \<option\> is:
 *   --close-stderr (-e)
 
     Causes the standard error stream to be closed soon after start-up. This is
-    useful when operating as a backgroud daemon and it is therefore implied by
+    useful when operating as a background daemon and it is therefore implied by
     *--as-server* and *--as-proxy*.
 
 *   --connection-timeout \<time\> (-U)
@@ -175,11 +177,11 @@ where \<option\> is:
     The filter is passed the name of the message file in the spool directory so
     that it can edit it as required. The mail message is rejected if the filter
     program terminates with an exit code between 1 and 99. Use
-    *net:<transport-address>* to communicate with a filter daemon over the
-    network, or *spam:<transport-address>* for a spamassassin spamd daemon to
-    accept or reject mail messages, or *spam-edit:<transport-address>* to have
-    spamassassin edit the message content without rejecting it, or
-    *exit:<number>* to emulate a filter program that just exits.
+    *net:<tcp-address>* to communicate with a filter daemon over the network,
+    or *spam:<tcp-address>* for a spamassassin spamd daemon to accept or reject
+    mail messages, or *spam-edit:<tcp-address>* to have spamassassin edit the
+    message content without rejecting it, or *exit:<number>* to emulate a
+    filter program that just exits.
 
 *   --filter-timeout \<time\> (-W)
 
@@ -197,7 +199,7 @@ where \<option\> is:
 
 *   --forward-to \<host:port\> (-o)
 
-    Specifies the transport address of the remote SMTP server that is use for
+    Specifies the transport address of the remote SMTP server that is used for
     mail message forwarding.
 
 *   --forward-to-some
@@ -290,7 +292,7 @@ where \<option\> is:
 *   --pid-file \<pid-file\> (-i)
 
     Causes the process-id to be written into the specified file when the program
-    starts up, typically after it has become a backgroud daemon.
+    starts up, typically after it has become a background daemon.
 
 *   --poll \<period\> (-O)
 
@@ -368,7 +370,8 @@ where \<option\> is:
     list of configuration items. Each item is a single-character key, followed
     by a colon and then a comma-separated list. A 'm' character introduces a
     preferred sub-set of the built-in authentication mechanisms, and an 'x' is
-    used for blocklisted mechanisms.
+    used for blocklisted mechanisms. Use one 'm' list and one 'a' list for
+    mechanisms to advertise before and after the activation of TLS.
 
 *   --server-tls (-K)
 
@@ -381,8 +384,9 @@ where \<option\> is:
 
     Defines the TLS certificate file when acting as a SMTP or POP server. This
     file must contain the server's private key and certificate chain using the
-    PEM file format. Keep the file permissions tight to avoid accidental
-    exposure of the private key.
+    PEM file format. Alternatively, use this option twice with the first one
+    specifying the key file and the second the certificate file. Keep the file
+    permissions tight to avoid accidental exposure of the private key.
 
 *   --server-tls-connection
 
@@ -400,7 +404,8 @@ where \<option\> is:
     Enables verification of remote SMTP and POP clients' certificates against any
     of the trusted CA certificates in the specified file or directory. In many
     use cases this should be a file containing just your self-signed root
-    certificate.
+    certificate. Specify *<default>* for the TLS library's default set of
+    trusted CAs.
 
 *   --size \<bytes\> (-M)
 
@@ -796,7 +801,7 @@ suitable for testing:
 
 ::
 
-    $ openssl req -x509 -nodes -subj "/CN=$USER" -newkey rsa:2048 -keyout emailrelay.pem  -out emailrelay.pem
+    $ openssl req -x509 -noenc -subj "/CN=$USER" -newkey rsa:2048 -keyout emailrelay.pem  -out emailrelay.pem
 
 TLS performs encryption to prevent eavesdropping, but it does not necessarily
 do authentication to prevent man-in-the-middle attacks. For full TLS

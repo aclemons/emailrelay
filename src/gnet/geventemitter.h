@@ -36,6 +36,12 @@ namespace GNet
 /// Also sets an appropriate G::LogOutput context while events are
 /// being handled.
 ///
+/// The event loop should normally instantiate a read emitter and
+/// a write emitter for each new file descriptor; any existing
+/// emitters should be update()d rather than destructed and
+/// constructed, with garbage collection once all the events
+/// have been handled.
+///
 class GNet::EventEmitter
 {
 public:
@@ -62,30 +68,29 @@ public:
 	ExceptionSink es() const ;
 		///< Returns the exception sink, as passed to the ctor.
 
+	void update( EventHandler * , ExceptionSink ) noexcept ;
+		///< Sets the event handler and the exception sink.
+
 	void reset() noexcept ;
 		///< Resets the EventHandler so that the raise methods
-		///< do nothing and the exception sink is not used.
+		///< do nothing.
 		///< Postcondition: !handler()
 
-	void disarm() noexcept ;
-		///< Resets the ExceptionSink so that exceptions thrown
-		///< out of event handlers are rethrown, typically out
-		///< of the event loop and back to main().
+	void disarm( ExceptionHandler * ) noexcept ;
+		///< If the exception handler matches then reset it
+		///< so that it is not called. Any exceptions will be
+		///< thrown out of of the event loop and back to
+		///< main().
 
 private:
-	void raiseEvent( void (EventHandler::*method)(Descriptor) , Descriptor ) ;
-	void raiseEvent( void (EventHandler::*method)(Descriptor,EventHandler::Reason) , Descriptor , EventHandler::Reason ) ;
+	void raiseEvent( void (EventHandler::*method)() , Descriptor ) ;
+	void raiseEvent( void (EventHandler::*method)(EventHandler::Reason) , Descriptor , EventHandler::Reason ) ;
 
 private:
-	EventHandler * m_handler ; // handler for the event
+	EventHandler * m_handler {nullptr} ; // handler for the event
 	ExceptionSink m_es ; // handler for any thrown exception
+	ExceptionSink m_es_saved ; // in case disarm()ed but still needed
 } ;
-
-inline
-GNet::EventEmitter::EventEmitter() noexcept :
-	m_handler(nullptr)
-{
-}
 
 inline
 GNet::EventHandler * GNet::EventEmitter::handler() const
@@ -97,18 +102,6 @@ inline
 GNet::ExceptionSink GNet::EventEmitter::es() const
 {
 	return m_es ;
-}
-
-inline
-void GNet::EventEmitter::reset() noexcept
-{
-	m_handler = nullptr ;
-}
-
-inline
-void GNet::EventEmitter::disarm() noexcept
-{
-	m_es.reset() ;
 }
 
 #endif

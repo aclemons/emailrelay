@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-AM_CPPFLAGS =
+AM_CPPFLAGS = -DG_STR_SMALL -DG_FILE_SMALL
 
 noinst_LIBRARIES = libglib.a
 
@@ -29,7 +29,6 @@ EXTRA_DIST=\
 	gexecutablecommand_unix.cpp \
 	gfile_unix.cpp \
 	ggettext_unix.cpp \
-	ggettext_none.cpp \
 	ghostname_unix.cpp \
 	gidentity_unix.cpp \
 	glogoutput_unix.cpp \
@@ -39,6 +38,7 @@ EXTRA_DIST=\
 	gprocess_unix.cpp
 
 libglib_a_SOURCES = \
+	galign.h \
 	garg.h \
 	garg.cpp \
 	gassert.h \
@@ -63,6 +63,7 @@ libglib_a_SOURCES = \
 	gdirectory.h \
 	gdirectory.cpp \
 	gdirectory_win32.cpp \
+	geightbit.h \
 	genvironment.h \
 	genvironment.cpp \
 	genvironment_win32.cpp \
@@ -71,6 +72,7 @@ libglib_a_SOURCES = \
 	gexecutablecommand.h \
 	gexecutablecommand.cpp \
 	gexecutablecommand_win32.cpp \
+	gfbuf.h \
 	gfile.h \
 	gfile.cpp \
 	gfile_win32.cpp \
@@ -94,6 +96,8 @@ libglib_a_SOURCES = \
 	glogoutput.h \
 	glogoutput.cpp \
 	glogoutput_win32.cpp \
+	glogstream.h \
+	glogstream.cpp \
 	gstrmacros.h \
 	gmapfile.h \
 	gmapfile.cpp \
@@ -104,12 +108,13 @@ libglib_a_SOURCES = \
 	gnewprocess.h \
 	gnewprocess_win32.cpp \
 	gomembuf.h \
-	goption.h \
-	goption.cpp \
+	goptional.h \
 	goptionmap.h \
 	goptionmap.cpp \
 	goptionparser.h \
 	goptionparser.cpp \
+	goption.h \
+	goption.cpp \
 	goptions.h \
 	goptions.cpp \
 	goptionsoutput.h \
@@ -135,16 +140,19 @@ libglib_a_SOURCES = \
 	gslot.h \
 	gslot.cpp \
 	gstatemachine.h \
-	gstatemachine.cpp \
 	gstr.h \
 	gstr.cpp \
-	gstringfield.h \
-	gstringtoken.h \
 	gstringarray.h \
+	gstringfield.h \
+	gstringlist.cpp \
+	gstringlist.h \
 	gstringmap.h \
+	gstrings.h \
+	gstringtoken.h \
 	gstringwrap.cpp \
 	gstringwrap.h \
 	gstringview.h \
+	gstringview.cpp \
 	gtest.h \
 	gtest.cpp \
 	gthread.cpp \
@@ -163,15 +171,8 @@ PAM_EXTRA_DIST = gpam_linux.cpp
 PAM_SOURCES = gpam_none.cpp
 endif
 
-if GCONFIG_GETTEXT
-GETTEXT_EXTRA_DIST = ggettext_win32.cpp ggettext_none.cpp
-GETTEXT_SOURCES = ggettext_unix.cpp
-else
-GETTEXT_EXTRA_DIST = ggettext_win32.cpp ggettext_unix.cpp
-GETTEXT_SOURCES = ggettext_none.cpp
-endif
-
 EXTRA_DIST=\
+	$(PAM_EXTRA_DIST) \
 	gcleanup_win32.cpp \
 	gconvert.cpp \
 	gconvert_win32.cpp \
@@ -180,16 +181,16 @@ EXTRA_DIST=\
 	genvironment_win32.cpp \
 	gexecutablecommand_win32.cpp \
 	gfile_win32.cpp \
-	$(GETTEXT_EXTRA_DIST) \
+	ggettext_win32.cpp \
 	ghostname_win32.cpp \
 	gidentity_win32.cpp \
 	glogoutput_win32.cpp \
-	$(PAM_EXTRA_DIST) \
 	gprocess_win32.cpp \
 	gnewprocess_win32.cpp \
 	gmsg_win32.cpp
 
 libglib_a_SOURCES = \
+	$(PAM_SOURCES) \
 	garg.h \
 	garg.cpp \
 	gassert.h \
@@ -220,6 +221,7 @@ libglib_a_SOURCES = \
 	gexecutablecommand.h \
 	gexecutablecommand.cpp \
 	gexecutablecommand_unix.cpp \
+	gfbuf.h \
 	gfile.h \
 	gfile.cpp \
 	gfile_unix.cpp \
@@ -228,7 +230,7 @@ libglib_a_SOURCES = \
 	ggetopt.h \
 	ggetopt.cpp \
 	ggettext.h \
-	$(GETTEXT_SOURCES) \
+	ggettext_unix.cpp \
 	ghash.h \
 	ghash.cpp \
 	ghostname.h \
@@ -242,6 +244,8 @@ libglib_a_SOURCES = \
 	glogoutput.h \
 	glogoutput.cpp \
 	glogoutput_unix.cpp \
+	glogstream.h \
+	glogstream.cpp \
 	gmapfile.h \
 	gmapfile.cpp \
 	gmd5.h \
@@ -251,19 +255,19 @@ libglib_a_SOURCES = \
 	gnewprocess.h \
 	gnewprocess_unix.cpp \
 	gomembuf.h \
-	goption.h \
-	goption.cpp \
+	goptional.h \
 	goptionmap.h \
 	goptionmap.cpp \
 	goptionparser.h \
 	goptionparser.cpp \
+	goption.h \
+	goption.cpp \
 	goptions.h \
 	goptions.cpp \
 	goptionsoutput.h \
 	goptionsoutput.cpp \
 	goptionvalue.h \
 	gpam.h \
-	$(PAM_SOURCES) \
 	gpath.h \
 	gpath.cpp \
 	gpidfile.h \
@@ -282,16 +286,19 @@ libglib_a_SOURCES = \
 	gslot.h \
 	gslot.cpp \
 	gstatemachine.h \
-	gstatemachine.cpp \
 	gstr.h \
 	gstr.cpp \
-	gstringfield.h \
-	gstringtoken.h \
 	gstringarray.h \
+	gstringfield.h \
+	gstringlist.cpp \
+	gstringlist.h \
 	gstringmap.h \
+	gstrings.h \
+	gstringtoken.h \
 	gstringwrap.cpp \
 	gstringwrap.h \
 	gstringview.h \
+	gstringview.cpp \
 	gtest.h \
 	gtest.cpp \
 	gthread.cpp \

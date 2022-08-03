@@ -124,7 +124,7 @@ void GNet::TimerList::updateOnStart( TimerBase & timer )
 	if( m_soonest == &timer )
 		m_soonest = nullptr ;
 
-	if( m_soonest != nullptr && timer.t() < m_soonest->t() )
+	if( m_soonest != nullptr && timer.tref() < m_soonest->tref() )
 		m_soonest = &timer ;
 }
 
@@ -141,7 +141,7 @@ const GNet::TimerBase * GNet::TimerList::findSoonest() const
 	TimerBase * result = nullptr ;
 	for( const auto & t : m_list )
 	{
-		if( t.m_timer != nullptr && t.m_timer->active() && ( result == nullptr || t.m_timer->t() < result->t() ) )
+		if( t.m_timer != nullptr && t.m_timer->active() && ( result == nullptr || t.m_timer->tref() < result->tref() ) )
 			result = t.m_timer ;
 	}
 	return result ;
@@ -227,16 +227,16 @@ void GNet::TimerList::doTimeouts()
 	G::TimerTime now = G::TimerTime::zero() ; // lazy initialisation to G::TimerTime::now() in G::Timer::expired()
 
 	auto expired_end = std::partition( m_list.begin() , m_list.end() ,
-		[&now](Value &value){ return value.m_timer != nullptr && value.m_timer->active() && value.m_timer->expired(now) ; } ) ;
+		[&now](const Value &value){ return value.m_timer != nullptr && value.m_timer->active() && value.m_timer->expired(now) ; } ) ;
 
 	std::sort( m_list.begin() , expired_end ,
-		[](Value &a,Value &b){ return a.m_timer->t() < b.m_timer->t() ; } ) ;
+		[](const Value &a,const Value &b){ return G::TimerTime::less( a.m_timer->tref() , b.m_timer->tref() ) ; } ) ;
 
 	for( List::iterator value_p = m_list.begin() ; value_p != expired_end ; ++value_p )
 	{
+		G_ASSERT( value_p->m_timer != nullptr ) ;
 		if( value_p->m_timer == m_soonest )
 			m_soonest = nullptr ;
-
 		doTimeout( *value_p ) ;
 	}
 
@@ -245,6 +245,7 @@ void GNet::TimerList::doTimeouts()
 
 void GNet::TimerList::doTimeout( Value & value )
 {
+	// see also GNet::EventEmitter::raiseEvent()
 	EventLoggingContext set_logging_context( value.m_es.esrc() ) ;
 	try
 	{

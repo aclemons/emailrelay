@@ -37,7 +37,7 @@ namespace GNet
 }
 
 //| \class GNet::ClientPtrBase
-/// The non-template part of GNet::ClientPtr. It is an ExcptionHandler
+/// The non-template part of GNet::ClientPtr. It is an ExceptionHandler
 /// so that exceptions thrown by the Client out to the event loop can
 /// be delivered back to reset the ClientPtr with the expected Client
 /// onDelete() semantics (like GNet::ServerPeer).
@@ -146,11 +146,11 @@ public:
 	bool busy() const ;
 		///< Returns true if the pointer is not nullptr.
 
-	void reset( T * p ) noexcept ;
+	void reset( T * p ) ;
 		///< Resets the pointer. There is no call to onDelete()
 		///< and no emitted signals.
 
-	void reset( std::unique_ptr<T> p ) noexcept ;
+	void reset( std::unique_ptr<T> p ) ;
 		///< Resets the pointer. There is no call to onDelete()
 		///< and no emitted signals.
 
@@ -262,13 +262,13 @@ T * GNet::ClientPtr<T>::release() noexcept
 }
 
 template <typename T>
-void GNet::ClientPtr<T>::reset( T * p ) noexcept
+void GNet::ClientPtr<T>::reset( T * p )
 {
 	delete set( p ) ;
 }
 
 template <typename T>
-void GNet::ClientPtr<T>::reset( std::unique_ptr<T> p ) noexcept
+void GNet::ClientPtr<T>::reset( std::unique_ptr<T> p )
 {
 	delete set( p.release() ) ;
 }

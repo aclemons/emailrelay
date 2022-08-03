@@ -108,8 +108,8 @@ public:
 public:
 	PidFile( const PidFile & ) = delete ;
 	PidFile( PidFile && ) = delete ;
-	void operator=( const PidFile & ) = delete ;
-	void operator=( PidFile && ) = delete ;
+	PidFile & operator=( const PidFile & ) = delete ;
+	PidFile & operator=( PidFile && ) = delete ;
 
 private:
 	static void create( const Path & pid_file ) ;

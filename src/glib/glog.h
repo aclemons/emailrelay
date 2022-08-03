@@ -22,6 +22,7 @@
 #define G_LOG_H
 
 #include "gdef.h"
+#include "glogstream.h"
 #include <sstream>
 #include <string>
 
@@ -58,25 +59,22 @@ public:
 		Assertion
 	} ;
 
-	Log( Severity , const char * file , int line ) ;
+	Log( Severity , const char * file , int line ) noexcept ;
 		///< Constructor.
 
 	~Log() ;
 		///< Destructor. Writes the accumulated string to the log output.
 
-	std::ostream & operator<<( const char * s ) ;
+	LogStream & operator<<( const char * s ) noexcept ;
 		///< Streams 's' and then returns a stream for streaming more stuff into.
 
-	std::ostream & operator<<( const std::string & s ) ;
+	LogStream & operator<<( const std::string & s ) noexcept ;
 		///< Streams 's' and then returns a stream for streaming more stuff into.
 
-	static bool at( Severity ) ;
+	static bool at( Severity ) noexcept ;
 		///< Returns true if G::LogOutput::output() would log at the given level.
 		///< This can be used as an optimisation to short-ciruit the stream-out
 		///< expression evaluation.
-
-	static bool at( Severity , const char * group ) ;
-		///< An overload that adds a logging group name to the test.
 
 public:
 	Log( const Log & ) = delete ;
@@ -91,7 +89,7 @@ private:
 	Severity m_severity ;
 	const char * m_file ;
 	int m_line ;
-	std::ostream & m_ostream ;
+	LogStream & m_logstream ;
 } ;
 
 /// The DEBUG macro is for debugging during development, the LOG macro
@@ -102,9 +100,9 @@ private:
 /// G::LogOutput) error conditions should be made visible by some other means
 /// (such as stderr).
 ///
-#define G_LOG_IMP( expr , severity ) do { try { if(G::Log::at(severity)) G::Log((severity),__FILE__,__LINE__) << expr ; } catch(...) {} } while(0)
-#define G_LOG_IMP_IF( cond , expr , severity ) do { try { if(G::Log::at(severity)&&(cond)) G::Log((severity),__FILE__,__LINE__) << expr ; } catch(...) {} } while(0)
-#define G_LOG_IMP_ONCE( expr , severity ) do { static bool done__ = false ; try { if(!done__) G::Log((severity),__FILE__,__LINE__) << expr ; } catch(...) {} done__ = true ; } while(0)
+#define G_LOG_IMP( expr , severity ) do { if(G::Log::at(severity)) G::Log((severity),__FILE__,__LINE__) << expr ; } while(0) /* NOLINT bugprone-macro-parentheses */
+#define G_LOG_IMP_IF( cond , expr , severity ) do { if(G::Log::at(severity)&&(cond)) G::Log((severity),__FILE__,__LINE__) << expr ; } while(0) /* NOLINT bugprone-macro-parentheses */
+#define G_LOG_IMP_ONCE( expr , severity ) do { static bool done__ = false ; if(!done__&&G::Log::at(severity)) { G::Log((severity),__FILE__,__LINE__) << expr ;  done__ = true ; } } while(0) /* NOLINT bugprone-macro-parentheses */
 
 #if defined(G_WITH_DEBUG) || ( defined(_DEBUG) && ! defined(G_NO_DEBUG) )
 #define G_DEBUG( expr ) G_LOG_IMP( expr , G::Log::Severity::Debug )

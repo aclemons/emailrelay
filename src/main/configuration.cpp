@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -115,11 +115,6 @@ unsigned int Main::Configuration::port() const
 	return G::Str::toUInt( m_map.value( "port" , "25" ) ) ;
 }
 
-std::pair<int,int> Main::Configuration::socketLinger() const
-{
-	return std::make_pair( -1 , -1 ) ;
-}
-
 G::StringArray Main::Configuration::listeningAddresses( const std::string & protocol ) const
 {
 	// allow eg. "127.0.0.1,smtp=192.168.1.1,admin=10.0.0.1"
@@ -148,17 +143,13 @@ G::StringArray Main::Configuration::listeningAddresses( const std::string & prot
 
 std::string Main::Configuration::clientBindAddress() const
 {
+	// "--interface client=..." no longer supported, just "--client-interface"
 	return m_map.value( "client-interface" ) ;
 }
 
 unsigned int Main::Configuration::adminPort() const
 {
 	return G::Str::toUInt( m_map.value( "admin" , "0" ) ) ;
-}
-
-std::pair<int,int> Main::Configuration::adminSocketLinger() const
-{
-	return std::make_pair( -1 , -1 ) ;
 }
 
 bool Main::Configuration::closeStderr() const
@@ -292,11 +283,6 @@ unsigned int Main::Configuration::popPort() const
 	return G::Str::toUInt( m_map.value( "pop-port" , "110" ) ) ;
 }
 
-std::pair<int,int> Main::Configuration::popSocketLinger() const
-{
-	return std::make_pair( -1 , -1 ) ;
-}
-
 bool Main::Configuration::allowRemoteClients() const
 {
 	return m_map.contains( "remote-clients" ) ;
@@ -387,9 +373,14 @@ std::string Main::Configuration::tlsConfig() const
 	return m_map.value( "tls-config" ) ;
 }
 
+G::Path Main::Configuration::serverTlsPrivateKey() const
+{
+	return keyFile( "server-tls-certificate" ) ;
+}
+
 G::Path Main::Configuration::serverTlsCertificate() const
 {
-	return m_map.contains("server-tls-certificate") ? pathValue("server-tls-certificate") : G::Path() ;
+	return certificateFile( "server-tls-certificate" ) ;
 }
 
 G::Path Main::Configuration::serverTlsCaList() const
@@ -407,9 +398,26 @@ std::string Main::Configuration::clientTlsPeerHostName() const
 	return m_map.value( "client-tls-server-name" ) ;
 }
 
+G::Path Main::Configuration::clientTlsPrivateKey() const
+{
+	return keyFile( "client-tls-certificate" ) ;
+}
+
 G::Path Main::Configuration::clientTlsCertificate() const
 {
-	return m_map.contains("client-tls-certificate") ? pathValue("client-tls-certificate") : G::Path() ;
+	return certificateFile( "client-tls-certificate" ) ;
+}
+
+G::Path Main::Configuration::keyFile( const std::string & option_name ) const
+{
+	std::string value = m_map.value( option_name ) ;
+	return value.empty() ? G::Path() : pathValueImp( G::Str::head(value,",",false) ) ;
+}
+
+G::Path Main::Configuration::certificateFile( const std::string & option_name ) const
+{
+	std::string value = m_map.value( option_name ) ;
+	return value.empty() ? G::Path() : pathValueImp( G::Str::tail(value,",",false) ) ;
 }
 
 G::Path Main::Configuration::clientTlsCaList() const
@@ -472,17 +480,9 @@ unsigned int Main::Configuration::maxSize() const
 	return G::Str::toUInt( m_map.value( "size" , "0" ) ) ;
 }
 
-int Main::Configuration::shutdownHowOnQuit() const
+bool Main::Configuration::eightBitTest() const
 {
-	return 1 ;
-}
-
-bool Main::Configuration::utf8Test() const
-{
-	// don't test when storing a new file and be strict when
-	// forwarding -- the user can get strict SMTPUTF8 conformance
-	// by implementing the character-set test in a filter
-	return false ;
+	return true ;
 }
 
 std::string Main::Configuration::scannerAddress() const
@@ -505,9 +505,15 @@ bool Main::Configuration::anonymous() const
 	return m_map.contains( "anonymous" ) ;
 }
 
+bool Main::Configuration::smtpPipelining() const
+{
+	// allow broken clients by default
+	return m_map.value( "test" ) != "smtp-no-pipelining" ;
+}
+
 unsigned int Main::Configuration::filterTimeout() const
 {
-	return G::Str::toUInt( m_map.value( "filter-timeout" , "60" ) ) ; // was 300
+	return G::Str::toUInt( m_map.value( "filter-timeout" , "300" ) ) ;
 }
 
 G::StringArray Main::Configuration::semanticWarnings() const
@@ -709,6 +715,18 @@ G::StringArray Main::Configuration::semantics( bool want_errors ) const
 			txt("the --client-tls- options require --client-tls or --client-tls-connection") ) ;
 	}
 
+	if( m_map.count("server-tls-certificate") > 2U )
+	{
+		errors.push_back(
+			txt("the --server-tls-certificate option cannot be used more than twice") ) ;
+	}
+
+	if( m_map.count("client-tls-certificate") > 2U )
+	{
+		errors.push_back(
+			txt("the --client-tls-certificate option cannot be used more than twice") ) ;
+	}
+
 	if( m_map.contains("client-tls-verify-name") && !m_map.contains("client-tls-verify") )
 	{
 		errors.push_back(
@@ -751,7 +769,7 @@ G::StringArray Main::Configuration::semantics( bool want_errors ) const
 
 	if( m_map.contains("client-interface") && GNet::Address::isFamilyLocal(forward_to) )
 	{
-		errors.push_back( txt("cannot use --client-interface with a unix-domain forwarding address") ) ;
+		errors.push_back( "cannot use --client-interface with a unix-domain forwarding address" ) ;
 	}
 
 	// warnings...
@@ -789,11 +807,6 @@ G::StringArray Main::Configuration::semantics( bool want_errors ) const
 	return want_errors ? errors : warnings ;
 }
 
-G::Path Main::Configuration::pathValue( const char * option_name ) const
-{
-	return pathValue( std::string(option_name) ) ;
-}
-
 G::Path Main::Configuration::pathValue( const std::string & option_name ) const
 {
 	std::string value = m_map.value( option_name ) ;
@@ -807,14 +820,20 @@ G::Path Main::Configuration::pathValue( const std::string & option_name ) const
 	}
 	else
 	{
-		if( value.find("@app") == 0U && !m_app_dir.empty() )
-			G::Str::replace( value , "@app" , m_app_dir.str() ) ;
-
-		return G::Path(value).isAbsolute() ? G::Path(value) : ( daemon() ? (m_base_dir+value) : value ) ;
+		return pathValueImp( value ) ;
 	}
 }
 
-bool Main::Configuration::pathlike( const std::string & option_name ) const
+G::Path Main::Configuration::pathValueImp( const std::string & value_in ) const
+{
+	std::string value = value_in ;
+	if( value.find("@app") == 0U && !m_app_dir.empty() )
+		G::Str::replace( value , "@app" , m_app_dir.str() ) ;
+
+	return G::Path(value).isAbsolute() ? G::Path(value) : ( daemon() ? (m_base_dir+value) : value ) ;
+}
+
+bool Main::Configuration::pathlike( const std::string & option_name )
 {
 	return
 		option_name == "log-file" ||
@@ -833,7 +852,7 @@ bool Main::Configuration::pathlike( const std::string & option_name ) const
 		false ;
 }
 
-bool Main::Configuration::filterType( const std::string & option_name ) const
+bool Main::Configuration::filterType( const std::string & option_name )
 {
 	return
 		option_name == "filter" ||
@@ -841,25 +860,26 @@ bool Main::Configuration::filterType( const std::string & option_name ) const
 		option_name == "address-verifier" ;
 }
 
-bool Main::Configuration::specialFilterValue( const std::string & value ) const
+bool Main::Configuration::specialFilterValue( const std::string & value )
 {
 	return
 		value.find(':') != std::string::npos &&
 		value.find(':') >= 3U ;
 }
 
-bool Main::Configuration::verifyType( const std::string & option_name ) const
+bool Main::Configuration::verifyType( const std::string & option_name )
 {
 	return
 		option_name == "server-tls-verify" ||
 		option_name == "client-tls-verify" ;
 }
 
-bool Main::Configuration::specialVerifyValue( const std::string & value ) const
+bool Main::Configuration::specialVerifyValue( const std::string & value )
 {
 	return !value.empty() && value.at(0U) == '<' && value.at(value.length()-1U) == '>' ;
 }
 
+#ifdef G_WINDOWS
 G::StringArray Main::Configuration::display() const
 {
 	const std::string yes = "yes" ;
@@ -910,4 +930,5 @@ G::StringArray Main::Configuration::display() const
 	}
 	return result ;
 }
+#endif
 

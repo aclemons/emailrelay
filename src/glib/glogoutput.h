@@ -23,6 +23,7 @@
 
 #include "gdef.h"
 #include "glog.h"
+#include "glogstream.h"
 #include "gexception.h"
 #include "gstringview.h"
 #include <string>
@@ -30,6 +31,7 @@
 #include <fstream>
 #include <ctime>
 #include <array>
+#include <utility>
 
 namespace G
 {
@@ -113,10 +115,10 @@ public:
 			///< is true then debug messages will also be generated (but
 			///< only if compiled in).
 			///<
-			///< If an output filename is given it has a "%d" substitution
-			///< applied and it is then opened or created before this
-			///< constructor returns. If no filename is given then
-			///< logging is sent to the standard error stream; the user
+			///< If an output filename is given it has "%d" and "%h"
+			///< substitutions applied and it is then opened or created
+			///< before this constructor returns. If no filename is given
+			///< then logging is sent to the standard error stream; the user
 			///< is free to close stderr and reopen it onto /dev/null if
 			///< only syslog logging is required.
 			///<
@@ -154,14 +156,14 @@ public:
 	static void * contextarg() noexcept ;
 		///< Returns the functor argument as set by the last call to context().
 
-	static std::ostream & start( Log::Severity , const char * file , int line ) ;
+	static LogStream & start( Log::Severity , const char * file , int line ) noexcept ;
 		///< Prepares the internal ostream for a new log line and returns a
 		///< reference to it. The caller should stream out the rest of the log
 		///< line into the ostream and then call output(). Calls to start() and
 		///< output() must be strictly in pairs. Returns a pointer to a dummy
 		///< ostream if there is no LogOutput instance.
 
-	static void output( std::ostream & ) ;
+	static void output( LogStream & ) noexcept ;
 		///< Emits the current log line (see start()). Does nothing if there
 		///< is no LogOutput instance.
 
@@ -175,7 +177,7 @@ public:
 	static void assertionFailure( const char * file , int line , const char * test_expression ) noexcept ;
 		///< Reports an assertion failure.
 
-	GDEF_NORETURN1 static void assertionAbort() GDEF_NORETURN2 ;
+	GDEF_NORETURN_LHS static void assertionAbort() GDEF_NORETURN_RHS ;
 		///< Aborts the program when an assertion has failed.
 
 	static void register_( const std::string & exe ) ;
@@ -197,13 +199,15 @@ public:
 
 private:
 	void osinit() ;
-	void open( std::string , bool ) ;
-	std::ostream & start( Log::Severity ) ;
-	void output( std::ostream & , int ) ;
+	void open( const std::string & , bool ) ;
+	LogStream & start( Log::Severity ) ;
+	void output( LogStream & , int ) ;
 	void osoutput( int , Log::Severity , char * , std::size_t ) ;
 	void oscleanup() const noexcept ;
 	bool updateTime() ;
-	void appendTimeTo( std::ostream & ) ;
+	bool updatePath( const std::string & , std::string & ) const ;
+	std::string makePath( const std::string & ) const ;
+	void appendTimeTo( LogStream & ) ;
 	static G::string_view levelString( Log::Severity ) noexcept ;
 	static const char * basename( const char * ) noexcept ;
 
@@ -212,10 +216,11 @@ private:
 	Config m_config ;
 	std::time_t m_time_s{0} ;
 	unsigned int m_time_us{0U} ;
-	std::vector<char> m_time_buffer ;
-	std::array<char,8U> m_date_buffer {} ;
+	std::array<char,17U> m_time_buffer {} ;
+	std::array<char,17U> m_time_change_buffer {} ;
 	HANDLE m_handle{0} ; // windows
-	std::string m_path ;
+	std::string m_path ; // with %d etc
+	std::string m_real_path ;
 	int m_fd{-1} ;
 	unsigned int m_depth{0U} ;
 	Log::Severity m_severity{Log::Severity::Debug} ;

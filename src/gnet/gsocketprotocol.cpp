@@ -116,7 +116,7 @@ private:
 	ssize_t m_read_buffer_n ;
 	Timer<SocketProtocolImp> m_secure_connection_timer ;
 	std::string m_peer_certificate ;
-	static constexpr std::size_t m_read_buffer_size = G::Limits<>::net_buffer ;
+	static constexpr std::size_t m_read_buffer_size = G::limits::net_buffer ;
 } ;
 
 namespace GNet

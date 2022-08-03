@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -121,8 +121,7 @@ void G::Environment::setBlock()
 
 void G::Environment::add( const std::string & name , const std::string & value )
 {
-	if( name.find('=') != std::string::npos )
-		throw Error( name ) ;
+	if( name.find('=') != std::string::npos ) throw std::runtime_error( "invalid environment variable [" + name + "]" ) ;
 	m_map.insert( std::make_pair(name,value) ) ;
 	setup() ;
 }

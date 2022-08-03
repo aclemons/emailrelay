@@ -45,6 +45,7 @@ struct G::Option
 	std::string value_description ;
 	unsigned int level ;
 	StringArray tags ;
+	unsigned int tag_bits ;
 
 	Option( char c , const std::string & name , const std::string & description ,
 		const std::string & description_extra , Multiplicity value_multiplicity ,

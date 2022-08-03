@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -75,19 +75,9 @@ void GSmtp::ProtocolMessageForward::clear()
 	m_pm->clear() ;
 }
 
-GSmtp::MessageId GSmtp::ProtocolMessageForward::setFrom( const std::string & from , const FromInfo & from_info )
+GSmtp::MessageId GSmtp::ProtocolMessageForward::setFrom( const std::string & from , const std::string & from_auth )
 {
-	return m_pm->setFrom( from , from_info ) ;
-}
-
-GSmtp::ProtocolMessage::FromInfo GSmtp::ProtocolMessageForward::fromInfo() const
-{
-	return m_pm->fromInfo() ;
-}
-
-std::string GSmtp::ProtocolMessageForward::bodyType() const
-{
-	return m_pm->bodyType() ;
+	return m_pm->setFrom( from , from_auth ) ;
 }
 
 bool GSmtp::ProtocolMessageForward::addTo( VerifierStatus to_status )
@@ -100,14 +90,9 @@ void GSmtp::ProtocolMessageForward::addReceived( const std::string & line )
 	m_pm->addReceived( line ) ;
 }
 
-GSmtp::NewMessage::Status GSmtp::ProtocolMessageForward::addContent( const char * line_data , std::size_t line_size )
+bool GSmtp::ProtocolMessageForward::addText( const char * line_data , std::size_t line_size )
 {
-	return m_pm->addContent( line_data , line_size ) ;
-}
-
-std::size_t GSmtp::ProtocolMessageForward::contentSize() const
-{
-	return m_pm->contentSize() ;
+	return m_pm->addText( line_data , line_size ) ;
 }
 
 std::string GSmtp::ProtocolMessageForward::from() const

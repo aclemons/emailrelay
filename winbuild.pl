@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -74,11 +74,13 @@ chomp( my $version = eval { FileHandle->new("VERSION")->gets() } || "2.4" ) ;
 # makefile conditionals
 my %switches = (
 	GCONFIG_BSD => 0 ,
+	GCONFIG_DNSBL => 1 ,
 	GCONFIG_EPOLL => 0 ,
+	GCONFIG_GETTEXT => 0 ,
 	GCONFIG_GUI => 1 , # << zero if no qt libraries
+	GCONFIG_ICONV => 0 ,
 	GCONFIG_INSTALL_HOOK => 0 ,
 	GCONFIG_INTERFACE_NAMES => 1 ,
-	GCONFIG_IPV6 => 1 ,
 	GCONFIG_MAC => 0 ,
 	GCONFIG_PAM => 0 ,
 	GCONFIG_TESTING => 1 ,
@@ -86,6 +88,7 @@ my %switches = (
 	GCONFIG_TLS_USE_OPENSSL => 0 ,
 	GCONFIG_TLS_USE_BOTH => 0 ,
 	GCONFIG_TLS_USE_NONE => 0 ,
+	GCONFIG_UDS => 0 ,
 	GCONFIG_WINDOWS => 1 ,
 ) ;
 
@@ -307,12 +310,14 @@ sub create_cmake_file
 		print $fh "set(CMAKE_INCLUDE_CURRENT_DIR ON)\n" ;
 	}
 
+
 	# force static or dynamic linking of the c++ runtime by
 	# switching between /MD and /MT -- use static linking
-	# by default but keep the gui dynamically linked to
-	# avoid separate runtime states in Qt and non-Qt code --
-	# note that the gui code is self-contained by virtue
-	# of "glibsources.cpp"
+	# by default but keep the gui dynamically linked so that
+	# it can use the Qt binary distribution -- for public
+	# distribution of a statically linked gui program use
+	# "emailrelay-gui.pro" -- note that the gui build is
+	# self-contained by virtue of "glibsources.cpp"
 	#
 	my $dynamic_runtime = ( $m->path() =~ m/gui/ ) ;
 	{
@@ -344,7 +349,7 @@ sub create_cmake_file
 	}
 
 	my $definitions = join( " " , "G_WINDOWS=1" , $m->definitions() ) ;
-	my $includes = join( " " , "." , ".." , $m->includes($m->top()) , '"${MBEDTLS_INCLUDE_DIRS}"' ) ;
+	my $includes = join( " " , "." , ".." , $m->includes($m->base()) , '"${MBEDTLS_INCLUDE_DIRS}"' ) ;
 
 	my @libraries = $m->libraries() ;
 	for my $library ( @libraries )
@@ -483,7 +488,7 @@ sub run_cmake
 	my $mbedtls_dir = Cwd::realpath( $mbedtls ) ;
 	my $mbedtls_include_dir = "$mbedtls_dir/include" ;
 	my $mbedtls_lib_dir = "$mbedtls_dir/$arch/library/Release" ; # fixed up to Debug elsewhere
-	my $qt_dir = Cwd::realpath( $qt_dirs->{$arch} ) ;
+	my $qt_dir = defined($qt_dirs) ? Cwd::realpath( $qt_dirs->{$arch} ) : "." ;
 	my $module_path = Cwd::realpath( "." ) ;
 
 	my @arch_args = @{$cmake_args->{$arch}} ;
@@ -842,8 +847,7 @@ sub run_tests
 {
 	my ( $main_bin_dir , $test_bin_dir ) = @_ ;
 	my $dash_v = "" ; # or "-v"
-	my $script = "test/emailrelay-test.pl" ;
-	## $script = ( $script."_") if ! -f $script ;
+	my $script = "test/emailrelay_test.pl" ;
 	system( "perl -Itest \"$script\" $dash_v -d \"$main_bin_dir\" -x \"$test_bin_dir\" -c \"test/certificates\"" ) ;
 }
 

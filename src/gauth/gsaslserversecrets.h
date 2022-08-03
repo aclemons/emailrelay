@@ -24,6 +24,7 @@
 #include "gdef.h"
 #include "gvalid.h"
 #include "gsecret.h"
+#include "gstringview.h"
 #include <string>
 #include <utility>
 
@@ -39,7 +40,7 @@ namespace GAuth
 class GAuth::SaslServerSecrets : public virtual Valid
 {
 public:
-	virtual Secret serverSecret( const std::string & type , const std::string & id ) const = 0 ;
+	virtual Secret serverSecret( G::string_view type , G::string_view id ) const = 0 ;
 		///< Returns the server secret for the given client id.
 		///< The type is "plain" or the CRAM hash algorithm.
 		///< Returns an invalid secret if not found.
@@ -52,7 +53,7 @@ public:
 	virtual std::string source() const = 0 ;
 		///< Returns the source identifier (eg. file name).
 
-	virtual bool contains( const std::string & type , const std::string & id ) const = 0 ;
+	virtual bool contains( G::string_view type , G::string_view id ) const = 0 ;
 		///< Returns true if there is a secret of the given type
 		///< either for one user in particular or for any user if
 		///< the id is empty.

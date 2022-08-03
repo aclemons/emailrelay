@@ -273,7 +273,7 @@ void GNet::Client::onConnectedTimeout()
 	onWriteable() ;
 }
 
-void GNet::Client::writeEvent( Descriptor )
+void GNet::Client::writeEvent()
 {
 	G_DEBUG( "GNet::Client::writeEvent" ) ;
 	onWriteable() ;
@@ -350,15 +350,15 @@ void GNet::Client::doOnConnect()
 	emit( "connected" ) ;
 }
 
-void GNet::Client::otherEvent( Descriptor fd , EventHandler::Reason reason )
+void GNet::Client::otherEvent( EventHandler::Reason reason )
 {
 	if( m_state == State::Socksing || m_sp == nullptr )
-		EventHandler::otherEvent( fd , reason ) ; // default implementation
+		EventHandler::otherEvent( reason ) ; // default implementation
 	else
 		m_sp->otherEvent( reason ) ;
 }
 
-void GNet::Client::readEvent( Descriptor )
+void GNet::Client::readEvent()
 {
 	if( m_state == State::Socksing )
 	{
@@ -372,7 +372,7 @@ void GNet::Client::readEvent( Descriptor )
 	}
 	else
 	{
-		G_ASSERT_OR_DO( m_sp != nullptr , return ) ;
+		G_ASSERT( m_sp != nullptr ) ;
 		m_sp->readEvent() ;
 	}
 }

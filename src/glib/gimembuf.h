@@ -22,7 +22,6 @@
 #define G_IMEMBUF_H
 
 #include "gdef.h"
-#include "gstringview.h"
 #include <streambuf>
 #include <algorithm>
 
@@ -55,9 +54,6 @@ public:
 	basic_imembuf( const Tchar * p , std::size_t n ) ;
 		///< Constructor.
 
-	explicit basic_imembuf( basic_string_view<Tchar> ) ;
-		///< Constructor.
-
 protected:
 	std::streamsize xsgetn( Tchar * s , std::streamsize n ) override ;
 	std::streampos seekpos( std::streampos pos , std::ios_base::openmode which ) override ;
@@ -82,16 +78,6 @@ template <typename Tchar>
 template <typename Tint> std::streamsize G::basic_imembuf<Tchar>::min( Tint a , std::streamsize b )
 {
 	return std::min( static_cast<std::streamsize>(a) , b ) ;
-}
-
-template <typename Tchar>
-G::basic_imembuf<Tchar>::basic_imembuf( basic_string_view<Tchar> s ) :
-	m_p(s.data()) ,
-	m_n(s.size())
-{
-	using base_t = std::basic_streambuf<Tchar> ;
-	Tchar * mp = const_cast<Tchar*>(m_p) ;
-	base_t::setg( mp , mp , mp+m_n ) ;
 }
 
 template <typename Tchar>

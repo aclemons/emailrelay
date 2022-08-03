@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,14 +24,14 @@
 #include "gdef.h"
 #include "glogoutput.h"
 
-
-#if defined(G_WITH_ASSERT) || ( defined(_DEBUG) && ! defined(G_NO_ASSERT) )
-	#define G_ASSERT( test ) G::LogOutput::assertion( __FILE__ , __LINE__ , (test) , #test )
-	// (see also GotW-102)
-	#define G_ASSERT_OR_DO( test , action ) G::LogOutput::assertion( __FILE__ , __LINE__ , (test) , #test )
+#if defined(G_WITH_ASSERT)
+	#define G_ASSERT( test ) G::LogOutput::assertion( __FILE__ , __LINE__ , test , #test )
 #else
-	#define G_ASSERT( test )
-	#define G_ASSERT_OR_DO( test , action ) do { if(!(test)) { action ; } } while(0)
+	#if defined(_DEBUG) && ! defined(G_NO_ASSERT)
+		#define G_ASSERT( test ) G::LogOutput::assertion( __FILE__ , __LINE__ , test , #test )
+	#else
+		#define G_ASSERT( test )
+	#endif
 #endif
 
 #endif

@@ -27,9 +27,11 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <openssl/rand.h>
+#include <openssl/conf.h>
+#include <openssl/evp.h>
 #include <openssl/md5.h>
 #include <openssl/sha.h>
-#include <openssl/evp.h>
+#include <openssl/hmac.h>
 #include <memory>
 #include <stdexcept>
 #include <functional>
@@ -94,7 +96,7 @@ public:
 	bool noverify() const ;
 
 private:
-	static bool consume( G::StringArray & , const std::string & ) ;
+	static bool consume( G::StringArray & , G::string_view ) ;
 	static int map( int , int ) ;
 
 private:
@@ -293,7 +295,7 @@ public:
 	~DigesterImp() override ;
 
 private: // overrides
-	void add( const std::string & ) override ;
+	void add( G::string_view ) override ;
 	std::string value() override ;
 	std::string state() override ;
 	std::size_t blocksize() const override ;

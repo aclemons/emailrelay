@@ -19,7 +19,7 @@
 ///
 // A dummy network processor for testing "emailrelay --filter net:<host>:<port>".
 //
-// usage: emailrelay-test-scanner [--port <port-or-address>] [--log] [--log-file <file>] [--debug] [--pid-file <pidfile>]
+// usage: emailrelay_test_scanner [--port <port-or-address>] [--log] [--log-file <file>] [--debug] [--pid-file <pidfile>]
 //
 // Listens on port 10020 by default. Each request is a 'content' filename
 // and the file should contain a mini script with commands of:
@@ -27,6 +27,7 @@
 //  * sleep [<time>]
 //  * delete-content
 //  * delete-envelope
+//  * shutdown
 //  * disconnect
 //  * terminate
 //
@@ -39,6 +40,7 @@
 #include "gtimerlist.h"
 #include "gfile.h"
 #include "gprocess.h"
+#include "gscope.h"
 #include "gstr.h"
 #include "garg.h"
 #include "gfile.h"
@@ -148,10 +150,12 @@ bool Main::ScannerPeer::processFile( std::string path , std::string eol )
 			G_LOG_S( "ScannerPeer::processFile: sleeping: " << sleep_time ) ;
 			::sleep( sleep_time ) ;
 		}
+		if( line.find("shutdown") == 0U )
+		{
+			socket().shutdown() ; // no more sends (FIN)
+		}
 		if( line.find("disconnect") == 0U )
 		{
-			if( sent )
-				::sleep( 1U ) ; // allow the data to get down the pipe
 			return false ;
 		}
 		if( line.find("terminate") == 0U )
@@ -188,7 +192,7 @@ public:
 Main::Scanner::Scanner( GNet::ExceptionSink es , const GNet::Address & address , unsigned int idle_timeout ) :
 	GNet::Server(es,address,
 		GNet::ServerPeer::Config().set_idle_timeout(idle_timeout),
-		GNet::Server::Config())
+		GNet::Server::Config().set_uds_open_permissions())
 {
 	G_LOG_S( "Scanner::ctor: listening on " << address.displayString() ) ;
 }
@@ -225,6 +229,7 @@ static int run( const GNet::Address & address , unsigned int idle_timeout )
 
 int main( int argc , char * argv [] )
 {
+	std::string pid_file ;
 	try
 	{
 		G::Arg arg( argc , argv ) ;
@@ -232,8 +237,8 @@ int main( int argc , char * argv [] )
 		bool debug = arg.remove("--debug") ;
 		std::string log_file = arg.index("--log-file",1U) ? arg.v(arg.index("--log-file",1U)+1U) : std::string() ;
 		std::string port_str = arg.index("--port",1U) ? arg.v(arg.index("--port",1U)+1U) : std::string("10020") ;
-		std::string pid_file = arg.index("--pid-file",1U) ? arg.v(arg.index("--pid-file",1U)+1U) : std::string() ;
-		unsigned int idle_timeout = 30U ;
+		pid_file = arg.index("--pid-file",1U) ? arg.v(arg.index("--pid-file",1U)+1U) : std::string() ;
+		unsigned int idle_timeout = 10U ;
 
 		GNet::Address address = G::Str::isNumeric(port_str) ?
 			GNet::Address( GNet::Address::Family::ipv4 , G::Str::toUInt(port_str) ) :
@@ -246,9 +251,18 @@ int main( int argc , char * argv [] )
 			file << G::Process::Id().str() << std::endl ;
 		}
 
-		G::LogOutput log_output( log , debug , log_file ) ;
+		G::LogOutput log_output( arg.prefix() ,
+			G::LogOutput::Config()
+				.set_output_enabled()
+				.set_summary_info(log||debug)
+				.set_verbose_info(log||debug)
+				.set_debug(debug)
+				.set_with_level(true) ,
+			log_file ) ;
+
 		int rc = run( address , idle_timeout ) ;
 		std::cout << "done" << std::endl ;
+		std::remove( pid_file.c_str() ) ;
 		return rc ;
 	}
 	catch( std::exception & e )
@@ -259,6 +273,7 @@ int main( int argc , char * argv [] )
 	{
 		std::cerr << "exception\n" ;
 	}
+	std::remove( pid_file.c_str() ) ;
 	return 1 ;
 }
 

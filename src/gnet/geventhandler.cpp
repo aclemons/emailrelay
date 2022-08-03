@@ -21,19 +21,32 @@
 #include "gdef.h"
 #include "geventhandler.h"
 #include "gexception.h"
+#include "geventloop.h"
 #include "glog.h"
 
-void GNet::EventHandler::readEvent( Descriptor )
+GNet::EventHandler::EventHandler()
+= default ;
+
+GNet::EventHandler::~EventHandler()
+{
+	EventLoop * event_loop ;
+	if( (event_loop=EventLoop::ptr()) != nullptr && m_fd.valid() )
+	{
+		event_loop->drop( m_fd ) ;
+	}
+}
+
+void GNet::EventHandler::readEvent()
 {
 	G_DEBUG( "GNet::EventHandler::readEvent: no override" ) ;
 }
 
-void GNet::EventHandler::writeEvent( Descriptor )
+void GNet::EventHandler::writeEvent()
 {
 	G_DEBUG( "GNet::EventHandler::writeEvent: no override" ) ;
 }
 
-void GNet::EventHandler::otherEvent( Descriptor , EventHandler::Reason reason )
+void GNet::EventHandler::otherEvent( EventHandler::Reason reason )
 {
 	// this event is mostly relevant to windows -- the default action here
 	// is to throw an exception, but overrides can check for Reason::closed

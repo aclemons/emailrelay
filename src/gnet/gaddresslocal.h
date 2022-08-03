@@ -58,10 +58,8 @@ public:
 
 	explicit AddressLocal( unsigned int ) ;
 	explicit AddressLocal( const std::string & ) ;
-	AddressLocal( const std::string & , const std::string & ) ;
-	AddressLocal( const std::string & , unsigned int ) ;
 	AddressLocal( unsigned int port , int /*for overload resolution*/ ) ;
-	AddressLocal( const sockaddr * addr , socklen_t len , bool ipv6_scope_id_fixup = false ) ;
+	AddressLocal( const sockaddr * addr , socklen_t len ) ;
 
 	static int domain() noexcept ;
 	static unsigned short af() noexcept ;
@@ -88,7 +86,7 @@ public:
 	bool isAny() const ;
 	unsigned int bits() const ;
 	std::string displayString( bool ipv6_with_scope = false ) const ;
-	std::string hostPartString( bool raw = false ) const ;
+	std::string hostPartString() const ;
 	std::string queryString() const ;
 	G::StringArray wildcards() const ;
 	static bool format( const std::string & ) ;

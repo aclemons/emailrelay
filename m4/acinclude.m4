@@ -1,4 +1,4 @@
-dnl Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+dnl Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 dnl 
 dnl This program is free software: you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
@@ -134,6 +134,7 @@ AC_DEFUN([GCONFIG_FN_CHECK_NET],[
 	AC_REQUIRE([GCONFIG_FN_NETROUTE])
 	AC_REQUIRE([GCONFIG_FN_IFNAMETOINDEX])
 	AC_REQUIRE([GCONFIG_FN_IFNAMETOLUID])
+	AC_REQUIRE([GCONFIG_FN_IFINDEX])
 	AC_REQUIRE([GCONFIG_FN_GAISTRERROR])
 	AC_REQUIRE([GCONFIG_FN_UDS])
 ])
@@ -341,10 +342,25 @@ AC_DEFUN([GCONFIG_FN_ENABLE_DEBUG],
 	fi
 ])
 
+dnl GCONFIG_FN_ENABLE_DNSBL
+dnl -----------------------
+dnl Enables DNSBL unless "--disable-dnsbl" is used.
+dnl Typically used after AC_ARG_ENABLE(dnsbl).
+dnl
+AC_DEFUN([GCONFIG_FN_ENABLE_DNSBL],
+[
+	if test "$enable_dnsbl" = "no"
+	then
+		AM_CONDITIONAL([GCONFIG_DNSBL],[false])
+	else
+		AM_CONDITIONAL([GCONFIG_DNSBL],[true])
+	fi
+])
+
 dnl GCONFIG_FN_ENABLE_EPOLL
 dnl -----------------------
-dnl Enables the epoll event-loop if "--enable-epoll" is used and epoll is
-dnl available. Typically used after GCONFIG_FN_EPOLL and AC_ARG_ENABLE(epoll).
+dnl Enables the epoll event-loop if epoll is available and "--disable-epoll"
+dnl is not used. Typically used after GCONFIG_FN_EPOLL and AC_ARG_ENABLE(epoll).
 dnl
 AC_DEFUN([GCONFIG_FN_ENABLE_EPOLL],
 [
@@ -440,42 +456,6 @@ AC_DEFUN([GCONFIG_FN_ENABLE_INTERFACE_NAMES],
 	AM_CONDITIONAL([GCONFIG_INTERFACE_NAMES],test "$enable_interface_names" != "no")
 ])
 
-dnl GCONFIG_FN_ENABLE_IPV6
-dnl ----------------------
-dnl Enables ipv6 if "--enable-ipv6" is used and ipv6 is available.
-dnl Typically used after GCONFIG_FN_IPV6 and AC_ARG_ENABLE(ipv6).
-dnl
-AC_DEFUN([GCONFIG_FN_ENABLE_IPV6],
-[
-	if test "$enable_ipv6" = "no"
-	then
-		gconfig_use_ipv6="no"
-	else
-		if test "$gconfig_cv_ipv6" = "no"
-		then
-			if test "$enable_ipv6" = "yes"
-			then
-				AC_MSG_WARN([ignoring --enable-ipv6])
-			fi
-			gconfig_use_ipv6="no"
-		else
-			gconfig_use_ipv6="yes"
-		fi
-	fi
-
-	if test "$enable_ipv6" != "no" -a "$gconfig_use_ipv6" = "no"
-	then
-		gconfig_warnings="$gconfig_warnings ipv6_ipv6_networking"
-	fi
-
-	if test "$gconfig_use_ipv6" = "yes" ; then
-		AC_DEFINE(GCONFIG_ENABLE_IPV6,1,[Define true to use IPv6])
-	else
-		AC_DEFINE(GCONFIG_ENABLE_IPV6,0,[Define true to use IPv6])
-	fi
-	AM_CONDITIONAL([GCONFIG_IPV6],test "$gconfig_use_ipv6" = "yes")
-])
-
 dnl GCONFIG_FN_ENABLE_MAC
 dnl ---------------------
 dnl Enables mac tweaks if "--enable-mac" is used. Typically used after
@@ -563,6 +543,27 @@ AC_DEFUN([GCONFIG_FN_ENABLE_WINDOWS],
 		AC_DEFINE(GCONFIG_MINGW,0,[Define true for a windows build using the mingw tool chain])
 	fi
 	AM_CONDITIONAL([GCONFIG_WINDOWS],test "$enable_windows" = "yes" -o "`uname -o 2>/dev/null`" = "Msys")
+])
+
+dnl GCONFIG_FN_ENABLE_UDS
+dnl ---------------------
+dnl Enables unix domain sockets if detected unless "--disable-uds" is
+dnl used. Requires GCONFIG_FN_UDS to set gconfig_cv_uds.
+dnl Typically used after AC_ARG_ENABLE(uds).
+dnl
+AC_DEFUN([GCONFIG_FN_ENABLE_UDS],
+[
+	AC_REQUIRE([GCONFIG_FN_UDS])
+	if test "$enable_uds" = "no"
+	then
+		AM_CONDITIONAL([GCONFIG_UDS],[false])
+	else
+		if test "$enable_uds" = "yes" -a "$gconfig_cv_uds" = "no"
+		then
+			AC_MSG_WARN([forcing use of unix domain sockets even though not detected])
+		fi
+		AM_CONDITIONAL([GCONFIG_UDS],[true])
+	fi
 ])
 
 dnl GCONFIG_FN_EPOLL
@@ -1065,6 +1066,44 @@ AC_DEFUN([GCONFIG_FN_IFNAMETOLUID],
 		AC_DEFINE(GCONFIG_HAVE_IFNAMETOLUID,1,[Define true if ConvertInterfaceNameToLuid() is available])
 	else
 		AC_DEFINE(GCONFIG_HAVE_IFNAMETOLUID,0,[Define true if ConvertInterfaceNameToLuid() is available])
+	fi
+])
+
+dnl GCONFIG_FN_IFINDEX
+dnl ------------------
+dnl Tests for struct ifreq ifr_ifindex and SIOCGIFINDEX.
+dnl
+AC_DEFUN([GCONFIG_FN_IFINDEX],
+[AC_CACHE_CHECK([for ifreq ifr_index],[gconfig_cv_ifindex],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#ifdef _WIN32]
+				[#include <winsock2.h>]
+				[#include <windows.h>]
+				[#include <ws2tcpip.h>]
+				[#include <iphlpapi.h>]
+			[#else]
+				[#include <sys/types.h>]
+				[#include <sys/socket.h>]
+				[#include <arpa/inet.h>]
+				[#include <net/if.h>]
+				[#include <sys/ioctl.h>]
+			[#endif]
+			[struct ifreq req ;]
+			[int i = 0 ;]
+		],
+		[
+			[(void) ioctl( i , SIOCGIFINDEX , &req , sizeof(req) );]
+			[i = req.ifr_ifindex ;]
+		])],
+		gconfig_cv_ifindex=yes ,
+		gconfig_cv_ifindex=no )
+])
+	if test "$gconfig_cv_ifindex" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_IFINDEX,1,[Define true if struct ifreq has ifr_ifindex])
+	else
+		AC_DEFINE(GCONFIG_HAVE_IFINDEX,0,[Define true if struct ifreq has ifr_ifindex])
 	fi
 ])
 
@@ -1661,12 +1700,13 @@ AC_DEFUN([GCONFIG_FN_QT],
 dnl GCONFIG_FN_QT_BUILD
 dnl -------------------
 dnl Tests for successful Qt5 compilation if GCONFIG_FN_QT
-dnl has set gconfig_have_qt. Sets gconfig_qt_build.
+dnl has set gconfig_have_qt. Does nothing if --disable-gui.
+dnl Sets gconfig_qt_build.
 dnl
 AC_DEFUN([GCONFIG_FN_QT_BUILD],
 [AC_CACHE_CHECK([for QT compilation],[gconfig_cv_qt_build],
 [
-	if test "$gconfig_have_qt" = "yes"
+	if test "$gconfig_have_qt" = "yes" -a "$enable_gui" != "no"
 	then
 		gconfig_save_LIBS="$LIBS"
 		gconfig_save_CXXFLAGS="$CXXFLAGS"
@@ -2763,26 +2803,5 @@ AC_DEFUN([GCONFIG_FN_WITH_PAM],
 		AC_DEFINE(GCONFIG_HAVE_PAM,0,[Define true to use pam])
 	fi
 	AM_CONDITIONAL([GCONFIG_PAM],[test "$gconfig_use_pam" = "yes"])
-])
-
-dnl GCONFIG_FN_WITH_UDS
-dnl -------------------
-dnl Enables unix domain sockets if detected unless "--without-uds" is
-dnl used. Requires GCONFIG_FN_UDS to set gconfig_cv_uds.
-dnl Typically used after AC_ARG_WITH(uds).
-dnl
-AC_DEFUN([GCONFIG_FN_WITH_UDS],
-[
-	AC_REQUIRE([GCONFIG_FN_UDS])
-	if test "$with_uds" = "no"
-	then
-		AM_CONDITIONAL([GCONFIG_UDS],[false])
-	else
-		if test "$with_uds" = "yes" -a "$gconfig_cv_uds" = "no"
-		then
-			AC_MSG_WARN([forcing use of unix domain sockets even though not detected])
-		fi
-		AM_CONDITIONAL([GCONFIG_UDS],[true])
-	fi
 ])
 

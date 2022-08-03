@@ -11,15 +11,12 @@
   <h1><a class="a-header" name="H_1">E-MailRelay Change Log</a></h1> <!-- index:1:H:E-MailRelay Change Log -->
    <h2><a class="a-header" name="SH_1_1">2.3 -> 2.4</a></h2> <!-- index:2:SH:1:1:2.3 -> 2.4 -->
     <ul>
-     <li>SMTP PIPELINING extension (RFC-2920).</li>
-     <li>SMTP CHUNKING/8BITMIME extension (RFC-3030).</li>
-     <li>SMTPUTF8 support added (RFC-6531).</li>
-     <li>AUTH not advertised if <em>--server-tls-required</em> and no TLS (RFC-4954 6).</li>
-     <li>More simultaneous connections supported on Windows.</li>
-     <li>No 7-bit/8-bit check on received message content (see NEWS fle).</li>
-     <li>Multiple <em>--filter</em> options allowed.</li>
-     <li>Shorter default filter timeout.</li>
+     <li>Multiple <em>--filter</em> and <em>--client-filter</em> options allowed.</li>
+     <li>Hourly log file rotation using <em>%h</em> (eg. <em>--log-file=log.%d.%h</em>).</li>
+     <li>TLS key and certificate files can be specified separately.</li>
      <li>Uses epoll by default on Linux.</li>
+     <li>More simultaneous connections supported on Windows.</li>
+     <li>Fixed error handling for network client filters (<em>--client-filter=net:...</em>) [bug-id #50].</li>
     </ul>
    <h2><a class="a-header" name="SH_1_2">2.2 -> 2.3</a></h2> <!-- index:2:SH:1:2:2.2 -> 2.3 -->
     <ul>

@@ -144,23 +144,23 @@ bool G::GetOpt::contains( char c ) const
 	return m_map.contains( m_spec.lookup(c) ) ;
 }
 
-bool G::GetOpt::contains( const std::string & name ) const
+bool G::GetOpt::contains( string_view name ) const
 {
 	return m_map.contains( name ) ;
 }
 
-std::size_t G::GetOpt::count( const std::string & name ) const
+std::size_t G::GetOpt::count( string_view name ) const
 {
 	return m_map.count( name ) ;
 }
 
-std::string G::GetOpt::value( char c , const std::string & default_ ) const
+std::string G::GetOpt::value( char c , string_view default_ ) const
 {
 	G_ASSERT( contains(c) ) ;
 	return value( m_spec.lookup(c) , default_ ) ;
 }
 
-std::string G::GetOpt::value( const std::string & name , const std::string & default_ ) const
+std::string G::GetOpt::value( string_view name , string_view default_ ) const
 {
 	return m_map.value( name , default_ ) ;
 }

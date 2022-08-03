@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@
 #include "goptionsoutput.h"
 #include "gbase64.h"
 #include "gxtext.h"
+#include "ggettext.h"
 #include "gssl.h"
 #include "legal.h"
 #include <iostream>
@@ -66,43 +67,67 @@ namespace PasswdImp
 	}
 }
 
+static G::Options options()
+{
+	using M = G::Option::Multiplicity ;
+	using G::tx ;
+	G::Options opt ;
+	unsigned int t_undef = 0U ;
+
+	G::Options::add( opt , 'h' , "help" ,
+		G::tx("show usage help") , "" ,
+		M::zero , "" , 1 , t_undef ) ;
+			// Shows help text and exits.
+
+	G::Options::add( opt , 'H' , "hash" ,
+		tx("use the named hash function! such as MD5") , "" ,
+		M::one , "function" , 1 , t_undef ) ;
+			// Specifies the hash function, such as MD5 or SHA1.
+			// MD5 is the default, and a hash function of NONE does
+			// simple xtext encoding. Other hash function may or may
+			// not be available, depending on the build.
+
+	G::Options::add( opt , 'p' , "password" ,
+		tx("defines the password! on the command-line") , "" ,
+		M::one , "pwd" , 2 , t_undef ) ;
+			// Specifies the password to be hashed. Beware of leaking
+			// sensitive passwords via command-line history or the
+			// process-table when using this option.
+
+	G::Options::add( opt , 'b' , "base64" ,
+		tx("interpret the password as base64-encoded") , "" ,
+		M::zero , "" , 2 , t_undef ) ;
+			// The input password is interpreted as being base-64 encoded.
+
+	G::Options::add( opt , 'd' , "dotted" ,
+		tx("use a dotted decimal format! for backwards compatibility") , "" ,
+		M::zero , "" , 2 , t_undef ) ;
+			// Generates a dotted decimal format, for backwards compatibility.
+
+	G::Options::add( opt , 'v' , "verbose" , 
+		"verbose" , "" , 
+		M::zero , "" , 0 , t_undef ) ;
+			// Verbose logging. (undocumented)
+
+	G::Options::add( opt , 't' , "tls" , 
+		"tls" , "" , M::zero , "" , 0 , t_undef ) ;
+			// Enables the TLS library even if using a hash function of 
+			// MD5 or NONE. (undocumented)
+
+	G::Options::add( opt , 'T' , "tls-config" , 
+		"tls-config" , "" , M::one , "config" , 0 , t_undef ) ;
+			// Configures the TLS library with the given configuration 
+			// string. (undocumented)
+
+	return opt ;
+}
+
 int main( int argc , char * argv [] )
 {
 	G::Arg arg( argc , argv ) ;
 	try
 	{
-		G::GetOpt opt( arg ,
-
-			"h!help!show usage help!!0!!1" "|"
-				// Shows help and exits.
-
-			"H!hash!use the named hash function! (eg. MD5)!1!function!1" "|"
-				// Specifies the hash function, such as MD5 or SHA1.
-				// MD5 is the default, and a hash function of NONE does
-				// simple xtext encoding. Other hash function may or may
-				// not be available, depending on the build.
-
-			"p!password!defines the password! on the command-line (beware command-line history)!2!pwd!2" "|"
-				// Specifies the password to be hashed. Beware of leaking
-				// sensitive passwords via command-line history or the
-				// process-table when using this option.
-
-			"b!base64!interpret the password as base64-encoded!!0!!2" "|"
-				// Interpret the input password as base64 encoded.
-
-			"v!verbose!!!0!!0" "|"
-				// Verbose logging.
-
-			"d!dotted!use a dotted decimal format! for backwards compatibility!0!!2" "|"
-				// Generate a dotted decimal format, for backwards compatibility.
-
-			"t!tls!!!0!!0" "|"
-				// Enable the TLS library even if using a hash function of MD5 or NONE.
-
-			"T!tls-config!!!1!config!0" "|"
-				// Configure the TLS library with the given configuration string.
-
-		) ;
+		G::GetOpt opt( arg , options() ) ;
 		if( opt.hasErrors() )
 		{
 			opt.showErrors( std::cerr ) ;

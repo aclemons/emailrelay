@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -76,7 +76,7 @@ if test "0$opt_git" -eq 1
 then
 	git clone https://salsa.debian.org/debian/mbedtls.git
 	e="$?"
-	patch -d mbedtls/library -p1 < src/gssl/mbedtls-vsnprintf-fix.p1
+	sed -i 's/defined._TRUNCATE./0/' mbedtls/library/platform.c
 	if test "$e" -eq 0 -a "0$opt_mingw" -eq 0
 	then
 		echo build with...
@@ -90,7 +90,7 @@ if test "0$opt_debug" -eq 1
 then
 	export CFLAGS="-O0 -g"
 	export CXXFLAGS="-O0 -g"
-	if expr "x$*" : '.*enable.debug' >/dev/null ; then : ; else enable_debug="--enable-debug" ; fi
+	if expr "x$*" : '.*enable.debug' ; then : ; else enable_debug="--enable-debug" ; fi
 :
 elif expr "x$*" : '.*enable.debug' >/dev/null
 then

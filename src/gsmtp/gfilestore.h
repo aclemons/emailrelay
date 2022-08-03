@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -51,38 +51,49 @@ namespace GSmtp
 /// that the content file is valid and that it has been commited
 /// to the care of the SMTP system for delivery.
 ///
+/// Passes out unique sequence numbers, filesystem paths and
+/// i/o streams to NewMessageImp.
+///
 class GSmtp::FileStore : public MessageStore
 {
 public:
 	G_EXCEPTION( InvalidDirectory , tx("invalid spool directory") ) ;
 	G_EXCEPTION( GetError , tx("error reading specific message") ) ;
-	enum class State // see GSmtp::FileStore::envelopePath()
-	{
-		Normal ,
-		New ,
-		Locked
-	} ;
-	struct Config /// Configuration structure for GSmtp::FileStore.
-	{
-		std::size_t max_size ; // SIZE in EHLO response
-		Config & set_max_size( std::size_t ) noexcept ;
-	} ;
 
-	FileStore( const G::Path & dir , const Config & config ) ;
+	FileStore( const G::Path & dir , unsigned long max_size , bool test_for_eight_bit ) ;
 		///< Constructor. Throws an exception if the storage directory
 		///< is invalid.
 
 	MessageId newId() ;
-		///< Hands out a new unique message id.
+		///< Hands out a new message id.
 
 	std::unique_ptr<std::ofstream> stream( const G::Path & path ) ;
 		///< Returns a stream to the given content.
 
-	G::Path contentPath( const MessageId & id ) const ;
+	G::Path contentPath( const MessageId & ) const ;
 		///< Returns the path for a content file.
 
-	G::Path envelopePath( const MessageId & id , State = State::Normal ) const ;
+	G::Path envelopePath( const MessageId & , const char * modifier = "" ) const ;
 		///< Returns the path for an envelope file.
+
+	bool empty() const override ;
+		///< Override from GSmtp::MessageStore.
+
+	std::string location( const MessageId & ) const override ;
+		///< Override from GSmtp::MessageStore.
+
+	std::unique_ptr<StoredMessage> get( const MessageId & ) override ;
+		///< Override from GSmtp::MessageStore.
+
+	std::shared_ptr<MessageStore::Iterator> iterator( bool lock ) override ;
+		///< Override from GSmtp::MessageStore.
+
+	std::shared_ptr<MessageStore::Iterator> failures() override ;
+		///< Override from GSmtp::MessageStore.
+
+	std::unique_ptr<NewMessage> newMessage( const std::string & from ,
+		const std::string & from_auth_in , const std::string & from_auth_out ) override ;
+			///< Override from GSmtp::MessageStore.
 
 	static std::string x() ;
 		///< Returns the prefix for envelope header lines.
@@ -95,18 +106,18 @@ public:
 		///< Returns true if the storage format string is
 		///< recognised and supported for reading.
 
-private: // overrides
-	bool empty() const override ;
-	std::string location( const MessageId & ) const override ;
-	std::unique_ptr<StoredMessage> get( const MessageId & ) override ;
-	std::shared_ptr<MessageStore::Iterator> iterator( bool lock ) override ;
-	std::shared_ptr<MessageStore::Iterator> failures() override ;
-	std::unique_ptr<NewMessage> newMessage( const std::string & , const MessageStore::SmtpInfo & , const std::string & ) override ;
 	void updated() override ;
+		///< Override from GSmtp::MessageStore.
+
 	G::Slot::Signal<> & messageStoreUpdateSignal() override ;
+		///< Override from GSmtp::MessageStore.
+
 	G::Slot::Signal<> & messageStoreRescanSignal() override ;
-	void rescan() override ;
-	void unfailAll() override ;
+		///< Override from GSmtp::MessageStore.
+
+private: // overrides
+	void rescan() override ; // Override from GSmtp::MessageStore.
+	void unfailAll() override ; // Override from GSmtp::MessageStore.
 
 public:
 	~FileStore() override = default ;
@@ -118,6 +129,7 @@ public:
 private:
 	static void checkPath( const G::Path & dir ) ;
 	G::Path fullPath( const std::string & filename ) const ;
+	std::string filePrefix( unsigned long seq ) const ;
 	std::string getline( std::istream & ) const ;
 	std::string value( const std::string & ) const ;
 	std::shared_ptr<MessageStore::Iterator> iteratorImp( bool ) ;
@@ -129,7 +141,9 @@ private:
 private:
 	unsigned long m_seq ;
 	G::Path m_dir ;
-	const Config m_config ;
+	unsigned long m_max_size ;
+	bool m_test_for_eight_bit ;
+	unsigned long m_pid_modifier ;
 	G::Slot::Signal<> m_update_signal ;
 	G::Slot::Signal<> m_rescan_signal ;
 } ;
@@ -199,7 +213,5 @@ public:
 	void operator=( const FileWriter & ) = delete ;
 	void operator=( FileWriter && ) = delete ;
 } ;
-
-inline GSmtp::FileStore::Config & GSmtp::FileStore::Config::set_max_size( std::size_t n ) noexcept { max_size = n ; return *this ; }
 
 #endif

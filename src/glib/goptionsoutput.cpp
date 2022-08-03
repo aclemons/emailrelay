@@ -43,8 +43,8 @@ G::OptionsOutput::OptionsOutput( const std::vector<Option> & options ) :
 std::string G::OptionsOutput::usageSummary( const Layout & layout ,
 	const std::string & exe , const std::string & args ) const
 {
-	const char * usage = txt( "usage: " ) ;
-	const char * alt_usage = txt( "abbreviated usage: " ) ;
+	const char * usage = txt("usage: ") ;
+	const char * alt_usage = txt("abbreviated usage: ") ;
 	std::string s = std::string()
 		.append(layout.alt_usage?alt_usage:usage)
 		.append(exe)
@@ -268,15 +268,7 @@ std::string G::OptionsOutput::usageHelpImp( const Layout & layout ) const
 
 // ==
 
-G::OptionsOutputLayout::OptionsOutputLayout() :
-	column(30U) ,
-	width(0U) ,
-	width2(0U) ,
-	margin(2U) ,
-	level(99U) ,
-	level_exact(false) ,
-	extra(false) ,
-	alt_usage(false)
+G::OptionsOutputLayout::OptionsOutputLayout()
 {
 	width = width2 = OptionsOutputLayoutImp::widthDefault() ;
 }
@@ -285,11 +277,7 @@ G::OptionsOutputLayout::OptionsOutputLayout( std::size_t column_ ) :
 	column(column_) ,
 	width(0U) ,
 	width2(0U) ,
-	margin(2U) ,
-	level(99U) ,
-	level_exact(false) ,
-	extra(false) ,
-	alt_usage(false)
+	margin(2U)
 {
 	width = width2 = OptionsOutputLayoutImp::widthDefault() ;
 }
@@ -298,11 +286,7 @@ G::OptionsOutputLayout::OptionsOutputLayout( std::size_t column_ , std::size_t w
 	column(column_) ,
 	width(width_) ,
 	width2(width_) ,
-	margin(2U) ,
-	level(99U) ,
-	level_exact(false) ,
-	extra(false) ,
-	alt_usage(false)
+	margin(2U)
 {
 	width = width2 = OptionsOutputLayoutImp::widthDefault() ;
 }

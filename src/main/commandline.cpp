@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,12 +20,13 @@
 
 #include "gdef.h"
 #include "gssl.h"
+#include "goptions.h"
+#include "goptionsoutput.h"
 #include "legal.h"
 #include "configuration.h"
 #include "commandline.h"
 #include "gmessagestore.h"
 #include "ggetopt.h"
-#include "goptionsoutput.h"
 #include "gprocess.h"
 #include "gpath.h"
 #include "gfile.h"
@@ -67,8 +68,7 @@ private:
 
 // ==
 
-Main::CommandLine::CommandLine( Output & output , const G::Arg & arg ,
-	const G::Options & spec ,
+Main::CommandLine::CommandLine( Output & output , const G::Arg & arg , const G::Options & spec ,
 	const std::string & version ) :
 		m_output(output) ,
 		m_version(version) ,
@@ -78,9 +78,7 @@ Main::CommandLine::CommandLine( Output & output , const G::Arg & arg ,
 {
 	if( !m_getopt.hasErrors() && m_getopt.args().c() == 2U )
 	{
-		std::string config_file = m_getopt.args().v(1U) ;
-		if( sanityCheck( config_file ) )
-			m_getopt.addOptionsFromFile( 1U , "@app" , G::Path(G::Process::exe()).dirname().str() ) ;
+		m_getopt.addOptionsFromFile( 1U , "@app" , G::Path(G::Process::exe()).dirname().str() ) ;
 	}
 }
 
@@ -102,23 +100,9 @@ std::size_t Main::CommandLine::argc() const
 	return m_getopt.args().c() ;
 }
 
-bool Main::CommandLine::sanityCheck( const G::Path & path )
-{
-	// a simple check to reject pem files since 'server-tls' no longer takes a value
-	using G::format ;
-	using G::txt ;
-	std::ifstream file ;
-	if( path.extension() == "pem" )
-		m_insanity = str( format(txt("invalid filename extension for config file: [%1%]")) % path.str() ) ;
-	G::File::open( file , path ) ;
-	if( file.good() && G::Str::readLineFrom(file).find("---") == 0U )
-		m_insanity = str( format(txt("invalid file format for config file: [%1%]")) % path.str() ) ;
-	return m_insanity.empty() ;
-}
-
 bool Main::CommandLine::hasUsageErrors() const
 {
-	return !m_insanity.empty() || m_getopt.hasErrors() ;
+	return m_getopt.hasErrors() ;
 }
 
 void Main::CommandLine::showUsage( bool e ) const
@@ -139,10 +123,7 @@ void Main::CommandLine::showUsage( bool e ) const
 void Main::CommandLine::showUsageErrors( bool e ) const
 {
 	Show show( m_output , e , m_verbose ) ;
-	if( !m_insanity.empty() )
-		show.s() << m_arg.prefix() << ": error: " << m_insanity << std::endl ;
-	else
-		m_getopt.showErrors( show.s() ) ;
+	m_getopt.showErrors( show.s() ) ;
 	showShortHelp( e ) ;
 }
 
@@ -301,9 +282,7 @@ void Main::CommandLine::showSemanticWarnings( const G::StringArray & warnings ) 
 	{
 		Show show( m_output , true , m_verbose ) ;
 		const char * warning = txt( "warning" ) ;
-		std::string sep = std::string(1U,'\n').append(m_arg.prefix()).append(": ",2U).append(warning).append(": ",2U) ;
-		show.s() << m_arg.prefix() << ": " << warning << ": "
-			<< G::Str::join(sep,warnings) << std::endl ;
+		show.s() << m_arg.prefix() << ": " << warning << ": " << G::Str::join("\n"+m_arg.prefix()+": "+warning+": ",warnings) << std::endl ;
 	}
 }
 

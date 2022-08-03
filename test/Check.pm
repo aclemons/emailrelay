@@ -213,7 +213,7 @@ sub noFileContains
 
 sub fileContains
 {
-	my ( $path , $re , $more ) = @_ ;
+	my ( $path , $re , $more , $count ) = @_ ;
 	my $fh = new FileHandle( $path ) ;
 	my $n = 0 ;
 	while(<$fh>)
@@ -222,7 +222,8 @@ sub fileContains
 		chomp $line ;
 		if( !defined($re) || $line =~ m/$re/ ) { $n++ }
 	}
-	Check::that( $n > 0 , "file does not contain expected string" , $path , "[$re]" , $more ) ;
+	my $ok = defined($count) ? ($n == $count) : ($n > 0) ;
+	Check::that( $ok , "file does not contain expected string" , $path , "[$re]" , $more ) ;
 }
 
 sub fileContainsEither

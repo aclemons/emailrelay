@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -41,8 +41,7 @@ namespace GSmtp
 class GSmtp::SpamFilter : public Filter
 {
 public:
-	SpamFilter( GNet::ExceptionSink , FileStore & ,
-		const std::string & server_location ,
+	SpamFilter( GNet::ExceptionSink , FileStore & , const std::string & server_location ,
 		bool read_only , bool always_pass , unsigned int connection_timeout ,
 		unsigned int response_timeout ) ;
 			///< Constructor.

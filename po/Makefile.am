@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -17,12 +17,12 @@
 #
 # Makefile.am
 #
-# By default this makefile does nothing.
+# This makefile does not build or install anything by default.
 #
 # Consider using 'gettextize' to convert the project files canonically, and
 # after that this makefile should not be used.
 #
-# For testing do something like this:
+# This makefile can be used for testing, something like this:
 #
 #   $ apt-get install locales-all # or equivalent
 #   $ ./configure.sh --with-gettext --disable-gui --without-doxygen
@@ -39,8 +39,8 @@
 # baked-in from the configure script's '--localedir' path, which is in turn
 # based on its '--prefix' directory (eg. /usr/local). However, when
 # installing with DESTDIR the emailrelay program needs the '--localedir'
-# command-line option, as shown above, in order to find them (see
-# src/main/run.cpp).
+# command-line option, as shown above, in order to find them
+# (see src/main/run.cpp).
 #
 
 EXTRA_DIST = Makevars POTFILES.in

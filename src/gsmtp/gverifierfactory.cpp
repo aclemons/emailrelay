@@ -29,9 +29,7 @@
 std::unique_ptr<GSmtp::Verifier> GSmtp::VerifierFactory::newVerifier( GNet::ExceptionSink es ,
 	const std::string & identifier , unsigned int timeout )
 {
-	const bool allow_spam = false ;
-	const bool allow_chain = false ;
-	FactoryParser::Result p = FactoryParser::parse( identifier , allow_spam , allow_chain ) ;
+	FactoryParser::Result p = FactoryParser::parse( identifier , false ) ;
 	if( p.first == "exit" )
 	{
 		return std::make_unique<InternalVerifier>() ;

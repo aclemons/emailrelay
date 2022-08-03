@@ -65,14 +65,13 @@ public:
 		unsigned int idle_timeout {0U} ;
 		int socket_linger_onoff {-1} ;
 		int socket_linger_time {-1} ;
-		Config & set_read_buffer_size( std::size_t ) ; // zero for no-op
 		Config & set_socket_protocol_config( const SocketProtocol::Config & ) ;
 		Config & set_idle_timeout( unsigned int ) ;
 		Config & set_all_timeouts( unsigned int ) ;
 		Config & set_socket_linger( std::pair<int,int> ) ;
 	} ;
 
-	ServerPeer( ExceptionSink , ServerPeerInfo && , LineBufferConfig ) ;
+	ServerPeer( ExceptionSink , ServerPeerInfo && , const LineBufferConfig & ) ;
 		///< Constructor. This constructor is only used from within the
 		///< override of GNet::Server::newPeer(). The ExceptionSink refers
 		///< to the owning Server.
@@ -147,14 +146,20 @@ protected:
 		///< Returns a reference to the client-server connection
 		///< socket.
 
+	void dropReadHandler() ;
+		///< Drops the socket() read handler.
+
+	void addReadHandler() ;
+		///< Re-adds the socket() read handler.
+
 	void expect( std::size_t ) ;
 		///< Modifies the line buffer state so that it delivers
 		///< a chunk of non-line-delimited data.
 
 private: // overrides
-	void readEvent( Descriptor ) override ; // Override from GNet::EventHandler.
-	void writeEvent( Descriptor ) override ; // Override from GNet::EventHandler.
-	void otherEvent( Descriptor , EventHandler::Reason ) override ; // Override from GNet::EventHandler.
+	void readEvent() override ; // Override from GNet::EventHandler.
+	void writeEvent() override ; // Override from GNet::EventHandler.
+	void otherEvent( EventHandler::Reason ) override ; // Override from GNet::EventHandler.
 	std::string exceptionSourceId() const override ; // Override from GNet::ExceptionSource.
 
 protected:
@@ -177,6 +182,7 @@ private:
 	bool onDataImp( const char * , std::size_t , std::size_t , std::size_t , char ) ;
 
 private:
+	ExceptionSink m_es ;
 	Address m_address ;
 	std::unique_ptr<StreamSocket> m_socket ; // order dependency -- first
 	SocketProtocol m_sp ; // order dependency -- second
@@ -186,7 +192,6 @@ private:
 	mutable std::string m_exception_source_id ;
 } ;
 
-inline GNet::ServerPeer::Config & GNet::ServerPeer::Config::set_read_buffer_size( std::size_t n ) { if( n ) socket_protocol_config.read_buffer_size = n ; return *this ; }
 inline GNet::ServerPeer::Config & GNet::ServerPeer::Config::set_idle_timeout( unsigned int t ) { idle_timeout = t ; return *this ; }
 inline GNet::ServerPeer::Config & GNet::ServerPeer::Config::set_all_timeouts( unsigned int t ) { idle_timeout = t ; socket_protocol_config.secure_connection_timeout = t ; return *this ; }
 inline GNet::ServerPeer::Config & GNet::ServerPeer::Config::set_socket_protocol_config( const SocketProtocol::Config & config ) { socket_protocol_config = config ; return *this ; }

@@ -105,13 +105,13 @@ public:
 	}
 	char operator*() const
 	{
-		G_ASSERT_OR_DO( m_p != nullptr , throw Error() ) ;
-		return m_p->at( m_pos ) ;
+		G_ASSERT( m_p != nullptr ) ;
+		return m_p ? m_p->at( m_pos ) : '\0' ;
 	}
 	char operator[]( std::size_t n ) const
 	{
-		G_ASSERT_OR_DO( m_p != nullptr , throw Error() ) ;
-		return m_p->at( m_pos + n ) ;
+		G_ASSERT( m_p != nullptr ) ;
+		return m_p ? m_p->at( m_pos + n ) : '\0' ;
 	}
 	void operator+=( ptrdiff_t n )
 	{

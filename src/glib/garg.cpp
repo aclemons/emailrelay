@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@
 #include "gassert.h"
 #include <cstring>
 
+bool G::Arg::m_first = true ;
 std::string G::Arg::m_v0 ;
 std::string G::Arg::m_cwd ;
 
@@ -37,12 +38,11 @@ G::Arg::Arg( int argc , char **argv )
 	for( int i = 0 ; i < argc ; i++ )
 		m_array.push_back( argv[i] ) ;
 
-	static bool first = true ;
-	if( first )
+	if( m_first )
 	{
 		m_v0 = std::string( argv[0] ) ;
 		m_cwd = Process::cwd(true/*nothrow*/) ; // don't throw yet - we may "cd /" to deamonise
-		first = false ;
+		m_first = false ;
 	}
 }
 
@@ -137,7 +137,7 @@ bool G::Arg::strmatch( bool cs , const std::string & s1 , const std::string & s2
 bool G::Arg::remove( const std::string & option , std::size_t option_args )
 {
 	std::size_t i = 0U ;
-	const bool found = find( true , option , option_args , &i ) != 0U ;
+	const bool found = find( true , option , option_args , &i ) ;
 	if( found )
 		removeAt( i , option_args ) ;
 	return found ;
@@ -162,7 +162,7 @@ std::size_t G::Arg::index( const std::string & option , std::size_t option_args 
 	std::size_t default_ ) const
 {
 	std::size_t i = 0U ;
-	const bool found = find( true , option , option_args , &i ) != 0U ;
+	const bool found = find( true , option , option_args , &i ) ;
 	return found ? i : default_ ;
 }
 
@@ -194,8 +194,8 @@ const char * G::Arg::prefix( char ** argv ) noexcept
 	const char * exe = argv[0] ;
 	const char * p1 = std::strrchr( exe , '/' ) ;
 	const char * p2 = std::strrchr( exe , '\\' ) ;
-	p1 = p1 == nullptr ? exe : (p1+1U) ;
-	p2 = p2 == nullptr ? exe : (p2+1U) ;
+	p1 = p1 ? (p1+1U) : exe ;
+	p2 = p2 ? (p2+1U) : exe ;
 	return p1 > p2 ? p1 : p2 ;
 }
 
@@ -219,7 +219,7 @@ std::string G::Arg::exe( bool do_throw )
 			throw Exception( "cannot determine the absolute path of the current executable" ,
 				G::is_windows() ? "" : "try mounting procfs" ) ;
 		}
-		return {} ;
+		return std::string() ;
 	}
 	else if( proc_exe.empty() && Path(m_v0).isRelative() )
 	{

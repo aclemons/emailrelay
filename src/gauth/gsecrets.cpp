@@ -61,14 +61,14 @@ bool GAuth::Secrets::valid() const
 	return m_source == "/pam" || m_imp->valid() ;
 }
 
-GAuth::Secret GAuth::Secrets::clientSecret( const std::string & type ) const
+GAuth::Secret GAuth::Secrets::clientSecret( G::string_view type ) const
 {
 	return valid() ? m_imp->clientSecret(type) : Secret::none() ;
 }
 
-GAuth::Secret GAuth::Secrets::serverSecret( const std::string & type , const std::string & id ) const
+GAuth::Secret GAuth::Secrets::serverSecret( G::string_view type , G::string_view id ) const
 {
-	return valid() ? m_imp->serverSecret( type , id ) : Secret::none() ;
+	return valid() ? m_imp->serverSecret(type,id) : Secret::none() ;
 }
 
 std::pair<std::string,std::string> GAuth::Secrets::serverTrust( const std::string & address_range ) const
@@ -76,7 +76,7 @@ std::pair<std::string,std::string> GAuth::Secrets::serverTrust( const std::strin
 	return valid() ? m_imp->serverTrust( address_range ) : std::make_pair(std::string(),std::string()) ;
 }
 
-bool GAuth::Secrets::contains( const std::string & type , const std::string & id ) const
+bool GAuth::Secrets::contains( G::string_view type , G::string_view id ) const
 {
 	return valid() ? m_imp->contains( type , id ) : false ;
 }

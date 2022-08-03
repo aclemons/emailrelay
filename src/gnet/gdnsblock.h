@@ -152,7 +152,7 @@ public:
 	G_EXCEPTION( BadDnsResponse , tx("invalid dns response") ) ;
 	using ResultList = std::vector<DnsBlockServerResult> ;
 
-	DnsBlock( DnsBlockCallback & , ExceptionSink , const std::string & config = {} ) ;
+	DnsBlock( DnsBlockCallback & , ExceptionSink , G::string_view config = {} ) ;
 		///< Constructor. Use configure() if necessary and then start(),
 		///< one time only.
 
@@ -160,7 +160,7 @@ public:
 		G::TimeInterval timeout , const G::StringArray & servers ) ;
 			///< Configures the object after construction.
 
-	void configure( const std::string & ) ;
+	void configure( G::string_view ) ;
 		///< Configuration overload taking a configuration string containing
 		///< comma-separated fields of: dns-server-address, timeout-ms,
 		///< threshold, dnsbl-server-list.
@@ -183,10 +183,10 @@ public:
 	void operator=( DnsBlock && ) = delete ;
 
 private: // overrides
-	void readEvent( Descriptor ) override ; // Override from GNet::EventHandler.
+	void readEvent() override ; // Override from GNet::EventHandler.
 
 private:
-	static void configureImp( const std::string & , DnsBlock * ) ;
+	static void configureImp( G::string_view , DnsBlock * ) ;
 	void onTimeout() ;
 	static std::string queryString( const Address & ) ;
 	static std::size_t countResponders( const ResultList & ) ;

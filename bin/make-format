@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -72,8 +72,8 @@ if( !$opt{noformat} )
 	my ($v1,$v2) = ( $version =~ m/(\d+)\.(\d+)/ ) ;
 	die "make-format: error: cannot run [$cfg_formatter --version]\n"
 		if ( !$v1 && !$v2 ) ;
-	die "make-format: error: $cfg_formatter [$v1] is too old: use version 10 or later\n"
-		if ( $v1 < 10 ) ;
+	die "make-format: error: $cfg_formatter is too old [$v1.$v2]\n"
+		if ( $v1 < 3 || ( $v1 == 3 && $v2 < 10 ) ) ;
 	die "make-format: error: no .clang-format file in cwd\n"
 		if ! -e ".clang-format" ;
 }

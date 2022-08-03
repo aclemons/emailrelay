@@ -31,6 +31,7 @@
 #include "gtest.h"
 #include "glog.h"
 #include "gassert.h"
+#include <memory>
 #include <tuple>
 #include <sstream>
 #include <sys/types.h>
@@ -62,6 +63,7 @@ private: // overrides
 	void dropRead( Descriptor fd ) noexcept override ;
 	void dropWrite( Descriptor fd ) noexcept override ;
 	void dropOther( Descriptor fd ) noexcept override ;
+	void drop( Descriptor fd ) noexcept override ;
 	void disarm( ExceptionHandler * ) noexcept override ;
 
 public:
@@ -74,17 +76,16 @@ public:
 private:
 	using Emitters = std::vector<EventEmitter> ;
 	void runOnce() ;
-	void addImp( int fd , Emitters & , const EventEmitter & ) ;
+	void addImp( int fd , Emitters & , EventHandler & , ExceptionSink ) ;
 	void dropImp( int fd , Emitters & ) noexcept ;
 	void disarmImp( Emitters & , ExceptionHandler * ) noexcept ;
-	void shrink( int ) noexcept ;
 	static int events( int nfds , fd_set * ) ;
 
 private:
-	bool m_quit{false} ;
+	bool m_quit {false} ;
 	std::string m_quit_reason ;
-	bool m_running{false} ;
-	int m_nfds{0} ;
+	bool m_running {false} ;
+	int m_nfds {0} ;
 	fd_set m_read_set ; // NOLINT cppcoreguidelines-pro-type-member-init
 	fd_set m_write_set ; // NOLINT cppcoreguidelines-pro-type-member-init
 	fd_set m_other_set ; // NOLINT cppcoreguidelines-pro-type-member-init
@@ -199,7 +200,7 @@ void GNet::EventLoopImp::runOnce()
 	}
 
 	// call the fd event handlers -- note that event handlers can
-	// remove fds from the copy sets but not add them -- that means
+	// remove fds from the 'copy' sets but not add them -- that means
 	// that ecount might be smaller that expected, but it still
 	// serves as a valid optimisation
 	//
@@ -226,6 +227,22 @@ void GNet::EventLoopImp::runOnce()
 		}
 	}
 
+	// collect garbage
+	int fd_max = 0 ;
+	for( int fd = 0 ; fd < m_nfds ; fd++ )
+	{
+		if( FD_ISSET(fd,&m_read_set) ||
+			FD_ISSET(fd,&m_write_set) ||
+			FD_ISSET(fd,&m_other_set) )
+		{
+			fd_max = fd ;
+		}
+	}
+	m_nfds = fd_max + 1 ;
+	m_read_emitters.resize( m_nfds ) ;
+	m_write_emitters.resize( m_nfds ) ;
+	m_other_emitters.resize( m_nfds ) ;
+
 	if( G::Test::enabled("event-loop-slow") )
 	{
 		Timeval timeout_slow ;
@@ -248,88 +265,83 @@ int GNet::EventLoopImp::events( int nfds , fd_set * sp )
 
 void GNet::EventLoopImp::addRead( Descriptor fd , EventHandler & handler , ExceptionSink es )
 {
-	addImp( fd.fd() , m_read_emitters , EventEmitter(&handler,es) ) ;
-	FD_SET( fd.fd() , &m_read_set ) ;
+	if( fd.valid() )
+	{
+		handler.setDescriptor( fd ) ; // see EventHandler::dtor
+		addImp( fd.fd() , m_read_emitters , handler , es ) ;
+		FD_SET( fd.fd() , &m_read_set ) ;
+	}
 }
 
 void GNet::EventLoopImp::addWrite( Descriptor fd , EventHandler & handler , ExceptionSink es )
 {
-	addImp( fd.fd() , m_write_emitters , EventEmitter(&handler,es) ) ;
-	FD_SET( fd.fd() , &m_write_set ) ;
+	if( fd.valid() )
+	{
+		handler.setDescriptor( fd ) ; // see EventHandler::dtor
+		addImp( fd.fd() , m_write_emitters , handler , es ) ;
+		FD_SET( fd.fd() , &m_write_set ) ;
+	}
 }
 
 void GNet::EventLoopImp::addOther( Descriptor fd , EventHandler & handler , ExceptionSink es )
 {
-	addImp( fd.fd() , m_other_emitters , EventEmitter(&handler,es) ) ;
-	FD_SET( fd.fd() , &m_other_set ) ;
+	if( fd.valid() )
+	{
+		handler.setDescriptor( fd ) ; // see EventHandler::dtor
+		addImp( fd.fd() , m_other_emitters , handler , es ) ;
+		FD_SET( fd.fd() , &m_other_set ) ;
+	}
 }
 
-void GNet::EventLoopImp::addImp( int fd , Emitters & emitters , const EventEmitter & emitter )
+void GNet::EventLoopImp::addImp( int fd , Emitters & emitters , EventHandler & handler , ExceptionSink es )
 {
 	if( fd >= FD_SETSIZE )
 		throw EventLoop::Overflow( "too many open file descriptors for select()" ) ;
 
 	m_nfds = std::max( m_nfds , fd+1 ) ;
 	emitters.resize( m_nfds ) ;
-	emitters[fd] = emitter ;
+	emitters[fd].update( &handler , es ) ;
 }
 
 void GNet::EventLoopImp::dropRead( Descriptor fd ) noexcept
 {
-	FD_CLR( fd.fd() , &m_read_set ) ;
-	FD_CLR( fd.fd() , &m_read_set_copy ) ;
-	dropImp( fd.fd() , m_read_emitters ) ;
+	if( fd.valid() )
+	{
+		FD_CLR( fd.fd() , &m_read_set ) ;
+		FD_CLR( fd.fd() , &m_read_set_copy ) ;
+	}
 }
 
 void GNet::EventLoopImp::dropWrite( Descriptor fd ) noexcept
 {
-	FD_CLR( fd.fd() , &m_write_set ) ;
-	FD_CLR( fd.fd() , &m_write_set_copy ) ;
-	dropImp( fd.fd() , m_write_emitters ) ;
+	if( fd.valid() )
+	{
+		FD_CLR( fd.fd() , &m_write_set ) ;
+		FD_CLR( fd.fd() , &m_write_set_copy ) ;
+	}
 }
 
 void GNet::EventLoopImp::dropOther( Descriptor fd ) noexcept
 {
-	FD_CLR( fd.fd() , &m_other_set ) ;
-	FD_CLR( fd.fd() , &m_other_set_copy ) ;
-	dropImp( fd.fd() , m_other_emitters ) ;
-}
-
-void GNet::EventLoopImp::dropImp( int fd , Emitters & ) noexcept
-{
-	G_ASSERT( (fd+1) <= m_nfds ) ;
-	if( m_nfds && fd >= 0 && (fd+1) >= m_nfds ) // if dropping biggest fd
+	if( fd.valid() )
 	{
-		// count defunct fds at the top of the fd range
-		int i = m_nfds - 1 ;
-		while( i >= 0 &&
-			!FD_ISSET(i,&m_read_set) &&
-			!FD_ISSET(i,&m_write_set) &&
-			!FD_ISSET(i,&m_other_set) )
-		{
-			i-- ;
-		}
-
-		// garbage-collect big fds
-		shrink( i < 0 ? 0 : (i+1) ) ;
+		FD_CLR( fd.fd() , &m_other_set ) ;
+		FD_CLR( fd.fd() , &m_other_set_copy ) ;
 	}
 }
 
-void GNet::EventLoopImp::shrink( int nfds ) noexcept
+void GNet::EventLoopImp::drop( Descriptor fd ) noexcept
 {
-	G_ASSERT( m_nfds >= 0 ) ;
-	G_ASSERT( nfds >= 0 ) ;
-	if( nfds < m_nfds )
-	{
-		m_nfds = nfds ;
-		std::size_t n = static_cast<unsigned int>( nfds ) ;
-		if( n < m_read_emitters.size() )
-			m_read_emitters.resize( n ) ;
-		if( n < m_write_emitters.size() )
-			m_write_emitters.resize( n ) ;
-		if( n < m_other_emitters.size() )
-			m_other_emitters.resize( n ) ;
-	}
+	dropRead( fd ) ;
+	dropWrite( fd ) ;
+	dropOther( fd ) ;
+	std::size_t ufd = static_cast<unsigned int>(fd.fd()) ;
+	if( ufd < m_read_emitters.size() )
+		m_read_emitters[ufd].reset() ;
+	if( ufd < m_write_emitters.size() )
+		m_write_emitters[ufd].reset() ;
+	if( ufd < m_other_emitters.size() )
+		m_other_emitters[ufd].reset() ;
 }
 
 void GNet::EventLoopImp::disarm( ExceptionHandler * p ) noexcept
@@ -343,8 +355,7 @@ void GNet::EventLoopImp::disarmImp( Emitters & emitters , ExceptionHandler * p )
 {
 	for( auto & emitter : emitters )
 	{
-		if( emitter.es().eh() == p )
-			emitter.disarm() ;
+		emitter.disarm( p ) ;
 	}
 }
 

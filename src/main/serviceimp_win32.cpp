@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ std::pair<ServiceImp::StatusHandle,DWORD> ServiceImp::statusHandle( const std::s
 	StatusHandle h = RegisterServiceCtrlHandlerA( service_name.c_str() , fn ) ;
 	if( h == 0 )
 		e = GetLastError() ;
-	return { h , e } ;
+	return std::make_pair( h , e ) ;
 }
 
 DWORD ServiceImp::dispatch( ServiceMainFn fn )

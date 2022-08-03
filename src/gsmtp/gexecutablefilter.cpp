@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,9 +29,8 @@
 #include "gassert.h"
 #include <tuple>
 
-GSmtp::ExecutableFilter::ExecutableFilter( GNet::ExceptionSink es ,
-	FileStore & file_store , bool server_side , const std::string & path ,
-	unsigned int timeout ) :
+GSmtp::ExecutableFilter::ExecutableFilter( GNet::ExceptionSink es , FileStore & file_store ,
+	bool server_side , const std::string & path , unsigned int timeout ) :
 		m_file_store(file_store) ,
 		m_server_side(server_side) ,
 		m_prefix(server_side?"filter":"client filter") ,
@@ -53,17 +52,12 @@ bool GSmtp::ExecutableFilter::simple() const
 
 std::string GSmtp::ExecutableFilter::id() const
 {
-	return m_path.basename() ; // was .str()
+	return m_path.str() ;
 }
 
 bool GSmtp::ExecutableFilter::special() const
 {
 	return m_exit.special ;
-}
-
-bool GSmtp::ExecutableFilter::abandoned() const
-{
-	return m_exit.abandon() ;
 }
 
 std::string GSmtp::ExecutableFilter::response() const
@@ -86,13 +80,13 @@ std::string GSmtp::ExecutableFilter::reason() const
 
 void GSmtp::ExecutableFilter::start( const MessageId & message_id )
 {
-	FileStore::State state = m_server_side ? FileStore::State::New : FileStore::State::Locked ;
 	G::Path cpath = m_file_store.contentPath( message_id ) ;
-	G::Path epath = m_file_store.envelopePath( message_id , state ) ;
+	G::Path epath = m_file_store.envelopePath( message_id , m_server_side ? ".new" : ".busy" ) ;
 
 	G::StringArray args ;
 	args.push_back( cpath.str() ) ;
 	args.push_back( epath.str() ) ;
+
 	G::ExecutableCommand commandline( m_path.str() , args ) ;
 	G_LOG( "GSmtp::ExecutableFilter::start: " << m_prefix << ": running " << commandline.displayString() ) ;
 	m_task.start( commandline ) ;
@@ -140,10 +134,10 @@ std::pair<std::string,std::string> GSmtp::ExecutableFilter::parseOutput( std::st
 {
 	G_DEBUG( "GSmtp::ExecutableFilter::parseOutput: in: \"" << G::Str::printable(s) << "\"" ) ;
 
-	static constexpr auto start_1 = "<<"_sv ;
-	static constexpr auto end_1 = ">>"_sv ;
-	static constexpr auto start_2 = "[["_sv ;
-	static constexpr auto end_2 = "]]"_sv ;
+	const std::string start_1("<<") ;
+	const std::string end_1(">>") ;
+	const std::string start_2("[[") ;
+	const std::string end_2("]]") ;
 
 	G::StringArray lines ;
 	while( G::Str::replaceAll( s , "\r\n" , "\n" ) ) {;}
@@ -152,17 +146,17 @@ std::pair<std::string,std::string> GSmtp::ExecutableFilter::parseOutput( std::st
 
 	for( auto p = lines.begin() ; p != lines.end() ; )
 	{
-		const std::string & line = *p ;
-		std::size_t pos_start = line.find( start_1.data() , 0U , start_1.size() ) ;
-		std::size_t pos_end = line.find( end_1.data() , 0U , end_1.size() ) ;
+		std::string line = *p ;
+		std::size_t pos_start = line.find(start_1) ;
+		std::size_t pos_end = line.find(end_1) ;
 		if( pos_start != 0U )
 		{
-			pos_start = line.find( start_2.data() , 0U , start_2.size() ) ;
-			pos_end = line.find( end_2.data() , 0U , end_2.size() ) ;
+			pos_start = line.find(start_2) ;
+			pos_end = line.find(end_2) ;
 		}
 		if( pos_start == 0U && pos_end != std::string::npos )
 		{
-			*p++ = G::Str::printable( line.substr(2U,pos_end-2U) ) ;
+			*p++ = G::Str::printable(line.substr(2U,pos_end-2U)) ;
 		}
 		else
 		{
@@ -174,7 +168,7 @@ std::pair<std::string,std::string> GSmtp::ExecutableFilter::parseOutput( std::st
 
 	std::string response = ( !lines.empty() && !lines.at(0U).empty() ) ? lines.at(0U) : default_ ;
 	std::string reason = ( lines.size() > 1U && !lines.at(1U).empty() ) ? lines.at(1U) : response ;
-	return { response , reason } ;
+	return std::make_pair( response , reason ) ;
 }
 
 G::Slot::Signal<int> & GSmtp::ExecutableFilter::doneSignal()
@@ -184,7 +178,12 @@ G::Slot::Signal<int> & GSmtp::ExecutableFilter::doneSignal()
 
 void GSmtp::ExecutableFilter::cancel()
 {
-	m_task.stop() ;
 	m_timer.cancelTimer() ;
+	m_task.stop() ;
+}
+
+bool GSmtp::ExecutableFilter::abandoned() const
+{
+	return m_exit.abandon() ;
 }
 

@@ -38,14 +38,14 @@ namespace G
 struct G::OptionsOutputLayout
 {
 	std::string separator ; ///< separator between syntax and description
-	std::size_t column ; ///< left hand column width if no separator (includes margin)
-	std::size_t width ; ///< overall width for wrapping, or zero for none
-	std::size_t width2 ; ///< width after the first line, or zero for 'width'
-	std::size_t margin ; ///< spaces to the left of the syntax part
-	unsigned int level ; ///< show options at-or-below this level
-	bool level_exact ; ///< .. or exactly at some level
-	bool extra ; ///< include descriptions' extra text
-	bool alt_usage ; ///< use alternate "usage:" string
+	std::size_t column {30U} ; ///< left hand column width if no separator (includes margin)
+	std::size_t width {0U} ; ///< overall width for wrapping, or zero for none
+	std::size_t width2 {0U} ; ///< width after the first line, or zero for 'width'
+	std::size_t margin {2U} ; ///< spaces to the left of the syntax part
+	unsigned int level {99U} ; ///< show options at-or-below this level
+	bool level_exact {false} ; ///< .. or exactly at some level
+	bool extra {false} ; ///< include descriptions' extra text
+	bool alt_usage {false} ; ///< use alternate "usage:" string
 
 	OptionsOutputLayout() ;
 	explicit OptionsOutputLayout( std::size_t column ) ;

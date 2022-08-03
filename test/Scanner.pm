@@ -18,7 +18,7 @@
 #
 # Scanner.pm
 #
-# A wrapper for running the "emailrelay-test-scanner" program.
+# A wrapper for running the "emailrelay_test_scanner" program.
 #
 # See also: Helper
 #
@@ -31,7 +31,7 @@ package Scanner ;
 sub new
 {
 	my ( $classname , $address ) = @_ ;
-	return bless { h => new Helper( "emailrelay-test-scanner" , $address ) } , $classname ; # "--port <address>"
+	return bless { h => new Helper( "emailrelay_test_scanner" , $address ) } , $classname ; # "--port <address>"
 }
 
 sub port { return shift->{h}->port(@_) }

@@ -57,6 +57,7 @@ private: // overrides
 	void dropRead( Descriptor fd ) noexcept override ;
 	void dropWrite( Descriptor fd ) noexcept override ;
 	void dropOther( Descriptor fd ) noexcept override ;
+	void drop( Descriptor fd ) noexcept override ;
 	void disarm( ExceptionHandler * ) noexcept override ;
 
 public:
@@ -68,8 +69,7 @@ public:
 private:
 	struct ListItem
 	{
-		int m_fd{-1} ;
-		unsigned int m_events{0U} ;
+		unsigned int m_events {0U} ;
 		EventEmitter m_read_emitter ;
 		EventEmitter m_write_emitter ;
 	} ;
@@ -78,7 +78,7 @@ private:
 private:
 	void runOnce() ;
 	ListItem * find( int fd ) noexcept ;
-	ListItem * findOrCreate( int fd , EventHandler & , ExceptionSink , unsigned int new_events ) ;
+	ListItem * findOrCreate( int fd ) ;
 	void addReadWrite( int fd , EventHandler & , ExceptionSink , unsigned int new_events ) ;
 	void dropReadWrite( int , unsigned int old_events ) noexcept ;
 	void eadd( int fd , unsigned int events ) ;
@@ -90,11 +90,11 @@ private:
 
 private:
 	std::vector<struct epoll_event> m_wait_events ;
-	int m_wait_rc{0} ;
-	bool m_quit{false} ;
+	int m_wait_rc {0} ;
+	bool m_quit {false} ;
 	std::string m_quit_reason ;
-	bool m_running{false} ;
-	int m_fd{-1} ;
+	bool m_running {false} ;
+	int m_fd {-1} ;
 	List m_list ;
 } ;
 
@@ -139,7 +139,7 @@ void GNet::EventLoopImp::runOnce()
 	// extract the pending events
 	int timeout_ms = ms() ;
 	m_wait_rc = epoll_wait( m_fd , &m_wait_events[0] , m_wait_events.size() , timeout_ms ) ;
-	if( m_wait_rc == -1 )
+	if( m_wait_rc < 0 )
 	{
 		int e = G::Process::errno_() ;
 		if( e != EINTR )
@@ -147,32 +147,25 @@ void GNet::EventLoopImp::runOnce()
 	}
 
 	// handle timer events
-	if( m_wait_rc <= 0 || timeout_ms == 0 )
+	if( m_wait_rc == 0 || timeout_ms == 0 )
 	{
 		TimerList::instance().doTimeouts() ;
 	}
 
-	// handle read events
+	// handle i/o events
 	for( int i = 0 ; m_wait_rc > 0 && i < m_wait_rc ; i++ )
 	{
 		unsigned int e = m_wait_events[i].events ;
+		int fd = m_wait_events[i].data.fd ;
 		if( e & EPOLLIN )
 		{
-			int fd = m_wait_events[i].data.fd ;
 			ListItem * item = find( fd ) ;
 			if( item )
 				item->m_read_emitter.raiseReadEvent( Descriptor(fd) ) ;
 		}
-	}
-
-	// handle write events
-	for( int i = 0 ; m_wait_rc > 0 && i < m_wait_rc ; i++ )
-	{
-		unsigned int e = m_wait_events[i].events ;
 		if( e & EPOLLOUT )
 		{
-			int fd = m_wait_events[i].data.fd ;
-			ListItem * item = find( fd ) ;
+			ListItem * item = find( fd ) ; // again
 			if( item )
 				item->m_write_emitter.raiseWriteEvent( Descriptor(fd) ) ;
 		}
@@ -225,34 +218,32 @@ void GNet::EventLoopImp::quit( const G::SignalSafe & )
 
 GNet::EventLoopImp::ListItem * GNet::EventLoopImp::find( int fd ) noexcept
 {
-	unsigned int ufd = static_cast<unsigned int>(fd) ;
-	return fd >= 0 && ufd < m_list.size() && m_list[ufd].m_fd == fd ? &m_list[ufd] : nullptr ;
+	std::size_t ufd = static_cast<unsigned int>(fd) ;
+	return fd >= 0 && ufd < m_list.size() ? &m_list[ufd] : nullptr ;
 }
 
-GNet::EventLoopImp::ListItem * GNet::EventLoopImp::findOrCreate( int fd ,
-	EventHandler & handler , ExceptionSink es , unsigned int new_events )
+GNet::EventLoopImp::ListItem * GNet::EventLoopImp::findOrCreate( int fd )
 {
 	ListItem * p = find( fd ) ;
 	if( p == nullptr )
 	{
-		unsigned int ufd = static_cast<unsigned int>(fd) ;
-		m_list.resize( std::max(m_list.size(),std::size_t(ufd+1U)) ) ;
+		std::size_t ufd = static_cast<unsigned int>(fd) ;
+		m_list.resize( std::max(m_list.size(),ufd+1U) ) ; // grow, not shrink
 		p = &m_list[ufd] ;
 		*p = ListItem() ;
 	}
-	G_ASSERT( p->m_fd == -1 || p->m_fd == fd ) ;
-	EventEmitter & emitter = ( new_events & EPOLLIN ) ? p->m_read_emitter : p->m_write_emitter ;
-	emitter = EventEmitter( &handler , es ) ;
 	return p ;
 }
 
 void GNet::EventLoopImp::addRead( Descriptor fd , EventHandler & handler , ExceptionSink es )
 {
+	handler.setDescriptor( fd ) ; // see EventHandler::dtor
 	addReadWrite( fd.fd() , handler , es , EPOLLIN ) ;
 }
 
 void GNet::EventLoopImp::addWrite( Descriptor fd , EventHandler & handler , ExceptionSink es )
 {
+	handler.setDescriptor( fd ) ; // see EventHandler::dtor
 	addReadWrite( fd.fd() , handler , es , EPOLLOUT ) ;
 }
 
@@ -264,18 +255,20 @@ void GNet::EventLoopImp::addOther( Descriptor , EventHandler & , ExceptionSink )
 void GNet::EventLoopImp::addReadWrite( int fd , EventHandler & handler , ExceptionSink es , unsigned int new_events )
 {
 	G_ASSERT( fd >= 0 ) ;
-	ListItem * item = findOrCreate( fd , handler , es , new_events ) ;
-	if( item->m_fd == -1 )
+	G_ASSERT( new_events == EPOLLIN || new_events == EPOLLOUT ) ;
+	ListItem * item = findOrCreate( fd ) ;
+	if( item->m_events == 0U )
 	{
 		eadd( fd , new_events ) ;
-		item->m_fd = fd ;
 		item->m_events = new_events ;
 	}
 	else
 	{
 		emodify( fd , item->m_events | new_events ) ;
-		item->m_events = ( item->m_events | new_events ) ;
+		item->m_events |= new_events ;
 	}
+	EventEmitter & emitter = new_events == EPOLLIN ? item->m_read_emitter : item->m_write_emitter ;
+	emitter.update( &handler , es ) ;
 }
 
 void GNet::EventLoopImp::dropRead( Descriptor fd ) noexcept
@@ -299,16 +292,30 @@ void GNet::EventLoopImp::dropReadWrite( int fd , unsigned int old_events ) noexc
 	if( item && ( item->m_events & old_events ) )
 	{
 		unsigned int new_events = item->m_events & ~old_events ;
-		if( new_events == 0 )
+		if( new_events == 0U )
 		{
 			eremove( fd ) ;
-			item->m_fd = -1 ;
 		}
 		else
 		{
 			emodify( fd , new_events , std::nothrow ) ;
-			item->m_events = new_events ;
 		}
+		item->m_events = new_events ;
+		// the emitter is not messed with here because there may
+		// be a pending exception that still needs to be delivered
+	}
+}
+
+void GNet::EventLoopImp::drop( Descriptor fd ) noexcept
+{
+	ListItem * item = find( fd.fd() ) ;
+	if( item )
+	{
+		if( item->m_events )
+			eremove( fd.fd() ) ;
+		item->m_events = 0U ;
+		item->m_read_emitter.reset() ;
+		item->m_write_emitter.reset() ;
 	}
 }
 
@@ -316,10 +323,8 @@ void GNet::EventLoopImp::disarm( ExceptionHandler * p ) noexcept
 {
 	for( auto & item : m_list )
 	{
-		if( item.m_read_emitter.es().eh() == p )
-			item.m_read_emitter.disarm() ;
-		if( item.m_write_emitter.es().eh() == p )
-			item.m_write_emitter.disarm() ;
+		item.m_read_emitter.disarm( p ) ;
+		item.m_write_emitter.disarm( p ) ;
 	}
 }
 

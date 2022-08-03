@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -65,10 +65,10 @@ G_EXCEPTION_CLASS( NoBody , tx("no body text") ) ;
 
 std::string versionNumber()
 {
-	return "2.4dev1" ;
+	return "2.4" ;
 }
 
-static std::pair<G::Path,G::Path> writeFiles( const G::Path & spool_dir ,
+static std::string writeFiles( const G::Path & spool_dir ,
 	const G::StringArray & envelope_to_list , const std::string & from ,
 	const std::string & from_auth_in , const std::string & from_auth_out ,
 	const G::StringArray & content , std::istream & instream )
@@ -76,11 +76,8 @@ static std::pair<G::Path,G::Path> writeFiles( const G::Path & spool_dir ,
 	// create the output file
 	//
 	std::string envelope_from = from.empty() ? "anonymous" : from ;
-	GSmtp::FileStore file_store( spool_dir , {} ) ;
-	GSmtp::MessageStore & store = file_store ;
-	GSmtp::MessageStore::SmtpInfo smtp_info ;
-	smtp_info.auth = from_auth_in ;
-	std::unique_ptr<GSmtp::NewMessage> msg = store.newMessage( envelope_from , smtp_info , from_auth_out ) ;
+	GSmtp::FileStore store( spool_dir , /*max_size=*/0U , /*test_for_eight_bit=*/true ) ;
+	std::unique_ptr<GSmtp::NewMessage> msg = store.newMessage( envelope_from , from_auth_in , from_auth_out ) ;
 
 	// add "To:" lines to the envelope
 	//
@@ -97,10 +94,10 @@ static std::pair<G::Path,G::Path> writeFiles( const G::Path & spool_dir ,
 		for( const auto & line : content )
 		{
 			eoh_in_content = eoh_in_content || line.empty() ;
-			msg->addContentLine( line ) ;
+			msg->addTextLine( line ) ;
 		}
 		if( !eoh_in_content )
-			msg->addContentLine( std::string() ) ;
+			msg->addTextLine( std::string() ) ;
 	}
 
 	// read and stream out more content body
@@ -111,7 +108,7 @@ static std::pair<G::Path,G::Path> writeFiles( const G::Path & spool_dir ,
 		G::Str::trimRight( line , {"\r",1U} , 1U ) ;
 		if( instream.fail() || line == "." )
 			break ;
-		msg->addContentLine( line ) ;
+		msg->addTextLine( line ) ;
 	}
 
 	// commit the file
@@ -121,15 +118,13 @@ static std::pair<G::Path,G::Path> writeFiles( const G::Path & spool_dir ,
 	msg->prepare( auth_id , ip.hostPartString() , std::string() ) ;
 	msg->commit( true ) ;
 
-	return {
-		file_store.contentPath(msg->id()) ,
-		file_store.envelopePath(msg->id()) } ;
+	return store.contentPath(msg->id()).str() ;
 }
 
-static void copyIntoSubDirectories( const G::Path & envelope_path )
+static void copyIntoSubDirectories( const G::Path & content_path )
 {
-	G::Directory spool_dir( envelope_path.simple() ? G::Path(".") : envelope_path.dirname() ) ;
-	std::string envelope_filename = envelope_path.basename() ;
+	G::Directory spool_dir( content_path.simple() ? G::Path(".") : content_path.dirname() ) ;
+	std::string envelope_filename = content_path.withExtension("envelope").basename() ;
 	G::Path src = spool_dir.path() + envelope_filename ;
 
 	G::Process::Umask set_umask( G::Process::Umask::Mode::Tighter ) ; // 0117 => -rw-rw----
@@ -159,29 +154,97 @@ static std::string appDir()
 		return this_exe.dirname().str() ;
 }
 
+static G::Options options()
+{
+	using G::tx ;
+	using M = G::Option::Multiplicity ;
+	G::Options opt ;
+	unsigned int t_undef = 0U ;
+
+	G::Options::add( opt , 'h' , "help" ,
+		tx("show usage help") , "" ,
+		M::zero , "" , 1 , t_undef ) ;
+			// Shows help text and exits.
+
+	G::Options::add( opt , 'v' , "verbose" ,
+		tx("prints the path of the created content file") , "" , 
+		M::zero , "" , 1 , t_undef ) ;
+			// Prints the full path of the content file.
+
+	G::Options::add( opt , 's' , "spool-dir" ,
+		tx("specifies the spool directory") , "" , 
+		M::one , "dir" , 1 , t_undef ) ;
+			// Specifies the spool directory.
+
+	G::Options::add( opt , 'f' , "from" ,
+		tx("sets the envelope sender") , "" , 
+		M::one , "name" , 1 , t_undef ) ;
+			// Sets the envelope 'from' address.
+
+	G::Options::add( opt , 't' , "content-to" ,
+		tx("add recipients as content headers") , "" , 
+		M::zero , "" , 2 , t_undef ) ;
+			// Adds the envelope 'to' addresses as "To:" content headers.
+
+	G::Options::add( opt , 'F' , "content-from" ,
+		tx("add sender as content header") , "" , 
+		M::zero , "" , 2 , t_undef ) ;
+			// Adds the envelope 'from' addresses as a "From:" content header.
+
+	G::Options::add( opt , 'd' , "content-date" ,
+		tx("add a date content header") , "" , 
+		M::zero , "" , 2 , t_undef ) ;
+			// Adds a "Date:" content header if there is none.
+
+	G::Options::add( opt , 'c' , "copy" ,
+		tx("copy into spool sub-directories") , "" , 
+		M::zero , "" , 2 , t_undef ) ;
+			// Copies the envelope file into all sub-directories of the
+			// main spool directory.
+
+	G::Options::add( opt , 'n' , "filename" ,
+		tx("prints the name of the created content file") , "" , 
+		M::zero , "" , 2 , t_undef ) ;
+			// Prints the name of the content file.
+
+	G::Options::add( opt , 'C' , "content" ,
+		tx("sets a line of content") , "" , 
+		M::many , "base64" , 3 , t_undef ) ;
+			// Sets a line of content. This can be a header line, a blank line
+			// or a line of the body text. The first blank line separates headers 
+			// from the body. The option value should be base64 encoded.
+
+	G::Options::add( opt , 'N' , "no-stdin" ,
+		tx("ignores the standard input stream") , "" , 
+		M::zero , "" , 3 , t_undef ) ;
+			// Ignores the standard-input. Typically used with "--content".
+
+	G::Options::add( opt , 'a' , "auth" ,
+		tx("sets the envelope authentication value") , "" , 
+		M::one , "name" , 3 , t_undef ) ;
+			// Sets the authentication value in the envelope file.
+
+	G::Options::add( opt , 'i' , "from-auth-in" ,
+		tx("sets the envelope from-auth-in value") , "" , 
+		M::one , "name" , 3 , t_undef ) ;
+			// Sets the 'from-auth-in' value in the envelope file.
+
+	G::Options::add( opt , 'o' , "from-auth-out" ,
+		tx("sets the envelope from-auth-out value") , "" , 
+		M::one , "name" , 3 , t_undef ) ;
+			// Sets the 'from-auth-out' value in the envelope file.
+
+	G::Options::add( opt , 'V' , "version" ,
+		tx("prints the version and exits") , "" , 
+		M::zero , "" , 2 , t_undef ) ;
+			// Prints the version number and exits.
+
+	return opt ;
+}
+
 static void run( const G::Arg & arg )
 {
-	G::GetOpt opt( arg ,
-
-		"v!verbose!prints the path of the created content file!!0!!1|"
-		"s!spool-dir!specifies the spool directory!!1!dir!1|"
-		"f!from!sets the envelope sender!!1!name!1|"
-
-		"t!content-to!add recipients as content headers!!0!!2|"
-		"F!content-from!add sender as content header!!0!!2|"
-		"d!content-date!add a date content header!!0!!2|"
-		"c!copy!copy into spool sub-directories!!0!!2|"
-		"n!filename!prints the name of the created content file!!0!!2|"
-
-		"C!content!sets a line of content! and ignores stdin!2!base64!3|"
-		"a!auth!sets the envelope authentication value!!1!name!3|"
-		"i!from-auth-in!sets the envelope from-auth-in value!!1!name!3|"
-		"o!from-auth-out!sets the envelope from-auth-out value!!1!name!3|"
-
-		"h!help!shows this help!!0!!2|"
-		"V!version!prints the version and exits!!0!!2|"
-	) ;
-
+	G::GetOpt opt( arg , options() ) ;
 	if( opt.hasErrors() )
 	{
 		opt.showErrors( std::cerr ) ;
@@ -216,8 +279,9 @@ static void run( const G::Arg & arg )
 	}
 	else
 	{
-		// unpack the command-line options
+		// parse the command-line options
 		bool opt_copy = opt.contains( "copy" ) ;
+		bool opt_no_stdin = opt.contains( "no-stdin" ) ;
 		std::string opt_spool_dir = opt.value( "spool-dir" , GSmtp::MessageStore::defaultDirectory().str() ) ;
 		std::string opt_from = opt.value( "from" ) ;
 		G::StringArray opt_content = G::Str::splitIntoTokens( opt.value("content") , "," ) ;
@@ -248,15 +312,13 @@ static void run( const G::Arg & arg )
 			for( const auto & part : opt_content )
 				content.push_back( part.size() <= 1U ? std::string() : G::Base64::decode(part,true) ) ;
 		}
-		else
+		if( !opt_no_stdin )
 		{
 			std::istream & stream = std::cin ;
 			while( stream.good() )
 			{
 				std::string line = G::Str::readLineFrom( stream ) ;
 				G::Str::trimRight( line , {"\r",1U} , 1U ) ;
-				if( line == "." )
-					throw NoBody() ;
 				if( !stream || line.empty() )
 					break ;
 				content.push_back( line ) ;
@@ -316,22 +378,19 @@ static void run( const G::Arg & arg )
 
 		// generate the two files
 		std::stringstream empty ;
-		G::Path new_content ;
-		G::Path new_envelope ;
-		std::tie( new_content , new_envelope ) = writeFiles( opt_spool_dir ,
-			envelope_to_list , from ,
+		std::string new_path = writeFiles( opt_spool_dir , envelope_to_list , from ,
 			opt_from_auth_in , opt_from_auth_out , content ,
-			opt.contains("content") ? empty : std::cin ) ;
+			opt_no_stdin ? empty : std::cin ) ;
 
 		// copy into spool-dir subdirectories (cf. emailrelay-filter-copy)
 		if( opt_copy )
-			copyIntoSubDirectories( new_envelope ) ;
+			copyIntoSubDirectories( new_path ) ;
 
 		// print the content filename
 		if( opt.contains("verbose") )
-			std::cout << new_content << std::endl ;
+			std::cout << new_path << std::endl ;
 		else if( opt.contains("filename") )
-			std::cout << new_content.basename() << std::endl ;
+			std::cout << G::Path(new_path).basename() << std::endl ;
 	}
 }
 

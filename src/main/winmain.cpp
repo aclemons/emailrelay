@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -33,21 +33,9 @@ int WINAPI WinMain( HINSTANCE hinstance , HINSTANCE previous , LPSTR command_lin
 {
 	try
 	{
-
-#if 0
-		// set the C locale from the environment -- this has very little effect
-		// on C++ code on windows, particularly as we avoid things like atoi(),
-		// tolower(), strtoul() etc. -- however, it is probably best not to
-		// use it at all because of possible interaction between the MBCS
-		// functions and the locale
+		// set the C locale from the environment
+		// (has no effect on the msvc run-time)
 		::setlocale( LC_ALL , "" ) ;
-#endif
-
-#if 0
-		// TODO _setmbcp()
-		_setmbcp( GetACP() ) ;
-		_setmbcp( _MB_CP_ANSI ) ; // same thing?
-#endif
 
 		G::Arg arg ;
 		arg.parse( hinstance , command_line ) ;

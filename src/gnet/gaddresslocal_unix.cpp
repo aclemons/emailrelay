@@ -43,15 +43,6 @@ namespace GNet
 		{
 			return offsetof( sockaddr_un , sun_path ) ;
 		}
-		std::string unescape( std::string path )
-		{
-			if( path.size() > 1U && path[0U] == '\\' && path[1U] == '0' )
-			{
-				path = path.substr( 1U ) ;
-				path[0] = '\0' ;
-			}
-			return path ;
-		}
 	}
 }
 
@@ -83,9 +74,10 @@ GNet::AddressLocal::AddressLocal( unsigned int /*port*/ , int /*loopback_overloa
 {
 }
 
-GNet::AddressLocal::AddressLocal( const sockaddr * addr , socklen_t len , bool /*ipv6_scope_id_fixup*/ ) :
+GNet::AddressLocal::AddressLocal( const sockaddr * addr , socklen_t len ) :
 	AddressLocal(nullptr)
 {
+	namespace imp = AddressLocalImp ;
 	std::size_t size = static_cast<std::size_t>( len ) ;
 
 	if( addr == nullptr )
@@ -95,25 +87,34 @@ GNet::AddressLocal::AddressLocal( const sockaddr * addr , socklen_t len , bool /
 
 	m_local = *(reinterpret_cast<const sockaddr_type*>(addr)) ;
 	m_size = size ;
+
+	if( m_size > imp::poffset() )
+	{
+		G::string_view path( m_local.sun_path , std::min(std::strlen(m_local.sun_path),imp::psize()) ) ;
+		if( path.empty() || path.at(0) != '/' || !G::Str::isPrintable(path) )
+			throw Address::BadString( "invalid unix domain socket path" ) ;
+	}
 }
 
-GNet::AddressLocal::AddressLocal( const std::string & host_part , unsigned int /*port*/ ) :
+GNet::AddressLocal::AddressLocal( const std::string & host_part ) :
 	AddressLocal(nullptr)
 {
-	if( host_part.size() >= AddressLocalImp::psize() )
-		throw Address::BadString( "local-domain address too long" ) ;
-	std::memcpy( m_local.sun_path , host_part.data() , host_part.size() ) ;
-	m_size = AddressLocalImp::poffset() + host_part.size() + 1U ; // include terminator
-}
-
-GNet::AddressLocal::AddressLocal( const std::string & host_part , const std::string & /*port_part*/ ) :
-	AddressLocal(host_part,0)
-{
-}
-
-GNet::AddressLocal::AddressLocal( const std::string & display_string ) :
-	AddressLocal(AddressLocalImp::unescape(display_string),0)
-{
+	namespace imp = AddressLocalImp ;
+	if( host_part.empty() || !G::Str::isPrintable(host_part) || host_part.at(0) != '/' )
+	{
+		throw Address::BadString() ;
+	}
+	else if( host_part.size() == 1U )
+	{
+		m_size = imp::minsize() ;
+	}
+	else
+	{
+		if( host_part.size() >= AddressLocalImp::psize() )
+			throw Address::BadString( "local-domain address too long" ) ;
+		std::memcpy( m_local.sun_path , host_part.data() , host_part.size() ) ;
+		m_size = AddressLocalImp::poffset() + host_part.size() + 1U ; // include terminator
+	}
 }
 
 void GNet::AddressLocal::setPort( unsigned int /*port*/ )
@@ -134,23 +135,19 @@ std::string GNet::AddressLocal::path() const
 	namespace imp = AddressLocalImp ;
 	G_ASSERT( m_size >= imp::minsize() ) ;
 	if( m_size <= imp::poffset() )
-		return {} ;
-	else if( m_local.sun_path[0] == '\0' ) // if abstract
-		return { m_local.sun_path , std::min(m_size-imp::poffset(),imp::psize()) } ;
+		return std::string( 1U , '/' ) ;
 	else
-		return { m_local.sun_path , std::min(std::strlen(m_local.sun_path),imp::psize()) } ;
-
+		return std::string( m_local.sun_path , std::min(std::strlen(m_local.sun_path),imp::psize()) ) ;
 }
 
 std::string GNet::AddressLocal::displayString( bool /*ipv6_with_scope*/ ) const
 {
-	std::string p = path() ;
-	return p.empty() ? std::string(1U,'/') : G::Str::printable( p ) ;
+	return path() ;
 }
 
-std::string GNet::AddressLocal::hostPartString( bool raw ) const
+std::string GNet::AddressLocal::hostPartString() const
 {
-	return raw ? path() : G::Str::printable(path()) ;
+	return path() ;
 }
 
 std::string GNet::AddressLocal::queryString() const
@@ -170,8 +167,10 @@ bool GNet::AddressLocal::validString( const std::string & path , std::string * r
 		reason = "local-domain address too long" ;
 	if( path.empty() )
 		reason = "empty string" ;
-	if( path[0] != '\0' && path[0] != '/' )
+	if( path[0] != '/' )
 		reason = "not an absolute filesystem path" ;
+	if( !G::Str::isPrintable(path) )
+		reason = "invalid characters" ;
 	if( reason && reason_p )
 		*reason_p = std::string( reason ) ;
 	return reason == nullptr ;

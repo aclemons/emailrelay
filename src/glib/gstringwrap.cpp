@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,6 +27,10 @@
 #include <algorithm>
 #include <clocale>
 #include <locale>
+
+#ifdef emit
+#undef emit
+#endif
 
 struct G::StringWrap::Config /// Private implementation structure for G::StringWrap.
 {

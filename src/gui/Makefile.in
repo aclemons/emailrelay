@@ -134,41 +134,43 @@ am__v_AR_0 = @echo "  AR      " $@;
 am__v_AR_1 = 
 libguimain_a_AR = $(AR) $(ARFLAGS)
 libguimain_a_LIBADD =
-am__libguimain_a_SOURCES_DIST = access_unix.cpp dir_unix.cpp \
-	boot_unix.cpp glink_unix.cpp access_mac.cpp dir_mac.cpp \
-	boot_mac.cpp glink_mac.cpp access_win32.cpp dir_win32.cpp \
-	boot_win32.cpp glink_win32.cpp emailrelay-gui.rc access.h \
-	boot.h dir.cpp dir.h gcominit.h glibsources.cpp glink.h \
-	installer.h legal.cpp legal.h serverconfiguration.cpp \
+am__libguimain_a_SOURCES_DIST = guiaccess_unix.cpp guidir_unix.cpp \
+	guiboot_unix.cpp guilink_unix.cpp guiaccess_mac.cpp \
+	guidir_mac.cpp guiboot_mac.cpp guilink_mac.cpp \
+	guiaccess_win32.cpp guidir_win32.cpp guiboot_win32.cpp \
+	guilink_win32.cpp emailrelay-gui.rc guidir.cpp guidir.h \
+	gcominit.h glibsources.cpp guiaccess.h guiboot.h guilink.h \
+	guilegal.cpp guilegal.h installer.h serverconfiguration.cpp \
 	serverconfiguration.h
-am__objects_1 = access_unix.$(OBJEXT) dir_unix.$(OBJEXT) \
-	boot_unix.$(OBJEXT) glink_unix.$(OBJEXT)
-am__objects_2 = access_mac.$(OBJEXT) dir_mac.$(OBJEXT) \
-	boot_mac.$(OBJEXT) glink_mac.$(OBJEXT)
-am__objects_3 = access_win32.$(OBJEXT) dir_win32.$(OBJEXT) \
-	boot_win32.$(OBJEXT) glink_win32.$(OBJEXT)
+am__objects_1 = guiaccess_unix.$(OBJEXT) guidir_unix.$(OBJEXT) \
+	guiboot_unix.$(OBJEXT) guilink_unix.$(OBJEXT)
+am__objects_2 = guiaccess_mac.$(OBJEXT) guidir_mac.$(OBJEXT) \
+	guiboot_mac.$(OBJEXT) guilink_mac.$(OBJEXT)
+am__objects_3 = guiaccess_win32.$(OBJEXT) guidir_win32.$(OBJEXT) \
+	guiboot_win32.$(OBJEXT) guilink_win32.$(OBJEXT)
 @GCONFIG_MAC_FALSE@@GCONFIG_WINDOWS_FALSE@am__objects_4 =  \
 @GCONFIG_MAC_FALSE@@GCONFIG_WINDOWS_FALSE@	$(am__objects_1)
 @GCONFIG_MAC_TRUE@@GCONFIG_WINDOWS_FALSE@am__objects_4 =  \
 @GCONFIG_MAC_TRUE@@GCONFIG_WINDOWS_FALSE@	$(am__objects_2)
 @GCONFIG_WINDOWS_TRUE@am__objects_4 = $(am__objects_3)
-am__objects_5 = $(am__objects_4) dir.$(OBJEXT) glibsources.$(OBJEXT) \
-	legal.$(OBJEXT) serverconfiguration.$(OBJEXT)
+am__objects_5 = $(am__objects_4) guidir.$(OBJEXT) \
+	glibsources.$(OBJEXT) guilegal.$(OBJEXT) \
+	serverconfiguration.$(OBJEXT)
 @GCONFIG_GUI_TRUE@am_libguimain_a_OBJECTS = $(am__objects_5)
 libguimain_a_OBJECTS = $(am_libguimain_a_OBJECTS)
 am__emailrelay_gui_SOURCES_DIST = guimain.cpp installer.cpp \
-	gdialog.cpp gdialog.h gpage.cpp gpage.h pages.h pages.cpp \
-	gqt.h
-am__objects_6 = installer.$(OBJEXT) gdialog.$(OBJEXT) gpage.$(OBJEXT) \
-	pages.$(OBJEXT)
+	guidialog.cpp guidialog.h guipage.cpp guipage.h pages.h \
+	pages.cpp gqt.h
+am__objects_6 = installer.$(OBJEXT) guidialog.$(OBJEXT) \
+	guipage.$(OBJEXT) pages.$(OBJEXT)
 @GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_TRUE@am_emailrelay_gui_OBJECTS =  \
 @GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_TRUE@	guimain.$(OBJEXT) \
 @GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_TRUE@	$(am__objects_6)
 emailrelay_gui_OBJECTS = $(am_emailrelay_gui_OBJECTS)
 am__DEPENDENCIES_1 =
 am__emailrelay_gui_real_SOURCES_DIST = guimain.cpp installer.cpp \
-	gdialog.cpp gdialog.h gpage.cpp gpage.h pages.h pages.cpp \
-	gqt.h
+	guidialog.cpp guidialog.h guipage.cpp guipage.h pages.h \
+	pages.cpp gqt.h
 @GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_FALSE@am_emailrelay_gui_real_OBJECTS =  \
 @GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_FALSE@	guimain.$(OBJEXT) \
 @GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_FALSE@	$(am__objects_6)
@@ -189,16 +191,16 @@ am__v_at_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = ./$(DEPDIR)/access_mac.Po \
-	./$(DEPDIR)/access_unix.Po ./$(DEPDIR)/access_win32.Po \
-	./$(DEPDIR)/boot_mac.Po ./$(DEPDIR)/boot_unix.Po \
-	./$(DEPDIR)/boot_win32.Po ./$(DEPDIR)/dir.Po \
-	./$(DEPDIR)/dir_mac.Po ./$(DEPDIR)/dir_unix.Po \
-	./$(DEPDIR)/dir_win32.Po ./$(DEPDIR)/gdialog.Po \
-	./$(DEPDIR)/glibsources.Po ./$(DEPDIR)/glink_mac.Po \
-	./$(DEPDIR)/glink_unix.Po ./$(DEPDIR)/glink_win32.Po \
-	./$(DEPDIR)/gpage.Po ./$(DEPDIR)/guimain.Po \
-	./$(DEPDIR)/installer.Po ./$(DEPDIR)/legal.Po \
+am__depfiles_remade = ./$(DEPDIR)/glibsources.Po \
+	./$(DEPDIR)/guiaccess_mac.Po ./$(DEPDIR)/guiaccess_unix.Po \
+	./$(DEPDIR)/guiaccess_win32.Po ./$(DEPDIR)/guiboot_mac.Po \
+	./$(DEPDIR)/guiboot_unix.Po ./$(DEPDIR)/guiboot_win32.Po \
+	./$(DEPDIR)/guidialog.Po ./$(DEPDIR)/guidir.Po \
+	./$(DEPDIR)/guidir_mac.Po ./$(DEPDIR)/guidir_unix.Po \
+	./$(DEPDIR)/guidir_win32.Po ./$(DEPDIR)/guilegal.Po \
+	./$(DEPDIR)/guilink_mac.Po ./$(DEPDIR)/guilink_unix.Po \
+	./$(DEPDIR)/guilink_win32.Po ./$(DEPDIR)/guimain.Po \
+	./$(DEPDIR)/guipage.Po ./$(DEPDIR)/installer.Po \
 	./$(DEPDIR)/pages.Po ./$(DEPDIR)/serverconfiguration.Po
 am__mv = mv -f
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
@@ -411,31 +413,31 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-MAC_SOURCES = access_mac.cpp dir_mac.cpp boot_mac.cpp glink_mac.cpp
-WIN32_SOURCES = access_win32.cpp dir_win32.cpp boot_win32.cpp glink_win32.cpp emailrelay-gui.rc
-UNIX_SOURCES = access_unix.cpp dir_unix.cpp boot_unix.cpp glink_unix.cpp
+MAC_SOURCES = guiaccess_mac.cpp guidir_mac.cpp guiboot_mac.cpp guilink_mac.cpp
+WIN32_SOURCES = guiaccess_win32.cpp guidir_win32.cpp guiboot_win32.cpp guilink_win32.cpp emailrelay-gui.rc
+UNIX_SOURCES = guiaccess_unix.cpp guidir_unix.cpp guiboot_unix.cpp guilink_unix.cpp
 QT_SOURCES = \
 	installer.cpp \
-	gdialog.cpp \
-	gdialog.h \
-	gpage.cpp \
-	gpage.h \
+	guidialog.cpp \
+	guidialog.h \
+	guipage.cpp \
+	guipage.h \
 	pages.h \
 	pages.cpp \
 	gqt.h
 
 LIB_SOURCES = \
 	$(OS_SOURCES) \
-	access.h \
-	boot.h \
-	dir.cpp \
-	dir.h \
+	guidir.cpp \
+	guidir.h \
 	gcominit.h \
 	glibsources.cpp \
-	glink.h \
+	guiaccess.h \
+	guiboot.h \
+	guilink.h \
+	guilegal.cpp \
+	guilegal.h \
 	installer.h \
-	legal.cpp \
-	legal.h \
 	serverconfiguration.cpp \
 	serverconfiguration.h
 
@@ -463,8 +465,8 @@ EXTRA_DIST = \
 # force symbol stripping on 'make install' -- see also make 'install-strip'
 AM_INSTALL_PROGRAM_FLAGS = -s
 MOC_OUTPUT = \
-	moc_gdialog.cpp \
-	moc_gpage.cpp \
+	moc_guidialog.cpp \
+	moc_guipage.cpp \
 	moc_pages.cpp
 
 CLEANFILES = $(MOC_OUTPUT) $(QM_FILES)
@@ -473,8 +475,6 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/glib \
 	-I$(top_srcdir)/src/gssl \
 	-I$(top_srcdir)/src/gnet \
-	-I$(top_srcdir)/src/gsmtp \
-	-I$(top_srcdir)/src/gpop \
 	-I$(top_srcdir)/src/main \
 	-D "G_SBINDIR=$(sbindir)" \
 	-D "G_SPOOLDIR=$(e_spooldir)" \
@@ -601,25 +601,25 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/access_mac.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/access_unix.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/access_win32.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/boot_mac.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/boot_unix.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/boot_win32.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dir.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dir_mac.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dir_unix.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dir_win32.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdialog.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glibsources.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glink_mac.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glink_unix.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glink_win32.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpage.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/guiaccess_mac.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/guiaccess_unix.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/guiaccess_win32.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/guiboot_mac.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/guiboot_unix.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/guiboot_win32.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/guidialog.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/guidir.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/guidir_mac.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/guidir_unix.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/guidir_win32.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/guilegal.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/guilink_mac.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/guilink_unix.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/guilink_win32.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/guimain.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/guipage.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/installer.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/legal.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pages.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/serverconfiguration.Po@am__quote@ # am--include-marker
 
@@ -795,25 +795,25 @@ clean-am: clean-generic clean-local clean-noinstLIBRARIES \
 	clean-sbinPROGRAMS mostlyclean-am
 
 distclean: distclean-am
-		-rm -f ./$(DEPDIR)/access_mac.Po
-	-rm -f ./$(DEPDIR)/access_unix.Po
-	-rm -f ./$(DEPDIR)/access_win32.Po
-	-rm -f ./$(DEPDIR)/boot_mac.Po
-	-rm -f ./$(DEPDIR)/boot_unix.Po
-	-rm -f ./$(DEPDIR)/boot_win32.Po
-	-rm -f ./$(DEPDIR)/dir.Po
-	-rm -f ./$(DEPDIR)/dir_mac.Po
-	-rm -f ./$(DEPDIR)/dir_unix.Po
-	-rm -f ./$(DEPDIR)/dir_win32.Po
-	-rm -f ./$(DEPDIR)/gdialog.Po
-	-rm -f ./$(DEPDIR)/glibsources.Po
-	-rm -f ./$(DEPDIR)/glink_mac.Po
-	-rm -f ./$(DEPDIR)/glink_unix.Po
-	-rm -f ./$(DEPDIR)/glink_win32.Po
-	-rm -f ./$(DEPDIR)/gpage.Po
+		-rm -f ./$(DEPDIR)/glibsources.Po
+	-rm -f ./$(DEPDIR)/guiaccess_mac.Po
+	-rm -f ./$(DEPDIR)/guiaccess_unix.Po
+	-rm -f ./$(DEPDIR)/guiaccess_win32.Po
+	-rm -f ./$(DEPDIR)/guiboot_mac.Po
+	-rm -f ./$(DEPDIR)/guiboot_unix.Po
+	-rm -f ./$(DEPDIR)/guiboot_win32.Po
+	-rm -f ./$(DEPDIR)/guidialog.Po
+	-rm -f ./$(DEPDIR)/guidir.Po
+	-rm -f ./$(DEPDIR)/guidir_mac.Po
+	-rm -f ./$(DEPDIR)/guidir_unix.Po
+	-rm -f ./$(DEPDIR)/guidir_win32.Po
+	-rm -f ./$(DEPDIR)/guilegal.Po
+	-rm -f ./$(DEPDIR)/guilink_mac.Po
+	-rm -f ./$(DEPDIR)/guilink_unix.Po
+	-rm -f ./$(DEPDIR)/guilink_win32.Po
 	-rm -f ./$(DEPDIR)/guimain.Po
+	-rm -f ./$(DEPDIR)/guipage.Po
 	-rm -f ./$(DEPDIR)/installer.Po
-	-rm -f ./$(DEPDIR)/legal.Po
 	-rm -f ./$(DEPDIR)/pages.Po
 	-rm -f ./$(DEPDIR)/serverconfiguration.Po
 	-rm -f Makefile
@@ -862,25 +862,25 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-		-rm -f ./$(DEPDIR)/access_mac.Po
-	-rm -f ./$(DEPDIR)/access_unix.Po
-	-rm -f ./$(DEPDIR)/access_win32.Po
-	-rm -f ./$(DEPDIR)/boot_mac.Po
-	-rm -f ./$(DEPDIR)/boot_unix.Po
-	-rm -f ./$(DEPDIR)/boot_win32.Po
-	-rm -f ./$(DEPDIR)/dir.Po
-	-rm -f ./$(DEPDIR)/dir_mac.Po
-	-rm -f ./$(DEPDIR)/dir_unix.Po
-	-rm -f ./$(DEPDIR)/dir_win32.Po
-	-rm -f ./$(DEPDIR)/gdialog.Po
-	-rm -f ./$(DEPDIR)/glibsources.Po
-	-rm -f ./$(DEPDIR)/glink_mac.Po
-	-rm -f ./$(DEPDIR)/glink_unix.Po
-	-rm -f ./$(DEPDIR)/glink_win32.Po
-	-rm -f ./$(DEPDIR)/gpage.Po
+		-rm -f ./$(DEPDIR)/glibsources.Po
+	-rm -f ./$(DEPDIR)/guiaccess_mac.Po
+	-rm -f ./$(DEPDIR)/guiaccess_unix.Po
+	-rm -f ./$(DEPDIR)/guiaccess_win32.Po
+	-rm -f ./$(DEPDIR)/guiboot_mac.Po
+	-rm -f ./$(DEPDIR)/guiboot_unix.Po
+	-rm -f ./$(DEPDIR)/guiboot_win32.Po
+	-rm -f ./$(DEPDIR)/guidialog.Po
+	-rm -f ./$(DEPDIR)/guidir.Po
+	-rm -f ./$(DEPDIR)/guidir_mac.Po
+	-rm -f ./$(DEPDIR)/guidir_unix.Po
+	-rm -f ./$(DEPDIR)/guidir_win32.Po
+	-rm -f ./$(DEPDIR)/guilegal.Po
+	-rm -f ./$(DEPDIR)/guilink_mac.Po
+	-rm -f ./$(DEPDIR)/guilink_unix.Po
+	-rm -f ./$(DEPDIR)/guilink_win32.Po
 	-rm -f ./$(DEPDIR)/guimain.Po
+	-rm -f ./$(DEPDIR)/guipage.Po
 	-rm -f ./$(DEPDIR)/installer.Po
-	-rm -f ./$(DEPDIR)/legal.Po
 	-rm -f ./$(DEPDIR)/pages.Po
 	-rm -f ./$(DEPDIR)/serverconfiguration.Po
 	-rm -f Makefile
@@ -926,17 +926,17 @@ emailrelay.no.qm: emailrelay.no.qm_in
 	-$(AWK) '/^[0123456789]/ {for(i=1;i<NF;i++){printf("%c",$$i)}}' $(srcdir)/emailrelay.no.qm_in > emailrelay.no.qm
 	@test -s $(QM_FILES)
 
-@GCONFIG_GUI_TRUE@moc_gdialog.cpp: $(srcdir)/gdialog.h
-@GCONFIG_GUI_TRUE@	$(GCONFIG_QT_MOC) $(srcdir)/gdialog.h -o $@
+@GCONFIG_GUI_TRUE@moc_guidialog.cpp: $(srcdir)/guidialog.h
+@GCONFIG_GUI_TRUE@	$(GCONFIG_QT_MOC) $< -o $@
 
-@GCONFIG_GUI_TRUE@moc_gpage.cpp: $(srcdir)/gpage.h
-@GCONFIG_GUI_TRUE@	$(GCONFIG_QT_MOC) $(srcdir)/gpage.h -o $@
+@GCONFIG_GUI_TRUE@moc_guipage.cpp: $(srcdir)/guipage.h
+@GCONFIG_GUI_TRUE@	$(GCONFIG_QT_MOC) $< -o $@
 
 @GCONFIG_GUI_TRUE@moc_pages.cpp: $(srcdir)/pages.h
-@GCONFIG_GUI_TRUE@	$(GCONFIG_QT_MOC) $(srcdir)/pages.h -o $@
+@GCONFIG_GUI_TRUE@	$(GCONFIG_QT_MOC) $< -o $@
 
-@GCONFIG_GUI_TRUE@gdialog.o: moc_gdialog.cpp
-@GCONFIG_GUI_TRUE@gpage.o: moc_gpage.cpp
+@GCONFIG_GUI_TRUE@guidialog.o: moc_guidialog.cpp
+@GCONFIG_GUI_TRUE@guipage.o: moc_guipage.cpp
 @GCONFIG_GUI_TRUE@pages.o: moc_pages.cpp
 
 @GCONFIG_GUI_TRUE@install-exec-hook:

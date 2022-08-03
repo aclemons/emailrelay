@@ -24,8 +24,10 @@
 #include "glog.h"
 #include "gassert.h"
 #include <sstream>
+#include <utility>
 
-GNet::ServerPeer::ServerPeer( ExceptionSink es , ServerPeerInfo && peer_info , LineBufferConfig line_buffer_config ) :
+GNet::ServerPeer::ServerPeer( ExceptionSink es , ServerPeerInfo && peer_info , const LineBufferConfig & line_buffer_config ) :
+	m_es(es) ,
 	m_address(peer_info.m_address) ,
 	m_socket(std::move(peer_info.m_socket)) ,
 	m_sp(*this,es,*this,*m_socket,peer_info.m_server_peer_config.socket_protocol_config) ,
@@ -47,7 +49,6 @@ GNet::ServerPeer::ServerPeer( ExceptionSink es , ServerPeerInfo && peer_info , L
 	m_socket->addReadHandler( *this , es ) ;
 	m_socket->addOtherHandler( *this , es ) ;
 	Monitor::addServerPeer( *this ) ;
-
 }
 
 GNet::ServerPeer::~ServerPeer()
@@ -72,12 +73,22 @@ GNet::StreamSocket & GNet::ServerPeer::socket()
 	return *m_socket ;
 }
 
-void GNet::ServerPeer::otherEvent( Descriptor , EventHandler::Reason reason )
+void GNet::ServerPeer::dropReadHandler()
+{
+	socket().dropReadHandler() ;
+}
+
+void GNet::ServerPeer::addReadHandler()
+{
+	socket().addReadHandler( *this , m_es ) ;
+}
+
+void GNet::ServerPeer::otherEvent( EventHandler::Reason reason )
 {
 	m_sp.otherEvent( reason ) ;
 }
 
-void GNet::ServerPeer::readEvent( Descriptor )
+void GNet::ServerPeer::readEvent()
 {
 	m_sp.readEvent() ;
 }
@@ -118,7 +129,7 @@ bool GNet::ServerPeer::send( const std::vector<G::string_view> & segments , std:
 	return m_sp.send( segments , offset ) ;
 }
 
-void GNet::ServerPeer::writeEvent( Descriptor )
+void GNet::ServerPeer::writeEvent()
 {
 	if( m_sp.writeEvent() )
 		onSendComplete() ;

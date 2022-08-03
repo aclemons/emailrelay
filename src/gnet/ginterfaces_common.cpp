@@ -154,7 +154,7 @@ GNet::Interfaces::const_iterator GNet::Interfaces::end() const
 	return m_list.end() ;
 }
 
-void GNet::Interfaces::readEvent( Descriptor )
+void GNet::Interfaces::readEvent()
 {
 	if( m_notifier )
 	{

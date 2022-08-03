@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -81,7 +81,7 @@ std::string GGui::WindowBase::windowClass() const
 	if( (std::strlen(&buffer[0])+1U) == buffer.size() )
 	{
 		G_WARNING( "GGui::WindowBase::windowClass: possible truncation: "
-			<< "\"" << G::Str::printable(&buffer[0]) << "\"" ) ;
+			<< "\"" << G::Str::printable(std::string(&buffer[0])) << "\"" ) ;
 	}
 
 	return std::string( &buffer[0] ) ;

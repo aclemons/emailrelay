@@ -48,20 +48,20 @@ win {
 	QMAKE_LFLAGS += "/MANIFESTUAC:level='highestAvailable'"
 	LIBS += advapi32.lib ole32.lib oleaut32.lib
 	SOURCES += \
-		access_win32.cpp \
-		boot_win32.cpp \
-		dir_win32.cpp \
-		glink_win32.cpp
+		guiaccess_win32.cpp \
+		guiboot_win32.cpp \
+		guidir_win32.cpp \
+		guilink_win32.cpp
 }
 
 unix {
 	TARGET = emailrelay-gui.real
 	#LIBS += ...
 	SOURCES += \
-		access_unix.cpp \
-		boot_unix.cpp \
-		dir_unix.cpp \
-		glink_unix.cpp
+		guiaccess_unix.cpp \
+		guiboot_unix.cpp \
+		guidir_unix.cpp \
+		guilink_unix.cpp
 }
 
 RC_FILE = emailrelay-gui.rc
@@ -75,18 +75,18 @@ build_pass:CONFIG(release,debug|release) {
 
 SOURCES += \
 	guimain.cpp \
-	gdialog.cpp \
-	gpage.cpp \
+	guidialog.cpp \
+	guipage.cpp \
 	pages.cpp \
 	installer.cpp \
-	dir.cpp \
+	guidir.cpp \
 	glibsources.cpp \
-	legal.cpp \
+	guilegal.cpp \
 	serverconfiguration.cpp
 
 HEADERS += \
-	gdialog.h \
-	gpage.h \
+	guidialog.h \
+	guipage.h \
 	pages.h
 
 INCLUDEPATH += \

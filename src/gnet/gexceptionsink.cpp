@@ -41,6 +41,9 @@ namespace GNet
 	}
 }
 
+GNet::ExceptionSink::ExceptionSink() noexcept
+= default ;
+
 GNet::ExceptionSink::ExceptionSink( ExceptionHandler & eh , ExceptionSource * esrc ) noexcept :
 	m_eh(&eh) ,
 	m_esrc(esrc)
@@ -71,7 +74,7 @@ GNet::ExceptionSource * GNet::ExceptionSink::esrc() const noexcept
 
 void GNet::ExceptionSink::call( std::exception & e , bool done )
 {
-	G_ASSERT_OR_DO( m_eh != nullptr , throw ) ; // precondition -- see EventEmitter and TimerList
+	G_ASSERT( m_eh != nullptr ) ; // precondition -- see EventEmitter and TimerList
 	m_eh->onException( m_esrc , e , done ) ;
 }
 

@@ -117,7 +117,7 @@ public:
 			///< interface name.
 
 private: // overrides
-	void readEvent( Descriptor ) override ; // GNet::EventHandler
+	void readEvent() override ; // GNet::EventHandler
 	void onFutureEvent() override ; // GNet::FutureEventHandler
 
 public:

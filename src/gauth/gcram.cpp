@@ -24,6 +24,7 @@
 #include "ghashstate.h"
 #include "gmd5.h"
 #include "gstr.h"
+#include "gstringlist.h"
 #include "gssl.h"
 #include "gbase64.h"
 #include "glocal.h"
@@ -36,22 +37,21 @@ namespace GAuth
 {
 	namespace CramImp /// An implementation namespace for GAuth::Cram.
 	{
-		G_EXCEPTION( NoTls , tx("no tls library") ) ;
 		GSsl::Library & lib()
 		{
 			GSsl::Library * p = GSsl::Library::instance() ;
-			if( p == nullptr ) throw NoTls() ;
+			if( p == nullptr ) throw Cram::NoTls() ;
 			return *p ;
 		}
 		struct DigesterAdaptor /// Used by GAuth::Cram to use GSsl::Digester.
 		{
-			explicit DigesterAdaptor( const std::string & name ) :
-				m_name(name)
+			explicit DigesterAdaptor( G::string_view name ) :
+				m_name(G::sv_to_string(name))
 			{
 				GSsl::Digester d( CramImp::lib().digester(m_name) ) ;
 				m_blocksize = d.blocksize() ;
 			}
-			std::string operator()( const std::string & data_1 , const std::string & data_2 ) const
+			std::string operator()( G::string_view data_1 , G::string_view data_2 ) const
 			{
 				GSsl::Digester d( CramImp::lib().digester(m_name) ) ;
 				d.add( data_1 ) ;
@@ -67,8 +67,8 @@ namespace GAuth
 		} ;
 		struct PostDigesterAdaptor /// Used by GAuth::Cram to use GSsl::Digester.
 		{
-			explicit PostDigesterAdaptor( const std::string & name ) :
-				m_name(name)
+			explicit PostDigesterAdaptor( G::string_view name ) :
+				m_name(G::sv_to_string(name))
 			{
 				GSsl::Digester d( CramImp::lib().digester(m_name,std::string(),true) ) ;
 				if( d.statesize() == 0U )
@@ -94,9 +94,8 @@ namespace GAuth
 	}
 }
 
-std::string GAuth::Cram::response( const std::string & hash_type , bool as_hmac ,
-	const Secret & secret , const std::string & challenge ,
-	const std::string & id_prefix )
+std::string GAuth::Cram::response( G::string_view hash_type , bool as_hmac ,
+	const Secret & secret , G::string_view challenge , G::string_view id_prefix )
 {
 	try
 	{
@@ -107,7 +106,7 @@ std::string GAuth::Cram::response( const std::string & hash_type , bool as_hmac 
 			<< "[" << G::Str::printable(id_prefix) << "]"
 			<< "[" << responseImp(hash_type,as_hmac,secret,challenge) << "]" ) ;
 
-		return id_prefix + " " + responseImp(hash_type,as_hmac,secret,challenge) ;
+		return G::sv_to_string(id_prefix).append(1U,' ').append(responseImp(hash_type,as_hmac,secret,challenge)) ;
 	}
 	catch( std::exception & e )
 	{
@@ -116,9 +115,9 @@ std::string GAuth::Cram::response( const std::string & hash_type , bool as_hmac 
 	}
 }
 
-bool GAuth::Cram::validate( const std::string & hash_type , bool as_hmac ,
-	const Secret & secret , const std::string & challenge ,
-	const std::string & response_in )
+bool GAuth::Cram::validate( G::string_view hash_type , bool as_hmac ,
+	const Secret & secret , G::string_view challenge ,
+	G::string_view response_in )
 {
 	try
 	{
@@ -140,14 +139,15 @@ bool GAuth::Cram::validate( const std::string & hash_type , bool as_hmac ,
 	}
 }
 
-std::string GAuth::Cram::id( const std::string & response )
+std::string GAuth::Cram::id( G::string_view response )
 {
 	// the response is "<id> <hexchars>" but also allow for ids with spaces
-	return G::Str::head( response , response.rfind(' ') ) ;
+	std::size_t pos = response.rfind( ' ' ) ;
+	return G::Str::head( response , pos ) ;
 }
 
-std::string GAuth::Cram::responseImp( const std::string & mechanism_hash_type , bool as_hmac ,
-	const Secret & secret , const std::string & challenge )
+std::string GAuth::Cram::responseImp( G::string_view mechanism_hash_type , bool as_hmac ,
+	const Secret & secret , G::string_view challenge )
 {
 	G_DEBUG( "GAuth::Cram::responseImp: mechanism-hash=[" << mechanism_hash_type << "] "
 		<< "secret-hash=[" << secret.maskType() << "] "
@@ -158,7 +158,7 @@ std::string GAuth::Cram::responseImp( const std::string & mechanism_hash_type , 
 		if( secret.masked() )
 			throw BadType( secret.maskType() ) ;
 
-		if( mechanism_hash_type == "MD5" )
+		if( mechanism_hash_type == "MD5"_sv )
 		{
 			return G::Hash::printable( G::Md5::digest(challenge,secret.key()) ) ;
 		}
@@ -171,33 +171,33 @@ std::string GAuth::Cram::responseImp( const std::string & mechanism_hash_type , 
 	else if( secret.masked() )
 	{
 		if( ! G::Str::imatch(secret.maskType(),mechanism_hash_type) )
-			throw Mismatch( secret.maskType() , mechanism_hash_type ) ;
+			throw Mismatch( secret.maskType() , G::sv_to_string(mechanism_hash_type) ) ;
 
-		if( mechanism_hash_type == "MD5" )
+		if( mechanism_hash_type == "MD5"_sv )
 		{
-			return G::Hash::printable( G::Hash::hmac(G::Md5::postdigest,secret.key(),challenge,G::Hash::Masked()) ) ;
+			return G::Hash::printable( G::Hash::hmac(G::Md5::postdigest,secret.key(),G::sv_to_string(challenge),G::Hash::Masked()) ) ;
 		}
 		else
 		{
 			CramImp::PostDigesterAdaptor postdigest( mechanism_hash_type ) ;
-			return G::Hash::printable( G::Hash::hmac(postdigest,secret.key(),challenge,G::Hash::Masked()) ) ;
+			return G::Hash::printable( G::Hash::hmac(postdigest,secret.key(),G::sv_to_string(challenge),G::Hash::Masked()) ) ;
 		}
 	}
 	else
 	{
-		if( mechanism_hash_type == "MD5" )
+		if( mechanism_hash_type == "MD5"_sv )
 		{
-			return G::Hash::printable( G::Hash::hmac(G::Md5::digest2,G::Md5::blocksize(),secret.key(),challenge) ) ;
+			return G::Hash::printable( G::Hash::hmac(G::Md5::digest2,G::Md5::blocksize(),secret.key(),G::sv_to_string(challenge)) ) ;
 		}
 		else
 		{
 			CramImp::DigesterAdaptor digest( mechanism_hash_type ) ;
-			return G::Hash::printable( G::Hash::hmac(digest,digest.blocksize(),secret.key(),challenge) ) ;
+			return G::Hash::printable( G::Hash::hmac(digest,digest.blocksize(),secret.key(),G::sv_to_string(challenge)) ) ;
 		}
 	}
 }
 
-G::StringArray GAuth::Cram::hashTypes( const std::string & prefix , bool require_state )
+G::StringArray GAuth::Cram::hashTypes( G::string_view prefix , bool require_state )
 {
 	// we can do CRAM-X for all hash functions (X) provided by the TLS library
 	// but if we only have masked passwords (ie. require_state) then we only
@@ -212,23 +212,22 @@ G::StringArray GAuth::Cram::hashTypes( const std::string & prefix , bool require
 		<< "(" << (require_state?1:0) << ")" ) ;
 
 	// always include MD5 since we use G::Md5 code
-	if( !G::Str::match( result , "MD5" ) )
+	if( !G::StringList::match( result , "MD5" ) )
 		result.push_back( "MD5" ) ;
 
 	if( !prefix.empty() )
 	{
 		for( auto & hashtype : result )
-			hashtype.insert( 0U , prefix ) ;
+			hashtype.insert( 0U , prefix.data() , prefix.size() ) ;
 	}
 	return result ;
 }
 
 std::string GAuth::Cram::challenge( unsigned int random )
 {
-	std::ostringstream ss ;
-	ss << "<" << random << "."
-		<< G::SystemTime::now().s() << "@"
-		<< GNet::Local::canonicalName() << ">" ;
-	return ss.str() ;
+	return std::string(1U,'<')
+		.append(std::to_string(random)).append(1U,'.')
+		.append(std::to_string(G::SystemTime::now().s())).append(1U,'@')
+		.append(GNet::Local::canonicalName()).append(1U,'>') ;
 }
 

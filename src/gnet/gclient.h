@@ -170,11 +170,22 @@ public:
 		///< classes may inject the own events into this channel.
 
 	void doOnDelete( const std::string & reason , bool done ) ;
-		///< Called by ClientPtr (or equivalent) to call onDelete(),
-		///< just before this client object is deleted.
+		///< This should be called by the Client owner (typically
+		///< ClientPtr) just before this Client object is deleted.
+		///<
+		///< A Client onDelete() call only ever comes from
+		///< something external calling doOnDelete().
+		///<
+		///< The 'done' argument should be true if the current
+		///< exception is GNet::Done. The 'reason' string passed
+		///< to onDelete() will be the given 'reason' or the
+		///< empty string if 'done||finished()'.
+		///<
+		///< See also GNet::ExceptionHandler::onException(),
+		///< GNet::ServerPeer::onDelete().
 
 	bool finished() const ;
-		///< Returns true if finish()ed or disconnect()ed.
+		///< Returns true if finish() has been called.
 
 	LineBufferState lineBuffer() const ;
 		///< Returns information about the state of the internal
@@ -229,9 +240,9 @@ protected:
 		///< triggered when the secure session is established.
 
 private: // overrides
-	void readEvent( Descriptor ) override ; // Override from GNet::EventHandler.
-	void writeEvent( Descriptor ) override ; // Override from GNet::EventHandler.
-	void otherEvent( Descriptor , EventHandler::Reason ) override ; // Override from GNet::EventHandler.
+	void readEvent() override ; // Override from GNet::EventHandler.
+	void writeEvent() override ; // Override from GNet::EventHandler.
+	void otherEvent( EventHandler::Reason ) override ; // Override from GNet::EventHandler.
 	void onResolved( std::string , Location ) override ; // Override from GNet::Resolver.
 	void onData( const char * , std::size_t ) override ; // Override from GNet::SocketProtocolSink.
 

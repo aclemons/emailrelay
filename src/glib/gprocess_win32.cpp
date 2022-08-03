@@ -201,3 +201,13 @@ void G::Process::Umask::set( Process::Umask::Mode )
 	// not implemented
 }
 
+void G::Process::Umask::tightenOther()
+{
+	// not implemented
+}
+
+void G::Process::Umask::loosenGroup()
+{
+	// not implemented
+}
+

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@
 #include "gappbase.h"
 #include "gappinst.h"
 #include "gwindow.h"
-#include "gconvert.h"
 #include "gpump.h"
 #include "glog.h"
 
@@ -179,11 +178,7 @@ void GGui::ApplicationBase::messageBox( const std::string & title , const std::s
 bool GGui::ApplicationBase::messageBoxCore( HWND parent , unsigned int type ,
 	const std::string & title , const std::string & message )
 {
-	std::wstring wtitle ;
-	std::wstring wmessage ;
-	G::Convert::convert( wtitle , title ) ;
-	G::Convert::convert( wmessage , message ) ;
-	int rc = MessageBoxW( parent , wmessage.c_str() , wtitle.c_str() , type ) ;
+	int rc = MessageBoxA( parent , message.c_str() , title.c_str() , type ) ;
 	return rc == IDOK || rc == IDYES ;
 }
 

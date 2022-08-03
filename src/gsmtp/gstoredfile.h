@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,10 +26,12 @@
 #include "gstoredmessage.h"
 #include "genvelope.h"
 #include "gexception.h"
+#include "gfbuf.h"
 #include "gpath.h"
 #include "gstringarray.h"
 #include <iostream>
 #include <memory>
+#include <cstdio>
 
 namespace GSmtp
 {
@@ -47,7 +49,6 @@ public:
 	G_EXCEPTION( FilenameError , tx("invalid envelope filename") ) ;
 	G_EXCEPTION( ReadError , tx("cannot read envelope file") ) ;
 	G_EXCEPTION( EditError , tx("cannot update envelope file") ) ;
-	G_EXCEPTION( SizeError , tx("cannot get content file size") ) ;
 
 	StoredFile( FileStore & store , const G::Path & envelope_path ) ;
 		///< Constructor.
@@ -71,30 +72,41 @@ public:
 	MessageId id() const override ;
 		///< Override from GSmtp::StoredMessage.
 
+	void edit( const G::StringArray & ) override ;
+		///< Override from GSmtp::StoredMessage.
+
+	void fail( const std::string & reason , int reason_code ) override ;
+		///< Override from GSmtp::StoredMessage.
+
 private: // overrides
-	void edit( const G::StringArray & ) override ; // GSmtp::StoredMessage
-	void fail( const std::string & reason , int reason_code ) override ; // GSmtp::StoredMessage
-	std::string location() const override ; // GSmtp::StoredMessage
-	MessageStore::BodyType bodyType() const override ; // GSmtp::StoredMessage
-	std::string from() const override ; // GSmtp::StoredMessage
-	std::string to( std::size_t ) const override ; // GSmtp::StoredMessage
-	std::size_t toCount() const override ; // GSmtp::StoredMessage
-	std::string authentication() const override ; // GSmtp::StoredMessage
-	std::string fromAuthIn() const override ; // GSmtp::StoredMessage
-	std::string fromAuthOut() const override ; // GSmtp::StoredMessage
-	bool utf8Mailboxes() const override ; // GSmtp::StoredMessage
-	void close() override ; // GSmtp::StoredMessage
-	std::string reopen() override ; // GSmtp::StoredMessage
-	void destroy() override ; // GSmtp::StoredMessage
-	void unfail() override ; // GSmtp::StoredMessage
-	std::size_t contentSize() const override ; // GSmtp::StoredMessage
-	std::istream & contentStream() override ; // GSmtp::StoredMessage
+	std::string location() const override ; // Override from GSmtp::StoredMessage.
+	int eightBit() const override ; // Override from GSmtp::StoredMessage.
+	std::string from() const override ; // Override from GSmtp::StoredMessage.
+	std::string to( std::size_t ) const override ; // Override from GSmtp::StoredMessage.
+	std::size_t toCount() const override ; // Override from GSmtp::StoredMessage.
+	std::string authentication() const override ; // Override from GSmtp::StoredMessage.
+	std::string fromAuthIn() const override ; // Override from GSmtp::StoredMessage.
+	std::string fromAuthOut() const override ; // Override from GSmtp::StoredMessage.
+	void close() override ; // Override from GSmtp::StoredMessage.
+	std::string reopen() override ; // Override from GSmtp::StoredMessage.
+	void destroy() override ; // Override from GSmtp::StoredMessage.
+	void unfail() override ; // Override from GSmtp::StoredMessage.
+	std::istream & contentStream() override ; // Override from GSmtp::StoredMessage.
 
 public:
 	StoredFile( const StoredFile & ) = delete ;
 	StoredFile( StoredFile && ) = delete ;
 	void operator=( const StoredFile & ) = delete ;
 	void operator=( StoredFile && ) = delete ;
+
+private:
+	using StreamBuf = G::fbuf<int,BUFSIZ> ;
+	struct Stream : StreamBuf , std::istream
+	{
+		Stream() ;
+		void open( const G::Path & ) ;
+		std::streamoff size() const ;
+	} ;
 
 private:
 	enum class State { Normal , Locked , Bad } ;
@@ -106,7 +118,7 @@ private:
 
 private:
 	FileStore & m_store ;
-	std::unique_ptr<std::istream> m_content ;
+	std::unique_ptr<Stream> m_content ;
 	MessageId m_id ;
 	Envelope m_env ;
 	State m_state ;

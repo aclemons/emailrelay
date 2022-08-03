@@ -18,7 +18,7 @@
 #
 # TestServer.pm
 #
-# A wrapper for running the "emailrelay-test-server" program.
+# A wrapper for running the "emailrelay_test_server" program.
 #
 # See also: emailrelay_test_server.cpp
 #
@@ -50,7 +50,7 @@ sub new
 
 	my %me = (
 		m_port => $port ,
-		m_exe => System::exe( $bin_dir , "emailrelay-test-server" ) ,
+		m_exe => System::exe( $bin_dir , "emailrelay_test_server" ) ,
 		m_logfile => System::tempfile("test-server.out") ,
 		m_pidfile => System::tempfile("test-server.pid") ,
 		m_pid => undef ,

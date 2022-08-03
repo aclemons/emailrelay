@@ -50,13 +50,13 @@ namespace G
 			#if GCONFIG_HAVE_SOPEN_S
 				_set_errno( 0 ) ; // mingw bug
 				int fd = -1 ;
-				errno_t rc = _sopen_s( &fd , path , flags , _SH_DENYNO , pmode ) ;
+				errno_t rc = _sopen_s( &fd , path , flags | _O_NOINHERIT , _SH_DENYNO , pmode ) ;
 				return rc == 0 ? fd : -1 ;
 			#else
 				#if GCONFIG_HAVE_SOPEN
-					return _sopen( path , flags , _SH_DENYNO , pmode ) ;
+					return _sopen( path , flags | _O_NOINHERIT , _SH_DENYNO , pmode ) ;
 				#else
-					return _open( path , flags , pmode ) ;
+					return _open( path , flags | _O_NOINHERIT , pmode ) ;
 				#endif
 			#endif
 		}

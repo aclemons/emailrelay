@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,9 +24,8 @@
 #include "glog.h"
 
 GSmtp::SpamFilter::SpamFilter( GNet::ExceptionSink es , FileStore & file_store ,
-	const std::string & server ,
-	bool read_only , bool always_pass , unsigned int connection_timeout ,
-	unsigned int response_timeout ) :
+	const std::string & server , bool read_only , bool always_pass , 
+	unsigned int connection_timeout , unsigned int response_timeout ) :
 		m_es(es) ,
 		m_file_store(file_store) ,
 		m_location(server) ,

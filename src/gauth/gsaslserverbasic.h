@@ -28,6 +28,7 @@
 #include "gexception.h"
 #include "gaddress.h"
 #include "gstringarray.h"
+#include "goptional.h"
 #include "gpath.h"
 #include <memory>
 #include <utility>
@@ -46,8 +47,7 @@ class GAuth::SaslServerBasic : public SaslServer
 {
 public:
 	explicit SaslServerBasic( const SaslServerSecrets & , bool allow_pop ,
-		const std::string & config , std::pair<bool,std::string> config_secure ,
-		std::pair<bool,std::string> config_insecure ) ;
+		const std::string & config , bool force_no_insecure_mechanisms ) ;
 			///< Constructor. The 'config' parameters can be used to reduce the
 			///< set of available authentication mechanisms.
 

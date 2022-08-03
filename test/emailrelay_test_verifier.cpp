@@ -19,7 +19,7 @@
 ///
 // A dummy network address verifier for testing "emailrelay --verifier net:<transport-address>".
 //
-// usage: emailrelay-test-verifier [--ipv6] [--port <port>] [--log] [--log-file <file>] [--debug] [--pid-file <pidfile>]
+// usage: emailrelay_test_verifier [--ipv6] [--port <port>] [--log] [--log-file <file>] [--debug] [--pid-file <pidfile>]
 //
 // The action of the verifier is dictated by special sub-strings in the
 // recipient:

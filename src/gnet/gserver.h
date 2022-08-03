@@ -54,8 +54,9 @@ public:
 
 	struct Config /// A configuration structure for GNet::Server.
 	{
-		int listen_queue { G::Limits<>::net_listen_queue } ; // Socket::listen() 'backlog'
-		bool uds_open_permissions {true} ;
+		int listen_queue { G::limits::net_listen_queue } ; // Socket::listen() 'backlog'
+		bool uds_open_permissions {false} ;
+		Config & set_listen_queue( int n ) ;
 		Config & set_uds_open_permissions( bool b = true ) ;
 	} ;
 
@@ -109,8 +110,8 @@ protected:
 		///< most-derived Server.
 
 private: // overrides
-	void readEvent( Descriptor ) override ; // Override from GNet::EventHandler.
-	void writeEvent( Descriptor ) override ; // Override from GNet::EventHandler.
+	void readEvent() override ; // Override from GNet::EventHandler.
+	void writeEvent() override ; // Override from GNet::EventHandler.
 	void onException( ExceptionSource * , std::exception & , bool ) override ; // Override from GNet::ExceptionHandler.
 
 public:
@@ -145,6 +146,7 @@ public:
 	ServerPeerInfo( Server * , ServerPeer::Config ) ;
 } ;
 
+inline GNet::Server::Config & GNet::Server::Config::set_listen_queue( int n ) { listen_queue = n ; return *this ; }
 inline GNet::Server::Config & GNet::Server::Config::set_uds_open_permissions( bool b ) { uds_open_permissions = b ; return *this ; }
 
 #endif

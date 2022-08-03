@@ -297,7 +297,7 @@ std::string GSsl::MbedTls::LibraryImp::generateKey( const std::string & issuer_n
 		s_crt = reinterpret_cast<const char*>( &crt_buffer[0] ) ;
 	}
 
-	return s_key + s_crt ;
+	return s_key.append( s_crt ) ;
 }
 
 GSsl::MbedTls::Config GSsl::MbedTls::LibraryImp::config() const
@@ -395,7 +395,7 @@ bool GSsl::MbedTls::Config::servernoverify() const
 	return m_servernoverify ;
 }
 
-bool GSsl::MbedTls::Config::consume( G::StringArray & list , const std::string & item )
+bool GSsl::MbedTls::Config::consume( G::StringArray & list , G::string_view item )
 {
 	return LibraryImp::consume( list , item ) ;
 }
@@ -459,14 +459,14 @@ GSsl::MbedTls::DigesterImp::~DigesterImp()
 		mbedtls_sha256_free( &m_sha256 ) ;
 }
 
-void GSsl::MbedTls::DigesterImp::add( const std::string & s )
+void GSsl::MbedTls::DigesterImp::add( G::string_view sv )
 {
 	if( m_hash_type == Type::Md5 )
-		call( FN_RETv3(mbedtls_md5_update) , &m_md5 , reinterpret_cast<const unsigned char*>(s.data()) , s.size() ) ;
+		call( FN_RETv3(mbedtls_md5_update) , &m_md5 , reinterpret_cast<const unsigned char*>(sv.data()) , sv.size() ) ;
 	else if( m_hash_type == Type::Sha1 )
-		call( FN_RETv3(mbedtls_sha1_update) , &m_sha1 , reinterpret_cast<const unsigned char*>(s.data()) , s.size() ) ;
+		call( FN_RETv3(mbedtls_sha1_update) , &m_sha1 , reinterpret_cast<const unsigned char*>(sv.data()) , sv.size() ) ;
 	else if( m_hash_type == Type::Sha256 )
-		call( FN_RETv3(mbedtls_sha256_update) , &m_sha256 , reinterpret_cast<const unsigned char*>(s.data()) , s.size() ) ;
+		call( FN_RETv3(mbedtls_sha256_update) , &m_sha256 , reinterpret_cast<const unsigned char*>(sv.data()) , sv.size() ) ;
 }
 
 std::string GSsl::MbedTls::DigesterImp::value()
@@ -1057,7 +1057,7 @@ void GSsl::MbedTls::SecureFile::clear( std::vector<char> & buffer )
 	}
 }
 
-GSsl::MbedTls::SecureFile::SecureFile( const std::string & path , bool with_nul )
+GSsl::MbedTls::SecureFile::SecureFile( const std::string & path , bool with_counted_nul )
 {
 	G::ScopeExit clearer( [&](){ clear(m_buffer); } ) ;
 	std::filebuf f ;
@@ -1071,12 +1071,13 @@ GSsl::MbedTls::SecureFile::SecureFile( const std::string & path , bool with_nul 
 	if( n == 0U )
 		return ;
 
-	m_buffer.resize( n+1U ) ;
+	m_buffer.reserve( n+1U ) ;
+	m_buffer.resize( n ) ;
 	bool ok = fileRead( f , &m_buffer[0] , n ) ;
 	if( !ok )
 		return ;
 
-	if( with_nul )
+	if( with_counted_nul )
 		m_buffer.push_back( '\0' ) ;
 
 	clearer.release() ;
@@ -1250,7 +1251,9 @@ void GSsl::MbedTls::randomFillImp( char * p , std::size_t n )
 
 		n -= nread ;
 		p += nread ;
-		sleep( 1 ) ;
+
+		if( n )
+			sleep( 1 ) ; // wait for more entropy -- moot
 	}
 }
 

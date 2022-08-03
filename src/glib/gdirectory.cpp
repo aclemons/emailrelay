@@ -24,7 +24,7 @@
 #include "gpath.h"
 #include "gprocess.h"
 #include "gstr.h"
-#include <algorithm> // std::sort
+#include <algorithm>
 #include <functional>
 #include <iterator> // std::distance
 
@@ -33,17 +33,12 @@ G::Directory::Directory() :
 {
 }
 
-G::Directory::Directory( const char * path ) :
+G::Directory::Directory( const Path & path ) :
 	m_path(path)
 {
 }
 
 G::Directory::Directory( const std::string & path ) :
-	m_path(path)
-{
-}
-
-G::Directory::Directory( const Path & path ) :
 	m_path(path)
 {
 }
@@ -71,20 +66,19 @@ bool G::Directory::valid( bool for_creation ) const
 G::DirectoryList::DirectoryList()
 = default;
 
-void G::DirectoryList::readAll( const G::Path & dir , std::vector<G::DirectoryList::Item> & out , bool sorted )
+void G::DirectoryList::readAll( const G::Path & dir , std::vector<G::DirectoryList::Item> & out )
 {
 	DirectoryList list ;
 	list.readAll( dir ) ;
-	if( sorted ) list.sort() ;
 	list.m_list.swap( out ) ;
 }
 
 void G::DirectoryList::readAll( const G::Path & dir )
 {
-	readType( dir , std::string() ) ;
+	readType( dir , {} ) ;
 }
 
-void G::DirectoryList::readType( const G::Path & dir , const std::string & suffix , unsigned int limit )
+void G::DirectoryList::readType( const G::Path & dir , G::string_view suffix , unsigned int limit )
 {
 	Directory directory( dir ) ;
 	DirectoryIterator iter( directory ) ;
@@ -100,7 +94,7 @@ void G::DirectoryList::readType( const G::Path & dir , const std::string & suffi
 				item.m_is_link = iter.isLink() ;
 				item.m_path = iter.filePath() ;
 				item.m_name = iter.fileName() ;
-				m_list.push_back( item ) ;
+				m_list.insert( std::lower_bound(m_list.begin(),m_list.end(),item) , item ) ;
 			}
 			if( m_list.size() == limit )
 				break ;
@@ -142,15 +136,5 @@ G::Path G::DirectoryList::filePath() const
 std::string G::DirectoryList::fileName() const
 {
 	return m_list.at(m_index).m_name ;
-}
-
-bool G::DirectoryList::compare( const Item & a , const Item & b )
-{
-	return a.m_name.compare( b.m_name ) < 0 ;
-}
-
-void G::DirectoryList::sort()
-{
-	std::sort( m_list.begin() , m_list.end() , compare ) ;
 }
 

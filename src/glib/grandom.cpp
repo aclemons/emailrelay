@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 
 #include "gdef.h"
 #include "grandom.h"
-#include "gprocess.h"
 #include <ctime>
 #include <chrono>
 #include <random>
@@ -45,9 +44,7 @@ unsigned int G::Random::rand( unsigned int start , unsigned int end )
 		auto tp = std::chrono::high_resolution_clock::now() ;
 		auto seed_2 = static_cast<seed_t>( tp.time_since_epoch().count() ) ;
 
-		seed_t seed_3 = G::Process::Id().seed<seed_t>() ;
-
-		std::seed_seq seq{ seed_1 , seed_2 , seed_3 } ;
+		std::seed_seq seq{ seed_1 , seed_2 } ;
 		e.seed( seq ) ;
 		seeded = true ;
 	}

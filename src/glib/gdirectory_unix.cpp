@@ -232,6 +232,6 @@ G::DirectoryIteratorImp::~DirectoryIteratorImp()
 std::string G::DirectoryIteratorImp::sizeString() const
 {
 	std::string s = File::sizeString( filePath() ) ;
-	return s.empty() ? std::string("0") : s ;
+	return s.empty() ? std::string(1U,'0') : s ;
 }
 

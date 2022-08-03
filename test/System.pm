@@ -226,7 +226,7 @@ sub commandline
 		return
 			$args{prefix} . $command . " " .
 			( $args{stdout} ? ">$args{stdout} " : "" ) .
-			( $args{stderr} && System::unix() ? "2>$stderr " : "" ) .
+			( $args{stderr} ? "2>$stderr " : "" ) .
 			( ( $args{prefix} =~ m/"$/ ) ? "\" " : "" ) .
 			( $args{background} ? "&" : "" ) ;
 	}
@@ -249,7 +249,7 @@ sub _tempdir
 		# using Cwd::cwd() here can be awkward because permissioning tests
 		# typically need some unprivileged access to spool directories etc.
 		# (consider filter tests where the filter scripts run as "daemon",
-		# or submit tests where the submit tool is run from an unprivileted
+		# or submit tests where the submit tool is run from an unprivileged
 		# test account) -- when using absolute paths under the cwd every
 		# directory on the path requires "--------x" (see stat(2) and
 		# open(2)), but we might be running under a home directory with
@@ -498,6 +498,39 @@ sub submitMessage
 		"--spool-dir $spool_dir " . join(" ",@to) . " < $path" ) ;
 	Check::that( $rc == 0 , "failed to submit" ) ;
 	System::unlink( $path ) ;
+}
+
+{
+our $seq = 1 ;
+sub submitMessageText
+{
+    # Submits a message using the "emailrelay-submit" utility.
+	my ( $spool_dir , @lines ) = @_ ;
+	my $to = "me\@there.localnet" ;
+	my $tmp_path = tempfile( "message" ) ;
+	my $fh = new FileHandle( $tmp_path , "w" ) or die ;
+	print $fh "Subject: test\r\n\r\n" ;
+	for my $line ( @lines )
+	{
+		print $fh $line , "\r\n" ;
+	}
+	$fh->close() or die ;
+	my $cmd = sanepath(exe($bin_dir,"emailrelay-submit")) .
+		" --verbose --from me\@here.localnet --spool-dir $spool_dir $to" ;
+	my $fh_out = new FileHandle( "$cmd < $tmp_path |" ) ;
+	chomp( my $content_path = <$fh_out> ) ;
+	$fh_out->close() ;
+	( my $envelope_path = $content_path ) =~ s/\.content$/.envelope/ ;
+	Check::that( -e $content_path && -e $envelope_path , "failed to submit" , $content_path ) ;
+	System::unlink( $tmp_path ) ;
+
+	# impose an ordering
+	my $n = $seq++ ;
+	( my $new_content_path = $content_path ) =~ s:emailrelay\.(\d+)\.(\d+)\.(\d+)\.content$:emailrelay.$n.content: ;
+	( my $new_envelope_path = $envelope_path ) =~ s:emailrelay\.(\d+)\.(\d+)\.(\d+)\.envelope$:emailrelay.$n.envelope: ;
+	rename( $content_path , $new_content_path ) or die ;
+	rename( $envelope_path , $new_envelope_path ) or die ;
+}
 }
 
 sub submitMessages

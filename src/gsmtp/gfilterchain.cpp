@@ -21,31 +21,39 @@
 #include "gdef.h"
 #include "gfilterchain.h"
 #include "gslot.h"
+#include "gstringtoken.h"
 #include "gstr.h"
 #include <utility>
 #include <algorithm>
 
-GSmtp::FilterChain::FilterChain( GNet::ExceptionSink es , FileStore & file_store , FilterFactory & ff ,
+GSmtp::FilterChain::FilterChain( GNet::ExceptionSink es , FilterFactory & ff ,
 	bool server_side , const std::string & spec , unsigned int timeout ) :
-		m_file_store(file_store) ,
-		m_server_side(server_side) ,
 		m_filter_index(0U) ,
 		m_filter(nullptr) ,
 		m_running(false) ,
 		m_message_id(MessageId::none())
 {
-	G::StringArray sub_specs = G::Str::splitIntoTokens( spec , {",",1U} ) ;
-	if( sub_specs.empty() )
-		sub_specs.push_back( "exit:0" ) ;
-	for( const auto & sub_spec : sub_specs )
+	if( spec.empty() )
 	{
-		std::unique_ptr<Filter> filter = ff.newFilter( es , server_side , sub_spec , timeout ) ;
-		m_filters.emplace_back( std::move(filter) ) ;
-		m_filter_id = std::string(m_filter_id.empty()?1U:0U,',') + m_filters.back()->id() ;
+		add( es , ff , server_side , "exit:0" , timeout ) ;
+	}
+	else
+	{
+		for( G::StringToken sub_spec( spec , ","_sv ) ; sub_spec ; ++sub_spec )
+			add( es , ff , server_side , sub_spec() , timeout ) ;
 	}
 	m_filter_index = 0 ;
 	m_filter = m_filters.at(0U).get() ;
 	m_filter->doneSignal().connect( G::Slot::slot(*this,&FilterChain::onFilterDone) ) ;
+}
+
+void GSmtp::FilterChain::add( GNet::ExceptionSink es , FilterFactory & ff ,
+	bool server_side , const std::string & spec , unsigned int timeout )
+{
+	m_filters.push_back( ff.newFilter( es , server_side , spec , timeout ) ) ;
+	if( !m_filter_id.empty() )
+		m_filter_id.append( 1U , ',' ) ;
+	m_filter_id.append( m_filters.back()->id() ) ;
 }
 
 GSmtp::FilterChain::~FilterChain()
@@ -80,7 +88,7 @@ void GSmtp::FilterChain::start( const MessageId & id )
 
 void GSmtp::FilterChain::onFilterDone( int ok_abandon_fail )
 {
-	if( ok_abandon_fail == 0 )
+	if( ok_abandon_fail == 0 ) // ok
 	{
 		m_filter_index++ ;
 		if( m_filter_index == m_filters.size() )
@@ -96,7 +104,7 @@ void GSmtp::FilterChain::onFilterDone( int ok_abandon_fail )
 			m_filter->start( m_message_id ) ;
 		}
 	}
-	else
+	else // abandon/fail
 	{
 		m_running = false ;
 		m_done_signal.emit( ok_abandon_fail ) ;

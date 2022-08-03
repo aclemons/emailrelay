@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,7 +21,6 @@
 #include "gdef.h"
 #include "gdialog.h"
 #include "gcontrol.h"
-#include "gconvert.h"
 #include "glog.h"
 #include "gassert.h"
 #include "gdc.h"
@@ -354,14 +353,6 @@ GGui::EditBox::~EditBox()
 {
 }
 
-void GGui::EditBox::set( const std::string & text , int /*utf8_overload*/ )
-{
-	NoRedraw no_redraw( *this ) ;
-	std::wstring wtext ;
-	G::Convert::convert( wtext , G::Convert::utf8(text) ) ;
-	SetWindowTextW( handle() , wtext.c_str() ) ;
-}
-
 void GGui::EditBox::set( const std::string & text )
 {
 	NoRedraw no_redraw( *this ) ;
@@ -372,7 +363,7 @@ void GGui::EditBox::set( const G::StringArray & list )
 {
 	if( list.size() == 0U )
 	{
-		set( std::string() ) ;
+		SetWindowTextA( handle() , "" ) ;
 	}
 	else
 	{
@@ -427,29 +418,17 @@ void GGui::EditBox::scrollBack( int lines )
 void GGui::EditBox::scrollToEnd()
 {
 	// (add ten just to make sure)
-	sendMessage( EM_LINESCROLL , 0 , lines() + 10U ) ;
+	sendMessage( EM_LINESCROLL , 0 , lines() + WPARAM(10U) ) ;
 }
 
 std::string GGui::EditBox::get() const
 {
-	int length = GetWindowTextLengthA( handle() ) ;
+	int length = GetWindowTextLength( handle() ) ;
 	if( length <= 0 ) return std::string() ;
 	std::vector<char> buffer( static_cast<std::size_t>(length+2) ) ;
 	GetWindowTextA( handle() , &buffer[0] , length+1 ) ;
 	buffer[buffer.size()-1U] = '\0' ;
 	return std::string( &buffer[0] ) ;
-}
-
-std::string GGui::EditBox::get( int /*utf8_overload*/ ) const
-{
-	int length = GetWindowTextLengthW( handle() ) ;
-	if( length <= 0 ) return std::string() ;
-	std::vector<wchar_t> buffer( static_cast<std::size_t>(length+2) ) ;
-	GetWindowTextW( handle() , &buffer[0] , length+1 ) ;
-	buffer[buffer.size()-1U] = '\0' ;
-	G::Convert::utf8 result ;
-	G::Convert::convert( result , std::wstring(&buffer[0]) ) ;
-	return result.s ;
 }
 
 unsigned int GGui::EditBox::scrollPosition()
@@ -540,7 +519,7 @@ GGui::Button::~Button()
 
 bool GGui::Button::enabled() const
 {
-	return !! IsWindowEnabled( handle() ) ;
+	return !!IsWindowEnabled( handle() ) ;
 }
 
 void GGui::Button::enable( bool b )

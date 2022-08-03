@@ -43,7 +43,7 @@ namespace G
 		void noCloseOnExec( int fd ) noexcept ;
 		void reopen( int fd , int mode ) ;
 		mode_t umaskValue( G::Process::Umask::Mode mode ) ;
-		bool readlink_( const char * path , std::string & value ) ;
+		bool readlink_( string_view path , std::string & value ) ;
 		bool setRealUser( Identity id , std::nothrow_t ) noexcept ;
 		bool setRealGroup( Identity id , std::nothrow_t ) noexcept ;
 		void setEffectiveUser( Identity id ) ;
@@ -189,7 +189,7 @@ void G::Process::setEffectiveGroup( Identity id )
 std::string G::Process::cwd( bool no_throw )
 {
 	std::string result ;
-	std::array<std::size_t,2U> sizes = {{ G::Limits<>::path_buffer , PATH_MAX+1U }} ;
+	std::array<std::size_t,2U> sizes = {{ G::limits::path_buffer , PATH_MAX+1U }} ;
 	for( std::size_t n : sizes )
 	{
 		std::vector<char> buffer( n ) ;
@@ -289,6 +289,8 @@ mode_t G::Process::UmaskImp::set( Umask::Mode mode ) noexcept
 		new_ = old | mode_t(007) ;
 	else if( mode == Umask::Mode::LoosenGroup )
 		new_ = ( old | mode_t(007) ) & ~mode_t(060) ;
+	else if( mode == Umask::Mode::Open )
+		new_ = 0111 ; // -rw-rw-rw-
 	set( new_ ) ;
 	return old ;
 }
@@ -344,7 +346,7 @@ mode_t G::ProcessImp::umaskValue( Process::Umask::Mode mode )
 	return m ;
 }
 
-bool G::ProcessImp::readlink_( const char * path , std::string & value )
+bool G::ProcessImp::readlink_( string_view path , std::string & value )
 {
 	Path target = File::readlink( Path(path) , std::nothrow ) ;
 	if( !target.empty() ) value = target.str() ;

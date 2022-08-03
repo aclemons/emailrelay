@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,8 +29,6 @@
 #include "gsmtpserverprotocol.h"
 #include "gclientptr.h"
 #include "gsmtpclient.h"
-#include "gstringarray.h"
-#include "gstringmap.h"
 #include <string>
 #include <list>
 #include <sstream>
@@ -121,12 +119,10 @@ private:
 class GSmtp::AdminServer : public GNet::MultiServer
 {
 public:
-	AdminServer( GNet::ExceptionSink , MessageStore & store , FilterFactory & ,
+	AdminServer( GNet::ExceptionSink , MessageStore & store , FilterFactory & ff ,
 		G::Slot::Signal<const std::string&> & forward_request ,
-		const GNet::ServerPeer::Config & net_server_peer_config ,
-		const GNet::Server::Config & net_server_config ,
-		const GSmtp::Client::Config & smtp_client_config ,
-		const GAuth::SaslClientSecrets & client_secrets ,
+		const GNet::ServerPeer::Config & server_peer_config , const GNet::Server::Config & server_config ,
+		const GSmtp::Client::Config & client_config , const GAuth::SaslClientSecrets & client_secrets ,
 		const G::StringArray & interfaces , unsigned int port , bool allow_remote ,
 		const std::string & remote_address , unsigned int connection_timeout ,
 		const G::StringMap & info_commands , const G::StringMap & config_commands ,
@@ -188,7 +184,7 @@ private:
 	MessageStore & m_store ;
 	FilterFactory & m_ff ;
 	G::Slot::Signal<const std::string&> & m_forward_request ;
-	GSmtp::Client::Config m_smtp_client_config ;
+	GSmtp::Client::Config m_client_config ;
 	const GAuth::SaslClientSecrets & m_client_secrets ;
 	bool m_allow_remote ;
 	std::string m_remote_address ;

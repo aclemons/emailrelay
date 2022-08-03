@@ -38,13 +38,11 @@ GSmtp::FilterFactoryFileStore::FilterFactoryFileStore( FileStore & file_store ) 
 std::unique_ptr<GSmtp::Filter> GSmtp::FilterFactoryFileStore::newFilter( GNet::ExceptionSink es ,
 	bool server_side , const std::string & spec , unsigned int timeout )
 {
-	const bool allow_spam = true ;
-	const bool allow_chain = true ;
-	FactoryParser::Result p = FactoryParser::parse( spec , allow_spam , allow_chain ) ;
+	FactoryParser::Result p = FactoryParser::parse( spec , true ) ;
 	if( p.first == "chain" )
 	{
 		// (recursive -- FilterChain::ctor calls newFilter())
-		return std::make_unique<FilterChain>( es , m_file_store , *this , server_side , p.second , timeout ) ;
+		return std::make_unique<FilterChain>( es , *this , server_side , p.second , timeout ) ;
 	}
 	else if( p.first == "spam" )
 	{

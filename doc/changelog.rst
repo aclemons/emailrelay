@@ -5,15 +5,12 @@ E-MailRelay Change Log
 2.3 -> 2.4
 ==========
 
-* SMTP_ PIPELINING extension (RFC-2920_).
-* SMTP CHUNKING/8BITMIME extension (RFC-3030_).
-* SMTPUTF8 support added (RFC-6531_).
-* AUTH not advertised if *--server-tls-required* and no TLS_ (RFC-4954_ 6).
-* More simultaneous connections supported on Windows.
-* No 7-bit/8-bit check on received message content (see NEWS fle).
-* Multiple *--filter* options allowed.
-* Shorter default filter timeout.
+* Multiple *--filter* and *--client-filter* options allowed.
+* Hourly log file rotation using *%h* (eg. *--log-file=log.%d.%h*).
+* TLS_ key and certificate files can be specified separately.
 * Uses epoll by default on Linux.
+* More simultaneous connections supported on Windows.
+* Fixed error handling for network client filters (\ *--client-filter=net:...*\ ) [bug-id #50].
 
 2.2 -> 2.3
 ==========
@@ -34,7 +31,7 @@ E-MailRelay Change Log
 * New *--log-address* option to aid adaptive firewalling.
 * Dynamic log file rolling when using *--log-file=%d*.
 * Choice of syslog 'facility' on Linux with *--syslog=local0* etc.
-* Pipelined SMTP QUIT commands sent by broken clients are tolerated.
+* Pipelined SMTP_ QUIT commands sent by broken clients are tolerated.
 * Better handling of overly-verbose or unkillable *--filter* scripts.
 * Optional epoll event loop on Linux (\ *configure --enable-epoll*\ ).
 * Some internationalisation support (see NEWS file).
@@ -457,12 +454,8 @@ Windows fixes and improvements...
 .. _FHS: https://wiki.linuxfoundation.org/lsb/fhs
 .. _PAM: https://en.wikipedia.org/wiki/Linux_PAM
 .. _POP: https://en.wikipedia.org/wiki/Post_Office_Protocol
-.. _RFC-2920: https://tools.ietf.org/html/rfc2920
-.. _RFC-3030: https://tools.ietf.org/html/rfc3030
 .. _RFC-3848: https://tools.ietf.org/html/rfc3848
-.. _RFC-4954: https://tools.ietf.org/html/rfc4954
 .. _RFC-5782: https://tools.ietf.org/html/rfc5782
-.. _RFC-6531: https://tools.ietf.org/html/rfc6531
 .. _RFC-8314: https://tools.ietf.org/html/rfc8314
 .. _SMTP: https://en.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol
 .. _SOCKS: https://en.wikipedia.org/wiki/SOCKS

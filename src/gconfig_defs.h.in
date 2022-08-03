@@ -3,9 +3,6 @@
 /* Define true to use epoll */
 #undef GCONFIG_ENABLE_EPOLL
 
-/* Define true to use IPv6 */
-#undef GCONFIG_ENABLE_IPV6
-
 /* Define true to use std::thread */
 #undef GCONFIG_ENABLE_STD_THREAD
 
@@ -71,6 +68,9 @@
 
 /* Define true if grp.h is available */
 #undef GCONFIG_HAVE_GRP_H
+
+/* Define true if struct ifreq has ifr_ifindex */
+#undef GCONFIG_HAVE_IFINDEX
 
 /* Define true if if_nametoindex() is available */
 #undef GCONFIG_HAVE_IFNAMETOINDEX

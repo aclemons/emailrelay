@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -37,13 +37,13 @@ GPop::ServerProtocol::ServerProtocol( Sender & sender , Security & security , St
 		m_security(security) ,
 		m_store(store) ,
 		m_store_lock(m_store) ,
-		m_sasl(GAuth::SaslServerFactory::newSaslServer(server_secrets,true,sasl_server_config)) ,
+		m_sasl_server(GAuth::SaslServerFactory::newSaslServer(server_secrets,true,sasl_server_config,false)) ,
 		m_peer_address(peer_address) ,
 		m_fsm(State::sStart,State::sEnd,State::s_Same,State::s_Any) ,
 		m_body_limit(-1L) ,
 		m_in_body(false) ,
 		m_secure(false) ,
-		m_sasl_init_apop(false)
+		m_sasl_server_init_apop(false)
 {
 	// (dont send anything to the peer from this ctor -- the Sender object is not fuly constructed)
 
@@ -79,10 +79,10 @@ void GPop::ServerProtocol::init()
 void GPop::ServerProtocol::sendInit()
 {
 	std::string greeting = std::string() + "+OK " + m_text.greeting() ;
-	if( m_sasl->init(m_secure,"APOP") )
+	if( m_sasl_server->init( m_secure , "APOP" ) )
 	{
-		m_sasl_init_apop = true ;
-		std::string apop_challenge = m_sasl->initialChallenge() ;
+		m_sasl_server_init_apop = true ;
+		std::string apop_challenge = m_sasl_server->initialChallenge() ;
 		if( !apop_challenge.empty() )
 		{
 			greeting.append( " " ) ;
@@ -419,6 +419,8 @@ void GPop::ServerProtocol::doAuth( const std::string & line , bool & ok )
 	}
 	else if( mechanisms().empty() )
 	{
+		// reject authentication over an unencrypted transport
+		// if authentication is sensitive
 		ok = false ;
 		sendError( "must use STLS before authentication" ) ;
 	}
@@ -428,13 +430,13 @@ void GPop::ServerProtocol::doAuth( const std::string & line , bool & ok )
 		if( initial_response == "=" )
 			initial_response.clear() ; // RFC-5034
 
-		m_sasl_init_apop = false ;
-		if( !m_sasl->init( m_secure , mechanism ) )
+		m_sasl_server_init_apop = false ;
+		if( !m_sasl_server->init( m_secure , mechanism ) )
 		{
 			ok = false ;
 			sendError( "invalid mechanism" ) ;
 		}
-		else if( m_sasl->mustChallenge() && !initial_response.empty() )
+		else if( m_sasl_server->mustChallenge() && !initial_response.empty() )
 		{
 			ok = false ;
 			sendError( "invalid initial response" ) ;
@@ -445,7 +447,7 @@ void GPop::ServerProtocol::doAuth( const std::string & line , bool & ok )
 		}
 		else
 		{
-			std::string initial_challenge = m_sasl->initialChallenge() ;
+			std::string initial_challenge = m_sasl_server->initialChallenge() ;
 			sendLine( "+ " + G::Base64::encode(initial_challenge) ) ;
 		}
 	}
@@ -461,8 +463,8 @@ void GPop::ServerProtocol::doAuthData( const std::string & line , bool & ok )
 	}
 
 	bool done = false ;
-	std::string challenge = m_sasl->apply( G::Base64::decode(line) , done ) ;
-	if( done && m_sasl->authenticated() )
+	std::string challenge = m_sasl_server->apply( G::Base64::decode(line) , done ) ;
+	if( done && m_sasl_server->authenticated() )
 	{
 		m_fsm.apply( *this , Event::eAuthComplete , "" ) ;
 	}
@@ -479,8 +481,8 @@ void GPop::ServerProtocol::doAuthData( const std::string & line , bool & ok )
 
 void GPop::ServerProtocol::doAuthComplete( const std::string & , bool & )
 {
-	G_LOG_S( "GPop::ServerProtocol: pop authentication of " << m_sasl->id() << " connected from " << m_peer_address.displayString() ) ;
-	m_user = m_sasl->id() ;
+	G_LOG_S( "GPop::ServerProtocol: pop authentication of " << m_sasl_server->id() << " connected from " << m_peer_address.displayString() ) ;
+	m_user = m_sasl_server->id() ;
 	lockStore() ;
 	sendOk() ;
 }
@@ -510,7 +512,7 @@ bool GPop::ServerProtocol::mechanismsIncludePlain() const
 
 std::string GPop::ServerProtocol::mechanisms() const
 {
-	G::StringArray m = m_sasl->mechanisms( m_secure ) ;
+	G::StringArray m = m_sasl_server->mechanisms( m_secure ) ;
 	m.erase( std::remove( m.begin() , m.end() , "APOP" ) , m.end() ) ;
 	return G::Str::join( " " , m ) ;
 }
@@ -555,13 +557,13 @@ void GPop::ServerProtocol::doUser( const std::string & line , bool & )
 
 void GPop::ServerProtocol::doPass( const std::string & line , bool & ok )
 {
-	m_sasl_init_apop = false ;
-	if( !m_user.empty() && m_sasl->init(m_secure,"PLAIN") ) // (USER/PASS uses SASL PLAIN)
+	m_sasl_server_init_apop = false ;
+	if( !m_user.empty() && m_sasl_server->init(m_secure,"PLAIN") ) // (USER/PASS uses SASL PLAIN)
 	{
 		std::string rsp = m_user + std::string(1U,'\0') + m_user + std::string(1U,'\0') + commandParameter(line) ;
 		bool done = false ;
-		std::string ignore = m_sasl->apply( rsp , done ) ;
-		if( done && m_sasl->authenticated() )
+		std::string ignore = m_sasl_server->apply( rsp , done ) ;
+		if( done && m_sasl_server->authenticated() )
 		{
 			lockStore() ;
 			sendOk() ;
@@ -581,14 +583,14 @@ void GPop::ServerProtocol::doPass( const std::string & line , bool & ok )
 
 void GPop::ServerProtocol::doApop( const std::string & line , bool & ok )
 {
-	if( m_sasl_init_apop )
+	if( m_sasl_server_init_apop )
 	{
 		std::string rsp = commandParameter(line,1) + " " + commandParameter(line,2) ;
 		bool done = false ;
-		std::string ignore = m_sasl->apply( rsp , done ) ;
-		if( done && m_sasl->authenticated() )
+		std::string ignore = m_sasl_server->apply( rsp , done ) ;
+		if( done && m_sasl_server->authenticated() )
 		{
-			m_user = m_sasl->id() ;
+			m_user = m_sasl_server->id() ;
 			lockStore() ;
 			sendOk() ;
 		}

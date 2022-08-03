@@ -187,7 +187,7 @@ void GNet::MultiServer::onInterfaceEventTimeout()
 				// (can fail here if notified too soon, but succeeds later)
 				G_LOG( "GNet::MultiServer::onInterfaceEvent: failed to bind " << displayString(address)
 					<< " for new " << m_server_type << " server:"
-					<< G::Str::tail(e.what(),std::string(e.what()).rfind(':')) ) ;
+					<< G::Str::tail(e.what(),G::string_view(e.what()).rfind(':')) ) ;
 			}
 		}
 	}

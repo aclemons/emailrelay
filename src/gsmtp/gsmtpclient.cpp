@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,30 +31,12 @@
 #include "gassert.h"
 #include "glog.h"
 
-GSmtp::Client::Client( GNet::ExceptionSink es , MessageStore & store ,
-	FilterFactory & ff , const GNet::Location & remote ,
-	const GAuth::SaslClientSecrets & secrets ,
-	const Config & config ) :
-		GNet::Client(es,remote,netConfig(config)) ,
-		m_store(&store) ,
-		m_filter(ff.newFilter(es,false,config.filter_address,config.filter_timeout)) ,
-		m_protocol(es,*this,secrets,config.sasl_client_config,config.client_protocol_config,config.secure_tunnel) ,
-		m_secure_tunnel(config.secure_tunnel) ,
-		m_message_count(0U)
-{
-	m_protocol.doneSignal().connect( G::Slot::slot(*this,&Client::protocolDone) ) ;
-	m_protocol.filterSignal().connect( G::Slot::slot(*this,&Client::filterStart) ) ;
-	m_filter->doneSignal().connect( G::Slot::slot(*this,&Client::filterDone) ) ;
-}
-
-GSmtp::Client::Client( GNet::ExceptionSink es ,
-	FilterFactory & ff , const GNet::Location & remote ,
-	const GAuth::SaslClientSecrets & secrets ,
-	const Config & config ) :
+GSmtp::Client::Client( GNet::ExceptionSink es , FilterFactory & ff , const GNet::Location & remote ,
+	const GAuth::SaslClientSecrets & client_secrets , const Config & config ) :
 		GNet::Client(es,remote,netConfig(config)) ,
 		m_store(nullptr) ,
 		m_filter(ff.newFilter(es,false,config.filter_address,config.filter_timeout)) ,
-		m_protocol(es,*this,secrets,config.sasl_client_config,config.client_protocol_config,config.secure_tunnel) ,
+		m_protocol(es,*this,client_secrets,config.sasl_client_config,config.client_protocol_config,config.secure_tunnel) ,
 		m_secure_tunnel(config.secure_tunnel) ,
 		m_message_count(0U)
 {
@@ -73,7 +55,7 @@ GSmtp::Client::~Client()
 GNet::Client::Config GSmtp::Client::netConfig( const Config & smtp_config )
 {
 	GNet::Client::Config net_config ;
-	net_config.set_line_buffer_config( GNet::LineBufferConfig::smtp() ) ;
+	net_config.line_buffer_config = GNet::LineBufferConfig::smtp() ;
 	net_config.bind_local_address = smtp_config.bind_local_address ;
 	net_config.local_address = smtp_config.local_address ;
 	net_config.connection_timeout = smtp_config.connection_timeout ;
@@ -88,12 +70,22 @@ G::Slot::Signal<const std::string&> & GSmtp::Client::messageDoneSignal()
 	return m_message_done_signal ;
 }
 
+void GSmtp::Client::sendMessagesFrom( MessageStore & store )
+{
+	G_ASSERT( m_store == nullptr ) ;
+	G_ASSERT( !connected() ) ; // ie. immediately after construction
+	m_store = &store ;
+}
+
 void GSmtp::Client::sendMessage( std::unique_ptr<StoredMessage> message )
 {
-	G_ASSERT_OR_DO( message && message->toCount() , return ) ;
-	m_message.reset( message.release() ) ;
-	if( connected() )
-		start() ;
+	G_ASSERT( message && message->toCount() ) ;
+	if( message && message->toCount() )
+	{
+		m_message.reset( message.release() ) ;
+		if( connected() )
+			start() ;
+	}
 }
 
 void GSmtp::Client::onConnect()
@@ -170,15 +162,18 @@ void GSmtp::Client::start()
 
 std::shared_ptr<GSmtp::StoredMessage> GSmtp::Client::message()
 {
-	G_ASSERT_OR_DO( m_message != nullptr , return (m_message=std::make_shared<StoredMessageStub>()) ) ;
+	G_ASSERT( m_message != nullptr ) ;
+	if( m_message == nullptr )
+		m_message = std::make_shared<StoredMessageStub>() ;
+
 	return m_message ;
 }
 
-bool GSmtp::Client::protocolSend( G::string_view line , std::size_t offset , bool go_secure )
+bool GSmtp::Client::protocolSend( const std::string & line , std::size_t offset , bool go_secure )
 {
-	offset = std::min( offset , line.size() ) ;
-	G::string_view data( line.data()+offset , line.size()-offset ) ;
-	bool rc = data.empty() ? true : send( data ) ;
+    offset = std::min( offset , line.size() ) ;
+    G::string_view data( line.data()+offset , line.size()-offset ) ;
+    bool rc = data.empty() ? true : send( data ) ; // GNet::Client::send()
 	if( go_secure )
 		secureConnect() ; // GNet::Client -> GNet::SocketProtocol
 	return rc ;

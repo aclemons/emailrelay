@@ -24,8 +24,8 @@
 // of email messages on each one in turn.
 //
 // usage:
-//      emailrelay-test-client [-qQ] [-v [-v]] [<port>]
-//      emailrelay-test-client [-qQ] [-v [-v]] <addr-ipv4> <port> [<connections> [<iterations> [<lines> [<line-length> [<messages>]]]]]
+//      emailrelay_test_client [-qQ] [-v [-v]] [<port>]
+//      emailrelay_test_client [-qQ] [-v [-v]] <addr-ipv4> <port> [<connections> [<iterations> [<lines> [<line-length> [<messages>]]]]]
 //         -v -- verbose logging
 //         -q -- send "."&"QUIT" instead of "."
 //         -Q -- send "."&"QUIT" and immediately disconnect

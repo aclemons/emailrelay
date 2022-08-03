@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,7 +29,6 @@
 #include "gsaslserver.h"
 #include "gtimer.h"
 #include "gexception.h"
-#include <memory>
 
 namespace GPop
 {
@@ -198,7 +197,7 @@ private:
 	Security & m_security ;
 	Store & m_store ;
 	StoreLock m_store_lock ;
-	std::unique_ptr<GAuth::SaslServer> m_sasl ;
+	std::unique_ptr<GAuth::SaslServer> m_sasl_server ;
 	GNet::Address m_peer_address ;
 	Fsm m_fsm ;
 	std::string m_user ;
@@ -206,7 +205,7 @@ private:
 	long m_body_limit ;
 	bool m_in_body ;
 	bool m_secure ;
-	bool m_sasl_init_apop ;
+	bool m_sasl_server_init_apop ;
 } ;
 
 //| \class GPop::ServerProtocolText

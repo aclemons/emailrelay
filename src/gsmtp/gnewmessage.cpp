@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,9 +23,8 @@
 #include "gnewmessage.h"
 #include <iostream>
 
-void GSmtp::NewMessage::addContentLine( const std::string & line )
+bool GSmtp::NewMessage::addTextLine( const std::string & line )
 {
-	addContent( line.data() , line.size() ) ;
-	addContent( "\r\n" , 2U ) ;
+	return addText( line.data() , line.size() ) && addText( "\r\n" , 2U ) ;
 }
 

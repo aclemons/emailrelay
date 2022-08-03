@@ -25,7 +25,7 @@
 #	$Server::bin_dir = "." ;
 #	my $server = new Server( 10025 , 10101 , 10026 , "/var/tmp" ) ;
 #	$server->run( { AsServer => 1 , ForwardTo => "localhost:10020" ... } ) ;
-#	open $server->logFile() ... ;
+#	open $server->log() ... ;
 #	$server->kill() ;
 #	$server->cleanup() ;
 #	kill 15 , @Server::pid_list ;
@@ -46,13 +46,23 @@ my $exe_name = "emailrelay" ;
 
 sub new
 {
-	my ( $classname , $smtp_port , $pop_port , $admin_port , $spool_dir , $tls_certificate , $tls_verify ) = @_ ;
+	my ( $classname , $smtp_port , $pop_port , $admin_port , $spool_dir , $tls_certificate_in , $tls_verify ) = @_ ;
 
-	my $exe = System::exe( $bin_dir , $exe_name ) ;
-	if( !-x $exe ) { die "invalid server executable [$exe]" }
+	my ( $tls_private_key , $tls_certificate ) ;
+	if( ref($tls_certificate_in) )
+	{
+		($tls_private_key,$tls_certificate) = @$tls_certificate_in ;
+	}
+	else
+	{
+		($tls_private_key,$tls_certificate) = (undef,$tls_certificate_in) ;
+	}
 
 	$spool_dir ||= System::createSpoolDir() ;
 	$smtp_port ||= System::nextPort() ;
+	my $exe = System::exe( $bin_dir , $exe_name ) ;
+	if( !-x $exe ) { die "invalid server executable [$exe]" }
+
 	$pop_port ||= System::nextPort() ;
 	$admin_port ||= System::nextPort() ;
 
@@ -60,6 +70,7 @@ sub new
 	my $verifier_port = System::nextPort() ;
 	my $stdout = System::tempfile( "stdout" ) ;
 	my $stderr = System::tempfile( "stderr" ) ;
+	my $logfile = System::tempfile( "log" ) ;
 	my $piddir = System::createPidDir( System::tempfile("piddir") ) ;
 	my $pidfile = "$piddir/pid" ;
 
@@ -77,13 +88,14 @@ sub new
 		m_rc => undef ,
 		m_stdout => $stdout ,
 		m_stderr => $stderr ,
-		m_log_file => (System::unix()?undef:$stderr) ,
+		m_log_file => $logfile ,
 		m_piddir => $piddir ,
 		m_pidfile => $pidfile ,
 		m_pid => undef ,
 		m_pop_secrets => System::tempfile("pop.auth") ,
 		m_client_secrets => System::tempfile("client.auth") ,
 		m_server_secrets => System::tempfile("server.auth") ,
+		m_tls_private_key => $tls_private_key ,
 		m_tls_certificate => $tls_certificate ,
 		m_tls_verify => $tls_verify ,
 		m_tls_config => $tls_config ,
@@ -112,6 +124,7 @@ sub popPort { return shift->{m_pop_port} }
 sub popSecrets { return shift->{m_pop_secrets} }
 sub clientSecrets { return shift->{m_client_secrets} }
 sub serverSecrets { return shift->{m_server_secrets} }
+sub tlsPrivateKey { return shift->{m_tls_private_key} }
 sub tlsCertificate { return shift->{m_tls_certificate} }
 sub tlsVerify { return shift->{m_tls_verify} }
 sub tlsConfig { return shift->{m_tls_config} }
@@ -131,7 +144,7 @@ sub filter { return shift->{m_filter} }
 sub clientFilter { return shift->{m_client_filter} }
 sub maxSize { return shift->{m_max_size} }
 sub rc { return shift->{m_rc} }
-sub logFile { return shift->{m_log_file} }
+sub log { return shift->{m_log_file} }
 
 sub _pid
 {
@@ -146,6 +159,7 @@ sub _pid
 sub _set
 {
 	my ( $s , $var , $value ) = @_ ;
+	$value = "" if !defined($value) ;
 	$s =~ s/$var/$value/g ;
 	return $s ;
 }
@@ -157,7 +171,8 @@ sub _switches
 	return
 		"" .
 		( exists($sw{AsServer}) ? "--as-server " : "" ) .
-		( exists($sw{Log}) ? "--log --log-time --log-address " : "" ) .
+		( exists($sw{Log}) ? "--log --log-time --log-address --no-syslog " : "" ) .
+		( exists($sw{LogFile}) ? "--log-file __LOG_FILE__ " : "" ) .
 		( exists($sw{Port}) ? "--port __SMTP_PORT__ " : "" ) .
 		( exists($sw{Admin}) ? "--admin __ADMIN_PORT__ " : "" ) .
 		( exists($sw{Pop}) ? "--pop " : "" ) .
@@ -174,7 +189,6 @@ sub _switches
 		( exists($sw{ForwardToSome}) ? "--forward-to-some " : "" ) .
 		( exists($sw{User}) ? "--user __USER__ " : "" ) .
 		( exists($sw{Debug}) ? "--debug " : "" ) .
-		( !System::unix() && exists($sw{Log}) ? "--log-file __LOG_FILE__ " : "" ) .
 		( exists($sw{NoDaemon}) ? "--no-daemon " : "" ) .
 		( exists($sw{Hidden}) && !System::unix() ? "--hidden " : "" ) .
 		( exists($sw{NoSmtp}) ? "--no-smtp " : "" ) .
@@ -182,8 +196,9 @@ sub _switches
 		( exists($sw{Filter}) ? "--filter __FILTER__ " : "" ) .
 		( exists($sw{FilterTimeout}) ? "--filter-timeout 1 " : "" ) .
 		( exists($sw{ConnectionTimeout}) ? "--connection-timeout 1 " : "" ) .
-		( exists($sw{ClientFilter}) ? "--client-filter __CLIENT_FILTER__ " : "" ) .
 		( exists($sw{Immediate}) ? "--immediate " : "" ) .
+		( exists($sw{ClientFilter}) ? "--client-filter __CLIENT_FILTER__ " : "" ) .
+		( exists($sw{ClientFilterNet}) ? "--client-filter __SCANNER__ " : "" ) .
 		( exists($sw{Scanner}) ? "--filter __SCANNER__ " : "" ) .
 		( exists($sw{Verifier}) ? "--address-verifier __VERIFIER__ " : "" ) .
 		( exists($sw{DontServe}) ? "--dont-serve " : "" ) .
@@ -195,8 +210,10 @@ sub _switches
 		( exists($sw{ServerTlsRequired}) ? "--server-tls-required " : "" ) .
 		( exists($sw{ClientTls}) ? "--client-tls " : "" ) .
 		( exists($sw{ClientTlsConnection}) ? "--client-tls-connection " : "" ) .
+		( exists($sw{ServerTlsPrivateKey}) ? "--server-tls-certificate __TLS_PRIVATE_KEY__ " : "" ) .
 		( exists($sw{ServerTlsCertificate}) ? "--server-tls-certificate __TLS_CERTIFICATE__ " : "" ) .
 		( (exists($sw{ServerTlsVerify}) && $sw{ServerTlsVerify}) ? "--server-tls-verify __TLS_VERIFY__ " : "" ) .
+		( exists($sw{ClientTlsPrivateKey}) ? "--client-tls-certificate __TLS_PRIVATE_KEY__ " : "" ) .
 		( exists($sw{ClientTlsCertificate}) ? "--client-tls-certificate __TLS_CERTIFICATE__ " : "" ) .
 		( (exists($sw{ClientTlsVerify}) && $sw{ClientTlsVerify}) ? "--client-tls-verify __TLS_VERIFY__ " : "" ) .
 		( exists($sw{TlsConfig}) ? "--tls-config=__TLS_CONFIG__ " : "" ) .
@@ -215,7 +232,7 @@ sub _set_all
 	$command_tail = _set( $command_tail , "__POP_SECRETS__" , $this->popSecrets() ) ;
 	$command_tail = _set( $command_tail , "__PID_FILE__" , $this->pidFile() ) ;
 	$command_tail = _set( $command_tail , "__FORWARD_TO__" , $this->dst() ) ;
-	$command_tail = _set( $command_tail , "__LOG_FILE__" , $this->logFile() ) ;
+	$command_tail = _set( $command_tail , "__LOG_FILE__" , $this->log() ) ;
 	$command_tail = _set( $command_tail , "__SPOOL_DIR__" , $this->spoolDir() ) ;
 	$command_tail = _set( $command_tail , "__USER__" , $this->user() ) ;
 	$command_tail = _set( $command_tail , "__POLL_TIMEOUT__" , $this->pollTimeout() ) ;
@@ -226,6 +243,7 @@ sub _set_all
 	$command_tail = _set( $command_tail , "__CLIENT_SECRETS__" , $this->clientSecrets() ) ;
 	$command_tail = _set( $command_tail , "__MAX_SIZE__" , $this->maxSize() ) ;
 	$command_tail = _set( $command_tail , "__SERVER_SECRETS__" , $this->serverSecrets() ) ;
+	$command_tail = _set( $command_tail , "__TLS_PRIVATE_KEY__" , $this->tlsPrivateKey() ) ;
 	$command_tail = _set( $command_tail , "__TLS_CERTIFICATE__" , $this->tlsCertificate() ) ;
 	$command_tail = _set( $command_tail , "__TLS_VERIFY__" , $this->tlsVerify() ) ;
 	$command_tail = _set( $command_tail , "__TLS_CONFIG__" , $this->tlsConfig() ) ;

@@ -60,8 +60,8 @@ GNet::Server::Server( ExceptionSink es , const Address & listening_address ,
 
 	if( uds )
 	{
-		std::string path = listening_address.hostPartString( true ) ;
-		if( path.size() > 1U && path.at(0U) == '/' ) // just in case
+		std::string path = listening_address.hostPartString() ;
+		if( path.size() > 1U && path.at(0U) == '/' )
 		{
 			G::Cleanup::add( &Server::unlink , G::Cleanup::strdup(path) ) ;
 		}
@@ -94,7 +94,7 @@ GNet::Address GNet::Server::address() const
 	return result ;
 }
 
-void GNet::Server::readEvent( Descriptor )
+void GNet::Server::readEvent()
 {
 	// read-event-on-listening-port => new connection to accept
 	G_DEBUG( "GNet::Server::readEvent: " << this ) ;
@@ -107,7 +107,7 @@ void GNet::Server::readEvent( Descriptor )
 
 	// do an early set of the logging context so that it applies
 	// during the newPeer() construction process -- it is then set
-	// more normally by the event hander list when handing out events
+	// more normally by the event emitter when handing out events
 	// with a well-defined ExceptionSource
 	//
 	EventLoggingContext event_logging_context( peer_address.hostPartString() ) ;
@@ -191,7 +191,7 @@ std::vector<std::weak_ptr<GNet::ServerPeer>> GNet::Server::peers()
 	return result ;
 }
 
-void GNet::Server::writeEvent( Descriptor )
+void GNet::Server::writeEvent()
 {
 	G_DEBUG( "GNet::Server::writeEvent" ) ;
 }

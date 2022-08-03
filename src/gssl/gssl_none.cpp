@@ -184,7 +184,7 @@ GSsl::Digester::Digester( std::unique_ptr<DigesterImpBase> p ) :
 {
 }
 
-void GSsl::Digester::add( const std::string & )
+void GSsl::Digester::add( G::string_view )
 {
 }
 

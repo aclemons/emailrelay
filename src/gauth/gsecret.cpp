@@ -21,6 +21,7 @@
 #include "gdef.h"
 #include "gsecret.h"
 #include "gstr.h"
+#include "gstringfield.h"
 #include "gbase64.h"
 #include "gxtext.h"
 #include "gmd5.h"
@@ -32,42 +33,42 @@ GAuth::Secret::Secret()
 	G_ASSERT( !valid() ) ;
 }
 
-GAuth::Secret::Secret( const std::string & id ) :
-	m_id(id)
+GAuth::Secret::Secret( G::string_view id ) :
+	m_id(G::sv_to_string(id))
 {
 	G_ASSERT( !valid() ) ;
 }
 
-GAuth::Secret::Secret( const std::string & secret , const std::string & secret_encoding ,
-	const std::string & id , bool id_encoding_xtext , const std::string & context ) :
-		m_id(id) ,
-		m_context(context)
+GAuth::Secret::Secret( G::string_view secret , G::string_view secret_encoding ,
+	G::string_view id , bool id_encoding_xtext , G::string_view context ) :
+		m_id(G::sv_to_string(id)) ,
+		m_context(G::sv_to_string(context))
 {
 	G_ASSERT( secret_encoding == G::Str::lower(secret_encoding) ) ;
 	std::string reason = check( secret , secret_encoding , id , id_encoding_xtext ) ;
 	if( !reason.empty() )
-		throw context.empty() ? Error(reason) : Error(context,reason) ;
+		throw context.empty() ? Error(reason) : Error(m_context,reason) ;
 
-	if( secret_encoding == "plain" )
+	if( secret_encoding == "plain"_sv )
 	{
 		G_ASSERT( G::Xtext::valid(secret) ) ;
 		m_key = G::Xtext::decode( secret ) ;
 	}
-	else if( secret_encoding == "md5" && isDotted(secret) )
+	else if( secret_encoding == "md5"_sv && isDotted(secret) )
 	{
 		m_key = undotted( secret ) ;
-		m_mask_type = secret_encoding ;
+		m_mask_type = G::sv_to_string( secret_encoding ) ;
 	}
 	else
 	{
 		G_ASSERT( G::Base64::valid(secret) ) ; // check()ed
 		m_key = G::Base64::decode( secret ) ;
-		m_mask_type = secret_encoding ;
+		m_mask_type = G::sv_to_string( secret_encoding ) ;
 	}
 }
 
-std::string GAuth::Secret::check( const std::string & secret , const std::string & secret_encoding ,
-	const std::string & id , bool id_encoding_xtext )
+std::string GAuth::Secret::check( G::string_view secret , G::string_view secret_encoding ,
+	G::string_view id , bool id_encoding_xtext )
 {
 	if( secret.empty() )
 		return "empty secret" ;
@@ -77,16 +78,16 @@ std::string GAuth::Secret::check( const std::string & secret , const std::string
 		return "empty id" ;
 	if( id_encoding_xtext && !G::Xtext::valid(id) )
 		return "invalid xtext encoding of id" ;
-	if( secret_encoding == "plain" && !G::Xtext::valid(secret) )
+	if( secret_encoding == "plain"_sv && !G::Xtext::valid(secret) )
 		return "invalid xtext encoding of secret" ;
-	if( secret_encoding == "md5" && !( isDotted(secret) || G::Base64::valid(secret) ) )
+	if( secret_encoding == "md5"_sv && !( isDotted(secret) || G::Base64::valid(secret) ) )
 		return "invalid encoding of md5 secret" ;
-	if( secret_encoding != "md5" && secret_encoding != "plain" && !G::Base64::valid(secret) )
+	if( secret_encoding != "md5"_sv && secret_encoding != "plain"_sv && !G::Base64::valid(secret) )
 		return "invalid base64 encoding of secret" ;
 	return std::string() ;
 }
 
-GAuth::Secret GAuth::Secret::none( const std::string & id )
+GAuth::Secret GAuth::Secret::none( G::string_view id )
 {
 	return Secret( id ) ;
 }
@@ -140,24 +141,22 @@ std::string GAuth::Secret::info( const std::string & id_in ) const
 	return ss.str() ;
 }
 
-bool GAuth::Secret::isDotted( const std::string & s )
+bool GAuth::Secret::isDotted( G::string_view s )
 {
 	return
-		s.length() >= 15U &&
-		s.find_first_not_of("0123456789.") == std::string::npos &&
-		G::Str::splitIntoFields(s,'.').size() == 8U ;
+		s.size() >= 15U &&
+		s.find_first_not_of("0123456789."_sv) == std::string::npos &&
+		G::StringFieldView(s,'.').count() == 8U ;
 }
 
-std::string GAuth::Secret::undotted( const std::string & s )
+std::string GAuth::Secret::undotted( G::string_view s )
 {
-	G::StringArray decimals = G::Str::splitIntoFields( s , '.' ) ;
-	decimals.resize( 8U ) ;
-
 	std::string result ;
-	for( std::size_t i = 0U ; i < 8U ; i++ )
+	for( G::StringFieldView decimal(s,".",1U) ; decimal ; ++decimal )
 	{
 		G::Md5::big_t n = 0U ;
-		for( const char & c : decimals[i] )
+		G::string_view d = decimal() ;
+		for( const char & c : d )
 		{
 			n *= 10U ;
 			n += (c-'0') ;

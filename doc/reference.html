@@ -26,7 +26,7 @@
      <dt>--address-verifier &lt;program&gt;</dt>
       <dd>
        Runs the specified external program to verify a message recipent's e-mail
-       address. A network verifier can be specified as <em>net:<transport-address></em>.
+       address. A network verifier can be specified as <em>net:<tcp-address></em>.
       </dd>
      <dt>--admin &lt;admin-port&gt; (-a)</dt>
       <dd>
@@ -83,18 +83,18 @@
        list of configuration items. Each item is a single-character key, followed
        by a colon and then a comma-separated list. A 'm' character introduces an
        ordered list of authentication mechanisms, and an 'x' is used for
-       blocklisted mechanisms.
+       blocklisted mechanisms. Use one 'm' list and one 'a' list for mechanisms to
+       use before and after the activation of TLS.
       </dd>
      <dt>--client-filter &lt;program&gt; (-Y)</dt>
       <dd>
        Runs the specified external filter program whenever a mail message is
        forwarded. The filter is passed the name of the message file in the spool
        directory so that it can edit it as required. A network filter can be
-       specified as <em>net:<transport-address></em> and prefixes of <em>spam:</em>,
-       <em>spam-edit:</em> and <em>exit:</em> are also allowed. The <em>spam:</em> and <em>spam-edit:</em>
-       prefixes require a SpamAssassin daemon to be running. For store-and-forward
-       applications the <em>--filter</em> option is normally more useful than
-       <em>--client-filter</em>.
+       specified as <em>net:<tcp-address></em> and prefixes of <em>spam:</em>, <em>spam-edit:</em> and
+       <em>exit:</em> are also allowed. The <em>spam:</em> and <em>spam-edit:</em> prefixes require a
+       SpamAssassin daemon to be running. For store-and-forward applications the
+       <em>--filter</em> option is normally more useful than <em>--client-filter</em>.
       </dd>
      <dt>--client-interface &lt;ip-address&gt; (-6)</dt>
       <dd>
@@ -112,8 +112,9 @@
       <dd>
        Defines the TLS certificate file when acting as a SMTP client. This file must
        contain the client's private key and certificate chain using the PEM file
-       format. Keep the file permissions tight to avoid accidental exposure of the
-       private key.
+       format. Alternatively, use this option twice with the first one specifying
+       the key file and the second the certificate file. Keep the file permissions
+       tight to avoid accidental exposure of the private key.
       </dd>
      <dt>--client-tls-connection (-b)</dt>
       <dd>
@@ -137,7 +138,8 @@
        Enables verification of the remote SMTP server's certificate against any of
        the trusted CA certificates in the specified file or directory. In many use
        cases this should be a file containing just your self-signed root
-       certificate.
+       certificate. Specify <em><default></em> for the TLS library's default set of
+       trusted CAs.
       </dd>
      <dt>--client-tls-verify-name &lt;cname&gt;</dt>
       <dd>
@@ -147,7 +149,7 @@
      <dt>--close-stderr (-e)</dt>
       <dd>
        Causes the standard error stream to be closed soon after start-up. This is
-       useful when operating as a backgroud daemon and it is therefore implied by
+       useful when operating as a background daemon and it is therefore implied by
        <em>--as-server</em> and <em>--as-proxy</em>.
       </dd>
      <dt>--connection-timeout &lt;time&gt; (-U)</dt>
@@ -186,11 +188,11 @@
        The filter is passed the name of the message file in the spool directory so
        that it can edit it as required. The mail message is rejected if the filter
        program terminates with an exit code between 1 and 99. Use
-       <em>net:<transport-address></em> to communicate with a filter daemon over the
-       network, or <em>spam:<transport-address></em> for a spamassassin spamd daemon to
-       accept or reject mail messages, or <em>spam-edit:<transport-address></em> to have
-       spamassassin edit the message content without rejecting it, or
-       <em>exit:<number></em> to emulate a filter program that just exits.
+       <em>net:<tcp-address></em> to communicate with a filter daemon over the network,
+       or <em>spam:<tcp-address></em> for a spamassassin spamd daemon to accept or reject
+       mail messages, or <em>spam-edit:<tcp-address></em> to have spamassassin edit the
+       message content without rejecting it, or <em>exit:<number></em> to emulate a
+       filter program that just exits.
       </dd>
      <dt>--filter-timeout &lt;time&gt; (-W)</dt>
       <dd>
@@ -208,7 +210,7 @@
       </dd>
      <dt>--forward-to &lt;host:port&gt; (-o)</dt>
       <dd>
-       Specifies the transport address of the remote SMTP server that is use for
+       Specifies the transport address of the remote SMTP server that is used for
        mail message forwarding.
       </dd>
      <dt>--forward-to-some</dt>
@@ -301,7 +303,7 @@
      <dt>--pid-file &lt;pid-file&gt; (-i)</dt>
       <dd>
        Causes the process-id to be written into the specified file when the program
-       starts up, typically after it has become a backgroud daemon.
+       starts up, typically after it has become a background daemon.
       </dd>
      <dt>--poll &lt;period&gt; (-O)</dt>
       <dd>
@@ -379,7 +381,8 @@
        list of configuration items. Each item is a single-character key, followed
        by a colon and then a comma-separated list. A 'm' character introduces a
        preferred sub-set of the built-in authentication mechanisms, and an 'x' is
-       used for blocklisted mechanisms.
+       used for blocklisted mechanisms. Use one 'm' list and one 'a' list for
+       mechanisms to advertise before and after the activation of TLS.
       </dd>
      <dt>--server-tls (-K)</dt>
       <dd>
@@ -392,8 +395,9 @@
       <dd>
        Defines the TLS certificate file when acting as a SMTP or POP server. This
        file must contain the server's private key and certificate chain using the
-       PEM file format. Keep the file permissions tight to avoid accidental
-       exposure of the private key.
+       PEM file format. Alternatively, use this option twice with the first one
+       specifying the key file and the second the certificate file. Keep the file
+       permissions tight to avoid accidental exposure of the private key.
       </dd>
      <dt>--server-tls-connection</dt>
       <dd>
@@ -411,7 +415,8 @@
        Enables verification of remote SMTP and POP clients' certificates against any
        of the trusted CA certificates in the specified file or directory. In many
        use cases this should be a file containing just your self-signed root
-       certificate.
+       certificate. Specify <em><default></em> for the TLS library's default set of
+       trusted CAs.
       </dd>
      <dt>--size &lt;bytes&gt; (-M)</dt>
       <dd>
@@ -902,7 +907,7 @@ server plain carol my+20password
     </p>
 
       <div class="div-pre">
-       <pre>$ openssl req -x509 -nodes -subj "/CN=$USER" -newkey rsa:2048 -keyout emailrelay.pem  -out emailrelay.pem
+       <pre>$ openssl req -x509 -noenc -subj "/CN=$USER" -newkey rsa:2048 -keyout emailrelay.pem  -out emailrelay.pem
 </pre>
       </div><!-- div-pre -->
     <p>

@@ -44,14 +44,14 @@ public:
 	G_EXCEPTION( Error , tx("invalid authorisation secret") ) ;
 	G_EXCEPTION( BadId , tx("invalid authorisation id") ) ;
 
-	Secret( const std::string & secret , const std::string & secret_encoding ,
-		const std::string & id , bool id_encoding_xtext ,
-		const std::string & context = {} ) ;
+	Secret( G::string_view secret , G::string_view secret_encoding ,
+		G::string_view id , bool id_encoding_xtext ,
+		G::string_view context = {} ) ;
 			///< Constructor used by the SecretsFile class. Throws on error,
 			///< including if the encodings are invalid.
 
-	static std::string check( const std::string & secret , const std::string & secret_encoding ,
-		const std::string & id , bool id_encoding_xtext ) ;
+	static std::string check( G::string_view secret , G::string_view secret_encoding ,
+		G::string_view id , bool id_encoding_xtext ) ;
 			///< Does a non-throwing check of the constructor parameters,
 			///< returning an error message or the empty string.
 
@@ -71,7 +71,7 @@ public:
 	std::string id() const ;
 		///< Returns the associated identity. Throws if not valid().
 
-	static Secret none( const std::string & id ) ;
+	static Secret none( G::string_view id ) ;
 		///< Factory function that returns a secret that is not valid(),
 		///< as used by the SecretsFile class.
 
@@ -85,9 +85,9 @@ public:
 
 private:
 	Secret() ; // Secret::none()
-	explicit Secret( const std::string & ) ;
-	static bool isDotted( const std::string & ) ;
-	static std::string undotted( const std::string & ) ;
+	explicit Secret( G::string_view ) ;
+	static bool isDotted( G::string_view ) ;
+	static std::string undotted( G::string_view ) ;
 
 private:
 	std::string m_server_type ;

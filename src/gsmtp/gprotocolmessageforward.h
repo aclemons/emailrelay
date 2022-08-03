@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,12 +26,12 @@
 #include "gclientptr.h"
 #include "gprotocolmessage.h"
 #include "gprotocolmessagestore.h"
+#include "gsecrets.h"
 #include "gsmtpclient.h"
-#include "gsaslclientsecrets.h"
 #include "gmessagestore.h"
 #include "gnewmessage.h"
-#include "gfilterfactory.h"
 #include "gverifierstatus.h"
+#include "gfilterfactory.h"
 #include "gcall.h"
 #include <string>
 #include <memory>
@@ -55,13 +55,13 @@ namespace GSmtp
 class GSmtp::ProtocolMessageForward : public ProtocolMessage
 {
 public:
-	ProtocolMessageForward( GNet::ExceptionSink ,
-		MessageStore & store , FilterFactory & ,
+	ProtocolMessageForward( GNet::ExceptionSink , MessageStore & store , FilterFactory & ,
 		std::unique_ptr<ProtocolMessage> pm ,
 		const GSmtp::Client::Config & client_config ,
 		const GAuth::SaslClientSecrets & client_secrets ,
 		const std::string & remote_server_address ) ;
-			///< Constructor.
+			///< Constructor. The 'store' and 'client-secrets' references
+			///< are kept.
 
 	~ProtocolMessageForward() override ;
 		///< Destructor.
@@ -79,19 +79,16 @@ protected:
 		///< processing is complete.
 
 private: // overrides
-	ProtocolMessage::DoneSignal & doneSignal() override ; // GSmtp::ProtocolMessage
-	void reset() override ; // GSmtp::ProtocolMessage
-	void clear() override ; // GSmtp::ProtocolMessage
-	MessageId setFrom( const std::string & from_user , const FromInfo & ) override ; // GSmtp::ProtocolMessage
-	bool addTo( VerifierStatus to_status ) override ; // GSmtp::ProtocolMessage
-	void addReceived( const std::string & ) override ; // GSmtp::ProtocolMessage
-	NewMessage::Status addContent( const char * , std::size_t ) override ; // GSmtp::ProtocolMessage
-	std::size_t contentSize() const override ; // GSmtp::ProtocolMessage
-	std::string from() const override ; // GSmtp::ProtocolMessage
-	ProtocolMessage::FromInfo fromInfo() const override ; // GSmtp::ProtocolMessage
-	std::string bodyType() const override ; // GSmtp::ProtocolMessage
+	ProtocolMessage::DoneSignal & doneSignal() override ; // Override from GSmtp::ProtocolMessage.
+	void reset() override ; // Override from GSmtp::ProtocolMessage.
+	void clear() override ; // Override from GSmtp::ProtocolMessage.
+	MessageId setFrom( const std::string & from_user , const std::string & ) override ; // Override from GSmtp::ProtocolMessage.
+	bool addTo( VerifierStatus to_status ) override ; // Override from GSmtp::ProtocolMessage.
+	void addReceived( const std::string & ) override ; // Override from GSmtp::ProtocolMessage.
+	bool addText( const char * , std::size_t ) override ; // Override from GSmtp::ProtocolMessage.
+	std::string from() const override ; // Override from GSmtp::ProtocolMessage.
 	void process( const std::string & auth_id, const std::string & peer_socket_address ,
-		const std::string & peer_certificate ) override ; // GSmtp::ProtocolMessage
+		const std::string & peer_certificate ) override ; // Override from GSmtp::ProtocolMessage.
 
 public:
 	ProtocolMessageForward( const ProtocolMessageForward & ) = delete ;

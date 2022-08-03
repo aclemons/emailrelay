@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -23,8 +23,11 @@ OS_SOURCES=gmessagestore_unix.cpp
 OS_SOURCES_EXTRA_DIST=gmessagestore_win32.cpp
 endif
 
+ADMIN_SOURCES = gadminserver.cpp gadminserver.h
+ADMIN_EXTRA_DIST =
 
 EXTRA_DIST=\
+	$(ADMIN_EXTRA_DIST) \
 	$(OS_SOURCES_EXTRA_DIST)
 
 AM_CPPFLAGS = \
@@ -37,77 +40,65 @@ AM_CPPFLAGS = \
 noinst_LIBRARIES = libgsmtp.a
 
 libgsmtp_a_SOURCES = \
+	$(ADMIN_SOURCES) \
 	$(OS_SOURCES) \
-	gadminserver.cpp \
-	gadminserver.h \
+	genvelope.cpp \
+	genvelope.h \
 	gexecutablefilter.cpp \
 	gexecutablefilter.h \
 	gexecutableverifier.cpp \
 	gexecutableverifier.h \
-	gnetworkfilter.cpp \
-	gnetworkfilter.h \
-	gnetworkverifier.cpp \
-	gnetworkverifier.h \
-	gfilterchain.cpp \
-	gfilterchain.h \
-	gfilterfactory.cpp \
-	grequestclient.cpp \
-	grequestclient.h \
-	gspamclient.cpp \
-	gspamclient.h \
-	gspamfilter.cpp \
-	gspamfilter.h \
-	gverifierfactory.cpp \
-	genvelope.cpp \
-	genvelope.h \
 	gfactoryparser.cpp \
 	gfactoryparser.h \
 	gfilestore.cpp \
 	gfilestore.h \
 	gfilter.cpp \
 	gfilter.h \
+	gfilterchain.cpp \
+	gfilterchain.h \
+	gfilterfactory.cpp \
 	gfilterfactory.h \
 	ginternalverifier.cpp \
 	ginternalverifier.h \
 	gmessagestore.cpp \
 	gmessagestore.h \
-	gnullfilter.cpp \
-	gnullfilter.h \
+	gnetworkfilter.cpp \
+	gnetworkfilter.h \
+	gnetworkverifier.cpp \
+	gnetworkverifier.h \
 	gnewfile.cpp \
 	gnewfile.h \
 	gnewmessage.cpp \
 	gnewmessage.h \
+	gnullfilter.cpp \
+	gnullfilter.h \
 	gprotocolmessage.cpp \
+	gprotocolmessage.h \
 	gprotocolmessageforward.cpp \
 	gprotocolmessageforward.h \
-	gprotocolmessage.h \
 	gprotocolmessagestore.cpp \
 	gprotocolmessagestore.h \
+	grequestclient.cpp \
+	grequestclient.h \
 	gsmtpclient.cpp \
 	gsmtpclient.h \
 	gsmtpclientprotocol.cpp \
 	gsmtpclientprotocol.h \
-	gsmtpclientreply.cpp \
-	gsmtpclientreply.h \
 	gsmtpserver.cpp \
 	gsmtpserver.h \
-	gsmtpserverbuffer.cpp \
-	gsmtpserverbuffer.h \
-	gsmtpserverparser.cpp \
-	gsmtpserverparser.h \
 	gsmtpserverprotocol.cpp \
 	gsmtpserverprotocol.h \
-	gsmtpserversend.cpp \
-	gsmtpserversend.h \
-	gsmtpserversender.h \
-	gsmtpservertext.cpp \
-	gsmtpservertext.h \
+	gspamclient.cpp \
+	gspamclient.h \
+	gspamfilter.cpp \
+	gspamfilter.h \
 	gstoredfile.cpp \
 	gstoredfile.h \
 	gstoredmessage.cpp \
 	gstoredmessage.h \
 	gverifier.cpp \
 	gverifier.h \
+	gverifierfactory.cpp \
 	gverifierfactory.h \
 	gverifierstatus.cpp \
 	gverifierstatus.h

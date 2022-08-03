@@ -52,8 +52,8 @@ public:
 	ExceptionSource() = default ;
 	ExceptionSource( const ExceptionSource & ) = delete ;
 	ExceptionSource( ExceptionSource && ) = delete ;
-	void operator=( const ExceptionSource & ) = delete ;
-	void operator=( ExceptionSource && ) = delete ;
+	ExceptionSource & operator=( const ExceptionSource & ) = delete ;
+	ExceptionSource & operator=( ExceptionSource && ) = delete ;
 } ;
 
 #endif
