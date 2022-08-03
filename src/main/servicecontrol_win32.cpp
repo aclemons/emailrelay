@@ -222,9 +222,10 @@ void ServiceControl::Service::configure( const std::string & description_in , co
 	if( description.empty() )
 		description = ( display_name + " service" ) ;
 
-	if( REG_SZ > 5 && (description.length()+5) > REG_SZ )
+	static constexpr std::size_t limit = 2048U ;
+	if( (description.length()+5) > limit )
 	{
-		description.resize( REG_SZ-5 ) ;
+		description.resize( limit-5 ) ;
 		description.append( "..." ) ;
 	}
 

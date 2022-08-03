@@ -476,6 +476,7 @@ sub run_generate
 sub run_cmake
 {
 	my ( $cmake , $mbedtls , $qt_dirs , $arch ) = @_ ;
+	$mbedtls ||= "." ;
 	$arch ||= "x64" ;
 
 	# (only full paths work here)

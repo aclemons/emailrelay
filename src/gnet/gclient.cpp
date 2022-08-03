@@ -30,6 +30,7 @@
 #include "gassert.h"
 #include "gtest.h"
 #include "glog.h"
+#include <numeric> // std::accumulate
 #include <sstream>
 #include <cstdlib>
 
@@ -478,7 +479,9 @@ bool GNet::Client::send( const std::string & data , std::size_t offset )
 
 bool GNet::Client::send( const std::vector<G::string_view> & data , std::size_t offset )
 {
-	if( m_response_timeout && data.size() > offset )
+	std::size_t total_size = std::accumulate( data.begin() , data.end() , std::size_t(0U) ,
+		[](std::size_t n,G::string_view s){return n+s.size();} ) ;
+	if( m_response_timeout && offset < total_size )
 		m_response_timer.startTimer( m_response_timeout ) ;
 	return m_sp->send( data , offset ) ;
 }
