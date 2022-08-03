@@ -209,7 +209,7 @@ void GSmtp::StoredFile::edit( const G::StringArray & rejectees )
 	}
 	if( !out.good() )
 		throw EditError( path_in.str() ) ;
-	G::ScopeExit file_deleter( [=](){G::File::remove(path_out,std::nothrow);} ) ;
+	G::ScopeExit file_deleter( [&](){out.close();G::File::remove(path_out,std::nothrow);} ) ;
 
 	// write new file
 	std::size_t endpos = GSmtp::Envelope::write( out , env_copy ) ;

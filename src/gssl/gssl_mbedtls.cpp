@@ -1068,7 +1068,8 @@ GSsl::MbedTls::SecureFile::SecureFile( const std::string & path , bool with_nul 
 	if( n == 0U )
 		return ;
 
-	m_buffer.resize( n+1U ) ;
+	m_buffer.reserve( n+1U ) ;
+	m_buffer.resize( n ) ;
 	bool ok = fileRead( f , &m_buffer[0] , n ) ;
 	if( !ok )
 		return ;

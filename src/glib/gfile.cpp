@@ -45,13 +45,7 @@ void G::File::remove( const Path & path )
 
 bool G::File::rename( const Path & from , const Path & to , std::nothrow_t ) noexcept
 {
-	bool ok = 0 == std::rename( from.cstr() , to.cstr() ) ;
-	if( !ok )
-	{
-		std::remove( to.cstr() ) ;
-		ok = 0 == std::rename( from.cstr() , to.cstr() ) ;
-	}
-	return ok ;
+	return 0 == std::rename( from.cstr() , to.cstr() ) ;
 }
 
 void G::File::rename( const Path & from , const Path & to , bool ignore_missing )

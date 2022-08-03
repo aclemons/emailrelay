@@ -281,6 +281,7 @@ void GSmtp::Client::protocolDone( int response_code , const std::string & respon
 	}
 	else
 	{
+		m_message.reset() ;
 		messageDoneSignal().emit( response ) ;
 	}
 }
