@@ -179,14 +179,14 @@ bool G::LogOutput::updatePath()
 {
 	std::string real_path = m_path ;
 	std::size_t pos = 0U ;
+	if( (pos=real_path.find("%d")) != std::string::npos )
+	{
+		real_path.replace( pos , 2U , std::string(&m_time_buffer[0],8U) ) ;
+	}
 	if( (pos=real_path.find("%h")) != std::string::npos )
 	{
 		real_path[pos] = m_time_buffer[9] ;
 		real_path[pos+1] = m_time_buffer[10] ;
-	}
-	if( (pos=real_path.find("%d")) != std::string::npos )
-	{
-		real_path.replace( pos , 2U , std::string(&m_time_buffer[0],8U) ) ;
 	}
 	real_path.swap( m_real_path ) ;
 	return real_path != m_real_path ;

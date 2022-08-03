@@ -71,7 +71,7 @@ disconnects.
 <DT><B>--address-verifier </B><I>&lt;program&gt;</I>
 
 <DD>
-Runs the specified external program to verify a message recipent's e-mail address. A network verifier can be specified as <I>net:&lt;transport-address&gt;</I>.
+Runs the specified external program to verify a message recipent's e-mail address. A network verifier can be specified as <I>net:&lt;tcp-address&gt;</I>.
 <DT><B>-a, --admin </B><I>&lt;admin-port&gt;</I>
 
 <DD>
@@ -107,7 +107,7 @@ Configures the SMTP client authentication module using a semicolon-separated lis
 <DT><B>-Y, --client-filter </B><I>&lt;program&gt;</I>
 
 <DD>
-Runs the specified external filter program whenever a mail message is forwarded. The filter is passed the name of the message file in the spool directory so that it can edit it as required. A network filter can be specified as <I>net:&lt;transport-address&gt;</I> and prefixes of <I>spam:</I>, <I>spam-edit:</I> and <I>exit:</I> are also allowed. The <I>spam:</I> and <I>spam-edit:</I> prefixes require a SpamAssassin daemon to be running. For store-and-forward applications the <I>--filter</I> option is normally more useful than <I>--client-filter</I>.
+Runs the specified external filter program whenever a mail message is forwarded. The filter is passed the name of the message file in the spool directory so that it can edit it as required. A network filter can be specified as <I>net:&lt;tcp-address&gt;</I> and prefixes of <I>spam:</I>, <I>spam-edit:</I> and <I>exit:</I> are also allowed. The <I>spam:</I> and <I>spam-edit:</I> prefixes require a SpamAssassin daemon to be running. For store-and-forward applications the <I>--filter</I> option is normally more useful than <I>--client-filter</I>.
 <DT><B>-6, --client-interface </B><I>&lt;ip-address&gt;</I>
 
 <DD>
@@ -167,7 +167,7 @@ Disables all network serving, including SMTP, POP and administration interfaces.
 <DT><B>-z, --filter </B><I>&lt;program&gt;</I>
 
 <DD>
-Runs the specified external filter program whenever a mail message is stored. The filter is passed the name of the message file in the spool directory so that it can edit it as required. The mail message is rejected if the filter program terminates with an exit code between 1 and 99. Use <I>net:&lt;transport-address&gt;</I> to communicate with a filter daemon over the network, or <I>spam:&lt;transport-address&gt;</I> for a spamassassin spamd daemon to accept or reject mail messages, or <I>spam-edit:&lt;transport-address&gt;</I> to have spamassassin edit the message content without rejecting it, or <I>exit:&lt;number&gt;</I> to emulate a filter program that just exits.
+Runs the specified external filter program whenever a mail message is stored. The filter is passed the name of the message file in the spool directory so that it can edit it as required. The mail message is rejected if the filter program terminates with an exit code between 1 and 99. Use <I>net:&lt;tcp-address&gt;</I> to communicate with a filter daemon over the network, or <I>spam:&lt;tcp-address&gt;</I> for a spamassassin spamd daemon to accept or reject mail messages, or <I>spam-edit:&lt;tcp-address&gt;</I> to have spamassassin edit the message content without rejecting it, or <I>exit:&lt;number&gt;</I> to emulate a filter program that just exits.
 <DT><B>-W, --filter-timeout </B><I>&lt;time&gt;</I>
 
 <DD>

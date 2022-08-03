@@ -26,7 +26,7 @@
      <dt>--address-verifier &lt;program&gt;</dt>
       <dd>
        Runs the specified external program to verify a message recipent's e-mail
-       address. A network verifier can be specified as <em>net:<transport-address></em>.
+       address. A network verifier can be specified as <em>net:<tcp-address></em>.
       </dd>
      <dt>--admin &lt;admin-port&gt; (-a)</dt>
       <dd>
@@ -90,7 +90,7 @@
        Runs the specified external filter program whenever a mail message is
        forwarded. The filter is passed the name of the message file in the spool
        directory so that it can edit it as required. A network filter can be
-       specified as <em>net:<transport-address></em> and prefixes of <em>spam:</em>,
+       specified as <em>net:<tcp-address></em> and prefixes of <em>spam:</em>,
        <em>spam-edit:</em> and <em>exit:</em> are also allowed. The <em>spam:</em> and <em>spam-edit:</em>
        prefixes require a SpamAssassin daemon to be running. For store-and-forward
        applications the <em>--filter</em> option is normally more useful than
@@ -188,9 +188,9 @@
        The filter is passed the name of the message file in the spool directory so
        that it can edit it as required. The mail message is rejected if the filter
        program terminates with an exit code between 1 and 99. Use
-       <em>net:<transport-address></em> to communicate with a filter daemon over the
-       network, or <em>spam:<transport-address></em> for a spamassassin spamd daemon to
-       accept or reject mail messages, or <em>spam-edit:<transport-address></em> to have
+       <em>net:<tcp-address></em> to communicate with a filter daemon over the
+       network, or <em>spam:<tcp-address></em> for a spamassassin spamd daemon to
+       accept or reject mail messages, or <em>spam-edit:<tcp-address></em> to have
        spamassassin edit the message content without rejecting it, or
        <em>exit:<number></em> to emulate a filter program that just exits.
       </dd>

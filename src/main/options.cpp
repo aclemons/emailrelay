@@ -396,7 +396,7 @@ G::Options Main::Options::spec( bool is_windows )
 			gettext("closes the standard error stream soon after start-up") ,
 			"0" , "" , "3" } , '!' ) ;
 				// Causes the standard error stream to be closed soon after start-up.
-				// This is useful when operating as a backgroud daemon and it is
+				// This is useful when operating as a background daemon and it is
 				// therefore implied by --as-server and --as-proxy.
 
 		opt.add( { "a" , "admin" ,
@@ -435,10 +435,10 @@ G::Options Main::Options::spec( bool is_windows )
 				// stored. The filter is passed the name of the message file in the
 				// spool directory so that it can edit it as required. The mail message
 				// is rejected if the filter program terminates with an exit code between
-				// 1 and 99. Use "net:<transport-address>" to communicate with a filter
-				// daemon over the network, or "spam:<transport-address>" for a
+				// 1 and 99. Use "net:<tcp-address>" to communicate with a filter
+				// daemon over the network, or "spam:<tcp-address>" for a
 				// spamassassin spamd daemon to accept or reject mail messages, or
-				// "spam-edit:<transport-address>" to have spamassassin edit the message
+				// "spam-edit:<tcp-address>" to have spamassassin edit the message
 				// content without rejecting it, or "exit:<number>" to emulate a filter
 				// program that just exits.
 
@@ -568,7 +568,7 @@ G::Options Main::Options::spec( bool is_windows )
 				//example: /run/emailrelay/emailrelay.pid
 				//example: C:/ProgramData/E-MailRelay/pid.txt
 				// Causes the process-id to be written into the specified file when the
-				// program starts up, typically after it has become a backgroud daemon.
+				// program starts up, typically after it has become a background daemon.
 
 		opt.add( { "O" , "poll" ,
 			gettext("enables polling of the spool directory for messages to be forwarded with the specified period! "
@@ -584,7 +584,7 @@ G::Options Main::Options::spec( bool is_windows )
 				//example: /usr/local/sbin/emailrelay-verifier.sh
 				//example: C:/ProgramData/E-MailRelay/verifier.js
 				// Runs the specified external program to verify a message recipent's e-mail
-				// address. A network verifier can be specified as "net:<transport-address>".
+				// address. A network verifier can be specified as "net:<tcp-address>".
 
 		opt.add( { "Y" , "client-filter" ,
 			gettext("specifies an external program to process messages when they are forwarded") ,
@@ -594,7 +594,7 @@ G::Options Main::Options::spec( bool is_windows )
 				// Runs the specified external filter program whenever a mail message is
 				// forwarded. The filter is passed the name of the message file in the spool
 				// directory so that it can edit it as required. A network filter can be
-				// specified as "net:<transport-address>" and prefixes of "spam:", "spam-edit:"
+				// specified as "net:<tcp-address>" and prefixes of "spam:", "spam-edit:"
 				// and "exit:" are also allowed. The "spam:" and "spam-edit:" prefixes
 				// require a SpamAssassin daemon to be running. For store-and-forward
 				// applications the --filter option is normally more useful than

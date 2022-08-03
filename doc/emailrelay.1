@@ -53,7 +53,7 @@ disconnects.
 .SH OPTIONS
 .TP
 .B --address-verifier \fI<program>\fR
-Runs the specified external program to verify a message recipent's e-mail address. A network verifier can be specified as \fInet:<transport-address>\fR.
+Runs the specified external program to verify a message recipent's e-mail address. A network verifier can be specified as \fInet:<tcp-address>\fR.
 .TP
 .B \-a, --admin \fI<admin-port>\fR
 Enables an administration interface on the specified listening port number. Use telnet or something similar to connect. The administration interface can be used to trigger forwarding of spooled mail messages if the \fI--forward-to\fR option is used.
@@ -80,7 +80,7 @@ Enables SMTP client authentication with the remote server, using the client acco
 Configures the SMTP client authentication module using a semicolon-separated list of configuration items. Each item is a single-character key, followed by a colon and then a comma-separated list. A 'm' character introduces an ordered list of authentication mechanisms, and an 'x' is used for blocklisted mechanisms.
 .TP
 .B \-Y, --client-filter \fI<program>\fR
-Runs the specified external filter program whenever a mail message is forwarded. The filter is passed the name of the message file in the spool directory so that it can edit it as required. A network filter can be specified as \fInet:<transport-address>\fR and prefixes of \fIspam:\fR, \fIspam-edit:\fR and \fIexit:\fR are also allowed. The \fIspam:\fR and \fIspam-edit:\fR prefixes require a SpamAssassin daemon to be running. For store-and-forward applications the \fI--filter\fR option is normally more useful than \fI--client-filter\fR.
+Runs the specified external filter program whenever a mail message is forwarded. The filter is passed the name of the message file in the spool directory so that it can edit it as required. A network filter can be specified as \fInet:<tcp-address>\fR and prefixes of \fIspam:\fR, \fIspam-edit:\fR and \fIexit:\fR are also allowed. The \fIspam:\fR and \fIspam-edit:\fR prefixes require a SpamAssassin daemon to be running. For store-and-forward applications the \fI--filter\fR option is normally more useful than \fI--client-filter\fR.
 .TP
 .B \-6, --client-interface \fI<ip-address>\fR
 Specifies the IP network address to be used to bind the local end of outgoing SMTP connections. By default the address will depend on the routing tables in the normal way. Use \fI0.0.0.0\fR to use only IPv4 addresses returned from DNS lookups of the \fI--forward-to\fR address, or \fI::\fR for IPv6.
@@ -125,7 +125,7 @@ Specifies the network name that is used in SMTP EHLO commands, \fIReceived\fR li
 Disables all network serving, including SMTP, POP and administration interfaces. The program will terminate as soon as any initial forwarding is complete.
 .TP
 .B \-z, --filter \fI<program>\fR
-Runs the specified external filter program whenever a mail message is stored. The filter is passed the name of the message file in the spool directory so that it can edit it as required. The mail message is rejected if the filter program terminates with an exit code between 1 and 99. Use \fInet:<transport-address>\fR to communicate with a filter daemon over the network, or \fIspam:<transport-address>\fR for a spamassassin spamd daemon to accept or reject mail messages, or \fIspam-edit:<transport-address>\fR to have spamassassin edit the message content without rejecting it, or \fIexit:<number>\fR to emulate a filter program that just exits.
+Runs the specified external filter program whenever a mail message is stored. The filter is passed the name of the message file in the spool directory so that it can edit it as required. The mail message is rejected if the filter program terminates with an exit code between 1 and 99. Use \fInet:<tcp-address>\fR to communicate with a filter daemon over the network, or \fIspam:<tcp-address>\fR for a spamassassin spamd daemon to accept or reject mail messages, or \fIspam-edit:<tcp-address>\fR to have spamassassin edit the message content without rejecting it, or \fIexit:<number>\fR to emulate a filter program that just exits.
 .TP
 .B \-W, --filter-timeout \fI<time>\fR
 Specifies a timeout (in seconds) for running a \fI--filter\fR program. The default is 300 seconds.
