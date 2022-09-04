@@ -111,6 +111,8 @@ G::fbuf<T,N>::fbuf( G::fbuf<T,N>::read_fn_t read , G::fbuf<T,N>::write_fn_t writ
 	m_read_fn(read) ,
 	m_write_fn(write) ,
 	m_close_fn(close) ,
+	m_input() ,
+	m_output() ,
 	m_file_open(false)
 {
 }
@@ -120,6 +122,8 @@ G::fbuf<T,N>::fbuf( T file , G::fbuf<T,N>::read_fn_t read , G::fbuf<T,N>::write_
 	m_read_fn(read) ,
 	m_write_fn(write) ,
 	m_close_fn(close) ,
+	m_input() ,
+	m_output() ,
 	m_file_open(false)
 {
 	open( file ) ;

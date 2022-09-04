@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -55,35 +55,31 @@ class GSmtp::Client : public GNet::Client , private ClientProtocol::Sender
 public:
 	struct Config /// A structure containing GSmtp::Client configuration parameters.
 	{
+		GNet::StreamSocket::Config stream_socket_config ;
+		ClientProtocol::Config client_protocol_config ;
 		std::string filter_address ;
 		unsigned int filter_timeout{0U} ;
 		bool bind_local_address{false} ;
 		GNet::Address local_address ;
-		ClientProtocol::Config client_protocol_config ;
 		unsigned int connection_timeout{0U} ;
 		unsigned int secure_connection_timeout{0U} ;
 		bool secure_tunnel{false} ;
 		std::string sasl_client_config ;
 
 		Config() ;
-		Config( const std::string & filter_address , unsigned int filter_timeout ,
-			bool bind_local_address , const GNet::Address & local_address ,
-			const ClientProtocol::Config & protocol_config ,
-			unsigned int connection_timeout , unsigned int secure_connection_timeout ,
-			bool secure_tunnel , const std::string & sasl_client_config ) ;
-
+		Config & set_stream_socket_config( const GNet::StreamSocket::Config & ) ;
+		Config & set_client_protocol_config( const ClientProtocol::Config & ) ;
 		Config & set_filter_address( const std::string & ) ;
 		Config & set_filter_timeout( unsigned int ) ;
 		Config & set_bind_local_address( bool = true ) ;
 		Config & set_local_address( const GNet::Address & ) ;
-		Config & set_client_protocol_config( const ClientProtocol::Config & ) ;
 		Config & set_connection_timeout( unsigned int ) ;
 		Config & set_secure_connection_timeout( unsigned int ) ;
 		Config & set_secure_tunnel( bool = true ) ;
 		Config & set_sasl_client_config( const std::string & ) ;
 	} ;
 
-	Client( GNet::ExceptionSink , FilterFactory & , const GNet::Location & remote , 
+	Client( GNet::ExceptionSink , FilterFactory & , const GNet::Location & remote ,
 		const GAuth::SaslClientSecrets & client_secrets , const Config & config ) ;
 			///< Constructor. Starts connecting immediately.
 			///<
@@ -161,11 +157,12 @@ private:
 	unsigned int m_message_count ;
 } ;
 
+inline GSmtp::Client::Config & GSmtp::Client::Config::set_stream_socket_config( const GNet::StreamSocket::Config & c ) { stream_socket_config = c ; return *this ; }
+inline GSmtp::Client::Config & GSmtp::Client::Config::set_client_protocol_config( const ClientProtocol::Config & c ) { client_protocol_config = c ; return *this ; }
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_filter_address( const std::string & s ) { filter_address = s ; return *this ; }
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_filter_timeout( unsigned int t ) { filter_timeout = t ; return *this ; }
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_bind_local_address( bool b ) { bind_local_address = b ; return *this ; }
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_local_address( const GNet::Address & a ) { local_address = a ; return *this ; }
-inline GSmtp::Client::Config & GSmtp::Client::Config::set_client_protocol_config( const ClientProtocol::Config & c ) { client_protocol_config = c ; return *this ; }
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_connection_timeout( unsigned int t ) { connection_timeout = t ; return *this ; }
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_secure_connection_timeout( unsigned int t ) { secure_connection_timeout = t ; return *this ; }
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_secure_tunnel( bool b ) { secure_tunnel = b ; return *this ; }

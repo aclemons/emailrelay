@@ -1696,6 +1696,7 @@ sub testClientNetworkFilter
 		FilterTimeout => 1 ,
 		Hidden => 1 ,
 		Port => 1 ,
+		PidFile => 1 ,
 	) ;
 	my %server_args = (
 		Log => 1 ,
@@ -1732,7 +1733,7 @@ sub testClientNetworkFilter
 	Check::fileContains( $scanner->logfile() , "info:.*file: " , undef , 5 ) ;
 
 	# tear down
-	$server_1->wait() ;
+	$server_1->kill() ;
 	$server_2->kill() ;
 	$server_1->cleanup() ;
 	$server_2->cleanup() ;

@@ -54,14 +54,13 @@ void G::Options::parseSpec( const std::string & spec , char sep_major , char sep
 		std::string short_form = inner_parts[0] ;
 		char c = short_form.empty() ? '\0' : short_form[0U] ;
 		unsigned int level = Str::toUInt( inner_parts[6U] ) ;
-		StringArray tags( inner_parts.begin()+7U , inner_parts.end() ) ;
 
 		Option::Multiplicity multiplicity = Option::decode( inner_parts[4U] ) ;
 		if( multiplicity == Option::Multiplicity::error )
 			throw InvalidSpecification( std::string(1U,'[').append(G::Str::join(",",inner_parts)).append(1U,']') ) ;
 
 		Option opt( c , inner_parts[1U] , inner_parts[2U] , inner_parts[3U] ,
-			multiplicity , inner_parts[5U] , level , tags ) ;
+			multiplicity , inner_parts[5U] , level ) ;
 
 		addOption( opt , sep_minor , escape ) ;
 	}
@@ -69,9 +68,9 @@ void G::Options::parseSpec( const std::string & spec , char sep_major , char sep
 
 void G::Options::add( Options & options , char c , const char * name , const char * text ,
 	const char * more , Option::Multiplicity m , const char * argname ,
-	unsigned int level , unsigned int flags )
+	unsigned int level , unsigned int main_tag , unsigned int tag_bits )
 {
-	options.add( Option(c,name,G::gettext(text),more,m,argname,level,flags) ) ;
+	options.add( Option(c,name,G::gettext(text),more,m,argname,level,main_tag,main_tag|tag_bits) ) ;
 }
 
 void G::Options::add( const Option & opt , char sep , char escape )
@@ -86,7 +85,7 @@ void G::Options::addOption( Option opt , char sep , char escape )
 		// if the description is in two parts separated by 'sep' and the
 		// extra-description is empty then take the first half as the
 		// description and the second part as the extra-description -- this
-		// allows the decription to be translatable as a single string
+		// allows the description to be translatable as a single string
 		//
 		StringArray sub_parts ;
 		sub_parts.reserve( 2U ) ;
@@ -145,7 +144,7 @@ bool G::Options::multivalued( const std::string & name ) const
 bool G::Options::visible( const std::string & name , unsigned int level , bool level_exact ) const
 {
 	auto p = find( name ) ;
-	return p == m_list.end() ? false : (*p).visible(level,level_exact) ;
+	return p == m_list.end() ? false : (*p).visible({level_exact?level:1U,level}) ;
 }
 
 bool G::Options::visible( const std::string & name ) const

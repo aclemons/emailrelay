@@ -24,6 +24,7 @@
 #include "gdef.h"
 #include "gstringarray.h"
 #include <string>
+#include <utility>
 
 namespace G
 {
@@ -44,18 +45,19 @@ struct G::Option
 	bool hidden ;
 	std::string value_description ;
 	unsigned int level ;
-	StringArray tags ;
+	unsigned int main_tag ;
 	unsigned int tag_bits ;
 
 	Option( char c , const std::string & name , const std::string & description ,
 		const std::string & description_extra , Multiplicity value_multiplicity ,
-		const std::string & vd , unsigned int level , const StringArray & tags ) ;
+		const std::string & vd , unsigned int level ) ;
 			///< Constructor taking strings.
 
 	Option( char c , const char * name , const char * description ,
 		const char * description_extra , Multiplicity value_multiplicity ,
-		const char * vd , unsigned int level , unsigned int tags = 0U ) ;
-			///< Constructor taking c-strings and tags as a bit-mask.
+		const char * vd , unsigned int level ,
+		unsigned int main_tag , unsigned int tag_bits ) ;
+			///< Constructor taking c-strings and tags.
 
 	static Multiplicity decode( const std::string & ) ;
 		///< Decodes a multiplicity string into its enumeration.
@@ -64,17 +66,22 @@ struct G::Option
 	bool valued() const ;
 	bool defaulting() const ;
 	bool multivalued() const ;
-	bool visible( unsigned int level , bool level_exact ) const ;
 	bool visible() const ;
+	bool visible( std::pair<unsigned,unsigned> level_range , unsigned int main_tag = 0U , unsigned int tag_bits = 0U ) const ;
 } ;
 
 inline bool G::Option::valued() const { return value_multiplicity != Multiplicity::zero ; }
 inline bool G::Option::defaulting() const { return value_multiplicity == Option::Multiplicity::zero_or_one ; }
 inline bool G::Option::multivalued() const { return value_multiplicity == Option::Multiplicity::many ; }
-inline bool G::Option::visible() const { return visible( 99U , false ) ; }
-inline bool G::Option::visible( unsigned int level_in , bool level_exact ) const
+inline bool G::Option::visible() const { return visible( {1U,99U} ) ; }
+inline bool G::Option::visible( std::pair<unsigned,unsigned> level_range , unsigned int main_tag_in , unsigned int tag_bits_in ) const
 {
-	return level_exact ? ( !hidden && level == level_in ) : ( !hidden && level <= level_in ) ;
+	return
+		!hidden &&
+		level >= level_range.first &&
+		level <= level_range.second &&
+		( main_tag_in == 0U || main_tag_in == main_tag ) &&
+		( tag_bits_in == 0U || ( tag_bits_in & tag_bits ) != 0U ) ;
 }
 
 #endif

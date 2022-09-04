@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -235,10 +235,6 @@ void Main::Run::run()
 	m_poll_timer = std::make_unique<Timer>( *this , &Run::onPollTimeout , es_log_only ) ;
 	m_queue_timer = std::make_unique<Timer>( *this , &Run::onQueueTimeout , es_log_only ) ;
 
-	// early check on socket bindability
-	//
-	checkPorts() ;
-
 	// early check on multi-threading behaviour
 	//
 	checkThreading() ;
@@ -341,11 +337,15 @@ void Main::Run::run()
 	if( configuration().doPop() )
 		m_pop_secrets = std::make_unique<GAuth::Secrets>( configuration().popSecretsFile().str() , "pop-server" ) ;
 
-	// daemonise
+	// prepare the pid file
 	//
-	G::PidFile pid_file( configuration().usePidFile() ? G::Path(configuration().pidFile()) : G::Path() ) ;
-	if( configuration().daemon() )
-		G::Daemon::detach() ;
+	G::Path pid_file_path = configuration().usePidFile() ? G::Path(configuration().pidFile()) : G::Path() ;
+	G::PidFile pid_file( pid_file_path ) ;
+	{
+		G::Root claim_root ;
+		G::Process::Umask _( G::Process::Umask::Mode::GroupOpen ) ;
+		pid_file.mkdir() ;
+	}
 
 	// create the smtp server
 	//
@@ -415,6 +415,13 @@ void Main::Run::run()
 	}
 	else
 	{
+		// daemonise etc
+		if( configuration().daemon() )
+			G::Daemon::detach( pid_file.path() ) ;
+		commit( pid_file ) ;
+		if( configuration().closeStderr() )
+			G::Process::closeStderr() ;
+
 		// kick off some forwarding
 		//
 		if( configuration().forwardOnStartup() )
@@ -433,8 +440,6 @@ void Main::Run::run()
 
 		// run the event loop
 		//
-		commit( pid_file ) ;
-		closeMoreFiles() ;
 		std::string quit_reason = m_event_loop->run() ;
 		if( !quit_reason.empty() )
 			throw std::runtime_error( quit_reason ) ;
@@ -464,65 +469,9 @@ void Main::Run::closeFiles() const
 	}
 }
 
-void Main::Run::closeMoreFiles() const
-{
-	if( configuration().closeStderr() )
-		G::Process::closeStderr() ;
-}
-
 bool Main::Run::hidden() const
 {
 	return configuration().hidden() || configuration().show("hidden") ;
-}
-
-void Main::Run::checkPort( bool check , const std::string & ip , unsigned int port )
-{
-	if( check )
-	{
-		const bool do_throw = true ;
-		if( ip.empty() )
-		{
-			if( GNet::Address::supports( GNet::Address::Family::ipv6 ) &&
-				GNet::StreamSocket::supports( GNet::Address::Family::ipv6 ) )
-			{
-				GNet::Address address( GNet::Address::Family::ipv6 , port ) ;
-				GNet::Server::canBind( address , do_throw ) ;
-			}
-			if( GNet::Address::supports( GNet::Address::Family::ipv4 ) )
-			{
-				GNet::Address address( GNet::Address::Family::ipv4 , port ) ;
-				GNet::Server::canBind( address , do_throw ) ;
-			}
-		}
-		else if( GNet::Address::validStrings(ip,"0") )
-		{
-			GNet::Address address = GNet::Address::parse( ip , port ) ;
-			GNet::Server::canBind( address , do_throw ) ;
-		}
-	}
-}
-
-void Main::Run::checkPorts() const
-{
-	if( configuration().doServing() )
-	{
-		G::StringArray smtp_addresses = configuration().listeningAddresses("smtp") ;
-		checkPort( configuration().doSmtp() && smtp_addresses.empty() , std::string() , configuration().port() ) ;
-		for( const auto & a : smtp_addresses )
-			checkPort( configuration().doSmtp() , a , configuration().port() ) ;
-
-		G::StringArray pop_addresses = configuration().listeningAddresses("pop") ;
-		checkPort( configuration().doPop() && pop_addresses.empty() , std::string() , configuration().popPort() ) ;
-		for( const auto & a : pop_addresses )
-			checkPort( configuration().doPop() , a , configuration().popPort() ) ;
-
-		G::StringArray admin_addresses = configuration().listeningAddresses("admin") ;
-		checkPort( configuration().doAdmin() && admin_addresses.empty() ,
-			std::string() , configuration().adminPort() ) ;
-
-		for( const auto & a : admin_addresses )
-			checkPort( configuration().doAdmin() , a , configuration().adminPort() ) ;
-	}
 }
 
 void Main::Run::commit( G::PidFile & pid_file )
@@ -539,11 +488,23 @@ void Main::Run::commit( G::PidFile & pid_file )
 	}
 }
 
+GNet::StreamSocket::Config Main::Run::netSocketConfig( bool /*server*/ ) const
+{
+	std::pair<int,int> linger = { -1 , 0 } ;
+	return
+		GNet::StreamSocket::Config()
+			.set_create_linger( linger )
+			.set_accept_linger( linger )
+			.set_bind_reuse( !G::is_windows() )
+			.set_bind_exclusive( G::is_windows() )
+			.set_last<GNet::StreamSocket::Config>() ;
+}
+
 GSmtp::ServerProtocol::Config Main::Run::serverProtocolConfig() const
 {
 	return
 		GSmtp::ServerProtocol::Config()
-			.set_with_vrfy( !configuration().anonymous() )
+			.set_with_vrfy( !configuration().anonymousServerVrfy() )
 			.set_filter_timeout( configuration().filterTimeout() )
 			.set_max_size( configuration().maxSize() )
 			.set_authentication_requires_encryption( configuration().serverTlsRequired() )
@@ -558,6 +519,7 @@ GNet::Server::Config Main::Run::netServerConfig() const
 {
 	bool open = configuration().user().empty() || configuration().user() == "root" ;
 	return GNet::Server::Config()
+		.set_stream_socket_config( netSocketConfig() )
 		.set_uds_open_permissions( open ) ;
 }
 
@@ -569,7 +531,8 @@ GSmtp::Server::Config Main::Run::smtpServerConfig() const
 			.set_interfaces( configuration().listeningAddresses("smtp") )
 			.set_port( configuration().port() )
 			.set_ident( smtpIdent() )
-			.set_anonymous( configuration().anonymous() )
+			.set_anonymous_smtp( configuration().anonymousServerSmtp() )
+			.set_anonymous_content( configuration().anonymousContent() )
 			.set_filter_address( configuration().filter().str() )
 			.set_filter_timeout( configuration().filterTimeout() )
 			.set_verifier_address( configuration().verifier().str() )
@@ -599,10 +562,7 @@ GSmtp::Client::Config Main::Run::clientConfig() const
 {
 	return
 		GSmtp::Client::Config()
-			.set_filter_address( configuration().clientFilter().str() )
-			.set_filter_timeout( configuration().filterTimeout() )
-			.set_bind_local_address( !configuration().clientBindAddress().empty() )
-			.set_local_address( asAddress(configuration().clientBindAddress()) )
+			.set_stream_socket_config( netSocketConfig(false) )
 			.set_client_protocol_config(
 				GSmtp::ClientProtocol::Config()
 					.set_thishost_name( GNet::Local::canonicalName() )
@@ -612,9 +572,13 @@ GSmtp::Client::Config Main::Run::clientConfig() const
 					.set_use_starttls_if_possible( configuration().clientTls() && !configuration().clientOverTls() )
 					.set_must_use_tls( configuration().clientTlsRequired() && !configuration().clientOverTls() )
 					.set_must_authenticate( true )
-					.set_anonymous( configuration().anonymous() )
+					.set_anonymous( configuration().anonymousClientSmtp() )
 					.set_must_accept_all_recipients( !configuration().forwardToSome() )
 					.set_eight_bit_strict( false ) )
+			.set_filter_address( configuration().clientFilter().str() )
+			.set_filter_timeout( configuration().filterTimeout() )
+			.set_bind_local_address( !configuration().clientBindAddress().empty() )
+			.set_local_address( asAddress(configuration().clientBindAddress()) )
 			.set_connection_timeout( configuration().connectionTimeout() )
 			.set_secure_connection_timeout( configuration().secureConnectionTimeout() )
 			.set_secure_tunnel( configuration().clientOverTls() )

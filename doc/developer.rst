@@ -77,29 +77,16 @@ required.
 Module structure
 ================
 The main C++ libraries in the E-MailRelay code base are as follows:
-
-*   \ *glib*\
-
     Low-level classes for file-system abstraction, date and time representation,
     string utility functions, logging, command line parsing etc.
 
-*   \ *gssl*\
-
     A thin layer over the third-party TLS libraries.
-
-*   \ *gnet*\
 
     Network and event-loop classes.
 
-*   \ *gauth*\
-
     Implements various authentication mechanisms.
 
-*   \ *gsmtp*\
-
     SMTP protocol and message-store classes.
-
-*   \ *gpop*\
 
     POP3 protocol classes.
 
@@ -290,4 +277,4 @@ Use *./configure --help* to see a complete list of options.
 .. _SMTP: https://en.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol
 .. _TLS: https://en.wikipedia.org/wiki/Transport_Layer_Security
 
-.. footer:: Copyright (C) 2001-2021 Graeme Walker
+.. footer:: Copyright (C) 2001-2022 Graeme Walker

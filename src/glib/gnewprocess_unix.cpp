@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -177,7 +177,7 @@ G::NewProcessImp::NewProcessImp( const Path & exe , const StringArray & args , c
 		{
 			// change directory
 			if( !cd.empty() )
-				Process::cd( cd ) ;
+				Process::cd( cd ) ; // throws on error
 
 			// set real id
 			if( run_as_id != Identity::invalid() )
@@ -236,7 +236,7 @@ std::pair<bool,pid_t> G::NewProcessImp::fork()
 	if( !ok ) throw NewProcess::CannotFork() ;
 	bool in_child = rc == 0 ;
 	auto child_pid = static_cast<pid_t>(rc) ;
-	return std::make_pair( in_child , child_pid ) ;
+	return { in_child , child_pid } ;
 }
 
 void G::NewProcessImp::printError( int stdxxx , const std::string & s )
@@ -522,10 +522,10 @@ int G::NewProcessWaitable::get( std::nothrow_t , int ec ) const
 	{
 		if( m_error || m_read_error )
 			result = ec ;
-		else if( !WIFEXITED(m_status) )
-			result = 128 + WTERMSIG(m_status) ;
+		else if( !WIFEXITED(m_status) ) // NOLINT
+			result = 128 + WTERMSIG(m_status) ; // NOLINT
 		else
-			result = WEXITSTATUS( m_status ) ;
+			result = WEXITSTATUS( m_status ) ; // NOLINT
 	}
 	return result ;
 }
@@ -533,8 +533,8 @@ int G::NewProcessWaitable::get( std::nothrow_t , int ec ) const
 std::string G::NewProcessWaitable::output() const
 {
 	if( m_fd < 0 || m_read_error != 0 )
-		return std::string() ;
+		return {} ;
 	else
-		return std::string( &m_buffer[0] , m_buffer.size() ) ;
+		return { &m_buffer[0] , m_buffer.size() } ;
 }
 

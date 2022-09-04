@@ -278,19 +278,19 @@ mode_t G::Process::UmaskImp::set( Umask::Mode mode ) noexcept
 	mode_t old = ::umask( 2 ) ;
 	mode_t new_ = old ;
 	if( mode == Umask::Mode::Tightest )
-		new_ = 0177 ; // -rw-------
+		new_ = 0077 ; // -rw-------
 	else if( mode == Umask::Mode::Tighter )
-		new_ = 0117 ;  // -rw-rw----
+		new_ = 0007 ;  // -rw-rw----
 	else if( mode == Umask::Mode::Readable )
-		new_ = 0133 ; // -rw-r--r--
+		new_ = 0022 ; // -rw-r--r--
 	else if( mode == Umask::Mode::GroupOpen )
-		new_ = 0113 ; // -rw-rw-r--
+		new_ = 0002 ; // -rw-rw-r--
 	else if( mode == Umask::Mode::TightenOther )
 		new_ = old | mode_t(007) ;
 	else if( mode == Umask::Mode::LoosenGroup )
-		new_ = ( old | mode_t(007) ) & ~mode_t(060) ;
+		new_ = old & ~mode_t(070) ;
 	else if( mode == Umask::Mode::Open )
-		new_ = 0111 ; // -rw-rw-rw-
+		new_ = 0 ; // -rw-rw-rw-
 	set( new_ ) ;
 	return old ;
 }

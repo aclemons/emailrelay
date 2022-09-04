@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "%-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<!DOCTYPE html>
 <html>
  <head>
   <title>E-MailRelay Developer Guide</title>
@@ -8,7 +8,7 @@
  <body>
   <!-- index:0::::E-MailRelay Developer Guide -->
  <div class="div-main">
-  <h1><a class="a-header" name="H_1">E-MailRelay Developer Guide</a></h1> <!-- index:1:H:1::E-MailRelay Developer Guide -->
+  <h1><a class="a-header" name="H_1">E-MailRelay Developer Guide</a></h1> <!-- index:1:H:E-MailRelay Developer Guide -->
    <h2><a class="a-header" name="SH_1_1">Principles</a></h2> <!-- index:2:SH:1:1:Principles -->
     <p>
      The main principles in the design of E-MailRelay can be summarised as:
@@ -102,34 +102,31 @@
     <p>
      The main C++ libraries in the E-MailRelay code base are as follows:
     </p>
-
-    <dl>
-     <dt><em>glib</em></dt>
+   <h3><a class="a-header"><em>glib</em></a></h3>
       <dd>
        Low-level classes for file-system abstraction, date and time representation,
        string utility functions, logging, command line parsing etc.
       </dd>
-     <dt><em>gssl</em></dt>
+   <h3><a class="a-header"><em>gssl</em></a></h3>
       <dd>
        A thin layer over the third-party TLS libraries.
       </dd>
-     <dt><em>gnet</em></dt>
+   <h3><a class="a-header"><em>gnet</em></a></h3>
       <dd>
        Network and event-loop classes.
       </dd>
-     <dt><em>gauth</em></dt>
+   <h3><a class="a-header"><em>gauth</em></a></h3>
       <dd>
        Implements various authentication mechanisms.
       </dd>
-     <dt><em>gsmtp</em></dt>
+   <h3><a class="a-header"><em>gsmtp</em></a></h3>
       <dd>
        SMTP protocol and message-store classes.
       </dd>
-     <dt><em>gpop</em></dt>
+   <h3><a class="a-header"><em>gpop</em></a></h3>
       <dd>
        POP3 protocol classes.
       </dd>
-    </dl>
     <p>
      All of these libraries are portable between Unix-like systems and Windows.
     </p>
@@ -353,10 +350,10 @@
 
     <div class="div-footer">
      <p>
-      Copyright (C) 2001-2021 Graeme Walker
+      Copyright (C) 2001-2022 Graeme Walker
      </p>
     </div><!-- div-footer -->
  </div> <!-- div-main -->
  </body>
 </html>
-<!-- Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->
+<!-- Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->

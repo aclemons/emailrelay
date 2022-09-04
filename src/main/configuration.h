@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -254,8 +254,20 @@ public:
 	unsigned int scannerResponseTimeout() const ;
 		///< Returns a timeout for talking to the scanner process.
 
-	bool anonymous() const ;
+	bool anonymousServerVrfy() const ;
+		///< Returns true if the server protocol should not
+		///< allow VRFY.
+
+	bool anonymousServerSmtp() const ;
 		///< Returns true if the server protocol should be
+		///< slightly more anonymous.
+
+	bool anonymousContent() const ;
+		///< Returns true if the server should not add a
+		///< received line.
+
+	bool anonymousClientSmtp() const ;
+		///< Returns true if the client protocol should be
 		///< slightly more anonymous.
 
 	bool clientTls() const ;
@@ -338,6 +350,7 @@ private:
 	static bool specialVerifyValue( const std::string & ) ;
 	G::StringArray semantics( bool ) const ;
 	bool validSyslogFacility() const ;
+	bool anonymous( G::string_view ) const ;
 
 private:
 	std::vector<G::Option> m_options ;

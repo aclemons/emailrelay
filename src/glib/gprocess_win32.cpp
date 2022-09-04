@@ -108,7 +108,7 @@ std::string G::Process::strerror( int errno_ )
 {
 	std::vector<char> buffer( 80U , '\0' ) ;
 	if( strerror_s( &buffer[0] , buffer.size()-1U , errno_ ) || buffer.at(0U) == '\0' )
-		return "unknown error" ;
+		return std::string("unknown error (").append(G::Str::fromInt(errno_)).append(1U,')') ;
 	std::string s( &buffer[0] ) ;
 	return Str::isPrintableAscii(s) ? Str::lower(s) : s ;
 }

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -65,7 +65,7 @@ public:
 		///< group-id or not.
 
 	~Root() ; // NOLINT
-		///< Desctructor. Releases special privileges if this instance acquired them.
+		///< Destructor. Releases special privileges if this instance acquired them.
 		///< The implementation uses G::Process::beOrdinary(). Errors from seteuid()
 		///< will call Process::terminate().
 

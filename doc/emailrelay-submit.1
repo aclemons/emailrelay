@@ -35,11 +35,17 @@ The verbose option causes the path of the new content file
 to be printed.
 .SH OPTIONS
 .TP
-.B \-a, --auth \fI<name>\fR
-Sets the authentication value in the envelope file.
+.B \-f, --from \fI<name>\fR
+Sets the envelope 'from' address.
 .TP
-.B \-C, --content \fI<base64>\fR
-Sets a line of content. This can be a header line, a blank line or a line of the body text. The first blank line separates headers  from the body. The option value should be base64 encoded.
+.B \-h, --help
+Shows help text and exits.
+.TP
+.B \-s, --spool-dir \fI<dir>\fR
+Specifies the spool directory.
+.TP
+.B \-v, --verbose
+Prints the full path of the content file.
 .TP
 .B \-d, --content-date
 Adds a \fIDate:\fR content header if there is none.
@@ -56,8 +62,14 @@ Copies the envelope file into all sub-directories of the main spool directory.
 .B \-n, --filename
 Prints the name of the content file.
 .TP
-.B \-f, --from \fI<name>\fR
-Sets the envelope 'from' address.
+.B \-V, --version
+Prints the version number and exits.
+.TP
+.B \-a, --auth \fI<name>\fR
+Sets the authentication value in the envelope file.
+.TP
+.B \-C, --content \fI<base64>\fR
+Sets a line of content. This can be a header line, a blank line or a line of the body text. The first blank line separates headers  from the body. The option value should be base64 encoded.
 .TP
 .B \-i, --from-auth-in \fI<name>\fR
 Sets the 'from-auth-in' value in the envelope file.
@@ -65,20 +77,8 @@ Sets the 'from-auth-in' value in the envelope file.
 .B \-o, --from-auth-out \fI<name>\fR
 Sets the 'from-auth-out' value in the envelope file.
 .TP
-.B \-h, --help
-Shows help text and exits.
-.TP
 .B \-N, --no-stdin
 Ignores the standard-input. Typically used with \fI\fR\fI--content\fR\fI\fR.
-.TP
-.B \-s, --spool-dir \fI<dir>\fR
-Specifies the spool directory.
-.TP
-.B \-v, --verbose
-Prints the full path of the content file.
-.TP
-.B \-V, --version
-Prints the version number and exits.
 .SH SEE ALSO
 .BR emailrelay (1),
 .BR emailrelay-passwd (1)

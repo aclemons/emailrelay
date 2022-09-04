@@ -23,7 +23,7 @@
 
 G::Option::Option( char c_in , const std::string & name_in , const std::string & description_in ,
 	const std::string & description_extra_in , Multiplicity value_multiplicity_in ,
-	const std::string & vd_in , unsigned int level_in , const StringArray & tags_in ) :
+	const std::string & vd_in , unsigned int level_in ) :
 		c(c_in) ,
 		name(name_in) ,
 		description(description_in) ,
@@ -32,14 +32,15 @@ G::Option::Option( char c_in , const std::string & name_in , const std::string &
 		hidden(description_in.empty()||level_in==0U) ,
 		value_description(vd_in) ,
 		level(level_in) ,
-		tags(tags_in) ,
+		main_tag(0U) ,
 		tag_bits(0U)
 {
 }
 
 G::Option::Option( char c_in , const char * name_in , const char * description_in ,
 	const char * description_extra_in , Multiplicity value_multiplicity_in ,
-	const char * vd_in , unsigned int level_in , unsigned int tag_bits_in ) :
+	const char * vd_in , unsigned int level_in , unsigned int main_tag_in ,
+	unsigned int tag_bits_in ) :
 		c(c_in) ,
 		name(name_in) ,
 		description(description_in) ,
@@ -48,7 +49,8 @@ G::Option::Option( char c_in , const char * name_in , const char * description_i
 		hidden(*description_in=='\0'||level_in==0U) ,
 		value_description(vd_in) ,
 		level(level_in) ,
-		tag_bits(tag_bits_in)
+		main_tag(main_tag_in) ,
+		tag_bits(main_tag_in|tag_bits_in)
 {
 }
 

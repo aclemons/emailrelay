@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -47,6 +47,7 @@ namespace G
 ///   void do_stuff()
 ///   {
 ///      CallFrame this_( m_stack ) ;
+///      do_some_stuff() ;
 ///      emit( "doing stuff" ) ; // call client code - can do anything
 ///      if( this_.deleted() ) return ; // just in case
 ///      do_more_stuff() ;
@@ -110,8 +111,8 @@ public:
 public:
 	CallFrame( const CallFrame & ) = delete ;
 	CallFrame( CallFrame && ) = delete ;
-	void operator=( const CallFrame & ) = delete ;
-	void operator=( CallFrame && ) = delete ;
+	CallFrame & operator=( const CallFrame & ) = delete ;
+	CallFrame & operator=( CallFrame && ) = delete ;
 
 private:
 	CallStack & m_stack ;

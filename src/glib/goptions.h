@@ -55,8 +55,8 @@ public:
 		///< (unless unvalued), (7) a level enumeration, and optional
 		///< trailing tags.
 		///<
-		///< By convention mainstream options should have a level of 1,
-		///< and obscure ones level 2 and above. If the option-description
+		///< Typically mainstream options are given a level of 1, and
+		///< obscure ones level 2 and above. If the option-description
 		///< field is empty or if the level is zero then the option
 		///< is hidden.
 
@@ -65,11 +65,11 @@ public:
 
 	static void add( Options & , char c , const char * name , const char * text ,
         const char * more , Option::Multiplicity m , const char * argname ,
-		unsigned int level , unsigned int flags ) ;
+		unsigned int level , unsigned int main_tag , unsigned int tag_bits = 0U ) ;
 			///< A convenience function that constructs an Option object
 			///< with the trailing arguments and then calls add(Option)
 			///< on the Options object. The 'text' string is passed through
-			///< G::txt() and should therefore normally be marked
+			///< G::gettext() and should therefore normally be marked
 			///< for translation with G::tx().
 
 	void add( const Option & , char sep = '!' , char escape = '\\' ) ;

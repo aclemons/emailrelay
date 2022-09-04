@@ -63,12 +63,11 @@ public:
 	{
 		SocketProtocol::Config socket_protocol_config ;
 		unsigned int idle_timeout {0U} ;
-		int socket_linger_onoff {-1} ;
-		int socket_linger_time {-1} ;
+		bool no_throw_on_peer_disconnect {false} ; // see SocketProtocolSink::onPeerDisconnect()
 		Config & set_socket_protocol_config( const SocketProtocol::Config & ) ;
 		Config & set_idle_timeout( unsigned int ) ;
+		Config & set_no_throw_on_peer_disconnect( bool = true ) ;
 		Config & set_all_timeouts( unsigned int ) ;
-		Config & set_socket_linger( std::pair<int,int> ) ;
 	} ;
 
 	ServerPeer( ExceptionSink , ServerPeerInfo && , const LineBufferConfig & ) ;
@@ -156,10 +155,14 @@ protected:
 		///< Modifies the line buffer state so that it delivers
 		///< a chunk of non-line-delimited data.
 
+	void finish() ;
+		///< Does a socket shutdown(). See also GNet::Client::finish().
+
 private: // overrides
 	void readEvent() override ; // Override from GNet::EventHandler.
 	void writeEvent() override ; // Override from GNet::EventHandler.
 	void otherEvent( EventHandler::Reason ) override ; // Override from GNet::EventHandler.
+	void onPeerDisconnect() override ; // Override from GNet::SocketProtocolSink.
 	std::string exceptionSourceId() const override ; // Override from GNet::ExceptionSource.
 
 protected:
@@ -171,8 +174,8 @@ protected:
 public:
 	ServerPeer( const ServerPeer & ) = delete ;
 	ServerPeer( ServerPeer && ) = delete ;
-	void operator=( const ServerPeer & ) = delete ;
-	void operator=( ServerPeer && ) = delete ;
+	ServerPeer & operator=( const ServerPeer & ) = delete ;
+	ServerPeer & operator=( ServerPeer && ) = delete ;
 	bool send( const char * , std::size_t offset ) = delete ;
 	bool send( const char * ) = delete ;
 	bool send( const std::string & , std::size_t offset ) = delete ;
@@ -195,5 +198,6 @@ private:
 inline GNet::ServerPeer::Config & GNet::ServerPeer::Config::set_idle_timeout( unsigned int t ) { idle_timeout = t ; return *this ; }
 inline GNet::ServerPeer::Config & GNet::ServerPeer::Config::set_all_timeouts( unsigned int t ) { idle_timeout = t ; socket_protocol_config.secure_connection_timeout = t ; return *this ; }
 inline GNet::ServerPeer::Config & GNet::ServerPeer::Config::set_socket_protocol_config( const SocketProtocol::Config & config ) { socket_protocol_config = config ; return *this ; }
+inline GNet::ServerPeer::Config & GNet::ServerPeer::Config::set_no_throw_on_peer_disconnect( bool b ) { no_throw_on_peer_disconnect = b ; return *this ; }
 
 #endif

@@ -412,4 +412,4 @@ to *fail2ban*.
 .. _SOCKS: https://en.wikipedia.org/wiki/SOCKS
 .. _TLS: https://en.wikipedia.org/wiki/Transport_Layer_Security
 
-.. footer:: Copyright (C) 2001-2021 Graeme Walker
+.. footer:: Copyright (C) 2001-2022 Graeme Walker

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@
 // entry point to receive service stop requests.
 //
 // Once the server process is created a separate thread is used to
-// check that it is still running. If it is not running then the 
+// check that it is still running. If it is not running then the
 // service is reported as failed and the wrapper terminates.
 //
 // By default the "<name>-start.bat" file must be in the same directory
@@ -522,7 +522,7 @@ void Service::onControlEvent( DWORD event )
 	else if( event == SERVICE_CONTROL_INTERROGATE )
 	{
 		G_SERVICE_DEBUG( "Service::onControlEvent: interrogate" ) ;
-		// sample code does nothing, documentation says use 
+		// sample code does nothing, documentation says use
 		// SetStatus() only if changed, and interrogate never
 		// gets used anyways
 	}

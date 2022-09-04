@@ -38,14 +38,14 @@
 
 namespace G
 {
-	namespace LogOutputImp
+	namespace LogOutputImp /// An implementation namespace for G::LogOutput.
 	{
 		constexpr int stderr_fileno = 2 ; // STDERR_FILENO
 		LogOutput * this_ = nullptr ;
 		constexpr std::size_t margin = 7U ;
 		constexpr std::size_t buffer_base_size = limits::log + 40U ;
 		std::array<char,buffer_base_size+margin> buffer {} ;
-		struct ostream : std::ostream
+		struct ostream : std::ostream /// An ostream using G::omembuf.
 		{
 			explicit ostream( G::omembuf * p ) : std::ostream(p) {}
 			void reset() { clear() ; seekp(0) ; }

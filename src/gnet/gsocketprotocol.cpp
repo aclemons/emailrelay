@@ -54,31 +54,32 @@ public:
 	SocketProtocolImp( EventHandler & , ExceptionSink , SocketProtocol::Sink & ,
 		StreamSocket & , const SocketProtocol::Config & ) ;
 	~SocketProtocolImp() ;
-	void readEvent() ;
+	bool readEvent( bool ) ;
 	bool writeEvent() ;
-	void otherEvent( EventHandler::Reason ) ;
+	void otherEvent( EventHandler::Reason , bool ) ;
 	bool send( G::string_view data , std::size_t offset ) ;
 	bool send( const Segments & , std::size_t ) ;
 	void shutdown() ;
 	void secureConnect() ;
 	void secureAccept() ;
 	bool secure() const ;
+	bool raw() const ;
 	std::string peerCertificate() const ;
 
 public:
 	SocketProtocolImp( const SocketProtocolImp & ) = delete ;
 	SocketProtocolImp( SocketProtocolImp && ) = delete ;
-	void operator=( const SocketProtocolImp & ) = delete ;
-	void operator=( SocketProtocolImp && ) = delete ;
+	SocketProtocolImp & operator=( const SocketProtocolImp & ) = delete ;
+	SocketProtocolImp & operator=( SocketProtocolImp && ) = delete ;
 
 private:
 	enum class State { raw , connecting , accepting , writing , idle , shuttingdown } ;
 	static std::unique_ptr<GSsl::Protocol> newProtocol( const std::string & ) ;
 	static void log( int level , const std::string & line ) ;
 	bool failed() const ;
-	void rawReadEvent() ;
+	bool rawReadEvent( bool ) ;
 	bool rawWriteEvent() ;
-	void rawOtherEvent() ;
+	bool rawOtherEvent( EventHandler::Reason ) ;
 	bool rawSend( const Segments & , Position , bool = false ) ;
 	bool rawSendImp( const Segments & , Position , Position & ) ;
 	void rawReset() ;
@@ -116,7 +117,6 @@ private:
 	ssize_t m_read_buffer_n ;
 	Timer<SocketProtocolImp> m_secure_connection_timer ;
 	std::string m_peer_certificate ;
-	static constexpr std::size_t m_read_buffer_size = G::limits::net_buffer ;
 } ;
 
 namespace GNet
@@ -151,7 +151,7 @@ GNet::SocketProtocolImp::SocketProtocolImp( EventHandler & handler , ExceptionSi
 		m_one_segment(1U) ,
 		m_failed(false) ,
 		m_state(State::raw) ,
-		m_read_buffer(m_read_buffer_size) ,
+		m_read_buffer(std::max(std::size_t(1U),config.read_buffer_size)) ,
 		m_read_buffer_n(0) ,
 		m_secure_connection_timer(*this,&SocketProtocolImp::onSecureConnectionTimeout,es)
 {
@@ -166,55 +166,65 @@ void GNet::SocketProtocolImp::onSecureConnectionTimeout()
 	throw SocketProtocol::SecureConnectionTimeout() ;
 }
 
-void GNet::SocketProtocolImp::readEvent()
+bool GNet::SocketProtocolImp::readEvent( bool no_throw_on_peer_disconnect )
 {
 	G_DEBUG( "SocketProtocolImp::readEvent: read event: " << m_socket.asString() << ": "
 		<< "state=" << static_cast<int>(m_state) ) ;
+	bool all_sent = false ;
 	if( m_state == State::raw )
-		rawReadEvent() ;
+		rawReadEvent( no_throw_on_peer_disconnect ) ;
 	else if( m_state == State::connecting )
 		secureConnectImp() ;
 	else if( m_state == State::accepting )
 		secureAcceptImp() ;
 	else if( m_state == State::writing )
-		sslSendImp() ;
+		all_sent = sslSendImp() ;
 	else if( m_state == State::shuttingdown )
 		shutdownImp() ;
 	else // State::idle
 		sslReadImp() ;
+	return all_sent ;
 }
 
 bool GNet::SocketProtocolImp::writeEvent()
 {
 	G_DEBUG( "GNet::SocketProtocolImp::writeEvent: write event: " << m_socket.asString() << ": "
 		<< "state=" << static_cast<int>(m_state) ) ;
-	bool rc = false ; // was true
+	bool all_sent = false ;
 	if( m_state == State::raw )
-		rc = rawWriteEvent() ;
+		all_sent = rawWriteEvent() ;
 	else if( m_state == State::connecting )
 		secureConnectImp() ;
 	else if( m_state == State::accepting )
 		secureAcceptImp() ;
 	else if( m_state == State::writing )
-		rc = sslSendImp() ;
+		all_sent = sslSendImp() ;
 	else if( m_state == State::shuttingdown )
 		shutdownImp() ;
 	else // State::idle
 		sslReadImp() ;
-	return rc ;
+	return all_sent ;
 }
 
-void GNet::SocketProtocolImp::otherEvent( EventHandler::Reason reason )
+void GNet::SocketProtocolImp::otherEvent( EventHandler::Reason reason , bool no_throw_on_peer_disconnect )
 {
-	if( m_state == State::raw && reason == EventHandler::Reason::closed
-		&& !G::Test::enabled("socket-protocol-noflush") )
+	m_socket.dropReadHandler() ;
+	m_socket.dropOtherHandler() ; // since event cannot be cleared
+
+	if( m_state == State::raw )
 	{
-		rawOtherEvent() ;
+		bool peer_disconnect = rawOtherEvent( reason ) ;
+		if( peer_disconnect && no_throw_on_peer_disconnect )
+		{
+			m_sink.onPeerDisconnect() ;
+			return ;
+		}
 	}
+
+	if( reason == EventHandler::Reason::closed )
+		throw SocketProtocol::Shutdown() ;
 	else
-	{
 		throw SocketProtocol::OtherEventError( EventHandler::str(reason) ) ;
-	}
 }
 
 std::size_t GNet::SocketProtocolImp::size( const Segments & segments )
@@ -312,7 +322,12 @@ bool GNet::SocketProtocolImp::send( const Segments & segments , std::size_t offs
 
 void GNet::SocketProtocolImp::shutdown()
 {
-	if( m_state == State::idle )
+	if( m_state == State::raw )
+	{
+		m_socket.dropWriteHandler() ;
+		m_socket.shutdown() ;
+	}
+	else if( m_state == State::idle )
 	{
 		m_state = State::shuttingdown ;
 		shutdownImp() ;
@@ -328,9 +343,11 @@ void GNet::SocketProtocolImp::shutdownImp()
 	{
 		m_socket.dropWriteHandler() ;
 		m_socket.shutdown() ;
+		m_state = State::idle ; // but possibly only half-open
 	}
 	else if( rc == Result::error )
 	{
+		m_socket.dropReadHandler() ;
 		m_socket.dropWriteHandler() ;
 		throw SocketProtocol::ShutdownError() ;
 	}
@@ -346,7 +363,15 @@ void GNet::SocketProtocolImp::shutdownImp()
 
 bool GNet::SocketProtocolImp::secure() const
 {
-	return m_state == State::writing || m_state == State::idle ;
+	return
+		m_state == State::writing ||
+		m_state == State::idle ||
+		m_state == State::shuttingdown ;
+}
+
+bool GNet::SocketProtocolImp::raw() const
+{
+	return m_state == State::raw ;
 }
 
 void GNet::SocketProtocolImp::secureConnect()
@@ -526,7 +551,7 @@ void GNet::SocketProtocolImp::sslReadImp()
 	G_ASSERT( m_ssl != nullptr ) ;
 
 	Result rc = Result::more ;
-	for( int sanity = 0 ; rc == Result::more && sanity < 1000 ; sanity++ )
+	for( int sanity = 0 ; rc == Result::more && sanity < 100000 ; sanity++ )
 	{
 		rc = m_ssl->read( &m_read_buffer[0] , m_read_buffer.size() , m_read_buffer_n ) ;
 		G_DEBUG( "SocketProtocolImp::sslReadImp: result=" << GSsl::Protocol::str(rc) ) ;
@@ -567,37 +592,48 @@ void GNet::SocketProtocolImp::sslReadImp()
 	}
 }
 
-void GNet::SocketProtocolImp::rawOtherEvent()
+bool GNet::SocketProtocolImp::rawOtherEvent( EventHandler::Reason reason )
 {
-	// got a clean socket shutdown indication on windows -- no read events will
-	// follow but there might be data to read, so try reading in a loop --
-	// always end up throwing an exception
-	G_DEBUG( "GNet::SocketProtocolImp::rawOtherEvent: clearing receive queue" ) ;
-	for(;;)
+	// got a windows socket shutdown indication, connection failure, etc.
+	if( reason == EventHandler::Reason::closed )
 	{
-		const ssize_t rc = m_socket.read( &m_read_buffer[0] , m_read_buffer.size() ) ;
-		G_DEBUG( "GNet::SocketProtocolImp::rawOtherEvent: read " << m_socket.asString() << ": " << rc ) ;
-		if( rc == 0 )
+		// no read events will follow but there might be data to read, so try reading in a loop
+		G_DEBUG( "GNet::SocketProtocolImp::rawOtherEvent: shutdown: clearing receive queue" ) ;
+		for(;;)
 		{
-			m_socket.shutdown() ;
-			throw SocketProtocol::Shutdown() ;
+			const ssize_t rc = m_socket.read( &m_read_buffer[0] , m_read_buffer.size() ) ;
+			G_DEBUG( "GNet::SocketProtocolImp::rawOtherEvent: read " << m_socket.asString() << ": " << rc ) ;
+			if( rc == 0 )
+			{
+				break ;
+			}
+			else if( rc < 0 )
+			{
+				throw SocketProtocol::ReadError( m_socket.reason() ) ;
+			}
+			G_ASSERT( static_cast<std::size_t>(rc) <= m_read_buffer.size() ) ;
+			G::CallFrame this_( m_stack ) ;
+			m_sink.onData( &m_read_buffer[0] , static_cast<std::size_t>(rc) ) ;
+			if( this_.deleted() ) break ;
 		}
-		else if( rc < 0 )
-		{
-			m_socket.shutdown() ;
-			throw SocketProtocol::ReadError( m_socket.reason() ) ;
-		}
-		G_ASSERT( static_cast<std::size_t>(rc) <= m_read_buffer.size() ) ;
-		G::CallFrame this_( m_stack ) ;
-		m_sink.onData( &m_read_buffer[0] , static_cast<std::size_t>(rc) ) ;
-		if( this_.deleted() ) break ;
+		return true ;
+	}
+	else
+	{
+		return false ;
 	}
 }
 
-void GNet::SocketProtocolImp::rawReadEvent()
+bool GNet::SocketProtocolImp::rawReadEvent( bool no_throw_on_peer_disconnect )
 {
 	const ssize_t rc = m_socket.read( &m_read_buffer[0] , m_read_buffer.size() ) ;
-	if( rc == 0 || ( rc == -1 && !m_socket.eWouldBlock() ) )
+	if( rc == 0 && no_throw_on_peer_disconnect )
+	{
+		m_socket.dropReadHandler() ;
+		m_sink.onPeerDisconnect() ;
+		return true ;
+	}
+	else if( rc == 0 || ( rc == -1 && !m_socket.eWouldBlock() ) )
 	{
 		throw SocketProtocol::ReadError( rc == 0 ? std::string() : m_socket.reason() ) ;
 	}
@@ -611,6 +647,7 @@ void GNet::SocketProtocolImp::rawReadEvent()
 		G_DEBUG( "GNet::SocketProtocolImp::rawReadEvent: read event read nothing" ) ;
 		; // -1 && eWouldBlock() -- no-op (esp. for windows)
 	}
+	return false ;
 }
 
 bool GNet::SocketProtocolImp::rawSend( const Segments & segments , Position pos , bool do_copy )
@@ -774,9 +811,9 @@ GNet::SocketProtocol::SocketProtocol( EventHandler & handler , ExceptionSink es 
 GNet::SocketProtocol::~SocketProtocol()
 = default;
 
-void GNet::SocketProtocol::readEvent()
+bool GNet::SocketProtocol::readEvent( bool no_throw_on_peer_disconnect )
 {
-	m_imp->readEvent() ;
+	return m_imp->readEvent( no_throw_on_peer_disconnect ) ;
 }
 
 bool GNet::SocketProtocol::writeEvent()
@@ -784,9 +821,9 @@ bool GNet::SocketProtocol::writeEvent()
 	return m_imp->writeEvent() ;
 }
 
-void GNet::SocketProtocol::otherEvent( EventHandler::Reason reason )
+void GNet::SocketProtocol::otherEvent( EventHandler::Reason reason , bool no_throw_on_peer_disconnect )
 {
-	m_imp->otherEvent( reason ) ;
+	m_imp->otherEvent( reason , no_throw_on_peer_disconnect ) ;
 }
 
 bool GNet::SocketProtocol::send( const std::string & data , std::size_t offset )
@@ -827,6 +864,16 @@ bool GNet::SocketProtocol::secureAcceptCapable()
 void GNet::SocketProtocol::secureAccept()
 {
 	m_imp->secureAccept() ;
+}
+
+bool GNet::SocketProtocol::secure() const
+{
+	return m_imp->secure() ;
+}
+
+bool GNet::SocketProtocol::raw() const
+{
+	return m_imp->raw() ;
 }
 
 std::string GNet::SocketProtocol::peerCertificate() const

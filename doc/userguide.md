@@ -369,4 +369,4 @@ to `fail2ban`.
 [TLS]: https://en.wikipedia.org/wiki/Transport_Layer_Security
 
 _____________________________________
-Copyright (C) 2001-2021 Graeme Walker
+Copyright (C) 2001-2022 Graeme Walker

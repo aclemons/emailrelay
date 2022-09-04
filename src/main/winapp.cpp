@@ -331,17 +331,13 @@ void Main::WinApp::onWindowException( std::exception & e )
 	GGui::Window::onWindowException( e ) ;
 }
 
-G::OptionsOutputLayout Main::WinApp::outputLayout( bool verbose ) const
+G::OptionsUsage::Config Main::WinApp::outputLayout( bool verbose ) const
 {
-	G::OptionsOutputLayout layout ;
+	G::OptionsUsage::Config layout ;
 	layout.separator = "\t" ;
-	//layout.column
 	layout.width = PixelLayout(verbose).width() ;
 	layout.width2 = PixelLayout(verbose).width2() ;
 	layout.margin = 0U ;
-	//layout.level
-	//layout.extra
-	//layout.usage_other
 	return layout ;
 }
 
@@ -369,11 +365,11 @@ void Main::WinApp::output( const std::string & text , bool , bool verbose )
 	}
 }
 
-void Main::WinApp::onError( const std::string & text )
+void Main::WinApp::onError( const std::string & text , int exit_code )
 {
 	// called from WinMain(), possibly before init()
 	output( text , true , false ) ; // override implemented above
-	m_exit_code = 1 ;
+	m_exit_code = exit_code ;
 }
 
 // ==

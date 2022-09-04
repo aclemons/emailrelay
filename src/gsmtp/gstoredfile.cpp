@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -206,8 +206,8 @@ void GSmtp::StoredFile::edit( const G::StringArray & rejectees )
 	{
 		FileWriter claim_writer ;
 		G::File::open( out , path_out ) ;
+		e = G::Process::errno_() ;
 	}
-	e = G::Process::errno_() ;
 	if( !out.good() )
 		throw EditError( path_in.basename() , G::Process::strerror(e) ) ;
 	G::ScopeExit file_deleter( [&](){out.close();G::File::remove(path_out,std::nothrow);} ) ;
@@ -245,12 +245,14 @@ void GSmtp::StoredFile::edit( const G::StringArray & rejectees )
 
 	// commit the file
 	bool ok = false ;
+	e = 0 ;
 	{
 		FileWriter claim_writer ;
-		ok = G::File::rename( path_out , path_in , std::nothrow ) ;
+		ok = G::File::remove( path_in , std::nothrow ) && G::File::rename( path_out , path_in , std::nothrow ) ;
+		e = G::Process::errno_() ;
 	}
 	if( !ok )
-		throw EditError( path_in.basename() ) ;
+		throw EditError( path_in.basename() , G::Process::strerror(e) ) ;
 	file_deleter.release() ;
 
 	m_env.m_crlf = true ;

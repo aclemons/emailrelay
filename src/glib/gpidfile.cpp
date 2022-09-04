@@ -51,10 +51,10 @@ G::PidFile::~PidFile()
 	}
 }
 
-void G::PidFile::mkdirs()
+void G::PidFile::mkdir()
 {
 	if( !m_path.empty() )
-		File::mkdirs( m_path.dirname() , std::nothrow ) ;
+		File::mkdir( m_path.dirname() , std::nothrow ) ;
 }
 
 void G::PidFile::create( const Path & pid_file )

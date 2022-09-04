@@ -29,17 +29,18 @@
 
 namespace G
 {
-	namespace PathImp
+	namespace PathImp /// An implementation namespace for G::Path.
 	{
 		enum class Platform { Unix , Windows } ;
-		template <Platform> struct PathPlatform {} ;
+		template <Platform> struct PathPlatform /// A class template specialised by o/s in the implementation of G::Path.
+			{} ;
 		template <> struct G::PathImp::PathPlatform<Platform::Unix> ;
 		template <> struct G::PathImp::PathPlatform<Platform::Windows> ;
 	}
 }
 
 template <>
-struct G::PathImp::PathPlatform<G::PathImp::Platform::Windows>
+struct G::PathImp::PathPlatform<G::PathImp::Platform::Windows> /// A windows specialisation of G::PathImp::PathPlatform used by G::Path.
 {
 	static string_view sep() noexcept
 	{
@@ -118,7 +119,7 @@ struct G::PathImp::PathPlatform<G::PathImp::Platform::Windows>
 } ;
 
 template <>
-struct G::PathImp::PathPlatform<G::PathImp::Platform::Unix>
+struct G::PathImp::PathPlatform<G::PathImp::Platform::Unix> /// A unix specialisation of G::PathImp::PathPlatform used by G::Path.
 {
 	static string_view sep() noexcept
 	{

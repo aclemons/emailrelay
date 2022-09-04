@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -32,7 +32,8 @@
 #include "gmd5.h"
 #include "ghash.h"
 #include "ggetopt.h"
-#include "goptionsoutput.h"
+#include "goptions.h"
+#include "goptionsusage.h"
 #include "gbase64.h"
 #include "gxtext.h"
 #include "ggettext.h"
@@ -69,13 +70,13 @@ namespace PasswdImp
 
 static G::Options options()
 {
-	using M = G::Option::Multiplicity ;
 	using G::tx ;
+	using M = G::Option::Multiplicity ;
 	G::Options opt ;
 	unsigned int t_undef = 0U ;
 
 	G::Options::add( opt , 'h' , "help" ,
-		G::tx("show usage help") , "" ,
+		tx("show usage help") , "" ,
 		M::zero , "" , 1 , t_undef ) ;
 			// Shows help text and exits.
 
@@ -104,20 +105,16 @@ static G::Options options()
 		M::zero , "" , 2 , t_undef ) ;
 			// Generates a dotted decimal format, for backwards compatibility.
 
-	G::Options::add( opt , 'v' , "verbose" , 
-		"verbose" , "" , 
-		M::zero , "" , 0 , t_undef ) ;
-			// Verbose logging. (undocumented)
+	G::Options::add( opt , 'v' , "verbose" , "verbose" , "" , M::zero , "" , 0 , t_undef ) ;
+		// Verbose logging. (undocumented)
 
-	G::Options::add( opt , 't' , "tls" , 
-		"tls" , "" , M::zero , "" , 0 , t_undef ) ;
-			// Enables the TLS library even if using a hash function of 
-			// MD5 or NONE. (undocumented)
+	G::Options::add( opt , 't' , "tls" , "tls" , "" , M::zero , "" , 0 , t_undef ) ;
+		// Enables the TLS library even if using a hash function of
+		// MD5 or NONE. (undocumented)
 
-	G::Options::add( opt , 'T' , "tls-config" , 
-		"tls-config" , "" , M::one , "config" , 0 , t_undef ) ;
-			// Configures the TLS library with the given configuration 
-			// string. (undocumented)
+	G::Options::add( opt , 'T' , "tls-config" , "tls-config" , "" , M::one , "config" , 0 , t_undef ) ;
+		// Configures the TLS library with the given configuration
+		// string. (undocumented)
 
 	return opt ;
 }
@@ -135,11 +132,11 @@ int main( int argc , char * argv [] )
 		}
 		if( opt.contains("help") )
 		{
-			G::OptionsOutputLayout layout ;
+			G::OptionsUsage::Config layout ;
 			if( !opt.contains("verbose") )
-				layout.set_level( 1U ) ;
+				layout.set_level_max( 1U ) ;
 
-			G::OptionsOutput(opt.options()).showUsage( layout , std::cout , arg.prefix() ) ;
+			G::OptionsUsage(opt.options()).output( layout , std::cout , arg.prefix() ) ;
 
 			std::cout
 				<< "\n"

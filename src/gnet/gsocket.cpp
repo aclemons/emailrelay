@@ -22,38 +22,11 @@
 #include "gsocket.h"
 #include "gtest.h"
 #include "gsleep.h"
+#include "glimits.h"
 #include "gmsg.h"
 #include "gstr.h"
 #include "gassert.h"
 #include "glog.h"
-
-namespace GNet
-{
-	namespace StreamSocketImp /// An implementation namespace for G::StreamSocket.
-	{
-		struct Options /// StreamSocket options.
-		{
-			enum class Linger { default_ , zero , nolinger } ;
-			Linger create_linger {Linger::nolinger} ;
-			bool create_keepalive { G::Test::enabled("socket-keepalive") } ;
-			Linger accept_linger {Linger::nolinger} ;
-			bool accept_keepalive { G::Test::enabled("socket-keepalive") } ;
-			bool free_bind {false} ;
-		} ;
-	}
-	namespace SocketImp /// An implementation namespace for G::Socket.
-	{
-		struct Options /// Socket options.
-		{
-			bool connect_pureipv6 {true} ;
-			bool bind_pureipv6 {true} ;
-			bool bind_reuse {true} ;
-			bool bind_exclusive { G::Test::enabled("socket-exclusive") } ;
-		} ;
-	}
-}
-
-// ==
 
 GNet::SocketBase::SocketBase( Address::Family family , int type , int protocol ) :
 	m_reason(0) ,
@@ -181,21 +154,24 @@ GNet::SocketBase::ssize_type GNet::SocketBase::writeImp( const char * buffer , s
 void GNet::SocketBase::addReadHandler( EventHandler & handler , ExceptionSink es )
 {
 	G_DEBUG( "GNet::SocketBase::addReadHandler: fd " << m_fd ) ;
-	EventLoop::instance().addRead( m_fd , handler , es ) ;
+	if( !m_read_added )
+		EventLoop::instance().addRead( m_fd , handler , es ) ;
 	m_read_added = true ;
 }
 
 void GNet::SocketBase::addWriteHandler( EventHandler & handler , ExceptionSink es )
 {
 	G_DEBUG( "GNet::SocketBase::addWriteHandler: fd " << m_fd ) ;
-	EventLoop::instance().addWrite( m_fd , handler , es ) ;
+	if( !m_write_added )
+		EventLoop::instance().addWrite( m_fd , handler , es ) ;
 	m_write_added = true ;
 }
 
 void GNet::SocketBase::addOtherHandler( EventHandler & handler , ExceptionSink es )
 {
 	G_DEBUG( "GNet::SocketBase::addOtherHandler: fd " << m_fd ) ;
-	EventLoop::instance().addOther( m_fd , handler , es ) ;
+	if( !m_other_added )
+		EventLoop::instance().addOther( m_fd , handler , es ) ;
 	m_other_added = true ;
 }
 
@@ -240,13 +216,18 @@ std::string GNet::SocketBase::asString() const
 
 // ==
 
-GNet::Socket::Socket( Address::Family af , int type , int protocol ) :
-	SocketBase(af,type,protocol)
+GNet::Socket::Config::Config()
+= default ;
+
+GNet::Socket::Socket( Address::Family af , int type , int protocol , const Config & config ) :
+	SocketBase(af,type,protocol) ,
+	m_config(config)
 {
 }
 
-GNet::Socket::Socket( Address::Family af , Descriptor s , const Accepted & a ) :
-	SocketBase(af,s,a)
+GNet::Socket::Socket( Address::Family af , Descriptor s , const Accepted & a , const Config & config ) :
+	SocketBase(af,s,a) ,
+	m_config(config)
 {
 }
 
@@ -307,9 +288,6 @@ bool GNet::Socket::connect( const Address & address , bool * done )
 	{
 		saveReason() ;
 
-		if( G::Test::enabled("socket-slow-connect") )
-			sleep( 1 ) ;
-
 		if( eInProgress() )
 		{
 			G_DEBUG( "GNet::Socket::connect: connection in progress" ) ;
@@ -325,9 +303,13 @@ bool GNet::Socket::connect( const Address & address , bool * done )
 	return true ;
 }
 
-void GNet::Socket::listen( int backlog )
+void GNet::Socket::listen()
 {
-	int rc = ::listen( fd() , backlog ) ;
+	int listen_queue = m_config.listen_queue ;
+	if( listen_queue <= 0 )
+		listen_queue = G::limits::net_listen_queue ;
+
+	int rc = ::listen( fd() , std::max(1,m_config.listen_queue) ) ;
 	if( error(rc) )
 	{
 		saveReason() ;
@@ -371,9 +353,7 @@ void GNet::Socket::setOptionsOnConnect( Address::Family af )
 {
 	if( af == Address::Family::ipv4 || af == Address::Family::ipv6 )
 	{
-		using namespace SocketImp ;
-		Options options ;
-		if( af == Address::Family::ipv6 && options.connect_pureipv6 )
+		if( af == Address::Family::ipv6 && m_config.connect_pureipv6 )
 			setOptionPureV6( std::nothrow ) ; // ignore errors - may fail if already bound
 	}
 }
@@ -382,13 +362,13 @@ void GNet::Socket::setOptionsOnBind( Address::Family af )
 {
 	if( af == Address::Family::ipv4 || af == Address::Family::ipv6 )
 	{
-		using namespace SocketImp ;
-		Options options ;
-		if( options.bind_reuse )
-			setOptionReuse() ; // allow us to rebind another socket's (eg. time-wait zombie's) address
-		if( options.bind_exclusive )
-			setOptionExclusive() ; // don't allow anyone else to bind our address
-		if( af == Address::Family::ipv6 && options.bind_pureipv6 )
+		if( m_config.bind_reuse )
+			setOptionReuse() ;
+		if( m_config.bind_exclusive )
+			setOptionExclusive() ;
+		if( m_config.free_bind )
+			setOptionFreeBind() ;
+		if( af == Address::Family::ipv6 && m_config.bind_pureipv6 )
 			setOptionPureV6() ;
 	}
 }
@@ -404,21 +384,16 @@ void GNet::Socket::setOptionFreeBind()
 	//setOption( IPPROTO_IP , "so_freebind" , IP_FREEBIND , 1 ) ;
 }
 
-void GNet::Socket::setOptionNoLinger()
-{
-	setOptionLinger( 0 , 0 ) ;
-}
-
 void GNet::Socket::setOptionLinger( int onoff , int time )
 {
-	struct linger options {} ;
-	options.l_onoff = onoff ;
-	options.l_linger = time ;
-	bool ok = setOptionImp( SOL_SOCKET , SO_LINGER , &options , sizeof(options) ) ;
+	struct linger linger_config {} ;
+	linger_config.l_onoff = onoff ;
+	linger_config.l_linger = time ;
+	bool ok = setOptionImp( SOL_SOCKET , SO_LINGER , &linger_config , sizeof(linger_config) ) ;
 	if( !ok )
 	{
 		saveReason() ;
-		throw SocketError( "cannot set no_linger" , reason() ) ;
+		throw SocketError( "cannot set socket linger option" , reason() ) ;
 	}
 }
 
@@ -438,6 +413,14 @@ void GNet::Socket::setOption( int level , const char * opp , int op , int arg )
 }
 
 //==
+
+GNet::StreamSocket::Config::Config()
+= default ;
+
+GNet::StreamSocket::Config::Config( const Socket::Config & base ) :
+	Socket::Config(base)
+{
+}
 
 bool GNet::StreamSocket::supports( Address::Family af )
 {
@@ -467,20 +450,23 @@ bool GNet::StreamSocket::supports( Address::Family af )
 	}
 }
 
-GNet::StreamSocket::StreamSocket( Address::Family af ) :
-	Socket(af,SOCK_STREAM,0)
+GNet::StreamSocket::StreamSocket( Address::Family af , const Config & config ) :
+	Socket(af,SOCK_STREAM,0,config) ,
+	m_config(config)
 {
 	setOptionsOnCreate( af , /*listener=*/false ) ;
 }
 
-GNet::StreamSocket::StreamSocket( Address::Family af , const Listener & ) :
-	Socket(af,SOCK_STREAM,0)
+GNet::StreamSocket::StreamSocket( Address::Family af , const Listener & , const Config & config ) :
+	Socket(af,SOCK_STREAM,0,config) ,
+	m_config(config)
 {
 	setOptionsOnCreate( af , /*listener=*/true ) ;
 }
 
-GNet::StreamSocket::StreamSocket( Address::Family af , Descriptor s , const Accepted & accepted ) :
-	Socket(af,s,accepted)
+GNet::StreamSocket::StreamSocket( Address::Family af , Descriptor s , const Accepted & accepted , const Config & config ) :
+	Socket(af,s,accepted,config) ,
+	m_config(config)
 {
 	setOptionsOnAccept( af ) ;
 }
@@ -522,7 +508,7 @@ GNet::AcceptInfo GNet::StreamSocket::accept()
 
 	AcceptInfo info ;
 	info.address = Address( addr ) ;
-	info.socket_ptr.reset( new StreamSocket( info.address.family() , new_fd , SocketBase::Accepted() ) ) ; // 'new' sic
+	info.socket_ptr.reset( new StreamSocket( info.address.family() , new_fd , SocketBase::Accepted() , m_config ) ) ; // 'new' sic
 
 	G_DEBUG( "GNet::StreamSocket::accept: accepted from " << fd()
 		<< " to " << new_fd << " (" << info.address.displayString() << ")" ) ;
@@ -530,20 +516,16 @@ GNet::AcceptInfo GNet::StreamSocket::accept()
 	return info ;
 }
 
-void GNet::StreamSocket::setOptionsOnCreate( Address::Family af , bool listener )
+void GNet::StreamSocket::setOptionsOnCreate( Address::Family af , bool /*listener*/ )
 {
 	if( af == Address::Family::ipv4 || af == Address::Family::ipv6 )
 	{
-		using namespace StreamSocketImp ;
-		Options options ;
-		if( options.create_linger == Options::Linger::zero )
-			setOptionLinger( 1 , 0 ) ;
-		else if( options.create_linger == Options::Linger::nolinger )
-			setOptionNoLinger() ;
-		if( options.create_keepalive )
+		if( m_config.create_linger_onoff == 1 )
+			setOptionLinger( 1 , m_config.create_linger_time ) ;
+		else if( m_config.create_linger_onoff == 0 )
+			setOptionLinger( 0 , 0 ) ;
+		if( m_config.create_keepalive )
 			setOptionKeepAlive() ;
-		if( listener && options.free_bind )
-			setOptionFreeBind() ;
 	}
 }
 
@@ -551,21 +533,27 @@ void GNet::StreamSocket::setOptionsOnAccept( Address::Family af )
 {
 	if( af == Address::Family::ipv4 || af == Address::Family::ipv6 )
 	{
-		using namespace StreamSocketImp ;
-		Options options ;
-		if( options.accept_linger == Options::Linger::zero )
-			setOptionLinger( 1 , 0 ) ;
-		else if( options.accept_linger == Options::Linger::nolinger )
-			setOptionNoLinger() ;
-		if( options.accept_keepalive )
+		if( m_config.accept_linger_onoff == 1 )
+			setOptionLinger( 1 , m_config.accept_linger_time ) ;
+		else if( m_config.accept_linger_onoff == 0 )
+			setOptionLinger( 0 , 0 ) ;
+		if( m_config.accept_keepalive )
 			setOptionKeepAlive() ;
 	}
 }
 
 //==
 
-GNet::DatagramSocket::DatagramSocket( Address::Family af , int protocol ) :
-	Socket( af , SOCK_DGRAM , protocol )
+GNet::DatagramSocket::Config::Config()
+= default ;
+
+GNet::DatagramSocket::Config::Config( const Socket::Config & base ) :
+	Socket::Config(base)
+{
+}
+
+GNet::DatagramSocket::DatagramSocket( Address::Family af , int protocol , const Config & config ) :
+	Socket(af,SOCK_DGRAM,protocol,config)
 {
 }
 

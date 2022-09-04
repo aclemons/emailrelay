@@ -31,10 +31,11 @@
 #include <algorithm>
 
 GNet::Server::Server( ExceptionSink es , const Address & listening_address ,
-	ServerPeer::Config server_peer_config , Config server_config ) :
+	const ServerPeer::Config & server_peer_config , const Config & server_config ) :
 		m_es(es) ,
+		m_config(server_config) ,
 		m_server_peer_config(server_peer_config) ,
-		m_socket(listening_address.family(),StreamSocket::Listener())
+		m_socket(listening_address.family(),StreamSocket::Listener(),m_config.stream_socket_config)
 {
 	G_DEBUG( "GNet::Server::ctor: listening on socket " << m_socket.asString()
 		<< " with address " << listening_address.displayString() ) ;
@@ -54,7 +55,7 @@ GNet::Server::Server( ExceptionSink es , const Address & listening_address ,
 		m_socket.bind( listening_address ) ;
 	}
 
-	m_socket.listen( std::max(1,server_config.listen_queue) ) ;
+	m_socket.listen() ;
 	m_socket.addReadHandler( *this , m_es ) ;
 	Monitor::addServer( *this ) ;
 
@@ -71,18 +72,6 @@ GNet::Server::Server( ExceptionSink es , const Address & listening_address ,
 GNet::Server::~Server()
 {
 	Monitor::removeServer( *this ) ;
-}
-
-bool GNet::Server::canBind( const Address & address , bool do_throw )
-{
-	std::string reason ;
-	{
-		G::Root claim_root ;
-		reason = Socket::canBindHint( address ) ;
-	}
-	if( !reason.empty() && do_throw )
-		throw CannotBind( address.displayString() , reason ) ;
-	return reason.empty() ;
 }
 
 GNet::Address GNet::Server::address() const

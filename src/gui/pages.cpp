@@ -133,7 +133,7 @@ std::string LicensePage::helpUrl( const std::string & language ) const
 
 DirectoryPage::DirectoryPage( Gui::Dialog & dialog , const G::MapFile & config , const std::string & name ,
 	const std::string & next_1 , const std::string & next_2 ,
-	bool installing , bool is_windows , bool is_mac ) :
+	bool installing , bool /*is_windows*/ , bool is_mac ) :
 		Gui::Page(dialog,name,next_1,next_2) ,
 		m_installing(installing) ,
 		m_is_mac(is_mac) ,

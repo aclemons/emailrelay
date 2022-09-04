@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ public:
 	virtual bool prepare( const std::string & session_auth_id ,
 		const std::string & peer_socket_address , const std::string & peer_certificate ) = 0 ;
 			///< Prepares to store the message in the message store.
-			///< Returns true if a local-mailbox only message that 
+			///< Returns true if a local-mailbox only message that
 			///< has been fully written and needs no commit().
 
 	virtual void commit( bool strict ) = 0 ;

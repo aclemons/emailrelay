@@ -36,7 +36,7 @@
 
 namespace G
 {
-	namespace StrImp
+	namespace StrImp /// An implementation namespace for G::Str.
 	{
 		#ifndef G_STR_SMALL
 			static constexpr string_view chars_meta = "~<>[]*$|?\\(){}\"`'&;="_sv ; // bash meta-chars plus "~"
@@ -939,7 +939,7 @@ std::size_t G::StrImp::outputPrintable( Tout out , Tchar c , Tchar escape_in , c
 }
 
 template <typename Tchar>
-struct G::StrImp::PrintableAppender
+struct G::StrImp::PrintableAppender /// An implementation class template for G::Str.
 {
 	PrintableAppender( std::string & s_ , Tchar escape_in_ , char escape_out_ , bool eight_bit_ ) :
 		s(s_) ,
@@ -959,7 +959,7 @@ private:
 	const bool eight_bit ;
 } ;
 
-struct G::StrImp::InPlaceBackInserter
+struct G::StrImp::InPlaceBackInserter /// An implementation class for G::Str.
 {
 	InPlaceBackInserter( std::string & s , std::size_t pos ) :
 		m_s(s) ,
@@ -1284,7 +1284,7 @@ G::StringArray G::Str::splitIntoFields( string_view in , char sep )
 }
 
 template <typename T>
-struct G::StrImp::Joiner
+struct G::StrImp::Joiner /// An implementation class template for G::Str.
 {
 	Joiner( T & result_ , string_view sep_ , bool & first_ ) :
 		result(result_) ,
@@ -1484,21 +1484,17 @@ bool G::Str::match( string_view a , string_view b ) noexcept
 	return a == b ;
 }
 
-#ifndef G_STR_SMALL
 bool G::StrImp::ilessc( char c1 , char c2 ) noexcept
 {
 	if( c1 >= 'a' && c1 <= 'z' ) c1 -= '\x20' ;
 	if( c2 >= 'a' && c2 <= 'z' ) c2 -= '\x20' ;
 	return c1 < c2 ;
 }
-#endif
 
-#ifndef G_STR_SMALL
 bool G::Str::iless( string_view a , string_view b ) noexcept
 {
 	return std::lexicographical_compare( a.begin() , a.end() , b.begin() , b.end() , StrImp::ilessc ) ; // noexcept?
 }
-#endif
 
 bool G::StrImp::imatchc( char c1 , char c2 ) noexcept
 {

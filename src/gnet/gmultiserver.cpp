@@ -199,12 +199,6 @@ bool GNet::MultiServer::gotServerFor( const Address & interface_address ) const
 		[&interface_address](const ServerPtr &ptr){return match(interface_address,ptr->address());} ) ;
 }
 
-bool GNet::MultiServer::canBind( const AddressList & address_list , bool do_throw )
-{
-	return std::all_of( address_list.begin() , address_list.end() ,
-		[do_throw](const Address & a){return Server::canBind(a,do_throw);} ) ;
-}
-
 std::string GNet::MultiServer::displayString( const Address & address )
 {
 	return address.displayString( true ) ;

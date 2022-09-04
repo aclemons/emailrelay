@@ -31,7 +31,7 @@
 #include "gstr.h"
 #include "garg.h"
 #include "ggetopt.h"
-#include "goptionsoutput.h"
+#include "goptionsusage.h"
 #include "gpath.h"
 #include "gserver.h"
 #include "gserverpeer.h"
@@ -175,7 +175,7 @@ Peer::Peer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo && peer_info ,
 
 void Peer::onSlowTimeout()
 {
-	sleep_ms( 800 ) ;
+	sleep_ms( 10 ) ;
 	m_slow_timer.startTimer( 0U , 10 ) ;
 }
 
@@ -352,7 +352,7 @@ int main( int argc , char * argv [] )
 		}
 		if( opt.contains("help") )
 		{
-			G::OptionsOutput(opt.options()).showUsage( {} , std::cout , arg.prefix() ) ;
+			G::OptionsUsage(opt.options()).output( {} , std::cout , arg.prefix() ) ;
 			return 0 ;
 		}
 

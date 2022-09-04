@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@
 #include "gstr.h"
 #include "gxtext.h"
 #include "ggetopt.h"
-#include "goptionsoutput.h"
+#include "goptionsusage.h"
 #include "gpath.h"
 #include "gverifier.h"
 #include "gfilestore.h"
@@ -167,75 +167,75 @@ static G::Options options()
 			// Shows help text and exits.
 
 	G::Options::add( opt , 'v' , "verbose" ,
-		tx("prints the path of the created content file") , "" , 
+		tx("prints the path of the created content file") , "" ,
 		M::zero , "" , 1 , t_undef ) ;
 			// Prints the full path of the content file.
 
 	G::Options::add( opt , 's' , "spool-dir" ,
-		tx("specifies the spool directory") , "" , 
+		tx("specifies the spool directory") , "" ,
 		M::one , "dir" , 1 , t_undef ) ;
 			// Specifies the spool directory.
 
 	G::Options::add( opt , 'f' , "from" ,
-		tx("sets the envelope sender") , "" , 
+		tx("sets the envelope sender") , "" ,
 		M::one , "name" , 1 , t_undef ) ;
 			// Sets the envelope 'from' address.
 
 	G::Options::add( opt , 't' , "content-to" ,
-		tx("add recipients as content headers") , "" , 
+		tx("add recipients as content headers") , "" ,
 		M::zero , "" , 2 , t_undef ) ;
 			// Adds the envelope 'to' addresses as "To:" content headers.
 
 	G::Options::add( opt , 'F' , "content-from" ,
-		tx("add sender as content header") , "" , 
+		tx("add sender as content header") , "" ,
 		M::zero , "" , 2 , t_undef ) ;
 			// Adds the envelope 'from' addresses as a "From:" content header.
 
 	G::Options::add( opt , 'd' , "content-date" ,
-		tx("add a date content header") , "" , 
+		tx("add a date content header") , "" ,
 		M::zero , "" , 2 , t_undef ) ;
 			// Adds a "Date:" content header if there is none.
 
 	G::Options::add( opt , 'c' , "copy" ,
-		tx("copy into spool sub-directories") , "" , 
+		tx("copy into spool sub-directories") , "" ,
 		M::zero , "" , 2 , t_undef ) ;
 			// Copies the envelope file into all sub-directories of the
 			// main spool directory.
 
 	G::Options::add( opt , 'n' , "filename" ,
-		tx("prints the name of the created content file") , "" , 
+		tx("prints the name of the created content file") , "" ,
 		M::zero , "" , 2 , t_undef ) ;
 			// Prints the name of the content file.
 
 	G::Options::add( opt , 'C' , "content" ,
-		tx("sets a line of content") , "" , 
+		tx("sets a line of content") , "" ,
 		M::many , "base64" , 3 , t_undef ) ;
 			// Sets a line of content. This can be a header line, a blank line
-			// or a line of the body text. The first blank line separates headers 
+			// or a line of the body text. The first blank line separates headers
 			// from the body. The option value should be base64 encoded.
 
 	G::Options::add( opt , 'N' , "no-stdin" ,
-		tx("ignores the standard input stream") , "" , 
+		tx("ignores the standard input stream") , "" ,
 		M::zero , "" , 3 , t_undef ) ;
 			// Ignores the standard-input. Typically used with "--content".
 
 	G::Options::add( opt , 'a' , "auth" ,
-		tx("sets the envelope authentication value") , "" , 
+		tx("sets the envelope authentication value") , "" ,
 		M::one , "name" , 3 , t_undef ) ;
 			// Sets the authentication value in the envelope file.
 
 	G::Options::add( opt , 'i' , "from-auth-in" ,
-		tx("sets the envelope from-auth-in value") , "" , 
+		tx("sets the envelope from-auth-in value") , "" ,
 		M::one , "name" , 3 , t_undef ) ;
 			// Sets the 'from-auth-in' value in the envelope file.
 
 	G::Options::add( opt , 'o' , "from-auth-out" ,
-		tx("sets the envelope from-auth-out value") , "" , 
+		tx("sets the envelope from-auth-out value") , "" ,
 		M::one , "name" , 3 , t_undef ) ;
 			// Sets the 'from-auth-out' value in the envelope file.
 
 	G::Options::add( opt , 'V' , "version" ,
-		tx("prints the version and exits") , "" , 
+		tx("prints the version and exits") , "" ,
 		M::zero , "" , 2 , t_undef ) ;
 			// Prints the version number and exits.
 
@@ -252,12 +252,12 @@ static void run( const G::Arg & arg )
 	else if( opt.contains("help") )
 	{
 		std::ostream & stream = std::cerr ;
-		G::OptionsOutputLayout layout ;
+		G::OptionsUsage::Config layout ;
 		if( opt.contains("verbose") )
-			layout.set_level( 3U ) ;
+			layout.set_level_max( 3U ) ;
 		else
-			layout.set_level(1U).set_alt_usage() ;
-		G::OptionsOutput(opt.options()).showUsage( layout , stream , arg.prefix() , " <to-address> [<to-address> ...]" ) ;
+			layout.set_level_max(1U).set_alt_usage() ;
+		G::OptionsUsage(opt.options()).output( layout , stream , arg.prefix() , " <to-address> [<to-address> ...]" ) ;
 		if( !opt.contains("verbose") )
 			stream << "\nFor complete usage information run \"emailrelay-submit --help --verbose\"" << std::endl ;
 		stream
@@ -274,7 +274,7 @@ static void run( const G::Arg & arg )
 	else if( opt.args().c() == 1U )
 	{
 		std::cerr
-			<< G::OptionsOutput(opt.options()).usageSummary( {} , arg.prefix() , " <to-address> [<to-address> ...]" )
+			<< G::OptionsUsage(opt.options()).summary( {} , arg.prefix() , " <to-address> [<to-address> ...]" )
 			<< std::endl ;
 	}
 	else

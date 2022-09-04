@@ -86,7 +86,7 @@ void GNet::EventEmitter::raiseEvent( void (EventHandler::*method)(EventHandler::
 	Descriptor , EventHandler::Reason reason )
 {
 	EventLoggingContext set_logging_context( m_handler && m_es.set() ? m_es.esrc() : nullptr ) ;
-	m_es_saved = m_es ;
+	m_es_saved = m_es ; // (fd might get closed and reopened with a different exception sink)
 	try
 	{
 		if( m_handler != nullptr )

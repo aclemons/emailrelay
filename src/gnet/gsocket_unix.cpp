@@ -149,18 +149,19 @@ std::string GNet::SocketBase::reasonString( int e )
 
 // ==
 
-std::string GNet::Socket::canBindHint( const Address & address , bool stream )
+std::string GNet::Socket::canBindHint( const Address & address , bool stream , const Config & config )
 {
 	if( address.family() == Address::Family::ipv4 || address.family() == Address::Family::ipv6 )
 	{
 		if( stream )
 		{
-			StreamSocket s( address.family() ) ;
+			StreamSocket s( address.family() , StreamSocket::Config(config) ) ;
 			return s.bind( address , std::nothrow ) ? std::string() : s.reason() ;
 		}
 		else
 		{
-			DatagramSocket s( address.family() ) ;
+			int protocol = 0 ;
+			DatagramSocket s( address.family() , protocol , DatagramSocket::Config(config) ) ;
 			return s.bind( address , std::nothrow ) ? std::string() : s.reason() ;
 		}
 	}

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 #define G_MAIN_OUTPUT_H
 
 #include "gdef.h"
-#include "goptionsoutput.h"
+#include "goptionsusage.h"
 #include <string>
 
 namespace Main
@@ -41,7 +41,7 @@ public:
 	virtual void output( const std::string & , bool error , bool ) = 0 ;
 		///< Outputs the given string.
 
-	virtual G::OptionsOutputLayout outputLayout( bool verbose ) const = 0 ;
+	virtual G::OptionsUsage::Config outputLayout( bool verbose ) const = 0 ;
 		///< Returns a layout definition for G::Options.
 
 	virtual bool outputSimple() const = 0 ;

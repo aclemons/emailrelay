@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -54,15 +54,18 @@ GSmtp::Client::~Client()
 
 GNet::Client::Config GSmtp::Client::netConfig( const Config & smtp_config )
 {
-	GNet::Client::Config net_config ;
-	net_config.line_buffer_config = GNet::LineBufferConfig::smtp() ;
-	net_config.bind_local_address = smtp_config.bind_local_address ;
-	net_config.local_address = smtp_config.local_address ;
-	net_config.connection_timeout = smtp_config.connection_timeout ;
-	net_config.socket_protocol_config.secure_connection_timeout = smtp_config.secure_connection_timeout ;
-	//net_config.response_timeout = 0U ; // the protocol class does this
-	//net_config.idle_timeout = 0U ; // not needed
-	return net_config ;
+	return
+		GNet::Client::Config()
+			.set_stream_socket_config( smtp_config.stream_socket_config )
+			.set_line_buffer_config( GNet::LineBufferConfig::smtp() )
+			.set_bind_local_address( smtp_config.bind_local_address )
+			.set_local_address( smtp_config.local_address )
+			.set_connection_timeout( smtp_config.connection_timeout )
+			//.set_response_timeout( 0U ) // the protocol class does this
+			//.set_idle_timeout( 0U ) // not needed
+			.set_socket_protocol_config(
+				GNet::SocketProtocol::Config()
+					.set_secure_connection_timeout( smtp_config.secure_connection_timeout ) ) ;
 }
 
 G::Slot::Signal<const std::string&> & GSmtp::Client::messageDoneSignal()
@@ -80,12 +83,9 @@ void GSmtp::Client::sendMessagesFrom( MessageStore & store )
 void GSmtp::Client::sendMessage( std::unique_ptr<StoredMessage> message )
 {
 	G_ASSERT( message && message->toCount() ) ;
-	if( message && message->toCount() )
-	{
-		m_message.reset( message.release() ) ;
-		if( connected() )
-			start() ;
-	}
+	m_message = std::move( message ) ;
+	if( connected() )
+		start() ;
 }
 
 void GSmtp::Client::onConnect()
@@ -141,7 +141,7 @@ bool GSmtp::Client::sendNext()
 			m_message_count = 0U ;
 			return false ;
 		}
-		m_message.reset( message.release() ) ;
+		m_message = std::move( message ) ;
 	}
 
 	start() ;
@@ -284,6 +284,7 @@ void GSmtp::Client::protocolDone( int response_code , const std::string & respon
 	}
 	else
 	{
+		m_message.reset() ;
 		messageDoneSignal().emit( response ) ;
 	}
 }
@@ -291,7 +292,7 @@ void GSmtp::Client::protocolDone( int response_code , const std::string & respon
 void GSmtp::Client::quitAndFinish()
 {
 	m_protocol.finish() ; // send QUIT
-	finish( true ) ; // GNet::Client::finish() -- expect a disconnect
+	finish() ; // GNet::Client::finish() -- expect a disconnect
 }
 
 void GSmtp::Client::messageDestroy()
@@ -317,6 +318,7 @@ bool GSmtp::Client::onReceive( const char * line_data , std::size_t line_size , 
 
 	if( done )
 	{
+		m_message.reset() ;
 		quitAndFinish() ;
 		throw GNet::Done() ;
 	}
@@ -344,23 +346,6 @@ void GSmtp::Client::onSendComplete()
 
 GSmtp::Client::Config::Config() :
 	local_address(GNet::Address::defaultAddress())
-{
-}
-
-GSmtp::Client::Config::Config( const std::string & filter_address_ , unsigned int filter_timeout_ ,
-	bool bind_local_address_ , const GNet::Address & local_address_ ,
-	const ClientProtocol::Config & protocol_config_ , unsigned int connection_timeout_ ,
-	unsigned int secure_connection_timeout_ , bool secure_tunnel_ ,
-	const std::string & sasl_client_config_ ) :
-		filter_address(filter_address_) ,
-		filter_timeout(filter_timeout_) ,
-		bind_local_address(bind_local_address_) ,
-		local_address(local_address_) ,
-		client_protocol_config(protocol_config_) ,
-		connection_timeout(connection_timeout_) ,
-		secure_connection_timeout(secure_connection_timeout_) ,
-		secure_tunnel(secure_tunnel_) ,
-		sasl_client_config(sasl_client_config_)
 {
 }
 

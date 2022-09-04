@@ -85,8 +85,8 @@ public:
 
 	bool expired( G::TimerTime & ) const ;
 		///< Used by TimerList. Returns true if expired when compared
-		///< to the given epoch time. If the given epoch time is 
-		///< TimerTime::zero() then it is initialised with 
+		///< to the given epoch time. If the given epoch time is
+		///< TimerTime::zero() then it is initialised with
 		///< TimerTime::now().
 
 protected:

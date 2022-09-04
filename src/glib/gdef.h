@@ -381,6 +381,13 @@
 			#define GCONFIG_HAVE_IFNAMETOLUID 0
 		#endif
 	#endif
+	#if !defined(GCONFIG_HAVE_IFINDEX)
+		#ifdef G_UNIX
+			#define GCONFIG_HAVE_IFINDEX 1
+		#else
+			#define GCONFIG_HAVE_IFINDEX 0
+		#endif
+	#endif
 	#if !defined(GCONFIG_HAVE_INET_PTON)
 		#define GCONFIG_HAVE_INET_PTON 1
 	#endif

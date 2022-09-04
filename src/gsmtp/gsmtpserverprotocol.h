@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -359,8 +359,8 @@ private:
 class GSmtp::ServerProtocolText : public ServerProtocol::Text
 {
 public:
-	ServerProtocolText( const std::string & code_ident , const std::string & thishost ,
-		const GNet::Address & peer_address ) ;
+	ServerProtocolText( const std::string & code_ident , bool with_received_line ,
+		const std::string & thishost , const GNet::Address & peer_address ) ;
 			///< Constructor.
 
 	static std::string receivedLine( const std::string & smtp_peer_name_from_helo ,
@@ -383,6 +383,7 @@ private: // overrides
 
 private:
 	std::string m_code_ident ;
+	bool m_with_received_line ;
 	std::string m_thishost ;
 	GNet::Address m_peer_address ;
 } ;

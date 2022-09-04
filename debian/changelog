@@ -1,11 +1,13 @@
 emailrelay (2.4) unstable; urgency=low
   * Multiple "--filter" and "--client-filter" options allowed.
+  * Finer control of "--anonymous" (eg. "--anonymous=server").
   * Hourly log file rotation using "%h" (eg. "--log-file=log.%d.%h").
   * TLS key and certificate files can be specified separately.
   * Uses epoll by default on Linux.
+  * Exclusive listening port binding on Windows.
   * More simultaneous connections supported on Windows.
   * Fixed error handling for network client filters ("--client-filter=net:...") [bug-id #50].
- -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Sun, 17 Jul 2022 00:00:00 +0000
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Sat,  3 Sep 2022 00:00:00 +0000
 
 emailrelay (2.3) unstable; urgency=low
   * Unix domain sockets supported (eg. "--interface=/tmp/smtp.s").

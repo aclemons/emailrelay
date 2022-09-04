@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -130,7 +130,6 @@ public:
 private:
 	void doForwardingOnStartup( G::PidFile & ) ;
 	void closeFiles() const ;
-	void closeMoreFiles() const ;
 	void commit( G::PidFile & ) ;
 	std::string smtpIdent() const ;
 	void recordPid() ;
@@ -149,8 +148,7 @@ private:
 	void onQueueTimeout() ;
 	std::string startForwarding() ;
 	bool logForwarding() const ;
-	void checkPorts() const ;
-	static void checkPort( bool , const std::string & , unsigned int ) ;
+	GNet::StreamSocket::Config netSocketConfig( bool server = true ) const ;
 	GSmtp::Client::Config clientConfig() const ;
 	GSmtp::ServerProtocol::Config serverProtocolConfig() const ;
 	GSmtp::Server::Config smtpServerConfig() const ;
@@ -169,7 +167,7 @@ private:
 		const Configuration & , GSmtp::MessageStore & , GSmtp::FilterFactory & ,
 		G::Slot::Signal<const std::string&> & ,
 		const GNet::ServerPeer::Config & ,
-		const GNet::Server::Config & , const GSmtp::Client::Config & , 
+		const GNet::Server::Config & , const GSmtp::Client::Config & ,
 		const GAuth::Secrets & , const std::string & ) ;
 
 private:

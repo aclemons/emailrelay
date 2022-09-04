@@ -179,8 +179,8 @@ public:
 	~DnsBlock() override = default ;
 	DnsBlock( const DnsBlock & ) = delete ;
 	DnsBlock( DnsBlock && ) = delete ;
-	void operator=( const DnsBlock & ) = delete ;
-	void operator=( DnsBlock && ) = delete ;
+	DnsBlock & operator=( const DnsBlock & ) = delete ;
+	DnsBlock & operator=( DnsBlock && ) = delete ;
 
 private: // overrides
 	void readEvent() override ; // Override from GNet::EventHandler.

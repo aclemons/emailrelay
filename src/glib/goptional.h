@@ -40,7 +40,7 @@ public:
 	optional() noexcept(noexcept(T())) ;
 	explicit optional( const T & ) ;
 	optional( bool has_value , const T & value ) ; // not in std::optional()
-	void clear() noexcept ; // not in std::optional()
+	void clear() ; // not in std::optional()
 	bool has_value() const noexcept ;
 	explicit operator bool() const noexcept ;
 	const T & value() const ;
@@ -81,7 +81,7 @@ G::optional<T>::optional( bool has_value , const T & value ) :
 }
 
 template <typename T>
-void G::optional<T>::clear() noexcept
+void G::optional<T>::clear()
 {
 	m_has_value = false ;
 }

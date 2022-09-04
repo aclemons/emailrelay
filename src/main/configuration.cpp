@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 
 #include "gdef.h"
 #include "gstr.h"
+#include "gstringfield.h"
 #include "configuration.h"
 #include "commandline.h"
 #include "gmessagestore.h"
@@ -500,9 +501,41 @@ unsigned int Main::Configuration::scannerResponseTimeout() const
 	return 90U ; // for now
 }
 
-bool Main::Configuration::anonymous() const
+bool Main::Configuration::anonymous( G::string_view type ) const
 {
-	return m_map.contains( "anonymous" ) ;
+	if( !m_map.contains("anonymous") )
+		return false ;
+
+	std::string value = m_map.value( "anonymous" ) ;
+	if( value.empty() )
+		return true ;
+
+	for( G::StringField f(value,",",1U) ; f ; ++f )
+	{
+		if( f() == type )
+			return true ;
+	}
+	return false ;
+}
+
+bool Main::Configuration::anonymousServerVrfy() const
+{
+	return anonymous( "vrfy" ) ;
+}
+
+bool Main::Configuration::anonymousServerSmtp() const
+{
+	return anonymous( "server" ) ;
+}
+
+bool Main::Configuration::anonymousContent() const
+{
+	return anonymous( "content" ) ;
+}
+
+bool Main::Configuration::anonymousClientSmtp() const
+{
+	return anonymous( "client" ) ;
 }
 
 bool Main::Configuration::smtpPipelining() const

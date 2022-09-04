@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -155,6 +155,7 @@ warn "error: cannot find mbedtls source: please download from tls.mbed.org " .
 if( $no_cmake || $no_msbuild || $no_qt || $no_mbedtls )
 {
 	warn "error: missing prerequisites: please install the missing components" ,
+		( -f "winbuild.cfg" ? "" : " or use a winbuild.cfg configuration file" ) ,
 		( ($no_qt||$no_mbedtls) ? " or unset configuration items in winbuild.pl\n" : "\n" ) ;
 	die "error: missing prerequisites\n" unless ( scalar(@ARGV) > 0 && $ARGV[0] eq "mingw" ) ;
 }
@@ -310,7 +311,6 @@ sub create_cmake_file
 		print $fh "set(CMAKE_INCLUDE_CURRENT_DIR ON)\n" ;
 	}
 
-
 	# force static or dynamic linking of the c++ runtime by
 	# switching between /MD and /MT -- use static linking
 	# by default but keep the gui dynamically linked so that
@@ -323,21 +323,21 @@ sub create_cmake_file
 	{
 		print $fh '# choose dynamic or static linking of the c++ runtime' , "\n" ;
 		print $fh 'set(CompilerFlags' , "\n" ;
-        print $fh '    CMAKE_CXX_FLAGS' , "\n" ;
-        print $fh '    CMAKE_CXX_FLAGS_DEBUG' , "\n" ;
-        print $fh '    CMAKE_CXX_FLAGS_RELEASE' , "\n" ;
-        print $fh '    CMAKE_C_FLAGS' , "\n" ;
-        print $fh '    CMAKE_C_FLAGS_DEBUG' , "\n" ;
-        print $fh '    CMAKE_C_FLAGS_RELEASE' , "\n" ;
-        print $fh ')' , "\n" ;
+		print $fh '    CMAKE_CXX_FLAGS' , "\n" ;
+		print $fh '    CMAKE_CXX_FLAGS_DEBUG' , "\n" ;
+		print $fh '    CMAKE_CXX_FLAGS_RELEASE' , "\n" ;
+		print $fh '    CMAKE_C_FLAGS' , "\n" ;
+		print $fh '    CMAKE_C_FLAGS_DEBUG' , "\n" ;
+		print $fh '    CMAKE_C_FLAGS_RELEASE' , "\n" ;
+		print $fh ')' , "\n" ;
 		print $fh 'foreach(CompilerFlag ${CompilerFlags})' , "\n" ;
 		if( $dynamic_runtime )
 		{
-  			print $fh '    string(REPLACE "/MT" "/MD" ${CompilerFlag} "${${CompilerFlag}}")' , "\n" ;
+			print $fh '    string(REPLACE "/MT" "/MD" ${CompilerFlag} "${${CompilerFlag}}")' , "\n" ;
 		}
 		else
 		{
-  			print $fh '    string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}")' , "\n" ;
+			print $fh '    string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}")' , "\n" ;
 		}
 		print $fh 'endforeach()' , "\n" ;
 	}
@@ -377,9 +377,9 @@ sub create_cmake_file
 		{
 			if( ! $tls_libs_fixed )
 			{
-  				print $fh '    string(REPLACE "/Release" "/Debug" MBEDTLS_LIBRARY_DEBUG "${MBEDTLS_LIBRARY}")' , "\n" ;
-  				print $fh '    string(REPLACE "/Release" "/Debug" MBEDX509_LIBRARY_DEBUG "${MBEDX509_LIBRARY}")' , "\n" ;
-  				print $fh '    string(REPLACE "/Release" "/Debug" MBEDCRYPTO_LIBRARY_DEBUG "${MBEDCRYPTO_LIBRARY}")' , "\n" ;
+				print $fh '    string(REPLACE "/Release" "/Debug" MBEDTLS_LIBRARY_DEBUG "${MBEDTLS_LIBRARY}")' , "\n" ;
+				print $fh '    string(REPLACE "/Release" "/Debug" MBEDX509_LIBRARY_DEBUG "${MBEDX509_LIBRARY}")' , "\n" ;
+				print $fh '    string(REPLACE "/Release" "/Debug" MBEDCRYPTO_LIBRARY_DEBUG "${MBEDCRYPTO_LIBRARY}")' , "\n" ;
 				$tls_libs_fixed = 1 ;
 			}
 			$tls_libs =
@@ -805,11 +805,11 @@ sub install_core
 		doc/forwardto.png doc
 		doc/whatisit.png doc
 		doc/serverclient.png doc
-    	doc/*.html doc
-    	doc/developer.txt doc
-    	doc/reference.txt doc
-    	doc/userguide.txt doc
-    	doc/windows.txt doc
+		doc/*.html doc
+		doc/developer.txt doc
+		doc/reference.txt doc
+		doc/userguide.txt doc
+		doc/windows.txt doc
 		doc/windows.txt readme-windows.txt
 		doc/doxygen-missing.html doc/doxygen/index.html
 	) ;

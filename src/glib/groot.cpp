@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -61,7 +61,7 @@ G::Root::~Root() // NOLINT bugprone-exception-escape
 		m_this = nullptr ;
 		int e_saved = Process::errno_() ;
 		Process::beOrdinary( m_nobody , m_change_group ) ; // can throw - std::terminate is correct
-		Process::errno_( SignalSafe() , e_saved ) ;
+		Process::errno_( e_saved ) ;
 	}
 }
 

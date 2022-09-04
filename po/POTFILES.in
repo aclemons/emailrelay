@@ -67,7 +67,6 @@
 ./src/glib/goptionmap.cpp
 ./src/glib/gpath.cpp
 ./src/glib/gfile.cpp
-./src/glib/ggettext_none.cpp
 ./src/glib/gstringview.cpp
 ./src/glib/gprocess_unix.cpp
 ./src/glib/gidentity_unix.cpp
@@ -92,7 +91,6 @@
 ./src/glib/gstr.cpp
 ./src/glib/glogoutput.cpp
 ./src/glib/gstringlist.cpp
-./src/glib/goptionsoutput.cpp
 ./src/glib/gformat.cpp
 ./src/glib/garg.cpp
 ./src/glib/gmsg_unix.cpp
@@ -101,8 +99,10 @@
 ./src/glib/gexecutablecommand.cpp
 ./src/glib/gpidfile.cpp
 ./src/glib/gpam_none.cpp
+./src/glib/goptionsusage.cpp
 ./src/glib/gdirectory.cpp
 ./src/glib/goptionparser.cpp
+./src/glib/glogstream.cpp
 ./src/glib/gtest.cpp
 ./src/glib/gdatetime.cpp
 ./src/glib/gstringwrap.cpp
@@ -127,6 +127,7 @@
 ./src/gnet/geventloop_epoll.cpp
 ./src/gnet/geventloop.cpp
 ./src/gnet/ginterfaces_common.cpp
+./src/gnet/geventloophandles.cpp
 ./src/gnet/gaddresslocal_unix.cpp
 ./src/gnet/gmonitor.cpp
 ./src/gnet/gdnsbl_enabled.cpp

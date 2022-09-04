@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "%-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<!DOCTYPE html>
 <html>
  <head>
   <title>E-MailRelay Readme</title>
@@ -8,7 +8,7 @@
  <body>
   <!-- index:0::::E-MailRelay Readme -->
  <div class="div-main">
-  <h1><a class="a-header" name="H_1">E-MailRelay Readme</a></h1> <!-- index:1:H:1::E-MailRelay Readme -->
+  <h1><a class="a-header" name="H_1">E-MailRelay Readme</a></h1> <!-- index:1:H:E-MailRelay Readme -->
    <h2><a class="a-header" name="SH_1_1">Abstract</a></h2> <!-- index:2:SH:1:1:Abstract -->
     <p>
      E-MailRelay is an e-mail store-and-forward message transfer agent and proxy
@@ -132,7 +132,43 @@
       <div class="div-pre">
        <pre>emailrelay --help --verbose</pre>
       </div><!-- div-pre -->
-   <h2><a class="a-header" name="SH_1_3">Documentation</a></h2> <!-- index:2:SH:1:3:Documentation -->
+   <h2><a class="a-header" name="SH_1_3">Packages</a></h2> <!-- index:2:SH:1:3:Packages -->
+    <p>
+     To install on Linux from a RPM or DEB package:
+    </p>
+
+      <div class="div-pre">
+       <pre>sudo $SHELL # or 'su'
+rpm -i emailrelay*.rpm  # if RPM
+dpkg -i emailrelay*.deb  # if DEB
+</pre>
+      </div><!-- div-pre -->
+    <p>
+     If your Linux system uses <em>systemd</em> then you should check the E-MailRelay
+     configuration file <em>/etc/emailrelay.conf</em> is as you want it and then run:
+    </p>
+
+      <div class="div-pre">
+       <pre>systemctl enable emailrelay
+systemctl start emailrelay
+systemctl status emailrelay
+</pre>
+      </div><!-- div-pre -->
+    <p>
+     On other systems try these commands:
+    </p>
+
+      <div class="div-pre">
+       <pre>cp /usr/lib/emailrelay/init/emailrelay /etc/init.d/
+update-rc.d emailrelay enable || rc-update add emailrelay
+invoke-rc.d emailrelay start || service emailrelay start
+tail /var/log/messages /var/log/syslog 2&gt;/dev/null
+</pre>
+      </div><!-- div-pre -->
+    <p>
+     On Windows run the setup program.
+    </p>
+   <h2><a class="a-header" name="SH_1_4">Documentation</a></h2> <!-- index:2:SH:1:4:Documentation -->
     <p>
      The following documentation is provided:
     </p>
@@ -150,12 +186,8 @@
      Source code documentation will be generated when building from source if
      <em>doxygen</em> is available.
     </p>
-   <h2><a class="a-header" name="SH_1_4">Feedback</a></h2> <!-- index:2:SH:1:4:Feedback -->
-    <p>
-     Please feel free to e-mail the author at <em>mailto:graeme_walker@users.sourceforge.net</em>.
-    </p>
 
  </div> <!-- div-main -->
  </body>
 </html>
-<!-- Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->
+<!-- Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->

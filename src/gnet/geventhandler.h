@@ -49,6 +49,7 @@ class GNet::EventHandler
 public:
 	enum class Reason
 	{
+		failed , // connection failed
 		closed , // fin packet, clean shutdown
 		down , // network down
 		reset , // rst packet

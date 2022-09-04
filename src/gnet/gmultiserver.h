@@ -75,11 +75,6 @@ public:
 	std::vector<std::weak_ptr<ServerPeer>> peers() ;
 		///< Returns the list of ServerPeer-derived objects.
 
-	static bool canBind( const AddressList & listening_address_list , bool do_throw ) ;
-		///< Checks that all the specified addresses can be
-		///< bound. Throws CannotBind if any of those addresses
-		///< cannot be bound and 'do_throw' is true.
-
 	std::unique_ptr<ServerPeer> doNewPeer( ExceptionSinkUnbound , ServerPeerInfo && , const ServerInfo & ) ;
 		///< Pseudo-private method used by the pimple class.
 

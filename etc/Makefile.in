@@ -302,7 +302,7 @@ e_examples_DATA = \
 e_systemd_DATA = \
 	emailrelay.service
 
-do_sed = sed -e "s:__INIT_DIR__:$(e_initdir):g" -e "s:__RUN_DIR__:$(e_rundir):g"
+do_sed = sed -e "s:__INIT_DIR__:$(e_initdir):g" -e "s:__RUN_DIR__:$(e_rundir):g" -e "s:__SYSCONF_DIR__:$(e_sysconfdir):g" -e "s:__SBIN_DIR__:$(sbindir):g"
 CLEANFILES = \
 	emailrelay \
 	emailrelay.service

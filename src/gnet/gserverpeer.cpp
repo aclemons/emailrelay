@@ -21,6 +21,7 @@
 #include "gdef.h"
 #include "gserver.h"
 #include "gmonitor.h"
+#include "gtest.h"
 #include "glog.h"
 #include "gassert.h"
 #include <sstream>
@@ -42,9 +43,6 @@ GNet::ServerPeer::ServerPeer( ExceptionSink es , ServerPeerInfo && peer_info , c
 
 	if( m_config.idle_timeout )
 		m_idle_timer.startTimer( m_config.idle_timeout ) ;
-
-	if( m_config.socket_linger_onoff >= 0 )
-		m_socket->setOptionLinger( m_config.socket_linger_onoff , m_config.socket_linger_time ) ;
 
 	m_socket->addReadHandler( *this , es ) ;
 	m_socket->addOtherHandler( *this , es ) ;
@@ -85,12 +83,13 @@ void GNet::ServerPeer::addReadHandler()
 
 void GNet::ServerPeer::otherEvent( EventHandler::Reason reason )
 {
-	m_sp.otherEvent( reason ) ;
+	m_sp.otherEvent( reason , m_config.no_throw_on_peer_disconnect ) ;
 }
 
 void GNet::ServerPeer::readEvent()
 {
-	m_sp.readEvent() ;
+	if( m_sp.readEvent( m_config.no_throw_on_peer_disconnect ) )
+		onSendComplete() ;
 }
 
 GNet::Address GNet::ServerPeer::localAddress() const
@@ -185,12 +184,12 @@ void GNet::ServerPeer::setIdleTimeout( unsigned int s )
 		m_idle_timer.startTimer( m_config.idle_timeout ) ;
 }
 
-// ==
-
-GNet::ServerPeer::Config & GNet::ServerPeer::Config::set_socket_linger( std::pair<int,int> pair )
+void GNet::ServerPeer::finish()
 {
-	socket_linger_onoff = pair.first ;
-	socket_linger_time = pair.second ;
-	return *this ;
+	m_sp.shutdown() ;
+}
+
+void GNet::ServerPeer::onPeerDisconnect()
+{
 }
 

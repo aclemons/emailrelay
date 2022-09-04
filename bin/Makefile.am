@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@ example_scripts_static = \
 	emailrelay-bcc-check.pl \
 	emailrelay-check-ipaddress.js \
 	emailrelay-check-ipaddress.pl \
+	emailrelay-dkim-signer.pl \
 	emailrelay-ldap-verify.py \
 	emailrelay-multicast.sh \
 	emailrelay-rot13.pl \
@@ -52,6 +53,7 @@ work_scripts = \
 	make-format \
 	make2cmake \
 	make2cdb \
+	make2unity \
 	AutoMakeParser.pm \
 	CompilationDatabase.pm \
 	ConfigStatus.pm \

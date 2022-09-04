@@ -66,7 +66,7 @@ void Gui::Boot::launchable( const G::Path & , const std::string & )
 
 void Gui::Boot::launch( const G::Path & , const std::string & )
 {
-	// TODO
+	// TODO Gui::Boot::launch() for mac
 	throw std::runtime_error( "startup failed: not implemented" ) ;
 }
 

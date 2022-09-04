@@ -167,7 +167,9 @@ void GNet::DnsBlock::start( const Address & address )
 		id_generator = 10 ;
 
 	// create a socket to receive responses
-	m_socket_ptr = std::make_unique<DatagramSocket>( m_dns_server.family() ) ;
+	int protocol = 0 ;
+	DatagramSocket::Config datagram_socket_config ;
+	m_socket_ptr = std::make_unique<DatagramSocket>( m_dns_server.family() , protocol , datagram_socket_config ) ;
 	m_socket_ptr->addReadHandler( *this , m_es ) ;
 
 	// send a DNS query to each configured server

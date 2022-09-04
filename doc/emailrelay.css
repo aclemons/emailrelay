@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+  Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 */
 
 /*
@@ -23,6 +23,12 @@ h1
 
 h2
 {
+	color: #09c ;
+}
+
+h3
+{
+	font-size: smaller ;
 	color: #09c ;
 }
 

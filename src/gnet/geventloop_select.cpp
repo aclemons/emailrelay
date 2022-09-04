@@ -42,10 +42,6 @@ namespace GNet
 	class EventLoopImp ;
 }
 
-//| \class GNet::EventLoopImp
-/// A concrete implementation of GNet::EventLoop using select() in its
-/// implementation.
-///
 class GNet::EventLoopImp : public EventLoop
 {
 public:

@@ -31,23 +31,28 @@ int GNet::AddressLocal::domain() noexcept
 	return 0 ;
 }
 
-GNet::AddressLocal::AddressLocal( std::nullptr_t )
+GNet::AddressLocal::AddressLocal( std::nullptr_t ) :
+	m_size(0U)
 {
 }
 
-GNet::AddressLocal::AddressLocal( unsigned int /*port*/ )
+GNet::AddressLocal::AddressLocal( unsigned int /*port*/ ) :
+	m_size(0U)
 {
 }
 
-GNet::AddressLocal::AddressLocal( unsigned int /*port*/ , int /*loopback_overload*/ )
+GNet::AddressLocal::AddressLocal( unsigned int /*port*/ , int /*loopback_overload*/ ) :
+	m_size(0U)
 {
 }
 
-GNet::AddressLocal::AddressLocal( const sockaddr * /*addr*/ , socklen_t /*len*/ )
+GNet::AddressLocal::AddressLocal( const sockaddr * /*addr*/ , socklen_t /*len*/ ) :
+	m_size(0U)
 {
 }
 
-GNet::AddressLocal::AddressLocal( const std::string & /*host_part*/ )
+GNet::AddressLocal::AddressLocal( const std::string & /*host_part*/ ) :
+	m_size(0U)
 {
 }
 

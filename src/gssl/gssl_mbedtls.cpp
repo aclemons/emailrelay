@@ -90,8 +90,8 @@ namespace GSsl
 {
 	namespace MbedTls
 	{
-		G_EXCEPTION( ErrorDevRandomOpen , tx("cannot open /dev/random") ) ;
-		G_EXCEPTION( ErrorDevRandomRead , tx("cannot read /dev/random") ) ;
+		G_EXCEPTION_CLASS( ErrorDevRandomOpen , tx("cannot open /dev/random") ) ;
+		G_EXCEPTION_CLASS( ErrorDevRandomRead , tx("cannot read /dev/random") ) ;
 
 		void randomFillImp( char * p , std::size_t n ) ;
 		int randomFill( void * , unsigned char * output , std::size_t len , std::size_t * olen ) ;

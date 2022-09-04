@@ -234,10 +234,17 @@ void GNet::TimerList::doTimeouts()
 
 	for( List::iterator value_p = m_list.begin() ; value_p != expired_end ; ++value_p )
 	{
-		G_ASSERT( value_p->m_timer != nullptr ) ;
 		if( value_p->m_timer == m_soonest )
+		{
 			m_soonest = nullptr ;
-		doTimeout( *value_p ) ;
+			break ;
+		}
+	}
+
+	for( List::iterator value_p = m_list.begin() ; value_p != expired_end ; ++value_p )
+	{
+		if( value_p->m_timer != nullptr && value_p->m_timer->active() && value_p->m_timer->expired(now) ) // still
+			doTimeout( *value_p ) ;
 	}
 
 	unlock() ; // avoid doing possibly-throwing operations in Lock dtor

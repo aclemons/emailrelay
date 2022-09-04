@@ -238,12 +238,10 @@ void G::File::chmodx( const Path & path )
 }
 #endif
 
-#ifndef G_FILE_SMALL
 bool G::File::mkdir( const Path & dir , std::nothrow_t )
 {
 	return 0 == mkdirImp( dir ) ;
 }
-#endif
 
 #ifndef G_FILE_SMALL
 void G::File::mkdir( const Path & dir )
@@ -254,12 +252,9 @@ void G::File::mkdir( const Path & dir )
 }
 #endif
 
-bool G::File::mkdirsr( int * ep , const Path & path , int limit )
+bool G::File::mkdirsr( const Path & path , int & e , int & limit )
 {
 	// (recursive)
-
-	if( limit == 0 )
-		return false ;
 
 	if( exists(path) )
 		return true ;
@@ -267,30 +262,31 @@ bool G::File::mkdirsr( int * ep , const Path & path , int limit )
 	if( path.str().empty() )
 		return true ;
 
-	if( !mkdirsr( ep , path.dirname() , limit-1 ) ) // (recursion)
+	bool ok = mkdirsr( path.dirname() , e , limit ) ; // (recursion)
+	if( !ok )
 		return false ;
 
-	int e = mkdirImp( path ) ;
-	if( e )
-		*ep = e ;
-	else
-		chmodx( path , std::nothrow ) ;
+	e = mkdirImp( path ) ;
+	if( e == 0 && --limit < 0 )
+	{
+		e = ENOENT ; // sort of
+		return false ;
+	}
 
-	return e == 0 ;
+	return true ;
 }
 
 bool G::File::mkdirs( const Path & path , std::nothrow_t , int limit )
 {
 	int e = 0 ;
-	bool ok = mkdirsr( &e , path , limit ) ;
-	return ok || e == EEXIST ;
+	return mkdirsr( path , e , limit ) ;
 }
 
 #ifndef G_FILE_SMALL
 void G::File::mkdirs( const Path & path , int limit )
 {
 	int e = 0 ;
-	if( !mkdirsr(&e,path,limit) && e != EEXIST )
+	if( !mkdirsr(path,e,limit) && e != EEXIST )
 		throw CannotMkdir( path.str() , e ? G::Process::strerror(e) : std::string() ) ;
 }
 #endif

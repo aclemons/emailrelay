@@ -24,7 +24,7 @@
 #include "gdef.h"
 #include "gappbase.h"
 #include "gexception.h"
-#include "goptionsoutput.h"
+#include "goptionsusage.h"
 #include "gtray.h"
 #include "winform.h"
 #include "winmenu.h"
@@ -79,7 +79,7 @@ public:
 	void disableOutput() ;
 		///< Disables subsequent calls to output().
 
-	void onError( const std::string & message ) ;
+	void onError( const std::string & message , int exit_code = 1 ) ;
 		///< To be called when WinMain() catches an exception.
 
 	unsigned int columns() ;
@@ -92,7 +92,7 @@ public:
 
 private: // overrides
 	void output( const std::string & message , bool error , bool ) override ; // Override from Main::Output.
-	G::OptionsOutput::Layout outputLayout( bool verbose ) const override ; // Override from Main::Output.
+	G::OptionsUsage::Config outputLayout( bool verbose ) const override ; // Override from Main::Output.
 	bool outputSimple() const override ; // Override from Main::Output.
 	void onWindowException( std::exception & e ) override ; // Override from GGui::Window.
 	DWORD classStyle() const override ; // Override from GGui::ApplicationBase.

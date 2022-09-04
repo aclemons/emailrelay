@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,11 +20,10 @@
 
 #include "gdef.h"
 #include "gdate.h"
+#include "gstr.h"
 #include "glog.h"
 #include "gassert.h"
 #include <ctime>
-#include <iomanip>
-#include <sstream>
 
 int G::Date::yearUpperLimit()
 {
@@ -110,16 +109,12 @@ int G::Date::monthday() const
 
 std::string G::Date::dd() const
 {
-	std::ostringstream ss ;
-	ss << std::setw(2) << std::setfill('0') << m_day ;
-	return ss.str() ;
+	return std::string(1U,'0').append(Str::fromInt(m_day)).substr(0U,2U) ;
 }
 
 std::string G::Date::mm() const
 {
-	std::ostringstream ss ;
-	ss << std::setw(2) << std::setfill('0') << m_month ;
-	return ss.str() ;
+	return std::string(1U,'0').append(Str::fromInt(m_month)).substr(0U,2U) ;
 }
 
 G::Date::Weekday G::Date::weekday() const
@@ -135,14 +130,16 @@ G::Date::Weekday G::Date::weekday() const
 
 std::string G::Date::weekdayName( bool brief ) const
 {
-	if( weekday() == Weekday::sunday ) return brief ? "Sun" : "Sunday" ;
-	if( weekday() == Weekday::monday ) return brief ? "Mon" : "Monday" ;
-	if( weekday() == Weekday::tuesday ) return brief ? "Tue" : "Tuesday" ;
-	if( weekday() == Weekday::wednesday ) return brief ? "Wed" : "Wednesday" ;
-	if( weekday() == Weekday::thursday ) return brief ? "Thu" : "Thursday" ;
-	if( weekday() == Weekday::friday ) return brief ? "Fri" : "Friday" ;
-	if( weekday() == Weekday::saturday ) return brief ? "Sat" : "Saturday" ;
-	return "" ;
+	Weekday d = weekday() ;
+	const char * p = "" ;
+	if( d == Weekday::sunday ) p = brief ? "Sun" : "Sunday" ;
+	else if( d == Weekday::monday ) p = brief ? "Mon" : "Monday" ;
+	else if( d == Weekday::tuesday ) p = brief ? "Tue" : "Tuesday" ;
+	else if( d == Weekday::wednesday ) p = brief ? "Wed" : "Wednesday" ;
+	else if( d == Weekday::thursday ) p= brief ? "Thu" : "Thursday" ;
+	else if( d == Weekday::friday ) p = brief ? "Fri" : "Friday" ;
+	else if( d == Weekday::saturday ) p = brief ? "Sat" : "Saturday" ;
+	return std::string(p) ;
 }
 
 G::Date::Month G::Date::month() const
@@ -152,19 +149,21 @@ G::Date::Month G::Date::month() const
 
 std::string G::Date::monthName( bool brief ) const
 {
-	if( month() == Month::january ) return brief ? "Jan" : "January" ;
-	if( month() == Month::february ) return brief ? "Feb" : "February" ;
-	if( month() == Month::march ) return brief ? "Mar" : "March" ;
-	if( month() == Month::april ) return brief ? "Apr" : "April" ;
-	if( month() == Month::may ) return "May" ;
-	if( month() == Month::june ) return brief ? "Jun" : "June" ;
-	if( month() == Month::july ) return brief ? "Jul" : "July" ;
-	if( month() == Month::august ) return brief ? "Aug" : "August" ;
-	if( month() == Month::september ) return brief ? "Sep" : "September" ;
-	if( month() == Month::october ) return brief ? "Oct" : "October" ;
-	if( month() == Month::november ) return brief ? "Nov" : "November" ;
-	if( month() == Month::december ) return brief ? "Dec" : "December" ;
-	return "" ;
+	Month m = month() ;
+	const char * p = "" ;
+	if( m == Month::january ) p = brief ? "Jan" : "January" ;
+	else if( m == Month::february ) p = brief ? "Feb" : "February" ;
+	else if( m == Month::march ) p = brief ? "Mar" : "March" ;
+	else if( m == Month::april ) p = brief ? "Apr" : "April" ;
+	else if( m == Month::may ) p = "May" ;
+	else if( m == Month::june ) p = brief ? "Jun" : "June" ;
+	else if( m == Month::july ) p = brief ? "Jul" : "July" ;
+	else if( m == Month::august ) p = brief ? "Aug" : "August" ;
+	else if( m == Month::september ) p = brief ? "Sep" : "September" ;
+	else if( m == Month::october ) p = brief ? "Oct" : "October" ;
+	else if( m == Month::november ) p = brief ? "Nov" : "November" ;
+	else if( m == Month::december ) p = brief ? "Dec" : "December" ;
+	return std::string(p) ;
 }
 
 int G::Date::year() const
@@ -174,9 +173,14 @@ int G::Date::year() const
 
 std::string G::Date::yyyy() const
 {
-	std::ostringstream ss ;
-	ss << std::setw(4) << std::setfill('0') << m_year ;
-	return ss.str() ;
+	return std::string(3U,'0').append(Str::fromInt(m_year)).substr(0U,4U) ;
+}
+
+G::Date G::Date::next() const
+{
+	Date d( *this ) ;
+	++d ;
+	return d ;
 }
 
 G::Date & G::Date::operator++()
@@ -200,6 +204,13 @@ G::Date & G::Date::operator++()
 			m_weekday = static_cast<Weekday>(static_cast<int>(m_weekday)+1) ;
 	}
 	return *this ;
+}
+
+G::Date G::Date::previous() const
+{
+	Date d( *this ) ;
+	--d ;
+	return d ;
 }
 
 G::Date & G::Date::operator--()

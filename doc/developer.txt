@@ -275,4 +275,4 @@ Use "./configure --help" to see a complete list of options.
 
 
 _____________________________________
-Copyright (C) 2001-2021 Graeme Walker
+Copyright (C) 2001-2022 Graeme Walker

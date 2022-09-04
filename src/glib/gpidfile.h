@@ -81,10 +81,8 @@ public:
 	~PidFile() ;
 		///< Destructor. Calls cleanup() to delete the file.
 
-	void mkdirs() ;
-		///< Creates the directory if it does not already
-		///< exist. Throws on error, but not just because
-		///< the directory already exists.
+	void mkdir() ;
+		///< Creates the directory if it does not already exist.
 		///<
 		///< The caller should switch effective user-id and
 		///< umask as necessary.
@@ -103,7 +101,7 @@ public:
 		///< a valid path().
 
 	Path path() const ;
-		///< Returns the path as supplied to the constructor.
+		///< Returns the full path of the file.
 
 public:
 	PidFile( const PidFile & ) = delete ;

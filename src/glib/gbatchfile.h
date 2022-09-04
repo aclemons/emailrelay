@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 
 #include "gdef.h"
 #include "gpath.h"
-#include "gstrings.h"
+#include "gstringarray.h"
 #include "gexception.h"
 #include <iostream>
 #include <string>
@@ -39,6 +39,13 @@ namespace G
 /// A class for reading and writing windows-style startup batch files
 /// containing a single command-line, optionally using "start".
 ///
+/// Eg:
+/// \code
+///  @echo off
+///  rem a windows batch file
+///  start "my app" "c:\my app\run.exe" arg-one "arg two"
+/// \endcode
+///
 class G::BatchFile
 {
 public:
@@ -51,7 +58,7 @@ public:
 		///< Constructor that reads from a file that might be missing
 		///< or empty.
 
-	explicit BatchFile( std::istream & , const std::string & stream_name = std::string() ) ;
+	explicit BatchFile( std::istream & , const std::string & stream_name = {} ) ;
 		///< Constructor that reads from a stream.
 
 	std::string line() const ;
@@ -69,7 +76,7 @@ public:
 		///< Returns the position in line() where the arguments start.
 
 	static void write( const Path & , const StringArray & args ,
-		const std::string & start_window_name = std::string() ) ;
+		const std::string & start_window_name = {} ) ;
 			///< Writes a startup batch file, including a "start" prefix.
 			///< If the "start" window name is not supplied then it is
 			///< derived from the command-line.

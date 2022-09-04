@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,13 +20,13 @@
 
 #include "gdef.h"
 #include "gssl.h"
-#include "goptions.h"
-#include "goptionsoutput.h"
 #include "legal.h"
 #include "configuration.h"
 #include "commandline.h"
+#include "options.h"
 #include "gmessagestore.h"
 #include "ggetopt.h"
+#include "goptionsusage.h"
 #include "gprocess.h"
 #include "gpath.h"
 #include "gfile.h"
@@ -55,8 +55,8 @@ public:
 public:
 	Show( const Show & ) = delete ;
 	Show( Show && ) = delete ;
-	void operator=( const Show & ) = delete ;
-	void operator=( Show && ) = delete ;
+	Show & operator=( const Show & ) = delete ;
+	Show & operator=( Show && ) = delete ;
 
 private:
 	static Show * m_this ;
@@ -68,7 +68,8 @@ private:
 
 // ==
 
-Main::CommandLine::CommandLine( Output & output , const G::Arg & arg , const G::Options & spec ,
+Main::CommandLine::CommandLine( Output & output , const G::Arg & arg ,
+	const G::Options & spec ,
 	const std::string & version ) :
 		m_output(output) ,
 		m_version(version) ,
@@ -105,19 +106,35 @@ bool Main::CommandLine::hasUsageErrors() const
 	return m_getopt.hasErrors() ;
 }
 
-void Main::CommandLine::showUsage( bool e ) const
+void Main::CommandLine::showUsage( bool is_error ) const
 {
-	G::OptionsOutputLayout layout = m_output.outputLayout( m_verbose ) ;
-	layout.set_column( m_verbose ? 38U : 30U ) ;
+	std::string args = " [<config-file>]" ;
+	auto layout = m_output.outputLayout( m_verbose ) ;
+	layout.set_column( m_verbose ? 42U : 30U ) ;
 	layout.set_extra( m_verbose ) ;
 	layout.set_alt_usage( !m_verbose ) ;
-	if( !m_verbose )
-		layout.set_level( 2U ) ;
+	layout.set_level_max( m_verbose ? 99U : 20U ) ;
 
-	Show show( m_output , e , m_verbose ) ;
-
-	G::OptionsOutput(m_getopt.options()).showUsage( layout ,
-		show.s() , m_arg.prefix() , " [<config-file>]" ) ;
+	G::OptionsUsage usage( m_getopt.options() ) ;
+	if( m_verbose )
+	{
+		// show help in sections...
+		bool help_state = false ;
+		usage.help( layout , &help_state ) ;
+		Show show( m_output , is_error , m_verbose ) ;
+		show.s() << usage.summary(layout,m_arg.prefix(),args) << "\n" ;
+		auto tags = Options::tags() ;
+		for( const auto & tag : tags )
+		{
+			layout.set_main_tag( tag.first ) ;
+			show.s() << "\n" << tag.second << "\n" << usage.help(layout,&help_state) ;
+		}
+	}
+	else
+	{
+		Show show( m_output , is_error , m_verbose ) ;
+		usage.output( layout , show.s() , m_arg.prefix() , args ) ;
+	}
 }
 
 void Main::CommandLine::showUsageErrors( bool e ) const
@@ -163,29 +180,24 @@ void Main::CommandLine::showExtraHelp( bool e ) const
 	Show show( m_output , e , m_verbose ) ;
 	const std::string & exe = m_arg.prefix() ;
 
-	show.s() << std::endl ;
-
+	show.s() << "\n" ;
 	if( m_verbose )
 	{
 		show.s()
-			<< txt("To start a 'storage' daemon in background...") << std::endl
-			<< "   " << exe << " --as-server" << std::endl
-			<< std::endl ;
-
-		show.s()
-			<< txt("To forward stored mail to \"mail.myisp.net\"...") << std::endl
-			<< "   " << exe << " --as-client mail.myisp.net:smtp" << std::endl
-			<< std::endl ;
-
-		show.s()
-			<< txt("To run as a proxy (on port 10025) to a local server (on port 25)...") << std::endl
-			<< "   " << exe << " --port 10025 --as-proxy localhost:25" << std::endl
+			<< txt("To start a 'storage' daemon in background...") << "\n"
+			<< "   " << exe << " --as-server\n\n"
+			//
+			<< txt("To forward stored mail to \"mail.myisp.net\"...") << "\n"
+			<< "   " << exe << " --as-client mail.myisp.net:smtp\n\n"
+			//
+			<< txt("To run as a proxy (on port 10025) to a local server (on port 25)...") << "\n"
+			<< "   " << exe << " --port 10025 --as-proxy localhost:25\n"
 			<< std::endl ;
 	}
 	else
 	{
 		show.s()
-			<< format(txt("For complete usage information run \"%1%\"")) % (exe+" --help --verbose") << std::endl
+			<< format(txt("For complete usage information run \"%1%\"")) % (exe+" --help --verbose") << "\n"
 			<< std::endl ;
 	}
 }
@@ -282,7 +294,9 @@ void Main::CommandLine::showSemanticWarnings( const G::StringArray & warnings ) 
 	{
 		Show show( m_output , true , m_verbose ) ;
 		const char * warning = txt( "warning" ) ;
-		show.s() << m_arg.prefix() << ": " << warning << ": " << G::Str::join("\n"+m_arg.prefix()+": "+warning+": ",warnings) << std::endl ;
+		std::string sep = std::string(1U,'\n').append(m_arg.prefix()).append(": ",2U).append(warning).append(": ",2U) ;
+		show.s() << m_arg.prefix() << ": " << warning << ": "
+			<< G::Str::join(sep,warnings) << std::endl ;
 	}
 }
 

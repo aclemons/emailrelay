@@ -127,8 +127,8 @@ am__libglib_a_SOURCES_DIST = gpam_none.cpp gpam_linux.cpp garg.h \
 	gmapfile.cpp gmd5.h gmd5.cpp gmsg_unix.cpp gmsg.h \
 	gnewprocess.h gnewprocess_unix.cpp gomembuf.h goptional.h \
 	goptionmap.h goptionmap.cpp goptionparser.h goptionparser.cpp \
-	goption.h goption.cpp goptions.h goptions.cpp goptionsoutput.h \
-	goptionsoutput.cpp goptionvalue.h gpam.h gpath.h gpath.cpp \
+	goption.h goption.cpp goptions.h goptions.cpp goptionsusage.h \
+	goptionsusage.cpp goptionvalue.h gpam.h gpath.h gpath.cpp \
 	gpidfile.h gpidfile.cpp gprocess.h gprocess_unix.cpp grandom.h \
 	grandom.cpp greadwrite.h greadwrite.cpp groot.h groot.cpp \
 	gscope.h gsignalsafe.h gsleep.h gslot.h gslot.cpp \
@@ -173,8 +173,8 @@ am__libglib_a_SOURCES_DIST = gpam_none.cpp gpam_linux.cpp garg.h \
 @GCONFIG_WINDOWS_FALSE@	goptionmap.$(OBJEXT) \
 @GCONFIG_WINDOWS_FALSE@	goptionparser.$(OBJEXT) \
 @GCONFIG_WINDOWS_FALSE@	goption.$(OBJEXT) goptions.$(OBJEXT) \
-@GCONFIG_WINDOWS_FALSE@	goptionsoutput.$(OBJEXT) \
-@GCONFIG_WINDOWS_FALSE@	gpath.$(OBJEXT) gpidfile.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	goptionsusage.$(OBJEXT) gpath.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	gpidfile.$(OBJEXT) \
 @GCONFIG_WINDOWS_FALSE@	gprocess_unix.$(OBJEXT) \
 @GCONFIG_WINDOWS_FALSE@	grandom.$(OBJEXT) greadwrite.$(OBJEXT) \
 @GCONFIG_WINDOWS_FALSE@	groot.$(OBJEXT) gslot.$(OBJEXT) \
@@ -209,7 +209,7 @@ am__libglib_a_SOURCES_DIST = gpam_none.cpp gpam_linux.cpp garg.h \
 @GCONFIG_WINDOWS_TRUE@	goptionmap.$(OBJEXT) \
 @GCONFIG_WINDOWS_TRUE@	goptionparser.$(OBJEXT) \
 @GCONFIG_WINDOWS_TRUE@	goption.$(OBJEXT) goptions.$(OBJEXT) \
-@GCONFIG_WINDOWS_TRUE@	goptionsoutput.$(OBJEXT) \
+@GCONFIG_WINDOWS_TRUE@	goptionsusage.$(OBJEXT) \
 @GCONFIG_WINDOWS_TRUE@	gpam_none.$(OBJEXT) gpath.$(OBJEXT) \
 @GCONFIG_WINDOWS_TRUE@	gpidfile.$(OBJEXT) \
 @GCONFIG_WINDOWS_TRUE@	gprocess_win32.$(OBJEXT) \
@@ -261,7 +261,7 @@ am__depfiles_remade = ./$(DEPDIR)/garg.Po ./$(DEPDIR)/gbase64.Po \
 	./$(DEPDIR)/gnewprocess_unix.Po \
 	./$(DEPDIR)/gnewprocess_win32.Po ./$(DEPDIR)/goption.Po \
 	./$(DEPDIR)/goptionmap.Po ./$(DEPDIR)/goptionparser.Po \
-	./$(DEPDIR)/goptions.Po ./$(DEPDIR)/goptionsoutput.Po \
+	./$(DEPDIR)/goptions.Po ./$(DEPDIR)/goptionsusage.Po \
 	./$(DEPDIR)/gpam_linux.Po ./$(DEPDIR)/gpam_none.Po \
 	./$(DEPDIR)/gpath.Po ./$(DEPDIR)/gpidfile.Po \
 	./$(DEPDIR)/gprocess_unix.Po ./$(DEPDIR)/gprocess_win32.Po \
@@ -562,8 +562,8 @@ noinst_LIBRARIES = libglib.a
 @GCONFIG_WINDOWS_FALSE@	goption.cpp \
 @GCONFIG_WINDOWS_FALSE@	goptions.h \
 @GCONFIG_WINDOWS_FALSE@	goptions.cpp \
-@GCONFIG_WINDOWS_FALSE@	goptionsoutput.h \
-@GCONFIG_WINDOWS_FALSE@	goptionsoutput.cpp \
+@GCONFIG_WINDOWS_FALSE@	goptionsusage.h \
+@GCONFIG_WINDOWS_FALSE@	goptionsusage.cpp \
 @GCONFIG_WINDOWS_FALSE@	goptionvalue.h \
 @GCONFIG_WINDOWS_FALSE@	gpam.h \
 @GCONFIG_WINDOWS_FALSE@	gpath.h \
@@ -685,8 +685,8 @@ noinst_LIBRARIES = libglib.a
 @GCONFIG_WINDOWS_TRUE@	goption.cpp \
 @GCONFIG_WINDOWS_TRUE@	goptions.h \
 @GCONFIG_WINDOWS_TRUE@	goptions.cpp \
-@GCONFIG_WINDOWS_TRUE@	goptionsoutput.h \
-@GCONFIG_WINDOWS_TRUE@	goptionsoutput.cpp \
+@GCONFIG_WINDOWS_TRUE@	goptionsusage.h \
+@GCONFIG_WINDOWS_TRUE@	goptionsusage.cpp \
 @GCONFIG_WINDOWS_TRUE@	goptionvalue.h \
 @GCONFIG_WINDOWS_TRUE@	gpam.h \
 @GCONFIG_WINDOWS_TRUE@	gpam_none.cpp \
@@ -829,7 +829,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/goptionmap.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/goptionparser.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/goptions.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/goptionsoutput.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/goptionsusage.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpam_linux.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpam_none.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpath.Po@am__quote@ # am--include-marker
@@ -1041,7 +1041,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/goptionmap.Po
 	-rm -f ./$(DEPDIR)/goptionparser.Po
 	-rm -f ./$(DEPDIR)/goptions.Po
-	-rm -f ./$(DEPDIR)/goptionsoutput.Po
+	-rm -f ./$(DEPDIR)/goptionsusage.Po
 	-rm -f ./$(DEPDIR)/gpam_linux.Po
 	-rm -f ./$(DEPDIR)/gpam_none.Po
 	-rm -f ./$(DEPDIR)/gpath.Po
@@ -1153,7 +1153,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/goptionmap.Po
 	-rm -f ./$(DEPDIR)/goptionparser.Po
 	-rm -f ./$(DEPDIR)/goptions.Po
-	-rm -f ./$(DEPDIR)/goptionsoutput.Po
+	-rm -f ./$(DEPDIR)/goptionsusage.Po
 	-rm -f ./$(DEPDIR)/gpam_linux.Po
 	-rm -f ./$(DEPDIR)/gpam_none.Po
 	-rm -f ./$(DEPDIR)/gpath.Po

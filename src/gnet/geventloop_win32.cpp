@@ -79,8 +79,8 @@ private:
 	using Rc = EventLoopHandles::Rc ;
 	using RcType = EventLoopHandles::RcType ;
 	static constexpr long READ_EVENTS = (FD_READ | FD_ACCEPT | FD_OOB) ;
-	static constexpr long WRITE_EVENTS = (FD_WRITE) ; // no need for "FD_CONNECT"
-	static constexpr long EXCEPTION_EVENTS = (FD_CLOSE) ;
+	static constexpr long WRITE_EVENTS = (FD_WRITE) ;
+	static constexpr long EXCEPTION_EVENTS = (FD_CLOSE | FD_CONNECT) ;
 	using s_type = G::TimeInterval::s_type ;
 	using us_type = G::TimeInterval::us_type ;
 	struct Library
@@ -446,15 +446,24 @@ void GNet::EventLoopImp::handleSocketEvent( std::size_t index )
 	}
 	if( events & EXCEPTION_EVENTS )
 	{
-		static_assert( EXCEPTION_EVENTS == FD_CLOSE , "" ) ;
+		static_assert( EXCEPTION_EVENTS == (FD_CLOSE|FD_CONNECT) , "" ) ;
 		item = item ? item : &m_list[index] ;
-		int e = events_info.iErrorCode[FD_CLOSE_BIT] ;
-		EventHandler::Reason reason = EventHandler::Reason::other ;
-		if( e == 0 ) reason = EventHandler::Reason::closed ;
-		if( e == WSAENETDOWN ) reason = EventHandler::Reason::down ;
-		if( e == WSAECONNRESET ) reason = EventHandler::Reason::reset ;
-		if( e == WSAECONNABORTED ) reason = EventHandler::Reason::abort ;
-		item->m_other_emitter.raiseOtherEvent( item->fd() , reason ) ;
+		if( events_info.lNetworkEvents & FD_CONNECT )
+		{
+			int e = events_info.iErrorCode[FD_CONNECT_BIT] ;
+			if( e )
+				item->m_other_emitter.raiseOtherEvent( item->fd() , EventHandler::Reason::failed ) ;
+		}
+		else
+		{
+			int e = events_info.iErrorCode[FD_CLOSE_BIT] ;
+			EventHandler::Reason reason = EventHandler::Reason::other ;
+			if( e == 0 ) reason = EventHandler::Reason::closed ;
+			if( e == WSAENETDOWN ) reason = EventHandler::Reason::down ;
+			if( e == WSAECONNRESET ) reason = EventHandler::Reason::reset ;
+			if( e == WSAECONNABORTED ) reason = EventHandler::Reason::abort ;
+			item->m_other_emitter.raiseOtherEvent( item->fd() , reason ) ;
+		}
 	}
 }
 

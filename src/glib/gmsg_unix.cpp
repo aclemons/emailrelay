@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
-/// \file gmsg_unix.cpp
+/// \file gmsg_linux.cpp
 ///
 
 #include "gdef.h"

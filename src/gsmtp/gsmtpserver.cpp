@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -39,21 +39,24 @@ namespace GSmtp
 {
 	struct AnonymousText : public ServerProtocol::Text /// Provides anodyne SMTP protocol text.
 	{
-		explicit AnonymousText( const std::string & = std::string() ) ;
+		AnonymousText( bool with_received_line , const std::string & this_host , const GNet::Address & peer_address ) ;
 		std::string greeting() const override ;
 		std::string hello( const std::string & peer_name ) const override ;
 		std::string received( const std::string & smtp_peer_name ,
 			bool auth , bool secure , const std::string & protocol ,
 			const std::string & cipher ) const override ;
+
+		bool m_with_received_line ;
 		std::string m_thishost ;
+		GNet::Address m_peer_address ;
 	} ;
 }
 
-GSmtp::AnonymousText::AnonymousText( const std::string & thishost ) :
-	m_thishost(thishost)
+GSmtp::AnonymousText::AnonymousText( bool with_received_line , const std::string & thishost , const GNet::Address & peer_address ) :
+	m_with_received_line(with_received_line) ,
+	m_thishost(thishost) ,
+	m_peer_address(peer_address)
 {
-	if( m_thishost.empty() )
-		m_thishost = "smtp" ;
 }
 
 std::string GSmtp::AnonymousText::greeting() const
@@ -63,13 +66,17 @@ std::string GSmtp::AnonymousText::greeting() const
 
 std::string GSmtp::AnonymousText::hello( const std::string & ) const
 {
-	return m_thishost + " says hello" ;
+	return "smtp says hello" ;
 }
 
-std::string GSmtp::AnonymousText::received( const std::string & , bool , bool ,
-	const std::string & , const std::string & ) const
+std::string GSmtp::AnonymousText::received( const std::string & smtp_peer_name ,
+	bool authenticated , bool secure , const std::string & protocol , const std::string & cipher ) const
 {
-	return std::string() ; // no Received line
+	if( m_with_received_line )
+		return ServerProtocolText::receivedLine( smtp_peer_name , m_peer_address.hostPartString() , m_thishost ,
+			authenticated , secure , protocol , cipher ) ;
+	else
+		return {} ;
 }
 
 // ===
@@ -250,7 +257,7 @@ std::unique_ptr<GNet::ServerPeer> GSmtp::Server::newPeer( GNet::ExceptionSinkUnb
 			GNet::Address peer_address = peer_info.m_address ;
 			ptr = std::make_unique<ServerPeer>( esu , std::move(peer_info) , *this ,
 				m_server_secrets , m_server_config ,
-				newProtocolText(m_server_config.anonymous,peer_address) ) ;
+				newProtocolText(m_server_config.anonymous_smtp,m_server_config.anonymous_content,peer_address) ) ;
 		}
 	}
 	catch( std::exception & e ) // newPeer()
@@ -260,14 +267,15 @@ std::unique_ptr<GNet::ServerPeer> GSmtp::Server::newPeer( GNet::ExceptionSinkUnb
 	return std::unique_ptr<GNet::ServerPeer>( ptr.release() ) ; // up-cast
 }
 
-std::unique_ptr<GSmtp::ServerProtocol::Text> GSmtp::Server::newProtocolText( bool anonymous ,
-	const GNet::Address & peer_address ) const
+std::unique_ptr<GSmtp::ServerProtocol::Text> GSmtp::Server::newProtocolText( bool anonymous_smtp ,
+	bool anonymous_content , const GNet::Address & peer_address ) const
 {
-	if( anonymous )
-		return std::make_unique<AnonymousText>() ; // up-cast
+	if( anonymous_smtp )
+		return std::make_unique<AnonymousText>( !anonymous_content ,
+			GNet::Local::canonicalName() , peer_address ) ;
 	else
 		return std::make_unique<ServerProtocolText>( m_server_config.ident ,
-			GNet::Local::canonicalName() , peer_address ) ; // up-cast
+			!anonymous_content , GNet::Local::canonicalName() , peer_address ) ;
 }
 
 std::unique_ptr<GSmtp::Filter> GSmtp::Server::newFilter( GNet::ExceptionSink es ) const

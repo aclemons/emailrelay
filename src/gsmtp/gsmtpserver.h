@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -57,7 +57,8 @@ public:
 		G::StringArray interfaces ;
 		unsigned int port{0U} ;
 		std::string ident ;
-		bool anonymous{false} ;
+		bool anonymous_smtp{false} ;
+		bool anonymous_content{false} ;
 		std::string filter_address ;
 		unsigned int filter_timeout{0U} ;
 		std::string verifier_address ;
@@ -73,6 +74,8 @@ public:
 		Config & set_port( unsigned int ) ;
 		Config & set_ident( const std::string & ) ;
 		Config & set_anonymous( bool = true ) ;
+		Config & set_anonymous_smtp( bool = true ) ;
+		Config & set_anonymous_content( bool = true ) ;
 		Config & set_filter_address( const std::string & ) ;
 		Config & set_filter_timeout( unsigned int ) ;
 		Config & set_verifier_address( const std::string & ) ;
@@ -120,7 +123,7 @@ private:
 	std::unique_ptr<Filter> newFilter( GNet::ExceptionSink ) const ;
 	std::unique_ptr<ProtocolMessage> newProtocolMessageStore( std::unique_ptr<Filter> ) ;
 	std::unique_ptr<ProtocolMessage> newProtocolMessageForward( GNet::ExceptionSink , std::unique_ptr<ProtocolMessage> ) ;
-	std::unique_ptr<ServerProtocol::Text> newProtocolText( bool , const GNet::Address & ) const ;
+	std::unique_ptr<ServerProtocol::Text> newProtocolText( bool , bool , const GNet::Address & ) const ;
 
 private:
 	MessageStore & m_store ;
@@ -186,7 +189,9 @@ inline GSmtp::Server::Config & GSmtp::Server::Config::set_allow_remote( bool b )
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_interfaces( const G::StringArray & a ) { interfaces = a ; return *this ; }
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_port( unsigned int n ) { port = n ; return *this ; }
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_ident( const std::string & s ) { ident = s ; return *this ; }
-inline GSmtp::Server::Config & GSmtp::Server::Config::set_anonymous( bool b ) { anonymous = b ; return *this ; }
+inline GSmtp::Server::Config & GSmtp::Server::Config::set_anonymous( bool b ) { anonymous_smtp = anonymous_content = b ; return *this ; }
+inline GSmtp::Server::Config & GSmtp::Server::Config::set_anonymous_smtp( bool b ) { anonymous_smtp = b ; return *this ; }
+inline GSmtp::Server::Config & GSmtp::Server::Config::set_anonymous_content( bool b ) { anonymous_content = b ; return *this ; }
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_filter_address( const std::string & s ) { filter_address = s ; return *this ; }
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_filter_timeout( unsigned int t ) { filter_timeout = t ; return *this ; }
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_verifier_address( const std::string & s ) { verifier_address = s ; return *this ; }

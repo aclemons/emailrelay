@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -995,9 +995,11 @@ std::string GSmtp::ServerProtocol::parsePeerName( const std::string & line ) con
 
 // ===
 
-GSmtp::ServerProtocolText::ServerProtocolText( const std::string & code_ident , const std::string & thishost ,
+GSmtp::ServerProtocolText::ServerProtocolText( const std::string & code_ident ,
+	bool with_received_line , const std::string & thishost ,
 	const GNet::Address & peer_address ) :
 		m_code_ident(code_ident) ,
+		m_with_received_line(with_received_line) ,
 		m_thishost(thishost) ,
 		m_peer_address(peer_address)
 {
@@ -1016,8 +1018,8 @@ std::string GSmtp::ServerProtocolText::hello( const std::string & ) const
 std::string GSmtp::ServerProtocolText::received( const std::string & smtp_peer_name ,
 	bool authenticated , bool secure , const std::string & protocol , const std::string & cipher ) const
 {
-	return receivedLine( smtp_peer_name , m_peer_address.hostPartString() , m_thishost ,
-		authenticated , secure , protocol , cipher ) ;
+	return m_with_received_line ? receivedLine( smtp_peer_name , m_peer_address.hostPartString() , m_thishost ,
+		authenticated , secure , protocol , cipher ) : std::string() ;
 }
 
 std::string GSmtp::ServerProtocolText::receivedLine( const std::string & smtp_peer_name ,
