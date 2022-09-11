@@ -131,7 +131,7 @@ public:
 public:
 	DirectoryIterator( const DirectoryIterator & ) = delete ;
 	DirectoryIterator( DirectoryIterator && ) noexcept = default ;
-	void operator=( const DirectoryIterator & ) = delete ;
+	DirectoryIterator & operator=( const DirectoryIterator & ) = delete ;
 	DirectoryIterator & operator=( DirectoryIterator && ) noexcept = default ;
 
 private:

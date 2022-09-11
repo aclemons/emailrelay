@@ -58,8 +58,8 @@ private: // overrides
 public:
 	FutureEventImp( const FutureEventImp & ) = delete ;
 	FutureEventImp( FutureEventImp && ) = delete ;
-	void operator=( const FutureEventImp & ) = delete ;
-	void operator=( FutureEventImp && ) = delete ;
+	FutureEventImp & operator=( const FutureEventImp & ) = delete ;
+	FutureEventImp & operator=( FutureEventImp && ) = delete ;
 
 private:
 	HANDLE dup() ;
@@ -69,12 +69,12 @@ private:
 	{
 		Handle() = default ;
 		~Handle() { if(h) CloseHandle(h) ; }
-		void operator=( HANDLE h_ ) { h = h_ ; }
+		Handle & operator=( HANDLE h_ ) { h = h_ ; return *this ; }
 		bool operator==( HANDLE h_ ) const { return h == h_ ; }
 		Handle( const Handle & ) = delete ;
 		Handle( Handle && ) = delete ;
-		void operator=( const Handle & ) = delete ;
-		void operator=( Handle && ) = delete ;
+		Handle & operator=( const Handle & ) = delete ;
+		Handle & operator=( Handle && ) = delete ;
 		HANDLE h{0} ;
 	} ;
 

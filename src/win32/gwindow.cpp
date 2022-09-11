@@ -168,10 +168,10 @@ LRESULT GGui::Window::wndProc( HWND hwnd , UINT msg , WPARAM wparam , LPARAM lpa
 			{
 				window->onWindowException( e ) ; // overridable - posts wm_quit by default
 			}
-			catch( std::exception & e )
+			catch( std::exception & ee )
 			{
 				// exception from exception handler - save it for wndProcException()
-				window->m_reason = e.what() ;
+				window->m_reason = ee.what() ;
 			}
 		}
 	}
@@ -236,7 +236,7 @@ namespace GGui
 	{
 		std::pair<DWORD,DWORD> make_style( DWORD first , DWORD second = 0 )
 		{
-			return std::make_pair( first , second ) ;
+			return { first , second } ;
 		}
 	}
 }

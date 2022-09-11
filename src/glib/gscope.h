@@ -58,8 +58,8 @@ public:
 public:
 	ScopeExit( const ScopeExit & ) = delete ;
 	ScopeExit( ScopeExit && ) = delete ;
-	void operator=( const ScopeExit & ) = delete ;
-	void operator=( ScopeExit && ) = delete ;
+	ScopeExit & operator=( const ScopeExit & ) = delete ;
+	ScopeExit & operator=( ScopeExit && ) = delete ;
 
 private:
 	std::function<void()> m_fn ;
@@ -88,8 +88,8 @@ public:
 public:
 	ScopeExitSetFalse( const ScopeExitSetFalse & ) = delete ;
 	ScopeExitSetFalse( ScopeExitSetFalse && ) = delete ;
-	void operator=( const ScopeExitSetFalse & ) = delete ;
-	void operator=( ScopeExitSetFalse && ) = delete ;
+	ScopeExitSetFalse & operator=( const ScopeExitSetFalse & ) = delete ;
+	ScopeExitSetFalse & operator=( ScopeExitSetFalse && ) = delete ;
 
 private:
 	bool & m_bref ;

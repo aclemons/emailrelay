@@ -37,7 +37,7 @@ namespace GNet
 /// A base class for classes that have a file descriptor and handle
 /// asynchronous events from the event loop.
 ///
-/// THe event handler virtual methods are called when an event is
+/// The event handler virtual methods are called when an event is
 /// detected on the associated file descriptor.
 ///
 /// The EventEmitter class ensures that if an exception is thrown out

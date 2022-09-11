@@ -95,6 +95,16 @@ bool G::OptionMap::contains( string_view key ) const
 	return false ;
 }
 
+bool G::OptionMap::contains( const char * key ) const
+{
+	return contains( string_view(key) ) ;
+}
+
+bool G::OptionMap::contains( const std::string & key ) const
+{
+	return contains( string_view(key) ) ;
+}
+
 std::size_t G::OptionMap::count( string_view key ) const
 {
 	std::size_t n = 0U ;

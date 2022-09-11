@@ -25,6 +25,7 @@
 #include "gmultiserver.h"
 #include "gsmtpclient.h"
 #include "gfilterfactory.h"
+#include "gfactoryparser.h"
 #include "gdnsbl.h"
 #include "glinebuffer.h"
 #include "gverifier.h"
@@ -59,9 +60,9 @@ public:
 		std::string ident ;
 		bool anonymous_smtp{false} ;
 		bool anonymous_content{false} ;
-		std::string filter_address ;
+		FactoryParser::Result filter_spec ;
 		unsigned int filter_timeout{0U} ;
-		std::string verifier_address ;
+		FactoryParser::Result verifier_spec ;
 		unsigned int verifier_timeout{0U} ;
 		GNet::ServerPeer::Config server_peer_config ;
 		GNet::Server::Config server_config ;
@@ -76,9 +77,9 @@ public:
 		Config & set_anonymous( bool = true ) ;
 		Config & set_anonymous_smtp( bool = true ) ;
 		Config & set_anonymous_content( bool = true ) ;
-		Config & set_filter_address( const std::string & ) ;
+		Config & set_filter_spec( const FactoryParser::Result & ) ;
 		Config & set_filter_timeout( unsigned int ) ;
-		Config & set_verifier_address( const std::string & ) ;
+		Config & set_verifier_spec( const FactoryParser::Result & ) ;
 		Config & set_verifier_timeout( unsigned int ) ;
 		Config & set_server_peer_config( const GNet::ServerPeer::Config & ) ;
 		Config & set_server_config( const GNet::Server::Config & ) ;
@@ -116,8 +117,8 @@ private: // overrides
 public:
 	Server( const Server & ) = delete ;
 	Server( Server && ) = delete ;
-	void operator=( const Server & ) = delete ;
-	void operator=( Server && ) = delete ;
+	Server & operator=( const Server & ) = delete ;
+	Server & operator=( Server && ) = delete ;
 
 private:
 	std::unique_ptr<Filter> newFilter( GNet::ExceptionSink ) const ;
@@ -165,8 +166,8 @@ public:
 	~ServerPeer() override = default ;
 	ServerPeer( const ServerPeer & ) = delete ;
 	ServerPeer( ServerPeer && ) = delete ;
-	void operator=( const ServerPeer & ) = delete ;
-	void operator=( ServerPeer && ) = delete ;
+	ServerPeer & operator=( const ServerPeer & ) = delete ;
+	ServerPeer & operator=( ServerPeer && ) = delete ;
 
 private:
 	void onCheckTimeout() ;
@@ -192,9 +193,9 @@ inline GSmtp::Server::Config & GSmtp::Server::Config::set_ident( const std::stri
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_anonymous( bool b ) { anonymous_smtp = anonymous_content = b ; return *this ; }
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_anonymous_smtp( bool b ) { anonymous_smtp = b ; return *this ; }
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_anonymous_content( bool b ) { anonymous_content = b ; return *this ; }
-inline GSmtp::Server::Config & GSmtp::Server::Config::set_filter_address( const std::string & s ) { filter_address = s ; return *this ; }
+inline GSmtp::Server::Config & GSmtp::Server::Config::set_filter_spec( const FactoryParser::Result & r ) { filter_spec = r ; return *this ; }
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_filter_timeout( unsigned int t ) { filter_timeout = t ; return *this ; }
-inline GSmtp::Server::Config & GSmtp::Server::Config::set_verifier_address( const std::string & s ) { verifier_address = s ; return *this ; }
+inline GSmtp::Server::Config & GSmtp::Server::Config::set_verifier_spec( const FactoryParser::Result & r ) { verifier_spec = r ; return *this ; }
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_verifier_timeout( unsigned int t ) { verifier_timeout = t ; return *this ; }
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_server_peer_config( const GNet::ServerPeer::Config & c ) { server_peer_config = c ; return *this ; }
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_server_config( const GNet::Server::Config & c ) { server_config = c ; return *this ; }

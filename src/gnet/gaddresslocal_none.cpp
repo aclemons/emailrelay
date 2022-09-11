@@ -34,6 +34,9 @@ int GNet::AddressLocal::domain() noexcept
 GNet::AddressLocal::AddressLocal( std::nullptr_t ) :
 	m_size(0U)
 {
+	// avoid clang 'unused field' warnings...
+	GDEF_IGNORE_VARIABLE( m_size ) ;
+	GDEF_IGNORE_VARIABLE( m_local ) ;
 }
 
 GNet::AddressLocal::AddressLocal( unsigned int /*port*/ ) :

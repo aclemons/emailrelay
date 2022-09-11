@@ -69,8 +69,8 @@ private: // overrides
 public:
 	EventLoopImp( const EventLoopImp & ) = delete ;
 	EventLoopImp( EventLoopImp && ) = delete ;
-	void operator=( const EventLoopImp & ) = delete ;
-	void operator=( EventLoopImp && ) = delete ;
+	EventLoopImp & operator=( const EventLoopImp & ) = delete ;
+	EventLoopImp & operator=( EventLoopImp && ) = delete ;
 
 private:
 	void runOnce() ;
@@ -89,8 +89,8 @@ private:
 		~Library() ;
 		Library( const Library & ) = delete ;
 		Library( Library && ) = delete ;
-		void operator=( const Library & ) = delete ;
-		void operator=( Library && ) = delete ;
+		Library & operator=( const Library & ) = delete ;
+		Library & operator=( Library && ) = delete ;
 	} ;
 
 public:

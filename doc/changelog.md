@@ -5,11 +5,13 @@ E-MailRelay Change Log
 ----------
 
 * Multiple `--filter` and `--client-filter` options allowed.
-* Finer control of `--anonymous` (eg. `--anonymous=server`).
-* Hourly log file rotation using `%h` (eg. `--log-file=log.%d.%h`).
 * [TLS][] key and certificate files can be specified separately.
-* Uses epoll by default on Linux.
+* Finer control of `--anonymous` (eg. `--anonymous=server`).
+* The `auth-config` options can distinguish between TLS and non-TLS authentication.
+* Hourly log file rotation using `%h` (eg. `--log-file=log.%d.%h`).
+* Listening file descriptors can be inherited from the parent process (see `--interface`).
 * Exclusive listening port binding on Windows.
+* The Linux event loop uses `epoll` by default rather than `select`.
 * More simultaneous connections supported on Windows.
 * Fixed error handling for network client filters (`--client-filter=net:...`) [bug-id #50].
 

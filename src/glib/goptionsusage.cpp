@@ -37,7 +37,9 @@ G::OptionsUsage::OptionsUsage( const std::vector<Option> & options , std::functi
 std::string G::OptionsUsage::summary( const Config & config_in ,
 	const std::string & exe , const std::string & args ) const
 {
-	Config config = applyDefault( config_in ) ;
+	Config config = config_in ;
+	config.setDefaults() ;
+
 	const char * usage = txt( "usage: " ) ;
 	const char * alt_usage = txt( "abbreviated usage: " ) ;
 	std::string s = std::string()
@@ -52,30 +54,24 @@ std::string G::OptionsUsage::summary( const Config & config_in ,
 	return config.width == 0U ? s : StringWrap::wrap( s , "" , indent , config.width , 0U , true ) ;
 }
 
-std::string G::OptionsUsage::help( const Config & config_in , bool * state_p ) const
+std::string G::OptionsUsage::help( const Config & config_in , bool * overflow_p ) const
 {
-	Config config = applyDefault( config_in ) ;
-	std::string result = helpImp( config ) ;
+	Config config = config_in ;
+	config.setDefaults() ;
+	config.setWidthsWrtMargin() ;
 
-	// check for width overflow even after wrapping, which can
-	// happen as 'config.width' shrinks towards 'config.column'
-	//
-	bool overflow = ( state_p && *state_p ) || (
-		config.width && config.column && config.separator.empty() &&
-		config.width <= (config.column+20) &&
-		longestSubLine(result) > config.width ) ;
-
-	if( overflow && state_p )
-		*state_p = true ;
-
-	// on width-overflow give up on columns and make the description
-	// part wrap onto a completely new line by setting a huge separator
-	if( overflow )
+	if( overflow_p == nullptr )
 	{
-		result = helpImp( Config(config).set_separator( std::string(config.column+config.column,' ') ) ) ;
+		bool overflow = false ;
+		std::string s = helpImp( config , &overflow ) ;
+		if( overflow )
+			s = helpImp( config , &overflow ) ;
+		return s ;
 	}
-
-	return result ;
+	else
+	{
+		return helpImp( config , overflow_p ) ;
+	}
 }
 
 void G::OptionsUsage::output( const Config & config , std::ostream & stream ,
@@ -139,6 +135,89 @@ std::string G::OptionsUsage::summaryPartTwo( const Config & config ) const
 	return ss.str() ;
 }
 
+std::string G::OptionsUsage::helpImp( const Config & config , bool * overflow_p ) const
+{
+	std::string result ;
+	for( const auto & option : m_options )
+	{
+		if( option.visible({config.level_min,config.level_max},config.main_tag,config.tag_bits) )
+		{
+			std::string option_help = optionHelp( config , option , overflow_p ) ;
+			result.append( option_help ) ;
+			result.append( 1U , '\n' ) ;
+		}
+	}
+	return result ;
+}
+
+std::string G::OptionsUsage::optionHelp( const Config & config , const Option & option , bool * overflow_p ) const
+{
+	char placeholder = '\x01' ;
+	std::string syntax = helpSyntax( option , placeholder ) ;
+	std::string description = helpDescription( option , config ) ;
+	std::string separator = helpSeparator( config , syntax.length() ) ;
+
+	// concatentate and wrap
+	std::string line = helpWrap( config , syntax , separator , description , overflow_p ) ;
+
+	// add a margin
+	if( config.margin )
+	{
+		std::string margin = std::string( config.margin , m_space_margin ) ;
+		G::Str::replaceAll( line , "\n" , std::string(1U,'\n').append(margin) ) ;
+		line = margin + line ;
+	}
+
+	// fix up the placeholders
+	G::Str::replace( line , placeholder , m_space_placeholder ) ;
+
+	return line ;
+}
+
+std::string G::OptionsUsage::helpWrap( const Config & config , const std::string & syntax ,
+	const std::string & separator , const std::string & description , bool * overflow_p ) const
+{
+	std::string text = std::string(syntax).append(separator).append(description) ;
+	if( config.width == 0 )
+	{
+		// no wrapping
+		return text ;
+	}
+	else if( config.separator == "\t" )
+	{
+		// wrapped lines are indented with a tab
+		return StringWrap::wrap( text , "" , "\t" ,
+			config.width , config.width2 , true ) ;
+	}
+	else if( config.separator.empty() && !(overflow_p && *overflow_p) )
+	{
+		// no separator so wrapped lines are indented to the required column
+		std::string s = StringWrap::wrap( text , "" , helpPadding(config) ,
+			config.width , config.width2 , true ) ;
+
+		if( overflow_p && !*overflow_p && config.overflow )
+			*overflow_p = ( longestSubLine(s) + config.margin ) < ( config.column + config.overflow ) ;
+
+		return s ;
+	}
+	else if( overflow_p && *overflow_p )
+	{
+		// overflow format -- use a very large separator so the description is
+		// bumped onto a new line with one leading space on all wrapped lines
+		std::size_t n = config.column + config.column + 99U ;
+		text = std::string(syntax).append(n,m_space_overflow).append(description) ;
+		return StringWrap::wrap( text , "" , std::string(config.overflow_spaces,m_space_overflow) ,
+			config.width , config.width2 , true ) ;
+	}
+	else
+	{
+		// separator defined -- no column for the wrapped lines to indent
+		// to -- just add (typically) one leading space to wrapped lines
+		return StringWrap::wrap( text , "" , std::string(config.separator_spaces,m_space_separator) ,
+			config.width , config.width2 , true ) ;
+	}
+}
+
 std::string G::OptionsUsage::helpSyntax( const Option & option , char placeholder ) const
 {
 	std::string syntax ;
@@ -168,7 +247,6 @@ std::string G::OptionsUsage::helpSyntax( const Option & option , char placeholde
 		syntax.append( ">" ) ;
 		if( option.defaulting() ) syntax.append( "]" ) ;
 	}
-	syntax.append( 1U , ' ' ) ;
 	return syntax ;
 }
 
@@ -182,57 +260,31 @@ std::string G::OptionsUsage::helpDescription( const Option & option , const Conf
 
 std::string G::OptionsUsage::helpSeparator( const Config & config , std::size_t syntax_length ) const
 {
-	std::string separator ;
 	if( !config.separator.empty() )
-		separator = config.separator ;
-	else if( (config.margin+syntax_length) > config.column )
-		separator = std::string( 1U , ' ' ) ;
+		return config.separator ;
+	else if( (config.margin+syntax_length) >= config.column )
+		return std::string( 1U , m_space_separator ) ;
 	else
-		separator = std::string( config.column-syntax_length-config.margin , ' ' ) ;
-	return separator ;
+		return std::string( config.column-syntax_length-config.margin , m_space_separator ) ;
 }
 
-std::string G::OptionsUsage::helpWrap( const Config & config , const std::string & line_in ,
-	const std::string & margin ) const
+std::string G::OptionsUsage::helpPadding( const Config & config ) const
 {
-	std::string line( line_in ) ;
-	std::size_t wrap_width = config.width>config.margin ? (config.width-config.margin) : 1U ;
-	bool separator_is_tab = config.separator.length() == 1U && config.separator.at(0U) == '\t' ;
-	if( separator_is_tab )
-	{
-		std::string prefix_other = std::string(config.margin,' ').append(1U,'\t') ;
-		line = margin + StringWrap::wrap( line , std::string() , prefix_other ,
-			wrap_width , config.width2 , true ) ;
-	}
-	else if( !config.separator.empty() )
-	{
-		// wrap with a one-space indent for wrapped descriptions wrt. the syntax
-		if( line.length() > config.width )
-		{
-			std::string prefix_other( config.margin+1U , ' ' ) ;
-			line = margin + StringWrap::wrap( line , std::string() , prefix_other ,
-				wrap_width , config.width2 , true ) ;
-		}
-	}
-	else
-	{
-		std::string prefix_other( config.column , ' ' ) ;
-		line = margin + StringWrap::wrap( line , std::string() , prefix_other ,
-			wrap_width , config.width2 , true ) ;
-	}
-	return line ;
+	std::size_t n = std::max( std::size_t(1U) , config.column - std::min(config.column,config.margin) ) ;
+	return std::string( n , m_space_padding ) ;
 }
 
 std::size_t G::OptionsUsage::longestSubLine( const std::string & s )
 {
 	std::size_t result = 0U ;
+	bool result_set = false ;
 	std::size_t n = 0U ;
 	for( auto c : s )
 	{
 		if( c == '\n' )
 		{
 			if( n > result )
-				result = n ;
+				result = n , result_set = true ;
 			n = 0 ;
 		}
 		else
@@ -240,42 +292,7 @@ std::size_t G::OptionsUsage::longestSubLine( const std::string & s )
 			n++ ;
 		}
 	}
-	return result ;
-}
-
-std::string G::OptionsUsage::helpImp( const Config & config ) const
-{
-	std::string result ;
-	for( const auto & option : m_options )
-	{
-		if( option.visible({config.level_min,config.level_max},config.main_tag,config.tag_bits) )
-		{
-			char placeholder = '\x01' ;
-			std::string margin( config.margin , ' ' ) ;
-			std::string syntax = helpSyntax( option , placeholder ) ;
-			std::string description = helpDescription( option , config ) ;
-			std::string separator = helpSeparator( config , syntax.length() ) ;
-
-			std::string line ;
-			line.append(margin).append(syntax).append(separator).append(description) ;
-
-			if( config.width )
-				line = helpWrap( config , line , margin ) ;
-
-			G::Str::replace( line , placeholder , ' ' ) ;
-			line.append( 1U , '\n' ) ;
-			result.append( line ) ;
-		}
-	}
-	return result ;
-}
-
-G::OptionsUsage::Config G::OptionsUsage::applyDefault( const Config & config_in )
-{
-	bool set1 = config_in.width == Config::default_ ;
-	bool set2 = config_in.width2 == Config::default_ ;
-	std::size_t w = set1||set2 ? Str::toUInt( Environment::get("COLUMNS",{}) , "79" ) : 0U ;
-	return Config(config_in).set_width(set1?w:config_in.width).set_width2(set2?w:config_in.width2) ;
+	return result_set ? result : s.length() ;
 }
 
 G::OptionsUsage::SortFn G::OptionsUsage::sort()
@@ -285,4 +302,27 @@ G::OptionsUsage::SortFn G::OptionsUsage::sort()
 		return a.level == b.level ? G::Str::iless(a.name,b.name) : ( a.level < b.level ) ;
 	} ;
 }
+
+// ==
+
+G::OptionsUsage::Config & G::OptionsUsage::Config::setDefaults()
+{
+	bool default1 = width == Config::default_ ;
+	bool default2 = width2 == Config::default_ ;
+	std::size_t wenv = (default1||default2) ? Str::toUInt( Environment::get("COLUMNS",{}) , "79" ) : 0U ;
+	if( default1 ) width = wenv ;
+	if( default2 ) width2 = wenv ;
+	return *this ;
+}
+
+G::OptionsUsage::Config & G::OptionsUsage::Config::setWidthsWrtMargin()
+{
+	// modify the given widths to pass to StringWrap::wrap()
+	width -= std::min( width , margin ) ;
+	width = std::max( width , std::size_t(1U) ) ;
+	width2 -= std::min( width2 , margin ) ;
+	width2 = std::max( width2 , std::size_t(1U) ) ;
+	return *this ;
+}
+
 

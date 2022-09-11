@@ -136,8 +136,8 @@ private: // overrides
 public:
 	StoredMessageStub( const StoredMessageStub & ) = delete ;
 	StoredMessageStub( StoredMessageStub && ) = delete ;
-	void operator=( const StoredMessageStub & ) = delete ;
-	void operator=( StoredMessageStub && ) = delete ;
+	StoredMessageStub & operator=( const StoredMessageStub & ) = delete ;
+	StoredMessageStub & operator=( StoredMessageStub && ) = delete ;
 
 private:
 	G::StringArray m_to_list ;

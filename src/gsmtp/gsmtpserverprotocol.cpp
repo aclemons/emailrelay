@@ -206,8 +206,8 @@ bool GSmtp::ServerProtocol::apply( const char * line_data , std::size_t line_dat
 	else
 	{
 		std::string line( line_data , line_data_size ) ;
-		G_LOG( "GSmtp::ServerProtocol: rx<<: \"" << G::Str::printable(line) << "\"" ) ;
 		event = commandEvent( commandWord(line) ) ;
+		G_LOG( "GSmtp::ServerProtocol: rx<<: \"" << (event == Event::eAuth ? printableAuth(line) : G::Str::printable(line)) << "\"" ) ;
 		m_buffer = commandLine( line ) ;
 		event_data = EventData( m_buffer.data() , m_buffer.size() ) ;
 	}
@@ -424,6 +424,24 @@ void GSmtp::ServerProtocol::doHelo( EventData event_data , bool & predicate )
 bool GSmtp::ServerProtocol::authenticationRequiresEncryption() const
 {
 	return mechanisms().empty() && !mechanisms(true).empty() ;
+}
+
+std::string GSmtp::ServerProtocol::printableAuth( const std::string & auth_line ) const
+{
+	constexpr std::size_t npos = std::string::npos ;
+	std::size_t pos1 = auth_line.find_first_not_of( " \t" , 0U , 2U ) ;
+	std::size_t pos2 = auth_line.find_first_of( " \t" , pos1 , 2U ) ;
+	std::size_t pos3 = auth_line.find_first_not_of( " \t" , pos2 , 2U ) ;
+	std::size_t pos4 = auth_line.find_first_of( " \t" , pos3 , 2U ) ;
+	std::size_t pos5 = auth_line.find_first_not_of( " \t" , pos4 , 2U ) ;
+	if( pos1 != npos && pos2 != npos && pos3 != npos && pos4 != npos && pos5 != npos )
+	{
+		return auth_line.substr(0U,pos5).append(" [not logged]" ) ;
+	}
+	else
+	{
+		return auth_line ;
+	}
 }
 
 void GSmtp::ServerProtocol::doAuth( EventData event_data , bool & predicate )
@@ -1058,12 +1076,12 @@ std::string GSmtp::ServerProtocolText::receivedLine( const std::string & smtp_pe
 
 G::StringArray GSmtp::ServerProtocol::mechanisms() const
 {
-    return m_sasl->mechanisms( m_secure ) ;
+	return m_sasl->mechanisms( m_secure ) ;
 }
 
 G::StringArray GSmtp::ServerProtocol::mechanisms( bool secure ) const
 {
-    return m_sasl->mechanisms( secure ) ;
+	return m_sasl->mechanisms( secure ) ;
 }
 
 // ===

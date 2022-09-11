@@ -254,8 +254,8 @@ private: // overrides
 public:
 	Client( const Client & ) = delete ;
 	Client( Client && ) = delete ;
-	void operator=( const Client & ) = delete ;
-	void operator=( Client && ) = delete ;
+	Client & operator=( const Client & ) = delete ;
+	Client & operator=( Client && ) = delete ;
 	bool send( const char * , std::size_t ) = delete ;
 	bool send( const char * ) = delete ;
 	bool send( const std::string & , std::size_t ) = delete ;

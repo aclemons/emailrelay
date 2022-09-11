@@ -37,7 +37,7 @@
 #include "gfilterfactory.h"
 #include "gfactoryparser.h"
 #include "gverifierfactory.h"
-#include "gdnsblock.h"
+#include "gdnsbl.h"
 #include "gslot.h"
 #include "gmonitor.h"
 #include "glocal.h"
@@ -179,7 +179,7 @@ void Main::Run::run()
 	// when running as a daemon -- this has to be done early, before
 	// opening any sockets or message-store streams
 	//
-	if( configuration().daemon() )
+	if( configuration().closeFiles() )
 	{
 		closeFiles() ;
 	}
@@ -295,7 +295,7 @@ void Main::Run::run()
 	// early check on the DNSBL configuration string
 	//
 	if( !configuration().dnsbl().empty() )
-		GNet::DnsBlock::checkConfig( configuration().dnsbl() ) ;
+		GNet::Dnsbl::checkConfig( configuration().dnsbl() ) ;
 
 	// figure out what we're doing
 	//
@@ -323,10 +323,6 @@ void Main::Run::run()
 		m_pop_store = std::make_unique<GPop::Store>( configuration().spoolDir() ,
 			configuration().popByName() , ! configuration().popNoDelete() ) ;
 	}
-
-	// early check on script executablity
-	//
-	checkScripts() ;
 
 	// authentication secrets
 	//
@@ -495,8 +491,8 @@ GNet::StreamSocket::Config Main::Run::netSocketConfig( bool /*server*/ ) const
 		GNet::StreamSocket::Config()
 			.set_create_linger( linger )
 			.set_accept_linger( linger )
-			.set_bind_reuse( !G::is_windows() )
-			.set_bind_exclusive( G::is_windows() )
+			.set_bind_reuse( !G::is_windows() || G::is_wine() )
+			.set_bind_exclusive( G::is_windows() && !G::is_wine() )
 			.set_last<GNet::StreamSocket::Config>() ;
 }
 
@@ -528,14 +524,14 @@ GSmtp::Server::Config Main::Run::smtpServerConfig() const
 	return
 		GSmtp::Server::Config()
 			.set_allow_remote( configuration().allowRemoteClients() )
-			.set_interfaces( configuration().listeningAddresses("smtp") )
+			.set_interfaces( configuration().listeningNames("smtp") )
 			.set_port( configuration().port() )
 			.set_ident( smtpIdent() )
 			.set_anonymous_smtp( configuration().anonymousServerSmtp() )
 			.set_anonymous_content( configuration().anonymousContent() )
-			.set_filter_address( configuration().filter().str() )
+			.set_filter_spec( configuration().filter() )
 			.set_filter_timeout( configuration().filterTimeout() )
-			.set_verifier_address( configuration().verifier().str() )
+			.set_verifier_spec( configuration().verifier() )
 			.set_verifier_timeout( configuration().filterTimeout() )
 			.set_server_peer_config( GNet::ServerPeer::Config().set_idle_timeout(configuration().idleTimeout()) )
 			.set_server_config( netServerConfig() )
@@ -550,7 +546,7 @@ GPop::Server::Config Main::Run::popConfig() const
 		GPop::Server::Config()
 			.set_allow_remote( configuration().allowRemoteClients() )
 			.set_port( configuration().popPort() )
-			.set_addresses( configuration().listeningAddresses("pop") )
+			.set_addresses( configuration().listeningNames("pop") )
 			.set_server_peer_config(
 				GNet::ServerPeer::Config()
 					.set_idle_timeout( configuration().idleTimeout()) )
@@ -575,7 +571,7 @@ GSmtp::Client::Config Main::Run::clientConfig() const
 					.set_anonymous( configuration().anonymousClientSmtp() )
 					.set_must_accept_all_recipients( !configuration().forwardToSome() )
 					.set_eight_bit_strict( false ) )
-			.set_filter_address( configuration().clientFilter().str() )
+			.set_filter_spec( configuration().clientFilter() )
 			.set_filter_timeout( configuration().filterTimeout() )
 			.set_bind_local_address( !configuration().clientBindAddress().empty() )
 			.set_local_address( asAddress(configuration().clientBindAddress()) )
@@ -782,52 +778,9 @@ int Main::Run::resolverFamily() const
 	return ( address.af() == AF_INET || address.af() == AF_INET6 ) ? address.af() : AF_UNSPEC ;
 }
 
-void Main::Run::checkScripts() const
-{
-	checkFilter( configuration().filter().str() , true ) ;
-	checkFilter( configuration().clientFilter().str() , false ) ;
-	checkVerifier( configuration().verifier().str() ) ;
-}
-
-void Main::Run::checkVerifier( const std::string & spec ) const
-{
-	try
-	{
-		if( !spec.empty() )
-			GSmtp::VerifierFactory::newVerifier( GNet::ExceptionSink() , spec , 1U ) ;
-	}
-	catch( std::exception & e )
-	{
-		using G::format ;
-		using G::txt ;
-		std::string reason = e.what() ;
-		G_WARNING( "Main::Run::checkVerifier: " << format(txt("invalid verifier: %1%"))%reason ) ;
-	}
-}
-
-void Main::Run::checkFilter( const std::string & spec , bool server_side ) const
-{
-	try
-	{
-		G_ASSERT( m_filter_factory.get() != nullptr ) ;
-		if( !spec.empty() )
-			m_filter_factory->newFilter( GNet::ExceptionSink() , server_side , spec , 1U ) ;
-	}
-	catch( std::exception & e )
-	{
-		using G::format ;
-		using G::txt ;
-		std::string reason = e.what() ;
-		G_WARNING( "Main::Run::checkFilter: " << format(txt("invalid filter: %1%"))%reason ) ;
-	}
-}
-
 void Main::Run::checkThreading() const
 {
-	if( G::threading::using_std_thread && (
-		GSmtp::FactoryParser::parse(configuration().filter().str(),true).first == "file" ||
-		GSmtp::FactoryParser::parse(configuration().clientFilter().str(),true).first == "file" ||
-		GSmtp::FactoryParser::parse(configuration().clientFilter().str(),true).first == "file" ) )
+	if( G::threading::using_std_thread )
 	{
 		// ignore the result here -- we are just trying to provoke an early weak-symbol linking failure
 		G::threading::works() ;
@@ -871,7 +824,7 @@ std::unique_ptr<GSmtp::AdminServer> Main::Run::newAdminServer( GNet::ExceptionSi
 			net_server_config ,
 			client_config ,
 			client_secrets ,
-			cfg.listeningAddresses("admin") ,
+			cfg.listeningNames("admin") ,
 			cfg.adminPort() ,
 			cfg.allowRemoteClients() ,
 			cfg.serverAddress() ,

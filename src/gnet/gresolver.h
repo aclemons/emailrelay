@@ -91,8 +91,8 @@ public:
 public:
 	Resolver( const Resolver & ) = delete ;
 	Resolver( Resolver && ) = delete ;
-	void operator=( const Resolver & ) = delete ;
-	void operator=( Resolver && ) = delete ;
+	Resolver & operator=( const Resolver & ) = delete ;
+	Resolver & operator=( Resolver && ) = delete ;
 
 private:
 	friend class GNet::ResolverImp ;

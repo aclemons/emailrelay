@@ -211,6 +211,8 @@ private:
 class GNet::Socket : public SocketBase
 {
 public:
+	struct Adopted /// Overload discriminator class for GNet::Socket.
+		{} ;
 	struct Config /// A configuration structure for GNet::Socket.
 	{
 		Config() ;
@@ -228,7 +230,7 @@ public:
 	} ;
 
 	Address getLocalAddress() const ;
-		///< Retrieves local address of the socket.
+		///< Retrieves the local address of the socket.
 
 	std::pair<bool,Address> getPeerAddress() const ;
 		///< Retrieves address of socket's peer.
@@ -296,7 +298,8 @@ public:
 protected:
 	Socket( Address::Family , int type , int protocol , const Config & ) ;
 	Socket( Address::Family , Descriptor s , const Accepted & , const Config & ) ;
-	std::pair<bool,Address> getLocalAddress( std::nothrow_t ) const ;
+	Socket( Address::Family , Descriptor s , const Adopted & , const Config & ) ;
+	static Address getLocalAddress( Descriptor ) ;
 
 protected:
 	void setOptionLinger( int onoff , int time ) ;
@@ -374,6 +377,10 @@ public:
 		///< socket, which might need slightly different socket
 		///< options.
 
+	StreamSocket( const Listener & , Descriptor fd , const Config & config ) ;
+		///< Constructor overload for adopting an externally-managed
+		///< listening file descriptor.
+
 	ssize_type read( char * buffer , size_type buffer_length ) override ;
 		///< Override from ReadWrite::read().
 
@@ -395,6 +402,7 @@ private:
 	StreamSocket( Address::Family , Descriptor s , const Accepted & , const Config & config ) ;
 	void setOptionsOnCreate( Address::Family , bool listener ) ;
 	void setOptionsOnAccept( Address::Family ) ;
+	static Address::Family family( Descriptor ) ;
 
 private:
 	Config m_config ;
@@ -412,7 +420,7 @@ public:
 		explicit Config( const Socket::Config & ) ;
 	} ;
 
-	explicit DatagramSocket( Address::Family , int protocol , const Config & config ) ; // TODO defaults
+	explicit DatagramSocket( Address::Family , int protocol , const Config & config ) ;
 		///< Constructor.
 
 	ssize_type read( char * buffer , size_type len ) override ;

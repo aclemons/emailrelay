@@ -5,6 +5,7 @@
 #
 Checks: "\
 bugprone-*,\
+-bugprone-suspicious-include,\
 cert-*,\
 clang-diagnostic-*,\
 misc-*,\

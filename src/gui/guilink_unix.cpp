@@ -39,8 +39,8 @@ public:
 	~LinkImp() = default ;
 	LinkImp( const LinkImp & ) = delete ;
 	LinkImp( LinkImp && ) = delete ;
-	void operator=( const LinkImp & ) = delete ;
-	void operator=( LinkImp && ) = delete ;
+	LinkImp & operator=( const LinkImp & ) = delete ;
+	LinkImp & operator=( LinkImp && ) = delete ;
 
 private:
 	static std::string quote( const std::string & ) ;

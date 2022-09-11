@@ -73,8 +73,8 @@ public:
 public:
 	Link( const Link & ) = delete ;
 	Link( Link && ) = delete ;
-	void operator=( const Link & ) = delete ;
-	void operator=( Link && ) = delete ;
+	Link & operator=( const Link & ) = delete ;
+	Link & operator=( Link && ) = delete ;
 
 private:
 	std::unique_ptr<LinkImp> m_imp ;

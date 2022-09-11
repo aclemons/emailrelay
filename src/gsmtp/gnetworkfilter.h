@@ -64,8 +64,8 @@ private: // overrides
 public:
 	NetworkFilter( const NetworkFilter & ) = delete ;
 	NetworkFilter( NetworkFilter && ) = delete ;
-	void operator=( const NetworkFilter & ) = delete ;
-	void operator=( NetworkFilter && ) = delete ;
+	NetworkFilter & operator=( const NetworkFilter & ) = delete ;
+	NetworkFilter & operator=( NetworkFilter && ) = delete ;
 
 private:
 	void clientEvent( const std::string & , const std::string & , const std::string & ) ;

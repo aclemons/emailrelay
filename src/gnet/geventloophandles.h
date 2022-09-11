@@ -288,8 +288,8 @@ public:
 public:
 	EventLoopHandlesMT( const EventLoopHandlesMT & ) = delete ;
 	EventLoopHandlesMT( EventLoopHandlesMT && ) = delete ;
-	void operator=( const EventLoopHandlesMT & ) = delete ;
-	void operator=( EventLoopHandlesMT && ) = delete ;
+	EventLoopHandlesMT & operator=( const EventLoopHandlesMT & ) = delete ;
+	EventLoopHandlesMT & operator=( EventLoopHandlesMT && ) = delete ;
 
 private:
 	void startMarkedThreads() ;
@@ -361,7 +361,7 @@ GNet::WaitThread::Lock::~Lock()
 // --
 
 template <typename TList>
-GNet::EventLoopHandles::EventLoopHandles( TList & list , std::size_t threads )
+GNet::EventLoopHandles::EventLoopHandles( TList & /*list*/ , std::size_t threads )
 {
 	if( threads )
 		m_mt = std::make_unique<EventLoopHandlesMT>( threads ) ;
@@ -405,7 +405,7 @@ bool GNet::EventLoopHandles::overflow( TList & list , bool (*fn)(const typename 
 		return overflow_MT( list , fn ) ;
 	}
 	else if( list.size() > wait_limit &&
-		(1U+std::count_if(list.cbegin(),list.cbegin()+list.size()-1U,fn)) > wait_limit )
+		static_cast<std::size_t>(1+std::count_if(list.cbegin(),list.cbegin()+list.size()-1U,fn)) > wait_limit )
 	{
 		// allow automatic implementation switcheroo on first overflow
 		return overflow_MT( list , fn ) ;
@@ -529,7 +529,7 @@ void GNet::moveToRhs( T begin , std::size_t i , std::size_t n )
 // --
 
 template <typename Iterator>
-void GNet::WaitThread::updateIfMarked( std::size_t t , Iterator list_p , std::size_t n )
+void GNet::WaitThread::updateIfMarked( std::size_t /*t*/ , Iterator list_p , std::size_t n )
 {
 	Lock lock( m_mutex ) ;
 	if( m_marked )

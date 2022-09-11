@@ -27,6 +27,7 @@
 #include "gmessagestore.h"
 #include "ggetopt.h"
 #include "goptionsusage.h"
+#include "gaddress.h"
 #include "gprocess.h"
 #include "gpath.h"
 #include "gfile.h"
@@ -263,7 +264,17 @@ void Main::CommandLine::showSslVersion( bool e , const std::string & eot ) const
 void Main::CommandLine::showThreading( bool e , const std::string & eot ) const
 {
 	Show show( m_output , e , m_verbose ) ;
-	show.s() << "Multi-threading: " << (G::threading::works()?"enabled":"disabled") << std::endl << eot ;
+	show.s() << "Multi-threading: " << (G::threading::works()?"enabled":"disabled") << eot ;
+}
+
+void Main::CommandLine::showUds( bool e , const std::string & eot ) const
+{
+	if( !G::is_windows() || G::is_wine() )
+	{
+		bool enabled = GNet::Address::supports( GNet::Address::Family::local ) ;
+		Show show( m_output , e , m_verbose ) ;
+		show.s() << "Unix domain sockets: " << (enabled?"enabled":"disabled") << eot ;
+	}
 }
 
 void Main::CommandLine::showVersion( bool e ) const
@@ -274,6 +285,7 @@ void Main::CommandLine::showVersion( bool e ) const
 	if( m_verbose )
 	{
 		showThreading( e , "\n" ) ;
+		showUds( e , "\n" ) ;
 		showSslVersion( e , "\n" ) ;
 	}
 	showSslCredit( e , "\n" ) ;

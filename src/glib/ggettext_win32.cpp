@@ -27,6 +27,6 @@ void G::gettext_init( const std::string & , const std::string & )
 
 const char * G::gettext( const char * p ) noexcept
 {
-		return p ;
+	return p ;
 }
 

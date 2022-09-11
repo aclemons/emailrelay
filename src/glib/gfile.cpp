@@ -79,7 +79,7 @@ bool G::File::copy( const Path & from , const Path & to , std::nothrow_t )
 	return copy(from,to,0).empty() ;
 }
 
-#ifndef G_FILE_SMALL
+#ifndef G_LIB_SMALL
 bool G::File::copyInto( const Path & from , const Path & to_dir , std::nothrow_t )
 {
 	G::Path to = to_dir + from.basename() ;
@@ -117,7 +117,7 @@ std::string G::File::copy( const Path & from , const Path & to , int )
 	return {} ;
 }
 
-#ifndef G_FILE_SMALL
+#ifndef G_LIB_SMALL
 void G::File::copy( std::istream & in , std::ostream & out , std::streamsize limit , std::string::size_type block )
 {
 	std::ios_base::iostate in_state = in.rdstate() ;
@@ -194,7 +194,7 @@ bool G::File::isExecutable( const Path & path , std::nothrow_t )
 	return 0 == s.error && s.is_executable ;
 }
 
-#ifndef G_FILE_SMALL
+#ifndef G_LIB_SMALL
 bool G::File::isEmpty( const Path & path , std::nothrow_t )
 {
 	Stat s = statImp( path.cstr() ) ;
@@ -216,7 +216,7 @@ G::SystemTime G::File::time( const Path & path )
 	return SystemTime( s.mtime_s , s.mtime_us ) ;
 }
 
-#ifndef G_FILE_SMALL
+#ifndef G_LIB_SMALL
 G::SystemTime G::File::time( const Path & path , std::nothrow_t )
 {
 	Stat s = statImp( path.cstr() ) ;
@@ -231,7 +231,7 @@ bool G::File::chmodx( const Path & path , std::nothrow_t )
 	return chmodx( path , false ) ;
 }
 
-#ifndef G_FILE_SMALL
+#ifndef G_LIB_SMALL
 void G::File::chmodx( const Path & path )
 {
 	chmodx( path , true ) ;
@@ -243,7 +243,7 @@ bool G::File::mkdir( const Path & dir , std::nothrow_t )
 	return 0 == mkdirImp( dir ) ;
 }
 
-#ifndef G_FILE_SMALL
+#ifndef G_LIB_SMALL
 void G::File::mkdir( const Path & dir )
 {
 	int e = mkdirImp( dir ) ;
@@ -282,7 +282,7 @@ bool G::File::mkdirs( const Path & path , std::nothrow_t , int limit )
 	return mkdirsr( path , e , limit ) ;
 }
 
-#ifndef G_FILE_SMALL
+#ifndef G_LIB_SMALL
 void G::File::mkdirs( const Path & path , int limit )
 {
 	int e = 0 ;
@@ -291,7 +291,7 @@ void G::File::mkdirs( const Path & path , int limit )
 }
 #endif
 
-#ifndef G_FILE_SMALL
+#ifndef G_LIB_SMALL
 int G::File::compare( const Path & path_1 , const Path & path_2 , bool ignore_whitespace )
 {
 	std::ifstream file_1 ; open( file_1 , path_1 ) ;

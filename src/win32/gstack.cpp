@@ -313,7 +313,7 @@ LRESULT GGui::Stack::wndProc( UINT message , WPARAM wparam , LPARAM lparam , boo
 	return 0 ;
 }
 
-int GGui::Stack::sheetProc( HWND hsheet , UINT message , LPARAM lparam )
+int GGui::Stack::sheetProc( HWND hsheet , UINT message , LPARAM /*lparam*/ )
 {
 	if( message == PSCB_INITIALIZED )
 	{
@@ -324,7 +324,7 @@ int GGui::Stack::sheetProc( HWND hsheet , UINT message , LPARAM lparam )
 	return 0 ;
 }
 
-unsigned int GGui::Stack::pageProc( HWND , UINT message , PROPSHEETPAGE * page_p )
+unsigned int GGui::Stack::pageProc( HWND , UINT message , PROPSHEETPAGE * /*page_p*/ )
 {
 	unsigned int result = 0U ;
 	if( message == PSPCB_CREATE )
@@ -332,7 +332,7 @@ unsigned int GGui::Stack::pageProc( HWND , UINT message , PROPSHEETPAGE * page_p
 	return result ;
 }
 
-bool GGui::Stack::dlgProc( HWND hpage , UINT message , WPARAM wparam , LPARAM lparam )
+bool GGui::Stack::dlgProc( HWND hpage , UINT message , WPARAM /*wparam*/ , LPARAM lparam )
 {
 	if( message == WM_INITDIALOG )
 	{
@@ -413,7 +413,7 @@ bool GGui::StackPageCallback::onApply()
 	return true ;
 }
 
-void GGui::StackPageCallback::onSysCommand( unsigned int id )
+void GGui::StackPageCallback::onSysCommand( unsigned int /*id*/ )
 {
 }
 

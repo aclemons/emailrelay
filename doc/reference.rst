@@ -177,6 +177,8 @@ The *emailrelay* program supports the following command-line usage:
     all the addresses associated with that interface at startup will used for
     listening. When an interface name is decorated with a *-ipv4* or *-ipv6*
     suffix only their IPv4 or IPv6 addresses will be used (eg. *ppp0-ipv4*).
+    To inherit listening file descriptors from the parent process on unix use a
+    syntax like this: **--interface\ *=smtp=fd#3,smtp=fd#4,pop=fd#5*\ .
 
 *   --prompt-timeout \<time\> (-w)
 

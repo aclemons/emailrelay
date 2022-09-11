@@ -89,8 +89,8 @@ public:
 public:
 	Root( const Root & ) = delete ;
 	Root( Root && ) = delete ;
-	void operator=( const Root & ) = delete ;
-	void operator=( Root && ) = delete ;
+	Root & operator=( const Root & ) = delete ;
+	Root & operator=( Root && ) = delete ;
 
 private:
 	void check() ;

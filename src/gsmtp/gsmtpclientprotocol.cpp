@@ -24,6 +24,7 @@
 #include "gsaslclient.h"
 #include "gbase64.h"
 #include "gstr.h"
+#include "gstringfield.h"
 #include "gssl.h"
 #include "gxtext.h"
 #include "gsmtpclientprotocol.h"
@@ -103,7 +104,7 @@ void GSmtp::ClientProtocol::sendComplete()
 		if( endOfContent() )
 		{
 			m_state = State::sSentDot ;
-			send( "." , true ) ;
+			sendEot() ; // "."
 		}
 	}
 }
@@ -188,25 +189,33 @@ void GSmtp::ClientProtocol::sendMailCore()
 {
 	std::string mail_from_tail = message()->from() ;
 	mail_from_tail.append( 1U , '>' ) ;
-	if( m_server_has_8bitmime && message()->eightBit() != -1 )
+	if( m_server_has_8bitmime ) // BODY=
 	{
-		mail_from_tail.append( message()->eightBit() ? " BODY=8BITMIME" : " BODY=7BIT" ) ; // RFC-6152
+		if( message()->eightBit() != -1 )
+			mail_from_tail.append( message()->eightBit() ? " BODY=8BITMIME" : " BODY=7BIT" ) ; // RFC-6152
 	}
-	if( m_authenticated_with_server && message()->fromAuthOut().empty() && !m_sasl->id().empty() )
+	if( m_authenticated_with_server ) // AUTH=
 	{
-		// default policy is to use the session authentication id, although
-		// this is not strictly conforming with RFC-2554
-		mail_from_tail.append( " AUTH=" ) ;
-		mail_from_tail.append( G::Xtext::encode(m_sasl->id()) ) ;
-	}
-	else if( m_authenticated_with_server && G::Xtext::valid(message()->fromAuthOut()) )
-	{
-		mail_from_tail.append( " AUTH=" ) ;
-		mail_from_tail.append( message()->fromAuthOut() ) ;
-	}
-	else if( m_authenticated_with_server )
-	{
-		mail_from_tail.append( " AUTH=<>" ) ;
+		if( m_config.anonymous )
+		{
+			mail_from_tail.append( " AUTH=<>" ) ;
+		}
+		else if( message()->fromAuthOut().empty() && !m_sasl->id().empty() )
+		{
+			// default policy is to use the session authentication id, although
+			// this is not strictly conforming with RFC-2554
+			mail_from_tail.append( " AUTH=" ) ;
+			mail_from_tail.append( G::Xtext::encode(m_sasl->id()) ) ;
+		}
+		else if( G::Xtext::valid(message()->fromAuthOut()) )
+		{
+			mail_from_tail.append( " AUTH=" ) ;
+			mail_from_tail.append( message()->fromAuthOut() ) ;
+		}
+		else
+		{
+			mail_from_tail.append( " AUTH=<>" ) ;
+		}
 	}
 	send( "MAIL FROM:<" , mail_from_tail ) ;
 }
@@ -306,7 +315,8 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 		else if( m_server_has_auth && m_sasl->active() )
 		{
 			m_state = State::sAuth ;
-			send( "AUTH " , m_auth_mechanism , initialResponse(*m_sasl) ) ;
+			auto rsp = initialResponse( *m_sasl ) ;
+			send( "AUTH " , m_auth_mechanism , base64(' ',rsp.data) , rsp.sensitive ) ;
 		}
 		else if( !m_server_has_auth && m_sasl->active() && m_config.must_authenticate )
 		{
@@ -343,7 +353,7 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 		if( rsp.error )
 			send( "*" ) ; // expect 501
 		else
-			send( G::Base64::encode(rsp.data) , false , rsp.sensitive ) ;
+			sendImp( G::Base64::encode(rsp.data) , false , rsp.sensitive , "[response not logged]" ) ;
 	}
 	else if( m_state == State::sAuth && reply.is(Reply::Value::Challenge_334) )
 	{
@@ -365,7 +375,8 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 		G_LOG( "GSmtp::ClientProtocol::applyEvent: " << AuthError(*m_sasl,reply).str()
 			<< ": trying [" << G::Str::lower(m_sasl->mechanism()) << "]" ) ;
 		m_auth_mechanism = m_sasl->mechanism() ;
-		send( "AUTH " , m_auth_mechanism , initialResponse(*m_sasl) ) ;
+		auto rsp = initialResponse( *m_sasl ) ;
+		send( "AUTH " , m_auth_mechanism , base64(' ',rsp.data) , rsp.sensitive ) ;
 	}
 	else if( m_state == State::sAuth && !reply.positive() && m_config.must_authenticate )
 	{
@@ -446,7 +457,7 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 		if( endOfContent() )
 		{
 			m_state = State::sSentDot ;
-			send( "." , true ) ;
+			sendEot() ; // "."
 		}
 	}
 	else if( m_state == State::sSentDataStub )
@@ -484,10 +495,14 @@ bool GSmtp::ClientProtocol::applyEvent( const Reply & reply , bool is_start_even
 	return protocol_done ;
 }
 
-std::string GSmtp::ClientProtocol::initialResponse( const GAuth::SaslClient & sasl )
+GAuth::SaslClient::Response GSmtp::ClientProtocol::initialResponse( const GAuth::SaslClient & sasl )
 {
-	std::string rsp = sasl.initialResponse( 450U ) ; // RFC-2821 total command line length of 512
-	return rsp.empty() ? rsp : ( " " + G::Base64::encode(rsp) ) ;
+	return sasl.initialResponse( 450U ) ; // RFC-2821 total command line length of 512
+}
+
+std::string GSmtp::ClientProtocol::base64( char sep , const std::string & data )
+{
+	return data.empty() ? std::string() : std::string(1U,sep).append( G::Base64::encode(data) ) ;
 }
 
 void GSmtp::ClientProtocol::onTimeout()
@@ -614,33 +629,62 @@ bool GSmtp::ClientProtocol::sendLine( std::string & line )
 	return ok ;
 }
 
-void GSmtp::ClientProtocol::send( const char * p )
+void GSmtp::ClientProtocol::sendEot()
 {
-	send( std::string(p) , false , false ) ;
+	sendImp( std::string(1U,'.') , true , false ) ;
 }
 
-void GSmtp::ClientProtocol::send( const char * p , const std::string & s , const std::string & p2 )
+void GSmtp::ClientProtocol::send( const char * p0 )
 {
-	std::string line( p ) ;
-	line.append( s ) ;
+	sendImp( std::string(p0) , false , false ) ;
+}
+
+void GSmtp::ClientProtocol::send( const char * p0 , const std::string & s1 , const std::string & p2 )
+{
+	std::string line( p0 ) ;
+	line.append( s1 ) ;
 	line.append( p2 ) ;
-	send( line , false , false ) ;
+	sendImp( line , false , false ) ;
 }
 
-void GSmtp::ClientProtocol::send( const char * p , const std::string & s )
+void GSmtp::ClientProtocol::send( const char * p0 , const std::string & s1 , const std::string & p2 , bool p2_sensitive )
 {
-	send( std::string(p) + s , false , false ) ;
+	std::string line( p0 ) ;
+	line.append( s1 ) ;
+	line.append( p2 ) ;
+	if( p2_sensitive )
+	{
+		std::string log_text = std::string(p0).append(s1).append(" [not logged]") ;
+		sendImp( line , false , true , log_text ) ;
+	}
+	else
+	{
+		sendImp( line , false , false ) ;
+	}
 }
 
-bool GSmtp::ClientProtocol::send( const std::string & line , bool eot , bool sensitive )
+void GSmtp::ClientProtocol::send( const char * p0 , const std::string & s1 )
+{
+	sendImp( std::string(p0).append(s1) , false , false ) ;
+}
+
+bool GSmtp::ClientProtocol::sendImp( const std::string & line , bool eot , bool with_log_text , const std::string & log_text )
 {
 	if( m_config.response_timeout != 0U )
 		startTimer( m_config.response_timeout ) ;
 
 	bool dot_prefix = !eot && line.length() && line.at(0U) == '.' ;
-	if( sensitive )
+	if( with_log_text )
 	{
-		G_LOG( "GSmtp::ClientProtocol: tx>>: [response not logged]" ) ;
+		G_LOG( "GSmtp::ClientProtocol: tx>>: \"" << log_text << "\"" ) ;
+	}
+	else if( line.find("\r\n",0U,2U) != std::string::npos )
+	{
+		for( G::StringField f(line,"\r\n",2U) ; f && !f.last() ; ++f )
+		{
+			G_LOG( "GSmtp::ClientProtocol: tx>>: \""
+				<< G::Str::printable(G::string_view(f.data(),f.size())) << "\"" ) ;
+		}
 	}
 	else
 	{
@@ -806,26 +850,7 @@ bool GSmtp::ClientProtocolReply::textContains( std::string key ) const
 // ===
 
 GSmtp::ClientProtocol::Config::Config()
-= default;
-
-GSmtp::ClientProtocol::Config::Config( const std::string & name_ ,
-	unsigned int response_timeout_ ,
-	unsigned int ready_timeout_ , unsigned int filter_timeout_ ,
-	bool use_starttls_if_possible_ , bool must_use_tls_ ,
-	bool must_authenticate_ , bool anonymous_ ,
-	bool must_accept_all_recipients_ , bool eight_bit_strict_ ) :
-		thishost_name(name_) ,
-		response_timeout(response_timeout_) ,
-		ready_timeout(ready_timeout_) ,
-		filter_timeout(filter_timeout_) ,
-		use_starttls_if_possible(use_starttls_if_possible_) ,
-		must_use_tls(must_use_tls_) ,
-		must_authenticate(must_authenticate_) ,
-		anonymous(anonymous_) ,
-		must_accept_all_recipients(must_accept_all_recipients_) ,
-		eight_bit_strict(eight_bit_strict_)
-{
-}
+= default ;
 
 // ==
 

@@ -35,7 +35,7 @@ GSmtp::Client::Client( GNet::ExceptionSink es , FilterFactory & ff , const GNet:
 	const GAuth::SaslClientSecrets & client_secrets , const Config & config ) :
 		GNet::Client(es,remote,netConfig(config)) ,
 		m_store(nullptr) ,
-		m_filter(ff.newFilter(es,false,config.filter_address,config.filter_timeout)) ,
+		m_filter(ff.newFilter(es,false,config.filter_spec,config.filter_timeout)) ,
 		m_protocol(es,*this,client_secrets,config.sasl_client_config,config.client_protocol_config,config.secure_tunnel) ,
 		m_secure_tunnel(config.secure_tunnel) ,
 		m_message_count(0U)

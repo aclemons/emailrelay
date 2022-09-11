@@ -146,8 +146,8 @@ protected:
 public:
 	ApplicationBase( const ApplicationBase & ) = delete ;
 	ApplicationBase( ApplicationBase && ) = delete ;
-	void operator=( const ApplicationBase & ) = delete ;
-	void operator=( ApplicationBase && ) = delete ;
+	ApplicationBase & operator=( const ApplicationBase & ) = delete ;
+	ApplicationBase & operator=( ApplicationBase && ) = delete ;
 
 private:
 	static bool messageBoxCore( HWND , unsigned int , const std::string & , const std::string & ) ;

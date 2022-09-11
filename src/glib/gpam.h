@@ -152,8 +152,8 @@ public:
 public:
 	Pam( const Pam & ) = delete ;
 	Pam( Pam && ) = delete ;
-	void operator=( const Pam & ) = delete ;
-	void operator=( Pam && ) = delete ;
+	Pam & operator=( const Pam & ) = delete ;
+	Pam & operator=( Pam && ) = delete ;
 
 private:
 	std::unique_ptr<PamImp> m_imp ;

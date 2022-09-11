@@ -66,7 +66,7 @@ GNet::Address::Address( Family f , unsigned int port )
 
 GNet::Address::Address( const sockaddr * addr , socklen_t len , bool ipv6_scope_id_fixup )
 {
-	if( addr == nullptr || len < sizeof(sockaddr::sa_family) )
+	if( addr == nullptr || len < static_cast<socklen_t>(sizeof(sockaddr::sa_family)) )
 		throw Address::Error() ;
 	else if( addr->sa_family == 0 )
 		throw Address::BadFamily() ;
@@ -596,8 +596,8 @@ const char * GNet::inet_ntop_imp( int f , void * ap , char * buffer , std::size_
 		const char * hexmap = "0123456789abcdef" ;
 		for( int i = 0 ; i < 16 ; i++ , sep = *sep ? "" : ":" ) // sep alternates
 		{
-			unsigned int n = static_cast<unsigned int>(a.s6_addr[i]) % 256U ;
-			ss << sep << hexmap[(n>>4U)%16U] << hexmap[(n&15U)%16U] ;
+			unsigned int nn = static_cast<unsigned int>(a.s6_addr[i]) % 256U ;
+			ss << sep << hexmap[(nn>>4U)%16U] << hexmap[(nn&15U)%16U] ;
 		}
 		ss << ":" ;
 		// eg. ":0001:0002:0000:0000:0005:0006:dead:beef:"

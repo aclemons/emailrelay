@@ -23,7 +23,7 @@ if GCONFIG_WINDOWS
 
 AM_CPPFLAGS = -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl -I$(top_srcdir)/src/win32
 
-EXTRA_DIST_OS = \
+OS_EXTRA_DIST = \
 	gdescriptor_unix.cpp \
 	gfutureevent_unix.cpp \
 	gsocket_unix.cpp
@@ -38,7 +38,7 @@ else
 
 AM_CPPFLAGS = -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl
 
-EXTRA_DIST_OS = \
+OS_EXTRA_DIST = \
 	gdescriptor_win32.cpp \
 	geventloop_win32.cpp \
 	gfutureevent_win32.cpp \
@@ -57,7 +57,7 @@ if GCONFIG_INTERFACE_NAMES
 
 if GCONFIG_WINDOWS
 
-EXTRA_DIST_INTERFACES = \
+INTERFACES_EXTRA_DIST = \
 	ginterfaces_unix.cpp \
 	ginterfaces_none.cpp
 
@@ -67,7 +67,7 @@ INTERFACES_SOURCES = \
 
 else
 
-EXTRA_DIST_INTERFACES = \
+INTERFACES_EXTRA_DIST = \
 	ginterfaces_win32.cpp \
 	ginterfaces_none.cpp
 
@@ -79,7 +79,7 @@ endif
 
 else
 
-EXTRA_DIST_INTERFACES = \
+INTERFACES_EXTRA_DIST = \
 	ginterfaces_unix.cpp \
 	ginterfaces_win32.cpp \
 	ginterfaces_common.cpp
@@ -93,7 +93,7 @@ endif
 
 if GCONFIG_DNSBL
 
-EXTRA_DIST_DNSBL = \
+DNSBL_EXTRA_DIST = \
 	gdnsbl_disabled.cpp
 
 DNSBL_SOURCES = \
@@ -106,7 +106,7 @@ DNSBL_SOURCES = \
 
 else
 
-EXTRA_DIST_DNSBL = \
+DNSBL_EXTRA_DIST = \
 	gdnsbl_enabled.cpp \
 	gdnsblock.h \
 	gdnsblock.cpp \
@@ -128,7 +128,7 @@ if GCONFIG_WINDOWS
 UDS_SOURCES = \
 	gaddresslocal_none.cpp
 
-EXTRA_DIST_UDS =
+UDS_EXTRA_DIST =
 	gaddresslocal_unix.cpp
 
 else
@@ -136,7 +136,7 @@ else
 UDS_SOURCES = \
 	gaddresslocal_unix.cpp
 
-EXTRA_DIST_UDS =
+UDS_EXTRA_DIST =
 	gaddresslocal_none.cpp
 
 endif
@@ -146,7 +146,7 @@ else
 UDS_SOURCES = \
 	gaddresslocal_none.cpp
 
-EXTRA_DIST_UDS =
+UDS_EXTRA_DIST =
 	gaddresslocal_unix.cpp
 
 endif
@@ -155,7 +155,7 @@ endif
 
 if GCONFIG_WINDOWS
 
-EXTRA_DIST_EVENTLOOP = \
+EVENTLOOP_EXTRA_DIST = \
 	geventloop_epoll.cpp \
 	geventloop_select.cpp
 
@@ -168,7 +168,7 @@ else
 
 if GCONFIG_EPOLL
 
-EXTRA_DIST_EVENTLOOP = \
+EVENTLOOP_EXTRA_DIST = \
 	geventloop_win32.cpp \
 	geventloophandles.h \
 	geventloophandles.cpp \
@@ -179,7 +179,7 @@ EVENTLOOP_SOURCES = \
 
 else
 
-EXTRA_DIST_EVENTLOOP = \
+EVENTLOOP_EXTRA_DIST = \
 	geventloop_win32.cpp \
 	geventloophandles.cpp \
 	geventloophandles.h \
@@ -195,21 +195,24 @@ endif
 # ===
 
 EXTRA_DIST = \
-	$(EXTRA_DIST_OS) \
-	$(EXTRA_DIST_INTERFACES) \
-	$(EXTRA_DIST_EVENTLOOP) \
-	$(EXTRA_DIST_UDS) \
-	$(EXTRA_DIST_DNSBL)
+	$(DNSBL_EXTRA_DIST) \
+	$(EVENTLOOP_EXTRA_DIST) \
+	$(INTERFACES_EXTRA_DIST) \
+	$(OS_EXTRA_DIST) \
+	$(UDS_EXTRA_DIST)
 
 libgnet_a_SOURCES = \
+	$(DNSBL_SOURCES) \
+	$(EVENTLOOP_SOURCES) \
+	$(INTERFACES_SOURCES) \
 	$(OS_SOURCES) \
+	$(UDS_SOURCES) \
 	gaddress.cpp \
 	gaddress.h \
 	gaddress4.h \
 	gaddress4.cpp \
 	gaddress6.h \
 	gaddress6.cpp \
-	$(UDS_SOURCES) \
 	gaddresslocal.h \
 	gclient.cpp \
 	gclient.h \
@@ -218,7 +221,6 @@ libgnet_a_SOURCES = \
 	gconnection.cpp \
 	gconnection.h \
 	gdescriptor.h \
-	$(DNSBL_SOURCES) \
 	gevent.h \
 	geventemitter.cpp \
 	geventemitter.h \
@@ -228,7 +230,6 @@ libgnet_a_SOURCES = \
 	geventloggingcontext.h \
 	geventloop.cpp \
 	geventloop.h \
-	$(EVENTLOOP_SOURCES) \
 	gexceptionhandler.cpp \
 	gexceptionhandler.h \
 	gexceptionsink.cpp \
@@ -237,7 +238,6 @@ libgnet_a_SOURCES = \
 	gexceptionsource.h \
 	gfutureevent.h \
 	ginterfaces.h \
-	$(INTERFACES_SOURCES) \
 	glinebuffer.cpp \
 	glinebuffer.h \
 	glinestore.cpp \

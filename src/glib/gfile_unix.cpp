@@ -105,7 +105,7 @@ bool G::File::probe( const char * path ) noexcept
 	return true ;
 }
 
-#ifndef G_FILE_SMALL
+#ifndef G_LIB_SMALL
 void G::File::create( const Path & path )
 {
 	int fd = ::open( path.cstr() , O_RDONLY|O_CREAT , 0666 ) ; // NOLINT
@@ -204,7 +204,7 @@ bool G::File::chmodx( const Path & path , bool do_throw )
 	return ok ;
 }
 
-#ifndef G_FILE_SMALL
+#ifndef G_LIB_SMALL
 void G::File::chmod( const Path & path , const std::string & spec )
 {
 	if( !chmod( path , spec , std::nothrow ) )
@@ -212,7 +212,7 @@ void G::File::chmod( const Path & path , const std::string & spec )
 }
 #endif
 
-#ifndef G_FILE_SMALL
+#ifndef G_LIB_SMALL
 bool G::File::chmod( const Path & path , const std::string & spec , std::nothrow_t )
 {
 	if( spec.empty() )
@@ -235,7 +235,7 @@ bool G::File::chmod( const Path & path , const std::string & spec , std::nothrow
 }
 #endif
 
-#ifndef G_FILE_SMALL
+#ifndef G_LIB_SMALL
 std::pair<bool,mode_t> G::FileImp::newmode( mode_t mode , const std::string & spec_in )
 {
 	mode &= mode_t(07777) ;
@@ -306,7 +306,7 @@ std::pair<bool,mode_t> G::FileImp::newmode( mode_t mode , const std::string & sp
 }
 #endif
 
-#ifndef G_FILE_SMALL
+#ifndef G_LIB_SMALL
 void G::File::chgrp( const Path & path , const std::string & group )
 {
 	bool ok = 0 == ::chown( path.cstr() , -1 , Identity::lookupGroup(group) ) ;
@@ -315,14 +315,14 @@ void G::File::chgrp( const Path & path , const std::string & group )
 }
 #endif
 
-#ifndef G_FILE_SMALL
+#ifndef G_LIB_SMALL
 bool G::File::chgrp( const Path & path , const std::string & group , std::nothrow_t )
 {
 	return 0 == ::chown( path.cstr() , -1 , Identity::lookupGroup(group) ) ;
 }
 #endif
 
-#ifndef G_FILE_SMALL
+#ifndef G_LIB_SMALL
 void G::File::link( const Path & target , const Path & new_link )
 {
 	if( linked(target,new_link) ) // optimisation
@@ -342,7 +342,7 @@ void G::File::link( const Path & target , const Path & new_link )
 }
 #endif
 
-#ifndef G_FILE_SMALL
+#ifndef G_LIB_SMALL
 bool G::File::link( const Path & target , const Path & new_link , std::nothrow_t )
 {
 	if( linked(target,new_link) ) // optimisation
@@ -355,7 +355,7 @@ bool G::File::link( const Path & target , const Path & new_link , std::nothrow_t
 }
 #endif
 
-#ifndef G_FILE_SMALL
+#ifndef G_LIB_SMALL
 int G::File::linkImp( const char * target , const char * new_link )
 {
 	int rc = ::symlink( target , new_link ) ;
@@ -364,7 +364,7 @@ int G::File::linkImp( const char * target , const char * new_link )
 }
 #endif
 
-#ifndef G_FILE_SMALL
+#ifndef G_LIB_SMALL
 G::Path G::File::readlink( const Path & link )
 {
 	Path result = readlink( link , std::nothrow ) ;
@@ -395,7 +395,7 @@ G::Path G::File::readlink( const Path & link , std::nothrow_t )
 	return result ;
 }
 
-#ifndef G_FILE_SMALL
+#ifndef G_LIB_SMALL
 bool G::File::linked( const Path & target , const Path & new_link )
 {
 	// see if already linked correctly - errors and overflows are not fatal
@@ -403,7 +403,7 @@ bool G::File::linked( const Path & target , const Path & new_link )
 }
 #endif
 
-#ifndef G_FILE_SMALL
+#ifndef G_LIB_SMALL
 void G::File::setNonBlocking( int fd ) noexcept
 {
 	int flags = ::fcntl( fd , F_GETFL ) ; // NOLINT

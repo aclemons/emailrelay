@@ -243,8 +243,8 @@ private:
 public:
 	ServerProtocol( const ServerProtocol & ) = delete ;
 	ServerProtocol( ServerProtocol && ) = delete ;
-	void operator=( const ServerProtocol & ) = delete ;
-	void operator=( ServerProtocol && ) = delete ;
+	ServerProtocol & operator=( const ServerProtocol & ) = delete ;
+	ServerProtocol & operator=( ServerProtocol && ) = delete ;
 
 private:
 	void send( const char * ) ;
@@ -330,6 +330,7 @@ private:
 	std::string parseRcptParameter( const std::string & ) const ;
 	std::string parsePeerName( const std::string & ) const ;
 	void verify( const std::string & , const std::string & ) ;
+	std::string printableAuth( const std::string & auth_line ) const ;
 
 private:
 	Sender & m_sender ;
@@ -373,8 +374,8 @@ public:
 	~ServerProtocolText() override = default ;
 	ServerProtocolText( const ServerProtocolText & ) = delete ;
 	ServerProtocolText( ServerProtocolText && ) = delete ;
-	void operator=( const ServerProtocolText & ) = delete ;
-	void operator=( ServerProtocolText && ) = delete ;
+	ServerProtocolText & operator=( const ServerProtocolText & ) = delete ;
+	ServerProtocolText & operator=( ServerProtocolText && ) = delete ;
 
 private: // overrides
 	std::string greeting() const override ; // Override from GSmtp::ServerProtocol::Text.

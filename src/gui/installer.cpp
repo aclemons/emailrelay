@@ -31,6 +31,8 @@
 #include "gprocess.h"
 #include "guilink.h"
 #include "gbatchfile.h"
+#include "gxtext.h"
+#include "gbase64.h"
 #include "glog.h"
 #include "glogoutput.h"
 #include "gexception.h"
@@ -551,7 +553,7 @@ void CreatePointerFile::run()
 	if( !isWindows() )
 	{
 		G::File::chmodx( m_pointer_file ) ;
-		G::File::chmodx( m_gui_exe ) ; // hopefully redundant
+		G::File::chmodx( m_gui_exe , std::nothrow ) ; // hopefully redundant
 	}
 }
 
@@ -1501,9 +1503,9 @@ void InstallerImp::addActions()
 	{
 		G::Path spool_dir( pvalue("dir-spool") ) ;
 		std::vector<std::string> names ;
-		names.push_back( pvalue("pop-account-1-name") ) ;
-		names.push_back( pvalue("pop-account-2-name") ) ;
-		names.push_back( pvalue("pop-account-3-name") ) ;
+		names.push_back( G::Xtext::encode( G::Base64::decode(pvalue("pop-account-1-name")) ) ) ;
+		names.push_back( G::Xtext::encode( G::Base64::decode(pvalue("pop-account-2-name")) ) ) ;
+		names.push_back( G::Xtext::encode( G::Base64::decode(pvalue("pop-account-3-name")) ) ) ;
 		for( const auto & name : names )
 		{
 			if( name.empty() ) continue ;

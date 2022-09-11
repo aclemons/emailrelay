@@ -163,8 +163,8 @@ public:
 	~Timer() override = default ;
 	Timer( const Timer<T> & ) = delete ;
 	Timer( Timer<T> && ) = delete ;
-	void operator=( const Timer<T> & ) = delete ;
-	void operator=( Timer<T> && ) = delete ;
+	Timer<T> & operator=( const Timer<T> & ) = delete ;
+	Timer<T> & operator=( Timer<T> && ) = delete ;
 
 private: // overrides
 	void onTimeout() override ; // Override from GNet::TimerBase.

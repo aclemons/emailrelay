@@ -60,8 +60,8 @@ public:
 public:
 	SubClassMap( const SubClassMap & ) = delete ;
 	SubClassMap( SubClassMap && ) = delete ;
-	void operator=( const SubClassMap & ) = delete ;
-	void operator=( SubClassMap && ) = delete ;
+	SubClassMap & operator=( const SubClassMap & ) = delete ;
+	SubClassMap & operator=( SubClassMap && ) = delete ;
 
 private:
 	struct Slot

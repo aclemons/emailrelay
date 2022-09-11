@@ -109,8 +109,8 @@ public:
 public:
 	Installer( const Installer & ) = delete ;
 	Installer( Installer && ) = delete ;
-	void operator=( const Installer & ) = delete ;
-	void operator=( Installer && ) = delete ;
+	Installer & operator=( const Installer & ) = delete ;
+	Installer & operator=( Installer && ) = delete ;
 
 private:
 	bool doneImp() ;

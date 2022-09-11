@@ -79,8 +79,8 @@ public:
 public:
 	Log( const Log & ) = delete ;
 	Log( Log && ) = delete ;
-	void operator=( const Log & ) = delete ;
-	void operator=( Log && ) = delete ;
+	Log & operator=( const Log & ) = delete ;
+	Log & operator=( Log && ) = delete ;
 
 private:
 	void flush() ;

@@ -27,38 +27,31 @@
 #include <algorithm>
 
 GSmtp::FilterChain::FilterChain( GNet::ExceptionSink es , FilterFactory & ff ,
-	bool server_side , const std::string & spec , unsigned int timeout ) :
+	bool server_side , const FactoryParser::Result & spec , unsigned int timeout ) :
 		m_filter_index(0U) ,
 		m_filter(nullptr) ,
 		m_running(false) ,
 		m_message_id(MessageId::none())
 {
-	if( spec.empty() )
-	{
-		add( es , ff , server_side , "exit:0" , timeout ) ;
-	}
-	else
-	{
-		for( G::StringToken sub_spec( spec , ","_sv ) ; sub_spec ; ++sub_spec )
-			add( es , ff , server_side , sub_spec() , timeout ) ;
-	}
-	m_filter_index = 0 ;
-	m_filter = m_filters.at(0U).get() ;
-	m_filter->doneSignal().connect( G::Slot::slot(*this,&FilterChain::onFilterDone) ) ;
+	G_ASSERT( spec.first == "chain" ) ;
+	for( G::StringToken t( spec.second , ","_sv ) ; t ; ++t )
+		add( es , ff , server_side , FactoryParser::parse(t(),true) , timeout ) ;
+
+	if( m_filters.empty() )
+		add( es , ff , server_side , {"exit","0"} , timeout ) ;
 }
 
 void GSmtp::FilterChain::add( GNet::ExceptionSink es , FilterFactory & ff ,
-	bool server_side , const std::string & spec , unsigned int timeout )
+	bool server_side , const FactoryParser::Result & spec , unsigned int timeout )
 {
 	m_filters.push_back( ff.newFilter( es , server_side , spec , timeout ) ) ;
-	if( !m_filter_id.empty() )
-		m_filter_id.append( 1U , ',' ) ;
-	m_filter_id.append( m_filters.back()->id() ) ;
+	m_filter_id.append(m_filter_id.empty()?0U:1U,',').append( m_filters.back()->id() ) ;
 }
 
 GSmtp::FilterChain::~FilterChain()
 {
-	m_filter->doneSignal().disconnect() ;
+	if( m_filter )
+		m_filter->doneSignal().disconnect() ;
 }
 
 std::string GSmtp::FilterChain::id() const
@@ -80,25 +73,32 @@ G::Slot::Signal<int> & GSmtp::FilterChain::doneSignal()
 void GSmtp::FilterChain::start( const MessageId & id )
 {
 	if( m_running )
+	{
 		m_filter->cancel() ;
+		m_filter->doneSignal().disconnect() ;
+	}
 	m_running = true ;
 	m_message_id = id ;
+	m_filter_index = 0U ;
+	m_filter = m_filters.at(0U).get() ;
+	m_filter->doneSignal().connect( G::Slot::slot(*this,&FilterChain::onFilterDone) ) ;
 	m_filter->start( m_message_id ) ;
 }
 
 void GSmtp::FilterChain::onFilterDone( int ok_abandon_fail )
 {
+	m_filter->doneSignal().disconnect() ;
 	if( ok_abandon_fail == 0 ) // ok
 	{
 		m_filter_index++ ;
-		if( m_filter_index == m_filters.size() )
+		G_ASSERT( m_filter_index <= m_filters.size() ) ;
+		if( m_filter_index >= m_filters.size() )
 		{
 			m_running = false ;
 			m_done_signal.emit( 0 ) ;
 		}
 		else
 		{
-			m_filter->doneSignal().disconnect() ;
 			m_filter = m_filters.at(m_filter_index).get() ;
 			m_filter->doneSignal().connect( G::Slot::slot(*this,&FilterChain::onFilterDone) ) ;
 			m_filter->start( m_message_id ) ;
@@ -114,7 +114,10 @@ void GSmtp::FilterChain::onFilterDone( int ok_abandon_fail )
 void GSmtp::FilterChain::cancel()
 {
 	if( m_running )
+	{
 		m_filter->cancel() ;
+		m_filter->doneSignal().disconnect() ;
+	}
 	m_running = false ;
 }
 

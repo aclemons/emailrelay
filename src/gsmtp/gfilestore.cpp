@@ -53,8 +53,8 @@ private: // overrides
 public:
 	FileIterator( const FileIterator & ) = delete ;
 	FileIterator( FileIterator && ) = delete ;
-	void operator=( const FileIterator & ) = delete ;
-	void operator=( FileIterator && ) = delete ;
+	FileIterator & operator=( const FileIterator & ) = delete ;
+	FileIterator & operator=( FileIterator && ) = delete ;
 
 private:
 	FileStore & m_store ;

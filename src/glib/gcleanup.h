@@ -47,8 +47,8 @@ public:
 		bool m_active ;
 		Block( const Block & ) = delete ;
 		Block( Block && ) = delete ;
-		void operator=( const Block & ) = delete ;
-		void operator=( Block && ) = delete ;
+		Block & operator=( const Block & ) = delete ;
+		Block & operator=( Block && ) = delete ;
 	} ;
 
 	static void init() ;

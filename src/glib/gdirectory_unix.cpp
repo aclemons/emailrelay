@@ -56,8 +56,8 @@ public:
 public:
 	DirectoryIteratorImp( const DirectoryIteratorImp & ) = delete ;
 	DirectoryIteratorImp( DirectoryIteratorImp && ) = delete ;
-	void operator=( const DirectoryIteratorImp & ) = delete ;
-	void operator=( DirectoryIteratorImp && ) = delete ;
+	DirectoryIteratorImp & operator=( const DirectoryIteratorImp & ) = delete ;
+	DirectoryIteratorImp & operator=( DirectoryIteratorImp && ) = delete ;
 
 private:
 	DIR * m_d ;

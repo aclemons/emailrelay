@@ -58,8 +58,8 @@ public:
 public:
 	Dnsbl( const Dnsbl & ) = delete ;
 	Dnsbl( Dnsbl && ) = delete ;
-	void operator=( const Dnsbl & ) = delete ;
-	void operator=( Dnsbl && ) = delete ;
+	Dnsbl & operator=( const Dnsbl & ) = delete ;
+	Dnsbl & operator=( Dnsbl && ) = delete ;
 
 private:
 	std::function<void(bool)> m_callback ; // see gdnsbl_disabled.cpp

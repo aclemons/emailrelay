@@ -67,8 +67,8 @@ private: // overrides
 public:
 	ResolverImp( const ResolverImp & ) = delete ;
 	ResolverImp( ResolverImp && ) = delete ;
-	void operator=( const ResolverImp & ) = delete ;
-	void operator=( ResolverImp && ) = delete ;
+	ResolverImp & operator=( const ResolverImp & ) = delete ;
+	ResolverImp & operator=( ResolverImp && ) = delete ;
 
 private:
 	void onTimeout() ;

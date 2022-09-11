@@ -222,8 +222,8 @@ protected:
 public:
 	Window( const Window & ) = delete ;
 	Window( Window && ) = delete ;
-	void operator=( const Window & ) = delete ;
-	void operator=( Window && ) = delete ;
+	Window & operator=( const Window & ) = delete ;
+	Window & operator=( Window && ) = delete ;
 
 private:
 	static LRESULT wndProcCore( Window * , HWND , UINT , WPARAM , LPARAM ) ;

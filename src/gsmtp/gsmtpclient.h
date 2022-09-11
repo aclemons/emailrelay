@@ -57,7 +57,7 @@ public:
 	{
 		GNet::StreamSocket::Config stream_socket_config ;
 		ClientProtocol::Config client_protocol_config ;
-		std::string filter_address ;
+		FactoryParser::Result filter_spec ;
 		unsigned int filter_timeout{0U} ;
 		bool bind_local_address{false} ;
 		GNet::Address local_address ;
@@ -69,7 +69,7 @@ public:
 		Config() ;
 		Config & set_stream_socket_config( const GNet::StreamSocket::Config & ) ;
 		Config & set_client_protocol_config( const ClientProtocol::Config & ) ;
-		Config & set_filter_address( const std::string & ) ;
+		Config & set_filter_spec( const FactoryParser::Result & ) ;
 		Config & set_filter_timeout( unsigned int ) ;
 		Config & set_bind_local_address( bool = true ) ;
 		Config & set_local_address( const GNet::Address & ) ;
@@ -129,8 +129,8 @@ private: // overrides
 public:
 	Client( const Client & ) = delete ;
 	Client( Client && ) = delete ;
-	void operator=( const Client & ) = delete ;
-	void operator=( Client && ) = delete ;
+	Client & operator=( const Client & ) = delete ;
+	Client & operator=( Client && ) = delete ;
 
 private:
 	std::shared_ptr<StoredMessage> message() ;
@@ -159,7 +159,7 @@ private:
 
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_stream_socket_config( const GNet::StreamSocket::Config & c ) { stream_socket_config = c ; return *this ; }
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_client_protocol_config( const ClientProtocol::Config & c ) { client_protocol_config = c ; return *this ; }
-inline GSmtp::Client::Config & GSmtp::Client::Config::set_filter_address( const std::string & s ) { filter_address = s ; return *this ; }
+inline GSmtp::Client::Config & GSmtp::Client::Config::set_filter_spec( const FactoryParser::Result & r ) { filter_spec = r ; return *this ; }
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_filter_timeout( unsigned int t ) { filter_timeout = t ; return *this ; }
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_bind_local_address( bool b ) { bind_local_address = b ; return *this ; }
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_local_address( const GNet::Address & a ) { local_address = a ; return *this ; }

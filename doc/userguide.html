@@ -447,32 +447,49 @@ exit 0</pre>
       </div><!-- div-pre -->
    <h2><a class="a-header" name="SH_1_14">Google mail</a></h2> <!-- index:2:SH:1:14:Google mail -->
     <p>
-     To send mail via Google mail's SMTP gateway you will need to create a client
-     secrets file containing your account details and also enable TLS support in
-     E-MailRelay by using the <em>--client-tls</em> option.
+     To send mail via Google mail's SMTP gateway you will need to obtain a new
+     <em>application password</em> from Google. Log in to your Google account and look for
+     the account's security settings and then <em>app passwords</em>. Create the password
+     for E-MailRelay as application type <em>other</em>.
     </p>
 
     <p>
-     The secrets file should contain one line of text something like this:
+     Then you need to create a client secrets file for E-MailRelay containing your
+     account name and the new application password. You may already have this file
+     on Windows as <em>C:\ProgramData\E-MailRelay\emailrelay.auth</em>.
+    </p>
+
+    <p>
+     You should edit the file to contain one <em>client</em> line, something like this:
     </p>
 
       <div class="div-pre">
-       <pre>client plain myname@gmail.com my+20password
+       <pre>client plain myname@gmail.com myapppassword
 </pre>
       </div><!-- div-pre -->
     <p>
-     If your password contains a space, equals or plus sign, or any control
-     character then you will need to replace those characters with their
-     corresponding hexadecimal ascii value, something like <em>+20</em> or <em>+2B</em>.
+     Then change the E-MailRelay startup batch file or configuration file to refer
+     to your secrets file by using the <em>--client-auth</em> option. The <em>--as-proxy</em> or
+     <em>--forward-to</em> options should be set to <em>smtp.gmail.com:587</em> and you will also
+     need to add the <em>--client-tls</em> option to enable TLS encryption.
     </p>
 
     <p>
-     Refer to your secrets file by using <em>--client-auth</em> on the E-MailRelay
-     command-line, and also add in the <em>--client-tls</em> option:
+     On Windows the E-MailRelay startup batch file should contain something like this:
     </p>
 
       <div class="div-pre">
-       <pre>emailrelay --as-proxy=smtp.gmail.com:587 --client-tls --client-auth=/etc/emailrelay.auth ...</pre>
+       <pre>emailrelay --as-proxy=smtp.gmail.com:587 --client-tls --client-auth=C:/ProgramData/E-MailRelay/emailrelay.auth ...
+</pre>
+      </div><!-- div-pre -->
+    <p>
+     Or in a configration file like this:
+    </p>
+
+      <div class="div-pre">
+       <pre>forward-to smtp.gmail.com:587
+client-tls
+client-auth C:/ProgramData/E-MailRelay/emailrelay.auth</pre>
       </div><!-- div-pre -->
    <h2><a class="a-header" name="SH_1_15">Connection tunnelling</a></h2> <!-- index:2:SH:1:15:Connection tunnelling -->
     <p>

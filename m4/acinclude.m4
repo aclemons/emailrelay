@@ -137,6 +137,7 @@ AC_DEFUN([GCONFIG_FN_CHECK_NET],[
 	AC_REQUIRE([GCONFIG_FN_IFINDEX])
 	AC_REQUIRE([GCONFIG_FN_GAISTRERROR])
 	AC_REQUIRE([GCONFIG_FN_UDS])
+	AC_REQUIRE([GCONFIG_FN_UDS_LEN])
 ])
 
 dnl GCONFIG_FN_CHECK_TYPES
@@ -2053,6 +2054,7 @@ AC_DEFUN([GCONFIG_FN_SOPEN_S],
 		],
 		[
 			[errno_t e = _sopen_s(&fd,"foo",_O_WRONLY,_SH_DENYNO,_S_IWRITE) ;]
+			[if( e ) return 1 ;]
 		])],
 		gconfig_cv_sopen_s=yes ,
 		gconfig_cv_sopen_s=no )
@@ -2319,7 +2321,7 @@ AC_DEFUN([GCONFIG_FN_TLS],
 		GCONFIG_TLS_LIBS=""
 	fi
 
-	if test "$gconfig_ssl_use_none" = "yes" -a "$with_openssl" != "no"
+	if test "$gconfig_ssl_use_none" = "yes"
 	then
 		gconfig_warnings="$gconfig_warnings openssl/mbedtls_transport_layer_security"
 	fi
@@ -2672,6 +2674,36 @@ AC_DEFUN([GCONFIG_FN_UDS],
 	fi
 ])
 
+dnl GCONFIG_FN_UDS_LEN
+dnl ------------------
+dnl Tests for BSD's 'sun_len' in 'sockaddr_un'.
+dnl
+AC_DEFUN([GCONFIG_FN_UDS_LEN],
+[AC_CACHE_CHECK([for unix domain sockets],[gconfig_cv_uds_len],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#include <sys/types.h>]
+			[#include <sys/socket.h>]
+			[#include <sys/un.h>]
+			[struct sockaddr_un a ;]
+		] ,
+		[
+			[a.sun_len = 2U ;]
+			[a.sun_family = AF_UNIX | PF_UNIX ;]
+			[a.sun_path[0] = '\0' ;]
+		])] ,
+		[gconfig_cv_uds_len=yes],
+		[gconfig_cv_uds_len=no])
+])
+	if test "$gconfig_cv_uds_len" = "yes"
+	then
+		AC_DEFINE(GCONFIG_HAVE_UDS_LEN,1,[Define true if sockaddr_un has a sun_len field])
+	else
+		AC_DEFINE(GCONFIG_HAVE_UDS_LEN,0,[Define true if sockaddr_un has a sun_len field])
+	fi
+])
+
 dnl GCONFIG_FN_WARNINGS
 dnl -------------------
 dnl Displays a summary warning.
@@ -2718,17 +2750,15 @@ dnl relevant library code. See also AM_GNU_GETTEXT.
 dnl
 AC_DEFUN([GCONFIG_FN_WITH_GETTEXT],
 [
-	if test "$with_gettext" = "no"
-	then
-		gconfig_cv_gettext="no"
-	:
-	elif test "$with_gettext" = "yes"
+	if test "$with_gettext" = "yes"
 	then
 		if test "$gconfig_cv_gettext" = "no"
 		then
 			AC_MSG_WARN([forcing use of gettext even though not detected])
 			gconfig_cv_gettext="yes"
 		fi
+	else
+		gconfig_cv_gettext="no"
 	fi
 
 	if test "$gconfig_cv_gettext" = "yes" ; then

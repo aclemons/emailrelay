@@ -62,7 +62,7 @@ public:
 		///< Returns a response to the given challenge. The mechanism is
 		///< used to choose the appropriate entry in the secrets file.
 
-	std::string initialResponse( std::size_t limit = 0U ) const ;
+	Response initialResponse( std::size_t limit = 0U ) const ;
 		///< Returns an optional initial response. Always returns the empty
 		///< string if the mechanism is 'server-first'. Returns the empty
 		///< string, with no side-effects, if the initial response is longer

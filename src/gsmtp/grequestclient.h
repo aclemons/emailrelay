@@ -88,8 +88,8 @@ public:
 	~RequestClient() override = default ;
 	RequestClient( const RequestClient & ) = delete ;
 	RequestClient( RequestClient && ) = delete ;
-	void operator=( const RequestClient & ) = delete ;
-	void operator=( RequestClient && ) = delete ;
+	RequestClient & operator=( const RequestClient & ) = delete ;
+	RequestClient & operator=( RequestClient && ) = delete ;
 
 private:
 	void onTimeout() ;

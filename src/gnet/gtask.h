@@ -90,8 +90,8 @@ public:
 public:
 	Task( const Task & ) = delete ;
 	Task( Task && ) = delete ;
-	void operator=( const Task & ) = delete ;
-	void operator=( Task && ) = delete ;
+	Task & operator=( const Task & ) = delete ;
+	Task & operator=( Task && ) = delete ;
 
 private:
 	friend class GNet::TaskImp ;

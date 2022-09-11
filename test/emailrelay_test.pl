@@ -117,7 +117,15 @@ sub requireUnix
 
 sub requireUnixDomainSockets
 {
-	requireUnix() ; # could do better -- assumes '--with-uds'
+	my $has_uds ;
+	if( System::unix() )
+	{
+		my $server = new Server() ;
+		$has_uds = $server->hasUnixDomainSockets() ;
+		$server->cleanup() ;
+	}
+	die "skipped: no unix domain socket support\n"
+		if !$has_uds ;
 }
 
 sub requireRoot
@@ -243,7 +251,7 @@ sub _testServerStartsAndStops
 	my $sudo_prefix = $as_root ? System::sudoPrefix() : "" ;
 
 	# test that the server starts up
-	(new FileHandle($server->log(),"w"))->close() if( $as_root ) ; # (log file permissions)
+	(new FileHandle($server->log(),"w"))->close() if $as_root ; # (log file permissions)
 	Check::ok( $server->run(\%args,$sudo_prefix) , "failed to run" , $server->message() ) ;
 	Check::that( $server->rc() == 0 , "immediate error" ) ;
 	Check::fileExists( $server->stdout() ) ;
@@ -1088,6 +1096,7 @@ sub testFilterTimeout
 		Filter => 1 ,
 		FilterTimeout => 1 ,
 	) ;
+	requireThreads() ;
 	my $server = new Server() ;
 	Filter::create( $server->filter() , {} , {
 			unix => [
@@ -1711,11 +1720,9 @@ sub testClientNetworkFilter
 	my $spool_dir_1 = System::createSpoolDir( "spool-1" ) ;
 	my $spool_dir_2 = System::createSpoolDir( "spool-2" ) ;
 	System::submitMessageText( $spool_dir_1 , "send ok" ) ;
-	System::submitMessageText( $spool_dir_1 , "send ok" , "disconnect" ) ;
-	System::submitMessageText( $spool_dir_1 , "send ok" , "disconnect" ) ;
 	System::submitMessageText( $spool_dir_1 , "send _failed_" ) ;
 	System::submitMessageText( $spool_dir_1 , "send ok" ) ;
-	Check::fileMatchCount( $spool_dir_1 ."/emailrelay.*.envelope", 5 ) ;
+	Check::fileMatchCount( $spool_dir_1 ."/emailrelay.*.envelope", 3 ) ;
 	my $server_1 = new Server(undef,undef,undef,$spool_dir_1) ;
 	my $server_2 = new Server(System::nextPort(),undef,System::nextPort(),$spool_dir_2) ;
 	my $scanner = new Scanner( $server_1->scannerAddress() ) ;
@@ -1726,11 +1733,11 @@ sub testClientNetworkFilter
 	Check::ok( $server_1->run(\%args) , "failed to run" , $server_1->message() ) ;
 
 	# test that the messages are fowarded or not according to the filter
-	System::waitForFiles( $spool_dir_2."/emailrelay.*.envelope", 4 ) ;
+	System::waitForFiles( $spool_dir_2."/emailrelay.*.envelope", 2 ) ;
 	System::waitForFiles( $spool_dir_1."/emailrelay.*.envelope.bad", 1 ) ;
 	Check::allFilesContain( $spool_dir_1."/emailrelay.*.envelope.bad" , "_failed_" ) ;
-	Check::fileContains( $scanner->logfile() , "info:.*new connection" , undef , 3 ) ;
-	Check::fileContains( $scanner->logfile() , "info:.*file: " , undef , 5 ) ;
+	Check::fileContains( $scanner->logfile() , "info:.*new connection" , undef , 1 ) ;
+	Check::fileContains( $scanner->logfile() , "info:.*file: " , undef , 3 ) ;
 
 	# tear down
 	$server_1->kill() ;

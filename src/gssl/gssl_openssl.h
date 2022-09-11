@@ -162,8 +162,8 @@ private: // overrides
 public:
 	ProfileImp( const ProfileImp & ) = delete ;
 	ProfileImp( ProfileImp && ) = delete ;
-	void operator=( const ProfileImp & ) = delete ;
-	void operator=( ProfileImp && ) = delete ;
+	ProfileImp & operator=( const ProfileImp & ) = delete ;
+	ProfileImp & operator=( ProfileImp && ) = delete ;
 
 private:
 	static void check( int , const std::string & , const std::string & = {} ) ;
@@ -214,8 +214,8 @@ private: // overrides
 public:
 	LibraryImp( const LibraryImp & ) = delete ;
 	LibraryImp( LibraryImp && ) = delete ;
-	void operator=( const LibraryImp & ) = delete ;
-	void operator=( LibraryImp && ) = delete ;
+	LibraryImp & operator=( const LibraryImp & ) = delete ;
+	LibraryImp & operator=( LibraryImp && ) = delete ;
 
 private:
 	static void cleanup() ;
@@ -260,8 +260,8 @@ private: // overrides
 public:
 	ProtocolImp( const ProtocolImp & ) = delete ;
 	ProtocolImp( ProtocolImp && ) = delete ;
-	void operator=( const ProtocolImp & ) = delete ;
-	void operator=( ProtocolImp && ) = delete ;
+	ProtocolImp & operator=( const ProtocolImp & ) = delete ;
+	ProtocolImp & operator=( ProtocolImp && ) = delete ;
 
 private:
 	int error( const char * , int ) const ;
@@ -305,8 +305,8 @@ private: // overrides
 public:
 	DigesterImp( const DigesterImp & ) = delete ;
 	DigesterImp( DigesterImp && ) = delete ;
-	void operator=( const DigesterImp & ) = delete ;
-	void operator=( DigesterImp && ) = delete ;
+	DigesterImp & operator=( const DigesterImp & ) = delete ;
+	DigesterImp & operator=( DigesterImp && ) = delete ;
 
 private:
 	enum class Type { Md5 , Sha1 , Sha256 , Other } ;

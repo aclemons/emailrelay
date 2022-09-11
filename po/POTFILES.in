@@ -64,9 +64,11 @@
 ./src/gsmtp/gfilterfactory.cpp
 ./src/gsmtp/gspamclient.cpp
 ./src/gsmtp/gexecutableverifier.cpp
+./src/glib/gconvert_unix.cpp
 ./src/glib/goptionmap.cpp
 ./src/glib/gpath.cpp
 ./src/glib/gfile.cpp
+./src/glib/ggettext_none.cpp
 ./src/glib/gstringview.cpp
 ./src/glib/gprocess_unix.cpp
 ./src/glib/gidentity_unix.cpp
@@ -157,7 +159,6 @@
 ./src/gnet/gexceptionsource.cpp
 ./src/gnet/geventloop_select.cpp
 ./src/gnet/ginterfaces_none.cpp
-./src/gnet/geventhandlerlist.cpp
 ./src/gnet/gaddress.cpp
 ./src/gnet/gdnsmessage.cpp
 ./src/gnet/gexceptionsink.cpp

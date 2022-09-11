@@ -63,7 +63,6 @@ test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
 /etc/emailrelay.auth.template
 %config /etc/emailrelay.conf
 /etc/emailrelay.conf.template
-/usr/lib/emailrelay/init/emailrelay
 %config /etc/pam.d/emailrelay
 %dir /usr/lib/emailrelay
 %attr(2755, root, daemon) /usr/lib/emailrelay/emailrelay-filter-copy
@@ -85,6 +84,7 @@ test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
 /usr/lib/emailrelay/examples/emailrelay-set-from.js
 /usr/lib/emailrelay/examples/emailrelay-set-from.pl
 /usr/lib/emailrelay/examples/emailrelay-submit.sh
+/usr/lib/emailrelay/init/emailrelay
 /usr/lib/systemd/system/emailrelay.service
 /usr/sbin/emailrelay
 /usr/sbin/emailrelay-passwd

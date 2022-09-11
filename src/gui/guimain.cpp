@@ -352,7 +352,7 @@ int main( int argc , char * argv [] )
 			if( configure_mode && pointer_file.empty() )
 			{
 				QString message_format = tr( "cannot find a 'payload' directory for installation or a "
-					"'%1%' pointer file to allow reconfiguration: "
+					"'%1' pointer file to allow reconfiguration: "
 					"this program has probably been moved away from its original location: "
 					"please configure the emailrelay server manually" ) ;
 				QString message = message_format.arg( GQt::qstr( pointerFilename(argv0) , GQt::Path ) ) ;
@@ -448,7 +448,7 @@ int main( int argc , char * argv [] )
 					G::File::open( f , server_config_file , G::File::Append() ) ;
 					if( !f.good() )
 					{
-						QString message_format = tr( "cannot write [%1%]: check file permissions%2%" ) ;
+						QString message_format = tr( "cannot write [%1]: check file permissions%2" ) ;
 						QString more_help = isWindows() ? tr( " or run as administrator" ) : QString() ;
 						QString message = message_format.arg(GQt::qstr(server_config_file.str())).arg(more_help) ;
 						throw std::runtime_error( GQt::stdstr( message , GQt::Utf8 ) ) ;

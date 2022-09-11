@@ -59,8 +59,8 @@ public:
 	~NullFilter() override = default ;
 	NullFilter( const NullFilter & ) = delete ;
 	NullFilter( NullFilter && ) = delete ;
-	void operator=( const NullFilter & ) = delete ;
-	void operator=( NullFilter && ) = delete ;
+	NullFilter & operator=( const NullFilter & ) = delete ;
+	NullFilter & operator=( NullFilter && ) = delete ;
 
 private:
 	void onTimeout() ;

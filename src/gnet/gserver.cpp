@@ -30,6 +30,20 @@
 #include "gassert.h"
 #include <algorithm>
 
+GNet::Server::Server( ExceptionSink es , Descriptor fd ,
+	const ServerPeer::Config & server_peer_config , const Config & server_config ) :
+		m_es(es) ,
+		m_config(server_config) ,
+		m_server_peer_config(server_peer_config) ,
+		m_socket(StreamSocket::Listener(),fd,m_config.stream_socket_config)
+{
+	G_DEBUG( "GNet::Server::ctor: listening on socket " << m_socket.asString()
+		<< " with address " << m_socket.getLocalAddress().displayString() ) ;
+	m_socket.listen() ;
+	m_socket.addReadHandler( *this , m_es ) ;
+	Monitor::addServer( *this ) ;
+}
+
 GNet::Server::Server( ExceptionSink es , const Address & listening_address ,
 	const ServerPeer::Config & server_peer_config , const Config & server_config ) :
 		m_es(es) ,
@@ -43,7 +57,7 @@ GNet::Server::Server( ExceptionSink es , const Address & listening_address ,
 	bool uds = listening_address.family() == Address::Family::local ;
 	if( uds )
 	{
-		bool open = server_config.uds_open_permissions ;
+		bool open = m_config.uds_open_permissions ;
 		using Mode = G::Process::Umask::Mode ;
 		G::Root claim_root( false ) ; // group ownership from the effective group-id
 		G::Process::Umask set_umask( open ? Mode::Open : Mode::Tighter ) ;

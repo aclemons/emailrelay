@@ -46,22 +46,13 @@ namespace Main
 		unsigned int m_width ;
 		unsigned int m_width2 ;
 	} ;
-} ;
+}
 
 Main::PixelLayout::PixelLayout( bool verbose )
 {
-	if( isWine() )
-	{
-		m_tabstop = verbose ? 37 : 28 ;
-		m_width = verbose ? 60U : 85U ;
-		m_width2 = verbose ? 48U : 65U ;
-	}
-	else
-	{
-		m_tabstop = verbose ? 120 : 90 ;
-		m_width = verbose ? 60U : 80U ;
-		m_width2 = verbose ? 48U : 80U ;
-	}
+    m_tabstop = verbose ? 122 : 90 ;
+    m_width = verbose ? 60U : 80U ;
+    m_width2 = verbose ? 48U : 80U ;
 }
 
 bool Main::PixelLayout::isWine()
@@ -192,9 +183,9 @@ void Main::WinApp::onTrayDoubleClick()
 	PostMessage( handle() , wm_user() , 2 , static_cast<LPARAM>(IDM_OPEN) ) ;
 }
 
-LRESULT Main::WinApp::onUser( WPARAM wparam , LPARAM lparam )
+LRESULT Main::WinApp::onUser( WPARAM /*wparam*/ , LPARAM lparam )
 {
-	G_DEBUG( "Main::WinApp::onUser: wparam=" << wparam << " lparam=" << lparam ) ;
+	G_DEBUG( "Main::WinApp::onUser: lparam=" << lparam ) ;
 	int id = static_cast<int>(lparam) ;
 	if( id == IDM_OPEN ) doOpen() ;
 	if( id == IDM_CLOSE ) doClose() ;

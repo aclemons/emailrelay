@@ -24,6 +24,7 @@
 #include "gdef.h"
 #include "gfilter.h"
 #include "gfilterfactory.h"
+#include "gfactoryparser.h"
 #include "gtimer.h"
 #include "gslot.h"
 #include "gexceptionsink.h"
@@ -43,8 +44,8 @@ namespace GSmtp
 class GSmtp::FilterChain : public Filter
 {
 public:
-	FilterChain( GNet::ExceptionSink , FilterFactory & ,
-		bool server_side , const std::string & spec , unsigned int timeout ) ;
+	FilterChain( GNet::ExceptionSink , FilterFactory & , bool server_side ,
+		const FactoryParser::Result & spec , unsigned int timeout ) ;
 			///< Constructor.
 
 	~FilterChain() override ;
@@ -68,7 +69,7 @@ private: // overrides
 	bool special() const override ; // Override from from GSmtp::Filter.
 
 private:
-	void add( GNet::ExceptionSink es , FilterFactory & , bool server_side , const std::string & spec , unsigned int timeout ) ;
+	void add( GNet::ExceptionSink , FilterFactory & , bool , const FactoryParser::Result & , unsigned int ) ;
 	void onFilterDone( int ) ;
 
 private:

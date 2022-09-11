@@ -35,6 +35,32 @@ namespace G
 //| \class G::OptionsUsage
 /// Provides help text for a set of options.
 ///
+/// If configured with a fixed separator the help() text is
+/// formatted as:
+/// \code
+///  <margin><syntax><separator><detail-to-width1>
+///  <margin><separator-spaces><more-detail-to-width2>
+/// \endcode
+///
+/// Or with a tab separator:
+/// \code
+///  <margin><syntax><TAB><detail-to-width1>
+///  <margin><TAB><more-detail-to-width2>
+/// \endcode
+///
+/// Or with a two-column layout:
+/// \code
+///  <margin><syntax><spaces-to-column><detail-to-width1>
+///  <margin><spaces-to-column><more-detail-to-width2>
+/// \endcode
+///
+/// Or two-column layout in 'overflow' mode:
+/// \code
+///  <margin><syntax>
+///  <margin><overflow-spaces><detail-to-width2>
+///  <margin><overflow-spaces><more-detail-to-width2>
+/// \endcode
+///
 class G::OptionsUsage
 {
 public:
@@ -43,10 +69,14 @@ public:
 		static constexpr std::size_t default_ = static_cast<std::size_t>(-1) ;
 
 		std::string separator ; ///< separator between syntax and description
+		std::size_t separator_spaces {1U} ; ///< extra spaces on wrapped lines if using a separator
 		std::size_t column {30U} ; ///< left hand column width if no separator (includes margin)
 		std::size_t width {default_} ; ///< overall width for wrapping, or zero for none
 		std::size_t width2 {default_} ; ///< width after the first line, or zero for 'width'
-		std::size_t margin {2U} ; ///< spaces to the left of the syntax part
+		std::size_t margin {2U} ; ///< spaces added to the left
+		std::size_t overflow {20U} ; ///< use 'overflow' format if rhs is squashed down to this
+		std::size_t overflow_spaces {6U} ; ///< 'overflow' format extra spaces on wrapped lines
+
 		bool extra {false} ; ///< include descriptions' extra text
 		bool alt_usage {false} ; ///< use alternate "usage:" string
 
@@ -67,6 +97,9 @@ public:
 		Config & set_level_min( unsigned int ) ;
 		Config & set_main_tag( unsigned int ) ;
 		Config & set_tag_bits( unsigned int ) ;
+		Config & setDefaults() ;
+		Config & setWidthsWrtMargin() ;
+		Config & setOverflowFormat( char = ' ' ) ;
 	} ;
 
 	using SortFn = std::function<bool(const Option&,const Option&)> ;
@@ -88,9 +121,9 @@ public:
 			///<   getopt.args().prefix() , " <arg> [<arg> ...]" ) << std::endl ;
 			///< \endcode
 
-	std::string help( const Config & , bool * = nullptr ) const ;
+	std::string help( const Config & , bool * overflow_p = nullptr ) const ;
 		///< Returns a multi-line string giving help on each option.
-		///< Use the optional parameter if using help() for separate
+		///< Use the optional overflow flag if using help() for separate
 		///< sections that should have the same layout: initialise to
 		///< false, call help() for each section and discard the result,
 		///< then call help() again for each section.
@@ -109,14 +142,23 @@ private:
 	std::string helpSyntax( const Option & , char ) const ;
 	std::string helpDescription( const Option & , const Config & ) const ;
 	std::string helpSeparator( const Config & , std::size_t syntax_length ) const ;
-	std::string helpWrap( const Config & , const std::string & line_in ,
-		const std::string & ) const ;
-	std::string helpImp( const Config & ) const ;
+	std::string helpPadding( const Config & ) const ;
+	std::string helpImp( const Config & , bool * = nullptr ) const ;
+	std::string optionHelp( const Config & , const Option & option , bool * ) const ;
+	std::string helpWrap( const Config & , const std::string & separator ,
+		const std::string & syntax , const std::string & description , bool * ) const ;
 	static std::size_t longestSubLine( const std::string & ) ;
-	static Config applyDefault( const Config & ) ;
+	static Config setDefaults( const Config & ) ;
+	static Config setWidthsWrtMargin( const Config & ) ;
 
 private:
 	std::vector<Option> m_options ;
+	char m_space_margin {' '} ;
+	char m_space_separator {' '} ;
+	char m_space_indent {' '} ;
+	char m_space_padding {' '} ;
+	char m_space_overflow {' '} ;
+	char m_space_placeholder {' '} ;
 } ;
 
 inline G::OptionsUsage::Config & G::OptionsUsage::Config::set_separator( const std::string & s ) { separator = s ; return *this ; }

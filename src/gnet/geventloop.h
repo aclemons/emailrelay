@@ -151,8 +151,8 @@ public:
 public:
 	EventLoop( const EventLoop & ) = delete ;
 	EventLoop( EventLoop && ) = delete ;
-	void operator=( const EventLoop & ) = delete ;
-	void operator=( EventLoop && ) = delete ;
+	EventLoop & operator=( const EventLoop & ) = delete ;
+	EventLoop & operator=( EventLoop && ) = delete ;
 
 private:
 	static EventLoop * m_this ;

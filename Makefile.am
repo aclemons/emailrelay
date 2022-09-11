@@ -119,6 +119,10 @@ deb-src: dist
 tidy:
 	$(MAKE) -C unity tidy
 
+.PHONY: unitybuild
+unitybuild:
+	$(MAKE) -C unity programs
+
 .PHONY: format
 format:
 	$(MAKE) -C src format
@@ -143,4 +147,10 @@ zip: $(ZIP)
 $(ZIP): $(TAR)
 	tar -xzf $(TAR)
 	sh -c "cd emailrelay-$(VERSION) && zip -r ../$(ZIP) ."
+
+.PHONY: mbedtls
+mbedtls:
+	test -d mbedtls || git clone https://salsa.debian.org/debian/mbedtls.git
+	make -C mbedtls/library WINDOWS=0
+	-@echo now run ./configure.sh
 

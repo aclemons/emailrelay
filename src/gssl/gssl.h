@@ -192,8 +192,8 @@ public:
 public:
 	Protocol( const Protocol & ) = delete ;
 	Protocol( Protocol && ) = delete ;
-	void operator=( const Protocol & ) = delete ;
-	void operator=( Protocol && ) = delete ;
+	Protocol & operator=( const Protocol & ) = delete ;
+	Protocol & operator=( Protocol && ) = delete ;
 
 private:
 	std::unique_ptr<ProtocolImpBase> m_imp ;
@@ -373,8 +373,8 @@ public:
 public:
 	Library( const Library & ) = delete ;
 	Library( Library && ) = delete ;
-	void operator=( const Library & ) = delete ;
-	void operator=( Library && ) = delete ;
+	Library & operator=( const Library & ) = delete ;
+	Library & operator=( Library && ) = delete ;
 
 private:
 	const LibraryImpBase & imp() const ;

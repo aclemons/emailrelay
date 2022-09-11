@@ -84,7 +84,7 @@ public:
 
 	static int errno_( const SignalSafe & , int e_new ) noexcept ;
 		///< Sets the process's 'errno' value. Returns the old
-		///< value. Typicaly used in signal handlers.
+		///< value. Typically used in signal handlers.
 
 	static std::string strerror( int errno_ ) ;
 		///< Translates an 'errno' value into a meaningful diagnostic string.

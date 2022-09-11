@@ -153,8 +153,8 @@ public:
 	~GetOpt() = default ;
 	GetOpt( const GetOpt & ) = delete ;
 	GetOpt( GetOpt && ) = delete ;
-	void operator=( const GetOpt & ) = delete ;
-	void operator=( GetOpt && ) = delete ;
+	GetOpt & operator=( const GetOpt & ) = delete ;
+	GetOpt & operator=( GetOpt && ) = delete ;
 
 private:
 	void parseArgs( std::size_t ) ;

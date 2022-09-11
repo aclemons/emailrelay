@@ -190,6 +190,8 @@
        all the addresses associated with that interface at startup will used for
        listening. When an interface name is decorated with a <em>-ipv4</em> or <em>-ipv6</em>
        suffix only their IPv4 or IPv6 addresses will be used (eg. <em>ppp0-ipv4</em>).
+       To inherit listening file descriptors from the parent process on unix use a
+       syntax like this: <em></em>--interface<em>=smtp=fd#3,smtp=fd#4,pop=fd#5</em>.
       </dd>
      <dt>--prompt-timeout &lt;time&gt; (-w)</dt>
       <dd>

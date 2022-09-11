@@ -6,3 +6,12 @@ functionality and performance characteristics might be different.
 Low-level changes include a rework of the event-loops so the Unix event loop
 defaults to an epoll() implementation and the Windows event loop now supports
 many more simultaneous connections.
+
+The i18n of the main server (not the gui) has been extended somewhat by marking
+for translation the text of most C++ exceptions. This is only relevant if
+building "--with-gettext" and running with "--localedir".
+
+The "--anonyous" option has changed slightly in v2.4 so that it will now force
+the AUTH parameter on the MAIL command to be "AUTH=<>". Replace "--anonymous"
+with "--anonymous=vrfy,server,content" to keep the same behaviour as before.
+

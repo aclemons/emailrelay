@@ -49,7 +49,7 @@ public:
 
 	static void detach( const G::Path & pid_file ) ;
 		///< Does a detach() but the calling process waits a while
-		///< for the pid file to be created (for systemd).
+		///< for the pid file to be created before it exits.
 
 public:
 	Daemon() = delete ;

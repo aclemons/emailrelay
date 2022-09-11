@@ -99,8 +99,8 @@ public:
 	StringFieldT( T && s , char ) = delete ;
 	StringFieldT( const StringFieldT<T> & ) = delete ;
 	StringFieldT( StringFieldT<T> && ) = delete ;
-	void operator=( const StringFieldT<T> & ) = delete ;
-	void operator=( StringFieldT<T> && ) = delete ;
+	StringFieldT<T> & operator=( const StringFieldT<T> & ) = delete ;
+	StringFieldT<T> & operator=( StringFieldT<T> && ) = delete ;
 
 private:
 	const T & m_s ;

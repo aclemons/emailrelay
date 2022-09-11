@@ -52,8 +52,8 @@ public:
 	~InternalVerifier() override = default ;
 	InternalVerifier( const InternalVerifier & ) = delete ;
 	InternalVerifier( InternalVerifier && ) = delete ;
-	void operator=( const InternalVerifier & ) = delete ;
-	void operator=( InternalVerifier && ) = delete ;
+	InternalVerifier & operator=( const InternalVerifier & ) = delete ;
+	InternalVerifier & operator=( InternalVerifier && ) = delete ;
 
 private:
 	G::Slot::Signal<const VerifierStatus&> m_done_signal ;

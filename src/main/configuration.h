@@ -25,6 +25,7 @@
 #include "garg.h"
 #include "goptions.h"
 #include "goptionmap.h"
+#include "gfactoryparser.h"
 #include "gpath.h"
 #include "gstrings.h"
 #include "glogoutput.h"
@@ -65,8 +66,11 @@ public:
 	unsigned int port() const ;
 		///< Returns the main listening port number.
 
-	G::StringArray listeningAddresses( const std::string & protocol = std::string() ) const ;
-		///< Returns the listening addresses.
+	bool closeFiles() const ;
+		///< Returns true if the server should start by closing file descriptors.
+
+	G::StringArray listeningNames( const std::string & protocol = std::string() ) const ;
+		///< Returns the listening addresses, interfaces and file descriptors.
 
 	std::string clientBindAddress() const ;
 		///< Returns the sending address.
@@ -162,11 +166,11 @@ public:
 	bool useFilter() const ;
 		///< Returns true if pre-processing.
 
-	G::Path filter() const ;
-		///< Returns the path to a server-side pre-processor.
+	GSmtp::FactoryParser::Result filter() const ;
+		///< Returns the spec for the server-side pre-processor(s).
 
-	G::Path clientFilter() const ;
-		///< Returns the path to a client-side pre-processor.
+	GSmtp::FactoryParser::Result clientFilter() const ;
+		///< Returns the spec for the client-side pre-processor(s).
 
 	unsigned int filterTimeout() const ;
 		///< Returns the timeout for executing an ansynchronous
@@ -220,8 +224,8 @@ public:
 		///< Returns the name of an unprivileged user. This is only
 		///< used if running with a real user-id of root.
 
-	G::Path verifier() const ;
-		///< Returns the path of an external address verifier program.
+	GSmtp::FactoryParser::Result verifier() const ;
+		///< Returns the spec of an address verifier.
 
 	bool doPolling() const ;
 		///< Returns true if doing poll-based forwarding.
@@ -340,17 +344,17 @@ public:
 private:
 	G::Path pathValue( const std::string & option ) const ;
 	G::Path pathValueImp( const std::string & value ) const ;
+	GSmtp::FactoryParser::Result specValue( const std::string & , bool is_filter , G::StringArray * = nullptr ) const ;
 	G::Path keyFile( const std::string & option ) const ;
 	G::Path certificateFile( const std::string & option ) const ;
-	std::string semanticError( bool & ) const ;
 	static bool pathlike( const std::string & ) ;
 	static bool filterType( const std::string & ) ;
-	static bool specialFilterValue( const std::string & ) ;
 	static bool verifyType( const std::string & ) ;
 	static bool specialVerifyValue( const std::string & ) ;
 	G::StringArray semantics( bool ) const ;
 	bool validSyslogFacility() const ;
 	bool anonymous( G::string_view ) const ;
+	const char * semanticErrorImp( std::string & ) const ;
 
 private:
 	std::vector<G::Option> m_options ;

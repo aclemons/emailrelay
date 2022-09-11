@@ -105,8 +105,8 @@ public:
 public:
 	FutureEvent( const FutureEvent & ) = delete ;
 	FutureEvent( FutureEvent && ) = delete ;
-	void operator=( const FutureEvent & ) = delete ;
-	void operator=( FutureEvent && ) = delete ;
+	FutureEvent & operator=( const FutureEvent & ) = delete ;
+	FutureEvent & operator=( FutureEvent && ) = delete ;
 
 private:
 	std::unique_ptr<FutureEventImp> m_imp ;

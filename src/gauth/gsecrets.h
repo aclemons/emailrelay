@@ -70,8 +70,8 @@ public:
 	~Secrets() override ;
 	Secrets( const Secrets & ) = delete ;
 	Secrets( Secrets && ) = delete ;
-	void operator=( const Secrets & ) = delete ;
-	void operator=( Secrets && ) = delete ;
+	Secrets & operator=( const Secrets & ) = delete ;
+	Secrets & operator=( Secrets && ) = delete ;
 
 private: // overrides
 	std::string source() const override ; // Override from GAuth::SaslServerSecrets.

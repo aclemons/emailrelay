@@ -63,8 +63,8 @@ private: // overrides
 public:
 	SpamFilter( const SpamFilter & ) = delete ;
 	SpamFilter( SpamFilter && ) = delete ;
-	void operator=( const SpamFilter & ) = delete ;
-	void operator=( SpamFilter && ) = delete ;
+	SpamFilter & operator=( const SpamFilter & ) = delete ;
+	SpamFilter & operator=( SpamFilter && ) = delete ;
 
 private:
 	void clientEvent( const std::string & , const std::string & , const std::string & ) ;

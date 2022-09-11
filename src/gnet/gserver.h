@@ -66,6 +66,10 @@ public:
 		///< is used for exceptions relating to the listening
 		///< socket, not the server peers.
 
+	Server( ExceptionSink , Descriptor listening_fd , const ServerPeer::Config & , const Config & ) ;
+		///< Constructor overload for adopting an externally-managed
+		///< listening file descriptor.
+
 	~Server() override ;
 		///< Destructor.
 
@@ -112,8 +116,8 @@ private: // overrides
 public:
 	Server( const Server & ) = delete ;
 	Server( Server && ) = delete ;
-	void operator=( const Server & ) = delete ;
-	void operator=( Server && ) = delete ;
+	Server & operator=( const Server & ) = delete ;
+	Server & operator=( Server && ) = delete ;
 
 private:
 	void accept( ServerPeerInfo & ) ;

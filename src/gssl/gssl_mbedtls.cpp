@@ -148,8 +148,8 @@ namespace GSsl
 			const X * operator&() const = delete ;
 			X( const X<T> & ) = delete ;
 			X( X<T> && ) = delete ;
-			void operator=( const X<T> & ) = delete ;
-			void operator=( X<T> && ) = delete ;
+			X<T> & operator=( const X<T> & ) = delete ;
+			X<T> & operator=( X<T> && ) = delete ;
 		} ;
 	}
 }

@@ -231,6 +231,12 @@ GNet::Socket::Socket( Address::Family af , Descriptor s , const Accepted & a , c
 {
 }
 
+GNet::Socket::Socket( Address::Family af , Descriptor s , const Adopted & , const Config & config ) :
+	SocketBase(af,s) ,
+	m_config(config)
+{
+}
+
 void GNet::Socket::bind( const Address & local_address )
 {
 	G_DEBUG( "Socket::bind: binding " << local_address.displayString() << " on fd " << fd() ) ;
@@ -315,6 +321,15 @@ void GNet::Socket::listen()
 		saveReason() ;
 		throw SocketError( "cannot listen on socket" , reason() ) ;
 	}
+}
+
+GNet::Address GNet::Socket::getLocalAddress( Descriptor fd )
+{
+	AddressStorage address_storage ;
+	int rc = ::getsockname( fd.fd() , address_storage.p1() , address_storage.p2() ) ;
+	if( error(rc) )
+		throw SocketError( std::string("no bound address on fd ").append(std::to_string(fd.fd())) ) ;
+	return Address( address_storage ) ;
 }
 
 GNet::Address GNet::Socket::getLocalAddress() const
@@ -464,11 +479,22 @@ GNet::StreamSocket::StreamSocket( Address::Family af , const Listener & , const 
 	setOptionsOnCreate( af , /*listener=*/true ) ;
 }
 
-GNet::StreamSocket::StreamSocket( Address::Family af , Descriptor s , const Accepted & accepted , const Config & config ) :
-	Socket(af,s,accepted,config) ,
+GNet::StreamSocket::StreamSocket( const Listener & , Descriptor fd , const Config & config ) :
+	Socket(family(fd),fd,Socket::Adopted(),config) ,
+	m_config(config)
+{
+}
+
+GNet::StreamSocket::StreamSocket( Address::Family af , Descriptor fd , const Accepted & accepted , const Config & config ) :
+	Socket(af,fd,accepted,config) ,
 	m_config(config)
 {
 	setOptionsOnAccept( af ) ;
+}
+
+GNet::Address::Family GNet::StreamSocket::family( Descriptor fd )
+{
+	return getLocalAddress(fd).family() ;
 }
 
 GNet::Socket::ssize_type GNet::StreamSocket::read( char * buffer , size_type length )

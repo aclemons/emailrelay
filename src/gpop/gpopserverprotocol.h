@@ -149,8 +149,8 @@ public:
 	~ServerProtocol() = default ;
 	ServerProtocol( const ServerProtocol & ) = delete ;
 	ServerProtocol( ServerProtocol && ) = delete ;
-	void operator=( const ServerProtocol & ) = delete ;
-	void operator=( ServerProtocol && ) = delete ;
+	ServerProtocol & operator=( const ServerProtocol & ) = delete ;
+	ServerProtocol & operator=( ServerProtocol && ) = delete ;
 
 private:
 	void doQuit( const std::string & line , bool & ) ;
@@ -221,8 +221,8 @@ public:
 	~ServerProtocolText() override = default ;
 	ServerProtocolText( const ServerProtocolText & ) = delete ;
 	ServerProtocolText( ServerProtocolText && ) = delete ;
-	void operator=( const ServerProtocolText & ) = delete ;
-	void operator=( ServerProtocolText && ) = delete ;
+	ServerProtocolText & operator=( const ServerProtocolText & ) = delete ;
+	ServerProtocolText & operator=( ServerProtocolText && ) = delete ;
 
 private: // overrides
 	std::string greeting() const override ; // Override from GPop::ServerProtocol::Text.

@@ -91,8 +91,8 @@ public:
 	~OptionParser() = default ;
 	OptionParser( const OptionParser & ) = delete ;
 	OptionParser( OptionParser && ) = delete ;
-	void operator=( const OptionParser & ) = delete ;
-	void operator=( OptionParser && ) = delete ;
+	OptionParser & operator=( const OptionParser & ) = delete ;
+	OptionParser & operator=( OptionParser && ) = delete ;
 
 private:
 	bool haveSeen( const std::string & ) const ;

@@ -12,11 +12,13 @@
    <h2><a class="a-header" name="SH_1_1">2.3 -> 2.4</a></h2> <!-- index:2:SH:1:1:2.3 -> 2.4 -->
     <ul>
      <li>Multiple <em>--filter</em> and <em>--client-filter</em> options allowed.</li>
-     <li>Finer control of <em>--anonymous</em> (eg. <em>--anonymous=server</em>).</li>
-     <li>Hourly log file rotation using <em>%h</em> (eg. <em>--log-file=log.%d.%h</em>).</li>
      <li>TLS key and certificate files can be specified separately.</li>
-     <li>Uses epoll by default on Linux.</li>
+     <li>Finer control of <em>--anonymous</em> (eg. <em>--anonymous=server</em>).</li>
+     <li>The <em>auth-config</em> options can distinguish between TLS and non-TLS authentication.</li>
+     <li>Hourly log file rotation using <em>%h</em> (eg. <em>--log-file=log.%d.%h</em>).</li>
+     <li>Listening file descriptors can be inherited from the parent process (see <em>--interface</em>).</li>
      <li>Exclusive listening port binding on Windows.</li>
+     <li>The Linux event loop uses <em>epoll</em> by default rather than <em>select</em>.</li>
      <li>More simultaneous connections supported on Windows.</li>
      <li>Fixed error handling for network client filters (<em>--client-filter=net:...</em>) [bug-id #50].</li>
     </ul>

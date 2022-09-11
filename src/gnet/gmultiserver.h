@@ -48,6 +48,7 @@ class GNet::MultiServer : private InterfacesHandler
 public:
 	G_EXCEPTION( NoListeningAddresses , tx("no listening addresses") ) ;
 	G_EXCEPTION( InvalidName , tx("invalid address or interface name") ) ;
+	G_EXCEPTION( InvalidFd , tx("invalid listening file descriptor number") ) ;
 	using AddressList = std::vector<Address> ;
 
 	struct ServerInfo /// A structure used in GNet::MultiServer::newPeer().
@@ -56,15 +57,18 @@ public:
 		Address m_address ; ///< The server address that the peer connected to.
 	} ;
 
-	MultiServer( ExceptionSink listener_exception_sink , const G::StringArray & addresses ,
+	MultiServer( ExceptionSink listener_exception_sink , const G::StringArray & listen_list ,
 		unsigned int port , const std::string & server_type ,
 		ServerPeer::Config server_peer_config , Server::Config server_config ) ;
-			///< Constructor. The server listens on on the specific local
-			///< addresses, given as either interface names (eg. "eth0")
-			///< or IP network addresses (eg. "::1") together with a
-			///< fixed port number. Throws if there are no addresses in the
-			///< list and the GNet::Interfaces implementation is not active().
-			///< Listens on "0.0.0.0" and "::" if the list is empty.
+			///< Constructor. The server listens on inherited file descriptors
+			///< formatted like "#3", specific local addresses (eg. "127.0.0.1")
+			///< and addresses from named interfaces ("eth0").
+			///<
+			///< Listens on "0.0.0.0" and "::" if the listen list is
+			///< empty.
+			///<
+			///< Throws if there are no addresses in the list and the
+			///< GNet::Interfaces implementation is not active().
 
 	~MultiServer() override ;
 		///< Destructor.
@@ -98,14 +102,15 @@ private: // overrides
 public:
 	MultiServer( const MultiServer & ) = delete ;
 	MultiServer( MultiServer && ) = delete ;
-	void operator=( const MultiServer & ) = delete ;
-	void operator=( MultiServer && ) = delete ;
+	MultiServer & operator=( const MultiServer & ) = delete ;
+	MultiServer & operator=( MultiServer && ) = delete ;
 
 private:
 	friend class GNet::MultiServerImp ;
-	AddressList addresses( unsigned int ) const ;
-	AddressList addresses( unsigned int , G::StringArray & , G::StringArray & , G::StringArray & ) const ;
-	void init( const AddressList & address_list ) ;
+	void parse( const G::StringArray & , unsigned int port ,
+		AddressList & , std::vector<int> & ,
+		G::StringArray & , G::StringArray & , G::StringArray & ) ;
+	static int parseFd( const std::string & ) ;
 	bool gotServerFor( const Address & ) const ;
 	void onInterfaceEventTimeout() ;
 	static bool match( const Address & , const Address & ) ;
@@ -115,12 +120,12 @@ private:
 	using ServerPtr = std::unique_ptr<MultiServerImp> ;
 	using ServerList = std::vector<ServerPtr> ;
 	ExceptionSink m_es ;
-	G::StringArray m_interfaces ;
 	unsigned int m_port ;
 	std::string m_server_type ;
 	ServerPeer::Config m_server_peer_config ;
 	Server::Config m_server_config ;
 	Interfaces m_if ;
+	G::StringArray m_if_names ;
 	ServerList m_server_list ;
 	Timer<MultiServer> m_interface_event_timer ;
 } ;
@@ -132,6 +137,9 @@ class GNet::MultiServerImp : public GNet::Server
 {
 public:
 	MultiServerImp( MultiServer & , ExceptionSink , const Address & , ServerPeer::Config , Server::Config ) ;
+		///< Constructor.
+
+	MultiServerImp( MultiServer & , ExceptionSink , Descriptor , ServerPeer::Config , Server::Config ) ;
 		///< Constructor.
 
 	~MultiServerImp() override ;
@@ -146,12 +154,11 @@ public:
 public:
 	MultiServerImp( const MultiServerImp & ) = delete ;
 	MultiServerImp( MultiServerImp && ) = delete ;
-	void operator=( const MultiServerImp & ) = delete ;
-	void operator=( MultiServerImp && ) = delete ;
+	MultiServerImp & operator=( const MultiServerImp & ) = delete ;
+	MultiServerImp & operator=( MultiServerImp && ) = delete ;
 
 private:
 	MultiServer & m_ms ;
-	Address m_address ;
 } ;
 
 #endif

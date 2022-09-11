@@ -642,6 +642,7 @@ G::Options Main::Options::spec( bool is_windows )
 			t_smtpserver ) ;
 				//example: 127.0.0.1,smtp=eth0
 				//example: fe80::1%1,smtp=::,admin=lo-ipv4,pop=10.0.0.1
+				//example: smtp=fd#3,smtp=fd#4,pop=fd#5
 				//example: lo
 				//example: 10.0.0.1
 				// Specifies the IP network addresses or interface names used to bind
@@ -658,6 +659,9 @@ G::Options Main::Options::spec( bool is_windows )
 				// for listening. When an interface name is decorated with a "-ipv4"
 				// or "-ipv6" suffix only their IPv4 or IPv6 addresses will be used
 				// (eg. "ppp0-ipv4").
+				//
+				// To inherit listening file descriptors from the parent process on
+				// unix use a syntax like this: "--interface=smtp=fd#3,smtp=fd#4,pop=fd#5".
 
 		G::Options::add( opt , '6' , "client-interface" ,
 			tx("defines the local network address used for outgoing connections") , "" ,

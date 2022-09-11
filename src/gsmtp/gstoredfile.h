@@ -96,8 +96,8 @@ private: // overrides
 public:
 	StoredFile( const StoredFile & ) = delete ;
 	StoredFile( StoredFile && ) = delete ;
-	void operator=( const StoredFile & ) = delete ;
-	void operator=( StoredFile && ) = delete ;
+	StoredFile & operator=( const StoredFile & ) = delete ;
+	StoredFile & operator=( StoredFile && ) = delete ;
 
 private:
 	using StreamBuf = G::fbuf<int,BUFSIZ> ;

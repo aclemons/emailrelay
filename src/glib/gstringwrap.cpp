@@ -51,8 +51,8 @@ public:
 	~WordWrapper() = default ;
 	WordWrapper( const WordWrapper & ) = delete ;
 	WordWrapper( WordWrapper && ) = delete ;
-	void operator=( const WordWrapper & ) = delete ;
-	void operator=( WordWrapper && ) = delete ;
+	WordWrapper & operator=( const WordWrapper & ) = delete ;
+	WordWrapper & operator=( WordWrapper && ) = delete ;
 
 private:
 	string_view prefix() const ;

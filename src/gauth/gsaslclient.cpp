@@ -42,7 +42,7 @@ public:
 	SaslClientImp( const SaslClientSecrets & , const std::string & ) ;
 	bool active() const ;
 	std::string mechanism( const G::StringArray & ) const ;
-	std::string initialResponse( std::size_t limit ) const ;
+	Response initialResponse( std::size_t limit ) const ;
 	Response response( G::string_view mechanism , G::string_view challenge ) const ;
 	bool next() ;
 	std::string mechanism() const ;
@@ -154,7 +154,7 @@ std::string GAuth::SaslClientImp::mechanism() const
 	return m_mechanisms.empty() ? std::string() : m_mechanisms.at(0U) ;
 }
 
-std::string GAuth::SaslClientImp::initialResponse( std::size_t limit ) const
+GAuth::SaslClient::Response GAuth::SaslClientImp::initialResponse( std::size_t limit ) const
 {
 	// (the implementation of response() is stateless because it can derive
 	// state from the challege, so we doesn't need to worry here about
@@ -168,7 +168,7 @@ std::string GAuth::SaslClientImp::initialResponse( std::size_t limit ) const
 	if( rsp.error || rsp.data.size() > limit )
 		return {} ;
 	else
-		return rsp.data ;
+		return rsp ;
 }
 
 GAuth::SaslClient::Response GAuth::SaslClientImp::response( G::string_view mechanism , G::string_view challenge ) const
@@ -239,7 +239,7 @@ GAuth::SaslClient::Response GAuth::SaslClientImp::response( G::string_view mecha
 		m_info
 			.assign("using mechanism [")
 			.append(G::Str::lower(G::sv_to_string(mechanism)))
-			.append("] and",5U)
+			.append("] and ",6U)
 			.append(secret.info()) ;
 		m_id = secret.id() ;
 	}
@@ -287,7 +287,7 @@ GAuth::SaslClient::Response GAuth::SaslClient::response( G::string_view mechanis
 	return m_imp->response( mechanism , challenge ) ;
 }
 
-std::string GAuth::SaslClient::initialResponse( std::size_t limit ) const
+GAuth::SaslClient::Response GAuth::SaslClient::initialResponse( std::size_t limit ) const
 {
 	return m_imp->initialResponse( limit ) ;
 }

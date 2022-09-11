@@ -52,8 +52,8 @@ public:
 	~ExecutableVerifier() override = default ;
 	ExecutableVerifier( const ExecutableVerifier & ) = delete ;
 	ExecutableVerifier( ExecutableVerifier && ) = delete ;
-	void operator=( const ExecutableVerifier & ) = delete ;
-	void operator=( ExecutableVerifier && ) = delete ;
+	ExecutableVerifier & operator=( const ExecutableVerifier & ) = delete ;
+	ExecutableVerifier & operator=( ExecutableVerifier && ) = delete ;
 
 private:
 	G::Path m_path ;

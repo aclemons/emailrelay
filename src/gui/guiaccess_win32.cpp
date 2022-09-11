@@ -89,8 +89,8 @@ struct Gui::AccessImp::Token
 	}
 	Token( const Token & ) = delete ;
 	Token( Token && ) = delete ;
-	void operator=( const Token & ) = delete ;
-	void operator=( Token && ) = delete ;
+	Token & operator=( const Token & ) = delete ;
+	Token & operator=( Token && ) = delete ;
 	HANDLE m_h ;
 } ;
 
@@ -185,8 +185,8 @@ struct Gui::AccessImp::Dacl
 	}
 	Dacl( const Dacl & ) = delete ;
 	Dacl( Dacl && ) = delete ;
-	void operator=( const Dacl & ) = delete ;
-	void operator=( Dacl && ) = delete ;
+	Dacl & operator=( const Dacl & ) = delete ;
+	Dacl & operator=( Dacl && ) = delete ;
 	PSECURITY_DESCRIPTOR m_sd ;
 	ACL * m_dacl ;
 	bool m_free_me ;

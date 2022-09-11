@@ -52,8 +52,8 @@ public:
 public:
 	FutureEventImp( const FutureEventImp & ) = delete ;
 	FutureEventImp( FutureEventImp && ) = delete ;
-	void operator=( const FutureEventImp & ) = delete ;
-	void operator=( FutureEventImp && ) = delete ;
+	FutureEventImp & operator=( const FutureEventImp & ) = delete ;
+	FutureEventImp & operator=( FutureEventImp && ) = delete ;
 
 private: // overrides
 	void readEvent() override ; // Override from GNet::EventHandler.
@@ -70,8 +70,8 @@ private:
 		int fd{-1} ;
 		Fd( const Fd & ) = delete ;
 		Fd( Fd && ) = delete ;
-		void operator=( const Fd & ) = delete ;
-		void operator=( Fd && ) = delete ;
+		Fd & operator=( const Fd & ) = delete ;
+		Fd & operator=( Fd && ) = delete ;
 	} ;
 
 private:

@@ -124,8 +124,8 @@ private:
 public:
 	Run( const Run & ) = delete ;
 	Run( Run && ) = delete ;
-	void operator=( const Run & ) = delete ;
-	void operator=( Run && ) = delete ;
+	Run & operator=( const Run & ) = delete ;
+	Run & operator=( Run && ) = delete ;
 
 private:
 	void doForwardingOnStartup( G::PidFile & ) ;
@@ -156,9 +156,6 @@ private:
 	int resolverFamily() const ;
 	static GNet::Address asAddress( const std::string & ) ;
 	GPop::Server::Config popConfig() const ;
-	void checkScripts() const ;
-	void checkVerifier( const std::string & ) const ;
-	void checkFilter( const std::string & , bool ) const ;
 	void checkThreading() const ;
 	std::string versionString() const ;
 	static std::string buildConfiguration() ;

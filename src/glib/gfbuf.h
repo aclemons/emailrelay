@@ -85,10 +85,10 @@ protected:
 		///< Called to sync the stream.
 
 public:
-	fbuf( const fbuf & ) = delete ;
-	fbuf( fbuf && ) = delete ;
-	void operator=( const fbuf & ) = delete ;
-	void operator=( fbuf && ) = delete ;
+	fbuf( const fbuf<T,N> & ) = delete ;
+	fbuf( fbuf<T,N> && ) = delete ;
+	fbuf<T,N> & operator=( const fbuf<T,N> & ) = delete ;
+	fbuf<T,N> & operator=( fbuf<T,N> && ) = delete ;
 
 private:
 	using traits_type = std::streambuf::traits_type ;
@@ -113,7 +113,8 @@ G::fbuf<T,N>::fbuf( G::fbuf<T,N>::read_fn_t read , G::fbuf<T,N>::write_fn_t writ
 	m_close_fn(close) ,
 	m_input() ,
 	m_output() ,
-	m_file_open(false)
+	m_file_open(false) ,
+	m_file()
 {
 }
 
@@ -124,7 +125,8 @@ G::fbuf<T,N>::fbuf( T file , G::fbuf<T,N>::read_fn_t read , G::fbuf<T,N>::write_
 	m_close_fn(close) ,
 	m_input() ,
 	m_output() ,
-	m_file_open(false)
+	m_file_open(false) ,
+	m_file()
 {
 	open( file ) ;
 }

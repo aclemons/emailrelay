@@ -80,8 +80,8 @@ public:
 public:
 	ProtocolMessageStore( const ProtocolMessageStore & ) = delete ;
 	ProtocolMessageStore( ProtocolMessageStore && ) = delete ;
-	void operator=( const ProtocolMessageStore & ) = delete ;
-	void operator=( ProtocolMessageStore && ) = delete ;
+	ProtocolMessageStore & operator=( const ProtocolMessageStore & ) = delete ;
+	ProtocolMessageStore & operator=( ProtocolMessageStore && ) = delete ;
 
 private:
 	void filterDone( int ) ;

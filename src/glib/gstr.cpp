@@ -38,7 +38,7 @@ namespace G
 {
 	namespace StrImp /// An implementation namespace for G::Str.
 	{
-		#ifndef G_STR_SMALL
+		#ifndef G_LIB_SMALL
 			static constexpr string_view chars_meta = "~<>[]*$|?\\(){}\"`'&;="_sv ; // bash meta-chars plus "~"
 		#endif
 
@@ -105,7 +105,7 @@ bool G::StrImp::allOf( string_view s , bool (*fn)(char) ) noexcept
 	return true ;
 }
 
-#ifndef G_STR_SMALL
+#ifndef G_LIB_SMALL
 std::string G::Str::escaped( string_view s_in )
 {
 	if( s_in.empty() ) return {} ;
@@ -198,14 +198,14 @@ std::string G::Str::dequote( const std::string & s , char qq , char esc , string
 	return result ;
 }
 
-#ifndef G_STR_SMALL
+#ifndef G_LIB_SMALL
 void G::Str::unescape( std::string & s )
 {
 	unescape( s , '\\' , "0rnt"_sv , "\0\r\n\t"_sv ) ;
 }
 #endif
 
-#ifndef G_STR_SMALL
+#ifndef G_LIB_SMALL
 void G::Str::unescape( std::string & s , char c_escape , string_view specials_in , string_view specials_out )
 {
 	G_ASSERT( specials_in.size() == specials_out.size() ) ;
@@ -229,7 +229,7 @@ void G::Str::unescape( std::string & s , char c_escape , string_view specials_in
 }
 #endif
 
-#ifndef G_STR_SMALL
+#ifndef G_LIB_SMALL
 std::string G::Str::unescaped( const std::string & s_in )
 {
 	std::string s( s_in ) ;
@@ -454,7 +454,6 @@ bool G::Str::isSimple( string_view s ) noexcept
 	return StrImp::allOf( s , StrImp::isSimple ) ;
 }
 
-#ifndef G_STR_SMALL
 bool G::Str::isInt( string_view s ) noexcept
 {
 	bool overflow = false ;
@@ -462,9 +461,8 @@ bool G::Str::isInt( string_view s ) noexcept
 	StrImp::toInt( s , overflow , invalid ) ;
 	return !overflow && !invalid ;
 }
-#endif
 
-#ifndef G_STR_SMALL
+#ifndef G_LIB_SMALL
 bool G::Str::isUShort( string_view s ) noexcept
 {
 	bool overflow = false ;
@@ -490,14 +488,14 @@ bool G::Str::isULong( string_view s ) noexcept
 	return !overflow && !invalid ;
 }
 
-#ifndef G_STR_SMALL
+#ifndef G_LIB_SMALL
 std::string G::Str::fromBool( bool b )
 {
 	return b ? "true" : "false" ;
 }
 #endif
 
-#ifndef G_STR_SMALL
+#ifndef G_LIB_SMALL
 std::string G::Str::fromDouble( double d )
 {
 	if( std::isnan(d) ) return "nan" ;
@@ -508,7 +506,7 @@ std::string G::Str::fromDouble( double d )
 }
 #endif
 
-#ifndef G_STR_SMALL
+#ifndef G_LIB_SMALL
 bool G::Str::toBool( string_view s )
 {
 	bool result = true ;
@@ -522,7 +520,7 @@ bool G::Str::toBool( string_view s )
 }
 #endif
 
-#ifndef G_STR_SMALL
+#ifndef G_LIB_SMALL
 double G::Str::toDouble( const std::string & s )
 {
 	try
@@ -544,7 +542,7 @@ double G::Str::toDouble( const std::string & s )
 }
 #endif
 
-#ifndef G_STR_SMALL
+#ifndef G_LIB_SMALL
 float G::Str::toFloat( const std::string & s )
 {
 	try
@@ -578,12 +576,10 @@ int G::Str::toInt( string_view s )
 	return result ;
 }
 
-#ifndef G_STR_SMALL
 int G::Str::toInt( string_view s1 , string_view s2 )
 {
 	return !s1.empty() && isInt(s1) ? toInt(s1) : toInt(s2) ;
 }
-#endif
 
 int G::StrImp::toInt( string_view s , bool & overflow , bool & invalid ) noexcept
 {
@@ -594,7 +590,7 @@ int G::StrImp::toInt( string_view s , bool & overflow , bool & invalid ) noexcep
 	return result ;
 }
 
-#ifndef G_STR_SMALL
+#ifndef G_LIB_SMALL
 long G::Str::toLong( string_view s )
 {
 	bool overflow = false ;
@@ -627,7 +623,7 @@ long G::StrImp::toLong( string_view s , bool & overflow , bool & invalid ) noexc
 	return negative ? -static_cast<long>(ul) : static_cast<long>(ul) ;
 }
 
-#ifndef G_STR_SMALL
+#ifndef G_LIB_SMALL
 short G::Str::toShort( string_view s )
 {
 	bool overflow = false ;
@@ -641,7 +637,7 @@ short G::Str::toShort( string_view s )
 }
 #endif
 
-#ifndef G_STR_SMALL
+#ifndef G_LIB_SMALL
 short G::StrImp::toShort( string_view s , bool & overflow , bool & invalid ) noexcept
 {
 	long long_val = toLong( s , overflow , invalid ) ;
@@ -662,7 +658,7 @@ unsigned int G::Str::toUInt( string_view s , unsigned int default_ )
 	return !s.empty() && isUInt(s) ? toUInt(s) : default_ ;
 }
 
-#ifndef G_STR_SMALL
+#ifndef G_LIB_SMALL
 unsigned int G::Str::toUInt( string_view s , Limited )
 {
 	bool overflow = false ;
@@ -709,21 +705,21 @@ unsigned long G::Str::toULong( string_view s , Limited )
 	return result ;
 }
 
-#ifndef G_STR_SMALL
+#ifndef G_LIB_SMALL
 unsigned long G::Str::toULong( string_view s , Hex , Limited )
 {
 	return StrImp::toULongHex( s , true ) ;
 }
 #endif
 
-#ifndef G_STR_SMALL
+#ifndef G_LIB_SMALL
 unsigned long G::Str::toULong( string_view s , Hex )
 {
 	return StrImp::toULongHex( s , false ) ;
 }
 #endif
 
-#ifndef G_STR_SMALL
+#ifndef G_LIB_SMALL
 unsigned long G::StrImp::toULongHex( string_view s , bool limited )
 {
 	unsigned long n = 0U ;
@@ -761,7 +757,7 @@ unsigned long G::Str::toULong( string_view s )
 	return result ;
 }
 
-#ifndef G_STR_SMALL
+#ifndef G_LIB_SMALL
 unsigned long G::Str::toULong( string_view s1 , string_view s2 )
 {
 	return !s1.empty() && isULong(s1) ? toULong(s1) : toULong(s2) ;
@@ -779,7 +775,7 @@ unsigned long G::StrImp::toULong( string_view s , bool & overflow , bool & inval
 	return Str::toUnsigned<unsigned long>( s.data() , s.data()+s.size() , overflow , invalid ) ;
 }
 
-#ifndef G_STR_SMALL
+#ifndef G_LIB_SMALL
 unsigned short G::Str::toUShort( string_view s , Limited )
 {
 	bool overflow = false ;
@@ -793,7 +789,7 @@ unsigned short G::Str::toUShort( string_view s , Limited )
 }
 #endif
 
-#ifndef G_STR_SMALL
+#ifndef G_LIB_SMALL
 unsigned short G::Str::toUShort( string_view s )
 {
 	bool overflow = false ;
@@ -807,7 +803,7 @@ unsigned short G::Str::toUShort( string_view s )
 }
 #endif
 
-#ifndef G_STR_SMALL
+#ifndef G_LIB_SMALL
 unsigned short G::StrImp::toUShort( string_view s , bool & overflow , bool & invalid ) noexcept
 {
 	unsigned long ulong_val = toULong( s , overflow , invalid ) ;
@@ -818,21 +814,21 @@ unsigned short G::StrImp::toUShort( string_view s , bool & overflow , bool & inv
 }
 #endif
 
-#ifndef G_STR_SMALL
+#ifndef G_LIB_SMALL
 G::string_view G::Str::fromULongToHex( unsigned long u , char * out_p ) noexcept
 {
 	return StrImp::fromUnsignedToHex( u , out_p ) ;
 }
 #endif
 
-#ifndef G_STR_SMALL
+#ifndef G_LIB_SMALL
 G::string_view G::Str::fromULongLongToHex( unsigned long long u , char * out_p ) noexcept
 {
 	return StrImp::fromUnsignedToHex( u , out_p ) ;
 }
 #endif
 
-#ifndef G_STR_SMALL
+#ifndef G_LIB_SMALL
 template <typename U>
 G::string_view G::StrImp::fromUnsignedToHex( U u , char * out_p ) noexcept
 {
@@ -1372,7 +1368,7 @@ G::string_view G::Str::alnum_() noexcept
 	return StrImp::chars_alnum_ ;
 }
 
-#ifndef G_STR_SMALL
+#ifndef G_LIB_SMALL
 G::string_view G::Str::meta() noexcept
 {
 	return StrImp::chars_meta ;
@@ -1401,7 +1397,7 @@ G::string_view G::Str::headView( string_view in , std::size_t pos , string_view 
 			( pos == 0U ? string_view(in.data(),std::size_t(0U)) : ( pos >= in.size() ? in : in.substr(std::nothrow,0U,pos) ) ) ;
 }
 
-#ifndef G_STR_SMALL
+#ifndef G_LIB_SMALL
 G::string_view G::Str::headView( string_view in , string_view sep , bool default_empty ) noexcept
 {
 	std::size_t pos = sep.empty() ? std::string::npos : in.find( sep ) ;
@@ -1501,7 +1497,7 @@ bool G::StrImp::imatchc( char c1 , char c2 ) noexcept
 	return string_view(&c1,1U).imatch({&c2,1U}) ;
 }
 
-#ifndef G_STR_SMALL
+#ifndef G_LIB_SMALL
 bool G::Str::imatch( char c1 , char c2 ) noexcept
 {
 	return StrImp::imatchc( c1 , c2 ) ;

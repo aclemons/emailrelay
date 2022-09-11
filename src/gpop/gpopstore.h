@@ -63,8 +63,8 @@ public:
 	~Store() = default ;
 	Store( const Store & ) = delete ;
 	Store( Store && ) = delete ;
-	void operator=( const Store & ) = delete ;
-	void operator=( Store && ) = delete ;
+	Store & operator=( const Store & ) = delete ;
+	Store & operator=( Store && ) = delete ;
 
 private:
 	static void checkPath( const G::Path & , bool , bool ) ;
@@ -175,8 +175,8 @@ private:
 public:
 	StoreLock( const StoreLock & ) = delete ;
 	StoreLock( StoreLock && ) = delete ;
-	void operator=( const StoreLock & ) = delete ;
-	void operator=( StoreLock && ) = delete ;
+	StoreLock & operator=( const StoreLock & ) = delete ;
+	StoreLock & operator=( StoreLock && ) = delete ;
 
 private:
 	Set::iterator find( const std::string & ) ;

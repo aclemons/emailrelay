@@ -131,8 +131,8 @@ private:
 public:
 	WinApp( const WinApp & ) = delete ;
 	WinApp( WinApp && ) = delete ;
-	void operator=( const WinApp & ) = delete ;
-	void operator=( WinApp && ) = delete ;
+	WinApp & operator=( const WinApp & ) = delete ;
+	WinApp & operator=( WinApp && ) = delete ;
 
 private:
 	void doOpen() ;

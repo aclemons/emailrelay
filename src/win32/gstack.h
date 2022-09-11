@@ -94,9 +94,9 @@ public:
 		///< Destructor.
 
 	static bool stackMessage( MSG & msg ) ;
-		///< Used by the GGui::Pump message pump to bypass DispatchMessage(),
-		///< similarly to GGui::Dialog::dialogMessage(). Returns true
-		///< if a stack message.
+		///< Used by the GGui::Pump message pump to bypass DispatchMessage() if
+		///< a stack message, in the same way as GGui::Dialog::dialogMessage().
+		///< Returns true if a stack message.
 
 	static int sheetProc( HWND hwnd , UINT message , LPARAM lparam ) ;
 		///< Implementation window procedure.
@@ -121,8 +121,8 @@ private:
 public:
 	Stack( const Stack & ) = delete ;
 	Stack( Stack && ) = delete ;
-	void operator=( const Stack & ) = delete ;
-	void operator=( Stack && ) = delete ;
+	Stack & operator=( const Stack & ) = delete ;
+	Stack & operator=( Stack && ) = delete ;
 
 private:
 	using PageInfo = std::pair<Stack*,int> ;

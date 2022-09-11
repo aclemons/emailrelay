@@ -55,8 +55,8 @@ public:
 	~SaslServerBasic() override ;
 	SaslServerBasic( const SaslServerBasic & ) = delete ;
 	SaslServerBasic( SaslServerBasic && ) = delete ;
-	void operator=( const SaslServerBasic & ) = delete ;
-	void operator=( SaslServerBasic && ) = delete ;
+	SaslServerBasic & operator=( const SaslServerBasic & ) = delete ;
+	SaslServerBasic & operator=( SaslServerBasic && ) = delete ;
 
 private: // overrides
 	void reset() override ; // Override from GAuth::SaslServer.

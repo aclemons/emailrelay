@@ -56,8 +56,8 @@ public:
 public:
 	WinMenu( const WinMenu & ) = delete ;
 	WinMenu( WinMenu && ) = delete ;
-	void operator=( const WinMenu & ) = delete ;
-	void operator=( WinMenu && ) = delete ;
+	WinMenu & operator=( const WinMenu & ) = delete ;
+	WinMenu & operator=( WinMenu && ) = delete ;
 
 private:
 	HMENU m_hmenu ;

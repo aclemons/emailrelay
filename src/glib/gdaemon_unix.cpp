@@ -36,9 +36,9 @@ namespace G
 			{
 				for( int i = 0 ; i < 100 ; i++ )
 				{
-					std::this_thread::sleep_for( std::chrono::milliseconds(10) ) ;
-					if( G::File::exists( pid_file ) )
+					if( G::File::exists( pid_file , std::nothrow ) )
 						break ;
+					std::this_thread::sleep_for( std::chrono::milliseconds(10) ) ;
 				}
 			}
 		}
@@ -52,14 +52,11 @@ void G::Daemon::detach()
 
 void G::Daemon::detach( const G::Path & pid_file )
 {
-	if( !pid_file.empty() )
-		G::File::remove( pid_file , std::nothrow ) ;
-
 	// see Stevens, ISBN 0-201-563137-7, ch 13.
 
 	if( !NewProcess::fork().first )
 	{
-		DaemonImp::waitfor( pid_file ) ;
+		DaemonImp::waitfor( pid_file ) ; // because systemd
 		std::_Exit( 0 ) ; // exit from parent
 	}
 

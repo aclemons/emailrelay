@@ -193,7 +193,7 @@ sub _switches
 		( exists($sw{Hidden}) && !System::unix() ? "--hidden " : "" ) .
 		( exists($sw{NoSmtp}) ? "--no-smtp " : "" ) .
 		( exists($sw{Poll}) ? "--poll __POLL_TIMEOUT__ " : "" ) .
-		( exists($sw{Filter}) ? "--filter __FILTER__ " : "" ) .
+		( exists($sw{Filter}) ? "--filter=exit:0 --filter __FILTER__ " : "" ) .
 		( exists($sw{FilterTimeout}) ? "--filter-timeout 1 " : "" ) .
 		( exists($sw{ConnectionTimeout}) ? "--connection-timeout 1 " : "" ) .
 		( exists($sw{Immediate}) ? "--immediate " : "" ) .
@@ -405,6 +405,20 @@ sub hasThreads
 	{
 		return 1 ; # assume msvc build with threads
 	}
+}
+
+sub hasUnixDomainSockets
+{
+	my ( $this ) = @_ ;
+	return undef if !System::unix() ;
+	my $exe = $this->exe() ;
+	my $fh = new FileHandle( "$exe --version --verbose |" ) ;
+	while(<$fh>)
+	{
+		chomp( my $line = $_ ) ;
+		return 1 if( $line =~ m/Unix domain sockets: enabled/i ) ;
+	}
+	return undef ;
 }
 
 sub hasTls

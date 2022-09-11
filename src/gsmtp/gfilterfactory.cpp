@@ -36,35 +36,37 @@ GSmtp::FilterFactoryFileStore::FilterFactoryFileStore( FileStore & file_store ) 
 }
 
 std::unique_ptr<GSmtp::Filter> GSmtp::FilterFactoryFileStore::newFilter( GNet::ExceptionSink es ,
-	bool server_side , const std::string & spec , unsigned int timeout )
+	bool server_side , const FactoryParser::Result & spec , unsigned int timeout )
 {
-	FactoryParser::Result p = FactoryParser::parse( spec , true ) ;
-	if( p.first == "chain" )
+	if( spec.first == "chain" )
 	{
-		// (recursive -- FilterChain::ctor calls newFilter())
-		return std::make_unique<FilterChain>( es , *this , server_side , p.second , timeout ) ;
+		// (one level of recursion -- FilterChain::ctor calls newFilter())
+		return std::make_unique<FilterChain>( es , *this , server_side , spec , timeout ) ;
 	}
-	else if( p.first == "spam" )
+	else if( spec.first == "spam" )
 	{
 		// "spam:" is read-only, not-always-pass
 		// "spam-edit:" is read-write, always-pass
-		bool edit = p.third == 1 ;
+		bool edit = spec.third == 1 ;
 		bool read_only = !edit ;
 		bool always_pass = edit ;
-		return std::make_unique<SpamFilter>( es , m_file_store , p.second , read_only , always_pass , timeout , timeout ) ;
+		return std::make_unique<SpamFilter>( es , m_file_store , spec.second , read_only , always_pass , timeout , timeout ) ;
 	}
-	else if( p.first == "net" )
+	else if( spec.first == "net" )
 	{
-		return std::make_unique<NetworkFilter>( es , m_file_store , p.second , timeout , timeout ) ;
+		return std::make_unique<NetworkFilter>( es , m_file_store , spec.second , timeout , timeout ) ;
 	}
-	else if( p.first == "exit" )
+	else if( spec.first == "exit" )
 	{
-		return std::make_unique<NullFilter>( es , server_side , G::Str::toUInt(p.second) ) ;
+		return std::make_unique<NullFilter>( es , server_side , G::Str::toUInt(spec.second) ) ;
+	}
+	else if( spec.first == "file" )
+	{
+		return std::make_unique<ExecutableFilter>( es , m_file_store , server_side , spec.second , timeout ) ;
 	}
 	else
 	{
-		G_ASSERT( p.first == "file" ) ;
-		return std::make_unique<ExecutableFilter>( es , m_file_store , server_side , p.second , timeout ) ;
+		throw G::Exception( "invalid filter" , spec.second ) ;
 	}
 }
 

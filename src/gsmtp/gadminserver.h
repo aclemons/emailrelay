@@ -77,8 +77,8 @@ private: // overrides
 public:
 	AdminServerPeer( const AdminServerPeer & ) = delete ;
 	AdminServerPeer( AdminServerPeer && ) = delete ;
-	void operator=( const AdminServerPeer & ) = delete ;
-	void operator=( AdminServerPeer && ) = delete ;
+	AdminServerPeer & operator=( const AdminServerPeer & ) = delete ;
+	AdminServerPeer & operator=( AdminServerPeer && ) = delete ;
 
 private:
 	void clientDone( const std::string & ) ;
@@ -173,8 +173,8 @@ protected:
 public:
 	AdminServer( const AdminServer & ) = delete ;
 	AdminServer( AdminServer && ) = delete ;
-	void operator=( const AdminServer & ) = delete ;
-	void operator=( AdminServer && ) = delete ;
+	AdminServer & operator=( const AdminServer & ) = delete ;
+	AdminServer & operator=( AdminServer && ) = delete ;
 
 private:
 	void onForwardTimeout() ;

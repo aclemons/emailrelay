@@ -34,7 +34,7 @@ GNet::Dnsbl::Dnsbl( std::function<void(bool)> callback , ExceptionSink , G::stri
 GNet::Dnsbl::~Dnsbl()
 = default ;
 
-void GNet::Dnsbl::start( const Address & address )
+void GNet::Dnsbl::start( const Address & )
 {
 	m_callback( /*allow=*/true ) ;
 }

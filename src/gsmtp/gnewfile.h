@@ -60,8 +60,8 @@ public:
 public:
 	NewFile( const NewFile & ) = delete ;
 	NewFile( NewFile && ) = delete ;
-	void operator=( const NewFile & ) = delete ;
-	void operator=( NewFile && ) = delete ;
+	NewFile & operator=( const NewFile & ) = delete ;
+	NewFile & operator=( NewFile && ) = delete ;
 
 private: // overrides
 	void commit( bool strict ) override ; // Override from GSmtp::NewMessage.

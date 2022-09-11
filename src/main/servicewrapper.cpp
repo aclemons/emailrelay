@@ -154,7 +154,6 @@ struct ServiceEvent
 	}
 	void create()
 	{
-		const DWORD access = DELETE | SYNCHRONIZE | EVENT_MODIFY_STATE | PROCESS_DUP_HANDLE ;
 		m_h = CreateEvent( nullptr , FALSE , FALSE , nullptr ) ;
 		if( m_h == 0 )
 		{
@@ -218,8 +217,8 @@ public:
 public:
 	Service( const Service & ) = delete ;
 	Service( Service && ) = delete ;
-	void operator=( const Service & ) = delete ;
-	void operator=( Service && ) = delete ;
+	Service & operator=( const Service & ) = delete ;
+	Service & operator=( Service && ) = delete ;
 
 private:
 	void setStatus( DWORD ) ;

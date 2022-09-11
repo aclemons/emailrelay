@@ -194,8 +194,8 @@ public:
 public:
 	LogOutput( const LogOutput & ) = delete ;
 	LogOutput( LogOutput && ) = delete ;
-	void operator=( const LogOutput & ) = delete ;
-	void operator=( LogOutput && ) = delete ;
+	LogOutput & operator=( const LogOutput & ) = delete ;
+	LogOutput & operator=( LogOutput && ) = delete ;
 
 private:
 	void osinit() ;

@@ -91,7 +91,7 @@ GSmtp::ServerPeer::ServerPeer( GNet::ExceptionSinkUnbound esu ,
 		m_flush_timer(*this,&ServerPeer::onFlushTimeout,esu.bind(this)) ,
 		m_check_timer(*this,&ServerPeer::onCheckTimeout,esu.bind(this)) ,
 		m_verifier(VerifierFactory::newVerifier(esu.bind(this),
-			server_config.verifier_address,server_config.verifier_timeout)) ,
+			server_config.verifier_spec,server_config.verifier_timeout)) ,
 		m_pmessage(server.newProtocolMessage(esu.bind(this))) ,
 		m_ptext(ptext.release()) ,
 		m_line_buffer(GNet::LineBufferConfig::smtp()) ,
@@ -280,7 +280,7 @@ std::unique_ptr<GSmtp::ServerProtocol::Text> GSmtp::Server::newProtocolText( boo
 
 std::unique_ptr<GSmtp::Filter> GSmtp::Server::newFilter( GNet::ExceptionSink es ) const
 {
-	return m_ff.newFilter( es , true , m_server_config.filter_address , m_server_config.filter_timeout ) ;
+	return m_ff.newFilter( es , true , m_server_config.filter_spec , m_server_config.filter_timeout ) ;
 }
 
 std::unique_ptr<GSmtp::ProtocolMessage> GSmtp::Server::newProtocolMessageStore( std::unique_ptr<Filter> filter )

@@ -123,8 +123,8 @@ public:
 	~FileStore() override = default ;
 	FileStore( const FileStore & ) = delete ;
 	FileStore( FileStore && ) = delete ;
-	void operator=( const FileStore & ) = delete ;
-	void operator=( FileStore && ) = delete ;
+	FileStore & operator=( const FileStore & ) = delete ;
+	FileStore & operator=( FileStore && ) = delete ;
 
 private:
 	static void checkPath( const G::Path & dir ) ;
@@ -166,8 +166,8 @@ public:
 public:
 	FileReader( const FileReader & ) = delete ;
 	FileReader( FileReader && ) = delete ;
-	void operator=( const FileReader & ) = delete ;
-	void operator=( FileReader && ) = delete ;
+	FileReader & operator=( const FileReader & ) = delete ;
+	FileReader & operator=( FileReader && ) = delete ;
 } ;
 
 //| \class GSmtp::DirectoryReader
@@ -188,8 +188,8 @@ public:
 public:
 	DirectoryReader( const DirectoryReader & ) = delete ;
 	DirectoryReader( DirectoryReader && ) = delete ;
-	void operator=( const DirectoryReader & ) = delete ;
-	void operator=( DirectoryReader && ) = delete ;
+	DirectoryReader & operator=( const DirectoryReader & ) = delete ;
+	DirectoryReader & operator=( DirectoryReader && ) = delete ;
 } ;
 
 //| \class GSmtp::FileWriter
@@ -210,8 +210,8 @@ public:
 public:
 	FileWriter( const FileWriter & ) = delete ;
 	FileWriter( FileWriter && ) = delete ;
-	void operator=( const FileWriter & ) = delete ;
-	void operator=( FileWriter && ) = delete ;
+	FileWriter & operator=( const FileWriter & ) = delete ;
+	FileWriter & operator=( FileWriter && ) = delete ;
 } ;
 
 #endif

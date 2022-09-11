@@ -24,6 +24,7 @@
 #include "gdef.h"
 #include "ggettext.h"
 #include "gpath.h"
+#include "gstringarray.h"
 #include "gexception.h"
 #include <utility>
 #include <string>
@@ -34,9 +35,9 @@ namespace GSmtp
 }
 
 //| \class GSmtp::FactoryParser
-/// A simple static class to parse filter and verifier specifications
-/// that are either a program path or a network address etc. Used by
-/// the filter factory and the address-verifier factory classes.
+/// A static class to parse filter and verifier specifications that are
+/// either a program path or a network address etc. Used by the filter
+/// factory and the address-verifier factory classes.
 ///
 class GSmtp::FactoryParser
 {
@@ -48,37 +49,43 @@ public:
 		Result() ;
 		Result( const std::string & , const std::string & ) ;
 		Result( const std::string & , const std::string & , int ) ;
-		std::string first ; // eg. "file", "net", "spam", "chain"
-		std::string second ; // eg. "localhost:99"
+		std::string first ; // "exit", "file", "net", "spam", "chain", empty on error
+		std::string second ; // reason on error, or eg. "/bin/a" if "file", eg. "file:/bin/a,file:/bin/b" if "chain"
 		int third{0} ; // eg. 1 for spam-edit
 	} ;
 
-	static Result parse( const std::string & spec , bool is_filter ) ;
-		///< Parses a filter or verifier specification like "/usr/bin/foo" or
-		///< "net:127.0.0.1:99" or "net:/run/spamd.s", returning the
-		///< type and value in a result tuple, eg. ("file","/usr/bin/foo")
-		///< or ("net","127.0.0.1:99").
-		///<
-		///< If 'is-filter' then the spec can be a comma-separated list with
-		///< the component parts checked separately and the returned Result
-		///< is like ("chain","foo,bar").
-		///<
-		///< Throws if not parseable.
-
-	static std::string normalise( const std::string & spec , bool is_filter_spec ,
-		const G::Path & base_dir , const G::Path & app_dir = {} ) ;
-			///< Normalises a filter or address-verifier specification
-			///< so that any relative file paths are made absolute
-			///< using the given base directory.
+	static Result parse( const std::string & spec , bool is_filter ,
+		const G::Path & base_dir = {} , const G::Path & app_dir = {} ,
+		G::StringArray * warnings_p = nullptr ) ;
+			///< Parses a filter or verifier specification like "/usr/bin/foo" or
+			///< "net:127.0.0.1:99" or "net:/run/spamd.s", returning the
+			///< type and value in a result tuple, eg. ("file","/usr/bin/foo")
+			///< or ("net","127.0.0.1:99").
+			///<
+			///< If 'is-filter' then the spec can be a comma-separated list with
+			///< the component parts checked separately and the returned Result
+			///< is like ("chain","file:foo,net:bar").
+			///<
+			///< Any relative file paths are made absolute using the given
+			///< base directory, if given. (This is normally from
+			///< G::Process::cwd() called at startup).
+			///<
+			///< Any "@app" sub-strings in file paths are substituted with
+			///< the given application directory, if given.
+			///<
+			///< Returns 'first' empty if a fatal parsing error, with the
+			///< reason in 'second'.
+			///<
+			///< Returns warnings by reference for non-fatal errors, such
+			///< as missing files.
 
 public:
 	FactoryParser() = delete ;
 
 private:
-	static Result parse( const std::string & spec , bool allow_spam , bool allow_chain , bool check ) ;
-	static void normalise( Result & , bool , const G::Path & , const G::Path & ) ;
-	static void checkFile( const G::Path & ) ;
-	static std::string checkExit( const std::string & ) ;
+	static Result parseImp( const std::string & , bool , const G::Path & , const G::Path & , G::StringArray * , bool , bool ) ;
+	static void normalise( Result & , const G::Path & , const G::Path & ) ;
+	static void check( Result & , bool , G::StringArray * ) ;
 } ;
 
 #endif

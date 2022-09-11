@@ -62,8 +62,8 @@ public:
 	~LinkImp() = default ;
 	LinkImp( const LinkImp & ) = delete ;
 	LinkImp( LinkImp && ) = delete ;
-	void operator=( const LinkImp & ) = delete ;
-	void operator=( LinkImp && ) = delete ;
+	LinkImp & operator=( const LinkImp & ) = delete ;
+	LinkImp & operator=( LinkImp && ) = delete ;
 
 private:
 	static void check( HRESULT , const char * ) ;
@@ -89,8 +89,8 @@ private:
 		BSTR p() ;
 		bstr( const bstr & ) = delete ;
 		bstr( bstr && ) = delete ;
-		void operator=( const bstr & ) = delete ;
-		void operator=( bstr && ) = delete ;
+		bstr & operator=( const bstr & ) = delete ;
+		bstr & operator=( bstr && ) = delete ;
 		private: BSTR m_p ;
 	} ;
 } ;

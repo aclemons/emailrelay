@@ -93,8 +93,8 @@ private: // overrides
 public:
 	ProtocolMessageForward( const ProtocolMessageForward & ) = delete ;
 	ProtocolMessageForward( ProtocolMessageForward && ) = delete ;
-	void operator=( const ProtocolMessageForward & ) = delete ;
-	void operator=( ProtocolMessageForward && ) = delete ;
+	ProtocolMessageForward & operator=( const ProtocolMessageForward & ) = delete ;
+	ProtocolMessageForward & operator=( ProtocolMessageForward && ) = delete ;
 
 private:
 	void clientDone( const std::string & ) ; // GNet::Client::doneSignal()

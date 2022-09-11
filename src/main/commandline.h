@@ -106,8 +106,8 @@ public:
 public:
 	CommandLine( const CommandLine & ) = delete ;
 	CommandLine( CommandLine && ) = delete ;
-	void operator=( const CommandLine & ) = delete ;
-	void operator=( CommandLine && ) = delete ;
+	CommandLine & operator=( const CommandLine & ) = delete ;
+	CommandLine & operator=( CommandLine && ) = delete ;
 
 private:
 	void showUsage( bool e ) const ;
@@ -117,6 +117,7 @@ private:
 	void showSslCredit( bool e = false , const std::string & eot = {} ) const ;
 	void showSslVersion( bool e = false , const std::string & eot = {} ) const ;
 	void showThreading( bool e = false , const std::string & eot = {} ) const ;
+	void showUds( bool e = false , const std::string & eod = {} ) const ;
 
 private:
 	Output & m_output ;

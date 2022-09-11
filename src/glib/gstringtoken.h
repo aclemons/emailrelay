@@ -81,6 +81,9 @@ public:
 	std::size_t size() const noexcept ;
 		///< Returns the current token size.
 
+	std::size_t pos() const noexcept ;
+		///< Returns the offset of data().
+
 	T operator()() const noexcept(std::is_same<T,string_view>::value) ;
 		///< Returns the current token substring.
 
@@ -96,8 +99,8 @@ public:
 	StringTokenT( T && s , string_view ) = delete ;
 	StringTokenT( const StringTokenT<T> & ) = delete ;
 	StringTokenT( StringTokenT<T> && ) = delete ;
-	void operator=( const StringTokenT<T> & ) = delete ;
-	void operator=( StringTokenT<T> && ) = delete ;
+	StringTokenT<T> & operator=( const StringTokenT<T> & ) = delete ;
+	StringTokenT<T> & operator=( StringTokenT<T> && ) = delete ;
 
 private:
 	static constexpr std::size_t npos = T::npos ;
@@ -161,6 +164,12 @@ template <typename T>
 std::size_t G::StringTokenT<T>::size() const noexcept
 {
 	return (m_endpos==npos?m_s.size():m_endpos) - m_pos ;
+}
+
+template <typename T>
+std::size_t G::StringTokenT<T>::pos() const noexcept
+{
+	return m_pos == npos ? 0U : m_pos ;
 }
 
 template <typename T>

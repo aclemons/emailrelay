@@ -382,7 +382,7 @@
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_IFINDEX)
-		#ifdef G_UNIX
+		#ifdef G_UNIX_LINUX
 			#define GCONFIG_HAVE_IFINDEX 1
 		#else
 			#define GCONFIG_HAVE_IFINDEX 0
@@ -685,6 +685,13 @@
 			#define GCONFIG_HAVE_UDS 1
 		#else
 			#define GCONFIG_HAVE_UDS 0
+		#endif
+	#endif
+	#if !defined(GCONFIG_HAVE_UDS_LEN)
+		#ifdef G_UNIX_BSD
+			#define GCONFIG_HAVE_UDS_LEN 1
+		#else
+			#define GCONFIG_HAVE_UDS_LEN 0
 		#endif
 	#endif
 
@@ -1028,6 +1035,11 @@
 				inline constexpr bool is_windows() { return true ; }
 			#else
 				inline constexpr bool is_windows() { return false ; }
+			#endif
+			#ifdef G_MINGW
+				inline constexpr bool is_wine() { return true ; }
+			#else
+				inline constexpr bool is_wine() { return false ; }
 			#endif
 			#ifdef G_UNIX_LINUX
 				inline constexpr bool is_linux() { return true ; }

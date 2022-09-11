@@ -15,34 +15,18 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
-/// \file gverifierfactory.cpp
+/// \file ggettext_none.cpp
 ///
 
 #include "gdef.h"
-#include "gverifierfactory.h"
-#include "ginternalverifier.h"
-#include "gexecutableverifier.h"
-#include "gnetworkverifier.h"
-#include "gexception.h"
+#include "ggettext.h"
 
-std::unique_ptr<GSmtp::Verifier> GSmtp::VerifierFactory::newVerifier( GNet::ExceptionSink es ,
-	const FactoryParser::Result & spec , unsigned int timeout )
+void G::gettext_init( const std::string & , const std::string & )
 {
-	if( spec.first == "exit" )
-	{
-		return std::make_unique<InternalVerifier>() ;
-	}
-	else if( spec.first == "net" )
-	{
-		return std::make_unique<NetworkVerifier>( es , spec.second , timeout , timeout ) ;
-	}
-	else if( spec.first == "file" )
-	{
-		return std::make_unique<ExecutableVerifier>( es , G::Path(spec.second) ) ;
-	}
-	else
-	{
-		throw G::Exception( "invalid verifier" , spec.second ) ; // never gets here
-	}
+}
+
+const char * G::gettext( const char * p ) noexcept
+{
+	return p ;
 }
 

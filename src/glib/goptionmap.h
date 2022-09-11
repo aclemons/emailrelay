@@ -81,6 +81,12 @@ public:
 		///< Returns true if the map contains the given key, but ignoring 'off'
 		///< option-values.
 
+	bool contains( const char * ) const ;
+		///< Overload for c-string.
+
+	bool contains( const std::string & ) const ;
+		///< Overload for std-string.
+
 	std::size_t count( string_view key ) const ;
 		///< Returns the total repeat count for all matching entries.
 		///< See G::OptionValue::count().

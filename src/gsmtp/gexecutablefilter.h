@@ -64,8 +64,8 @@ private: // overrides
 public:
 	ExecutableFilter( const ExecutableFilter & ) = delete ;
 	ExecutableFilter( ExecutableFilter && ) = delete ;
-	void operator=( const ExecutableFilter & ) = delete ;
-	void operator=( ExecutableFilter && ) = delete ;
+	ExecutableFilter & operator=( const ExecutableFilter & ) = delete ;
+	ExecutableFilter & operator=( ExecutableFilter && ) = delete ;
 
 private:
 	std::pair<std::string,std::string> parseOutput( std::string , const std::string & ) const ;

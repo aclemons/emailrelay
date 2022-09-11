@@ -685,7 +685,7 @@ sub install_mingw
 	{
 		my $fh = new FileHandle( "$install_mingw/emailrelay-submit-test.bat" , "w" ) or die ;
 		my $cmd = "\@echo off\r\n" ;
-		$cmd .= "emailrelay-submit.exe -n -s \@app --from postmaster " ;
+		$cmd .= "emailrelay-submit.exe -N -n -s \@app --from postmaster " ;
 		$cmd .= "-C U3ViamVjdDogdGVzdA== " ; # subject
 		$cmd .= "-C = " ;
 		$cmd .= "-C VGVzdCBtZXNzYWdl " ; # body

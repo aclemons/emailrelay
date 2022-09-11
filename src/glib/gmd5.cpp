@@ -166,8 +166,8 @@ public:
 	~block() = default ;
 	block( const block & ) = delete ;
 	block( block && ) = delete ;
-	void operator=( const block & ) = delete ;
-	void operator=( block && ) = delete ;
+	block & operator=( const block & ) = delete ;
+	block & operator=( block && ) = delete ;
 
 private:
 	small_t x( small_t ) const ;

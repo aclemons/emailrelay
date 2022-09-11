@@ -29,7 +29,7 @@
 namespace GGui
 {
 	class Tray ;
-} ;
+}
 
 //| \class GGui::Tray
 /// Manages an icon within the system tray.
@@ -53,8 +53,8 @@ public:
 		///< Destructor. Removes the icon from the system tray.
 
 public:
-	void operator=( const Tray & ) = delete ;
-	void operator=( Tray && ) = delete ;
+	Tray & operator=( const Tray & ) = delete ;
+	Tray & operator=( Tray && ) = delete ;
 	Tray( const Tray & ) = delete ;
 	Tray( Tray && ) = delete ;
 

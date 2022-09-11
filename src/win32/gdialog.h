@@ -88,7 +88,7 @@ public:
 		///< An override taking a resource name rather than a
 		///< resource id.
 
-	static BOOL dlgProc( HWND hwnd , UINT message , WPARAM wparam , LPARAM lparam ) ;
+	static INT_PTR dlgProc( HWND hwnd , UINT message , WPARAM wparam , LPARAM lparam ) ;
 		///< Called directly from the exported dialog procedure.
 
 	void setFocus( int control ) ;
@@ -163,18 +163,18 @@ protected:
 public:
 	Dialog( const Dialog & ) = delete ;
 	Dialog( Dialog && ) = delete ;
-	void operator=( const Dialog & ) = delete ;
-	void operator=( Dialog && ) = delete ;
+	Dialog & operator=( const Dialog & ) = delete ;
+	Dialog & operator=( Dialog && ) = delete ;
 
 private:
 	using DialogList = std::list<HWND> ;
-	BOOL dlgProcImp( UINT message , WPARAM wparam , LPARAM lparam ) ;
+	INT_PTR dlgProcImp( UINT message , WPARAM wparam , LPARAM lparam ) ;
 	void privateInit( HWND hwnd ) ;
 	void privateEnd( int n ) ;
 	bool privateFocusSet() const ;
 	void cleanup() ;
 	DialogList::iterator find( HWND h ) ;
-	BOOL onControlColour_( WPARAM wparam , LPARAM lparam , WORD type ) ;
+	INT_PTR onControlColour_( WPARAM wparam , LPARAM lparam , WORD type ) ;
 	bool runStart() ;
 	bool runCore( const char * ) ;
 	bool runCore( const wchar_t * ) ;
@@ -205,7 +205,7 @@ namespace GGui
 	template <typename T>
 	DLGPROC Dialog::toDlgProc( T export_fn )
 	{
-		return reinterpret_cast<DLGPROC>(export_fn) ;
+		return reinterpret_cast<DLGPROC>( export_fn ) ;
 	}
 }
 

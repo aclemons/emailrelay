@@ -328,8 +328,8 @@ public:
 public:
 	AddressStorage( const AddressStorage & ) = delete ;
 	AddressStorage( AddressStorage && ) = delete ;
-	void operator=( const AddressStorage & ) = delete ;
-	void operator=( AddressStorage && ) = delete ;
+	AddressStorage & operator=( const AddressStorage & ) = delete ;
+	AddressStorage & operator=( AddressStorage && ) = delete ;
 
 private:
 	std::unique_ptr<AddressStorageImp> m_imp ;

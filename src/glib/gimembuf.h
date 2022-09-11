@@ -63,8 +63,8 @@ public:
 	~basic_imembuf() override = default ;
 	basic_imembuf( const basic_imembuf<Tchar> & ) = delete ;
 	basic_imembuf( basic_imembuf<Tchar> && ) = delete ;
-	void operator=( const basic_imembuf<Tchar> & ) = delete ;
-	void operator=( basic_imembuf<Tchar> && ) = delete ;
+	basic_imembuf<Tchar> & operator=( const basic_imembuf<Tchar> & ) = delete ;
+	basic_imembuf<Tchar> & operator=( basic_imembuf<Tchar> && ) = delete ;
 
 private:
 	template <typename Tint> static std::streamsize min( Tint a , std::streamsize b ) ;

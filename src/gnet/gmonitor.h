@@ -90,8 +90,8 @@ public:
 public:
 	Monitor( const Monitor & ) = delete ;
 	Monitor( Monitor && ) = delete ;
-	void operator=( const Monitor & ) = delete ;
-	void operator=( Monitor && ) = delete ;
+	Monitor & operator=( const Monitor & ) = delete ;
+	Monitor & operator=( Monitor && ) = delete ;
 
 private:
 	static Monitor * & pthis() noexcept ;

@@ -145,8 +145,8 @@ private:
 		~Lock() ;
 		Lock( const Lock & ) = delete ;
 		Lock( Lock && ) = delete ;
-		void operator=( const Lock & ) = delete ;
-		void operator=( Lock && ) = delete ;
+		Lock & operator=( const Lock & ) = delete ;
+		Lock & operator=( Lock && ) = delete ;
 		TimerList & m_timer_list ;
 	} ;
 	friend class GNet::TimerListTest ;

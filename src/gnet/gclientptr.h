@@ -75,8 +75,8 @@ public:
 	~ClientPtrBase() override = default ;
 	ClientPtrBase( const ClientPtrBase & ) = delete ;
 	ClientPtrBase( ClientPtrBase && ) = delete ;
-	void operator=( const ClientPtrBase & ) = delete ;
-	void operator=( ClientPtrBase && ) = delete ;
+	ClientPtrBase & operator=( const ClientPtrBase & ) = delete ;
+	ClientPtrBase & operator=( ClientPtrBase && ) = delete ;
 
 private:
 	void eventSlot( const std::string & , const std::string & , const std::string & ) ;
@@ -178,8 +178,8 @@ private: // overrides
 public:
 	ClientPtr( const ClientPtr & ) = delete ;
 	ClientPtr( ClientPtr && ) = delete ;
-	void operator=( const ClientPtr & ) = delete ;
-	void operator=( ClientPtr && ) = delete ;
+	ClientPtr & operator=( const ClientPtr & ) = delete ;
+	ClientPtr & operator=( ClientPtr && ) = delete ;
 
 private:
 	T * set( T * ) ;

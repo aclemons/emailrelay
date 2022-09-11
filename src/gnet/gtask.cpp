@@ -71,8 +71,8 @@ private: // overrides
 public:
 	TaskImp( const TaskImp & ) = delete ;
 	TaskImp( TaskImp && ) = delete ;
-	void operator=( const TaskImp & ) = delete ;
-	void operator=( TaskImp && ) = delete ;
+	TaskImp & operator=( const TaskImp & ) = delete ;
+	TaskImp & operator=( TaskImp && ) = delete ;
 
 private:
 	void onTimeout() ;
