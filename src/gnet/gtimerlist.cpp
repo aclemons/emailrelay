@@ -230,16 +230,10 @@ void GNet::TimerList::doTimeouts()
 		[&now](const Value &value){ return value.m_timer != nullptr && value.m_timer->active() && value.m_timer->expired(now) ; } ) ;
 
 	std::sort( m_list.begin() , expired_end ,
-		[](const Value &a,const Value &b){ return G::TimerTime::less( a.m_timer->tref() , b.m_timer->tref() ) ; } ) ;
+		[](const Value &a,const Value &b){ return a.m_timer->tref() < b.m_timer->tref() ; } ) ;
 
-	for( List::iterator value_p = m_list.begin() ; value_p != expired_end ; ++value_p )
-	{
-		if( value_p->m_timer == m_soonest )
-		{
-			m_soonest = nullptr ;
-			break ;
-		}
-	}
+	if( expired_end != m_list.begin() )
+		m_soonest = nullptr ; // the soonest timer will in the expired list, so invalidate it
 
 	for( List::iterator value_p = m_list.begin() ; value_p != expired_end ; ++value_p )
 	{

@@ -97,8 +97,7 @@ public:
 	enum class ListItemType // A type enumeration for the list of event sources.
 	{
 		socket ,
-		simple ,
-		other
+		simple
 	} ;
 	struct ListItem /// A structure holding an event handle and its event handlers.
 	{
@@ -106,12 +105,6 @@ public:
 			m_type(fdd.fd()==INVALID_SOCKET?ListItemType::simple:ListItemType::socket) ,
 			m_socket(fdd.fd()) ,
 			m_handle(fdd.h())
-		{
-		}
-		explicit ListItem( HANDLE h ) :
-			m_type(ListItemType::other) ,
-			m_handle(h) ,
-			m_events(~0L)
 		{
 		}
 		Descriptor fd() const
@@ -164,7 +157,7 @@ GNet::EventLoopImp::EventLoopImp() :
 	m_quit(false)
 {
 	std::size_t threads = 0U ; // 0 => become multi-threaded automatically
-	m_handles = std::make_unique<EventLoopHandles>( m_list , threads ) ;
+	m_handles = std::make_unique<EventLoopHandles>() ;
 }
 
 GNet::EventLoopImp::~EventLoopImp()
@@ -224,10 +217,8 @@ void GNet::EventLoopImp::runOnce()
 		ListItem & list_item = m_list[list_index] ;
 		if( list_item.m_type == ListItemType::socket )
 			handleSocketEvent( list_index ) ;
-		else if( list_item.m_type == ListItemType::simple )
+		else // list_item.m_type == ListItemType::simple
 			handleSimpleEvent( list_item ) ;
-		else
-			handles.handleInternalEvent( list_index ) ;
 	}
 	else if( rc == RcType::message )
 	{

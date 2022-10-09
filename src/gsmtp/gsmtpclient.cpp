@@ -65,6 +65,7 @@ GNet::Client::Config GSmtp::Client::netConfig( const Config & smtp_config )
 			//.set_idle_timeout( 0U ) // not needed
 			.set_socket_protocol_config(
 				GNet::SocketProtocol::Config()
+					.set_client_tls_profile( smtp_config.client_tls_profile )
 					.set_secure_connection_timeout( smtp_config.secure_connection_timeout ) ) ;
 }
 

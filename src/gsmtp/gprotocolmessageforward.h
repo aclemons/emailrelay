@@ -59,7 +59,7 @@ public:
 		std::unique_ptr<ProtocolMessage> pm ,
 		const GSmtp::Client::Config & client_config ,
 		const GAuth::SaslClientSecrets & client_secrets ,
-		const std::string & remote_server_address ) ;
+		const std::string & forward_to , int forward_to_family ) ;
 			///< Constructor. The 'store' and 'client-secrets' references
 			///< are kept.
 

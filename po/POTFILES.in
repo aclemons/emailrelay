@@ -16,9 +16,11 @@
 ./src/main/serviceimp_none.cpp
 ./src/main/submit.cpp
 ./src/main/main.cpp
+./src/main/testrun.cpp
 ./src/main/configuration.cpp
 ./src/main/passwd.cpp
 ./src/main/news.cpp
+./src/main/submission.cpp
 ./src/main/start.cpp
 ./src/main/servicewrapper.cpp
 ./src/main/options.cpp

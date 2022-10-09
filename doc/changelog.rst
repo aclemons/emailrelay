@@ -13,7 +13,6 @@ E-MailRelay Change Log
 * Listening file descriptors can be inherited from the parent process (see *--interface*).
 * Exclusive listening port binding on Windows.
 * The Linux event loop uses *epoll* by default rather than *select*.
-* More simultaneous connections supported on Windows.
 * Fixed error handling for network client filters (\ *--client-filter=net:...*\ ) [bug-id #50].
 
 2.2 -> 2.3

@@ -24,7 +24,7 @@
 #include "gdef.h"
 #include "gfilestore.h"
 #include "genvelope.h"
-#include "gstrings.h"
+#include "gstringarray.h"
 #include "gnewmessage.h"
 #include "gexception.h"
 #include <fstream>
@@ -42,9 +42,7 @@ namespace GSmtp
 class GSmtp::NewFile : public NewMessage
 {
 public:
-	G_EXCEPTION( InvalidPath , tx("invalid path: must be absolute") ) ;
 	G_EXCEPTION( FileError , tx("message store error") ) ;
-	G_EXCEPTION( TooBig , tx("message too big") ) ;
 
 	NewFile( FileStore & store , const std::string & from , const std::string & from_auth_in ,
 		const std::string & from_auth_out , std::size_t max_size , bool test_for_eight_bit ) ;

@@ -239,7 +239,7 @@ protected:
 
 	void secureConnect() ;
 		///< Starts TLS/SSL client-side negotiation. Uses a profile
-		///< called "client"; see GSsl::Library::addProfile().
+		///< called "client" by default; see GSsl::Library::addProfile().
 		///< The callback GNet::SocketProtocolSink::onSecure() is
 		///< triggered when the secure session is established.
 

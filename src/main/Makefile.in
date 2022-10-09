@@ -137,12 +137,13 @@ am__objects_3 = serviceimp_win32.$(OBJEXT) \
 libmain_a_OBJECTS = $(am_libmain_a_OBJECTS)
 am__emailrelay_SOURCES_DIST = main.cpp commandline.h commandline.cpp \
 	configuration.h configuration.cpp legal.cpp legal.h output.cpp \
-	output.h run.cpp run.h winmain.cpp winapp.cpp winapp.h \
-	winform.cpp winform.h winmenu.cpp winmenu.h licence.cpp \
-	licence.h news.cpp news.h
+	output.h submission.cpp submission.h run.cpp run.h winmain.cpp \
+	winapp.cpp winapp.h winform.cpp winform.h winmenu.cpp \
+	winmenu.h licence.cpp licence.h news.cpp news.h
 am__objects_4 = main.$(OBJEXT)
 am__objects_5 = commandline.$(OBJEXT) configuration.$(OBJEXT) \
-	legal.$(OBJEXT) output.$(OBJEXT) run.$(OBJEXT)
+	legal.$(OBJEXT) output.$(OBJEXT) submission.$(OBJEXT) \
+	run.$(OBJEXT)
 am__objects_6 = winmain.$(OBJEXT) winapp.$(OBJEXT) winform.$(OBJEXT) \
 	winmenu.$(OBJEXT) licence.$(OBJEXT) news.$(OBJEXT)
 @GCONFIG_WINDOWS_FALSE@am_emailrelay_OBJECTS = $(am__objects_4) \
@@ -222,7 +223,8 @@ emailrelay_submit_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(emailrelay_submit_LDFLAGS) $(LDFLAGS) -o $@
 am__emailrelay_textmode_SOURCES_DIST = main.cpp commandline.h \
 	commandline.cpp configuration.h configuration.cpp legal.cpp \
-	legal.h output.cpp output.h run.cpp run.h
+	legal.h output.cpp output.h submission.cpp submission.h \
+	run.cpp run.h
 @GCONFIG_WINDOWS_TRUE@am_emailrelay_textmode_OBJECTS =  \
 @GCONFIG_WINDOWS_TRUE@	$(am__objects_4) $(am__objects_5)
 emailrelay_textmode_OBJECTS = $(am_emailrelay_textmode_OBJECTS)
@@ -262,9 +264,9 @@ am__depfiles_remade = ./$(DEPDIR)/commandline.Po \
 	./$(DEPDIR)/servicecontrol_win32.Po \
 	./$(DEPDIR)/serviceimp_none.Po ./$(DEPDIR)/serviceimp_win32.Po \
 	./$(DEPDIR)/servicewrapper.Po ./$(DEPDIR)/start.Po \
-	./$(DEPDIR)/submit.Po ./$(DEPDIR)/winapp.Po \
-	./$(DEPDIR)/winform.Po ./$(DEPDIR)/winmain.Po \
-	./$(DEPDIR)/winmenu.Po
+	./$(DEPDIR)/submission.Po ./$(DEPDIR)/submit.Po \
+	./$(DEPDIR)/winapp.Po ./$(DEPDIR)/winform.Po \
+	./$(DEPDIR)/winmain.Po ./$(DEPDIR)/winmenu.Po
 am__mv = mv -f
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -566,6 +568,8 @@ OTHER_SOURCES = \
 	legal.h \
 	output.cpp \
 	output.h \
+	submission.cpp \
+	submission.h \
 	run.cpp \
 	run.h
 
@@ -593,7 +597,9 @@ MISC_EXTRA_DIST = \
 	emailrelay-service.exe.manifest \
 	fakemc.c \
 	messages.mc \
-	resource.h
+	resource.h \
+	testrun.cpp \
+	testrun.h
 
 @GCONFIG_MAC_FALSE@MAC_PROGS = 
 @GCONFIG_MAC_TRUE@MAC_PROGS = emailrelay-start
@@ -894,6 +900,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/serviceimp_win32.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/servicewrapper.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/start.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/submission.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/submit.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/winapp.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/winform.Po@am__quote@ # am--include-marker
@@ -1159,6 +1166,7 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/serviceimp_win32.Po
 	-rm -f ./$(DEPDIR)/servicewrapper.Po
 	-rm -f ./$(DEPDIR)/start.Po
+	-rm -f ./$(DEPDIR)/submission.Po
 	-rm -f ./$(DEPDIR)/submit.Po
 	-rm -f ./$(DEPDIR)/winapp.Po
 	-rm -f ./$(DEPDIR)/winform.Po
@@ -1227,6 +1235,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/serviceimp_win32.Po
 	-rm -f ./$(DEPDIR)/servicewrapper.Po
 	-rm -f ./$(DEPDIR)/start.Po
+	-rm -f ./$(DEPDIR)/submission.Po
 	-rm -f ./$(DEPDIR)/submit.Po
 	-rm -f ./$(DEPDIR)/winapp.Po
 	-rm -f ./$(DEPDIR)/winform.Po
@@ -1301,6 +1310,10 @@ fakemc.exe: $(top_srcdir)/src/main/fakemc.c
 .PHONY: strip
 strip:
 	$(STRIP) $(sbin_PROGRAMS) $(e_libexec_PROGRAMS)
+
+.PHONY: map
+map:
+	$(CXXLD) -Xlinker -Map=emailrelay.map $(AM_CXXFLAGS) $(CXXFLAGS) $(emailrelay_LDFLAGS) $(LDFLAGS) -o /tmp/emailrelay.tmp $(emailrelay_OBJECTS) $(emailrelay_LDADD) $(LIBS)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

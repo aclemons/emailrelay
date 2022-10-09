@@ -199,6 +199,7 @@ void Main::Run::run()
 			.set_strip(!configuration().debug())
 			.set_use_syslog(configuration().useSyslog())
 			.set_allow_bad_syslog(!(m_has_gui&&configuration().logFile().empty()))
+			.set_umask( G::Process::Umask::Mode::Tighter )
 			.set_facility(configuration().syslogFacility()) ,
 		configuration().logFile().str() // stderr-replacement
 	) ;
@@ -362,6 +363,7 @@ void Main::Run::run()
 			*m_server_secrets ,
 			smtpServerConfig() ,
 			configuration().immediate() ? configuration().serverAddress() : std::string() ,
+			resolverFamily() ,
 			clientConfig() ) ;
 
 		m_smtp_server->eventSignal().connect( G::Slot::slot(*this,&Run::onServerEvent) ) ;

@@ -90,7 +90,7 @@ public:
 
 	Server( GNet::ExceptionSink es , MessageStore & store , FilterFactory & ,
 		const GAuth::SaslClientSecrets & client_secrets , const GAuth::SaslServerSecrets & server_secrets ,
-		const Config & server_config , const std::string & forward_to ,
+		const Config & server_config , const std::string & forward_to , int forward_to_family ,
 		const GSmtp::Client::Config & client_config ) ;
 			///< Constructor. Listens on the given port number using INET_ANY
 			///< if 'server_config.interfaces' is empty, or on specific
@@ -134,6 +134,7 @@ private:
 	const GAuth::SaslServerSecrets & m_server_secrets ;
 	std::string m_sasl_server_config ;
 	std::string m_forward_to ;
+	int m_forward_to_family ;
 	const GAuth::SaslClientSecrets & m_client_secrets ;
 	std::string m_sasl_client_config ;
 	G::Slot::Signal<const std::string&,const std::string&> m_event_signal ;

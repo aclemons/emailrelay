@@ -224,6 +224,8 @@ private:
 class G::TimerTime
 {
 public:
+	using time_point_type = std::chrono::time_point<std::chrono::steady_clock> ;
+
 	static TimerTime now() ;
 		///< Factory function for the current steady-clock time.
 
@@ -238,7 +240,7 @@ public:
 		///< Returns true if this time and the other time are the same,
 		///< at second resolution.
 
-	static constexpr bool less_noexcept = noexcept(std::chrono::time_point<std::chrono::steady_clock>() < std::chrono::time_point<std::chrono::steady_clock>()) ; // NOLINT bogus cert-err58-cpp
+	static constexpr bool less_noexcept = noexcept(time_point_type() < time_point_type()) ; // NOLINT bogus cert-err58-cpp
 
 	static bool less( const TimerTime & , const TimerTime & ) noexcept(less_noexcept) ;
 		///< Comparison operator.
@@ -278,7 +280,6 @@ public:
 
 private:
 	friend class G::DateTimeTest ;
-	using time_point_type = std::chrono::time_point<std::chrono::steady_clock> ;
 	using duration_type = time_point_type::duration ;
 	explicit TimerTime( time_point_type ) ;
 	static TimerTime test( int , int ) ;

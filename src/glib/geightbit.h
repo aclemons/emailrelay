@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -102,36 +102,44 @@ namespace G
 		}
 	}
 
+	/// \code
 	/// Returns true if the given data buffer contains a byte greater than 127.
 	/// An overload for an unsigned char buffer.
 	///
+	/// \endcode
 	inline bool eightbit( const unsigned char * p , std::size_t n )
 	{
 		namespace imp = EightBitImp ;
 		return imp::is8bit_faster( p , n ) ;
 	}
 
+	/// \code
 	/// Returns true if the given data buffer contains a character greater than 127.
 	/// An overload for a char buffer.
 	///
+	/// \endcode
 	inline bool eightbit( const char * p , std::size_t n )
 	{
 		namespace imp = EightBitImp ;
 		return imp::is8bit_faster( reinterpret_cast<const unsigned char *>(p) , n ) ;
 	}
 
+	/// \code
 	/// Returns true if the given data buffer contains a byte greater than 127.
 	/// An overload for an unsigned char buffer, with no optimisation.
 	///
+	/// \endcode
 	inline bool eightbit( const unsigned char * p , std::size_t n , int )
 	{
 		namespace imp = EightBitImp ;
 		return imp::is8bit_slow( p , n ) ;
 	}
 
+	/// \code
 	/// Returns true if the given data buffer contains a character greater than 127.
 	/// An overload for a char buffer, with no optimisation.
 	///
+	/// \endcode
 	inline bool eightbit( const char * p , std::size_t n , int )
 	{
 		namespace imp = EightBitImp ;

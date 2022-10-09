@@ -60,6 +60,11 @@ void GNet::ServerPeer::secureAccept()
 	m_sp.secureAccept() ;
 }
 
+bool GNet::ServerPeer::secureAcceptCapable() const
+{
+	return m_sp.secureAcceptCapable() ;
+}
+
 void GNet::ServerPeer::expect( std::size_t n )
 {
 	m_line_buffer.expect( n ) ;
@@ -172,6 +177,8 @@ std::string GNet::ServerPeer::exceptionSourceId() const
 	if( m_exception_source_id.empty() )
 	{
 		m_exception_source_id = peerAddress().hostPartString() ; // GNet::Connection
+		if( G::Test::enabled("log-full-address") )
+			m_exception_source_id = peerAddress().displayString() ;
 	}
 	return m_exception_source_id ;
 }

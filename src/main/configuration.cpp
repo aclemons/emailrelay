@@ -238,18 +238,22 @@ bool Main::Configuration::immediate() const
 
 bool Main::Configuration::doPolling() const
 {
-	return m_map.contains( "poll" ) && pollingTimeout() > 0U ;
+	return m_map.contains( "poll" ) ;
 }
 
-unsigned int Main::Configuration::pollingTimeout() const
+G::TimeInterval Main::Configuration::pollingTimeout() const
 {
-	return G::Str::toUInt( m_map.value( "poll" , "0" ) ) ;
+	std::string value = m_map.value( "poll" , "0" ) ;
+	if( G::Str::tailMatch(value,"ms"_sv) )
+		return G::TimeInterval( 0U , 1000U * G::Str::toUInt( G::Str::head(value,"ms"_sv) ) ) ;
+	else
+		return G::TimeInterval( G::Str::toUInt( value ) ) ;
 }
 
 bool Main::Configuration::pollingLog() const
 {
 	// dont log if polling very frequently
-	return doPolling() && pollingTimeout() > 60U ;
+	return doPolling() && pollingTimeout() > G::TimeInterval(60U) ;
 }
 
 bool Main::Configuration::forwardOnDisconnect() const
@@ -573,7 +577,7 @@ const char * Main::Configuration::semanticErrorImp( std::string & s ) const
 		return "" ;
 	}
 
-	if( m_map.contains("poll") && G::Str::toUInt(m_map.value("poll","0")) == 0U )
+	if( m_map.contains("poll") && pollingTimeout() == G::TimeInterval(0U) )
 	{
 		return txt("invalid --poll period: try --forward-on-disconnect") ;
 	}
@@ -689,6 +693,16 @@ const char * Main::Configuration::semanticErrorImp( std::string & s ) const
 			return txt("the --server-auth option cannot be used with --no-smtp") ;
 	}
 
+	if( m_map.contains("server-auth-config") && !m_map.contains("server-auth") )
+	{
+		return txt("--server-auth-config requires --server-auth") ;
+	}
+
+	if( m_map.contains("client-auth-config") && !m_map.contains("client-auth") )
+	{
+		return txt("--client-auth-config requires --client-auth") ;
+	}
+
 	const bool contains_log =
 		m_map.contains("log") ||
 		m_map.contains("as-server") || // => log
@@ -753,24 +767,10 @@ const char * Main::Configuration::semanticErrorImp( std::string & s ) const
 		return txt("the --client-tls-verify-name options requires --client-tls-verify") ;
 	}
 
-	if( m_map.contains("server-auth") && m_map.value("server-auth") == "/pam" &&
-		!( m_map.contains("server-tls" ) || m_map.contains("server-tls-connection") ) &&
-		!m_map.contains("server-tls-required") )
-	{
-		return txt("--server-auth using pam requires --server-tls or --server-tls-connection and --server-tls-required") ;
-	}
-
 	if( m_map.contains("server-tls-required") &&
 		!( m_map.contains("server-tls" ) || m_map.contains("server-tls-connection") ) )
 	{
 		return txt("--server-tls-required requires --server-tls or --server-tls-connection") ;
-	}
-
-	if( m_map.contains("pop-auth") && m_map.value("pop-auth") == "/pam" &&
-		!( m_map.contains("server-tls" ) || m_map.contains("server-tls-connection") ) &&
-		!m_map.contains("server-tls-required") )
-	{
-		return txt("--pop-auth using pam requires --server-tls or --server-tls-connection and --server-tls-required") ;
 	}
 
 	if( m_map.contains("interface") && m_map.value("interface").find("client=") != std::string::npos )
@@ -871,7 +871,7 @@ GSmtp::FactoryParser::Result Main::Configuration::specValue( const std::string &
 {
 	std::string value = m_map.value( option_name ) ;
 	return GSmtp::FactoryParser::parse( value , is_filter ,
-		daemon()?m_base_dir.str():std::string() , m_app_dir.str() , warnings_p ) ;
+		m_base_dir.str() , m_app_dir.str() , warnings_p ) ;
 }
 
 G::Path Main::Configuration::pathValue( const std::string & option_name ) const
@@ -911,8 +911,6 @@ bool Main::Configuration::pathlike( const std::string & option_name )
 		option_name == "log-file" ||
 		option_name == "spool-dir" ||
 		option_name == "pid-file" ||
-		option_name == "filter" ||
-		option_name == "client-filter" ||
 		option_name == "client-auth" ||
 		option_name == "server-tls-certificate" ||
 		option_name == "server-tls-verify" || // verifyType()
@@ -920,7 +918,6 @@ bool Main::Configuration::pathlike( const std::string & option_name )
 		option_name == "client-tls-verify" || // verifyType()
 		option_name == "pop-auth" ||
 		option_name == "server-auth" ||
-		option_name == "address-verifier" ||
 		false ;
 }
 #endif

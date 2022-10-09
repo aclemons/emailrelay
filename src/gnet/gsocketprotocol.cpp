@@ -61,7 +61,9 @@ public:
 	bool send( const Segments & , std::size_t ) ;
 	void shutdown() ;
 	void secureConnect() ;
+	bool secureConnectCapable() const ;
 	void secureAccept() ;
+	bool secureAcceptCapable() const ;
 	bool secure() const ;
 	bool raw() const ;
 	std::string peerCertificate() const ;
@@ -155,6 +157,8 @@ GNet::SocketProtocolImp::SocketProtocolImp( EventHandler & handler , ExceptionSi
 		m_read_buffer_n(0) ,
 		m_secure_connection_timer(*this,&SocketProtocolImp::onSecureConnectionTimeout,es)
 {
+	if( m_config.server_tls_profile.empty() ) m_config.server_tls_profile = "server" ;
+	if( m_config.client_tls_profile.empty() ) m_config.client_tls_profile = "client" ;
 }
 
 GNet::SocketProtocolImp::~SocketProtocolImp()
@@ -374,6 +378,11 @@ bool GNet::SocketProtocolImp::raw() const
 	return m_state == State::raw ;
 }
 
+bool GNet::SocketProtocolImp::secureConnectCapable() const
+{
+	return GSsl::Library::enabledAs( m_config.client_tls_profile ) ;
+}
+
 void GNet::SocketProtocolImp::secureConnect()
 {
 	G_DEBUG( "SocketProtocolImp::secureConnect" ) ;
@@ -383,7 +392,7 @@ void GNet::SocketProtocolImp::secureConnect()
 		throw SocketProtocol::ProtocolError() ;
 
 	rawReset() ;
-	m_ssl = newProtocol( "client" ) ;
+	m_ssl = newProtocol( m_config.client_tls_profile ) ;
 	m_state = State::connecting ;
 	if( m_config.secure_connection_timeout != 0U )
 		m_secure_connection_timer.startTimer( m_config.secure_connection_timeout ) ;
@@ -426,6 +435,11 @@ void GNet::SocketProtocolImp::secureConnectImp()
 	}
 }
 
+bool GNet::SocketProtocolImp::secureAcceptCapable() const
+{
+	return GSsl::Library::enabledAs( m_config.server_tls_profile ) ;
+}
+
 void GNet::SocketProtocolImp::secureAccept()
 {
 	G_DEBUG( "SocketProtocolImp::secureAccept" ) ;
@@ -435,7 +449,7 @@ void GNet::SocketProtocolImp::secureAccept()
 		throw SocketProtocol::ProtocolError() ;
 
 	rawReset() ;
-	m_ssl = newProtocol( "server" ) ;
+	m_ssl = newProtocol( m_config.server_tls_profile ) ;
 	m_state = State::accepting ;
 	secureAcceptImp() ;
 }
@@ -846,9 +860,9 @@ void GNet::SocketProtocol::shutdown()
 	m_imp->shutdown() ;
 }
 
-bool GNet::SocketProtocol::secureConnectCapable()
+bool GNet::SocketProtocol::secureConnectCapable() const
 {
-	return GSsl::Library::enabledAs( "client" ) ;
+	return m_imp->secureConnectCapable() ;
 }
 
 void GNet::SocketProtocol::secureConnect()
@@ -856,9 +870,9 @@ void GNet::SocketProtocol::secureConnect()
 	m_imp->secureConnect() ;
 }
 
-bool GNet::SocketProtocol::secureAcceptCapable()
+bool GNet::SocketProtocol::secureAcceptCapable() const
 {
-	return GSsl::Library::enabledAs( "server" ) ;
+	return m_imp->secureAcceptCapable() ;
 }
 
 void GNet::SocketProtocol::secureAccept()

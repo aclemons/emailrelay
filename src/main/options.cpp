@@ -423,10 +423,10 @@ G::Options Main::Options::spec( bool is_windows )
 				// Configures the SMTP client authentication module using a
 				// semicolon-separated list of configuration items. Each item is a
 				// single-character key, followed by a colon and then a comma-separated
-				// list. A 'm' character introduces an ordered list of authentication
-				// mechanisms, and an 'x' is used for blocklisted mechanisms. Use one
-				// 'm' list and one 'a' list for mechanisms to use before and after
-				// the activation of TLS.
+				// list. A 'm' character introduces an ordered list of preferred
+				// authentication mechanisms and an 'x' introduces a list of mechanisms
+				// to avoid. An 'a' list and a 'd' list can be used similarly to prefer
+				// and avoid certain mechanisms once the session is encrypted with TLS.
 
 		G::Options::add( opt , 'L' , "log-time" ,
 			tx("adds a timestamp to the logging output") , "" ,
@@ -475,13 +475,17 @@ G::Options Main::Options::spec( bool is_windows )
 			t_auth , t_smtpserver ) ;
 				//example: m:cram-sha256,cram-sha1
 				//example: x:plain,login
+				//example: m:;a:plain
 				// Configures the SMTP server authentication module using a
 				// semicolon-separated list of configuration items. Each item is a
 				// single-character key, followed by a colon and then a comma-separated
-				// list. A 'm' character introduces a preferred sub-set of the built-in
-				// authentication mechanisms, and an 'x' is used for blocklisted
-				// mechanisms. Use one 'm' list and one 'a' list for mechanisms to
-				// advertise before and after the activation of TLS.
+				// list. A 'm' character introduces an ordered list of allowed
+				// authentication mechanisms and an 'x' introduces a list of
+				// mechanisms to deny. An 'a' list and a 'd' list can be used similarly
+				// to allow and deny mechanisms once the session is encrypted with
+				// TLS. In typical usage you might have an empty allow list for an
+				// unencrypted session and a single preferred mechanism once
+				// encrypted, "m:;a:plain".
 
 		G::Options::add( opt , 'e' , "close-stderr" ,
 			tx("closes the standard error stream soon after start-up") , "" ,
@@ -588,8 +592,8 @@ G::Options Main::Options::spec( bool is_windows )
 			M::one , "host:port" , 30 ,
 			t_smtpclient ) ;
 				//example: smtp.example.com:25
-				// Specifies the transport address of the remote SMTP server that is used for
-				// mail message forwarding.
+				// Specifies the transport address of the remote SMTP server that
+				// spooled mail messages are forwarded to.
 
 		G::Options::add( opt , '\0' , "forward-to-some" ,
 			tx("allows forwarding to some addressees even if others are rejected") , "" ,
@@ -661,7 +665,7 @@ G::Options Main::Options::spec( bool is_windows )
 				// (eg. "ppp0-ipv4").
 				//
 				// To inherit listening file descriptors from the parent process on
-				// unix use a syntax like this: "--interface=smtp=fd#3,smtp=fd#4,pop=fd#5".
+				// unix use a syntax like this: --interface=smtp=fd#3,smtp=fd#4,pop=fd#5.
 
 		G::Options::add( opt , '6' , "client-interface" ,
 			tx("defines the local network address used for outgoing connections") , "" ,
@@ -682,6 +686,7 @@ G::Options Main::Options::spec( bool is_windows )
 				//example: C:/ProgramData/E-MailRelay/pid.txt
 				// Causes the process-id to be written into the specified file when the
 				// program starts up, typically after it has become a background daemon.
+				// The immediate parent directory is created if necessary.
 
 		G::Options::add( opt , 'O' , "poll" ,
 			tx("enables polling of the spool directory for messages to be forwarded with the specified period! "
@@ -732,13 +737,13 @@ G::Options Main::Options::spec( bool is_windows )
 				// client protocol adding "AUTH=" to the "MAIL" command.
 				// For finer control use a comma-separated list of things
 				// to anonymise: "vrfy", "server", "content" and/or "client",
-				// eg. "--anonymous=server,content".
+				// eg. --anonymous=server,content.
 
 		G::Options::add( opt , 'B' , "pop" ,
 			tx("enables the pop server") , "" ,
 			M::zero , "" , 30 ,
 			t_pop , t_smtpserver ) ;
-				// Enables the POP server listening, by default on port 110, providing
+				// Enables the POP server, listening by default on port 110, providing
 				// access to spooled mail messages. Negotiated TLS using the POP "STLS"
 				// command will be enabled if the --server-tls option is also given.
 
@@ -779,7 +784,7 @@ G::Options Main::Options::spec( bool is_windows )
 			t_pop , t_smtpserver ) ;
 				// Modifies the spool directory used by the POP server to be a
 				// sub-directory with the same name as the POP authentication user-id.
-				// This allows multiple POP clients to read the spooled messages
+				// This allows multiple POP clients to read the spooled mail messages
 				// without interfering with each other, particularly when also
 				// using --pop-no-delete. Content files can stay in the main spool
 				// directory with only the envelope files copied into user-specific

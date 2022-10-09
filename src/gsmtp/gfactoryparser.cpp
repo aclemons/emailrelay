@@ -41,7 +41,7 @@ GSmtp::FactoryParser::Result GSmtp::FactoryParser::parseImp( const std::string &
 	const G::Path & base_dir , const G::Path & app_dir , G::StringArray * warnings_p ,
 	bool allow_spam , bool allow_chain )
 {
-	G_DEBUG( "GSmtp::FactoryParser::parse: [" << spec << "]" ) ;
+	//G_DEBUG( "GSmtp::FactoryParser::parse: [" << spec << "]" ) ;
 	Result result ;
 	if( spec.empty() )
 	{
@@ -87,7 +87,7 @@ GSmtp::FactoryParser::Result GSmtp::FactoryParser::parseImp( const std::string &
 	}
 	normalise( result , base_dir , app_dir ) ;
 	check( result , is_filter , warnings_p ) ;
-	G_DEBUG( "GSmtp::FactoryParser::parse: [" << spec << "] -> [" << result.first << "],[" << result.second << "]" ) ;
+	//G_DEBUG( "GSmtp::FactoryParser::parse: [" << spec << "] -> [" << result.first << "],[" << result.second << "]" ) ;
 	return result ;
 }
 

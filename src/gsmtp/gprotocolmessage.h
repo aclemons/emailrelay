@@ -24,7 +24,7 @@
 #include "gdef.h"
 #include "gmessagestore.h"
 #include "gslot.h"
-#include "gstrings.h"
+#include "gstringarray.h"
 #include "gverifier.h"
 #include "gexception.h"
 #include <string>

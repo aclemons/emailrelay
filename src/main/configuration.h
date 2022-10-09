@@ -26,6 +26,7 @@
 #include "goptions.h"
 #include "goptionmap.h"
 #include "gfactoryparser.h"
+#include "gdatetime.h"
 #include "gpath.h"
 #include "gstrings.h"
 #include "glogoutput.h"
@@ -233,7 +234,7 @@ public:
 	bool pollingLog() const ;
 		///< Returns true if polling activity should be logged.
 
-	unsigned int pollingTimeout() const ;
+	G::TimeInterval pollingTimeout() const ;
 		///< Returns the timeout for periodic polling.
 
 	bool immediate() const ;

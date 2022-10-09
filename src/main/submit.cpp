@@ -61,8 +61,6 @@
 #include <memory>
 #include <cstdlib>
 
-G_EXCEPTION_CLASS( NoBody , tx("no body text") ) ;
-
 std::string versionNumber()
 {
 	return "2.4" ;
@@ -257,13 +255,20 @@ static void run( const G::Arg & arg )
 			layout.set_level_max( 3U ) ;
 		else
 			layout.set_level_max(1U).set_alt_usage() ;
+
 		G::OptionsUsage(opt.options()).output( layout , stream , arg.prefix() , " <to-address> [<to-address> ...]" ) ;
+		stream << "\n" ;
+
+		stream << "If message content is read from the terminal then use ^" << (G::is_windows()?"Z":"D") << " to finish.\n" ;
+
 		if( !opt.contains("verbose") )
-			stream << "\nFor complete usage information run \"emailrelay-submit --help --verbose\"" << std::endl ;
+		{
+			stream << "\n" "For more options use \"--help -v\".\n" ;
+		}
 		stream
-			<< std::endl
+			<< "\n"
 			<< Main::Legal::warranty("","\n")
-			<< std::endl
+			<< "\n"
 			<< Main::Legal::copyright()
 			<< std::endl ;
 	}
@@ -284,7 +289,7 @@ static void run( const G::Arg & arg )
 		bool opt_no_stdin = opt.contains( "no-stdin" ) ;
 		std::string opt_spool_dir = opt.value( "spool-dir" , GSmtp::MessageStore::defaultDirectory().str() ) ;
 		std::string opt_from = opt.value( "from" ) ;
-		G::StringArray opt_content = G::Str::splitIntoTokens( opt.value("content") , "," ) ;
+		G::StringArray opt_content = G::Str::splitIntoFields( opt.value("content") , ',' ) ;
 		bool opt_content_date = opt.contains( "content-date" ) ;
 		bool opt_content_from = opt.contains( "content-from" ) ;
 		bool opt_content_to = opt.contains( "content-to" ) ;

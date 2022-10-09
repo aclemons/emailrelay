@@ -25,6 +25,8 @@
 #include "gmultiserver.h"
 #include "gtimer.h"
 #include "gstr.h"
+#include "gstringarray.h"
+#include "gstringmap.h"
 #include "glinebuffer.h"
 #include "gsmtpserverprotocol.h"
 #include "gclientptr.h"

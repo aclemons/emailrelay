@@ -27,7 +27,7 @@
 #include "gsaslclient.h"
 #include "gsecrets.h"
 #include "gslot.h"
-#include "gstrings.h"
+#include "gstringarray.h"
 #include "gtimer.h"
 #include "gexception.h"
 #include <memory>

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2021 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -63,27 +63,33 @@ namespace G
 		}
 	}
 
+	/// \code
 	/// Returns a pointer inside the given buffer that is aligned for
 	/// values of type T.
 	///
+	/// \endcode
 	template <typename T>
 	inline void * align( const char * buffer , std::size_t buffer_size )
 	{
 		return AlignImp::align_imp<T>( buffer , buffer_size ) ;
 	}
 
+	/// \code
 	/// Returns a pointer inside the given unsigned-char buffer that
 	/// is aligned for values of type T.
 	///
+	/// \endcode
 	template <typename T>
 	inline void * align( const unsigned char * buffer , std::size_t buffer_size )
 	{
 		return AlignImp::align_imp<T>( buffer , buffer_size ) ;
 	}
 
+	/// \code
 	/// Divides the number of bytes in a range to give the number
 	/// of whole Ts.
 	///
+	/// \endcode
 	template <typename T>
 	inline
 	constexpr std::size_t align_shift( std::size_t n )
@@ -91,9 +97,11 @@ namespace G
 		return AlignImp::shift<T>( n ) ;
 	}
 
+	/// \code
 	/// Rounds down the number of bytes in a range to give a number of
 	/// bytes that will hold an exact number of Ts.
 	///
+	/// \endcode
 	template <typename T>
 	inline
 	constexpr std::size_t align_mask( std::size_t n )

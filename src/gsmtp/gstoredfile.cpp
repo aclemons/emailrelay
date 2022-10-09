@@ -384,15 +384,16 @@ std::string GSmtp::StoredFile::fromAuthOut() const
 
 // ==
 
+
 GSmtp::StoredFile::Stream::Stream() :
 	StreamBuf(&G::File::read,&G::File::write,&G::File::close),
 	std::istream(static_cast<StreamBuf*>(this))
 {
-	// (because on windows we want _O_NOINHERIT and _SH_DENYNO)
 }
 
 void GSmtp::StoredFile::Stream::open( const G::Path & path )
 {
+	// File::open() because we want _O_NOINHERIT and _SH_DENYNO on windows
 	int fd = G::File::open( path.cstr() , G::File::InOutAppend::In ) ;
 	if( fd >= 0 )
 	{

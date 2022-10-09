@@ -72,7 +72,7 @@
 # Name: forward-to
 # Format: forward-to <host:port>
 # Description: Specifies the transport address of the remote SMTP server that
-# is used for mail message forwarding.
+# spooled mail messages are forwarded to.
 #
 #forward-to smtp.example.com:25
 
@@ -175,9 +175,9 @@
 # Description: Disables the server's SMTP VRFY command, sends less verbose
 # SMTP greeting and responses, stops "Received" lines being added to mail
 # message content files, and stops the SMTP client protocol adding "AUTH=" to
-# the "MAIL" command.  For finer control use a comma-separated list of things
-# to anonymise: "vrfy", "server", "content" and/or "client",  eg.
-# ""--anonymous"=server,content".
+# the "MAIL" command. For finer control use a comma-separated list of things
+# to anonymise: "vrfy", "server", "content" and/or "client", eg.
+# "--anonymous"=server,content.
 #
 #anonymous
 
@@ -234,7 +234,7 @@
 # "-ipv6" suffix only their IPv4 or IPv6 addresses will be used (eg.
 # "ppp0-ipv4").  To inherit listening file descriptors from the parent
 # process on unix use a syntax like this:
-# ""--interface"=smtp=fd#3,smtp=fd#4,pop=fd#5".
+# "--interface"=smtp=fd#3,smtp=fd#4,pop=fd#5.
 #
 #interface 127.0.0.1,smtp=eth0
 
@@ -258,7 +258,7 @@
 
 # Name: pop
 # Format: pop
-# Description: Enables the POP server listening, by default on port 110,
+# Description: Enables the POP server, listening by default on port 110,
 # providing access to spooled mail messages. Negotiated TLS using the POP
 # "STLS" command will be enabled if the "--server-tls" option is also given.
 #
@@ -268,7 +268,7 @@
 # Format: pop-by-name
 # Description: Modifies the spool directory used by the POP server to be a
 # sub-directory with the same name as the POP authentication user-id. This
-# allows multiple POP clients to read the spooled messages without
+# allows multiple POP clients to read the spooled mail messages without
 # interfering with each other, particularly when also using
 # "--pop-no-delete". Content files can stay in the main spool directory with
 # only the envelope files copied into user-specific sub-directories. The
@@ -331,9 +331,10 @@
 # Description: Configures the SMTP client authentication module using a
 # semicolon-separated list of configuration items. Each item is a
 # single-character key, followed by a colon and then a comma-separated list.
-# A 'm' character introduces an ordered list of authentication mechanisms,
-# and an 'x' is used for blocklisted mechanisms. Use one 'm' list and one 'a'
-# list for mechanisms to use before and after the activation of TLS.
+# A 'm' character introduces an ordered list of preferred authentication
+# mechanisms and an 'x' introduces a list of mechanisms to avoid. An 'a' list
+# and a 'd' list can be used similarly to prefer and avoid certain mechanisms
+# once the session is encrypted with TLS.
 #
 #client-auth-config m:cram-sha1,cram-md5
 
@@ -355,10 +356,12 @@
 # Description: Configures the SMTP server authentication module using a
 # semicolon-separated list of configuration items. Each item is a
 # single-character key, followed by a colon and then a comma-separated list.
-# A 'm' character introduces a preferred sub-set of the built-in
-# authentication mechanisms, and an 'x' is used for blocklisted mechanisms.
-# Use one 'm' list and one 'a' list for mechanisms to advertise before and
-# after the activation of TLS.
+# A 'm' character introduces an ordered list of allowed authentication
+# mechanisms and an 'x' introduces a list of mechanisms to deny. An 'a' list
+# and a 'd' list can be used similarly to allow and deny mechanisms once the
+# session is encrypted with TLS. In typical usage you might have an empty
+# allow list for an unencrypted session and a single preferred mechanism once
+# encrypted, "m:;a:plain".
 #
 #server-auth-config m:cram-sha256,cram-sha1
 
@@ -535,7 +538,7 @@
 # Format: pid-file <path>
 # Description: Causes the process-id to be written into the specified file
 # when the program starts up, typically after it has become a background
-# daemon.
+# daemon. The immediate parent directory is created if necessary.
 #
 #pid-file /run/emailrelay/emailrelay.pid
 

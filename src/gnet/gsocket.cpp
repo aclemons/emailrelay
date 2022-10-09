@@ -315,7 +315,7 @@ void GNet::Socket::listen()
 	if( listen_queue <= 0 )
 		listen_queue = G::limits::net_listen_queue ;
 
-	int rc = ::listen( fd() , std::max(1,m_config.listen_queue) ) ;
+	int rc = ::listen( fd() , std::max(1,listen_queue) ) ;
 	if( error(rc) )
 	{
 		saveReason() ;

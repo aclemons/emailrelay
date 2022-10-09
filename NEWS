@@ -15,3 +15,12 @@ The "--anonyous" option has changed slightly in v2.4 so that it will now force
 the AUTH parameter on the MAIL command to be "AUTH=<>". Replace "--anonymous"
 with "--anonymous=vrfy,server,content" to keep the same behaviour as before.
 
+The "emailrelay-submit" utility's "--content" option no longer suppresses
+reading of the standard input stream; there is a new "--no-stdin" option
+instead. A dot on its own does not terminate the input any more, so use ^D or
+^Z to stop reading from the terminal. Header-only content with no body text is
+now permitted.
+
+Authentication using PAM no longer insists on TLS encryption because the
+"--server-auth-config" option can be used to disable password authentication
+over an unencypted connection.

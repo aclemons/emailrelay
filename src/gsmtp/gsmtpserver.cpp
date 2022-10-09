@@ -210,7 +210,7 @@ void GSmtp::ServerPeer::onCheckTimeout()
 
 GSmtp::Server::Server( GNet::ExceptionSink es , MessageStore & store , FilterFactory & ff ,
 	const GAuth::SaslClientSecrets & client_secrets , const GAuth::SaslServerSecrets & server_secrets ,
-	const Config & server_config , const std::string & forward_to ,
+	const Config & server_config , const std::string & forward_to , int forward_to_family ,
 	const GSmtp::Client::Config & client_config ) :
 		GNet::MultiServer(es,server_config.interfaces,server_config.port,"smtp",server_config.server_peer_config,server_config.server_config) ,
 		m_store(store) ,
@@ -219,6 +219,7 @@ GSmtp::Server::Server( GNet::ExceptionSink es , MessageStore & store , FilterFac
 		m_client_config(client_config) ,
 		m_server_secrets(server_secrets) ,
 		m_forward_to(forward_to) ,
+		m_forward_to_family(forward_to_family) ,
 		m_client_secrets(client_secrets)
 {
 }
@@ -293,7 +294,7 @@ std::unique_ptr<GSmtp::ProtocolMessage> GSmtp::Server::newProtocolMessageForward
 {
 	// wrap the given 'store' object in a 'forward' one
 	return std::make_unique<ProtocolMessageForward>( es , m_store , m_ff , std::move(pm) , m_client_config ,
-		m_client_secrets , m_forward_to ) ; // up-cast
+		m_client_secrets , m_forward_to , m_forward_to_family ) ; // up-cast
 }
 
 std::unique_ptr<GSmtp::ProtocolMessage> GSmtp::Server::newProtocolMessage( GNet::ExceptionSink es )

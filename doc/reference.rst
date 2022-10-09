@@ -56,8 +56,8 @@ The *emailrelay* program supports the following command-line usage:
 
 *   --forward-to \<host:port\> (-o)
 
-    Specifies the transport address of the remote SMTP server that is used for
-    mail message forwarding.
+    Specifies the transport address of the remote SMTP server that spooled mail
+    messages are forwarded to.
 
 *   --poll \<period\> (-O)
 
@@ -130,9 +130,9 @@ The *emailrelay* program supports the following command-line usage:
     Disables the server's SMTP VRFY command, sends less verbose SMTP greeting and
     responses, stops *Received* lines being added to mail message content
     files, and stops the SMTP client protocol adding *AUTH=* to the *MAIL*
-    command.  For finer control use a comma-separated list of things to
-    anonymise: *vrfy*, *server*, *content* and/or *client*,  eg.
-    \ **\ --anonymous\ *=server,content*\ .
+    command. For finer control use a comma-separated list of things to
+    anonymise: *vrfy*, *server*, *content* and/or *client*, eg.
+    \ *--anonymous*\ =server,content.
 
 *   --dnsbl \<config\>
 
@@ -178,7 +178,7 @@ The *emailrelay* program supports the following command-line usage:
     listening. When an interface name is decorated with a *-ipv4* or *-ipv6*
     suffix only their IPv4 or IPv6 addresses will be used (eg. *ppp0-ipv4*).
     To inherit listening file descriptors from the parent process on unix use a
-    syntax like this: **--interface\ *=smtp=fd#3,smtp=fd#4,pop=fd#5*\ .
+    syntax like this: *--interface*=smtp=fd#3,smtp=fd#4,pop=fd#5.
 
 *   --prompt-timeout \<time\> (-w)
 
@@ -193,7 +193,7 @@ The *emailrelay* program supports the following command-line usage:
 
 *   --pop (-B)
 
-    Enables the POP server listening, by default on port 110, providing access to
+    Enables the POP server, listening by default on port 110, providing access to
     spooled mail messages. Negotiated TLS_ using the POP *STLS* command will be
     enabled if the *--server-tls* option is also given.
 
@@ -201,7 +201,7 @@ The *emailrelay* program supports the following command-line usage:
 
     Modifies the spool directory used by the POP server to be a sub-directory
     with the same name as the POP authentication user-id. This allows multiple
-    POP clients to read the spooled messages without interfering with each
+    POP clients to read the spooled mail messages without interfering with each
     other, particularly when also using *--pop-no-delete*. Content files can
     stay in the main spool directory with only the envelope files copied into
     user-specific sub-directories. The *emailrelay-filter-copy* program is a
@@ -246,9 +246,10 @@ The *emailrelay* program supports the following command-line usage:
     Configures the SMTP client authentication module using a semicolon-separated
     list of configuration items. Each item is a single-character key, followed
     by a colon and then a comma-separated list. A 'm' character introduces an
-    ordered list of authentication mechanisms, and an 'x' is used for
-    blocklisted mechanisms. Use one 'm' list and one 'a' list for mechanisms to
-    use before and after the activation of TLS.
+    ordered list of preferred authentication mechanisms and an 'x' introduces a
+    list of mechanisms to avoid. An 'a' list and a 'd' list can be used
+    similarly to prefer and avoid certain mechanisms once the session is
+    encrypted with TLS.
 
 *   --server-auth \<file\> (-S)
 
@@ -265,10 +266,12 @@ The *emailrelay* program supports the following command-line usage:
 
     Configures the SMTP server authentication module using a semicolon-separated
     list of configuration items. Each item is a single-character key, followed
-    by a colon and then a comma-separated list. A 'm' character introduces a
-    preferred sub-set of the built-in authentication mechanisms, and an 'x' is
-    used for blocklisted mechanisms. Use one 'm' list and one 'a' list for
-    mechanisms to advertise before and after the activation of TLS.
+    by a colon and then a comma-separated list. A 'm' character introduces an
+    ordered list of allowed authentication mechanisms and an 'x' introduces a
+    list of mechanisms to deny. An 'a' list and a 'd' list can be used
+    similarly to allow and deny mechanisms once the session is encrypted with
+    TLS. In typical usage you might have an empty allow list for an unencrypted
+    session and a single preferred mechanism once encrypted, *m:;a:plain*.
 
 *   --pop-auth \<file\> (-F)
 
@@ -396,7 +399,8 @@ The *emailrelay* program supports the following command-line usage:
 *   --pid-file \<path\> (-i)
 
     Causes the process-id to be written into the specified file when the program
-    starts up, typically after it has become a background daemon.
+    starts up, typically after it has become a background daemon. The immediate
+    parent directory is created if necessary.
 
 *   --user \<username\> (-u)
 
@@ -851,17 +855,13 @@ like the following:
 ::
 
     auth requisite pam_unix.so nullok_secure
-    session required pam_permit.so
-    account required pam_permit.so
-    password required pam_deny.so
 
 With this configuration the E-MailRelay server will use normal unix system
 account names and passwords to authenticate remote clients. On some systems
 this will require special permissioning to allow the E-MailRelay server to
-read the shadow password database.
-
-When using PAM authentication E-MailRelay requires that remote clients
-establish an encrypted session using TLS before authentication can proceed.
+read the shadow password database, so run the server as *root* and also add the
+*--user=root* command-line option to make sure that the process's effective
+user-id stays as *root* while it accesses the PAM system.
 
 IP addresses
 ============
@@ -1233,7 +1233,7 @@ The following are some security issues that have been taken into consideration:
     variables (*PATH* and *IFS*), and with no open file descriptors other than
     *stdin* and *stderr* open onto */dev/null*, and *stdout* open onto a pipe.
 
-    The program runs for most of the time with a *umask* of 177, switching to 117
+    The program runs for most of the time with a *umask* of 077, switching to 007
     when creating spool files.
 
     By default connections will be rejected if they come from remote machines.

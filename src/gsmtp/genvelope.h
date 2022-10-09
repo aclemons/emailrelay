@@ -22,7 +22,7 @@
 #define G_SMTP_ENVELOPE_H
 
 #include "gdef.h"
-#include "gstrings.h"
+#include "gstringarray.h"
 #include "gexception.h"
 #include <iostream>
 

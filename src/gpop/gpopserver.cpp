@@ -69,7 +69,7 @@ void GPop::ServerPeer::onSendComplete()
 bool GPop::ServerPeer::securityEnabled() const
 {
 	// require a tls server certificate -- see GSsl::Library::addProfile()
-	bool enabled = GNet::SocketProtocol::secureAcceptCapable() ;
+	bool enabled = secureAcceptCapable() ;
 	G_DEBUG( "ServerPeer::securityEnabled: tls library " << (enabled?"enabled":"disabled") ) ;
 	return enabled ;
 }

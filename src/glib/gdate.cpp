@@ -25,12 +25,13 @@
 #include "gassert.h"
 #include <ctime>
 
-int G::Date::yearUpperLimit()
+int G::Date::yearUpperLimit() noexcept
 {
-	return 2035 ; // see mktime()
+	//return 2035 ; // see mktime()
+	return 9999 ;
 }
 
-int G::Date::yearLowerLimit()
+int G::Date::yearLowerLimit() noexcept
 {
 	return 1970 ; // see mktime()
 }
@@ -38,26 +39,41 @@ int G::Date::yearLowerLimit()
 G::Date::Date()
 {
 	init( SystemTime::now().utc() ) ;
+	//check() ;
 }
 
 G::Date::Date( SystemTime t )
 {
 	init( t.utc() ) ;
+	//check() ;
 }
 
 G::Date::Date( SystemTime t , const LocalTime & )
 {
 	init( t.local() ) ;
+	//check() ;
 }
 
 G::Date::Date( const BrokenDownTime & tm )
 {
 	init( tm ) ;
+	//check() ;
 }
 
 G::Date::Date( const LocalTime & )
 {
 	init( SystemTime::now().local() ) ;
+	//check() ;
+}
+
+G::Date::Date( int year , Date::Month month , int day_of_month , std::nothrow_t ) noexcept :
+	m_day(day_of_month) ,
+	m_month(static_cast<int>(month)) ,
+	m_year(year)
+{
+	m_day = std::max( 1 , std::min(m_day,31) ) ;
+	m_month = std::max( 1 , std::min(m_month,12) ) ;
+	m_year = std::max( yearLowerLimit() , std::min(m_year,yearUpperLimit()) ) ;
 }
 
 G::Date::Date( int year , Date::Month month , int day_of_month ) :
@@ -65,12 +81,7 @@ G::Date::Date( int year , Date::Month month , int day_of_month ) :
 	m_month(static_cast<int>(month)) ,
 	m_year(year)
 {
-	G_ASSERT( year >= yearLowerLimit() ) ;
-	G_ASSERT( year <= yearUpperLimit() ) ;
-	G_ASSERT( day_of_month > 0 ) ;
-	G_ASSERT( day_of_month < 32 ) ;
-	G_ASSERT( static_cast<int>(month) >= 1 ) ;
-	G_ASSERT( static_cast<int>(month) <= 12 ) ;
+	check() ;
 }
 
 void G::Date::init( const BrokenDownTime & tm )
@@ -78,6 +89,19 @@ void G::Date::init( const BrokenDownTime & tm )
 	m_year = tm.year() ;
 	m_month = tm.month() ;
 	m_day = tm.day() ;
+}
+
+void G::Date::check()
+{
+	bool ok =
+		m_year >= yearLowerLimit() &&
+		m_year <= yearUpperLimit() &&
+		m_month >= 1 &&
+		m_month <= 12 &&
+		m_day >= 1 &&
+		m_day <= 31 ;
+	if( !ok )
+		throw DateError( "out of range" ) ;
 }
 
 std::string G::Date::str( Format format ) const
@@ -109,12 +133,17 @@ int G::Date::monthday() const
 
 std::string G::Date::dd() const
 {
-	return std::string(1U,'0').append(Str::fromInt(m_day)).substr(0U,2U) ;
+	return Str::fromInt(std::min(99,std::max(0,m_day))+100).substr(1U) ;
 }
 
 std::string G::Date::mm() const
 {
-	return std::string(1U,'0').append(Str::fromInt(m_month)).substr(0U,2U) ;
+	return Str::fromInt(std::min(99,std::max(0,m_month))+100).substr(1U) ;
+}
+
+std::string G::Date::yyyy() const
+{
+	return Str::fromInt(std::min(9999,std::max(0,m_year))+10000).substr(1U) ;
 }
 
 G::Date::Weekday G::Date::weekday() const
@@ -169,11 +198,6 @@ std::string G::Date::monthName( bool brief ) const
 int G::Date::year() const
 {
 	return m_year ;
-}
-
-std::string G::Date::yyyy() const
-{
-	return std::string(3U,'0').append(Str::fromInt(m_year)).substr(0U,4U) ;
 }
 
 G::Date G::Date::next() const

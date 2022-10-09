@@ -24,7 +24,7 @@
 #include "gdef.h"
 #include "gexception.h"
 #include "gslot.h"
-#include "gstrings.h"
+#include "gstringarray.h"
 #include "gpath.h"
 #include <memory>
 

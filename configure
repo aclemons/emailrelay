@@ -7439,6 +7439,54 @@ $as_echo "#define GCONFIG_HAVE_UDS 0" >>confdefs.h
 
 	fi
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for unix domain sockets" >&5
+$as_echo_n "checking for unix domain sockets... " >&6; }
+if ${gconfig_cv_uds_len+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+			#include <sys/types.h>
+			#include <sys/socket.h>
+			#include <sys/un.h>
+			struct sockaddr_un a ;
+
+int
+main ()
+{
+
+			a.sun_len = 2U ;
+			a.sun_family = AF_UNIX | PF_UNIX ;
+			a.sun_path[0] = '\0' ;
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  gconfig_cv_uds_len=yes
+else
+  gconfig_cv_uds_len=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $gconfig_cv_uds_len" >&5
+$as_echo "$gconfig_cv_uds_len" >&6; }
+	if test "$gconfig_cv_uds_len" = "yes"
+	then
+
+$as_echo "#define GCONFIG_HAVE_UDS_LEN 1" >>confdefs.h
+
+	else
+
+$as_echo "#define GCONFIG_HAVE_UDS_LEN 0" >>confdefs.h
+
+	fi
+
+
 
 
 
@@ -8099,6 +8147,7 @@ main ()
 {
 
 			errno_t e = _sopen_s(&fd,"foo",_O_WRONLY,_SH_DENYNO,_S_IWRITE) ;
+			if( e ) return 1 ;
 
   ;
   return 0;
@@ -9624,11 +9673,7 @@ if test "${with_gettext+set}" = set; then :
 fi
 
 
-	if test "$with_gettext" = "no"
-	then
-		gconfig_cv_gettext="no"
-	:
-	elif test "$with_gettext" = "yes"
+	if test "$with_gettext" = "yes"
 	then
 		if test "$gconfig_cv_gettext" = "no"
 		then
@@ -9636,6 +9681,8 @@ fi
 $as_echo "$as_me: WARNING: forcing use of gettext even though not detected" >&2;}
 			gconfig_cv_gettext="yes"
 		fi
+	else
+		gconfig_cv_gettext="no"
 	fi
 
 	if test "$gconfig_cv_gettext" = "yes" ; then
@@ -9746,7 +9793,7 @@ fi
 		GCONFIG_TLS_LIBS=""
 	fi
 
-	if test "$gconfig_ssl_use_none" = "yes" -a "$with_openssl" != "no"
+	if test "$gconfig_ssl_use_none" = "yes"
 	then
 		gconfig_warnings="$gconfig_warnings openssl/mbedtls_transport_layer_security"
 	fi

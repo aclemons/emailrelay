@@ -228,6 +228,9 @@
 /* Define true to use unix domain sockets */
 #undef GCONFIG_HAVE_UDS
 
+/* Define true if sockaddr_un has a sun_len field */
+#undef GCONFIG_HAVE_UDS_LEN
+
 /* Define true if uid_t is a type */
 #undef GCONFIG_HAVE_UID_T
 

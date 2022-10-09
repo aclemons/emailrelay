@@ -43,6 +43,8 @@ namespace GNet
 		{
 			#if GCONFIG_HAVE_UDS_LEN
 			a.sun_len = SUN_LEN( &a ) ; // ie. poffset() + strlen(sun_path)
+			#else
+			GDEF_IGNORE_PARAM( a ) ;
 			#endif
 		}
 		static constexpr std::size_t psize()

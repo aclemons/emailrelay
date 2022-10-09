@@ -35,7 +35,7 @@
 #include "gsocket.h"
 #include "gslot.h"
 #include "gtimer.h"
-#include "gstrings.h"
+#include "gstringarray.h"
 #include "gexception.h"
 #include <memory>
 #include <iostream>
@@ -65,6 +65,7 @@ public:
 		unsigned int secure_connection_timeout{0U} ;
 		bool secure_tunnel{false} ;
 		std::string sasl_client_config ;
+		std::string client_tls_profile ;
 
 		Config() ;
 		Config & set_stream_socket_config( const GNet::StreamSocket::Config & ) ;
@@ -77,6 +78,7 @@ public:
 		Config & set_secure_connection_timeout( unsigned int ) ;
 		Config & set_secure_tunnel( bool = true ) ;
 		Config & set_sasl_client_config( const std::string & ) ;
+		Config & set_client_tls_profile( const std::string & ) ;
 	} ;
 
 	Client( GNet::ExceptionSink , FilterFactory & , const GNet::Location & remote ,
@@ -167,5 +169,6 @@ inline GSmtp::Client::Config & GSmtp::Client::Config::set_connection_timeout( un
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_secure_connection_timeout( unsigned int t ) { secure_connection_timeout = t ; return *this ; }
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_secure_tunnel( bool b ) { secure_tunnel = b ; return *this ; }
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_sasl_client_config( const std::string & s ) { sasl_client_config = s ; return *this ; }
+inline GSmtp::Client::Config & GSmtp::Client::Config::set_client_tls_profile( const std::string & s ) { client_tls_profile = s ; return *this ; }
 
 #endif

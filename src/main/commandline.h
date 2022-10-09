@@ -58,6 +58,9 @@ public:
 	const std::vector<G::Option> & options() const ;
 		///< Exposes the command-line options.
 
+	G::StringArray usageErrors() const ;
+		///< Returns the usage error list.
+
 	std::size_t argc() const ;
 		///< Returns the number of non-option arguments on the command line.
 

@@ -91,7 +91,7 @@ GSmtp::ServerProtocol::ServerProtocol( Sender & sender ,
 	m_fsm( Event::eAuth , State::sIdle , State::sAuth , &ServerProtocol::doAuth , State::sIdle ) ;
 	m_fsm( Event::eAuthData, State::sAuth , State::sAuth , &ServerProtocol::doAuthData , State::sIdle ) ;
 
-	if( m_config.tls_starttls && GNet::SocketProtocol::secureAcceptCapable() )
+	if( m_config.tls_starttls )
 	{
 		m_with_starttls = true ;
 		m_fsm( Event::eStartTls , State::sIdle , State::sStartingTls , &ServerProtocol::doStartTls , State::sIdle ) ;

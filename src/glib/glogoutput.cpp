@@ -244,6 +244,7 @@ void G::LogOutput::open( const std::string & path , bool do_throw )
 	{
 		int fd = -1 ;
 		{
+			Process::Umask set_umask( m_config.m_umask ) ;
 			Root claim_root ;
 			fd = File::open( path.c_str() , File::InOutAppend::Append ) ;
 			if( fd < 0 && do_throw )
@@ -474,6 +475,12 @@ G::LogOutput::Config & G::LogOutput::Config::set_allow_bad_syslog( bool value )
 G::LogOutput::Config & G::LogOutput::Config::set_facility( SyslogFacility facility )
 {
 	m_facility = facility ;
+	return *this ;
+}
+
+G::LogOutput::Config & G::LogOutput::Config::set_umask( Process::Umask::Mode umask )
+{
+	m_umask = umask ;
 	return *this ;
 }
 

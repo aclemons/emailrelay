@@ -24,6 +24,7 @@
 #include "gdef.h"
 #include "glog.h"
 #include "glogstream.h"
+#include "gprocess.h"
 #include "gexception.h"
 #include "gstringview.h"
 #include <string>
@@ -86,6 +87,7 @@ public:
 		bool m_use_syslog{false} ;
 		bool m_allow_bad_syslog{false} ;
 		SyslogFacility m_facility{SyslogFacility::User} ;
+		Process::Umask::Mode m_umask{Process::Umask::Mode::NoChange} ;
 		Config() ;
 		Config & set_output_enabled( bool value = true ) ;
 		Config & set_summary_info( bool value = true ) ;
@@ -99,6 +101,7 @@ public:
 		Config & set_use_syslog( bool value = true ) ;
 		Config & set_allow_bad_syslog( bool value = true ) ;
 		Config & set_facility( SyslogFacility ) ;
+		Config & set_umask( Process::Umask::Mode ) ;
 	} ;
 
 	LogOutput( const std::string & exename , const Config & config ,

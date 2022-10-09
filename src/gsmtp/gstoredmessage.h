@@ -23,7 +23,7 @@
 
 #include "gdef.h"
 #include "gmessagestore.h"
-#include "gstrings.h"
+#include "gstringarray.h"
 #include "gpath.h"
 #include <iostream>
 #include <fstream>

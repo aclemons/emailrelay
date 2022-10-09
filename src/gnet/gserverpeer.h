@@ -137,9 +137,12 @@ protected:
 
 	void secureAccept() ;
 		///< Waits for the peer to start a secure session. Uses a
-		///< profile called "server"; see GSsl::Library::addProfile().
+		///< profile called "server" by default; see GSsl::Library::addProfile().
 		///< The callback GNet::SocketProtocolSink::onSecure() is
 		///< triggered when the secure session is established.
+
+	bool secureAcceptCapable() const ;
+		///< Returns true if secureAccept() is usable.
 
 	StreamSocket & socket() ;
 		///< Returns a reference to the client-server connection

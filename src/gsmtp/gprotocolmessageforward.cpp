@@ -29,12 +29,12 @@
 
 GSmtp::ProtocolMessageForward::ProtocolMessageForward( GNet::ExceptionSink es ,
 	MessageStore & store , FilterFactory & ff , std::unique_ptr<ProtocolMessage> pm ,
-	const GSmtp::Client::Config & client_config ,
-	const GAuth::SaslClientSecrets & client_secrets , const std::string & server ) :
+	const GSmtp::Client::Config & client_config , const GAuth::SaslClientSecrets & client_secrets ,
+	const std::string & forward_to , int forward_to_family ) :
 		m_es(es) ,
 		m_store(store) ,
 		m_ff(ff) ,
-		m_client_location(server) ,
+		m_client_location(forward_to,forward_to_family) ,
 		m_client_config(client_config) ,
 		m_client_secrets(client_secrets) ,
 		m_pm(pm.release()) ,

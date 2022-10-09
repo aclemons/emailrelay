@@ -102,6 +102,11 @@ std::size_t Main::CommandLine::argc() const
 	return m_getopt.args().c() ;
 }
 
+G::StringArray Main::CommandLine::usageErrors() const
+{
+	return m_getopt.errorList() ;
+}
+
 bool Main::CommandLine::hasUsageErrors() const
 {
 	return m_getopt.hasErrors() ;

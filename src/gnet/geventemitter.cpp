@@ -59,7 +59,7 @@ void GNet::EventEmitter::raiseEvent( void (EventHandler::*method)() , Descriptor
 {
 	// see also: std::make_exception_ptr, std::rethrow_exception
 
-	EventLoggingContext set_logging_context( m_handler && m_es.set() ? m_es.esrc() : nullptr ) ;
+	EventLoggingContext set_logging_context( m_es.esrc() ) ;
 	m_es_saved = m_es ; // in case the fd gets closed and re-opened when calling the event handler
 	try
 	{

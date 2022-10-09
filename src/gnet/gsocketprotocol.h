@@ -70,8 +70,12 @@ public:
 	{
 		std::size_t read_buffer_size {G::limits::net_buffer} ;
 		unsigned int secure_connection_timeout {0U} ;
+		std::string server_tls_profile ;
+		std::string client_tls_profile ;
 		Config & set_read_buffer_size( std::size_t n ) { read_buffer_size = n ; return *this ; }
 		Config & set_secure_connection_timeout( unsigned int t ) { secure_connection_timeout = t ; return *this ; }
+		Config & set_server_tls_profile( const std::string & s ) { server_tls_profile = s ; return *this ; }
+		Config & set_client_tls_profile( const std::string & s ) { client_tls_profile = s ; return *this ; }
 	} ;
 
 	SocketProtocol( EventHandler & , ExceptionSink , Sink & ,
@@ -127,7 +131,7 @@ public:
 		///< Initiates a TLS-close if secure, together with a
 		///< Socket::shutdown(1).
 
-	static bool secureConnectCapable() ;
+	bool secureConnectCapable() const ;
 		///< Returns true if the implementation supports TLS/SSL and a
 		///< "client" profile has been configured. See also GSsl::enabledAs().
 
@@ -135,7 +139,7 @@ public:
 		///< Initiates the TLS/SSL handshake, acting as a client.
 		///< Any send() data blocked by flow control is discarded.
 
-	static bool secureAcceptCapable() ;
+	bool secureAcceptCapable() const ;
 		///< Returns true if the implementation supports TLS/SSL and a
 		///< "server" profile has been configured. See also GSsl::enabledAs().
 
