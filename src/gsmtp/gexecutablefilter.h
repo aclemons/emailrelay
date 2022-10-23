@@ -43,7 +43,8 @@ class GSmtp::ExecutableFilter : public Filter, private GNet::TaskCallback
 {
 public:
 	ExecutableFilter( GNet::ExceptionSink , FileStore & , bool server_side ,
-		const std::string & path , unsigned int timeout ) ;
+		const std::string & path , unsigned int timeout ,
+		const std::string & log_prefix ) ;
 			///< Constructor.
 
 	~ExecutableFilter() override ;

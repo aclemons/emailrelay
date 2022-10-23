@@ -281,7 +281,7 @@ std::unique_ptr<GSmtp::ServerProtocol::Text> GSmtp::Server::newProtocolText( boo
 
 std::unique_ptr<GSmtp::Filter> GSmtp::Server::newFilter( GNet::ExceptionSink es ) const
 {
-	return m_ff.newFilter( es , true , m_server_config.filter_spec , m_server_config.filter_timeout ) ;
+	return m_ff.newFilter( es , true , m_server_config.filter_spec , m_server_config.filter_timeout , {} ) ;
 }
 
 std::unique_ptr<GSmtp::ProtocolMessage> GSmtp::Server::newProtocolMessageStore( std::unique_ptr<Filter> filter )

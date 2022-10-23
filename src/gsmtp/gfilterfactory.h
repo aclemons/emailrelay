@@ -45,7 +45,7 @@ class GSmtp::FilterFactory
 public:
 	virtual std::unique_ptr<Filter> newFilter( GNet::ExceptionSink ,
 		bool server_side , const FactoryParser::Result & spec ,
-		unsigned int timeout ) = 0 ;
+		unsigned int timeout , const std::string & log_prefix ) = 0 ;
 			///< Returns a Filter on the heap. Throws if an
 			///< invalid or unsupported specification.
 
@@ -67,7 +67,7 @@ public:
 
 	std::unique_ptr<Filter> newFilter( GNet::ExceptionSink ,
 		bool server_side , const FactoryParser::Result & spec ,
-		unsigned int timeout ) override ;
+		unsigned int timeout , const std::string & log_prefix ) override ;
 			///< Override from FilterFactory.
 
 private:

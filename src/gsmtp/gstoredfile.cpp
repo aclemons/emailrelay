@@ -382,6 +382,16 @@ std::string GSmtp::StoredFile::fromAuthOut() const
 	return m_env.m_from_auth_out ;
 }
 
+std::string GSmtp::StoredFile::forwardTo() const
+{
+	return m_env.m_forward_to ;
+}
+
+std::string GSmtp::StoredFile::forwardToAddress() const
+{
+	return m_env.m_forward_to_address ;
+}
+
 // ==
 
 

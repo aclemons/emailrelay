@@ -30,10 +30,11 @@
 #include <tuple>
 
 GSmtp::ExecutableFilter::ExecutableFilter( GNet::ExceptionSink es , FileStore & file_store ,
-	bool server_side , const std::string & path , unsigned int timeout ) :
+	bool server_side , const std::string & path , unsigned int timeout ,
+	const std::string & log_prefix ) :
 		m_file_store(file_store) ,
 		m_server_side(server_side) ,
-		m_prefix(server_side?"filter":"client filter") ,
+		m_prefix(log_prefix.empty()?std::string(server_side?"filter":"client filter"):log_prefix) ,
 		m_exit(0,server_side) ,
 		m_path(path) ,
 		m_timeout(timeout) ,

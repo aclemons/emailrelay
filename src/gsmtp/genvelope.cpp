@@ -38,6 +38,8 @@ namespace GSmtp
 		void readFrom( std::istream & , Envelope & ) ;
 		void readFromAuthIn( std::istream & , Envelope & ) ;
 		void readFromAuthOut( std::istream & , Envelope & ) ;
+		void readForwardTo( std::istream & , Envelope & ) ;
+		void readForwardToAddress( std::istream & , Envelope & ) ;
 		void readToList( std::istream & , Envelope & ) ;
 		void readAuthentication( std::istream & , Envelope & ) ;
 		void readClientSocketAddress( std::istream & , Envelope & ) ;
@@ -76,6 +78,8 @@ std::size_t GSmtp::Envelope::write( std::ostream & stream , const GSmtp::Envelop
 	stream << x << "ClientCertificate: " << imp::folded(e.m_client_certificate) << crlf ;
 	stream << x << "MailFromAuthIn: " << imp::xnormalise(e.m_from_auth_in) << crlf ;
 	stream << x << "MailFromAuthOut: " << imp::xnormalise(e.m_from_auth_out) << crlf ;
+	stream << x << "ForwardTo: " << imp::xnormalise(e.m_forward_to) << crlf ;
+	stream << x << "ForwardToAddress: " << e.m_forward_to_address << crlf ;
 	stream << x << "End: 1" << crlf ;
 	stream.flush() ;
 	return stream.fail() ? std::size_t(0U) : static_cast<std::size_t>( stream.tellp() - pos ) ;
@@ -114,8 +118,16 @@ void GSmtp::Envelope::read( std::istream & stream , GSmtp::Envelope & e )
 		imp::readClientCertificate( stream , e ) ;
 		imp::readFromAuthIn( stream , e ) ;
 		imp::readFromAuthOut( stream , e ) ;
+		imp::readForwardTo( stream , e ) ; // 2.4
+		imp::readForwardToAddress( stream , e ) ; // 2.4
 	}
 	else if( format == GSmtp::FileStore::format(-1) )
+	{
+		imp::readClientCertificate( stream , e ) ;
+		imp::readFromAuthIn( stream , e ) ;
+		imp::readFromAuthOut( stream , e ) ;
+	}
+	else if( format == GSmtp::FileStore::format(-2) )
 	{
 		imp::readClientSocketName( stream , e ) ;
 		imp::readClientCertificate( stream , e ) ;
@@ -180,6 +192,16 @@ void GSmtp::EnvelopeImp::readFromAuthOut( std::istream & stream , Envelope & e )
 	e.m_from_auth_out = readValue( stream , "MailFromAuthOut" ) ;
 	if( !e.m_from_auth_out.empty() && e.m_from_auth_out != "+" && !G::Xtext::valid(e.m_from_auth_out) )
 		throw Envelope::ReadError( "invalid mail-from-auth-out encoding" ) ;
+}
+
+void GSmtp::EnvelopeImp::readForwardTo( std::istream & stream , Envelope & e )
+{
+	e.m_forward_to = readValue( stream , "ForwardTo" ) ;
+}
+
+void GSmtp::EnvelopeImp::readForwardToAddress( std::istream & stream , Envelope & e )
+{
+	e.m_forward_to_address = readValue( stream , "ForwardToAddress" ) ;
 }
 
 void GSmtp::EnvelopeImp::readToList( std::istream & stream , Envelope & e )

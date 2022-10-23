@@ -8,7 +8,8 @@ emailrelay (2.4) unstable; urgency=low
   * Exclusive listening port binding on Windows.
   * The Linux event loop uses "epoll" by default rather than "select".
   * Fixed error handling for network client filters ("--client-filter=net:...") [bug-id #50].
- -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Sun,  9 Oct 2022 00:00:00 +0000
+  * Experimental support for routing (see NEWS).
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Sun, 23 Oct 2022 00:00:00 +0000
 
 emailrelay (2.3) unstable; urgency=low
   * Unix domain sockets supported (eg. "--interface=/tmp/smtp.s").

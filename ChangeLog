@@ -12,6 +12,7 @@ E-MailRelay Change Log
 * Exclusive listening port binding on Windows.
 * The Linux event loop uses "epoll" by default rather than "select".
 * Fixed error handling for network client filters ("--client-filter=net:...") [bug-id #50].
+* Experimental support for routing (see NEWS).
 
 2.2 -> 2.3
 ----------

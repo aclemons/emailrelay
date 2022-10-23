@@ -87,6 +87,8 @@ private: // overrides
 	std::string authentication() const override ; // Override from GSmtp::StoredMessage.
 	std::string fromAuthIn() const override ; // Override from GSmtp::StoredMessage.
 	std::string fromAuthOut() const override ; // Override from GSmtp::StoredMessage.
+	std::string forwardTo() const override ; // Override from GSmtp::StoredMessage.
+	std::string forwardToAddress() const override ; // Override from GSmtp::StoredMessage.
 	void close() override ; // Override from GSmtp::StoredMessage.
 	std::string reopen() override ; // Override from GSmtp::StoredMessage.
 	void destroy() override ; // Override from GSmtp::StoredMessage.

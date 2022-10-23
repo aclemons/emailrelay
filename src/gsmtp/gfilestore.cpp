@@ -134,12 +134,14 @@ std::string GSmtp::FileStore::x()
 std::string GSmtp::FileStore::format( int generation )
 {
 	// use a weird prefix to help with file(1) and magic(5)
-	if( generation == -2 )
+	if( generation == -3 )
 		return "#2821.3" ; // original
-	else if( generation == -1 )
+	else if( generation == -2 )
 		return "#2821.4" ; // new for 1.9
-	else
+	else if( generation == -1 )
 		return "#2821.5" ; // new for 2.0
+	else
+		return "#2821.6" ; // new for 2.4
 }
 
 bool GSmtp::FileStore::knownFormat( const std::string & format_in )
@@ -147,7 +149,8 @@ bool GSmtp::FileStore::knownFormat( const std::string & format_in )
 	return
 		format_in == format(0) ||
 		format_in == format(-1) ||
-		format_in == format(-2) ;
+		format_in == format(-2) ||
+		format_in == format(-3) ;
 }
 
 void GSmtp::FileStore::checkPath( const G::Path & directory_path )

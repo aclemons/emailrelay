@@ -27,7 +27,8 @@
 #include <algorithm>
 
 GSmtp::FilterChain::FilterChain( GNet::ExceptionSink es , FilterFactory & ff ,
-	bool server_side , const FactoryParser::Result & spec , unsigned int timeout ) :
+	bool server_side , const FactoryParser::Result & spec , unsigned int timeout ,
+	const std::string & log_prefix ) :
 		m_filter_index(0U) ,
 		m_filter(nullptr) ,
 		m_running(false) ,
@@ -35,16 +36,17 @@ GSmtp::FilterChain::FilterChain( GNet::ExceptionSink es , FilterFactory & ff ,
 {
 	G_ASSERT( spec.first == "chain" ) ;
 	for( G::StringToken t( spec.second , ","_sv ) ; t ; ++t )
-		add( es , ff , server_side , FactoryParser::parse(t(),true) , timeout ) ;
+		add( es , ff , server_side , FactoryParser::parse(t(),true) , timeout , log_prefix ) ;
 
 	if( m_filters.empty() )
-		add( es , ff , server_side , {"exit","0"} , timeout ) ;
+		add( es , ff , server_side , {"exit","0"} , timeout , log_prefix ) ;
 }
 
 void GSmtp::FilterChain::add( GNet::ExceptionSink es , FilterFactory & ff ,
-	bool server_side , const FactoryParser::Result & spec , unsigned int timeout )
+	bool server_side , const FactoryParser::Result & spec , unsigned int timeout ,
+	const std::string & log_prefix )
 {
-	m_filters.push_back( ff.newFilter( es , server_side , spec , timeout ) ) ;
+	m_filters.push_back( ff.newFilter( es , server_side , spec , timeout , log_prefix ) ) ;
 	m_filter_id.append(m_filter_id.empty()?0U:1U,',').append( m_filters.back()->id() ) ;
 }
 

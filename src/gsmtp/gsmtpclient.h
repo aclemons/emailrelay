@@ -26,6 +26,7 @@
 #include "gsecrets.h"
 #include "glinebuffer.h"
 #include "gclient.h"
+#include "gclientptr.h"
 #include "gsmtpclientprotocol.h"
 #include "gmessagestore.h"
 #include "gstoredmessage.h"
@@ -66,6 +67,7 @@ public:
 		bool secure_tunnel{false} ;
 		std::string sasl_client_config ;
 		std::string client_tls_profile ;
+		bool with_routing{true} ;
 
 		Config() ;
 		Config & set_stream_socket_config( const GNet::StreamSocket::Config & ) ;
@@ -79,10 +81,11 @@ public:
 		Config & set_secure_tunnel( bool = true ) ;
 		Config & set_sasl_client_config( const std::string & ) ;
 		Config & set_client_tls_profile( const std::string & ) ;
+		Config & set_with_routing( bool = true ) ;
 	} ;
 
 	Client( GNet::ExceptionSink , FilterFactory & , const GNet::Location & remote ,
-		const GAuth::SaslClientSecrets & client_secrets , const Config & config ) ;
+		const GAuth::SaslClientSecrets & secrets , const Config & config ) ;
 			///< Constructor. Starts connecting immediately.
 			///<
 			///< Use sendMessagesFrom() once, or use sendMessage()
@@ -121,7 +124,7 @@ public:
 		///< has completed or failed.
 
 private: // overrides
-	void onConnect() override ; // Override from GNet::SimpleClient.
+	void onConnect() override ; // Override from GNet::Client.
 	bool onReceive( const char * , std::size_t , std::size_t , std::size_t , char ) override ; // Override from GNet::Client.
 	void onDelete( const std::string & ) override ; // Override from GNet::HeapClient.
 	void onSendComplete() override ; // Override from GNet::BufferedClient.
@@ -146,15 +149,23 @@ private:
 	void startSending() ;
 	void quitAndFinish() ;
 	static GNet::Client::Config netConfig( const Config & smtp_config ) ;
+	void sendMessage( std::shared_ptr<StoredMessage> message ) ;
+	void routingFilterDone( int ) ;
+	void routedMessageDone( const std::string & ) ;
 
 private:
-	MessageStore * m_store ;
+	GNet::ExceptionSink m_es ;
+	FilterFactory & m_ff ;
 	G::CallStack m_stack ;
+	Config m_config ;
+	const GAuth::SaslClientSecrets & m_secrets ;
+	MessageStore * m_store ;
 	std::unique_ptr<Filter> m_filter ;
+	std::unique_ptr<Filter> m_routing_filter ;
+	GNet::ClientPtr<Client> m_routing_client ;
 	std::shared_ptr<StoredMessage> m_message ;
 	std::shared_ptr<MessageStore::Iterator> m_iter ;
 	ClientProtocol m_protocol ;
-	bool m_secure_tunnel ;
 	G::Slot::Signal<const std::string&> m_message_done_signal ;
 	unsigned int m_message_count ;
 } ;
@@ -170,5 +181,6 @@ inline GSmtp::Client::Config & GSmtp::Client::Config::set_secure_connection_time
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_secure_tunnel( bool b ) { secure_tunnel = b ; return *this ; }
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_sasl_client_config( const std::string & s ) { sasl_client_config = s ; return *this ; }
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_client_tls_profile( const std::string & s ) { client_tls_profile = s ; return *this ; }
+inline GSmtp::Client::Config & GSmtp::Client::Config::set_with_routing( bool b ) { with_routing = b ; return *this ; }
 
 #endif

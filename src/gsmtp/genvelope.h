@@ -69,6 +69,8 @@ public:
 	std::string m_client_certificate ;
 	std::string m_from_auth_in ;
 	std::string m_from_auth_out ;
+	std::string m_forward_to ;
+	std::string m_forward_to_address ;
 	std::size_t m_endpos{0U} ;
 } ;
 

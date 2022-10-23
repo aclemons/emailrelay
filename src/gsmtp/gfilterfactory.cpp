@@ -36,12 +36,13 @@ GSmtp::FilterFactoryFileStore::FilterFactoryFileStore( FileStore & file_store ) 
 }
 
 std::unique_ptr<GSmtp::Filter> GSmtp::FilterFactoryFileStore::newFilter( GNet::ExceptionSink es ,
-	bool server_side , const FactoryParser::Result & spec , unsigned int timeout )
+	bool server_side , const FactoryParser::Result & spec , unsigned int timeout ,
+	const std::string & log_prefix )
 {
 	if( spec.first == "chain" )
 	{
 		// (one level of recursion -- FilterChain::ctor calls newFilter())
-		return std::make_unique<FilterChain>( es , *this , server_side , spec , timeout ) ;
+		return std::make_unique<FilterChain>( es , *this , server_side , spec , timeout , log_prefix ) ;
 	}
 	else if( spec.first == "spam" )
 	{
@@ -62,7 +63,7 @@ std::unique_ptr<GSmtp::Filter> GSmtp::FilterFactoryFileStore::newFilter( GNet::E
 	}
 	else if( spec.first == "file" )
 	{
-		return std::make_unique<ExecutableFilter>( es , m_file_store , server_side , spec.second , timeout ) ;
+		return std::make_unique<ExecutableFilter>( es , m_file_store , server_side , spec.second , timeout , log_prefix ) ;
 	}
 	else
 	{

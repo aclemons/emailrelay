@@ -1,11 +1,7 @@
 News
 ----
-The v2.4 release concentrates on low-level code, so there is no new SMTP
-functionality and performance characteristics might be different.
-
-Low-level changes include a rework of the event-loops so the Unix event loop
-defaults to an epoll() implementation and the Windows event loop now supports
-many more simultaneous connections.
+Low-level changes include a rework of the event-loops. The Unix event loop
+defaults to an epoll() implementation.
 
 The i18n of the main server (not the gui) has been extended somewhat by marking
 for translation the text of most C++ exceptions. This is only relevant if
@@ -24,3 +20,19 @@ now permitted.
 Authentication using PAM no longer insists on TLS encryption because the
 "--server-auth-config" option can be used to disable password authentication
 over an unencypted connection.
+
+Experimental support for routing is included. The envelope files have two new
+fields: ForwardTo and ForwardToAddress. The intent is that a filter script can
+examine the message content and deposit the appropriate domain name and port
+number in the ForwardTo field. If the SMTP client sees a ForwardTo value then it
+runs the client-filter early, before initiating a connection, allowing the
+client filter to do a DNS MX lookup of the ForwardTo value and deposit the
+address into the ForwardToAddress field. If the SMTP client sees a
+ForwardToAddress it will initiate a connection to that address to send the
+message. The client-filter is run a second time in the normal way once the SMTP
+session has been established.
+
+The current implementation is limited in that a connection to the main
+"--forward-to" address will always be made even if all the messages are routed
+elsewhere, and a routed connection will carry only one message before it is torn
+down.

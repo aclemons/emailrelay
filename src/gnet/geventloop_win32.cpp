@@ -156,7 +156,6 @@ GNet::EventLoopImp::EventLoopImp() :
 	m_dirty(true) ,
 	m_quit(false)
 {
-	std::size_t threads = 0U ; // 0 => become multi-threaded automatically
 	m_handles = std::make_unique<EventLoopHandles>() ;
 }
 
@@ -203,7 +202,7 @@ void GNet::EventLoopImp::runOnce()
 	if( handles.overflow( m_list.size() ) )
 		throw Overflow( handles.help(m_list,false) ) ;
 
-	auto rc = handles.waitForMultipleObjects( ms() ) ;
+	auto rc = handles.wait( ms() ) ;
 
 	if( rc == RcType::timeout )
 	{
@@ -211,13 +210,13 @@ void GNet::EventLoopImp::runOnce()
 	}
 	else if( rc == RcType::event )
 	{
-		// rc indicates left-most event -- move it to the rhs to avoid starvation
+		// let the handles object shuffle our list
 		std::size_t list_index = handles.shuffle( m_list , rc ) ;
 
 		ListItem & list_item = m_list[list_index] ;
 		if( list_item.m_type == ListItemType::socket )
 			handleSocketEvent( list_index ) ;
-		else // list_item.m_type == ListItemType::simple
+		else
 			handleSimpleEvent( list_item ) ;
 	}
 	else if( rc == RcType::message )
@@ -237,12 +236,15 @@ void GNet::EventLoopImp::runOnce()
 			G::Str::fromUInt(static_cast<unsigned int>(e)) ) ;
 	}
 
-	bool updated = m_dirty ;
+	// garbage collection
+	bool updated = m_dirty ; // m_list updated as a result of event handling
 	if( m_dirty )
 	{
 		m_list.erase( std::remove_if(m_list.begin(),m_list.end(),&EventLoopImp::isInvalid) , m_list.end() ) ;
 		m_dirty = false ;
 	}
+
+	// let the handles object see the new, garbage-collected list
 	handles.update( m_list , updated , rc ) ;
 }
 
