@@ -131,10 +131,13 @@ G::fbuf<T,N>::fbuf( T file , G::fbuf<T,N>::read_fn_t read , G::fbuf<T,N>::write_
 	open( file ) ;
 }
 
-template <typename T,int N>
-G::fbuf<T,N>::~fbuf()
+namespace G
 {
-	close() ;
+	template <typename T,int N>
+	fbuf<T,N>::~fbuf()
+	{
+		close() ;
+	}
 }
 
 template <typename T,int N>

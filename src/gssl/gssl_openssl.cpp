@@ -40,10 +40,6 @@
 #include <algorithm>
 #include <memory>
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-#error "openssl is too old"
-#endif
-
 GSsl::OpenSSL::LibraryImp::LibraryImp( G::StringArray & library_config , Library::LogFn log_fn , bool verbose ) :
 	m_log_fn(log_fn) ,
 	m_verbose(verbose) ,
@@ -168,6 +164,9 @@ GSsl::OpenSSL::DigesterImp::DigesterImp( const std::string & hash_type , const s
 	m_evp_ctx(nullptr)
 {
 	bool have_state = !state.empty() ;
+	m_state_size = 0U ;
+
+	#if GCONFIG_HAVE_OPENSSL_HASH_FUNCTIONS
 	if( hash_type == "MD5" && ( have_state || need_state ) )
 	{
 		m_hash_type = Type::Md5 ;
@@ -198,8 +197,13 @@ GSsl::OpenSSL::DigesterImp::DigesterImp( const std::string & hash_type , const s
 		m_value_size = 32U ;
 		m_state_size = m_value_size + 4U ;
 	}
-	else
+	#endif
+
+	if( m_state_size == 0U )
 	{
+		if( have_state || need_state )
+			throw Error( std::string("hash state resoration not implemented for ").append(hash_type) ) ;
+
 		m_hash_type = Type::Other ;
 		m_evp_ctx = EVP_MD_CTX_create() ;
 
@@ -209,10 +213,6 @@ GSsl::OpenSSL::DigesterImp::DigesterImp( const std::string & hash_type , const s
 
 		m_block_size = static_cast<std::size_t>( EVP_MD_block_size(md) ) ;
 		m_value_size = static_cast<std::size_t>( EVP_MD_size(md) ) ;
-		m_state_size = 0U ; // intermediate state not available
-
-		if( m_state_size == 0U && !state.empty() )
-			throw Error( std::string("hash state resoration not implemented for ").append(hash_type) ) ;
 
 		EVP_DigestInit_ex( m_evp_ctx , md , nullptr ) ;
 	}
@@ -241,18 +241,20 @@ std::size_t GSsl::OpenSSL::DigesterImp::statesize() const
 
 std::string GSsl::OpenSSL::DigesterImp::state()
 {
+	#if GCONFIG_HAVE_OPENSSL_HASH_FUNCTIONS
 	if( m_hash_type == Type::Md5 )
 		return G::HashState<16,MD5_LONG,MD5_LONG>::encode( m_md5.Nh , m_md5.Nl , m_md5.A , m_md5.B , m_md5.C , m_md5.D ) ;
 	else if( m_hash_type == Type::Sha1 )
 		return G::HashState<20,SHA_LONG,SHA_LONG>::encode( m_sha1.Nh , m_sha1.Nl , m_sha1.h0 , m_sha1.h1 , m_sha1.h2 , m_sha1.h3 , m_sha1.h4 ) ;
 	else if( m_hash_type == Type::Sha256 )
 		return G::HashState<32,SHA_LONG,SHA_LONG>::encode( m_sha256.Nh , m_sha256.Nl , m_sha256.h ) ;
-	else
-		return std::string() ; // not available
+	#endif
+	return std::string() ; // not available
 }
 
 void GSsl::OpenSSL::DigesterImp::add( G::string_view data )
 {
+	#if GCONFIG_HAVE_OPENSSL_HASH_FUNCTIONS
 	if( m_hash_type == Type::Md5 )
 		MD5_Update( &m_md5 , data.data() , data.size() ) ;
 	else if( m_hash_type == Type::Sha1 )
@@ -261,12 +263,16 @@ void GSsl::OpenSSL::DigesterImp::add( G::string_view data )
 		SHA256_Update( &m_sha256 , data.data() , data.size() ) ;
 	else
 		EVP_DigestUpdate( m_evp_ctx , data.data() , data.size() ) ;
+	#else
+		EVP_DigestUpdate( m_evp_ctx , data.data() , data.size() ) ;
+	#endif
 }
 
 std::string GSsl::OpenSSL::DigesterImp::value()
 {
 	std::vector<unsigned char> output ;
 	std::size_t n = 0U ;
+	#if GCONFIG_HAVE_OPENSSL_HASH_FUNCTIONS
 	if( m_hash_type == Type::Md5 )
 	{
 		n = MD5_DIGEST_LENGTH ;
@@ -285,7 +291,8 @@ std::string GSsl::OpenSSL::DigesterImp::value()
 		output.resize( n ) ;
 		SHA256_Final( &output[0] , &m_sha256 ) ;
 	}
-	else
+	#endif
+	if( n == 0U )
 	{
 		unsigned int output_size = 0 ;
 		output.resize( EVP_MAX_MD_SIZE ) ;
@@ -579,12 +586,6 @@ void GSsl::OpenSSL::ProtocolImp::set( int fd )
 		int rc = SSL_set_fd( m_ssl.get() , fd ) ;
 		if( rc == 0 )
 			throw Error( "SSL_set_fd" , ERR_get_error() ) ;
-
-		if( G::Test::enabled("log-openssl-bio") ) // log bio activity directly to stderr
-		{
-			BIO_set_callback( SSL_get_rbio(m_ssl.get()) , BIO_debug_callback ) ;
-			BIO_set_callback( SSL_get_wbio(m_ssl.get()) , BIO_debug_callback ) ;
-		}
 
 		m_fd_set = true ;
 	}

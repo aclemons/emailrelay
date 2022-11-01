@@ -202,7 +202,7 @@ void GNet::EventLoopImp::runOnce()
 	if( handles.overflow( m_list.size() ) )
 		throw Overflow( handles.help(m_list,false) ) ;
 
-	auto rc = handles.wait( ms() ) ;
+	auto rc = handles.waitForMultipleObjects( ms() ) ;
 
 	if( rc == RcType::timeout )
 	{

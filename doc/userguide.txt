@@ -27,9 +27,9 @@ General Public License V3.
 
 What it's not
 -------------
-E-MailRelay does not do routing of individual messages; it is not a routing MTA.
-It forwards all e-mail messages to a pre-configured SMTP server, regardless of
-any message addressing or DNS redirects.
+E-MailRelay does not normally do routing of individual messages; it is not a
+routing MTA. It forwards all e-mail messages to a pre-configured SMTP server,
+regardless of any message addressing or DNS redirects.
 
 Why use it?
 -----------

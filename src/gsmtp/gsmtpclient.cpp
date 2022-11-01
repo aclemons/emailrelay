@@ -169,7 +169,11 @@ void GSmtp::Client::start()
 	// basic routing if forward-to is defined in the envelope
 	if( m_config.with_routing && !message()->forwardTo().empty() )
 	{
-		if( !m_routing_filter->simple() ) message()->close() ;
+		if( !m_routing_filter->simple() )
+		{
+			G_LOG( "GSmtp::Client::filterStart: routing filter start: [" << m_filter->id() << "]" << " [" << message()->location() << "]" ) ;
+			message()->close() ;
+		}
 		m_routing_filter->start( message()->id() ) ;
 		return ;
 	}
@@ -204,7 +208,7 @@ void GSmtp::Client::filterStart()
 {
 	if( !m_filter->simple() )
 	{
-		G_LOG( "GSmtp::Client::filterStart: client filter: [" << m_filter->id() << "]" ) ;
+		G_LOG( "GSmtp::Client::filterStart: client filter start: [" << m_filter->id() << "]" << " [" << message()->location() << "]" ) ;
 		message()->close() ; // allow external editing
 	}
 	m_filter->start( message()->id() ) ;

@@ -1137,6 +1137,30 @@ and "Cc" message recipients.
 An E-MailRelay "--filter" script can be used to reject messages with incorrect
 "Bcc:" headers, and an example script is included.
 
+Routing
+-------
+E-MailRelay does not normally do any routing of e-mail messages; they are
+all forwarded to a fixed "smarthost" address given by the "--forward-to" or
+"--as-client" command-line options.
+
+However, each message envelope file contains a "ForwardToAddress" field that
+can be populated by filter scripts in order to route the message to some other
+server.
+
+If the "ForwardTo" field has any non-empty value then E-MailRelay runs its
+client filter early to allow the client filter script to set or update the
+"ForwardToAddress" before the outgoing connection is made. (The client filter is
+run a second time as normal once the connection is made and the SMTP session has
+been established.)
+
+Typically a "--filter" script would be used to examine the message content and
+populate the "ForwardTo" field, then a "--client-filter" script would use
+the "ForwardTo" value to populate the "ForwardToAddress" field with an up-to-date
+forwarding address.
+
+Note that a successful connection to the smarthost is required even if a message
+is routed elsewhere.
+
 Files and directories
 ---------------------
 On Unix-like systems E-MailRelay installs by default under "/usr/local", but

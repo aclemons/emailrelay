@@ -199,10 +199,13 @@ GNet::ClientPtr<T>::ClientPtr( T * p ) :
 		connectSignals( *m_p ) ;
 }
 
-template <typename T>
-GNet::ClientPtr<T>::~ClientPtr()
+namespace GNet
 {
-	delete release() ;
+	template <typename T>
+	ClientPtr<T>::~ClientPtr()
+	{
+		delete release() ;
+	}
 }
 
 template <typename T>

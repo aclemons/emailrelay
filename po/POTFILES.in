@@ -20,7 +20,6 @@
 ./src/main/configuration.cpp
 ./src/main/passwd.cpp
 ./src/main/news.cpp
-./src/main/submission.cpp
 ./src/main/start.cpp
 ./src/main/servicewrapper.cpp
 ./src/main/options.cpp

@@ -119,7 +119,7 @@ sub adminPort { return shift->{m_admin_port} }
 sub scannerAddress { return shift->{m_scanner_address} }
 sub set_scannerAddress { $_[0]->{m_scanner_address} = $_[1] }
 sub verifierPort { return shift->{m_verifier_port} }
-sub verifierAddress { return "net:$System::localhost:" . shift->{m_verifier_port} }
+sub verifierAddress { return "net:${System::localhost}:" . shift->{m_verifier_port} }
 sub popPort { return shift->{m_pop_port} }
 sub popSecrets { return shift->{m_pop_secrets} }
 sub clientSecrets { return shift->{m_client_secrets} }

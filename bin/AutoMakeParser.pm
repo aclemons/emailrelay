@@ -269,7 +269,7 @@ sub includes
 	# For example, if CXXFLAGS is "-I$(top_srcdir)/src/sub"
 	# and top_srcdir is "." then includes(base()) will
 	# will yield ("./..",".././src/sub") for one makefile and
-	# ("./../..",../.././src/sub") for another.
+	# ("./../..","../.././src/sub") for another.
 	#
 	# In practice the value for top_srcdir should be carefully
 	# chosen as some "base-to-top" relative path that makes things

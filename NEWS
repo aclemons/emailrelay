@@ -21,18 +21,14 @@ Authentication using PAM no longer insists on TLS encryption because the
 "--server-auth-config" option can be used to disable password authentication
 over an unencypted connection.
 
-Experimental support for routing is included. The envelope files have two new
-fields: ForwardTo and ForwardToAddress. The intent is that a filter script can
-examine the message content and deposit the appropriate domain name and port
-number in the ForwardTo field. If the SMTP client sees a ForwardTo value then it
-runs the client-filter early, before initiating a connection, allowing the
-client filter to do a DNS MX lookup of the ForwardTo value and deposit the
-address into the ForwardToAddress field. If the SMTP client sees a
+Limited support for routing is included. The envelope files have two new fields:
+ForwardTo and ForwardToAddress. A filter script can examine the message content
+and deposit the appropriate domain name and port number in the ForwardTo field.
+If the SMTP client sees a ForwardTo value then it runs the client-filter early
+allowing the client filter to do a DNS MX lookup of the ForwardTo value and
+deposit the address into the ForwardToAddress field. If the SMTP client sees a
 ForwardToAddress it will initiate a connection to that address to send the
 message. The client-filter is run a second time in the normal way once the SMTP
-session has been established.
-
-The current implementation is limited in that a connection to the main
-"--forward-to" address will always be made even if all the messages are routed
-elsewhere, and a routed connection will carry only one message before it is torn
-down.
+session has been established. A connection to the main "--forward-to" address
+will always be made even if all the messages are routed elsewhere, and each
+routed connection will carry only one message.

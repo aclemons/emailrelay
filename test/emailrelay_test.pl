@@ -99,7 +99,6 @@ $Server::with_valgrind = $opts{V} if exists $opts{V} ;
 $Server::bin_dir = $opt_bin_dir ;
 $Helper::bin_dir = $opt_test_bin_dir ;
 $TestServer::bin_dir = $opt_test_bin_dir ;
-$Openssl::keep = 1 if exists $opts{t} ;
 $Openssl::log_fn = sub { System::log_("running [$_[0]] ($_[1])") } ;
 $OpensslFileStore::log_cat_fn = sub { System::log_("creating [$_[0]]") } ;
 $OpensslFileStore::unlink_fn = sub { System::unlink($_[0]) } ;

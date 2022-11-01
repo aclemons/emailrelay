@@ -13,14 +13,14 @@
     <ul>
      <li>Multiple <em>--filter</em> and <em>--client-filter</em> options allowed.</li>
      <li>TLS key and certificate files can be specified separately.</li>
-     <li>Finer control of <em>--anonymous</em> (eg. <em>--anonymous=server</em>).</li>
+     <li>Finer control when using <em>--anonymous</em> (eg. <em>--anonymous=server</em>).</li>
      <li>The <em>auth-config</em> options can distinguish between TLS and non-TLS authentication.</li>
      <li>Hourly log file rotation using <em>%h</em> (eg. <em>--log-file=log.%d.%h</em>).</li>
      <li>Listening file descriptors can be inherited from the parent process (see <em>--interface</em>).</li>
-     <li>Exclusive listening port binding on Windows.</li>
+     <li>Listening ports on Windows use exclusive binding.</li>
      <li>The Linux event loop uses <em>epoll</em> by default rather than <em>select</em>.</li>
-     <li>Fixed error handling for network client filters (<em>--client-filter=net:...</em>) [bug-id #50].</li>
-     <li>Experimental support for routing (see NEWS).</li>
+     <li>Some support for message routing (see NEWS).</li>
+     <li>Fix of error handling in network client filters (<em>--client-filter=net:...</em>) [bug-id #50].</li>
     </ul>
    <h2><a class="a-header" name="SH_1_2">2.2 -> 2.3</a></h2> <!-- index:2:SH:1:2:2.2 -> 2.3 -->
     <ul>

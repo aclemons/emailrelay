@@ -34,7 +34,7 @@ namespace GNet
 		static constexpr std::size_t minsize()
 		{
 			#if GCONFIG_HAVE_UDS_LEN
-			return offsetof( sockaddr_un , sockaddr_un::sun_family ) + sizeof( sockaddr_un::sun_family ) ;
+			return offsetof( sockaddr_un , sun_family ) + sizeof( sockaddr_un::sun_family ) ;
 			#else
 			return sizeof( sockaddr_un::sun_family ) ;
 			#endif

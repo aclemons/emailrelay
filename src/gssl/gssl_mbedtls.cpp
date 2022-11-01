@@ -86,6 +86,14 @@
 #define GET_RAW(field) field
 #endif
 
+#ifndef GCONFIG_HAVE_MBEDTLS_HASH_STATE
+#if MBEDTLS_VERSION_MAJOR >= 3
+#define GCONFIG_HAVE_MBEDTLS_HASH_STATE 0
+#else
+#define GCONFIG_HAVE_MBEDTLS_HASH_STATE 1
+#endif
+#endif
+
 namespace GSsl
 {
 	namespace MbedTls
@@ -402,46 +410,68 @@ bool GSsl::MbedTls::Config::consume( G::StringArray & list , G::string_view item
 
 // ==
 
-GSsl::MbedTls::DigesterImp::DigesterImp( const std::string & hash_name , const std::string & state , bool )
+GSsl::MbedTls::DigesterImp::DigesterImp( const std::string & hash_name , const std::string & state , bool need_state )
 {
+	bool have_state = !state.empty() ;
+	m_state_size = 0U ;
+
+	#if ! GCONFIG_HAVE_MBEDTLS_HASH_STATE
+	if( have_state || need_state )
+	{
+		throw Error( std::string("hash state resoration not implemented for ").append(hash_name) ) ;
+	}
+	#endif
+
 	if( hash_name == "MD5" )
 	{
 		m_hash_type = Type::Md5 ;
 		m_block_size = 64U ;
 		m_value_size = 16U ;
-		m_state_size = m_value_size + 4U ;
 
 		mbedtls_md5_init( &m_md5 ) ;
-		if( state.empty() )
-			call( FN_RETv3(mbedtls_md5_starts) , &m_md5 ) ;
-		else
+		#if GCONFIG_HAVE_MBEDTLS_HASH_STATE
+		m_state_size = m_value_size + 4U ;
+		if( have_state )
 			G::HashState<16,uint32_t,uint32_t>::decode( state , m_md5.GET(state) , m_md5.GET(total)[0] ) ;
+		else
+			call( FN_RETv3(mbedtls_md5_starts) , &m_md5 ) ;
+		#else
+		call( FN_RETv3(mbedtls_md5_starts) , &m_md5 ) ;
+		#endif
 	}
 	else if( hash_name == "SHA1" )
 	{
 		m_hash_type = Type::Sha1 ;
 		m_block_size = 64U ;
 		m_value_size = 20U ;
-		m_state_size = m_value_size + 4U ;
 
 		mbedtls_sha1_init( &m_sha1 ) ;
-		if( state.empty() )
-			call( FN_RETv3(mbedtls_sha1_starts) , &m_sha1 ) ;
-		else
+		#if GCONFIG_HAVE_MBEDTLS_HASH_STATE
+		m_state_size = m_value_size + 4U ;
+		if( have_state )
 			G::HashState<20,uint32_t,uint32_t>::decode( state , m_sha1.GET(state) , m_sha1.GET(total)[0] ) ;
+		else
+			call( FN_RETv3(mbedtls_sha1_starts) , &m_sha1 ) ;
+		#else
+		call( FN_RETv3(mbedtls_sha1_starts) , &m_sha1 ) ;
+		#endif
 	}
 	else if( hash_name == "SHA256" )
 	{
 		m_hash_type = Type::Sha256 ;
 		m_block_size = 64U ;
 		m_value_size = 32U ;
-		m_state_size = m_value_size + 4U ;
 
 		mbedtls_sha256_init( &m_sha256 ) ;
-		if( state.empty() )
-			call( FN_RETv3(mbedtls_sha256_starts) , &m_sha256 , 0 ) ;
-		else
+		#if GCONFIG_HAVE_MBEDTLS_HASH_STATE
+		m_state_size = m_value_size + 4U ;
+		if( have_state )
 			G::HashState<32,uint32_t,uint32_t>::decode( state , m_sha256.GET(state) , m_sha256.GET(total)[0] ) ;
+		else
+			call( FN_RETv3(mbedtls_sha256_starts) , &m_sha256 , 0 ) ;
+		#else
+		call( FN_RETv3(mbedtls_sha256_starts) , &m_sha256 , 0 ) ;
+		#endif
 	}
 	else
 	{
@@ -497,6 +527,7 @@ std::string GSsl::MbedTls::DigesterImp::value()
 
 std::string GSsl::MbedTls::DigesterImp::state()
 {
+	#if GCONFIG_HAVE_MBEDTLS_HASH_STATE
 	if( m_hash_type == Type::Md5 )
 		return G::HashState<16,uint32_t,uint32_t>::encode( m_md5.GET(state) , m_md5.GET(total)[0] ) ;
 	else if( m_hash_type == Type::Sha1 )
@@ -504,7 +535,10 @@ std::string GSsl::MbedTls::DigesterImp::state()
 	else if( m_hash_type == Type::Sha256 )
 		return G::HashState<32,uint32_t,uint32_t>::encode( m_sha256.GET(state) , m_sha256.GET(total)[0] ) ;
 	else
-		return std::string() ;
+		return {} ;
+	#else
+	return {} ;
+	#endif
 }
 
 std::size_t GSsl::MbedTls::DigesterImp::blocksize() const

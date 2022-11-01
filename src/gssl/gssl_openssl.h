@@ -37,6 +37,17 @@
 #include <functional>
 #include <map>
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#error "openssl is too old"
+#endif
+#ifndef GCONFIG_HAVE_OPENSSL_HASH_FUNCTIONS
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#define GCONFIG_HAVE_OPENSSL_HASH_FUNCTIONS 0
+#else
+#define GCONFIG_HAVE_OPENSSL_HASH_FUNCTIONS 1
+#endif
+#endif
+
 // debugging...
 //  * network logging
 //     $ sudo tcpdump -s 0 -n -i eth0 -X tcp port 587
@@ -311,9 +322,11 @@ public:
 private:
 	enum class Type { Md5 , Sha1 , Sha256 , Other } ;
 	Type m_hash_type ;
+	#if GCONFIG_HAVE_OPENSSL_HASH_FUNCTIONS
 	MD5_CTX m_md5 {} ;
 	SHA_CTX m_sha1 {} ;
 	SHA256_CTX m_sha256 {} ;
+	#endif
 	EVP_MD_CTX * m_evp_ctx ;
 	std::size_t m_block_size {0} ;
 	std::size_t m_value_size {0} ;

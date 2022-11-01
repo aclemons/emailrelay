@@ -175,11 +175,11 @@ sub make_mainpage_md
 		my $line_number = 0 ;
 		while( $line_number < $lines )
 		{
-			my $line = @lines[$line_number++] ;
-			my $next_line = @lines[$line_number] ;
+			my $line = $lines[$line_number++] ;
+			my $next_line = $lines[$line_number] ;
 			if( $next_line =~ m/^=====+$/ )
 			{
-				@lines[$line_number] = undef ;
+				$lines[$line_number] = undef ;
 				$line =~ s/E-MailRelay // ;
 				( my $id = basename($fname) . "_$line" ) =~ s/[- '?.]/_/g ;
 				print $fh "\\section $id $line\n" ;
@@ -191,14 +191,14 @@ sub make_mainpage_md
 			}
 			elsif( $next_line =~ m/^-----+$/ )
 			{
-				@lines[$line_number] = undef ;
+				$lines[$line_number] = undef ;
 				$line =~ s/^E-MailRelay // ;
 				( my $id = basename($fname) . "_$line" ) =~ s/[- '?.]/_/g ;
 				print $fh "\\subsection $id $line\n" ;
 			}
 			elsif( $line =~ m/^______+$/ )
 			{
-				@lines[$line_number] = undef ; # no footer text
+				$lines[$line_number] = undef ; # no footer text
 			}
 			elsif( defined($line) )
 			{
@@ -262,15 +262,15 @@ sub make_pages_md
 		my $line_number = 0 ;
 		while( $line_number < $lines )
 		{
-			my $line = @lines[$line_number++] ;
-			my $next_line = @lines[$line_number] ;
+			my $line = $lines[$line_number++] ;
+			my $next_line = $lines[$line_number] ;
 			if( $next_line =~ m/^=====+$/ )
 			{
-				@lines[$line_number] = undef ;
+				$lines[$line_number] = undef ;
 			}
 			elsif( $next_line =~ m/^---+$/ )
 			{
-				@lines[$line_number] = undef ;
+				$lines[$line_number] = undef ;
 				( my $id = "changelog_$line" ) =~ s/[- '?.>]/_/g ;
 				print $fh_out "\\section $id $line\n" ;
 			}

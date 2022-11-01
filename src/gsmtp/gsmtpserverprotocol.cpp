@@ -516,7 +516,7 @@ void GSmtp::ServerProtocol::doAuth( EventData event_data , bool & predicate )
 
 void GSmtp::ServerProtocol::doAuthData( EventData event_data , bool & predicate )
 {
-	G_LOG( "GSmtp::ServerProtocol: rx<<: [authentication response not logged]" ) ;
+	G_LOG( "GSmtp::ServerProtocol: rx<<: \"[authentication response not logged]\"" ) ;
 	std::string line( event_data.ptr , event_data.size ) ;
 	if( line == "*" )
 	{
