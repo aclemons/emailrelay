@@ -611,14 +611,14 @@ sub install
 	if( $with_gui )
 	{
 		install_copy( "$arch/src/gui/Release/emailrelay-gui.exe" , "$install/emailrelay-setup.exe" ) ;
-		install_copy( "$arch/test/Release/emailrelay-test-keygen.exe" , "$install" ) ;
+		install_copy( "$arch/test/Release/emailrelay_test_keygen.exe" , "$install" ) ;
 
 		install_mkdir( "$install/payload" ) ;
 		install_payload_cfg( "$install/payload/payload.cfg" ) ;
 		install_core( "$arch/src/main/Release" , "$install/payload/files" ) ;
 
 		install_copy( "$arch/src/gui/Release/emailrelay-gui.exe" , "$install/payload/files" ) ;
-		install_copy( "$arch/test/Release/emailrelay-test-keygen.exe" , "$install/payload/files" ) ;
+		install_copy( "$arch/test/Release/emailrelay_test_keygen.exe" , "$install/payload/files" ) ;
 
 		install_gui_dependencies( $msvc_base , $arch ,
 			{ exe => "$install/emailrelay-setup.exe" } ,

@@ -1189,7 +1189,7 @@ G::Path GenerateKey::exe( bool is_windows )
 	return
 		this_exe.empty() ?
 			G::Path() :
-			G::Path(this_exe).dirname() + (is_windows?"emailrelay-test-keygen.exe":"emailrelay-test-keygen") ;
+			G::Path(this_exe).dirname() + (is_windows?"emailrelay_test_keygen.exe":"emailrelay_test_keygen") ;
 }
 
 void GenerateKey::run()
