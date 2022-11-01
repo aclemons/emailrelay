@@ -68,8 +68,8 @@ protected:
 public:
 	WindowBase( const WindowBase & ) = delete ;
 	WindowBase( WindowBase && ) = delete ;
-	void operator=( const WindowBase & ) = delete ;
-	void operator=( WindowBase && ) = delete ;
+	WindowBase & operator=( const WindowBase & ) = delete ;
+	WindowBase & operator=( WindowBase && ) = delete ;
 
 private:
 	HWND m_hwnd ;

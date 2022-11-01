@@ -54,9 +54,11 @@ public:
 	std::string str() const ;
 		///< Returns the id string.
 
+public:
+	explicit MessageId( int ) = delete ;
+
 private:
 	MessageId() = default ;
-	explicit MessageId( int ) = delete ;
 
 private:
 	std::string m_s ;
@@ -70,18 +72,6 @@ private:
 class GSmtp::MessageStore
 {
 public:
-	struct SmtpInfo /// Information on the SMTP options used when submitted.
-	{
-		std::string auth ; // AUTH=
-		std::string body ; // BODY=
-	} ;
-	enum class BodyType
-	{
-		Unknown = -1 ,
-		SevenBit ,
-		EightBitMime , // RFC-1652
-		BinaryMime // RFC-3030
-	} ;
 	struct Iterator /// A base class for GSmtp::MessageStore iterators.
 	{
 		virtual std::unique_ptr<StoredMessage> next() = 0 ;
@@ -99,7 +89,7 @@ public:
 		///< Destructor.
 
 	virtual std::unique_ptr<NewMessage> newMessage( const std::string & from ,
-		const SmtpInfo & smtp_info , const std::string & from_auth_out ) = 0 ;
+		const std::string & from_auth_in , const std::string & from_auth_out ) = 0 ;
 			///< Creates a new message.
 
 	virtual bool empty() const = 0 ;
@@ -108,7 +98,7 @@ public:
 	virtual std::string location( const MessageId & ) const = 0 ;
 		///< Returns the location of the given message.
 
-	virtual std::unique_ptr<StoredMessage> get( const MessageId & id ) = 0 ;
+	virtual std::unique_ptr<StoredMessage> get( const MessageId & ) = 0 ;
 		///< Pulls the specified message out of the store. Throws
 		///< execptions on error.
 		///<

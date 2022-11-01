@@ -82,8 +82,8 @@ public:
 	~SpamClient() override = default ;
 	SpamClient( const SpamClient & ) = delete ;
 	SpamClient( SpamClient && ) = delete ;
-	void operator=( const SpamClient & ) = delete ;
-	void operator=( SpamClient && ) = delete ;
+	SpamClient & operator=( const SpamClient & ) = delete ;
+	SpamClient & operator=( SpamClient && ) = delete ;
 
 private:
 	void onTimeout() ;
@@ -107,8 +107,8 @@ private:
 		~Response() ;
 		Response( const Response & ) = delete ;
 		Response( Response && ) = delete ;
-		void operator=( const Response & ) = delete ;
-		void operator=( Response && ) = delete ;
+		Response & operator=( const Response & ) = delete ;
+		Response & operator=( Response && ) = delete ;
 		void add( const std::string & , const std::string & ) ;
 		bool ok( const std::string & ) const ;
 		bool complete() const ;

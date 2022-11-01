@@ -121,8 +121,8 @@ private:
 public:
 	Stack( const Stack & ) = delete ;
 	Stack( Stack && ) = delete ;
-	void operator=( const Stack & ) = delete ;
-	void operator=( Stack && ) = delete ;
+	Stack & operator=( const Stack & ) = delete ;
+	Stack & operator=( Stack && ) = delete ;
 
 private:
 	using PageInfo = std::pair<Stack*,int> ;

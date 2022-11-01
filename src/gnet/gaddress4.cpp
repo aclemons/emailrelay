@@ -21,6 +21,7 @@
 #include "gdef.h"
 #include "gaddress4.h"
 #include "gstr.h"
+#include "gstringfield.h"
 #include "gtest.h"
 #include "gassert.h"
 #include "glog.h"
@@ -73,7 +74,7 @@ GNet::Address4::Address4( unsigned int port , int /*loopback_overload*/ ) :
 	if( reason ) throw Address::Error(reason) ;
 }
 
-GNet::Address4::Address4( const sockaddr * addr , socklen_t len , bool ) :
+GNet::Address4::Address4( const sockaddr * addr , socklen_t len ) :
 	Address4(nullptr)
 {
 	if( addr == nullptr )
@@ -84,16 +85,6 @@ GNet::Address4::Address4( const sockaddr * addr , socklen_t len , bool ) :
 	m_inet = *(reinterpret_cast<const sockaddr_type*>(addr)) ;
 }
 
-GNet::Address4::Address4( const std::string & host_part , unsigned int port ) :
-	Address4(nullptr)
-{
-	const char * reason = setHostAddress( m_inet , host_part ) ;
-	if( !reason )
-		reason = setPort( m_inet , port ) ;
-	if( reason )
-		throw Address::BadString( std::string(reason) + ": " + host_part ) ;
-}
-
 GNet::Address4::Address4( const std::string & host_part , const std::string & port_part ) :
 	Address4(nullptr)
 {
@@ -101,7 +92,7 @@ GNet::Address4::Address4( const std::string & host_part , const std::string & po
 	if( !reason )
 		reason = setPort( m_inet , port_part ) ;
 	if( reason )
-		throw Address::BadString( std::string(reason) + ": [" + host_part + "][" + port_part + "]" ) ;
+		throw Address::BadString( std::string(reason).append(": [").append(host_part).append("][").append(port_part).append(1U,']') ) ;
 }
 
 GNet::Address4::Address4( const std::string & display_string ) :
@@ -109,17 +100,17 @@ GNet::Address4::Address4( const std::string & display_string ) :
 {
 	const char * reason = setAddress( m_inet , display_string ) ;
 	if( reason )
-		throw Address::BadString( std::string(reason) + ": " + display_string ) ;
+		throw Address::BadString( std::string(reason).append(": ").append(display_string) ) ;
 }
 
-const char * GNet::Address4::setAddress( sockaddr_type & inet , const std::string & display_string )
+const char * GNet::Address4::setAddress( sockaddr_type & inet , G::string_view display_string )
 {
 	const std::string::size_type pos = display_string.find_last_of( Address4Imp::port_separators ) ;
 	if( pos == std::string::npos )
 		return "no port separator" ;
 
-	std::string host_part = G::Str::head( display_string , pos ) ;
-	std::string port_part = G::Str::tail( display_string , pos ) ;
+	G::string_view host_part = G::Str::headView( display_string , pos ) ;
+	G::string_view port_part = G::Str::tailView( display_string , pos ) ;
 
 	const char * reason = setHostAddress( inet , host_part ) ;
 	if( !reason )
@@ -127,13 +118,13 @@ const char * GNet::Address4::setAddress( sockaddr_type & inet , const std::strin
 	return reason ;
 }
 
-const char * GNet::Address4::setHostAddress( sockaddr_type & inet , const std::string & host_part )
+const char * GNet::Address4::setHostAddress( sockaddr_type & inet , G::string_view host_part )
 {
 	// start with a stricter check than inet_pton(), inet_addr() etc. since they allow eg. "123.123"
 	if( !Address4::format(host_part) )
 		return "invalid network address" ;
 
-	int rc = inet_pton( af() , host_part.c_str() , &inet.sin_addr ) ;
+	int rc = inet_pton( af() , sv_to_string(host_part).c_str() , &inet.sin_addr ) ;
 	return rc == 1 ? nullptr : "invalid network address" ;
 }
 
@@ -144,9 +135,9 @@ void GNet::Address4::setPort( unsigned int port )
 		throw Address::Error( "invalid port number" ) ;
 }
 
-const char * GNet::Address4::setPort( sockaddr_type & inet , const std::string & port_part )
+const char * GNet::Address4::setPort( sockaddr_type & inet , G::string_view port_part )
 {
-	if( port_part.length() == 0U ) return "empty port string" ;
+	if( port_part.empty() ) return "empty port string" ;
 	if( !G::Str::isNumeric(port_part) || !G::Str::isUInt(port_part) ) return "non-numeric port string" ;
 	return setPort( inet , G::Str::toUInt(port_part) ) ;
 }
@@ -176,7 +167,7 @@ std::string GNet::Address4::displayString( bool /*ipv6_with_scope*/ ) const
 	return ss.str() ;
 }
 
-std::string GNet::Address4::hostPartString( bool /*raw*/ ) const
+std::string GNet::Address4::hostPartString() const
 {
 	std::array<char,INET_ADDRSTRLEN+1U> buffer {} ;
 	const void * vp = & m_inet.sin_addr ;
@@ -276,46 +267,44 @@ socklen_t GNet::Address4::length() noexcept
 
 G::StringArray GNet::Address4::wildcards() const
 {
-	std::string ip_string = hostPartString() ;
+	std::string ip_str = hostPartString() ;
 
 	G::StringArray result ;
 	result.reserve( 38U ) ;
-	result.push_back( ip_string ) ;
+	result.push_back( ip_str ) ;
 
-	G::StringArray part ;
-	part.reserve( 4U ) ;
-	G::Str::splitIntoFields( ip_string , part , '.' ) ;
+	G::string_view ip_sv( ip_str.data() , ip_str.size() ) ;
+	G::StringFieldT<G::string_view> part( ip_sv , "." , 1U ) ;
+	G::string_view part0 = part() ;
+	G::string_view part1 = (++part)() ;
+	G::string_view part2 = (++part)() ;
+	G::string_view part3 = (++part)() ;
 
-	G_ASSERT_OR_DO( part.size() == 4U , return result ) ;
-	if( part[0].empty() || !G::Str::isUInt(part[0]) ||
-		part[1].empty() || !G::Str::isUInt(part[1]) ||
-		part[2].empty() || !G::Str::isUInt(part[2]) ||
-		part[3].empty() || !G::Str::isUInt(part[3]) )
+	G_ASSERT( part.valid() ) ;
+	if( !part.valid() )
+		return result ;
+
+	G_ASSERT( !(++part).valid() ) ;
+
+	if( part0.empty() || !G::Str::isUInt(part0) ||
+		part1.empty() || !G::Str::isUInt(part1) ||
+		part2.empty() || !G::Str::isUInt(part2) ||
+		part3.empty() || !G::Str::isUInt(part3) )
 	{
 		return result ;
 	}
 
-	unsigned int n0 = G::Str::toUInt(part[0]) ;
-	unsigned int n1 = G::Str::toUInt(part[1]) ;
-	unsigned int n2 = G::Str::toUInt(part[2]) ;
-	unsigned int n3 = G::Str::toUInt(part[3]) ;
+	unsigned int n0 = G::Str::toUInt(part0) ;
+	unsigned int n1 = G::Str::toUInt(part1) ;
+	unsigned int n2 = G::Str::toUInt(part2) ;
+	unsigned int n3 = G::Str::toUInt(part3) ;
 
-	std::string part_0_1_2 = part[0] ;
-	part_0_1_2.append( 1U , '.' ) ;
-	part_0_1_2.append( part[1] ) ;
-	part_0_1_2.append( 1U , '.' ) ;
-	part_0_1_2.append( part[2] ) ;
-	part_0_1_2.append( 1U , '.' ) ;
-
-	std::string part_0_1 = part[0] ;
-	part_0_1.append( 1U , '.' ) ;
-	part_0_1.append( part[1] ) ;
-	part_0_1.append( 1U , '.' ) ;
-
-	std::string part_0 = part[0] ;
-	part_0.append( 1U , '.' ) ;
-
-	const std::string empty ;
+	std::string part_0_1_2 = std::string(part0.data(),part0.size()).append(1U,'.')
+		.append(part1.data(),part1.size()).append(1U,'.')
+		.append(part2.data(),part2.size()).append(1U,'.') ;
+	std::string part_0_1 = std::string(part0.data(),part0.size()).append(1U,'.')
+		.append(part1.data(),part1.size()).append(1U,'.') ;
+	std::string part_0 = std::string(part0.data(),part0.size()).append(1U,'.') ;
 
 	add( result , part_0_1_2 , n3 & 0xffU , "/32" ) ;
 	add( result , part_0_1_2 , n3 & 0xfeU , "/31" ) ;
@@ -345,39 +334,46 @@ G::StringArray GNet::Address4::wildcards() const
 	add( result , part_0 , n1 & 0x80U , ".0.0/9" ) ;
 	add( result , part_0 , 0 , ".0.0/8" ) ;
 	add( result , part_0 , "*.*.*" ) ;
-	add( result , empty , n0 & 0xfeU , ".0.0.0/7" ) ;
-	add( result , empty , n0 & 0xfcU , ".0.0.0/6" ) ;
-	add( result , empty , n0 & 0xf8U , ".0.0.0/5" ) ;
-	add( result , empty , n0 & 0xf0U , ".0.0.0/4" ) ;
-	add( result , empty , n0 & 0xe0U , ".0.0.0/3" ) ;
-	add( result , empty , n0 & 0xc0U , ".0.0.0/2" ) ;
-	add( result , empty , n0 & 0x80U , ".0.0.0/1" ) ;
-	add( result , empty , 0 , ".0.0.0/0" ) ;
-	add( result , empty , "*.*.*.*" ) ;
+	add( result , n0 & 0xfeU , ".0.0.0/7" ) ;
+	add( result , n0 & 0xfcU , ".0.0.0/6" ) ;
+	add( result , n0 & 0xf8U , ".0.0.0/5" ) ;
+	add( result , n0 & 0xf0U , ".0.0.0/4" ) ;
+	add( result , n0 & 0xe0U , ".0.0.0/3" ) ;
+	add( result , n0 & 0xc0U , ".0.0.0/2" ) ;
+	add( result , n0 & 0x80U , ".0.0.0/1" ) ;
+	add( result , 0 , ".0.0.0/0" ) ;
+	add( result , "*.*.*.*" ) ;
 
 	return result ;
 }
 
-void GNet::Address4::add( G::StringArray & result , const std::string & head , unsigned int n , const char * tail )
+void GNet::Address4::add( G::StringArray & result , G::string_view head , unsigned int n , const char * tail )
 {
-	std::string s = head ;
-	s.append( G::Str::fromUInt( n ) ) ;
-	s.append( tail ) ;
-	result.push_back( s ) ;
+	result.push_back( G::sv_to_string(head).append(G::Str::fromUInt(n)).append(tail) ) ;
 }
 
-void GNet::Address4::add( G::StringArray & result , const std::string & head , const char * tail )
+void GNet::Address4::add( G::StringArray & result , unsigned int n , const char * tail )
 {
-	result.push_back( head + tail ) ;
+	result.push_back( G::Str::fromUInt(n).append(tail) ) ;
 }
 
-bool GNet::Address4::format( std::string s )
+void GNet::Address4::add( G::StringArray & result , G::string_view head , const char * tail )
+{
+	result.push_back( G::sv_to_string(head).append(tail) ) ;
+}
+
+void GNet::Address4::add( G::StringArray & result , const char * tail )
+{
+	result.push_back( std::string(tail) ) ;
+}
+
+bool GNet::Address4::format( G::string_view s )
 {
 	// an independent check for the IPv4 dotted-quad format
 
 	if( s.empty() || s.find_first_not_of("0123456789.") != std::string::npos ||
 		std::count(s.begin(),s.end(),'.') != 3U || s.at(0U) == '.' ||
-		s.at(s.length()-1U) == '.' || s.find("..") != std::string::npos )
+		s.at(s.size()-1U) == '.' || s.find("..") != std::string::npos )
 			return false ;
 
 	unsigned int n = 0U ;
@@ -410,10 +406,8 @@ bool GNet::Address4::isLocal( std::string & reason ) const
 	}
 	else
 	{
-		std::ostringstream ss ;
-		ss << hostPartString() << " is not in "
-			"127.0.0.0/8, 169.254.0.0/16, 10.0.0.0/8, 172.16.0.0/12, or 192.168.0.0/16" ;
-		reason = ss.str() ;
+		reason = hostPartString().append( " is not in "
+			"127.0.0.0/8, 169.254.0.0/16, 10.0.0.0/8, 172.16.0.0/12, or 192.168.0.0/16" ) ;
 		return false ;
 	}
 }

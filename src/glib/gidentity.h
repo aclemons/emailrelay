@@ -47,7 +47,7 @@ public:
 	G_EXCEPTION( Error , tx("cannot read user database") ) ;
 
 	explicit Identity( const std::string & username ,
-		const std::string & group_name_override = {} ) ;
+		const std::string & group_name_override = std::string() ) ;
 			///< Constructor for the named identity.
 			///< Throws NoSuchUser on error.
 

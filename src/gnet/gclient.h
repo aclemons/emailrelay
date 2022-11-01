@@ -83,6 +83,7 @@ public:
 
 	struct Config /// A structure containing GNet::Client configuration parameters.
 	{
+		StreamSocket::Config stream_socket_config ;
 		LineBufferConfig line_buffer_config {LineBufferConfig::transparent()} ;
 		SocketProtocol::Config socket_protocol_config ; // inc. secure_connection_timeout
 		Address local_address {Address::defaultAddress()} ;
@@ -92,7 +93,9 @@ public:
 		unsigned int connection_timeout {0U} ;
 		unsigned int response_timeout {0U} ;
 		unsigned int idle_timeout {0U} ;
+		bool no_throw_on_peer_disconnect {false} ; // see SocketProtocolSink::onPeerDisconnect()
 
+		Config & set_stream_socket_config( const StreamSocket::Config & ) ;
 		Config & set_line_buffer_config( const LineBufferConfig & ) ;
 		Config & set_socket_protocol_config( const SocketProtocol::Config & ) ;
 		Config & set_sync_dns( bool = true ) ;
@@ -104,6 +107,7 @@ public:
 		Config & set_response_timeout( unsigned int ) ;
 		Config & set_idle_timeout( unsigned int ) ;
 		Config & set_all_timeouts( unsigned int ) ;
+		Config & set_no_throw_on_peer_disconnect( bool = true ) ;
 	} ;
 
 	Client( ExceptionSink , const Location & remote_location , const Config & ) ;
@@ -170,11 +174,22 @@ public:
 		///< classes may inject the own events into this channel.
 
 	void doOnDelete( const std::string & reason , bool done ) ;
-		///< Called by ClientPtr (or equivalent) to call onDelete(),
-		///< just before this client object is deleted.
+		///< This should be called by the Client owner (typically
+		///< ClientPtr) just before this Client object is deleted.
+		///<
+		///< A Client onDelete() call only ever comes from
+		///< something external calling doOnDelete().
+		///<
+		///< The 'done' argument should be true if the current
+		///< exception is GNet::Done. The 'reason' string passed
+		///< to onDelete() will be the given 'reason' or the
+		///< empty string if 'done||finished()'.
+		///<
+		///< See also GNet::ExceptionHandler::onException(),
+		///< GNet::ServerPeer::onDelete().
 
 	bool finished() const ;
-		///< Returns true if finish()ed or disconnect()ed.
+		///< Returns true if finish() has been called.
 
 	LineBufferState lineBuffer() const ;
 		///< Returns information about the state of the internal
@@ -190,7 +205,7 @@ protected:
 	const StreamSocket & socket() const ;
 		///< Returns a const reference to the socket. Throws if not connected.
 
-	void finish( bool with_socket_shutdown ) ;
+	void finish() ;
 		///< Indicates that the last data has been sent and the client
 		///< is expecting a peer disconnect. Any subsequent onDelete()
 		///< callback from doOnDelete() will have an empty reason
@@ -224,22 +239,23 @@ protected:
 
 	void secureConnect() ;
 		///< Starts TLS/SSL client-side negotiation. Uses a profile
-		///< called "client"; see GSsl::Library::addProfile().
+		///< called "client" by default; see GSsl::Library::addProfile().
 		///< The callback GNet::SocketProtocolSink::onSecure() is
 		///< triggered when the secure session is established.
 
 private: // overrides
-	void readEvent( Descriptor ) override ; // Override from GNet::EventHandler.
-	void writeEvent( Descriptor ) override ; // Override from GNet::EventHandler.
-	void otherEvent( Descriptor , EventHandler::Reason ) override ; // Override from GNet::EventHandler.
+	void readEvent() override ; // Override from GNet::EventHandler.
+	void writeEvent() override ; // Override from GNet::EventHandler.
+	void otherEvent( EventHandler::Reason ) override ; // Override from GNet::EventHandler.
 	void onResolved( std::string , Location ) override ; // Override from GNet::Resolver.
 	void onData( const char * , std::size_t ) override ; // Override from GNet::SocketProtocolSink.
+	void onPeerDisconnect() override ; // Override from GNet::SocketProtocolSink.
 
 public:
 	Client( const Client & ) = delete ;
 	Client( Client && ) = delete ;
-	void operator=( const Client & ) = delete ;
-	void operator=( Client && ) = delete ;
+	Client & operator=( const Client & ) = delete ;
+	Client & operator=( Client && ) = delete ;
 	bool send( const char * , std::size_t ) = delete ;
 	bool send( const char * ) = delete ;
 	bool send( const std::string & , std::size_t ) = delete ;
@@ -270,6 +286,7 @@ private:
 
 private:
 	ExceptionSink m_es ;
+	const Config m_config ;
 	G::CallStack m_call_stack ;
 	std::unique_ptr<StreamSocket> m_socket ;
 	std::unique_ptr<SocketProtocol> m_sp ;
@@ -277,13 +294,6 @@ private:
 	LineBuffer m_line_buffer ;
 	std::unique_ptr<Resolver> m_resolver ;
 	Location m_remote_location ;
-	bool m_bind_local_address ;
-	Address m_local_address ;
-	SocketProtocol::Config m_socket_protocol_config ; // secure_connection_timeout
-	bool m_sync_dns ;
-	unsigned int m_connection_timeout ;
-	unsigned int m_response_timeout ;
-	unsigned int m_idle_timeout ;
 	State m_state ;
 	bool m_finished ;
 	bool m_has_connected ;
@@ -295,6 +305,7 @@ private:
 	G::Slot::Signal<const std::string&,const std::string&,const std::string&> m_event_signal ;
 } ;
 
+inline GNet::Client::Config & GNet::Client::Config::set_stream_socket_config( const StreamSocket::Config & cfg ) { stream_socket_config = cfg ; return *this ; }
 inline GNet::Client::Config & GNet::Client::Config::set_line_buffer_config( const LineBufferConfig & cfg ) { line_buffer_config = cfg ; return *this ; }
 inline GNet::Client::Config & GNet::Client::Config::set_socket_protocol_config( const SocketProtocol::Config & cfg ) { socket_protocol_config = cfg ; return *this ; }
 inline GNet::Client::Config & GNet::Client::Config::set_sync_dns( bool b ) { sync_dns = b ; return *this ; }
@@ -305,5 +316,6 @@ inline GNet::Client::Config & GNet::Client::Config::set_connection_timeout( unsi
 inline GNet::Client::Config & GNet::Client::Config::set_secure_connection_timeout( unsigned int t ) { socket_protocol_config.secure_connection_timeout = t ; return *this ; }
 inline GNet::Client::Config & GNet::Client::Config::set_response_timeout( unsigned int t ) { response_timeout = t ; return *this ; }
 inline GNet::Client::Config & GNet::Client::Config::set_idle_timeout( unsigned int t ) { idle_timeout = t ; return *this ; }
+inline GNet::Client::Config & GNet::Client::Config::set_no_throw_on_peer_disconnect( bool b ) { no_throw_on_peer_disconnect = b ; return *this ; }
 
 #endif

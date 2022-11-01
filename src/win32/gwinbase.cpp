@@ -81,7 +81,7 @@ std::string GGui::WindowBase::windowClass() const
 	if( (std::strlen(&buffer[0])+1U) == buffer.size() )
 	{
 		G_WARNING( "GGui::WindowBase::windowClass: possible truncation: "
-			<< "\"" << G::Str::printable(&buffer[0]) << "\"" ) ;
+			<< "\"" << G::Str::printable(std::string(&buffer[0])) << "\"" ) ;
 	}
 
 	return std::string( &buffer[0] ) ;

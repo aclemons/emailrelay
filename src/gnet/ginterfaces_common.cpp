@@ -98,37 +98,44 @@ std::vector<GNet::Address> GNet::Interfaces::find( const std::string & name_in ,
 }
 
 std::vector<GNet::Address> GNet::Interfaces::addresses( const G::StringArray & names , unsigned int port ,
-	G::StringArray & used_names , G::StringArray & empty_names , G::StringArray & bad_names ) const
+	G::StringArray * used_names , G::StringArray * empty_names , G::StringArray * bad_names ) const
 {
 	AddressList result ;
 	for( const auto & name : names )
 	{
-		if( Address::validStrings( name , G::Str::fromUInt(port) ) )
+		addresses( name , port , result , used_names , empty_names , bad_names ) ;
+	}
+	return result ;
+}
+
+void GNet::Interfaces::addresses( const std::string & name , unsigned int port ,
+	std::vector<GNet::Address> & result ,
+	G::StringArray * used_names , G::StringArray * empty_names , G::StringArray * bad_names ) const
+{
+	if( Address::validStrings( name , G::Str::fromUInt(port) ) )
+	{
+		result.push_back( Address::parse(name,port) ) ;
+	}
+	else
+	{
+		// 'name' is not an address so treat it as an interface name having
+		// bound addresses -- reject file system paths as 'bad' unless
+		// they are under "/dev" (bsd)
+		AddressList list = find( name , port , true ) ;
+		if( list.empty() && ( name.empty() || ( name.find('/') != std::string::npos && name.find("/dev/") != 0U ) ) )
 		{
-			result.push_back( Address::parse(name,port) ) ;
+			if( bad_names ) bad_names->push_back( name ) ;
+		}
+		else if( list.empty() )
+		{
+			if( empty_names ) empty_names->push_back( name ) ;
 		}
 		else
 		{
-			// 'name' is not an address so treat it as an interface name having
-			// bound addresses -- reject file system paths as 'bad' unless
-			// they are under "/dev" (bsd)
-			AddressList list = find( name , port , true ) ;
-			if( list.empty() && ( name.empty() || ( name.find('/') != std::string::npos && name.find("/dev/") != 0U ) ) )
-			{
-				bad_names.push_back( name ) ;
-			}
-			else if( list.empty() )
-			{
-				empty_names.push_back( name ) ;
-			}
-			else
-			{
-				used_names.push_back( name ) ;
-			}
-			result.insert( result.end() , list.begin() , list.end() ) ;
+			if( used_names ) used_names->push_back( name ) ;
 		}
+		result.insert( result.end() , list.begin() , list.end() ) ;
 	}
-	return result ;
 }
 
 G::StringArray GNet::Interfaces::names( bool all ) const
@@ -154,7 +161,7 @@ GNet::Interfaces::const_iterator GNet::Interfaces::end() const
 	return m_list.end() ;
 }
 
-void GNet::Interfaces::readEvent( Descriptor )
+void GNet::Interfaces::readEvent()
 {
 	if( m_notifier )
 	{

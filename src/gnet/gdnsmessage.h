@@ -24,10 +24,12 @@
 #include "gdef.h"
 #include "gexception.h"
 #include "gaddress.h"
+#include "gstringview.h"
 #include <vector>
 #include <utility>
 #include <string>
 #include <map>
+#include <new>
 
 namespace GNet
 {
@@ -38,6 +40,7 @@ namespace GNet
 	class DnsMessageNameParser ;
 	class DnsMessageRequest ;
 	class DnsMessageDumper ;
+	class DnsMessageRRData ;
 }
 
 //| \class GNet::DnsMessage
@@ -120,10 +123,10 @@ public:
 	Address rrAddress( unsigned int n ) const ;
 		///< Returns the address in the n'th record treated as a RR record.
 
-	const char * p() const ;
+	const char * p() const noexcept ;
 		///< Returns the raw data.
 
-	std::size_t n() const ;
+	std::size_t n() const noexcept ;
 		///< Returns the raw data size.
 
 	unsigned int byte( unsigned int byte_index ) const ;
@@ -164,8 +167,13 @@ private:
 class GNet::DnsMessageRecordType
 {
 public:
-	static unsigned int value( const std::string & type_name ) ;
+	static unsigned int value( G::string_view type_name ) ;
 		///< Returns the type value for the given type name.
+		///< Throws on error.
+
+	static unsigned int value( G::string_view type_name , std::nothrow_t ) noexcept ;
+		///< Returns the type value for the given type name,
+		///< or zero on error.
 
 	static std::string name( unsigned int type_value ) ;
 		///< Returns the type name for the given type value.
@@ -175,9 +183,36 @@ public:
 } ;
 
 //| \class GNet::DnsMessageRR
+/// Provides access to raw DnsMessageRR data.
+///
+class GNet::DnsMessageRRData
+{
+public:
+	unsigned int byte( unsigned int offset ) const ;
+		///< Returns RDATA byte at the given offset.
+
+	unsigned int word( unsigned int offset ) const ;
+		///< Returns RDATA word at the given offset.
+
+	std::string span( unsigned int begin , unsigned int end ) const ;
+		///< Returns the data in the given half-open byte range.
+
+	std::string span( unsigned int begin ) const ;
+		///< Returns the data starting at the given offset.
+
+	std::string dname( unsigned int rdata_offset ) const ;
+	std::string dname( unsigned int * rdata_offset_inout_p ) const ;
+	unsigned int offset() const ;
+	unsigned int size() const ;
+
+protected:
+	DnsMessageRRData() = default ;
+} ;
+
+//| \class GNet::DnsMessageRR
 /// Represents DNS response record.
 ///
-class GNet::DnsMessageRR
+class GNet::DnsMessageRR : private DnsMessageRRData
 {
 public:
 	using RR = DnsMessageRR ;
@@ -187,31 +222,34 @@ public:
 		///< Constructor. Keeps the reference, which is then passed
 		///< to copies.
 
-	bool isa( const std::string & ) const ;
+	bool isa( G::string_view ) const noexcept ;
 		///< Returns true if the type() has the given name().
 
 	unsigned int type() const ;
-		///< Returns the type value().
+		///< Returns the RR TYPE value().
 
 	unsigned int size() const ;
-		///< Returns the size.
+		///< Returns the size of the RR.
 
 	std::string name() const ;
-		///< Returns the NAME.
+		///< Returns the RR NAME.
 
 	Address address() const ;
 		///< Returns the Address if isa(A) or isa(AAAA).
 
+	const DnsMessageRRData & rdata() const ;
+		///< Provides access to the message RDATA.
+
 private:
-	friend class DnsMessageDumper ;
-	std::string rdata_dname( unsigned int rdata_offset ) const ;
-	std::string rdata_dname( unsigned int * rdata_offset_p ) const ;
-	std::string rdata_span( unsigned int begin ) const ;
-	std::string rdata_span( unsigned int begin , unsigned int end ) const ;
-	unsigned int rdata_offset() const ;
-	unsigned int rdata_size() const ;
-	unsigned int rdata_byte( unsigned int offset ) const ;
-	unsigned int rdata_word( unsigned int offset ) const ;
+	friend class GNet::DnsMessageRRData ;
+	std::string rdataDname( unsigned int rdata_offset ) const ;
+	std::string rdataDname( unsigned int * rdata_offset_inout_p ) const ;
+	std::string rdataSpan( unsigned int begin ) const ;
+	std::string rdataSpan( unsigned int begin , unsigned int end ) const ;
+	unsigned int rdataOffset() const ;
+	unsigned int rdataSize() const ;
+	unsigned int rdataByte( unsigned int offset ) const ;
+	unsigned int rdataWord( unsigned int offset ) const ;
 
 private:
 	const DnsMessage & m_msg ;
@@ -281,12 +319,60 @@ public:
 
 private:
 	void q( const std::string & domain , char ) ;
-	void q( const std::string & ) ;
+	void q( G::string_view ) ;
 	void q( unsigned int ) ;
 	void q( int ) ;
 
 private:
 	std::string m_data ;
 } ;
+
+inline
+const GNet::DnsMessageRRData & GNet::DnsMessageRR::rdata() const
+{
+	return *this ;
+}
+
+inline
+std::string GNet::DnsMessageRRData::dname( unsigned int offset ) const
+{
+	return static_cast<const DnsMessageRR *>(this)->rdataDname( offset ) ;
+}
+
+inline
+std::string GNet::DnsMessageRRData::dname( unsigned int * offset_inout_p ) const
+{
+	return static_cast<const DnsMessageRR *>(this)->rdataDname( offset_inout_p ) ;
+}
+
+inline
+std::string GNet::DnsMessageRRData::span( unsigned int begin ) const
+{
+	return static_cast<const DnsMessageRR *>(this)->rdataSpan( begin ) ;
+}
+
+inline
+std::string GNet::DnsMessageRRData::span( unsigned int begin , unsigned int end ) const
+{
+	return static_cast<const DnsMessageRR *>(this)->rdataSpan( begin , end ) ;
+}
+
+inline
+unsigned int GNet::DnsMessageRRData::size() const
+{
+	return static_cast<const DnsMessageRR *>(this)->rdataSize() ;
+}
+
+inline
+unsigned int GNet::DnsMessageRRData::byte( unsigned int offset ) const
+{
+	return static_cast<const DnsMessageRR *>(this)->rdataByte( offset ) ;
+}
+
+inline
+unsigned int GNet::DnsMessageRRData::word( unsigned int offset ) const
+{
+	return static_cast<const DnsMessageRR *>(this)->rdataWord( offset ) ;
+}
 
 #endif

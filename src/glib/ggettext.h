@@ -22,7 +22,21 @@
 #define G_GETTEXT_H
 
 #include "gdef.h"
+#include "gstringview.h"
 #include <string>
+
+// Strings should be marked for translation using gettext() or gettext_noop(),
+// but not using the namespace scoping so that 'xgettext(1)' will still work.
+// For brevity G::txt() or G::tx() can be used instead. See also G::format.
+//
+// Eg:
+/// \code
+/// #include "ggettext.h"
+/// using G::tx ;
+/// using G::txt ;
+/// Message msg( tx("world") ) ;
+/// std::cout << txt("hello") << msg.translated() << "\n" ;
+/// \endcode
 
 namespace G
 {
@@ -34,23 +48,20 @@ namespace G
 	const char * gettext( const char * ) noexcept ;
 		///< Returns the message translation in the current locale's codeset,
 		///< eg. ISO-8859-1 or UTF-8, transcoding from the catalogue as
-		///< necessary. See also txt().
+		///< necessary.
 
 	constexpr const char * gettext_noop( const char * p ) ;
-		///< Marks a string for potential translation at build-time (see xgettext),
-		///< but no translation is applied at run-time. See also tx().
+		///< Returns the parameter. Used as a marker for xgettext
+		///< for potential translation at build-time.
 
 	const char * txt( const char * p ) ;
-		///< Calls G::gettext(). Typically used unscoped by virtue of
-		///< a 'using' declaration, for the benefit of xgettext.
+		///< A briefer alternative to G::gettext().
 
 	constexpr const char * tx( const char * p ) ;
-		///< Returns the parameter. Used as a marker for xgettext.
-}
+		///< A briefer alternative to G::gettext_noop().
 
-constexpr const char * G::gettext_noop( const char * p )
-{
-	return p ;
+	constexpr string_view tx( string_view sv ) ;
+		///< String view overload.
 }
 
 inline const char * G::txt( const char * p )
@@ -58,9 +69,19 @@ inline const char * G::txt( const char * p )
 	return G::gettext( p ) ;
 }
 
+constexpr const char * G::gettext_noop( const char * p )
+{
+	return p ;
+}
+
 constexpr const char * G::tx( const char * p )
 {
 	return p ;
+}
+
+constexpr G::string_view G::tx( string_view sv )
+{
+	return sv ;
 }
 
 #endif

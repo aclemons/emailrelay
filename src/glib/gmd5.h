@@ -23,6 +23,7 @@
 
 #include "gdef.h"
 #include "gexception.h"
+#include "gstringview.h"
 #include <string>
 
 namespace G
@@ -99,11 +100,15 @@ public:
 		///< A convenience function that returns a digest from
 		///< one input.
 
-	static std::string digest( const char * input , std::size_t input_size ) ;
+	static std::string digest( G::string_view input ) ;
 		///< A convenience function that returns a digest from
 		///< one input.
 
 	static std::string digest( const std::string & input_1 , const std::string & input_2 ) ;
+		///< A convenience function that returns a digest from
+		///< two inputs.
+
+	static std::string digest( G::string_view input_1 , G::string_view input_2 ) ;
 		///< A convenience function that returns a digest from
 		///< two inputs.
 
@@ -131,8 +136,8 @@ public:
 	~Md5() = default ;
 	Md5( const Md5 & ) = delete ;
 	Md5( Md5 && ) = delete ;
-	void operator=( const Md5 & ) = delete ;
-	void operator=( Md5 && ) = delete ;
+	Md5 & operator=( const Md5 & ) = delete ;
+	Md5 & operator=( Md5 && ) = delete ;
 
 private:
 	void consume() ;

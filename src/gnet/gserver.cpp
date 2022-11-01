@@ -30,11 +30,26 @@
 #include "gassert.h"
 #include <algorithm>
 
-GNet::Server::Server( ExceptionSink es , const Address & listening_address ,
-	ServerPeer::Config server_peer_config , Config server_config ) :
+GNet::Server::Server( ExceptionSink es , Descriptor fd ,
+	const ServerPeer::Config & server_peer_config , const Config & server_config ) :
 		m_es(es) ,
+		m_config(server_config) ,
 		m_server_peer_config(server_peer_config) ,
-		m_socket(listening_address.family(),StreamSocket::Listener())
+		m_socket(StreamSocket::Listener(),fd,m_config.stream_socket_config)
+{
+	G_DEBUG( "GNet::Server::ctor: listening on socket " << m_socket.asString()
+		<< " with address " << m_socket.getLocalAddress().displayString() ) ;
+	m_socket.listen() ;
+	m_socket.addReadHandler( *this , m_es ) ;
+	Monitor::addServer( *this ) ;
+}
+
+GNet::Server::Server( ExceptionSink es , const Address & listening_address ,
+	const ServerPeer::Config & server_peer_config , const Config & server_config ) :
+		m_es(es) ,
+		m_config(server_config) ,
+		m_server_peer_config(server_peer_config) ,
+		m_socket(listening_address.family(),StreamSocket::Listener(),m_config.stream_socket_config)
 {
 	G_DEBUG( "GNet::Server::ctor: listening on socket " << m_socket.asString()
 		<< " with address " << listening_address.displayString() ) ;
@@ -42,7 +57,7 @@ GNet::Server::Server( ExceptionSink es , const Address & listening_address ,
 	bool uds = listening_address.family() == Address::Family::local ;
 	if( uds )
 	{
-		bool open = server_config.uds_open_permissions ;
+		bool open = m_config.uds_open_permissions ;
 		using Mode = G::Process::Umask::Mode ;
 		G::Root claim_root( false ) ; // group ownership from the effective group-id
 		G::Process::Umask set_umask( open ? Mode::Open : Mode::Tighter ) ;
@@ -54,14 +69,14 @@ GNet::Server::Server( ExceptionSink es , const Address & listening_address ,
 		m_socket.bind( listening_address ) ;
 	}
 
-	m_socket.listen( std::max(1,server_config.listen_queue) ) ;
+	m_socket.listen() ;
 	m_socket.addReadHandler( *this , m_es ) ;
 	Monitor::addServer( *this ) ;
 
 	if( uds )
 	{
-		std::string path = listening_address.hostPartString( true ) ;
-		if( path.size() > 1U && path.at(0U) == '/' ) // just in case
+		std::string path = listening_address.hostPartString() ;
+		if( path.size() > 1U && path.at(0U) == '/' )
 		{
 			G::Cleanup::add( &Server::unlink , G::Cleanup::strdup(path) ) ;
 		}
@@ -73,18 +88,6 @@ GNet::Server::~Server()
 	Monitor::removeServer( *this ) ;
 }
 
-bool GNet::Server::canBind( const Address & address , bool do_throw )
-{
-	std::string reason ;
-	{
-		G::Root claim_root ;
-		reason = Socket::canBindHint( address ) ;
-	}
-	if( !reason.empty() && do_throw )
-		throw CannotBind( address.displayString() , reason ) ;
-	return reason.empty() ;
-}
-
 GNet::Address GNet::Server::address() const
 {
 	bool with_scope = true ; // was false
@@ -94,7 +97,7 @@ GNet::Address GNet::Server::address() const
 	return result ;
 }
 
-void GNet::Server::readEvent( Descriptor )
+void GNet::Server::readEvent()
 {
 	// read-event-on-listening-port => new connection to accept
 	G_DEBUG( "GNet::Server::readEvent: " << this ) ;
@@ -107,7 +110,7 @@ void GNet::Server::readEvent( Descriptor )
 
 	// do an early set of the logging context so that it applies
 	// during the newPeer() construction process -- it is then set
-	// more normally by the event hander list when handing out events
+	// more normally by the event emitter when handing out events
 	// with a well-defined ExceptionSource
 	//
 	EventLoggingContext event_logging_context( peer_address.hostPartString() ) ;
@@ -191,7 +194,7 @@ std::vector<std::weak_ptr<GNet::ServerPeer>> GNet::Server::peers()
 	return result ;
 }
 
-void GNet::Server::writeEvent( Descriptor )
+void GNet::Server::writeEvent()
 {
 	G_DEBUG( "GNet::Server::writeEvent" ) ;
 }

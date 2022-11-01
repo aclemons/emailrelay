@@ -29,12 +29,12 @@
 
 GSmtp::ProtocolMessageForward::ProtocolMessageForward( GNet::ExceptionSink es ,
 	MessageStore & store , FilterFactory & ff , std::unique_ptr<ProtocolMessage> pm ,
-	const GSmtp::Client::Config & client_config ,
-	const GAuth::SaslClientSecrets & client_secrets , const std::string & server ) :
+	const GSmtp::Client::Config & client_config , const GAuth::SaslClientSecrets & client_secrets ,
+	const std::string & forward_to , int forward_to_family ) :
 		m_es(es) ,
 		m_store(store) ,
 		m_ff(ff) ,
-		m_client_location(server) ,
+		m_client_location(forward_to,forward_to_family) ,
 		m_client_config(client_config) ,
 		m_client_secrets(client_secrets) ,
 		m_pm(pm.release()) ,
@@ -75,19 +75,9 @@ void GSmtp::ProtocolMessageForward::clear()
 	m_pm->clear() ;
 }
 
-GSmtp::MessageId GSmtp::ProtocolMessageForward::setFrom( const std::string & from , const FromInfo & from_info )
+GSmtp::MessageId GSmtp::ProtocolMessageForward::setFrom( const std::string & from , const std::string & from_auth )
 {
-	return m_pm->setFrom( from , from_info ) ;
-}
-
-GSmtp::ProtocolMessage::FromInfo GSmtp::ProtocolMessageForward::fromInfo() const
-{
-	return m_pm->fromInfo() ;
-}
-
-std::string GSmtp::ProtocolMessageForward::bodyType() const
-{
-	return m_pm->bodyType() ;
+	return m_pm->setFrom( from , from_auth ) ;
 }
 
 bool GSmtp::ProtocolMessageForward::addTo( VerifierStatus to_status )
@@ -100,14 +90,9 @@ void GSmtp::ProtocolMessageForward::addReceived( const std::string & line )
 	m_pm->addReceived( line ) ;
 }
 
-GSmtp::NewMessage::Status GSmtp::ProtocolMessageForward::addContent( const char * line_data , std::size_t line_size )
+bool GSmtp::ProtocolMessageForward::addText( const char * line_data , std::size_t line_size )
 {
-	return m_pm->addContent( line_data , line_size ) ;
-}
-
-std::size_t GSmtp::ProtocolMessageForward::contentSize() const
-{
-	return m_pm->contentSize() ;
+	return m_pm->addText( line_data , line_size ) ;
 }
 
 std::string GSmtp::ProtocolMessageForward::from() const

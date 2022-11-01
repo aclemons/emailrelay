@@ -21,36 +21,39 @@
 #include "gdef.h"
 #include "gfilterchain.h"
 #include "gslot.h"
+#include "gstringtoken.h"
 #include "gstr.h"
 #include <utility>
 #include <algorithm>
 
-GSmtp::FilterChain::FilterChain( GNet::ExceptionSink es , FileStore & file_store , FilterFactory & ff ,
-	bool server_side , const std::string & spec , unsigned int timeout ) :
-		m_file_store(file_store) ,
-		m_server_side(server_side) ,
+GSmtp::FilterChain::FilterChain( GNet::ExceptionSink es , FilterFactory & ff ,
+	bool server_side , const FactoryParser::Result & spec , unsigned int timeout ,
+	const std::string & log_prefix ) :
 		m_filter_index(0U) ,
 		m_filter(nullptr) ,
 		m_running(false) ,
 		m_message_id(MessageId::none())
 {
-	G::StringArray sub_specs = G::Str::splitIntoTokens( spec , {",",1U} ) ;
-	if( sub_specs.empty() )
-		sub_specs.push_back( "exit:0" ) ;
-	for( const auto & sub_spec : sub_specs )
-	{
-		std::unique_ptr<Filter> filter = ff.newFilter( es , server_side , sub_spec , timeout ) ;
-		m_filters.emplace_back( std::move(filter) ) ;
-		m_filter_id = std::string(m_filter_id.empty()?1U:0U,',') + m_filters.back()->id() ;
-	}
-	m_filter_index = 0 ;
-	m_filter = m_filters.at(0U).get() ;
-	m_filter->doneSignal().connect( G::Slot::slot(*this,&FilterChain::onFilterDone) ) ;
+	G_ASSERT( spec.first == "chain" ) ;
+	for( G::StringToken t( spec.second , ","_sv ) ; t ; ++t )
+		add( es , ff , server_side , FactoryParser::parse(t(),true) , timeout , log_prefix ) ;
+
+	if( m_filters.empty() )
+		add( es , ff , server_side , {"exit","0"} , timeout , log_prefix ) ;
+}
+
+void GSmtp::FilterChain::add( GNet::ExceptionSink es , FilterFactory & ff ,
+	bool server_side , const FactoryParser::Result & spec , unsigned int timeout ,
+	const std::string & log_prefix )
+{
+	m_filters.push_back( ff.newFilter( es , server_side , spec , timeout , log_prefix ) ) ;
+	m_filter_id.append(m_filter_id.empty()?0U:1U,',').append( m_filters.back()->id() ) ;
 }
 
 GSmtp::FilterChain::~FilterChain()
 {
-	m_filter->doneSignal().disconnect() ;
+	if( m_filter )
+		m_filter->doneSignal().disconnect() ;
 }
 
 std::string GSmtp::FilterChain::id() const
@@ -72,31 +75,38 @@ G::Slot::Signal<int> & GSmtp::FilterChain::doneSignal()
 void GSmtp::FilterChain::start( const MessageId & id )
 {
 	if( m_running )
+	{
 		m_filter->cancel() ;
+		m_filter->doneSignal().disconnect() ;
+	}
 	m_running = true ;
 	m_message_id = id ;
+	m_filter_index = 0U ;
+	m_filter = m_filters.at(0U).get() ;
+	m_filter->doneSignal().connect( G::Slot::slot(*this,&FilterChain::onFilterDone) ) ;
 	m_filter->start( m_message_id ) ;
 }
 
 void GSmtp::FilterChain::onFilterDone( int ok_abandon_fail )
 {
-	if( ok_abandon_fail == 0 )
+	m_filter->doneSignal().disconnect() ;
+	if( ok_abandon_fail == 0 ) // ok
 	{
 		m_filter_index++ ;
-		if( m_filter_index == m_filters.size() )
+		G_ASSERT( m_filter_index <= m_filters.size() ) ;
+		if( m_filter_index >= m_filters.size() )
 		{
 			m_running = false ;
 			m_done_signal.emit( 0 ) ;
 		}
 		else
 		{
-			m_filter->doneSignal().disconnect() ;
 			m_filter = m_filters.at(m_filter_index).get() ;
 			m_filter->doneSignal().connect( G::Slot::slot(*this,&FilterChain::onFilterDone) ) ;
 			m_filter->start( m_message_id ) ;
 		}
 	}
-	else
+	else // abandon/fail
 	{
 		m_running = false ;
 		m_done_signal.emit( ok_abandon_fail ) ;
@@ -106,7 +116,10 @@ void GSmtp::FilterChain::onFilterDone( int ok_abandon_fail )
 void GSmtp::FilterChain::cancel()
 {
 	if( m_running )
+	{
 		m_filter->cancel() ;
+		m_filter->doneSignal().disconnect() ;
+	}
 	m_running = false ;
 }
 

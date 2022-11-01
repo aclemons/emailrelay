@@ -158,7 +158,7 @@ bool GSmtp::SpamClient::Request::sendMore()
 	else
 	{
 		G_DEBUG( "GSmtp::SpamClient::Request::sendMore: spam request sending " << n << " bytes" ) ;
-		return m_client->send( G::string_view(&m_buffer[0],static_cast<std::size_t>(n)) ) ;
+		return m_client->send( std::string(&m_buffer[0],static_cast<std::size_t>(n)) ) ;
 	}
 }
 

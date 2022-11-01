@@ -23,9 +23,6 @@
 
 #include "gdef.h"
 #include "gprotocolmessage.h"
-#include "gsmtpserverparser.h"
-#include "gsmtpserversender.h"
-#include "gsmtpserversend.h"
 #include "geventhandler.h"
 #include "gaddress.h"
 #include "gverifier.h"
@@ -33,11 +30,7 @@
 #include "gsaslserver.h"
 #include "gsaslserversecrets.h"
 #include "gstatemachine.h"
-#include "glinebuffer.h"
-#include "gstringview.h"
-#include "gtimer.h"
 #include "gexception.h"
-#include "glimits.h"
 #include <utility>
 #include <memory>
 
@@ -50,41 +43,37 @@ namespace GSmtp
 //| \class GSmtp::ServerProtocol
 /// Implements the SMTP server-side protocol.
 ///
-/// Uses the ProtocolMessage class as its down-stream interface, used for
-/// assembling and processing the incoming email messages.
+/// Uses the ProtocolMessage class as its down-stream interface,
+/// used for assembling and processing the incoming email
+/// messages.
 ///
-/// Uses the ServerSender as its "sideways" interface to talk back to
-/// the client.
+/// Uses the ServerProtocol::Sender as its "sideways" interface
+/// to talk back to the email-sending client.
 ///
-/// The RFC-2920 PIPELING requirements on the server protocol are that
-/// reponses are batched up while the protocol is working through a batch
-/// of incoming requests.
+/// \see GSmtp::ProtocolMessage, RFC-2821
 ///
-/// Pipelined requests should be apply()ed one by one with a parameter
-/// to indicate last-in-batch. The return value will indicate whether
-/// the request has been fully processed. If the request is not processed
-/// immediately then the batch iteration must be paused until a response
-/// is emitted. The GSmtp::ServerBuffer class can help with this.
-///
-/// Some commands (DATA, NOOP, QUIT etc) should only appear at the end
-/// of a batch of pipelined requests and the responses to these commands
-/// should force any accumulated response batch to be flushed. (See
-/// also RFC-2920 3.2 (2) (5) (6) and RFC-3030 (chunking) 4.2.)
-/// There is a 'flush' parameter on the protocolSend() callback to
-/// indicate a response that should cause the response batch to be
-/// flushed. (See also GSmtp::ServerBuffer.)
-///
-/// Note that RCPT-TO commands are typically in the middle of a pipelined
-/// batch and might be processed asynchronously, but they do not cause the
-/// response batch to be flushed.
-///
-class GSmtp::ServerProtocol : private GSmtp::ServerParser , private GSmtp::ServerSend
+class GSmtp::ServerProtocol
 {
 public:
-	G_EXCEPTION_CLASS( Done , tx("smtp protocol done") ) ;
-	using ApplyArgsTuple = std::tuple<const char *,std::size_t,std::size_t,std::size_t,char,bool> ; // see GNet::LineBuffer
+	G_EXCEPTION( ProtocolDone , tx("smtp protocol done") ) ;
 
-	class Text /// An interface used by GSmtp::ServerProtocol to provide response text strings.
+	class Sender /// An interface used by ServerProtocol to send protocol replies.
+	{
+	public:
+		virtual void protocolSend( const std::string & s , bool go_secure ) = 0 ;
+			///< Called when the protocol class wants to send
+			///< data down the socket.
+
+		virtual void protocolShutdown() = 0 ;
+			///< Called on receipt of a quit command after the quit
+			///< response has been sent allowing the socket to be
+			///< shut down.
+
+		virtual ~Sender() = default ;
+			///< Destructor.
+	} ;
+
+	class Text /// An interface used by ServerProtocol to provide response text strings.
 	{
 	public:
 		virtual std::string greeting() const = 0 ;
@@ -101,46 +90,43 @@ public:
 			///< Destructor.
 	} ;
 
-	struct Config /// A configuration structure for GSmtp::ServerProtocol.
+	struct Config /// A structure containing configuration parameters for ServerProtocol.
 	{
-		bool mail_requires_authentication {false} ; // for MAIL or VRFY, unless a trusted address
-		bool mail_requires_encryption {false} ;
-		bool authentication_requires_encryption {false} ; // ie. no insecure mechanisms
-
-		bool with_vrfy {false} ;
-		bool with_chunking {true} ; // BDAT CHUNKING and BINARYMIME
-		std::size_t max_size {0U} ;
-		bool tls_starttls {false} ;
-		bool tls_connection {false} ; // smtps
-		bool advertise_pipelining {true} ;
-		bool advertise_smtputf8 {false} ; // nb. only advertise SMTPUTF8 if the next-hop server supports it
-		int shutdown_how_on_quit {1} ;
-		unsigned int client_error_limit {8U} ;
-		bool smtputf8_strict {false} ; // reject non-ASCII characters if no MAIL-FROM SMTPUTF8 parameter
+		bool with_vrfy{false} ;
+		unsigned int filter_timeout{0U} ;
+		std::size_t max_size{0U} ;
+		bool authentication_requires_encryption{false} ;
+		bool mail_requires_authentication{false} ; // for MAIL or VRFY, unless a trusted address
+		bool mail_requires_encryption{false} ;
+		bool disconnect_on_max_size{false} ;
+		bool tls_starttls{false} ;
+		bool tls_connection{false} ; // smtps
+		bool ignore_eager_quit{false} ;
+		bool allow_pipelining{false} ;
 
 		Config() ;
+		Config( bool with_vrfy , unsigned int filter_timeout , std::size_t max_size ,
+			bool authentication_requires_encryption ,
+			bool mail_requires_encryption ,
+			bool tls_starttls ,
+			bool tls_connection ) ;
 		Config & set_with_vrfy( bool = true ) ;
+		Config & set_filter_timeout( unsigned int ) ;
 		Config & set_max_size( std::size_t ) ;
+		Config & set_authentication_requires_encryption( bool = true ) ;
 		Config & set_mail_requires_authentication( bool = true ) ;
 		Config & set_mail_requires_encryption( bool = true ) ;
-		Config & set_authentication_requires_encryption( bool = true ) ;
+		Config & set_disconnect_on_max_size( bool = true ) ;
 		Config & set_tls_starttls( bool = true ) ;
 		Config & set_tls_connection( bool = true ) ;
-		Config & set_advertise_pipelining( bool = true ) ;
-		Config & set_advertise_smtputf8( bool = true ) ;
-		Config & set_with_chunking( bool = true ) ;
-		Config & set_shutdown_how_on_quit( int ) ;
-		Config & set_client_error_limit( unsigned int ) ;
-		Config & set_smtputf8_strict( bool = true ) ;
+		Config & set_ignore_eager_quit( bool = true ) ;
+		Config & set_allow_pipelining( bool = true ) ;
 	} ;
 
-	ServerProtocol( ServerSender & , Verifier & , ProtocolMessage & ,
+	ServerProtocol( Sender & , Verifier & , ProtocolMessage & ,
 		const GAuth::SaslServerSecrets & secrets , const std::string & sasl_server_config ,
 		Text & text , const GNet::Address & peer_address , const Config & config ) ;
 			///< Constructor.
-			///<
-			///< The ServerSender interface is used to send protocol responses
-			///< back to the client.
 			///<
 			///< The Verifier interface is used to verify recipient
 			///< addresses. See GSmtp::Verifier.
@@ -148,16 +134,20 @@ public:
 			///< The ProtocolMessage interface is used to assemble and
 			///< process an incoming message.
 			///<
-			///< The Text interface is used to get informational text for
-			///< returning to the client.
-
-	void setSender( ServerSender & ) ;
-		///< Sets the ServerSender interface, overriding the constructor
-		///< parameter.
+			///< The Sender interface is used to send protocol
+			///< replies back to the client.
+			///<
+			///< The Text interface is used to get informational text
+			///< for returning to the client.
+			///<
+			///< Exceptions thrown out of event-loop and timer callbacks
+			///< are delivered to the given exception sink.
+			///<
+			///< All references are kept.
 
 	void init() ;
 		///< Starts the protocol. Use only once after construction.
-		///< The implementation uses the ServerSender interface to either
+		///< The implementation uses the Sender interface to either
 		///< send the plaintext SMTP greeting or start the TLS
 		///< handshake.
 
@@ -165,151 +155,126 @@ public:
 		///< Destructor.
 
 	bool inDataState() const ;
-		///< Returns true if currently in a data-transfer state
-		///< meaning that the next apply() does not need to
-		///< contain a complete line of text. This is typically
-		///< used to enable the GNet::LineBuffer 'fragments'
-		///< option.
+		///< Returns true if currently in the data-transfer state.
+		///< This can be used to enable the GNet::LineBuffer
+		///< 'fragments' option.
 
-	bool apply( const ApplyArgsTuple & ) ;
-		///< Called on receipt of a complete line of text from the
-		///< client, or possibly a line fragment iff this object is
-		///< currently inDataState().
-		///<
-		///< To allow for RFC-2920 pipelining the 'more' field
-		///< should be set if there is another line that is ready
-		///< to be apply()d. This allows ServerSender::protocolSend()
-		///< callbacks to ask that responses get batched up until
-		///< the last request (without 'more').
-		///<
-		///< Returns false if the protocol has entered a state where
-		///< it cannot accept another apply(). In practice the false
-		///< return indicates that the protocol is waiting for an
-		///< asynchronous filter or address-verifier task to complete.
-		///< The caller should try to apply() any remaining data at
-		///< a later time. The next ServerSender::protocolSend() callback
-		///< is a convenient time to try the re-apply() because the
-		///< relevant state change will be accompanied by a protocol
-		///< response being sent out.
-		///<
-		///< Throws Done at the end of the protocol.
+	bool halfDuplexBusy() const ;
+		///< Returns true if the protocol has received a command
+		///< but not yet sent a response. This can be used to
+		///< enforce half-duplex operation on a badly-behaved
+		///< client that is attempting to do command pipelining.
+
+	bool halfDuplexBusy( const char * , std::size_t ) const ;
+		///< This overload is used for a newly-received network
+		///< packet. If it returns true then the packet should be
+		///< queued up and only apply()d after then next use
+		///< of Sender::protocolSend().
+
+	bool apply( const char * line_data , std::size_t line_size , std::size_t eolsize , std::size_t linesize , char c0 ) ;
+		///< Called on receipt of a line of text from the remote
+		///< client. As an optimisation this can also be a
+		///< GNet::LineBuffer line fragment iff this object is
+		///< currently inDataState(). Returns true. Throws
+		///< ProtocolDone at the end of the protocol.
 
 	void secure( const std::string & certificate , const std::string & protocol , const std::string & cipher ) ;
-		///< To be called when the transport protocol successfully
-		///< goes into secure mode. See ServerSender::protocolSend().
-
-	Config & config() ;
-		///< Used in testing to update the configuration on the fly.
-
-public:
-	ServerProtocol( const ServerProtocol & ) = delete ;
-	ServerProtocol( ServerProtocol && ) = delete ;
-	void operator=( const ServerProtocol & ) = delete ;
-	void operator=( ServerProtocol && ) = delete ;
+		///< To be called when the transport protocol goes
+		///< into secure mode.
 
 private:
 	enum class Event
 	{
-		Unknown ,
-		Quit ,
-		Helo ,
-		Ehlo ,
-		Rset ,
-		Noop ,
-		Expn ,
-		Data ,
-		DataFail ,
-		DataContent ,
-		Bdat ,
-		BdatLast ,
-		BdatLastZero ,
-		BdatCheck ,
-		BdatContent ,
-		Rcpt ,
-		RcptReply ,
-		Mail ,
-		StartTls ,
-		Secure ,
-		Vrfy ,
-		VrfyReply ,
-		Help ,
-		Auth ,
-		AuthData ,
-		Eot ,
-		Done
+		eQuit ,
+		eHelo ,
+		eEhlo ,
+		eRset ,
+		eNoop ,
+		eExpn ,
+		eData ,
+		eRcpt ,
+		eMail ,
+		eStartTls ,
+		eSecure ,
+		eVrfy ,
+		eVrfyReply ,
+		eHelp ,
+		eAuth ,
+		eAuthData ,
+		eContent ,
+		eEot ,
+		eDone ,
+		eUnknown
 	} ;
 	enum class State
 	{
-		Start ,
-		End ,
-		Idle ,
-		GotMail ,
-		GotRcpt ,
-		VrfyStart ,
-		VrfyIdle ,
-		VrfyGotMail ,
-		VrfyGotRcpt ,
-		RcptTo1 ,
-		RcptTo2 ,
-		Data ,
-		BdatData ,
-		BdatIdle ,
-		BdatDataLast ,
-		BdatChecking ,
-		MustReset ,
-		BdatProcessing ,
-		Processing ,
-		Auth ,
-		StartingTls ,
+		sStart ,
+		sEnd ,
+		sIdle ,
+		sGotMail ,
+		sGotRcpt ,
+		sVrfyStart ,
+		sVrfyIdle ,
+		sVrfyGotMail ,
+		sVrfyGotRcpt ,
+		sVrfyTo1 ,
+		sVrfyTo2 ,
+		sData ,
+		sProcessing ,
+		sAuth ,
+		sStartingTls ,
+		sDiscarding ,
 		s_Any ,
 		s_Same
 	} ;
-	using EventData = G::string_view ;
+	struct EventData /// Contains GNet::LineBuffer callback parameters or a complete input line, passed through the G::StateMachine.
+	{
+		const char * ptr ;
+		std::size_t size ;
+		std::size_t eolsize ;
+		std::size_t linesize ;
+		char c0 ;
+
+		EventData( const char * ptr , std::size_t size ) ;
+		EventData( const char * ptr , std::size_t size , std::size_t eolsize , std::size_t linesize , char c0 ) ;
+	} ;
 	using Fsm = G::StateMachine<ServerProtocol,State,Event,EventData> ;
 
-private: // overrides
-	std::string sendUseStartTls() const override ; // GSmtp::ServerSend
-	bool sendFlush() const override ; // GSmtp::ServerSend
+public:
+	ServerProtocol( const ServerProtocol & ) = delete ;
+	ServerProtocol( ServerProtocol && ) = delete ;
+	ServerProtocol & operator=( const ServerProtocol & ) = delete ;
+	ServerProtocol & operator=( ServerProtocol && ) = delete ;
 
 private:
-	struct AddressCommand /// mail-from or rcpt-to
-	{
-		AddressCommand() = default ;
-		AddressCommand( const std::string & e ) : error(e) {}
-		std::string error ;
-		std::string address ;
-		std::size_t tailpos {std::string::npos} ;
-		std::size_t size {0U} ;
-		std::string auth ;
-	} ;
-	static std::unique_ptr<GAuth::SaslServer> newSaslServer( const GAuth::SaslServerSecrets & , const Config & , const std::string & ) ;
-	static std::string str( EventData ) ;
-	void applyEvent( Event , EventData = {} ) ;
-	Event commandEvent( G::string_view ) const ;
-	Event dataEvent( G::string_view ) const ;
-	Event bdatEvent( G::string_view ) const ;
+	void send( const char * ) ;
+	void send( std::string , bool = false ) ;
+	Event commandEvent( const std::string & ) const ;
+	std::string commandWord( const std::string & line ) const ;
+	std::string commandLine( const std::string & line ) const ;
+	static const std::string & crlf() ;
+	bool authenticationRequiresEncryption() const ;
+	void reset() ;
 	G::StringArray mechanisms() const ;
-	G::StringArray mechanisms( bool ) const ;
-	void clear() ;
-	bool messageAddContentFailed() ;
-	bool messageAddContentTooBig() ;
+	G::StringArray mechanisms( bool secure ) const ;
 	void badClientEvent() ;
 	void processDone( bool , const MessageId & , const std::string & , const std::string & ) ; // ProtocolMessage::doneSignal()
 	void prepareDone( bool , bool , std::string ) ;
-	bool busy() const ;
-	bool rcptState() const ;
-	bool flush() const ;
-	bool isEndOfText( const ApplyArgsTuple & ) const ;
-	bool isEscaped( const ApplyArgsTuple & ) const ;
+	bool isEndOfText( const EventData & ) const ;
+	bool isEscaped( const EventData & ) const ;
 	void doNoop( EventData , bool & ) ;
 	void doIgnore( EventData , bool & ) ;
 	void doNothing( EventData , bool & ) ;
+	void doDiscarded( EventData , bool & ) ;
+	void doDiscard( EventData , bool & ) ;
 	void doHelp( EventData , bool & ) ;
 	void doExpn( EventData , bool & ) ;
+	void doEagerQuit( EventData , bool & ) ;
 	void doQuit( EventData , bool & ) ;
 	void doEhlo( EventData , bool & ) ;
 	void doHelo( EventData , bool & ) ;
-	void doAuthInvalid( EventData , bool & ) ;
+	void sendReadyForTls() ;
+	void sendBadMechanism() ;
 	void doAuth( EventData , bool & ) ;
 	void doAuthData( EventData , bool & ) ;
 	void doMail( EventData , bool & ) ;
@@ -317,42 +282,63 @@ private:
 	void doUnknown( EventData , bool & ) ;
 	void doRset( EventData , bool & ) ;
 	void doData( EventData , bool & ) ;
-	void doDataContent( EventData , bool & ) ;
-	void doBadDataCommand( EventData , bool & ) ;
-	void doBdatOutOfSequence( EventData , bool & ) ;
-	void doBdatFirst( EventData , bool & ) ;
-	void doBdatFirstLast( EventData , bool & ) ;
-	void doBdatFirstLastZero( EventData , bool & ) ;
-	void doBdatMore( EventData , bool & ) ;
-	void doBdatMoreLast( EventData , bool & ) ;
-	void doBdatMoreLastZero( EventData , bool & ) ;
-	void doBdatImp( G::string_view , bool & , bool , bool , bool ) ;
-	void doBdatContent( EventData , bool & ) ;
-	void doBdatContentLast( EventData , bool & ) ;
-	void doBdatCheck( EventData , bool & ) ;
-	void doBdatComplete( EventData , bool & ) ;
+	void doContent( EventData , bool & ) ;
 	void doComplete( EventData , bool & ) ;
 	void doEot( EventData , bool & ) ;
 	void doVrfy( EventData , bool & ) ;
 	void doVrfyReply( EventData , bool & ) ;
-	void doRcptToReply( EventData , bool & ) ;
+	void doVrfyToReply( EventData , bool & ) ;
 	void doNoRecipients( EventData , bool & ) ;
 	void doStartTls( EventData , bool & ) ;
 	void doSecure( EventData , bool & ) ;
 	void doSecureGreeting( EventData , bool & ) ;
-	void verifyDone( Verifier::Command , const VerifierStatus & ) ;
-	std::string useStartTls() const ;
-	void verify( Verifier::Command , const std::string & , const std::string & = {} ) ;
+	void verifyDone( const VerifierStatus & ) ;
+	void sendBadFrom( const std::string & ) ;
+	void sendTooBig( bool disconnecting = false ) ;
+	void sendChallenge( const std::string & ) ;
+	void sendBadTo( const std::string & , bool ) ;
+	void sendOutOfSequence() ;
+	void sendGreeting( const std::string & ) ;
+	void sendQuitOk() ;
+	void sendClosing() ;
+	void sendUnrecognised( const std::string & ) ;
+	void sendNotImplemented() ;
+	void sendHeloReply() ;
+	void sendEhloReply() ;
+	void sendRsetReply() ;
+	void sendMailReply() ;
+	void sendRcptReply() ;
+	void sendDataReply() ;
+	void sendCompletionReply( bool ok , const std::string & ) ;
+	void sendInvalidArgument() ;
+	void sendAuthenticationCancelled() ;
+	void sendAuthRequired() ;
+	void sendEncryptionRequired() ;
+	void sendNoRecipients() ;
+	void sendMissingParameter() ;
+	void sendVerified( const std::string & ) ;
+	void sendNotVerified( const std::string & , bool ) ;
+	void sendWillAccept( const std::string & ) ;
+	void sendAuthDone( bool ok ) ;
+	void sendOk() ;
+	std::pair<std::string,std::string> parseAddress( const std::string & ) const ;
+	std::pair<std::string,std::string> parseMailFrom( const std::string & ) const ;
+	std::string parseMailParameter( const std::string & , const std::string & ) const ;
+	std::size_t parseMailSize( const std::string & ) const ;
+	std::string parseMailAuth( const std::string & ) const ;
+	std::pair<std::string,std::string> parseRcptTo( const std::string & ) const ;
+	std::string parseRcptParameter( const std::string & ) const ;
+	std::string parsePeerName( const std::string & ) const ;
+	void verify( const std::string & , const std::string & ) ;
+	std::string printableAuth( const std::string & auth_line ) const ;
 
 private:
-	ServerSender * m_sender ;
+	Sender & m_sender ;
 	Verifier & m_verifier ;
 	Text & m_text ;
 	ProtocolMessage & m_message ;
 	std::unique_ptr<GAuth::SaslServer> m_sasl ;
 	Config m_config ;
-	const ApplyArgsTuple * m_apply_data {nullptr} ;
-	bool m_apply_more ;
 	Fsm m_fsm ;
 	bool m_with_starttls ;
 	GNet::Address m_peer_address ;
@@ -360,26 +346,58 @@ private:
 	std::string m_certificate ;
 	std::string m_protocol ;
 	std::string m_cipher ;
-	unsigned int m_client_error_count ;
+	unsigned int m_bad_client_count ;
+	unsigned int m_bad_client_limit ;
 	std::string m_session_peer_name ;
-	bool m_session_esmtp ;
-	std::size_t m_bdat_arg ;
-	std::size_t m_bdat_sum ;
+	bool m_session_authenticated ;
+	std::string m_buffer ;
 } ;
 
-inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::config() { return m_config ; }
+//| \class GSmtp::ServerProtocolText
+/// A default implementation for the
+/// ServerProtocol::Text interface.
+///
+class GSmtp::ServerProtocolText : public ServerProtocol::Text
+{
+public:
+	ServerProtocolText( const std::string & code_ident , bool with_received_line ,
+		const std::string & thishost , const GNet::Address & peer_address ) ;
+			///< Constructor.
+
+	static std::string receivedLine( const std::string & smtp_peer_name_from_helo ,
+		const std::string & peer_address , const std::string & thishost ,
+		bool authenticated , bool secure , const std::string & secure_protocol ,
+		const std::string & secure_cipher ) ;
+			///< Returns a standard "Received:" line.
+
+public:
+	~ServerProtocolText() override = default ;
+	ServerProtocolText( const ServerProtocolText & ) = delete ;
+	ServerProtocolText( ServerProtocolText && ) = delete ;
+	ServerProtocolText & operator=( const ServerProtocolText & ) = delete ;
+	ServerProtocolText & operator=( ServerProtocolText && ) = delete ;
+
+private: // overrides
+	std::string greeting() const override ; // Override from GSmtp::ServerProtocol::Text.
+	std::string hello( const std::string & smtp_peer_name_from_helo ) const override ; // Override from GSmtp::ServerProtocol::Text.
+	std::string received( const std::string & , bool , bool , const std::string & , const std::string & ) const override ; // Override from GSmtp::ServerProtocol::Text.
+
+private:
+	std::string m_code_ident ;
+	bool m_with_received_line ;
+	std::string m_thishost ;
+	GNet::Address m_peer_address ;
+} ;
+
 inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_with_vrfy( bool b ) { with_vrfy = b ; return *this ; }
-inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_with_chunking( bool b ) { with_chunking = b ; return *this ; }
+inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_filter_timeout( unsigned int t ) { filter_timeout = t ; return *this ; }
 inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_max_size( std::size_t n ) { max_size = n ; return *this ; }
+inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_authentication_requires_encryption( bool b ) { authentication_requires_encryption = b ; return *this ; }
 inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_mail_requires_authentication( bool b ) { mail_requires_authentication = b ; return *this ; }
 inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_mail_requires_encryption( bool b ) { mail_requires_encryption = b ; return *this ; }
-inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_authentication_requires_encryption( bool b ) { authentication_requires_encryption = b ; return *this ; }
+inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_disconnect_on_max_size( bool b ) { disconnect_on_max_size = b ; return *this ; }
 inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_tls_starttls( bool b ) { tls_starttls = b ; return *this ; }
 inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_tls_connection( bool b ) { tls_connection = b ; return *this ; }
-inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_advertise_pipelining( bool b ) { advertise_pipelining = b ; return *this ; }
-inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_advertise_smtputf8( bool b ) { advertise_smtputf8 = b ; return *this ; }
-inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_shutdown_how_on_quit( int i ) { shutdown_how_on_quit = i ; return *this ; }
-inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_client_error_limit( unsigned int n ) { client_error_limit = n ; return *this ; }
-inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_smtputf8_strict( bool b ) { smtputf8_strict = b ; return *this ; }
+inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_allow_pipelining( bool b ) { allow_pipelining = b ; return *this ; }
 
 #endif

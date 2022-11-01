@@ -74,8 +74,8 @@ public:
 public:
 	DeviceContext( const DeviceContext & ) = delete ;
 	DeviceContext( DeviceContext && ) = delete ;
-	void operator=( const DeviceContext & ) = delete ;
-	void operator=( DeviceContext && ) = delete ;
+	DeviceContext & operator=( const DeviceContext & ) = delete ;
+	DeviceContext & operator=( DeviceContext && ) = delete ;
 
 private:
 	HDC m_hdc ;
@@ -84,8 +84,8 @@ private:
 } ;
 
 //| \class GGui::ScreenDeviceContext
-/// A thin wrapper for a GDI device context corresponding to
-/// the whole screen.
+/// A thin wrapper for a GDI device
+/// context corresponding to the whole screen.
 /// \see GGui::DeviceContext
 ///
 class GGui::ScreenDeviceContext
@@ -121,8 +121,8 @@ public:
 public:
 	ScreenDeviceContext( const ScreenDeviceContext & ) = delete ;
 	ScreenDeviceContext( ScreenDeviceContext && ) = delete ;
-	void operator=( const ScreenDeviceContext & ) = delete ;
-	void operator=( ScreenDeviceContext && ) = delete ;
+	ScreenDeviceContext & operator=( const ScreenDeviceContext & ) = delete ;
+	ScreenDeviceContext & operator=( ScreenDeviceContext && ) = delete ;
 
 private:
 	HDC m_dc ;

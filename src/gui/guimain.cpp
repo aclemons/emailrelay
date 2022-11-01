@@ -106,17 +106,17 @@
 
 #include "gdef.h"
 #include "gqt.h"
-#include "gdialog.h"
+#include "guidialog.h"
 #include "gfile.h"
 #include "gbatchfile.h"
 #include "gmapfile.h"
 #include "gdirectory.h"
 #include "goptionparser.h"
 #include "installer.h"
-#include "dir.h"
-#include "glink.h"
+#include "guidir.h"
+#include "guilink.h"
 #include "pages.h"
-#include "boot.h"
+#include "guiboot.h"
 #include "serverconfiguration.h"
 #include "glogoutput.h"
 #include "ggetopt.h"
@@ -326,7 +326,7 @@ int main( int argc , char * argv [] )
 					G::File::copyInto( "/usr/sbin/emailrelay" , pdir + "usr/sbin" , std::nothrow ) ;
 					f << "usr/sbin/=%dir-install%/sbin/" << std::endl ;
 				}
-				GPage::setTestMode() ;
+				Gui::Page::setTestMode() ;
 			}
 
 			// look for the payload (for install mode)
@@ -352,7 +352,7 @@ int main( int argc , char * argv [] )
 			if( configure_mode && pointer_file.empty() )
 			{
 				QString message_format = tr( "cannot find a 'payload' directory for installation or a "
-					"'%1%' pointer file to allow reconfiguration: "
+					"'%1' pointer file to allow reconfiguration: "
 					"this program has probably been moved away from its original location: "
 					"please configure the emailrelay server manually" ) ;
 				QString message = message_format.arg( GQt::qstr( pointerFilename(argv0) , GQt::Path ) ) ;
@@ -383,8 +383,8 @@ int main( int argc , char * argv [] )
 			}
 
 			// load the existing server configuration
-			G::Path dir_config = pointer_map.expandedPathValue( "dir-config" , Dir::config() ) ;
-			G::Path dir_run = pointer_map.expandedPathValue( "dir-run" , Dir::pid(dir_config) ) ;
+			G::Path dir_config = pointer_map.expandedPathValue( "dir-config" , Gui::Dir::config() ) ;
+			G::Path dir_run = pointer_map.expandedPathValue( "dir-run" , Gui::Dir::pid(dir_config) ) ;
 			G::Path server_config_file = configFile( dir_config ) ; // config-file or batch-file
 			G::MapFile server_config_map ;
 			if( configure_mode )
@@ -396,7 +396,7 @@ int main( int argc , char * argv [] )
 			}
 
 			// determine the install root
-			G::Path dir_install = Dir::install() ;
+			G::Path dir_install = Gui::Dir::install() ;
 			if( configure_mode )
 			{
 				// configure-mode dir-install is relative to the server exe or this gui exe, with a pointer-file override
@@ -424,19 +424,19 @@ int main( int argc , char * argv [] )
 			pages_config.add( "=dir-config" , dir_config.str() ) ;
 			pages_config.add( "=dir-install" , dir_install.str() ) ;
 			pages_config.add( "=dir-run" , dir_run.str() ) ;
-			pages_config.add( "=dir-boot" , Dir::boot().str() ) ;
-			pages_config.add( "=dir-boot-enabled" , Boot::installable(Dir::boot()) ? "y" : "n" ) ;
+			pages_config.add( "=dir-boot" , Gui::Dir::boot().str() ) ;
+			pages_config.add( "=dir-boot-enabled" , Gui::Boot::installable(Gui::Dir::boot()) ? "y" : "n" ) ;
 			if( !pages_config.contains("spool-dir") )
-				pages_config.add( "spool-dir" , Dir::spool().str() ) ;
+				pages_config.add( "spool-dir" , Gui::Dir::spool().str() ) ;
 
 			// set widget states based on the current file-system state
 			if( configure_mode )
 			{
-				std::string fname = G::Link::filename( "E-MailRelay" ) ;
-				pages_config.add( "start-on-boot" , Boot::installed(Dir::boot(),"emailrelay") ? "y" : "n" ) ;
-				pages_config.add( "start-link-desktop" , G::Link::exists(Dir::desktop()+fname) ? "y" : "n" ) ;
-				pages_config.add( "start-link-menu" , G::Link::exists(Dir::menu()+fname) ? "y" : "n" ) ;
-				pages_config.add( "start-at-login" , G::Link::exists(Dir::autostart()+fname) ? "y" : "n" ) ;
+				std::string fname = Gui::Link::filename( "E-MailRelay" ) ;
+				pages_config.add( "start-on-boot" , Gui::Boot::installed(Gui::Dir::boot(),"emailrelay") ? "y" : "n" ) ;
+				pages_config.add( "start-link-desktop" , Gui::Link::exists(Gui::Dir::desktop()+fname) ? "y" : "n" ) ;
+				pages_config.add( "start-link-menu" , Gui::Link::exists(Gui::Dir::menu()+fname) ? "y" : "n" ) ;
+				pages_config.add( "start-at-login" , Gui::Link::exists(Gui::Dir::autostart()+fname) ? "y" : "n" ) ;
 			}
 
 			// check the config file (or windows batch file) will be writeable
@@ -448,7 +448,7 @@ int main( int argc , char * argv [] )
 					G::File::open( f , server_config_file , G::File::Append() ) ;
 					if( !f.good() )
 					{
-						QString message_format = tr( "cannot write [%1%]: check file permissions%2%" ) ;
+						QString message_format = tr( "cannot write [%1]: check file permissions%2" ) ;
 						QString more_help = isWindows() ? tr( " or run as administrator" ) : QString() ;
 						QString message = message_format.arg(GQt::qstr(server_config_file.str())).arg(more_help) ;
 						throw std::runtime_error( GQt::stdstr( message , GQt::Utf8 ) ) ;
@@ -474,7 +474,7 @@ int main( int argc , char * argv [] )
 			// as the configure-mode flag because the first run is always in
 			// install mode -- but for a mac bundle we are always in configure
 			// mode, so we add a flag file into the distribution bundle that gets
-			// deleted by a successful first configuration (see GDialog)
+			// deleted by a successful first configuration (see Gui::Dialog)
 			bool run_before = configure_mode ;
 			G::Path virgin_flag_file ;
 			if( is_mac )
@@ -488,7 +488,7 @@ int main( int argc , char * argv [] )
 			const bool licence_accepted = run_before ;
 			const bool with_launch = !configure_mode ;
 			const bool skip_startup_page = configure_mode && !isWindows() ;
-			GDialog d( virgin_flag_file , with_launch ) ;
+			Gui::Dialog d( virgin_flag_file , with_launch ) ;
 			d.add( new TitlePage(d,pages_config,"title","license","") ) ;
 			d.add( new LicensePage(d,pages_config,"license","directory","",licence_accepted) ) ;
 			d.add( new DirectoryPage(d,pages_config,"directory","dowhat","",!configure_mode,isWindows(),is_mac) ) ;

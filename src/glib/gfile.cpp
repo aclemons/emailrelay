@@ -45,13 +45,7 @@ void G::File::remove( const Path & path )
 
 bool G::File::rename( const Path & from , const Path & to , std::nothrow_t ) noexcept
 {
-	bool ok = 0 == std::rename( from.cstr() , to.cstr() ) ;
-	if( !ok )
-	{
-		std::remove( to.cstr() ) ;
-		ok = 0 == std::rename( from.cstr() , to.cstr() ) ;
-	}
-	return ok ;
+	return 0 == std::rename( from.cstr() , to.cstr() ) ;
 }
 
 void G::File::rename( const Path & from , const Path & to , bool ignore_missing )
@@ -85,6 +79,7 @@ bool G::File::copy( const Path & from , const Path & to , std::nothrow_t )
 	return copy(from,to,0).empty() ;
 }
 
+#ifndef G_LIB_SMALL
 bool G::File::copyInto( const Path & from , const Path & to_dir , std::nothrow_t )
 {
 	G::Path to = to_dir + from.basename() ;
@@ -93,6 +88,7 @@ bool G::File::copyInto( const Path & from , const Path & to_dir , std::nothrow_t
 		ok = chmodx( to , std::nothrow ) ;
 	return ok ;
 }
+#endif
 
 std::string G::File::copy( const Path & from , const Path & to , int )
 {
@@ -121,11 +117,12 @@ std::string G::File::copy( const Path & from , const Path & to , int )
 	return {} ;
 }
 
+#ifndef G_LIB_SMALL
 void G::File::copy( std::istream & in , std::ostream & out , std::streamsize limit , std::string::size_type block )
 {
 	std::ios_base::iostate in_state = in.rdstate() ;
 
-	block = block ? block : static_cast<std::string::size_type>(Limits<>::file_buffer) ;
+	block = block ? block : static_cast<std::string::size_type>(limits::file_buffer) ;
 	std::vector<char> buffer ;
 	buffer.reserve( block ) ;
 
@@ -147,6 +144,7 @@ void G::File::copy( std::istream & in , std::ostream & out , std::streamsize lim
 	// restore the input failbit because it might have been set by us reading an incomplete block at eof
 	in.clear( (in.rdstate() & ~std::ios_base::failbit) | (in_state & std::ios_base::failbit) ) ;
 }
+#endif
 
 bool G::File::exists( const Path & path )
 {
@@ -196,11 +194,13 @@ bool G::File::isExecutable( const Path & path , std::nothrow_t )
 	return 0 == s.error && s.is_executable ;
 }
 
+#ifndef G_LIB_SMALL
 bool G::File::isEmpty( const Path & path , std::nothrow_t )
 {
 	Stat s = statImp( path.cstr() ) ;
 	return 0 == s.error && s.is_empty ;
 }
+#endif
 
 std::string G::File::sizeString( const Path & path )
 {
@@ -216,6 +216,7 @@ G::SystemTime G::File::time( const Path & path )
 	return SystemTime( s.mtime_s , s.mtime_us ) ;
 }
 
+#ifndef G_LIB_SMALL
 G::SystemTime G::File::time( const Path & path , std::nothrow_t )
 {
 	Stat s = statImp( path.cstr() ) ;
@@ -223,35 +224,37 @@ G::SystemTime G::File::time( const Path & path , std::nothrow_t )
 		return SystemTime( 0 ) ;
 	return SystemTime( s.mtime_s , s.mtime_us ) ;
 }
+#endif
 
 bool G::File::chmodx( const Path & path , std::nothrow_t )
 {
 	return chmodx( path , false ) ;
 }
 
+#ifndef G_LIB_SMALL
 void G::File::chmodx( const Path & path )
 {
 	chmodx( path , true ) ;
 }
+#endif
 
 bool G::File::mkdir( const Path & dir , std::nothrow_t )
 {
 	return 0 == mkdirImp( dir ) ;
 }
 
+#ifndef G_LIB_SMALL
 void G::File::mkdir( const Path & dir )
 {
 	int e = mkdirImp( dir ) ;
 	if( e )
 		throw CannotMkdir( dir.str() , Process::strerror(e) ) ;
 }
+#endif
 
-bool G::File::mkdirsr( int * ep , const Path & path , int limit )
+bool G::File::mkdirsr( const Path & path , int & e , int & limit )
 {
 	// (recursive)
-
-	if( limit == 0 )
-		return false ;
 
 	if( exists(path) )
 		return true ;
@@ -259,32 +262,36 @@ bool G::File::mkdirsr( int * ep , const Path & path , int limit )
 	if( path.str().empty() )
 		return true ;
 
-	if( !mkdirsr( ep , path.dirname() , limit-1 ) ) // (recursion)
+	bool ok = mkdirsr( path.dirname() , e , limit ) ; // (recursion)
+	if( !ok )
 		return false ;
 
-	int e = mkdirImp( path ) ;
-	if( e )
-		*ep = e ;
-	else
-		chmodx( path , std::nothrow ) ;
+	e = mkdirImp( path ) ;
+	if( e == 0 && --limit < 0 )
+	{
+		e = ENOENT ; // sort of
+		return false ;
+	}
 
-	return e == 0 ;
+	return true ;
 }
 
 bool G::File::mkdirs( const Path & path , std::nothrow_t , int limit )
 {
 	int e = 0 ;
-	bool ok = mkdirsr( &e , path , limit ) ;
-	return ok || e == EEXIST ;
+	return mkdirsr( path , e , limit ) ;
 }
 
+#ifndef G_LIB_SMALL
 void G::File::mkdirs( const Path & path , int limit )
 {
 	int e = 0 ;
-	if( !mkdirsr(&e,path,limit) && e != EEXIST )
+	if( !mkdirsr(path,e,limit) && e != EEXIST )
 		throw CannotMkdir( path.str() , e ? G::Process::strerror(e) : std::string() ) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 int G::File::compare( const Path & path_1 , const Path & path_2 , bool ignore_whitespace )
 {
 	std::ifstream file_1 ; open( file_1 , path_1 ) ;
@@ -311,4 +318,5 @@ int G::File::compare( const Path & path_1 , const Path & path_2 , bool ignore_wh
 	}
 	return result ;
 }
+#endif
 

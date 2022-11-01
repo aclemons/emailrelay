@@ -24,8 +24,6 @@
 #include "gdef.h"
 #include <cstdlib>
 
-/// A sleep() function.
-///
 #ifdef G_WINDOWS
 inline void sleep( int s )
 {

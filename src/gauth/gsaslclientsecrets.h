@@ -24,6 +24,7 @@
 #include "gdef.h"
 #include "gvalid.h"
 #include "gsecret.h"
+#include "gstringview.h"
 
 namespace GAuth
 {
@@ -38,7 +39,7 @@ namespace GAuth
 class GAuth::SaslClientSecrets : public virtual Valid
 {
 public:
-	virtual Secret clientSecret( const std::string & type ) const = 0 ;
+	virtual Secret clientSecret( G::string_view type ) const = 0 ;
 		///< Returns the client secret for the given type.
 		///< The type is "plain" or the CRAM hash algorithm or "oauth".
 		///< Returns an invalid secret if none.

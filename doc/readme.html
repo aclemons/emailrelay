@@ -132,7 +132,43 @@
       <div class="div-pre">
        <pre>emailrelay --help --verbose</pre>
       </div><!-- div-pre -->
-   <h2><a class="a-header" name="SH_1_3">Documentation</a></h2> <!-- index:2:SH:1:3:Documentation -->
+   <h2><a class="a-header" name="SH_1_3">Packages</a></h2> <!-- index:2:SH:1:3:Packages -->
+    <p>
+     To install on Linux from a RPM or DEB package:
+    </p>
+
+      <div class="div-pre">
+       <pre>sudo $SHELL # or 'su'
+rpm -i emailrelay*.rpm  # if RPM
+dpkg -i emailrelay*.deb  # if DEB
+</pre>
+      </div><!-- div-pre -->
+    <p>
+     If your Linux system uses <em>systemd</em> then you should check the E-MailRelay
+     configuration file <em>/etc/emailrelay.conf</em> is as you want it and then run:
+    </p>
+
+      <div class="div-pre">
+       <pre>systemctl enable emailrelay
+systemctl start emailrelay
+systemctl status emailrelay
+</pre>
+      </div><!-- div-pre -->
+    <p>
+     On other systems try these commands:
+    </p>
+
+      <div class="div-pre">
+       <pre>cp /usr/lib/emailrelay/init/emailrelay /etc/init.d/
+update-rc.d emailrelay enable || rc-update add emailrelay
+invoke-rc.d emailrelay start || service emailrelay start
+tail /var/log/messages /var/log/syslog 2&gt;/dev/null
+</pre>
+      </div><!-- div-pre -->
+    <p>
+     On Windows run the setup program.
+    </p>
+   <h2><a class="a-header" name="SH_1_4">Documentation</a></h2> <!-- index:2:SH:1:4:Documentation -->
     <p>
      The following documentation is provided:
     </p>
@@ -149,10 +185,6 @@
     <p>
      Source code documentation will be generated when building from source if
      <em>doxygen</em> is available.
-    </p>
-   <h2><a class="a-header" name="SH_1_4">Feedback</a></h2> <!-- index:2:SH:1:4:Feedback -->
-    <p>
-     Please feel free to e-mail the author at <em>mailto:graeme_walker@users.sourceforge.net</em>.
     </p>
 
  </div> <!-- div-main -->

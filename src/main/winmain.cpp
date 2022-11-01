@@ -22,6 +22,7 @@
 #include "garg.h"
 #include "gslot.h"
 #include "gexception.h"
+#include "gsocket.h"
 #include "winapp.h"
 #include "commandline.h"
 #include "options.h"
@@ -33,21 +34,9 @@ int WINAPI WinMain( HINSTANCE hinstance , HINSTANCE previous , LPSTR command_lin
 {
 	try
 	{
-
-#if 0
-		// set the C locale from the environment -- this has very little effect
-		// on C++ code on windows, particularly as we avoid things like atoi(),
-		// tolower(), strtoul() etc. -- however, it is probably best not to
-		// use it at all because of possible interaction between the MBCS
-		// functions and the locale
+		// set the C locale from the environment
+		// (has no effect on the msvc run-time)
 		::setlocale( LC_ALL , "" ) ;
-#endif
-
-#if 0
-		// TODO _setmbcp()
-		_setmbcp( GetACP() ) ;
-		_setmbcp( _MB_CP_ANSI ) ; // same thing?
-#endif
 
 		G::Arg arg ;
 		arg.parse( hinstance , command_line ) ;
@@ -68,12 +57,14 @@ int WINAPI WinMain( HINSTANCE hinstance , HINSTANCE previous , LPSTR command_lin
 				run.run() ;
 			}
 		}
+		catch( GNet::SocketBase::SocketBindError & e )
+		{
+			app.onError( e.what() , 2 ) ;
+		}
 		catch( std::exception & e )
 		{
-			app.onError( e.what() ) ;
-			return 1 ;
+			app.onError( e.what() , 1 ) ;
 		}
-
 		return app.exitCode() ;
 	}
 	catch(...)

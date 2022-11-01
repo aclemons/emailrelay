@@ -1,69 +1,34 @@
 News
-====
+----
+Low-level changes include a rework of the event-loops. The Unix event loop
+defaults to an epoll() implementation.
 
-SMTP changes
-------------
-The 2.4 release adds support for the PIPELINING, CHUNKING (BDAT), BINARYMIME
-and SMTPUTF8 extensions to SMTP. This means that messages in the E-MailRelay
-spool directory that require BINARYMIME or SMTPUTF8 support in the next-hop
-server will fail to be forwarded and end up with a ".bad" envelope file
-if the server does not support those extensions.
+The i18n of the main server (not the gui) has been extended somewhat by marking
+for translation the text of most C++ exceptions. This is only relevant if
+building "--with-gettext" and running with "--localedir".
 
-This is similar to the older 7BIT/8BITMIME compatibility problem where a
-message contaning eight-bit content, or submitted with the 8BITMIME MAIL
-parameter, cannot strictly be forwarded to a next-hop server that does not
-advertise 8BITMIME.
+The "--anonyous" option has changed slightly in v2.4 so that it will now force
+the AUTH parameter on the MAIL command to be "AUTH=<>". Replace "--anonymous"
+with "--anonymous=vrfy,server,content" to keep the same behaviour as before.
 
-In this release E-MailRelay no longer tests messages for eight-bit content.
-All messages are assumed by be eight-bit by default and fowarding will be
-attempted even to a server without 8BITMIME. If this is not desired behaviour
-then a filter script should be used to test for seven-bit or eight-bit content
-and edit the Content attribute in the envelope file as necessary.
+The "emailrelay-submit" utility's "--content" option no longer suppresses
+reading of the standard input stream; there is a new "--no-stdin" option
+instead. A dot on its own does not terminate the input any more, so use ^D or
+^Z to stop reading from the terminal. Header-only content with no body text is
+now permitted.
 
-When upgrading consider having BINARYMIME and SMTPUTF8 features disabled
-if they are not needed or not supported by the next-hop server in order to
-avoid these incompatibility issues.
+Authentication using PAM no longer insists on TLS encryption because the
+"--server-auth-config" option can be used to disable password authentication
+over an unencypted connection.
 
-The SMTPUTF8 extension allows mailbox addresses with UTF-8 characters. This
-might require changes to address-verifier scripts if they rely on mailbox
-addresses being printable ASCII.
-
-In passing, note that mailbox addresses passed to verifier scripts are as they
-appear on the wire, so a badly-behaved SMTP client might send addresses
-containing double-quotes and backslash escapes that are semantically redundant.
-For example, a message submitted to "\A\l\i\c\e"@example.com will have the
-address passed to the verifier with all the redundant double quotes and
-backslashes present. Similar normalisation issues can arise when using SMTPUTF8
-because of the way Unicode can represent the same string in more than one way.
-
-Ideally address verifier scripts should not return UTF-8 results when being
-called as the result of a remote SMTP client using the VRFY command without the
-SMTPUTF8 parameter. There is currently no way for an external address verifier
-to make this distinction, but the issue only arises when a verifier script
-determines that an address is a local mailbox; for remote addresses the
-returned address strings are effectively ignored. Neither does the issue arise
-when the verifier is called as the result of a RCPT-TO command since the results
-are stored in the envelope file but not passed back to the remote client. If
-necessary the VRFY command can be disabled by using "--anonymous".
-
-The SMTP server now makes a distinction between authentication mechanisms that
-are advertised over an insecure connection and those advertised over a
-connection secured with TLS. By default all available mechanisms are advertised
-over both connection types but can be configured separately.
-
-Event loop changes
-------------------
-The event loop code has been revisited, in part motivated by the rather small
-limit on the number of simultaneous connections under Windows.
-
-The Windows event loop now automatically switches to a multi-threaded
-implementation when the normal WaitForMultipleObjects() limit is reached. The
-worker threads do their own WaitForMultipleObject() function call and signal
-back to the main thread when there is an event to handle.
-
-The old EventHandlerList class has been removed, allowing the event loops
-more freedom to implement their own lists, and the event emitting part
-factored out into EventEmitter.
-
-On Linux the configure script prefers epoll() to select().
-
+Limited support for routing is included. The envelope files have two new fields:
+ForwardTo and ForwardToAddress. A filter script can examine the message content
+and deposit the appropriate domain name and port number in the ForwardTo field.
+If the SMTP client sees a ForwardTo value then it runs the client-filter early
+allowing the client filter to do a DNS MX lookup of the ForwardTo value and
+deposit the address into the ForwardToAddress field. If the SMTP client sees a
+ForwardToAddress it will initiate a connection to that address to send the
+message. The client-filter is run a second time in the normal way once the SMTP
+session has been established. A connection to the main "--forward-to" address
+will always be made even if all the messages are routed elsewhere, and each
+routed connection will carry only one message.

@@ -23,7 +23,7 @@
 
 #include "gdef.h"
 #include "gwinbase.h"
-#include "gstringarray.h"
+#include "gstrings.h"
 #include <string>
 #include <list>
 
@@ -292,8 +292,8 @@ protected:
 public:
 	Cracker( const Cracker & ) = delete ;
 	Cracker( Cracker && ) = delete ;
-	void operator=( const Cracker & ) = delete ;
-	void operator=( Cracker && ) = delete ;
+	Cracker & operator=( const Cracker & ) = delete ;
+	Cracker & operator=( Cracker && ) = delete ;
 
 private:
 	using Fn = void (Cracker::*)(int,int,bool,bool) ;

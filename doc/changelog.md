@@ -4,15 +4,16 @@ E-MailRelay Change Log
 2.3 -> 2.4
 ----------
 
-* [SMTP][] PIPELINING extension ([RFC-2920][]).
-* SMTP CHUNKING/8BITMIME extension ([RFC-3030][]).
-* SMTPUTF8 support added ([RFC-6531][]).
-* AUTH not advertised if `--server-tls-required` and no [TLS][] ([RFC-4954][] 6).
-* More simultaneous connections supported on Windows.
-* No 7-bit/8-bit check on received message content (see NEWS fle).
-* Multiple `--filter` options allowed.
-* Shorter default filter timeout.
-* Uses epoll by default on Linux.
+* Multiple `--filter` and `--client-filter` options allowed.
+* [TLS][] key and certificate files can be specified separately.
+* Finer control when using `--anonymous` (eg. `--anonymous=server`).
+* The `auth-config` options can distinguish between TLS and non-TLS authentication.
+* Hourly log file rotation using `%h` (eg. `--log-file=log.%d.%h`).
+* Listening file descriptors can be inherited from the parent process (see `--interface`).
+* Listening ports on Windows use exclusive binding.
+* The Linux event loop uses `epoll` by default rather than `select`.
+* Some support for message routing (see NEWS).
+* Fix of error handling in network client filters (`--client-filter=net:...`) [bug-id #50].
 
 2.2 -> 2.3
 ----------
@@ -33,7 +34,7 @@ E-MailRelay Change Log
 * New `--log-address` option to aid adaptive firewalling.
 * Dynamic log file rolling when using `--log-file=%d`.
 * Choice of syslog 'facility' on Linux with `--syslog=local0` etc.
-* Pipelined SMTP QUIT commands sent by broken clients are tolerated.
+* Pipelined [SMTP][] QUIT commands sent by broken clients are tolerated.
 * Better handling of overly-verbose or unkillable `--filter` scripts.
 * Optional epoll event loop on Linux (`configure --enable-epoll`).
 * Some internationalisation support (see NEWS file).
@@ -456,12 +457,8 @@ Windows fixes and improvements...
 [FHS]: https://wiki.linuxfoundation.org/lsb/fhs
 [PAM]: https://en.wikipedia.org/wiki/Linux_PAM
 [POP]: https://en.wikipedia.org/wiki/Post_Office_Protocol
-[RFC-2920]: https://tools.ietf.org/html/rfc2920
-[RFC-3030]: https://tools.ietf.org/html/rfc3030
 [RFC-3848]: https://tools.ietf.org/html/rfc3848
-[RFC-4954]: https://tools.ietf.org/html/rfc4954
 [RFC-5782]: https://tools.ietf.org/html/rfc5782
-[RFC-6531]: https://tools.ietf.org/html/rfc6531
 [RFC-8314]: https://tools.ietf.org/html/rfc8314
 [SMTP]: https://en.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol
 [SOCKS]: https://en.wikipedia.org/wiki/SOCKS

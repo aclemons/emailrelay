@@ -23,9 +23,8 @@
 #include "gnewmessage.h"
 #include <iostream>
 
-void GSmtp::NewMessage::addContentLine( const std::string & line )
+bool GSmtp::NewMessage::addTextLine( const std::string & line )
 {
-	addContent( line.data() , line.size() ) ;
-	addContent( "\r\n" , 2U ) ;
+	return addText( line.data() , line.size() ) && addText( "\r\n" , 2U ) ;
 }
 

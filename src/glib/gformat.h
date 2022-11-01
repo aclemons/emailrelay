@@ -22,7 +22,7 @@
 #define G_FORMAT_H
 
 #include "gdef.h"
-#include "gstringarray.h"
+#include "gstrings.h"
 #include <string>
 #include <ostream>
 #include <sstream>

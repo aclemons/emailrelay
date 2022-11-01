@@ -73,8 +73,8 @@ public:
 	~omembuf() override = default ;
 	omembuf( const omembuf & ) = delete ;
 	omembuf( omembuf && ) = delete ;
-	void operator=( const omembuf & ) = delete ;
-	void operator=( omembuf && ) = delete ;
+	omembuf & operator=( const omembuf & ) = delete ;
+	omembuf & operator=( omembuf && ) = delete ;
 } ;
 
 inline

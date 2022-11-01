@@ -47,7 +47,7 @@ void GSmtp::RequestClient::onConnect()
 {
 	G_DEBUG( "GSmtp::RequestClient::onConnect" ) ;
 	if( busy() )
-		send( requestLine(m_request) ) ; // GNet::Client::send()
+		send( requestLine(m_request) ) ;
 }
 
 void GSmtp::RequestClient::request( const std::string & request_payload )
@@ -60,15 +60,15 @@ void GSmtp::RequestClient::request( const std::string & request_payload )
 	m_timer.startTimer( 0U ) ;
 
 	// clear the base-class line buffer of any incomplete line
-	// data from a previous request -- this is racey for servers
-	// that incorrectly reply with more than one line
+	// data from a previous request -- this is racy for servers
+	// which incorrectly reply with more than one line
 	clearInput() ;
 }
 
 void GSmtp::RequestClient::onTimeout()
 {
 	if( connected() )
-		send( requestLine(m_request) ) ; // GNet::Client::send()
+		send( requestLine(m_request) ) ;
 }
 
 bool GSmtp::RequestClient::busy() const

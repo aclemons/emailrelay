@@ -20,31 +20,31 @@
 # Use "make check" to run tests.
 #
 # Or, for example:
-#  $ make programs ; ./emailrelay-test.sh
-#  $ ./emailrelay-test.sh -q -v -t testStartsAndStops
+#  $ make programs ; ./emailrelay_test.sh
+#  $ ./emailrelay_test.sh -q -v -t testStartsAndStops
 #  $ sudo -v ; make check
 #  $ su -c 'make check'
 #  $ make -j 40 check TEST_LOG_FLAGS="-t -u someuser"
 #
 # Automake uses the TESTS variable for its list of tests, and runs a
 # "compiler" according to each test's filename extension -- in practice
-# "sh" for ".sh" tests and "emailrelay-test.sh" for ".test" tests.
+# "sh" for ".sh" tests and "emailrelay_test.sh" for ".test" tests.
 #
 # A ".test" file is created for each of the test routines defined within
-# "emailrelay-test.pl".
+# "emailrelay_test.pl".
 #
 # If "make check" fails then examine the relevant ".log" files and
-# re-run individual tests with "emailrelay-test.sh -q -v -t <test-name>".
+# re-run individual tests with "emailrelay_test.sh -q -v -t <test-name>".
 #
 
 utility_programs = \
-	emailrelay-test-keygen
+	emailrelay_test_keygen
 
 helper_programs = \
-	emailrelay-test-scanner \
-	emailrelay-test-client \
-	emailrelay-test-server \
-	emailrelay-test-verifier
+	emailrelay_test_scanner \
+	emailrelay_test_client \
+	emailrelay_test_server \
+	emailrelay_test_verifier
 
 helper_sources = \
 	emailrelay_test_keygen.cpp \
@@ -54,13 +54,13 @@ helper_sources = \
 	emailrelay_test_verifier.cpp
 
 other_scripts = \
-	emailrelay-test.sh \
-	emailrelay-test.pl \
-	emailrelay-soak-test.sh \
-	emailrelay-loop-test.sh
+	emailrelay_test.sh \
+	emailrelay_test.pl
 
 test_scripts = \
-	emailrelay-chain-test.sh
+	emailrelay_chain_test.sh
+
+test_programs =
 
 test_names = \
 	testServerShowsHelp.test \
@@ -103,6 +103,7 @@ test_names = \
 	testProxyConnectsOnce.test \
 	testClientFilterPass.test \
 	testClientFilterBlock.test \
+	testClientNetworkFilter.test \
 	testClientGivenUnknownMechanisms.test \
 	testClientAuthenticationFailure.test \
 	testClientMessageFailure.test \
@@ -147,7 +148,7 @@ modules = \
 if GCONFIG_TESTING
 TESTING_EXTRA_DIST = $(test_scripts)
 TESTING_TESTS = $(test_names) $(test_scripts)
-TESTING_HELPERS = $(helper_programs)
+TESTING_HELPERS = $(helper_programs) $(test_programs)
 else
 TESTING_EXTRA_DIST = $(test_scripts) $(helper_sources)
 TESTING_TESTS =
@@ -168,18 +169,20 @@ CLEANFILES = $(test_names) .tmp.port
 
 TESTS = $(TESTING_TESTS)
 
-# tell automake how to run .sh and .test tests...
+# tell automake how to run tests...
 TEST_EXTENSIONS = .sh .test
-TEST_LOG_COMPILER = $(top_srcdir)/test/emailrelay-test.sh
+TEST_LOG_COMPILER = $(top_srcdir)/test/emailrelay_test.sh
 AM_TEST_LOG_FLAGS = -q -v -c $(top_srcdir)/test/certificates
-SH_LOG_COMPILER = sh
-AM_SH_LOG_FLAGS =
+SH_LOG_COMPILER = $(top_srcdir)/test/emailrelay_test.sh
+AM_SH_LOG_FLAGS = --sh
 
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/glib \
 	-I$(top_srcdir)/src/gssl \
 	-I$(top_srcdir)/src/gnet \
+	-I$(top_srcdir)/src/gauth \
+	-I$(top_srcdir)/src/gsmtp \
 	-D "G_SPOOLDIR=$(e_spooldir)"
 
 COMMON_LDADD = \
@@ -246,13 +249,13 @@ emailrelay_test_verifier_LDADD = \
 
 .PHONY: programs
 if GCONFIG_WINDOWS
-programs: emailrelay-test-keygen.exe emailrelay-test-scanner.exe emailrelay-test-client.exe emailrelay-test-server.exe emailrelay-test-verifier.exe
+programs: emailrelay_test_keygen.exe emailrelay_test_scanner.exe emailrelay_test_client.exe emailrelay_test_server.exe emailrelay_test_verifier.exe
 else
-programs: $(utility_programs) $(helper_programs)
+programs: $(utility_programs) $(helper_programs) $(test_programs)
 endif
 
-# the .test files are empty files passed to emailrelay-test.sh
+# the .test files are empty files passed to emailrelay_test.sh
 $(test_names):
-	-@chmod +x $(top_srcdir)/test/emailrelay-test.sh || true
+	-@chmod +x $(top_srcdir)/test/emailrelay_test.sh || true
 	@touch $(test_names)
 

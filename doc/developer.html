@@ -70,15 +70,15 @@
     </p>
 
     <p>
-     The advantages of a non-blocking event model are discussed in the well-known
-     <a href="http://www.kegel.com/c10k.html">C10K Problem</a> document.
-    </p>
-
-    <p>
      This event model can make the code more complicated than the equivalent
      multi-threaded approach since (for example) it is not possible to wait for a
      complete line of input to be received from a remote SMTP client because there
      might be other connections that need servicing half way through.
+    </p>
+
+    <p>
+     The advantages of a non-blocking event model are discussed in the well-known
+     <a href="http://www.kegel.com/c10k.html">C10K Problem</a> document.
     </p>
 
     <p>
@@ -102,34 +102,31 @@
     <p>
      The main C++ libraries in the E-MailRelay code base are as follows:
     </p>
-
-    <dl>
-     <dt><em>glib</em></dt>
+   <h3><a class="a-header"><em>glib</em></a></h3>
       <dd>
        Low-level classes for file-system abstraction, date and time representation,
        string utility functions, logging, command line parsing etc.
       </dd>
-     <dt><em>gssl</em></dt>
+   <h3><a class="a-header"><em>gssl</em></a></h3>
       <dd>
        A thin layer over the third-party TLS libraries.
       </dd>
-     <dt><em>gnet</em></dt>
+   <h3><a class="a-header"><em>gnet</em></a></h3>
       <dd>
        Network and event-loop classes.
       </dd>
-     <dt><em>gauth</em></dt>
+   <h3><a class="a-header"><em>gauth</em></a></h3>
       <dd>
        Implements various authentication mechanisms.
       </dd>
-     <dt><em>gsmtp</em></dt>
+   <h3><a class="a-header"><em>gsmtp</em></a></h3>
       <dd>
        SMTP protocol and message-store classes.
       </dd>
-     <dt><em>gpop</em></dt>
+   <h3><a class="a-header"><em>gpop</em></a></h3>
       <dd>
        POP3 protocol classes.
       </dd>
-    </dl>
     <p>
      All of these libraries are portable between Unix-like systems and Windows.
     </p>
@@ -172,10 +169,10 @@
     </p>
 
     <p>
-     The protocol, processor and message-store interfaces are brought together by
-     the high-level <em>GSmtp::Server</em> and <em>GSmtp::Client</em> classes. Dependency
-     injection is used to create the concrete instances of the <em>ProtocolMessage</em> and
-     <em>Filter</em> interfaces.
+     The protocol, processor and message-store interfaces are brought together by the
+     high-level <em>GSmtp::Server</em> and <em>GSmtp::Client</em> classes. Dependency injection is
+     used to create the concrete instances of the <em>ProtocolMessage</em> and <em>Filter</em>
+     interfaces.
     </p>
    <h2><a class="a-header" name="SH_1_7">Event handling and exceptions</a></h2> <!-- index:2:SH:1:7:Event handling and exceptions -->
     <p>
@@ -189,30 +186,29 @@
 
     <p>
      The event loop delivers asynchronous socket events to the <em>EventHandler</em>
-     interface, timer events to the <em>TimerBase</em> interface, and 'future' events to
-     the <em>FutureEventCallback</em> interface. If any of the these event handlers throws
-     an exception then the event loop catches it and delivers it back to an
-     exception handler through the <em>onException()</em> method of an associated
-     <em>ExceptionHandler</em> interface. If an exception is thrown out of _this_ callback
-     then the event loop code lets it propagate back to <em>main()</em>, typically
-     terminating the program.
+     interface, timer events to the <em>TimerBase</em> interface, and 'future' events to the
+     <em>FutureEventCallback</em> interface. If any of the these event handlers throws an
+     exception then the event loop catches it and delivers it back to an exception
+     handler through the <em>onException()</em> method of an associated <em>ExceptionHandler</em>
+     interface. If an exception is thrown out of _this_ callback then the event loop
+     code lets it propagate back to <em>main()</em>, typically terminating the program.
     </p>
 
     <p>
      However, sometimes there are objects that need to be more resilient to
      exceptions. In particular, a network server should not terminate just because
      one of its connections fails unexpectedly. In these cases the owning parent
-     object receives the exception notification together with an <em>ExceptionSource</em>
-     pointer that identifies the child object that threw the exception. This allows
-     the parent object to absorb the exception and delete the child, without the
-     exception killing the whole server.
+     object receives the exception notification together with a pointer that
+     identifies the child object that threw the exception (ie. the exception
+     source). This allows the parent object to absorb the exception and delete the
+     child, without the exception killing the whole server.
     </p>
 
     <p>
-     Event sources in the event loop are typically held as a file descriptor and a
-     windows event handle, together known as a <em>Descriptor</em>. Event loop
-     implementations typically watch a set of Descriptors for events and call the
-     relevant EventHandler/ExceptionHandler code via the <em>EventEmitter</em> class.
+     Event sources in the event loop are held as a file descriptor, a windows event
+     handle, an EventHandler pointer, an ExceptionHandler pointer and an
+     ExceptionSource pointer. The first two together are known as a Descriptor, and
+     the last two together are known as an ExceptionSink.
     </p>
    <h2><a class="a-header" name="SH_1_8">Multi-threading</a></h2> <!-- index:2:SH:1:8:Multi-threading -->
     <p>
@@ -261,22 +257,13 @@
      bundle, and it contains a configuration file to tell the installer where
      to copy its files.
     </p>
-
-    <p>
-     When building the GUI program the library code shared with the main server
-     executable is compiled separately so that different GUI-specific compiler
-     options can be used. This is done as a 'unity build', concatenating the shared
-     code into one source file and compiling that for the GUI. (This technique
-     requires that private 'detail' namespaces are named rather than anonymous so
-     that there cannot be any name clashes within the combined anonymous namespace.)
-    </p>
    <h2><a class="a-header" name="SH_1_10">Windows build</a></h2> <!-- index:2:SH:1:10:Windows build -->
     <p>
      E-MailRelay can be compiled on Windows using Microsoft Visual Studio C++ (MSVC)
-     or mingw-w64. For MSVC builds there is a perl script (<em>winbuild.pl</em>) that
-     creates <em>cmake</em> files from the autotools makefiles, runs <em>cmake</em> to create the
-     MSVC project files and then runs <em>msbuild</em> to compile E-MailRelay. If perl,
-     cmake, MSVC, Qt and mbedTLS source are installed in the right way then the
+     or mingw-w64. For MSVC builds there is a perl script (<em>winbuild.pl</em>) that creates
+     <em>cmake</em> files from the autotools makefiles, runs <em>cmake</em> to create the MSVC
+     project files and then runs <em>msbuild</em> to compile E-MailRelay. If perl, cmake,
+     MSVC, Qt and mbedTLS source are installed in the right way then the
      <em>winbuild.bat</em> batch file should be able to do a complete MSVC release build
      in one go.
     </p>
@@ -326,15 +313,10 @@
     </p>
 
     <p>
-     The non-GUI code has some i18n support by using gettext() via the inline txt()
-     and tx() functions defined in <em>src/glib/ggettext.h</em>. The configure script
-     detects gettext support in the C run-time library, but without trying different
-     compile and link options.  See also <em>po/Makefile.am</em>.
-    </p>
-
-    <p>
-     On Windows the main server executable has a tabbed dialog-box as its user
-     interface, but that does not have any support for i18n.
+     The non-GUI code has minimal i18n support using gettext(), mostly for startup
+     error messages and usage help. This is disabled by default and requires a
+     configure-script option (<em>--with-gettext</em>) to enable it at build-time and
+     a <em>--localedir</em> option at run-time. See also <em>po/Makefile.am</em>.
     </p>
    <h2><a class="a-header" name="SH_1_14">Source control</a></h2> <!-- index:2:SH:1:14:Source control -->
     <p>

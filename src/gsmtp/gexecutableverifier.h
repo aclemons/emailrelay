@@ -41,10 +41,10 @@ public:
 		///< Constructor.
 
 private: // overrides
-	G::Slot::Signal<Command,const VerifierStatus&> & doneSignal() override ; // Override from GSmtp::Verifier.
+	G::Slot::Signal<const VerifierStatus&> & doneSignal() override ; // Override from GSmtp::Verifier.
 	void cancel() override ; // Override from GSmtp::Verifier.
 	void onTaskDone( int , const std::string & ) override ; // override from GNet::TaskCallback
-	void verify( Verifier::Command , const std::string & rcpt_to_parameter ,
+	void verify( const std::string & rcpt_to_parameter ,
 		const std::string & mail_from_parameter , const GNet::Address & client_ip ,
 		const std::string & auth_mechanism , const std::string & auth_extra ) override ; // Override from GSmtp::Verifier.
 
@@ -52,13 +52,12 @@ public:
 	~ExecutableVerifier() override = default ;
 	ExecutableVerifier( const ExecutableVerifier & ) = delete ;
 	ExecutableVerifier( ExecutableVerifier && ) = delete ;
-	void operator=( const ExecutableVerifier & ) = delete ;
-	void operator=( ExecutableVerifier && ) = delete ;
+	ExecutableVerifier & operator=( const ExecutableVerifier & ) = delete ;
+	ExecutableVerifier & operator=( ExecutableVerifier && ) = delete ;
 
 private:
-	Command m_command ;
 	G::Path m_path ;
-	G::Slot::Signal<Command,const VerifierStatus&> m_done_signal ;
+	G::Slot::Signal<const VerifierStatus&> m_done_signal ;
 	std::string m_to_address ;
 	GNet::Task m_task ;
 } ;

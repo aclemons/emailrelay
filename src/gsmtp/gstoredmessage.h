@@ -22,14 +22,15 @@
 #define G_SMTP_STORED_MESSAGE_H
 
 #include "gdef.h"
-#include "gstringarray.h"
 #include "gmessagestore.h"
+#include "gstringarray.h"
 #include "gpath.h"
 #include <iostream>
 #include <fstream>
 
 namespace GSmtp
 {
+	class MessageId ;
 	class StoredMessage ;
 	class StoredMessageStub ;
 }
@@ -57,9 +58,6 @@ public:
 	virtual std::size_t toCount() const = 0 ;
 		///< Returns the number of non-local recipients.
 
-	virtual std::size_t contentSize() const = 0 ;
-		///< Returns the content size.
-
 	virtual std::istream & contentStream() = 0 ;
 		///< Returns a reference to the content stream.
 
@@ -83,8 +81,11 @@ public:
 	virtual void unfail() = 0 ;
 		///< Marks the message as unfailed within the store.
 
-	virtual MessageStore::BodyType bodyType() const = 0 ;
-		///< Returns the message body type.
+	virtual int eightBit() const = 0 ;
+		///< Returns 1 if the message content (header+body)
+		///< contains a character with the most significant
+		///< bit set, or 0 if no such characters, or -1
+		///< if unknown.
 
 	virtual std::string authentication() const = 0 ;
 		///< Returns the original session authentication id.
@@ -97,9 +98,11 @@ public:
 		///< Returns the outgoing "mail from" auth parameter,
 		///< either empty, xtext-encoded or "<>".
 
-	virtual bool utf8Mailboxes() const = 0 ;
-		///< Returns true if the mail-from command should
-		///< have SMTPUTF8 (RFC-6531).
+	virtual std::string forwardTo() const = 0 ;
+		///< Returns the routing override or the empty string.
+
+	virtual std::string forwardToAddress() const = 0 ;
+		///< Returns the forwardTo() address or the empty string.
 
 	virtual ~StoredMessage() = default ;
 		///< Destructor.
@@ -124,7 +127,6 @@ private: // overrides
 	std::string from() const override ;
 	std::string to( std::size_t ) const override ;
 	std::size_t toCount() const override ;
-	std::size_t contentSize() const override ;
 	std::istream & contentStream() override ;
 	void close() override ;
 	std::string reopen() override ;
@@ -132,17 +134,18 @@ private: // overrides
 	void edit( const G::StringArray & ) override ;
 	void fail( const std::string & reason , int reason_code ) override ;
 	void unfail() override ;
-	MessageStore::BodyType bodyType() const override ;
+	int eightBit() const override ;
 	std::string authentication() const override ;
 	std::string fromAuthIn() const override ;
 	std::string fromAuthOut() const override ;
-	bool utf8Mailboxes() const override ;
+	std::string forwardTo() const override ;
+	std::string forwardToAddress() const override ;
 
 public:
 	StoredMessageStub( const StoredMessageStub & ) = delete ;
 	StoredMessageStub( StoredMessageStub && ) = delete ;
-	void operator=( const StoredMessageStub & ) = delete ;
-	void operator=( StoredMessageStub && ) = delete ;
+	StoredMessageStub & operator=( const StoredMessageStub & ) = delete ;
+	StoredMessageStub & operator=( StoredMessageStub && ) = delete ;
 
 private:
 	G::StringArray m_to_list ;
@@ -150,22 +153,22 @@ private:
 } ;
 
 inline GSmtp::MessageId GSmtp::StoredMessageStub::id() const { return MessageId::none() ; }
-inline std::string GSmtp::StoredMessageStub::location() const { return {} ; }
-inline std::string GSmtp::StoredMessageStub::from() const { return {} ; }
-inline std::string GSmtp::StoredMessageStub::to( std::size_t ) const { return {} ; }
+inline std::string GSmtp::StoredMessageStub::location() const { return std::string() ; }
+inline std::string GSmtp::StoredMessageStub::from() const { return std::string() ; }
+inline std::string GSmtp::StoredMessageStub::to( std::size_t ) const { return std::string() ; }
 inline std::size_t GSmtp::StoredMessageStub::toCount() const { return 0U ; }
-inline std::size_t GSmtp::StoredMessageStub::contentSize() const { return 0U ; }
 inline std::istream & GSmtp::StoredMessageStub::contentStream() { return m_content_stream ; }
 inline void GSmtp::StoredMessageStub::close() {}
-inline std::string GSmtp::StoredMessageStub::reopen() { return {} ; }
+inline std::string GSmtp::StoredMessageStub::reopen() { return std::string() ; }
 inline void GSmtp::StoredMessageStub::destroy() {}
 inline void GSmtp::StoredMessageStub::edit( const G::StringArray & ) {}
 inline void GSmtp::StoredMessageStub::fail( const std::string & , int ) {}
 inline void GSmtp::StoredMessageStub::unfail() {}
-inline GSmtp::MessageStore::BodyType GSmtp::StoredMessageStub::bodyType() const { return MessageStore::BodyType::Unknown ; }
-inline std::string GSmtp::StoredMessageStub::authentication() const { return {} ; }
-inline std::string GSmtp::StoredMessageStub::fromAuthIn() const { return {} ; }
-inline std::string GSmtp::StoredMessageStub::fromAuthOut() const { return {} ; }
-inline bool GSmtp::StoredMessageStub::utf8Mailboxes() const { return false ; }
+inline int GSmtp::StoredMessageStub::eightBit() const { return false ; }
+inline std::string GSmtp::StoredMessageStub::authentication() const { return std::string() ; }
+inline std::string GSmtp::StoredMessageStub::fromAuthIn() const { return std::string() ; }
+inline std::string GSmtp::StoredMessageStub::fromAuthOut() const { return std::string() ; }
+inline std::string GSmtp::StoredMessageStub::forwardTo() const { return std::string() ; }
+inline std::string GSmtp::StoredMessageStub::forwardToAddress() const { return std::string() ; }
 
 #endif

@@ -56,8 +56,8 @@ public:
 	~MonitorImp() = default ;
 	MonitorImp( const MonitorImp & ) = delete ;
 	MonitorImp( MonitorImp && ) = delete ;
-	void operator=( const MonitorImp & ) = delete ;
-	void operator=( MonitorImp && ) = delete ;
+	MonitorImp & operator=( const MonitorImp & ) = delete ;
+	MonitorImp & operator=( MonitorImp && ) = delete ;
 
 private:
 	static std::string join( const std::string & , const std::string & ) ;

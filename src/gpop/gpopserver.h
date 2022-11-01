@@ -27,7 +27,7 @@
 #include "gpopserverprotocol.h"
 #include "gsecrets.h"
 #include "gexception.h"
-#include "gstringarray.h"
+#include "gstrings.h"
 #include <string>
 #include <sstream>
 #include <memory>
@@ -55,7 +55,7 @@ public:
 			///< Constructor.
 
 private: // overrides
-	bool protocolSend( const std::string & line , std::size_t ) override ; // Override from GPop::ServerProtocol::Sender.
+	bool protocolSend( const std::string & , std::size_t ) override ; // Override from GPop::ServerProtocol::Sender.
 	void onDelete( const std::string & ) override ; // Override from GNet::ServerPeer.
 	bool onReceive( const char * , std::size_t , std::size_t , std::size_t , char ) override ; // Override from GNet::ServerPeer.
 	void onSecure( const std::string & , const std::string & , const std::string & ) override ; // Override from GNet::SocketProtocolSink.
@@ -67,8 +67,8 @@ public:
 	~ServerPeer() override = default ;
 	ServerPeer( const ServerPeer & ) = delete ;
 	ServerPeer( ServerPeer && ) = delete ;
-	void operator=( const ServerPeer & ) = delete ;
-	void operator=( ServerPeer && ) = delete ;
+	ServerPeer & operator=( const ServerPeer & ) = delete ;
+	ServerPeer & operator=( ServerPeer && ) = delete ;
 
 private:
 	void processLine( const std::string & line ) ;
@@ -90,15 +90,15 @@ public:
 		bool allow_remote{false} ;
 		unsigned int port{110} ;
 		G::StringArray addresses ;
-		GNet::ServerPeer::Config net_server_peer_config ;
-		GNet::Server::Config net_server_config ;
+		GNet::ServerPeer::Config server_peer_config ;
+		GNet::Server::Config server_config ;
 		std::string sasl_server_config ;
 
 		Config & set_allow_remote( bool = true ) ;
 		Config & set_port( unsigned int ) ;
 		Config & set_addresses( const G::StringArray & ) ;
-		Config & set_net_server_peer_config( const GNet::ServerPeer::Config & ) ;
-		Config & set_net_server_config( const GNet::Server::Config & ) ;
+		Config & set_server_peer_config( const GNet::ServerPeer::Config & ) ;
+		Config & set_server_config( const GNet::Server::Config & ) ;
 		Config & set_sasl_server_config( const std::string & ) ;
 	} ;
 
@@ -117,8 +117,8 @@ private: // overrides
 public:
 	Server( const Server & ) = delete ;
 	Server( Server && ) = delete ;
-	void operator=( const Server & ) = delete ;
-	void operator=( Server && ) = delete ;
+	Server & operator=( const Server & ) = delete ;
+	Server & operator=( Server && ) = delete ;
 
 private:
 	std::unique_ptr<ServerProtocol::Text> newProtocolText( const GNet::Address & ) const ;
@@ -132,8 +132,8 @@ private:
 inline GPop::Server::Config & GPop::Server::Config::set_allow_remote( bool b ) { allow_remote = b ; return *this ; }
 inline GPop::Server::Config & GPop::Server::Config::set_port( unsigned int p ) { port = p ; return *this ; }
 inline GPop::Server::Config & GPop::Server::Config::set_addresses( const G::StringArray & a ) { addresses = a ; return *this ; }
-inline GPop::Server::Config & GPop::Server::Config::set_net_server_peer_config( const GNet::ServerPeer::Config & c ) { net_server_peer_config = c ; return *this ; }
-inline GPop::Server::Config & GPop::Server::Config::set_net_server_config( const GNet::Server::Config & c ) { net_server_config = c ; return *this ; }
+inline GPop::Server::Config & GPop::Server::Config::set_server_peer_config( const GNet::ServerPeer::Config & c ) { server_peer_config = c ; return *this ; }
+inline GPop::Server::Config & GPop::Server::Config::set_server_config( const GNet::Server::Config & c ) { server_config = c ; return *this ; }
 inline GPop::Server::Config & GPop::Server::Config::set_sasl_server_config( const std::string & s ) { sasl_server_config = s ; return *this ; }
 
 #endif

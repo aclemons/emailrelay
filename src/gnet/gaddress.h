@@ -47,6 +47,14 @@ namespace GNet
 /// the GNet::Address6 can be forward-declared but not defined, with all methods
 /// forwarded to the GNet::Address4 sub-object.
 ///
+/// Unix domain addresses are supported by the GNet::AddressLocal implementation
+/// class. Port numbers are not expected when parsing and port numbers are not
+/// included in the display string. Unix domain addresses are only allowed
+/// to be absolute filesystem paths starting with '/' and with no unprintable
+/// characters, or the well-defined zero-length address (for unbound sockets)
+/// which is given the display string of "/". Paths with funny characters or
+/// linux-specific abstract addresses (see man unix(7)) will throw.
+///
 /// \see GNet::Resolver
 ///
 class GNet::Address
@@ -65,15 +73,15 @@ public:
 	G_EXCEPTION( BadString , tx("invalid address") ) ;
 	G_EXCEPTION_CLASS( BadFamily , tx("unsupported address family") ) ;
 
-	static bool supports( Family ) ;
+	static bool supports( Family ) noexcept ;
 		///< Returns true if the implementation supports the given
 		///< address family.
 
-	static bool supports( int af , int dummy ) ;
+	static bool supports( int af , int dummy ) noexcept ;
 		///< Returns true if the implementation supports the given
 		///< address family given as AF_INET etc.
 
-	static bool supports( const Domain & , int domain ) ;
+	static bool supports( const Domain & , int domain ) noexcept ;
 		///< Returns true if the implementation supports the given
 		///< address domain given as PF_INET etc.
 
@@ -128,7 +136,7 @@ public:
 		///< Factory function for Family::ipv4 or Family::ipv6.
 		///< Throws if an invalid string. See also validStrings().
 
-	static bool isFamilyLocal( const std::string & display_string ) ;
+	static bool isFamilyLocal( const std::string & display_string ) noexcept ;
 		///< Returns true if the given address display string looks
 		///< will parse to Family::local and Family::local is
 		///< supported. The address may still fail to parse if
@@ -153,13 +161,12 @@ public:
 		///< Returns the size of the sockaddr address. See address().
 
 	std::string displayString( bool with_scope_id = false ) const ;
-		///< Returns a string which represents the transport address.
+		///< Returns a printable string that represents the transport
+		///< address.
 
-	std::string hostPartString( bool raw = false ) const ;
-		///< Returns a string which represents the network address.
-		///< For unix-domain sockets this returns the address path
-		///< and if the 'raw' parameter is set then any non-printing
-		///< characters are not escaped.
+	std::string hostPartString() const ;
+		///< Returns a printable string that represents the network
+		///< address.
 
 	std::string queryString() const ;
 		///< Returns a string that can be used as a prefix for rDNS or
@@ -168,14 +175,14 @@ public:
 	unsigned int port() const;
 		///< Returns port part of the address.
 
-	static int domain( Family ) ;
+	static int domain( Family ) noexcept ;
 		///< Returns the address 'domain' for the given family, eg. PF_INET
 		///< for Family::ipv4.
 
-	Family family() const ;
+	Family family() const noexcept ;
 		///< Returns the address family enumeration.
 
-	int af() const ;
+	int af() const noexcept ;
 		///< Returns the address family number such as AF_INET or AFINET6.
 
 	static bool validPort( unsigned int n ) ;
@@ -252,10 +259,10 @@ public:
 	bool isMulticast() const ;
 		///< Returns true if this is a multicast address.
 
-	bool is4() const ;
+	bool is4() const noexcept ;
 		///< Returns true if family() is ipv4.
 
-	bool is6() const ;
+	bool is6() const noexcept ;
 		///< Returns true if family() is ipv6.
 
 	bool same( const Address & , bool ipv6_compare_with_scope ) const ;
@@ -272,8 +279,7 @@ public:
 
 private:
 	Address( Family , unsigned int , int ) ; // loopback()
-	explicit Address( const std::string & display_string ) ; // parse()
-	Address( const std::string & display_string , NotLocal ) ; // parse(NotLocal)
+	Address( const std::string & display_string , bool with_local ) ; // parse(), parse(NotLocal)
 	Address( const std::string & ip , const std::string & port ) ; // parse(ip,port)
 	Address( const std::string & ip , unsigned int port ) ; // parse(ip,port)
 
@@ -322,8 +328,8 @@ public:
 public:
 	AddressStorage( const AddressStorage & ) = delete ;
 	AddressStorage( AddressStorage && ) = delete ;
-	void operator=( const AddressStorage & ) = delete ;
-	void operator=( AddressStorage && ) = delete ;
+	AddressStorage & operator=( const AddressStorage & ) = delete ;
+	AddressStorage & operator=( AddressStorage && ) = delete ;
 
 private:
 	std::unique_ptr<AddressStorageImp> m_imp ;

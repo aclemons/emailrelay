@@ -41,8 +41,7 @@ namespace GSmtp
 class GSmtp::SpamFilter : public Filter
 {
 public:
-	SpamFilter( GNet::ExceptionSink , FileStore & ,
-		const std::string & server_location ,
+	SpamFilter( GNet::ExceptionSink , FileStore & , const std::string & server_location ,
 		bool read_only , bool always_pass , unsigned int connection_timeout ,
 		unsigned int response_timeout ) ;
 			///< Constructor.
@@ -64,8 +63,8 @@ private: // overrides
 public:
 	SpamFilter( const SpamFilter & ) = delete ;
 	SpamFilter( SpamFilter && ) = delete ;
-	void operator=( const SpamFilter & ) = delete ;
-	void operator=( SpamFilter && ) = delete ;
+	SpamFilter & operator=( const SpamFilter & ) = delete ;
+	SpamFilter & operator=( SpamFilter && ) = delete ;
 
 private:
 	void clientEvent( const std::string & , const std::string & , const std::string & ) ;

@@ -23,68 +23,132 @@
 #include "gaddress.h"
 #include "gresolver.h"
 #include "gexecutablecommand.h"
+#include "glocation.h"
+#include "gstringtoken.h"
 #include "gstr.h"
 #include "gfile.h"
 #include "glog.h"
 
-GSmtp::FactoryParser::Result GSmtp::FactoryParser::parse( const std::string & spec , bool allow_spam , bool allow_chain )
+GSmtp::FactoryParser::Result GSmtp::FactoryParser::parse( const std::string & spec , bool is_filter ,
+	const G::Path & base_dir , const G::Path & app_dir , G::StringArray * warnings_p )
 {
-	G_DEBUG( "GSmtp::FactoryParser::parse: [" << spec << "]" ) ;
+	bool allow_spam = is_filter ;
+	bool allow_chain = is_filter ;
+	return parseImp( spec , is_filter , base_dir , app_dir , warnings_p , allow_spam , allow_chain ) ;
+}
+
+GSmtp::FactoryParser::Result GSmtp::FactoryParser::parseImp( const std::string & spec , bool is_filter ,
+	const G::Path & base_dir , const G::Path & app_dir , G::StringArray * warnings_p ,
+	bool allow_spam , bool allow_chain )
+{
+	//G_DEBUG( "GSmtp::FactoryParser::parse: [" << spec << "]" ) ;
+	Result result ;
 	if( spec.empty() )
 	{
-		return Result( "exit" , "0" ) ;
+		result = Result( "exit" , "0" ) ;
 	}
 	else if( allow_chain && spec.find(',') != std::string::npos )
 	{
-		G::StringArray parts = G::Str::splitIntoTokens( spec , {",",1U} ) ;
-		for( const auto & sub : parts )
-			parse( sub , allow_spam , false ) ;
-		return Result( "chain" , spec ) ;
+		std::string new_spec ;
+		std::string error ;
+		for( G::StringToken t( spec , ","_sv ) ; t ; ++t )
+		{
+			// (one level of recursion)
+			Result sub_result = parseImp( t() , is_filter , base_dir , app_dir , warnings_p , allow_spam , false ) ;
+			if( sub_result.first.empty() )
+				error = sub_result.second ;
+			new_spec.append(",",new_spec.empty()?0U:1U).append(sub_result.first).append(1U,':').append(sub_result.second) ;
+		}
+		result = error.empty() ? Result( "chain" , new_spec ) : Result( "" , error ) ;
 	}
 	else if( spec.find("net:") == 0U )
 	{
-		return Result( "net" , G::Str::tail(spec,":") ) ;
+		result = Result( "net" , G::Str::tail(spec,":") ) ;
 	}
 	else if( allow_spam && spec.find("spam:") == 0U )
 	{
-		return Result( "spam" , G::Str::tail(spec,":") , 0 ) ;
+		result = Result( "spam" , G::Str::tail(spec,":") , 0 ) ;
 	}
 	else if( allow_spam && spec.find("spam-edit:") == 0U )
 	{
-		return Result( "spam" , G::Str::tail(spec,":") , 1 ) ;
+		result = Result( "spam" , G::Str::tail(spec,":") , 1 ) ;
 	}
 	else if( spec.find("exit:") == 0U )
 	{
-		return Result( "exit" , checkExit(G::Str::tail(spec,":")) ) ;
+		result = Result( "exit" , G::Str::tail(spec,":") ) ;
 	}
 	else if( spec.find("file:") == 0U )
 	{
-		std::string path = G::Str::tail( spec , ":" ) ;
-		checkFile( path ) ;
-		return Result( "file" , path ) ;
+		result = Result( "file" , G::Str::tail(spec,":") ) ;
 	}
 	else
 	{
-		checkFile( spec ) ;
-		return Result( "file" , spec ) ;
+		result = Result( "file" , spec ) ;
+	}
+	normalise( result , base_dir , app_dir ) ;
+	check( result , is_filter , warnings_p ) ;
+	//G_DEBUG( "GSmtp::FactoryParser::parse: [" << spec << "] -> [" << result.first << "],[" << result.second << "]" ) ;
+	return result ;
+}
+
+void GSmtp::FactoryParser::normalise( Result & result , const G::Path & base_dir , const G::Path & app_dir )
+{
+	if( result.first == "file" )
+	{
+		if( !app_dir.empty() && result.second.find("@app") == 0U )
+		{
+			G::Str::replace( result.second , "@app" , app_dir.str() ) ;
+		}
+		else if( !base_dir.empty() && G::Path(result.second).isRelative() )
+		{
+			result.second = (base_dir+result.second).str() ;
+		}
 	}
 }
 
-void GSmtp::FactoryParser::checkFile( const G::Path & exe )
+void GSmtp::FactoryParser::check( Result & result , bool is_filter , G::StringArray * warnings_p )
 {
-	if( !G::File::exists(exe,std::nothrow) )
-		throw Error( "no such file" , G::Str::printable(exe.str()) ) ;
-	else if( !G::is_windows() && !G::File::isExecutable(exe,std::nothrow) )
-		throw Error( "probably not executable" , G::Str::printable(exe.str()) ) ;
-	else if( !exe.isAbsolute() )
-		throw Error( "not an absolute path" , G::Str::printable(exe.str()) ) ;
-}
-
-std::string GSmtp::FactoryParser::checkExit( const std::string & s )
-{
-	if( !G::Str::isUInt(s) )
-		throw Error( "not a numeric exit code" , G::Str::printable(s) ) ;
-	return s ;
+	if( result.first == "chain" )
+	{
+		// no-op -- sub-parts already checked
+	}
+	else if( result.first == "file" )
+	{
+		if( result.second.empty() )
+		{
+			result.first.clear() ;
+			result.second = "empty file path" ;
+		}
+		else if( warnings_p && !G::File::exists(result.second) )
+		{
+			warnings_p->push_back( std::string(is_filter?"filter":"verifier")
+				.append(" program does not exist: ").append(result.second) ) ;
+		}
+		else if( warnings_p && G::File::isDirectory(result.second,std::nothrow) )
+		{
+			warnings_p->push_back( std::string("invalid program: ").append(result.second) ) ;
+		}
+	}
+	else if( result.first == "exit" )
+	{
+		if( !G::Str::isUInt(result.second) )
+		{
+			result.first.clear() ;
+			result.second = "not a numeric exit code: " + G::Str::printable(result.second) ;
+		}
+	}
+	else if( result.first == "net" || result.first == "spam" )
+	{
+		try
+		{
+			GNet::Location::nosocks( result.second ) ;
+		}
+		catch( std::exception & e )
+		{
+			result.first.clear() ;
+			result.second = e.what() ;
+		}
+	}
 }
 
 // ==

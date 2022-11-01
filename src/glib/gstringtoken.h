@@ -23,13 +23,16 @@
 
 #include "gdef.h"
 #include "gassert.h"
+#include "gstringview.h"
 #include <string>
+#include <type_traits>
 #include <algorithm>
 
 namespace G
 {
 	template <typename T> class StringTokenT ;
 	using StringToken = StringTokenT<std::string> ;
+	using StringTokenView = StringTokenT<string_view> ;
 }
 
 //| \class G::StringTokenT
@@ -52,52 +55,84 @@ class G::StringTokenT
 public:
 	using char_type = typename T::value_type ;
 
-	StringTokenT( const T & s , const char_type * ws , std::size_t wsn ) ;
+	StringTokenT( const T & s , const char_type * ws , std::size_t wsn ) noexcept ;
+		///< Constructor. The parameters must stay valid for
+		///< the object lifefime.
+		///<
+		///< The rvalue overload is deleted to avoid passing a
+		///< temporary T that has been implicitly constructed from
+		///< something else. Temporary string_views constructed
+		///< from a string would be safe, but might be unsafe for
+		///< other types.
+
+	StringTokenT( const T & s , string_view ws ) noexcept ;
 		///< Constructor. The parameters must stay valid
 		///< for the object lifefime.
 
-	template <typename Tsv> StringTokenT( const T & s , Tsv ws ) ;
-		///< Constructor. The parameters must stay valid
-		///< for the object lifefime.
-
-	explicit operator bool() const ;
+	bool valid() const noexcept ;
 		///< Returns true if a valid token.
 
-	const char_type * data() const ;
+	explicit operator bool() const noexcept ;
+		///< Returns true if a valid token.
+
+	const char_type * data() const noexcept ;
 		///< Returns the current token pointer.
 
-	std::size_t size() const ;
+	std::size_t size() const noexcept ;
 		///< Returns the current token size.
 
-	T operator()() const ;
+	std::size_t pos() const noexcept ;
+		///< Returns the offset of data().
+
+	T operator()() const noexcept(std::is_same<T,string_view>::value) ;
 		///< Returns the current token substring.
 
-	StringTokenT<T> & operator++() ;
+	StringTokenT<T> & operator++() noexcept ;
 		///< Moves to the next token.
 
-	StringTokenT<T> & next() ;
+	StringTokenT<T> & next() noexcept ;
 		///< Moves to the next token.
 
 public:
 	~StringTokenT() = default ;
 	StringTokenT( T && s , const char_type * , std::size_t ) = delete ;
+	StringTokenT( T && s , string_view ) = delete ;
 	StringTokenT( const StringTokenT<T> & ) = delete ;
 	StringTokenT( StringTokenT<T> && ) = delete ;
-	void operator=( const StringTokenT<T> & ) = delete ;
-	void operator=( StringTokenT<T> && ) = delete ;
+	StringTokenT<T> & operator=( const StringTokenT<T> & ) = delete ;
+	StringTokenT<T> & operator=( StringTokenT<T> && ) = delete ;
 
 private:
 	static constexpr std::size_t npos = T::npos ;
-	const T * m_p ;
+	const T & m_s ;
 	const char_type * m_ws ;
 	std::size_t m_wsn ;
 	std::size_t m_pos ;
 	std::size_t m_endpos ;
 } ;
 
+namespace G
+{
+	namespace StringTokenImp
+	{
+		template <typename T> inline T substr( const T & s ,
+			std::size_t pos , std::size_t len ) noexcept(std::is_same<T,string_view>::value)
+		{
+			return s.substr( pos , len ) ;
+		}
+		template <> inline string_view substr<string_view>( const string_view & s ,
+			std::size_t pos , std::size_t len ) noexcept
+		{
+			return s.substr( std::nothrow , pos , len ) ;
+		}
+		static_assert( !noexcept(std::string().substr(0,0)) , "" ) ;
+		static_assert( noexcept(string_view().substr(std::nothrow,0,0)) , "" ) ;
+	}
+}
+
 template <typename T>
-G::StringTokenT<T>::StringTokenT( const T & s , const char_type * ws , std::size_t wsn ) :
-	m_p(&s) ,
+G::StringTokenT<T>::StringTokenT( const T & s , const char_type * ws , std::size_t wsn ) noexcept :
+	m_s(s) ,
 	m_ws(ws) ,
 	m_wsn(wsn) ,
 	m_pos(s.empty()?npos:s.find_first_not_of(m_ws,0U,m_wsn)) ,
@@ -109,9 +144,8 @@ G::StringTokenT<T>::StringTokenT( const T & s , const char_type * ws , std::size
 }
 
 template <typename T>
-template <typename Tsv>
-G::StringTokenT<T>::StringTokenT( const T & s , Tsv ws ) :
-	m_p(&s) ,
+G::StringTokenT<T>::StringTokenT( const T & s , string_view ws ) noexcept :
+	m_s(s) ,
 	m_ws(ws.data()) ,
 	m_wsn(ws.size()) ,
 	m_pos(s.empty()?npos:s.find_first_not_of(m_ws,0U,m_wsn)) ,
@@ -120,44 +154,56 @@ G::StringTokenT<T>::StringTokenT( const T & s , Tsv ws ) :
 }
 
 template <typename T>
-const typename T::value_type * G::StringTokenT<T>::data() const
+const typename T::value_type * G::StringTokenT<T>::data() const noexcept
 {
-	static_assert( __cplusplus >= 201100 , "" ) ;
-	return m_p->data() + (m_pos==npos?0U:m_pos) ;
+	//static_assert( __cplusplus >= 201100 , "" ) ; // broken on msvc
+	return m_s.data() + (m_pos==npos?0U:m_pos) ;
 }
 
 template <typename T>
-std::size_t G::StringTokenT<T>::size() const
+std::size_t G::StringTokenT<T>::size() const noexcept
 {
-	return (m_endpos==npos?m_p->size():m_endpos) - m_pos ;
+	return (m_endpos==npos?m_s.size():m_endpos) - m_pos ;
 }
 
 template <typename T>
-G::StringTokenT<T>::operator bool() const
+std::size_t G::StringTokenT<T>::pos() const noexcept
+{
+	return m_pos == npos ? 0U : m_pos ;
+}
+
+template <typename T>
+G::StringTokenT<T>::operator bool() const noexcept
 {
 	return m_pos != npos ;
 }
 
 template <typename T>
-T G::StringTokenT<T>::operator()() const
+bool G::StringTokenT<T>::valid() const noexcept
 {
-	using string_type = T ;
-	return m_pos == npos ? string_type{} : m_p->substr( m_pos , size() ) ;
+	return m_pos != npos ;
 }
 
 template <typename T>
-G::StringTokenT<T> & G::StringTokenT<T>::operator++()
+T G::StringTokenT<T>::operator()() const noexcept(std::is_same<T,string_view>::value)
 {
-	m_pos = m_p->find_first_not_of( m_ws , m_endpos , m_wsn ) ;
-	m_endpos = m_p->find_first_of( m_ws , m_pos , m_wsn ) ;
-	G_ASSERT( !(m_p->empty()) || ( m_pos == npos && m_endpos == npos ) ) ;
-	G_ASSERT( !(!m_p->empty() && m_wsn==0U) || ( m_pos == npos && m_endpos == npos ) ) ;
+	using string_type = T ;
+	return m_pos == npos ? string_type{} : StringTokenImp::substr( m_s , m_pos , size() ) ;
+}
+
+template <typename T>
+G::StringTokenT<T> & G::StringTokenT<T>::operator++() noexcept
+{
+	m_pos = m_s.find_first_not_of( m_ws , m_endpos , m_wsn ) ;
+	m_endpos = m_s.find_first_of( m_ws , m_pos , m_wsn ) ;
+	G_ASSERT( !(m_s.empty()) || ( m_pos == npos && m_endpos == npos ) ) ;
+	G_ASSERT( !(!m_s.empty() && m_wsn==0U) || ( m_pos == npos && m_endpos == npos ) ) ;
 	G_ASSERT( !(m_pos == npos) || m_endpos == npos ) ;
 	return *this ;
 }
 
 template <typename T>
-G::StringTokenT<T> & G::StringTokenT<T>::next()
+G::StringTokenT<T> & G::StringTokenT<T>::next() noexcept
 {
 	return ++(*this) ;
 }

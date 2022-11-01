@@ -15,30 +15,42 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-AM_CPPFLAGS =
+AM_CPPFLAGS = -DG_LIB_SMALL
 
 noinst_LIBRARIES = libglib.a
 
-if GCONFIG_WINDOWS
-
-EXTRA_DIST=\
+UNIX_SOURCES = \
 	gcleanup_unix.cpp \
+	gconvert_unix.cpp \
 	gdaemon_unix.cpp \
 	gdirectory_unix.cpp \
 	genvironment_unix.cpp \
 	gexecutablecommand_unix.cpp \
 	gfile_unix.cpp \
-	ggettext_unix.cpp \
-	ggettext_none.cpp \
 	ghostname_unix.cpp \
 	gidentity_unix.cpp \
 	glogoutput_unix.cpp \
 	gmsg_unix.cpp \
 	gnewprocess_unix.cpp \
-	gpam_linux.cpp \
 	gprocess_unix.cpp
 
-libglib_a_SOURCES = \
+WINDOWS_SOURCES = \
+	gcleanup_win32.cpp \
+	gconvert_win32.cpp \
+	gdaemon_win32.cpp \
+	gdirectory_win32.cpp \
+	genvironment_win32.cpp \
+	gexecutablecommand_win32.cpp \
+	gfile_win32.cpp \
+	ghostname_win32.cpp \
+	gidentity_win32.cpp \
+	glogoutput_win32.cpp \
+	gmsg_win32.cpp \
+	gnewprocess_win32.cpp \
+	gprocess_win32.cpp
+
+COMMON_SOURCES = \
+	galign.h \
 	garg.h \
 	garg.cpp \
 	gassert.h \
@@ -49,12 +61,9 @@ libglib_a_SOURCES = \
 	gbuffer.h \
 	gcall.h \
 	gcleanup.h \
-	gcleanup_win32.cpp \
 	gconvert.h \
 	gconvert.cpp \
-	gconvert_win32.cpp \
 	gdaemon.h \
-	gdaemon_win32.cpp \
 	gdate.h \
 	gdate.cpp \
 	gdatetime.h \
@@ -62,48 +71,42 @@ libglib_a_SOURCES = \
 	gdef.h \
 	gdirectory.h \
 	gdirectory.cpp \
-	gdirectory_win32.cpp \
+	geightbit.h \
 	genvironment.h \
 	genvironment.cpp \
-	genvironment_win32.cpp \
 	gexception.h \
 	gexception.cpp \
 	gexecutablecommand.h \
 	gexecutablecommand.cpp \
-	gexecutablecommand_win32.cpp \
+	gfbuf.h \
 	gfile.h \
 	gfile.cpp \
-	gfile_win32.cpp \
 	gformat.h \
 	gformat.cpp \
 	ggetopt.h \
 	ggetopt.cpp \
-	ggettext.h \
-	ggettext_win32.cpp \
 	ghash.h \
 	ghash.cpp \
 	ghashstate.h \
 	ghostname.h \
-	ghostname_win32.cpp \
 	gidentity.h \
-	gidentity_win32.cpp \
 	gimembuf.h \
 	glimits.h \
 	glog.h \
 	glog.cpp \
+	glogstream.h \
+	glogstream.cpp \
 	glogoutput.h \
 	glogoutput.cpp \
-	glogoutput_win32.cpp \
 	gstrmacros.h \
 	gmapfile.h \
 	gmapfile.cpp \
 	gmd5.h \
 	gmd5.cpp \
 	gmsg.h \
-	gmsg_win32.cpp \
 	gnewprocess.h \
-	gnewprocess_win32.cpp \
 	gomembuf.h \
+	goptional.h \
 	goption.h \
 	goption.cpp \
 	goptionmap.h \
@@ -112,17 +115,14 @@ libglib_a_SOURCES = \
 	goptionparser.cpp \
 	goptions.h \
 	goptions.cpp \
-	goptionsoutput.h \
-	goptionsoutput.cpp \
+	goptionsusage.h \
+	goptionsusage.cpp \
 	goptionvalue.h \
-	gpam.h \
-	gpam_none.cpp \
 	gpath.h \
 	gpath.cpp \
 	gpidfile.h \
 	gpidfile.cpp \
 	gprocess.h \
-	gprocess_win32.cpp \
 	grandom.h \
 	grandom.cpp \
 	greadwrite.h \
@@ -135,16 +135,19 @@ libglib_a_SOURCES = \
 	gslot.h \
 	gslot.cpp \
 	gstatemachine.h \
-	gstatemachine.cpp \
 	gstr.h \
 	gstr.cpp \
+	gstringarray.h \
 	gstringfield.h \
 	gstringtoken.h \
-	gstringarray.h \
+	gstringlist.h \
+	gstringlist.cpp \
 	gstringmap.h \
+	gstrings.h \
 	gstringwrap.cpp \
 	gstringwrap.h \
 	gstringview.h \
+	gstringview.cpp \
 	gtest.h \
 	gtest.cpp \
 	gthread.cpp \
@@ -153,151 +156,82 @@ libglib_a_SOURCES = \
 	gxtext.h \
 	gxtext.cpp
 
-else
+# -- PAM
 
 if GCONFIG_PAM
-PAM_EXTRA_DIST = gpam_none.cpp
-PAM_SOURCES = gpam_linux.cpp
+if GCONFIG_WINDOWS
+PAM_SOURCES = \
+	gpam.h \
+	gpam_none.cpp
+PAM_EXTRA_DIST = \
+	gpam_linux.cpp
 else
-PAM_EXTRA_DIST = gpam_linux.cpp
-PAM_SOURCES = gpam_none.cpp
+PAM_SOURCES = \
+	gpam.h \
+	gpam_linux.cpp
+PAM_EXTRA_DIST = \
+	gpam_none.cpp
 endif
+else
+PAM_SOURCES = \
+	gpam.h \
+	gpam_none.cpp
+PAM_EXTRA_DIST = \
+	gpam_linux.cpp
+endif
+
+# -- GETTEXT
 
 if GCONFIG_GETTEXT
-GETTEXT_EXTRA_DIST = ggettext_win32.cpp ggettext_none.cpp
-GETTEXT_SOURCES = ggettext_unix.cpp
+if GCONFIG_WINDOWS
+GETTEXT_SOURCES = \
+	ggettext.h \
+	ggettext_win32.cpp
+GETTEXT_EXTRA_DIST = \
+	ggettext_none.cpp \
+	ggettext_unix.cpp
 else
-GETTEXT_EXTRA_DIST = ggettext_win32.cpp ggettext_unix.cpp
-GETTEXT_SOURCES = ggettext_none.cpp
+GETTEXT_SOURCES = \
+	ggettext.h \
+	ggettext_unix.cpp
+GETTEXT_EXTRA_DIST = \
+	ggettext_none.cpp \
+	ggettext_win32.cpp
+endif
+else
+GETTEXT_SOURCES = \
+	ggettext_none.cpp \
+	ggettext.h
+GETTEXT_EXTRA_DIST = \
+	ggettext_win32.cpp \
+	ggettext_unix.cpp
 endif
 
-EXTRA_DIST=\
-	gcleanup_win32.cpp \
-	gconvert.cpp \
-	gconvert_win32.cpp \
-	gdaemon_win32.cpp \
-	gdirectory_win32.cpp \
-	genvironment_win32.cpp \
-	gexecutablecommand_win32.cpp \
-	gfile_win32.cpp \
-	$(GETTEXT_EXTRA_DIST) \
-	ghostname_win32.cpp \
-	gidentity_win32.cpp \
-	glogoutput_win32.cpp \
-	$(PAM_EXTRA_DIST) \
-	gprocess_win32.cpp \
-	gnewprocess_win32.cpp \
-	gmsg_win32.cpp
+# -- OS
+
+if GCONFIG_WINDOWS
+OS_SOURCES = \
+	$(COMMON_SOURCES) \
+	$(WINDOWS_SOURCES)
+OS_EXTRA_DIST = \
+	$(UNIX_SOURCES)
+else
+OS_SOURCES = \
+	$(COMMON_SOURCES) \
+	$(UNIX_SOURCES)
+OS_EXTRA_DIST = \
+	$(WINDOWS_SOURCES)
+endif
+
+# ===
 
 libglib_a_SOURCES = \
-	garg.h \
-	garg.cpp \
-	gassert.h \
-	gbase64.h \
-	gbase64.cpp \
-	gbatchfile.h \
-	gbatchfile.cpp \
-	gbuffer.h \
-	gcall.h \
-	gcleanup.h \
-	gcleanup_unix.cpp \
-	gconvert.h \
-	gdaemon.h \
-	gdaemon_unix.cpp \
-	gdate.h \
-	gdate.cpp \
-	gdatetime.h \
-	gdatetime.cpp \
-	gdef.h \
-	gdirectory.h \
-	gdirectory.cpp \
-	gdirectory_unix.cpp \
-	genvironment.h \
-	genvironment.cpp \
-	genvironment_unix.cpp \
-	gexception.h \
-	gexception.cpp \
-	gexecutablecommand.h \
-	gexecutablecommand.cpp \
-	gexecutablecommand_unix.cpp \
-	gfile.h \
-	gfile.cpp \
-	gfile_unix.cpp \
-	gformat.h \
-	gformat.cpp \
-	ggetopt.h \
-	ggetopt.cpp \
-	ggettext.h \
 	$(GETTEXT_SOURCES) \
-	ghash.h \
-	ghash.cpp \
-	ghostname.h \
-	ghostname_unix.cpp \
-	gidentity.h \
-	gidentity_unix.cpp \
-	gimembuf.h \
-	glimits.h \
-	glog.h \
-	glog.cpp \
-	glogoutput.h \
-	glogoutput.cpp \
-	glogoutput_unix.cpp \
-	gmapfile.h \
-	gmapfile.cpp \
-	gmd5.h \
-	gmd5.cpp \
-	gmsg_unix.cpp \
-	gmsg.h \
-	gnewprocess.h \
-	gnewprocess_unix.cpp \
-	gomembuf.h \
-	goption.h \
-	goption.cpp \
-	goptionmap.h \
-	goptionmap.cpp \
-	goptionparser.h \
-	goptionparser.cpp \
-	goptions.h \
-	goptions.cpp \
-	goptionsoutput.h \
-	goptionsoutput.cpp \
-	goptionvalue.h \
-	gpam.h \
-	$(PAM_SOURCES) \
-	gpath.h \
-	gpath.cpp \
-	gpidfile.h \
-	gpidfile.cpp \
-	gprocess.h \
-	gprocess_unix.cpp \
-	grandom.h \
-	grandom.cpp \
-	greadwrite.h \
-	greadwrite.cpp \
-	groot.h \
-	groot.cpp \
-	gscope.h \
-	gsignalsafe.h \
-	gsleep.h \
-	gslot.h \
-	gslot.cpp \
-	gstatemachine.h \
-	gstatemachine.cpp \
-	gstr.h \
-	gstr.cpp \
-	gstringfield.h \
-	gstringtoken.h \
-	gstringarray.h \
-	gstringmap.h \
-	gstringwrap.cpp \
-	gstringwrap.h \
-	gstringview.h \
-	gtest.h \
-	gtest.cpp \
-	gthread.cpp \
-	gtime.h \
-	gtime.cpp \
-	gxtext.h \
-	gxtext.cpp
+	$(OS_SOURCES) \
+	$(PAM_SOURCES)
 
-endif
+EXTRA_DIST = \
+	$(GETTEXT_EXTRA_DIST) \
+	$(OS_EXTRA_DIST) \
+	$(PAM_EXTRA_DIST)
+

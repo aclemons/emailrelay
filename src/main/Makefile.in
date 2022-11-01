@@ -210,6 +210,7 @@ emailrelay_submit_OBJECTS = $(am_emailrelay_submit_OBJECTS)
 @GCONFIG_WINDOWS_FALSE@	$(top_builddir)/src/gsmtp/libgsmtp.a \
 @GCONFIG_WINDOWS_FALSE@	$(top_builddir)/src/gauth/libgauth.a \
 @GCONFIG_WINDOWS_FALSE@	$(top_builddir)/src/gnet/libgnet.a \
+@GCONFIG_WINDOWS_FALSE@	$(top_builddir)/src/gssl/libgssl.a \
 @GCONFIG_WINDOWS_FALSE@	$(top_builddir)/src/glib/libglib.a
 @GCONFIG_WINDOWS_TRUE@emailrelay_submit_DEPENDENCIES =  \
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/gsmtp/libgsmtp.a \
@@ -592,7 +593,9 @@ MISC_EXTRA_DIST = \
 	emailrelay-service.exe.manifest \
 	fakemc.c \
 	messages.mc \
-	resource.h
+	resource.h \
+	testrun.cpp \
+	testrun.h
 
 @GCONFIG_MAC_FALSE@MAC_PROGS = 
 @GCONFIG_MAC_TRUE@MAC_PROGS = emailrelay-start
@@ -679,6 +682,7 @@ emailrelay_submit_SOURCES = submit.cpp legal.cpp legal.h
 @GCONFIG_WINDOWS_FALSE@	$(top_builddir)/src/gsmtp/libgsmtp.a \
 @GCONFIG_WINDOWS_FALSE@	$(top_builddir)/src/gauth/libgauth.a \
 @GCONFIG_WINDOWS_FALSE@	$(top_builddir)/src/gnet/libgnet.a \
+@GCONFIG_WINDOWS_FALSE@	$(top_builddir)/src/gssl/libgssl.a \
 @GCONFIG_WINDOWS_FALSE@	$(top_builddir)/src/glib/libglib.a
 
 @GCONFIG_WINDOWS_TRUE@emailrelay_submit_LDADD = \
@@ -1299,6 +1303,10 @@ fakemc.exe: $(top_srcdir)/src/main/fakemc.c
 .PHONY: strip
 strip:
 	$(STRIP) $(sbin_PROGRAMS) $(e_libexec_PROGRAMS)
+
+.PHONY: map
+map:
+	$(CXXLD) -Xlinker -Map=emailrelay.map $(AM_CXXFLAGS) $(CXXFLAGS) $(emailrelay_LDFLAGS) $(LDFLAGS) -o /tmp/emailrelay.tmp $(emailrelay_OBJECTS) $(emailrelay_LDADD) $(LIBS)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

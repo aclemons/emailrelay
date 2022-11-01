@@ -27,13 +27,26 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <openssl/rand.h>
+#include <openssl/conf.h>
+#include <openssl/evp.h>
 #include <openssl/md5.h>
 #include <openssl/sha.h>
-#include <openssl/evp.h>
+#include <openssl/hmac.h>
 #include <memory>
 #include <stdexcept>
 #include <functional>
 #include <map>
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#error "openssl is too old"
+#endif
+#ifndef GCONFIG_HAVE_OPENSSL_HASH_FUNCTIONS
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#define GCONFIG_HAVE_OPENSSL_HASH_FUNCTIONS 0
+#else
+#define GCONFIG_HAVE_OPENSSL_HASH_FUNCTIONS 1
+#endif
+#endif
 
 // debugging...
 //  * network logging
@@ -94,7 +107,7 @@ public:
 	bool noverify() const ;
 
 private:
-	static bool consume( G::StringArray & , const std::string & ) ;
+	static bool consume( G::StringArray & , G::string_view ) ;
 	static int map( int , int ) ;
 
 private:
@@ -160,8 +173,8 @@ private: // overrides
 public:
 	ProfileImp( const ProfileImp & ) = delete ;
 	ProfileImp( ProfileImp && ) = delete ;
-	void operator=( const ProfileImp & ) = delete ;
-	void operator=( ProfileImp && ) = delete ;
+	ProfileImp & operator=( const ProfileImp & ) = delete ;
+	ProfileImp & operator=( ProfileImp && ) = delete ;
 
 private:
 	static void check( int , const std::string & , const std::string & = {} ) ;
@@ -212,8 +225,8 @@ private: // overrides
 public:
 	LibraryImp( const LibraryImp & ) = delete ;
 	LibraryImp( LibraryImp && ) = delete ;
-	void operator=( const LibraryImp & ) = delete ;
-	void operator=( LibraryImp && ) = delete ;
+	LibraryImp & operator=( const LibraryImp & ) = delete ;
+	LibraryImp & operator=( LibraryImp && ) = delete ;
 
 private:
 	static void cleanup() ;
@@ -258,8 +271,8 @@ private: // overrides
 public:
 	ProtocolImp( const ProtocolImp & ) = delete ;
 	ProtocolImp( ProtocolImp && ) = delete ;
-	void operator=( const ProtocolImp & ) = delete ;
-	void operator=( ProtocolImp && ) = delete ;
+	ProtocolImp & operator=( const ProtocolImp & ) = delete ;
+	ProtocolImp & operator=( ProtocolImp && ) = delete ;
 
 private:
 	int error( const char * , int ) const ;
@@ -293,7 +306,7 @@ public:
 	~DigesterImp() override ;
 
 private: // overrides
-	void add( const std::string & ) override ;
+	void add( G::string_view ) override ;
 	std::string value() override ;
 	std::string state() override ;
 	std::size_t blocksize() const override ;
@@ -303,15 +316,17 @@ private: // overrides
 public:
 	DigesterImp( const DigesterImp & ) = delete ;
 	DigesterImp( DigesterImp && ) = delete ;
-	void operator=( const DigesterImp & ) = delete ;
-	void operator=( DigesterImp && ) = delete ;
+	DigesterImp & operator=( const DigesterImp & ) = delete ;
+	DigesterImp & operator=( DigesterImp && ) = delete ;
 
 private:
 	enum class Type { Md5 , Sha1 , Sha256 , Other } ;
 	Type m_hash_type ;
+	#if GCONFIG_HAVE_OPENSSL_HASH_FUNCTIONS
 	MD5_CTX m_md5 {} ;
 	SHA_CTX m_sha1 {} ;
 	SHA256_CTX m_sha256 {} ;
+	#endif
 	EVP_MD_CTX * m_evp_ctx ;
 	std::size_t m_block_size {0} ;
 	std::size_t m_value_size {0} ;

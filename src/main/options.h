@@ -24,6 +24,8 @@
 #include "gdef.h"
 #include "goptions.h"
 #include <string>
+#include <vector>
+#include <utility>
 
 namespace Main
 {
@@ -39,6 +41,12 @@ class Main::Options
 public:
 	static G::Options spec( bool is_windows ) ;
 		///< Returns an o/s-specific G::OptionParser specification.
+
+	using Tag = std::pair<unsigned,std::string> ;
+
+	static std::vector<Tag> tags() ;
+		///< Returns an ordered list of tags to be matched
+		///< against each option's 'main_tag'.
 
 public:
 	Options() = delete ;

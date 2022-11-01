@@ -28,6 +28,7 @@
 #include "goptionparser.h"
 #include "garg.h"
 #include "gpath.h"
+#include "gstringview.h"
 #include "gstringarray.h"
 #include "gexception.h"
 #include <string>
@@ -48,9 +49,9 @@ namespace G
 ///  G::Arg arg( argc , argv ) ;
 ///  G::GetOpt opt( arg , "e!extra!does something! extra!1!something!1" "|" "h!help!shows help!!0!!1" ) ;
 ///  if( opt.hasErrors() ) { opt.showErrors( std::cerr ) ; exit( 2 ) ; }
-///  if( opt.contains("help") ) { Output(opt.options()).showUsage( Layout().set_whatever() ,
+///  if( opt.contains("help"sv) ) { Output(opt.options()).showUsage( Layout().set_whatever() ,
 ///    std::cout , arg.prefix() , " [<more>]" ) ; exit( 0 ) ; }
-///  run( opt.args() , opt.contains("extra") ? opt.value("extra") : std::string() ) ;
+///  run( opt.args() , opt.contains("extra"sv) ? opt.value("extra"sv) : std::string() ) ;
 /// \endcode
 ///
 /// This class is a thin layer over G::Options, G::OptionMap, G::OptionParser etc,
@@ -129,21 +130,21 @@ public:
 		///< Returns true if the command-line contains the option identified by its
 		///< short-form letter.
 
-	bool contains( const std::string & option_name ) const ;
+	bool contains( string_view option_name ) const ;
 		///< Returns true if the command-line contains the option identified by its
 		///< long-form name.
 
-	std::size_t count( const std::string & option_name ) const ;
+	std::size_t count( string_view option_name ) const ;
 		///< Returns the option's repeat count.
 
-	std::string value( const std::string & option_name , const std::string & default_ = {} ) const ;
+	std::string value( string_view option_name , string_view default_ = {} ) const ;
 		///< Returns the value for the option identified by its long-form name.
 		///< If the option is multi-valued then the returned value is a
 		///< comma-separated list. If the option-value is 'on' then
 		///< Str::positive() is returned; if the option-value is 'off'
 		///< then the given default is returned.
 
-	std::string value( char option_letter , const std::string & default_ = {} ) const ;
+	std::string value( char option_letter , string_view default_ = {} ) const ;
 		///< An overload that returns the value of the option identified
 		///< by its short-form letter.
 		///< Precondition: contains(option_letter)
@@ -152,8 +153,8 @@ public:
 	~GetOpt() = default ;
 	GetOpt( const GetOpt & ) = delete ;
 	GetOpt( GetOpt && ) = delete ;
-	void operator=( const GetOpt & ) = delete ;
-	void operator=( GetOpt && ) = delete ;
+	GetOpt & operator=( const GetOpt & ) = delete ;
+	GetOpt & operator=( GetOpt && ) = delete ;
 
 private:
 	void parseArgs( std::size_t ) ;

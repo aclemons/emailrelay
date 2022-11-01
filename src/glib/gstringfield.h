@@ -22,6 +22,7 @@
 #define G_STRING_FIELD_H
 
 #include "gdef.h"
+#include "gstringview.h"
 #include "gassert.h"
 #include <string>
 #include <algorithm>
@@ -30,6 +31,7 @@ namespace G
 {
 	template <typename T> class StringFieldT ;
 	using StringField = StringFieldT<std::string> ;
+	using StringFieldView = StringFieldT<string_view> ;
 }
 
 //| \class G::StringFieldT
@@ -49,51 +51,89 @@ class G::StringFieldT
 public:
 	using char_type = typename T::value_type ;
 
-	StringFieldT( const T & s , const char_type * sep , std::size_t sepn ) ;
+	StringFieldT( const T & s , const char_type * sep , std::size_t sepn ) noexcept ;
+		///< Constructor. The parameters must stay valid
+		///< for the object lifefime.
+		///<
+		///< The rvalue overload is deleted to avoid passing a
+		///< temporary T that has been implicitly constructed from
+		///< something else. Temporary string_views constructed
+		///< from a string would be safe, but might be unsafe for
+		///< other types.
+
+	StringFieldT( const T & s , char_type sep ) noexcept ;
 		///< Constructor. The parameters must stay valid
 		///< for the object lifefime.
 
-	explicit operator bool() const ;
+	explicit operator bool() const noexcept ;
 		///< Returns true if a valid field.
 
-	T operator()() const ;
+	bool valid() const noexcept ;
+		///< Returns true if a valid field.
+
+	T operator()() const noexcept(std::is_same<T,string_view>::value) ;
 		///< Returns the current field substring. Prefer data()
 		///< and size() to avoid copying.
 
-	StringFieldT<T> & operator++() ;
+	StringFieldT<T> & operator++() noexcept ;
 		///< Moves to the next field.
 
-	const char_type * data() const ;
+	const char_type * data() const noexcept ;
 		///< Returns the current field pointer.
 
-	std::size_t size() const ;
+	std::size_t size() const noexcept ;
 		///< Returns the current field size.
 
-	bool first() const ;
+	bool first() const noexcept ;
 		///< Returns true if the current field is the first.
 
-	bool last() const ;
+	bool last() const noexcept ;
 		///< Returns true if the current field is the last.
+
+	std::size_t count() const noexcept ;
+		///< Returns the number of fields.
 
 public:
 	~StringFieldT() = default ;
 	StringFieldT( T && s , const char * , std::size_t ) = delete ;
+	StringFieldT( T && s , char ) = delete ;
 	StringFieldT( const StringFieldT<T> & ) = delete ;
 	StringFieldT( StringFieldT<T> && ) = delete ;
-	void operator=( const StringFieldT<T> & ) = delete ;
-	void operator=( StringFieldT<T> && ) = delete ;
+	StringFieldT<T> & operator=( const StringFieldT<T> & ) = delete ;
+	StringFieldT<T> & operator=( StringFieldT<T> && ) = delete ;
 
 private:
-	const T * const m_p ;
+	const T & m_s ;
+	char m_c ;
 	const char_type * m_sep ;
 	std::size_t m_sepn ;
 	std::size_t m_fpos ;
 	std::size_t m_fendpos ;
 } ;
 
+namespace G
+{
+	namespace StringFieldImp
+	{
+		template <typename T> inline T substr( const T & s ,
+			std::size_t pos , std::size_t len ) noexcept(std::is_same<T,string_view>::value)
+		{
+			return s.substr( pos , len ) ;
+		}
+		template <> string_view inline substr<string_view>( const string_view & s ,
+			std::size_t pos , std::size_t len ) noexcept
+		{
+			return s.substr( std::nothrow , pos , len ) ;
+		}
+		static_assert( !noexcept(std::string().substr(0,0)) , "" ) ;
+		static_assert( noexcept(string_view().substr(std::nothrow,0,0)) , "" ) ;
+	}
+}
+
 template <typename T>
-G::StringFieldT<T>::StringFieldT( const T & s , const char_type * sep_p , std::size_t sep_n ) :
-	m_p(&s) ,
+G::StringFieldT<T>::StringFieldT( const T & s , const char_type * sep_p , std::size_t sep_n ) noexcept :
+	m_s(s) ,
+	m_c('\0') ,
 	m_sep(sep_p) ,
 	m_sepn(sep_n) ,
 	m_fpos(s.empty()?std::string::npos:0U) ,
@@ -102,54 +142,80 @@ G::StringFieldT<T>::StringFieldT( const T & s , const char_type * sep_p , std::s
 }
 
 template <typename T>
-const typename T::value_type * G::StringFieldT<T>::data() const
+G::StringFieldT<T>::StringFieldT( const T & s , char_type sep ) noexcept :
+	m_s(s) ,
+	m_c(sep) ,
+	m_sep(&m_c) ,
+	m_sepn(1U) ,
+	m_fpos(s.empty()?std::string::npos:0U) ,
+	m_fendpos(s.find(m_sep,0U,m_sepn))
 {
-	G_ASSERT( m_fpos != std::string::npos ) ;
-	return m_p->data() + m_fpos ;
 }
 
 template <typename T>
-std::size_t G::StringFieldT<T>::size() const
+const typename T::value_type * G::StringFieldT<T>::data() const noexcept
 {
 	G_ASSERT( m_fpos != std::string::npos ) ;
-	return (m_fendpos==std::string::npos?m_p->size():m_fendpos) - m_fpos ;
+	return m_s.data() + m_fpos ;
 }
 
 template <typename T>
-G::StringFieldT<T>::operator bool() const
+std::size_t G::StringFieldT<T>::size() const noexcept
+{
+	G_ASSERT( m_fpos != std::string::npos ) ;
+	return (m_fendpos==std::string::npos?m_s.size():m_fendpos) - m_fpos ;
+}
+
+template <typename T>
+G::StringFieldT<T>::operator bool() const noexcept
 {
 	return m_fpos != std::string::npos ;
 }
 
 template <typename T>
-T G::StringFieldT<T>::operator()() const
+bool G::StringFieldT<T>::valid() const noexcept
 {
-	if( m_fpos == std::string::npos ) return {} ;
-	return m_p->substr( m_fpos , size() ) ;
+	return m_fpos != std::string::npos ;
 }
 
 template <typename T>
-G::StringFieldT<T> & G::StringFieldT<T>::operator++()
+T G::StringFieldT<T>::operator()() const noexcept(std::is_same<T,string_view>::value)
+{
+	if( m_fpos == std::string::npos ) return {} ;
+	return StringFieldImp::substr<T>( m_s , m_fpos , size() ) ;
+}
+
+template <typename T>
+G::StringFieldT<T> & G::StringFieldT<T>::operator++() noexcept
 {
 	m_fpos = m_fendpos ;
 	if( m_fpos != std::string::npos )
 	{
-		m_fpos = std::min( m_p->size() , m_fpos + m_sepn ) ;
-		m_fendpos = m_p->find( m_sep , m_fpos , m_sepn ) ;
+		m_fpos = std::min( m_s.size() , m_fpos + m_sepn ) ;
+		m_fendpos = m_s.find( m_sep , m_fpos , m_sepn ) ; // documented as non-throwing
 	}
 	return *this ;
 }
 
 template <typename T>
-bool G::StringFieldT<T>::first() const
+bool G::StringFieldT<T>::first() const noexcept
 {
 	return m_fpos == 0U ;
 }
 
 template <typename T>
-bool G::StringFieldT<T>::last() const
+bool G::StringFieldT<T>::last() const noexcept
 {
 	return m_fendpos == std::string::npos ;
+}
+
+template <typename T>
+std::size_t G::StringFieldT<T>::count() const noexcept
+{
+	std::size_t n = 0U ;
+	for( StringFieldT<T> f( m_s , m_sep , m_sepn ) ; f ; ++f )
+		n++ ;
+	return n ;
 }
 
 #endif

@@ -26,6 +26,7 @@
 #include <string>
 #include <map>
 #include <algorithm>
+#include <functional> // std::less
 
 namespace G
 {
@@ -41,20 +42,21 @@ namespace G
 class G::OptionMap
 {
 public:
-	using Map = std::multimap<std::string,OptionValue> ;
+	using Map = std::multimap<std::string,OptionValue,std::less<std::string>> ; // NOLINT modernize-use-transparent-functors
 	using value_type = Map::value_type ;
 	using iterator = Map::iterator ;
 	using const_iterator = Map::const_iterator ;
 
 public:
 	void insert( const Map::value_type & ) ;
-		///< Inserts the key/value pair into the map. The ordering of values in
-		///< the map with the same key is in the order of insert()ion.
+		///< Inserts the key/value pair into the map. The ordering of values
+		///< in the map with the same key is in the order of insert()ion
+		///< (as guaranteed by std::multimap since c++ 2011).
 
-	void replace( const std::string & key , const std::string & value ) ;
+	void replace( string_view key , const std::string & value ) ;
 		///< Replaces all matching values with a single value.
 
-	void increment( const std::string & key ) ;
+	void increment( string_view key ) ;
 		///< Increments the repeat count for the given entry.
 
 	const_iterator begin() const ;
@@ -69,36 +71,38 @@ public:
 	const_iterator cend() const ;
 		///< Returns the off-the-end iterator.
 
-	const_iterator find( const std::string & ) const ;
+	const_iterator find( string_view ) const ;
 		///< Finds the map entry with the given key.
 
 	void clear() ;
 		///< Clears the map.
 
-	bool contains( const std::string & ) const ;
+	bool contains( string_view ) const ;
 		///< Returns true if the map contains the given key, but ignoring 'off'
 		///< option-values.
 
 	bool contains( const char * ) const ;
-		///< Overload taking a c-string.
+		///< Overload for c-string.
 
-	std::size_t count( const std::string & key ) const ;
+	bool contains( const std::string & ) const ;
+		///< Overload for std-string.
+
+	std::size_t count( string_view key ) const ;
 		///< Returns the total repeat count for all matching entries.
 		///< See G::OptionValue::count().
 
-	std::string value( const std::string & key , const std::string & default_ = {} ) const ;
+	std::string value( string_view key , string_view default_ = {} ) const ;
 		///< Returns the matching value, with concatentation into a comma-separated
-		///< list if multivalued. If there are any on/off option-values matching
-		///< the key then a single value is returned corresponding to the first
-		///< one, being G::Str::positive() if 'on' or the supplied default
-		///< if 'off'.
-
-	std::string value( const char * key , const char * default_ = nullptr ) const ;
-		///< Overload taking c-strings.
+		///< list if multivalued (with no escaping). If there are any on/off
+		///< option-values matching the key then a single value is returned
+		///< corresponding to the first one, being G::Str::positive() if 'on'
+		///< or the supplied default if 'off'.
 
 private:
-	std::string join( Map::const_iterator , Map::const_iterator , const std::string & ) const ;
-	static bool compare( const Map::value_type & , const Map::value_type & ) ;
+	using Range = std::pair<Map::const_iterator,Map::const_iterator> ;
+	Range findRange( string_view key ) const ;
+	Map::iterator findFirst( string_view key ) ;
+	std::string join( Map::const_iterator , Map::const_iterator , string_view ) const ;
 
 private:
 	Map m_map ;

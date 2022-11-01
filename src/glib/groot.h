@@ -64,8 +64,8 @@ public:
 		///< Constructor overload with explicit control over whether to change the
 		///< group-id or not.
 
-	~Root() ;
-		///< Desctructor. Releases special privileges if this instance acquired them.
+	~Root() ; // NOLINT
+		///< Destructor. Releases special privileges if this instance acquired them.
 		///< The implementation uses G::Process::beOrdinary(). Errors from seteuid()
 		///< will call Process::terminate().
 
@@ -89,8 +89,8 @@ public:
 public:
 	Root( const Root & ) = delete ;
 	Root( Root && ) = delete ;
-	void operator=( const Root & ) = delete ;
-	void operator=( Root && ) = delete ;
+	Root & operator=( const Root & ) = delete ;
+	Root & operator=( Root && ) = delete ;
 
 private:
 	void check() ;

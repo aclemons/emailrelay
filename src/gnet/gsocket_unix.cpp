@@ -149,18 +149,19 @@ std::string GNet::SocketBase::reasonString( int e )
 
 // ==
 
-std::string GNet::Socket::canBindHint( const Address & address , bool stream )
+std::string GNet::Socket::canBindHint( const Address & address , bool stream , const Config & config )
 {
 	if( address.family() == Address::Family::ipv4 || address.family() == Address::Family::ipv6 )
 	{
 		if( stream )
 		{
-			StreamSocket s( address.family() ) ;
+			StreamSocket s( address.family() , StreamSocket::Config(config) ) ;
 			return s.bind( address , std::nothrow ) ? std::string() : s.reason() ;
 		}
 		else
 		{
-			DatagramSocket s( address.family() ) ;
+			int protocol = 0 ;
+			DatagramSocket s( address.family() , protocol , DatagramSocket::Config(config) ) ;
 			return s.bind( address , std::nothrow ) ? std::string() : s.reason() ;
 		}
 	}
@@ -240,17 +241,5 @@ std::size_t GNet::DatagramSocket::limit() const
 		return static_cast<std::size_t>(value) ;
 	else
 		return 1024U ;
-}
-
-GNet::Socket::ssize_type GNet::DatagramSocket::writeto( const std::vector<G::string_view> & data , const Address & dst )
-{
-	ssize_type nsent = G::Msg::sendto( fd() , data , MSG_NOSIGNAL , dst.address() , dst.length() ) ;
-	if( nsent < 0 )
-	{
-		saveReason() ;
-		G_DEBUG( "GNet::DatagramSocket::write: write error " << reason() ) ;
-		return -1 ;
-	}
-	return nsent ;
 }
 

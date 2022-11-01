@@ -23,6 +23,7 @@
 #include "gassert.h"
 #include "gstr.h"
 #include "gstringview.h"
+#include "gstringfield.h"
 #include <array>
 #include <vector>
 #include <iomanip>
@@ -49,20 +50,20 @@ GNet::DnsMessageRequest::DnsMessageRequest( const std::string & type , const std
 
 void GNet::DnsMessageRequest::q( const std::string & domain , char sep )
 {
-	G::StringArray parts ;
-	G::Str::splitIntoFields( domain , parts , sep ) ;
-	for( const auto & part : parts )
+	G::string_view domain_sv( domain ) ;
+	for( G::StringFieldView part( domain_sv , sep ) ; part ; ++part )
 	{
-		q( part ) ;
+		q( part() ) ;
 	}
-	q( std::string() ) ;
+	q( G::string_view() ) ;
 }
 
-void GNet::DnsMessageRequest::q( const std::string & data )
+void GNet::DnsMessageRequest::q( G::string_view data )
 {
 	if( data.size() > 63U ) throw DnsMessage::Error("overflow") ;
 	q( static_cast<unsigned int>(data.size()) ) ;
-	m_data.append( data ) ;
+	if( !data.empty() )
+		m_data.append( data.data() , data.size() ) ;
 }
 
 void GNet::DnsMessageRequest::q( int n )
@@ -102,12 +103,12 @@ GNet::DnsMessage::DnsMessage( const char * p , std::size_t n ) :
 {
 }
 
-const char * GNet::DnsMessage::p() const
+const char * GNet::DnsMessage::p() const noexcept
 {
 	return &m_buffer[0] ;
 }
 
-std::size_t GNet::DnsMessage::n() const
+std::size_t GNet::DnsMessage::n() const noexcept
 {
 	return m_buffer.size() ;
 }
@@ -299,7 +300,7 @@ unsigned int GNet::DnsMessageNameParser::size( const DnsMessage & msg , unsigned
 		if( ( n & 0xC0 ) == 0xC0 ) // compression -- see RFC-1035 4.1.4
 			return offset - offset_in + 2U ;
 		else if( ( n & 0xC0 ) != 0 )
-			throw GNet::DnsMessage::Error( "unknown label type" ) ; // "reserved for future use"
+			throw DnsMessage::Error( "unknown label type" ) ; // "reserved for future use"
 		else if( n == 0U )
 			break ;
 		else
@@ -311,7 +312,7 @@ unsigned int GNet::DnsMessageNameParser::size( const DnsMessage & msg , unsigned
 std::string GNet::DnsMessageNameParser::read( const DnsMessage & msg , unsigned int offset_in )
 {
 	unsigned int offset = offset_in ;
-	std::vector<std::string> name ;
+	std::string result ;
 	for(;;)
 	{
 		unsigned int n = msg.byte( offset ) ;
@@ -322,7 +323,7 @@ std::string GNet::DnsMessageNameParser::read( const DnsMessage & msg , unsigned 
 		}
 		else if( ( n & 0xC0 ) != 0 )
 		{
-			throw GNet::DnsMessage::Error( "unknown label type" ) ; // "reserved for future use"
+			throw DnsMessage::Error( "unknown label type" ) ; // "reserved for future use"
 		}
 		else if( n == 0U )
 		{
@@ -331,13 +332,14 @@ std::string GNet::DnsMessageNameParser::read( const DnsMessage & msg , unsigned 
 		else
 		{
 			if( n > 63U )
-				throw GNet::DnsMessage::Error( "name overflow" ) ;
+				throw DnsMessage::Error( "name overflow" ) ;
 
-			name.push_back( msg.span(offset+1U,offset+n+1U) ) ;
+			result.append( result.empty()?0U:1U , '.' ) ;
+			result.append( msg.span(offset+1U,offset+n+1U) ) ;
 			offset += (n+1U) ;
 		}
 	}
-	return G::Str::join( "." , name ) ;
+	return result ;
 }
 
 // ==
@@ -371,9 +373,9 @@ unsigned int GNet::DnsMessageRR::type() const
 	return m_type ;
 }
 
-bool GNet::DnsMessageRR::isa( const std::string & type_name ) const
+bool GNet::DnsMessageRR::isa( G::string_view type_name ) const noexcept
 {
-	return m_type == DnsMessageRecordType::value(type_name) ;
+	return m_type == DnsMessageRecordType::value( type_name , std::nothrow ) ;
 }
 
 unsigned int GNet::DnsMessageRR::size() const
@@ -386,44 +388,44 @@ std::string GNet::DnsMessageRR::name() const
 	return m_name ;
 }
 
-std::string GNet::DnsMessageRR::rdata_dname( unsigned int rdata_offset ) const
+std::string GNet::DnsMessageRR::rdataDname( unsigned int rdata_offset ) const
 {
 	return DnsMessageNameParser::read( m_msg , m_rdata_offset + rdata_offset ) ;
 }
 
-std::string GNet::DnsMessageRR::rdata_dname( unsigned int * rdata_offset_p ) const
+std::string GNet::DnsMessageRR::rdataDname( unsigned int * rdata_offset_p ) const
 {
 	std::string dname = DnsMessageNameParser::read( m_msg , m_rdata_offset + *rdata_offset_p ) ;
 	*rdata_offset_p += DnsMessageNameParser::size( m_msg , m_rdata_offset + *rdata_offset_p ) ;
 	return dname ;
 }
 
-std::string GNet::DnsMessageRR::rdata_span( unsigned int rdata_begin ) const
+std::string GNet::DnsMessageRR::rdataSpan( unsigned int rdata_begin ) const
 {
-	return rdata_span( rdata_begin , rdata_size() ) ;
+	return rdataSpan( rdata_begin , rdataSize() ) ;
 }
 
-std::string GNet::DnsMessageRR::rdata_span( unsigned int rdata_begin , unsigned int rdata_end ) const
+std::string GNet::DnsMessageRR::rdataSpan( unsigned int rdata_begin , unsigned int rdata_end ) const
 {
 	return m_msg.span( m_rdata_offset + rdata_begin , m_rdata_offset + rdata_end ) ;
 }
 
-unsigned int GNet::DnsMessageRR::rdata_offset() const
+unsigned int GNet::DnsMessageRR::rdataOffset() const
 {
 	return m_rdata_offset ;
 }
 
-unsigned int GNet::DnsMessageRR::rdata_size() const
+unsigned int GNet::DnsMessageRR::rdataSize() const
 {
 	return m_rdata_size ;
 }
 
-unsigned int GNet::DnsMessageRR::rdata_byte( unsigned int i ) const
+unsigned int GNet::DnsMessageRR::rdataByte( unsigned int i ) const
 {
 	return m_msg.byte( m_rdata_offset + i ) ;
 }
 
-unsigned int GNet::DnsMessageRR::rdata_word( unsigned int i ) const
+unsigned int GNet::DnsMessageRR::rdataWord( unsigned int i ) const
 {
 	return m_msg.word( m_rdata_offset + i ) ;
 }
@@ -431,15 +433,15 @@ unsigned int GNet::DnsMessageRR::rdata_word( unsigned int i ) const
 GNet::Address GNet::DnsMessageRR::address() const
 {
 	std::ostringstream ss ;
-	if( isa("A") && rdata_size() == 4U )
+	if( isa("A") && rdataSize() == 4U )
 	{
-		ss << rdata_byte(0U) << "." << rdata_byte(1U) << "." << rdata_byte(2U) << "." << rdata_byte(3U) << ":0" ;
+		ss << rdataByte(0U) << "." << rdataByte(1U) << "." << rdataByte(2U) << "." << rdataByte(3U) << ":0" ;
 	}
-	else if( isa("AAAA") && rdata_size() == 16U )
+	else if( isa("AAAA") && rdataSize() == 16U )
 	{
 		const char * sep = "" ;
 		for( unsigned int i = 0 ; i < 8U ; i++ , sep = ":" )
-			ss << sep << std::hex << rdata_word(i*2U) ;
+			ss << sep << std::hex << rdataWord(i*2U) ;
 		ss << ".0" ;
 	}
 	else
@@ -490,15 +492,23 @@ namespace GNet
 	}
 }
 
-unsigned int GNet::DnsMessageRecordType::value( const std::string & type_name )
+unsigned int GNet::DnsMessageRecordType::value( G::string_view type_name , std::nothrow_t ) noexcept
 {
 	namespace imp = DnsMessageRecordTypeImp ;
 	for( const auto & item : imp::map )
 	{
-		if( type_name == item.second )
+		if( G::Str::match( type_name , item.second ) )
 			return item.first ;
 	}
-	throw DnsMessage::Error( "invalid rr type name" ) ;
+	return 0U ;
+}
+
+unsigned int GNet::DnsMessageRecordType::value( G::string_view type_name )
+{
+	unsigned int v = value( type_name , std::nothrow ) ;
+	if( v == 0U )
+		throw DnsMessage::Error( "invalid rr type name" ) ;
+	return v ;
 }
 
 std::string GNet::DnsMessageRecordType::name( unsigned int type_value )

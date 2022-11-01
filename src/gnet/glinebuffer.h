@@ -269,8 +269,8 @@ private:
 		~Extension() ;
 		Extension( const Extension & ) = delete ;
 		Extension( Extension && ) = delete ;
-		void operator=( const Extension & ) = delete ;
-		void operator=( Extension && ) = delete ;
+		Extension & operator=( const Extension & ) = delete ;
+		Extension & operator=( Extension && ) = delete ;
 		bool valid() const ;
 		LineBuffer * m_line_buffer ;
 		G::CallFrame m_call_frame ;
@@ -280,8 +280,8 @@ public:
 	~LineBuffer() = default ;
 	LineBuffer( const LineBuffer & ) = delete ;
 	LineBuffer( LineBuffer && ) = delete ;
-	void operator=( const LineBuffer & ) = delete ;
-	void operator=( LineBuffer && ) = delete ;
+	LineBuffer & operator=( const LineBuffer & ) = delete ;
+	LineBuffer & operator=( LineBuffer && ) = delete ;
 
 private:
 	friend class LineBufferState ;
@@ -498,7 +498,7 @@ void GNet::LineBuffer::apply( Tsink sink_p , Tmemfun memfun , const char * data_
 }
 
 inline
-bool GNet::LineBuffer::apply( SinkFn sink_fn , G::string_view data_in , FragmentsFn fragments_fn )
+bool GNet::LineBuffer::apply( SinkFn sink_fn , G::string_view data_in , FragmentsFn fragments_fn ) // NOLINT performance-unnecessary-value-param
 {
 	Extension e( this , data_in.data() , data_in.size() ) ;
 	while( e.valid() && more( fragments_fn() ) )

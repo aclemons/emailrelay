@@ -25,6 +25,7 @@
 
 #include "gdef.h"
 #include "gstringarray.h"
+#include "gstringview.h"
 #include "gexception.h"
 #include "greadwrite.h"
 #include <string>
@@ -191,8 +192,8 @@ public:
 public:
 	Protocol( const Protocol & ) = delete ;
 	Protocol( Protocol && ) = delete ;
-	void operator=( const Protocol & ) = delete ;
-	void operator=( Protocol && ) = delete ;
+	Protocol & operator=( const Protocol & ) = delete ;
+	Protocol & operator=( Protocol && ) = delete ;
 
 private:
 	std::unique_ptr<ProtocolImpBase> m_imp ;
@@ -226,7 +227,7 @@ public:
 		///< Returns the size of the state() string in bytes,
 		///< or zero if state() is not implemented.
 
-	void add( const std::string & ) ;
+	void add( G::string_view ) ;
 		///< Adds data of arbitrary size.
 
 	std::string state() ;
@@ -372,8 +373,8 @@ public:
 public:
 	Library( const Library & ) = delete ;
 	Library( Library && ) = delete ;
-	void operator=( const Library & ) = delete ;
-	void operator=( Library && ) = delete ;
+	Library & operator=( const Library & ) = delete ;
+	Library & operator=( Library && ) = delete ;
 
 private:
 	const LibraryImpBase & imp() const ;
@@ -420,7 +421,7 @@ public:
 	virtual std::string generateKey( const std::string & ) const = 0 ;
 		///< Implements Library::generateKey().
 
-	static bool consume( G::StringArray & list , const std::string & item ) ;
+	static bool consume( G::StringArray & list , G::string_view item ) ;
 		///< A convenience function that removes the item from
 		///< the list and returns true iff is was removed.
 } ;
@@ -488,7 +489,7 @@ public:
 	virtual ~DigesterImpBase() = default ;
 		///< Destructor.
 
-	virtual void add( const std::string & ) = 0 ;
+	virtual void add( G::string_view ) = 0 ;
 		///< Implements Digester::add().
 
 	virtual std::string value() = 0 ;

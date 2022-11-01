@@ -20,7 +20,6 @@
 
 #include "gdef.h"
 #include "servicecontrol.h"
-#include "ggettext.h"
 #include <sstream>
 #include <utility>
 #include <stdexcept>
@@ -46,8 +45,8 @@ struct ServiceControl::ScopeExitCloser
 	~ScopeExitCloser() { CloseServiceHandle( m_h ) ; }
 	ScopeExitCloser( const ScopeExitCloser & ) = delete ;
 	ScopeExitCloser( ScopeExitCloser && ) = delete ;
-	void operator=( const ScopeExitCloser & ) = delete ;
-	void operator=( ScopeExitCloser && ) = delete ;
+	ScopeExitCloser & operator=( const ScopeExitCloser & ) = delete ;
+	ScopeExitCloser & operator=( ScopeExitCloser && ) = delete ;
 	SC_HANDLE m_h ;
 } ;
 
@@ -61,8 +60,8 @@ public:
 public:
 	Manager( const Manager & ) = delete ;
 	Manager( Manager && ) = delete ;
-	void operator=( const Manager & ) = delete ;
-	void operator=( Manager && ) = delete ;
+	Manager & operator=( const Manager & ) = delete ;
+	Manager & operator=( Manager && ) = delete ;
 
 private:
 	SC_HANDLE m_h ;
@@ -85,8 +84,8 @@ public:
 public:
 	Service( const Service & ) = delete ;
 	Service( Service && ) = delete ;
-	void operator=( const Service & ) = delete ;
-	void operator=( Service && ) = delete ;
+	Service & operator=( const Service & ) = delete ;
+	Service & operator=( Service && ) = delete ;
 
 private:
 	SC_HANDLE open( SC_HANDLE , const std::string & ) ;
@@ -111,20 +110,19 @@ ServiceControl::Error::Error( const std::string & s , DWORD e ) :
 
 std::string ServiceControl::Error::decode( DWORD e )
 {
-	using G::gettext ;
 	switch( e )
 	{
-		case ERROR_ACCESS_DENIED: return txt("access denied") ;
-		case ERROR_DATABASE_DOES_NOT_EXIST: return txt("service database does not exist") ;
-		case ERROR_INVALID_PARAMETER: return txt("invalid parameter") ;
-		case ERROR_CIRCULAR_DEPENDENCY: return txt("circular dependency") ;
-		case ERROR_DUPLICATE_SERVICE_NAME: return txt("duplicate service name") ;
-		case ERROR_INVALID_HANDLE: return txt("invalid handle") ;
-		case ERROR_INVALID_NAME: return txt("invalid name") ;
-		case ERROR_INVALID_SERVICE_ACCOUNT: return txt("invalid service account") ;
-		case ERROR_SERVICE_EXISTS: return txt("service already exists") ;
-		case ERROR_SERVICE_MARKED_FOR_DELETE: return txt("already marked for deletion") ;
-		case ERROR_SERVICE_DOES_NOT_EXIST: return txt("no such service") ;
+		case ERROR_ACCESS_DENIED: return "access denied" ;
+		case ERROR_DATABASE_DOES_NOT_EXIST: return "service database does not exist" ;
+		case ERROR_INVALID_PARAMETER: return "invalid parameter" ;
+		case ERROR_CIRCULAR_DEPENDENCY: return "circular dependency" ;
+		case ERROR_DUPLICATE_SERVICE_NAME: return "duplicate service name" ;
+		case ERROR_INVALID_HANDLE: return "invalid handle" ;
+		case ERROR_INVALID_NAME: return "invalid name" ;
+		case ERROR_INVALID_SERVICE_ACCOUNT: return "invalid service account" ;
+		case ERROR_SERVICE_EXISTS: return "service already exists" ;
+		case ERROR_SERVICE_MARKED_FOR_DELETE: return "already marked for deletion" ;
+		case ERROR_SERVICE_DOES_NOT_EXIST: return "no such service" ;
 	}
 	std::ostringstream ss ;
 	ss << "error " << e ;

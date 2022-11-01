@@ -21,11 +21,14 @@
 #include "gdef.h"
 #include "gserver.h"
 #include "gmonitor.h"
+#include "gtest.h"
 #include "glog.h"
 #include "gassert.h"
 #include <sstream>
+#include <utility>
 
-GNet::ServerPeer::ServerPeer( ExceptionSink es , ServerPeerInfo && peer_info , LineBufferConfig line_buffer_config ) :
+GNet::ServerPeer::ServerPeer( ExceptionSink es , ServerPeerInfo && peer_info , const LineBufferConfig & line_buffer_config ) :
+	m_es(es) ,
 	m_address(peer_info.m_address) ,
 	m_socket(std::move(peer_info.m_socket)) ,
 	m_sp(*this,es,*this,*m_socket,peer_info.m_server_peer_config.socket_protocol_config) ,
@@ -41,13 +44,9 @@ GNet::ServerPeer::ServerPeer( ExceptionSink es , ServerPeerInfo && peer_info , L
 	if( m_config.idle_timeout )
 		m_idle_timer.startTimer( m_config.idle_timeout ) ;
 
-	if( m_config.socket_linger_onoff >= 0 )
-		m_socket->setOptionLinger( m_config.socket_linger_onoff , m_config.socket_linger_time ) ;
-
 	m_socket->addReadHandler( *this , es ) ;
 	m_socket->addOtherHandler( *this , es ) ;
 	Monitor::addServerPeer( *this ) ;
-
 }
 
 GNet::ServerPeer::~ServerPeer()
@@ -61,6 +60,11 @@ void GNet::ServerPeer::secureAccept()
 	m_sp.secureAccept() ;
 }
 
+bool GNet::ServerPeer::secureAcceptCapable() const
+{
+	return m_sp.secureAcceptCapable() ;
+}
+
 void GNet::ServerPeer::expect( std::size_t n )
 {
 	m_line_buffer.expect( n ) ;
@@ -72,14 +76,25 @@ GNet::StreamSocket & GNet::ServerPeer::socket()
 	return *m_socket ;
 }
 
-void GNet::ServerPeer::otherEvent( Descriptor , EventHandler::Reason reason )
+void GNet::ServerPeer::dropReadHandler()
 {
-	m_sp.otherEvent( reason ) ;
+	socket().dropReadHandler() ;
 }
 
-void GNet::ServerPeer::readEvent( Descriptor )
+void GNet::ServerPeer::addReadHandler()
 {
-	m_sp.readEvent() ;
+	socket().addReadHandler( *this , m_es ) ;
+}
+
+void GNet::ServerPeer::otherEvent( EventHandler::Reason reason )
+{
+	m_sp.otherEvent( reason , m_config.no_throw_on_peer_disconnect ) ;
+}
+
+void GNet::ServerPeer::readEvent()
+{
+	if( m_sp.readEvent( m_config.no_throw_on_peer_disconnect ) )
+		onSendComplete() ;
 }
 
 GNet::Address GNet::ServerPeer::localAddress() const
@@ -118,7 +133,7 @@ bool GNet::ServerPeer::send( const std::vector<G::string_view> & segments , std:
 	return m_sp.send( segments , offset ) ;
 }
 
-void GNet::ServerPeer::writeEvent( Descriptor )
+void GNet::ServerPeer::writeEvent()
 {
 	if( m_sp.writeEvent() )
 		onSendComplete() ;
@@ -162,6 +177,8 @@ std::string GNet::ServerPeer::exceptionSourceId() const
 	if( m_exception_source_id.empty() )
 	{
 		m_exception_source_id = peerAddress().hostPartString() ; // GNet::Connection
+		if( G::Test::enabled("log-full-address") )
+			m_exception_source_id = peerAddress().displayString() ;
 	}
 	return m_exception_source_id ;
 }
@@ -174,12 +191,12 @@ void GNet::ServerPeer::setIdleTimeout( unsigned int s )
 		m_idle_timer.startTimer( m_config.idle_timeout ) ;
 }
 
-// ==
-
-GNet::ServerPeer::Config & GNet::ServerPeer::Config::set_socket_linger( std::pair<int,int> pair )
+void GNet::ServerPeer::finish()
 {
-	socket_linger_onoff = pair.first ;
-	socket_linger_time = pair.second ;
-	return *this ;
+	m_sp.shutdown() ;
+}
+
+void GNet::ServerPeer::onPeerDisconnect()
+{
 }
 

@@ -22,8 +22,7 @@
 /* This header is always the first header included in source
  * files. It takes care of a lot of portability concerns
  * and it works best when autoconf is used to set GCONFIG
- * preprocessor switches. Either G_UNIX or G_WINDOWS are expected
- * to be defined on the compiler command-line.
+ * preprocessor switches.
  */
 
 #ifndef G_DEF_H
@@ -78,10 +77,6 @@
 	#if defined(linux) || defined(__linux__)
 		#define G_UNIX_LINUX 1
 	#endif
-
-	/* Define the compiler c++ dialect
-	 */
-	#define G_COMPILER_CXX_11 1
 
 	/* Apply GCONFIG defaults in case of no autoconf
 	 */
@@ -386,6 +381,13 @@
 			#define GCONFIG_HAVE_IFNAMETOLUID 0
 		#endif
 	#endif
+	#if !defined(GCONFIG_HAVE_IFINDEX)
+		#ifdef G_UNIX_LINUX
+			#define GCONFIG_HAVE_IFINDEX 1
+		#else
+			#define GCONFIG_HAVE_IFINDEX 0
+		#endif
+	#endif
 	#if !defined(GCONFIG_HAVE_INET_PTON)
 		#define GCONFIG_HAVE_INET_PTON 1
 	#endif
@@ -685,6 +687,13 @@
 			#define GCONFIG_HAVE_UDS 0
 		#endif
 	#endif
+	#if !defined(GCONFIG_HAVE_UDS_LEN)
+		#ifdef G_UNIX_BSD
+			#define GCONFIG_HAVE_UDS_LEN 1
+		#else
+			#define GCONFIG_HAVE_UDS_LEN 0
+		#endif
+	#endif
 
 	/* Include early o/s headers
 	 */
@@ -918,14 +927,12 @@
 		/* Attributes
 	 	*/
 		#if __cplusplus >= 201700L
-			#define GDEF_NORETURN1 [[noreturn]]
-			#define GDEF_NORETURN2
+			#define GDEF_NORETURN_LHS [[noreturn]]
 			#define GDEF_UNUSED [[maybe_unused]]
 			#define GDEF_FALLTHROUGH [[fallthrough]];
 		#else
 			#if defined(__GNUC__) || defined(__clang__)
-				#define GDEF_NORETURN1
-				#define GDEF_NORETURN2 __attribute__((noreturn))
+				#define GDEF_NORETURN_RHS __attribute__((noreturn))
 				#define GDEF_UNUSED __attribute__((unused))
 				#if defined(__GNUC__) && __GNUC__ >= 7
 					#define GDEF_FALLTHROUGH __attribute__((fallthrough));
@@ -934,10 +941,15 @@
 					#define GDEF_FALLTHROUGH __attribute__((fallthrough));
 				#endif
 			#endif
+			#if defined(_MSC_VER)
+				#define GDEF_NORETURN_LHS __declspec(noreturn)
+			#endif
 		#endif
-		#ifndef GDEF_NORETURN
-			/* MSVC __declspec(noreturn) goes on the lhs :( */
-			#define GDEF_NORETURN
+		#ifndef GDEF_NORETURN_LHS
+			#define GDEF_NORETURN_LHS
+		#endif
+		#ifndef GDEF_NORETURN_RHS
+			#define GDEF_NORETURN_RHS
 		#endif
 		#ifndef GDEF_UNUSED
 			#define GDEF_UNUSED
@@ -1023,6 +1035,11 @@
 				inline constexpr bool is_windows() { return true ; }
 			#else
 				inline constexpr bool is_windows() { return false ; }
+			#endif
+			#ifdef G_MINGW
+				inline constexpr bool is_wine() { return true ; }
+			#else
+				inline constexpr bool is_wine() { return false ; }
 			#endif
 			#ifdef G_UNIX_LINUX
 				inline constexpr bool is_linux() { return true ; }

@@ -29,9 +29,8 @@ namespace G
 	namespace Random
 	{
 		unsigned int rand( unsigned int start = 0U , unsigned int end = 32767 ) ;
-			///< Returns a random value, uniformly distributed over the
-			///< given range (including 'start' and 'end'), and automatically
-			///< seeded on first use.
+			///< Returns a random value, automatically seeded
+			///< on first use.
 	}
 }
 

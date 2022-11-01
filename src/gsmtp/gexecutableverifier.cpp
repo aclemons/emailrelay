@@ -30,17 +30,15 @@
 #include "glog.h"
 
 GSmtp::ExecutableVerifier::ExecutableVerifier( GNet::ExceptionSink es , const G::Path & path ) :
-	m_command(Command::VRFY) ,
 	m_path(path) ,
 	m_task(*this,es,"<<verifier exec error: __strerror__>>",G::Root::nobody())
 {
 }
 
-void GSmtp::ExecutableVerifier::verify( Command command , const std::string & to_address ,
+void GSmtp::ExecutableVerifier::verify( const std::string & to_address ,
 	const std::string & from_address , const GNet::Address & ip ,
 	const std::string & auth_mechanism , const std::string & auth_extra )
 {
-	m_command = command ;
 	G_DEBUG( "GSmtp::ExecutableVerifier::verify: to \"" << to_address << "\": from \"" << from_address << "\": "
 		<< "ip \"" << ip.hostPartString() << "\": auth-mechanism \"" << auth_mechanism << "\": "
 		<< "auth-extra \"" << auth_extra << "\"" ) ;
@@ -106,10 +104,10 @@ void GSmtp::ExecutableVerifier::onTaskDone( int exit_code , const std::string & 
 			temporary , response , reason ) ;
 	}
 
-	doneSignal().emit( m_command , status ) ;
+	doneSignal().emit( status ) ;
 }
 
-G::Slot::Signal<GSmtp::Verifier::Command,const GSmtp::VerifierStatus&> & GSmtp::ExecutableVerifier::doneSignal()
+G::Slot::Signal<const GSmtp::VerifierStatus&> & GSmtp::ExecutableVerifier::doneSignal()
 {
 	return m_done_signal ;
 }

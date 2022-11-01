@@ -23,9 +23,11 @@
 #include "legal.h"
 #include "configuration.h"
 #include "commandline.h"
+#include "options.h"
 #include "gmessagestore.h"
 #include "ggetopt.h"
-#include "goptionsoutput.h"
+#include "goptionsusage.h"
+#include "gaddress.h"
 #include "gprocess.h"
 #include "gpath.h"
 #include "gfile.h"
@@ -54,8 +56,8 @@ public:
 public:
 	Show( const Show & ) = delete ;
 	Show( Show && ) = delete ;
-	void operator=( const Show & ) = delete ;
-	void operator=( Show && ) = delete ;
+	Show & operator=( const Show & ) = delete ;
+	Show & operator=( Show && ) = delete ;
 
 private:
 	static Show * m_this ;
@@ -78,9 +80,7 @@ Main::CommandLine::CommandLine( Output & output , const G::Arg & arg ,
 {
 	if( !m_getopt.hasErrors() && m_getopt.args().c() == 2U )
 	{
-		std::string config_file = m_getopt.args().v(1U) ;
-		if( sanityCheck( config_file ) )
-			m_getopt.addOptionsFromFile( 1U , "@app" , G::Path(G::Process::exe()).dirname().str() ) ;
+		m_getopt.addOptionsFromFile( 1U , "@app" , G::Path(G::Process::exe()).dirname().str() ) ;
 	}
 }
 
@@ -102,47 +102,51 @@ std::size_t Main::CommandLine::argc() const
 	return m_getopt.args().c() ;
 }
 
-bool Main::CommandLine::sanityCheck( const G::Path & path )
+G::StringArray Main::CommandLine::usageErrors() const
 {
-	// a simple check to reject pem files since 'server-tls' no longer takes a value
-	using G::format ;
-	using G::txt ;
-	std::ifstream file ;
-	if( path.extension() == "pem" )
-		m_insanity = str( format(txt("invalid filename extension for config file: [%1%]")) % path.str() ) ;
-	G::File::open( file , path ) ;
-	if( file.good() && G::Str::readLineFrom(file).find("---") == 0U )
-		m_insanity = str( format(txt("invalid file format for config file: [%1%]")) % path.str() ) ;
-	return m_insanity.empty() ;
+	return m_getopt.errorList() ;
 }
 
 bool Main::CommandLine::hasUsageErrors() const
 {
-	return !m_insanity.empty() || m_getopt.hasErrors() ;
+	return m_getopt.hasErrors() ;
 }
 
-void Main::CommandLine::showUsage( bool e ) const
+void Main::CommandLine::showUsage( bool is_error ) const
 {
-	G::OptionsOutputLayout layout = m_output.outputLayout( m_verbose ) ;
-	layout.set_column( m_verbose ? 38U : 30U ) ;
+	std::string args = " [<config-file>]" ;
+	auto layout = m_output.outputLayout( m_verbose ) ;
+	layout.set_column( m_verbose ? 42U : 30U ) ;
 	layout.set_extra( m_verbose ) ;
 	layout.set_alt_usage( !m_verbose ) ;
-	if( !m_verbose )
-		layout.set_level( 2U ) ;
+	layout.set_level_max( m_verbose ? 99U : 20U ) ;
 
-	Show show( m_output , e , m_verbose ) ;
-
-	G::OptionsOutput(m_getopt.options()).showUsage( layout ,
-		show.s() , m_arg.prefix() , " [<config-file>]" ) ;
+	G::OptionsUsage usage( m_getopt.options() ) ;
+	if( m_verbose )
+	{
+		// show help in sections...
+		bool help_state = false ;
+		usage.help( layout , &help_state ) ;
+		Show show( m_output , is_error , m_verbose ) ;
+		show.s() << usage.summary(layout,m_arg.prefix(),args) << "\n" ;
+		auto tags = Options::tags() ;
+		for( const auto & tag : tags )
+		{
+			layout.set_main_tag( tag.first ) ;
+			show.s() << "\n" << tag.second << "\n" << usage.help(layout,&help_state) ;
+		}
+	}
+	else
+	{
+		Show show( m_output , is_error , m_verbose ) ;
+		usage.output( layout , show.s() , m_arg.prefix() , args ) ;
+	}
 }
 
 void Main::CommandLine::showUsageErrors( bool e ) const
 {
 	Show show( m_output , e , m_verbose ) ;
-	if( !m_insanity.empty() )
-		show.s() << m_arg.prefix() << ": error: " << m_insanity << std::endl ;
-	else
-		m_getopt.showErrors( show.s() ) ;
+	m_getopt.showErrors( show.s() ) ;
 	showShortHelp( e ) ;
 }
 
@@ -182,29 +186,24 @@ void Main::CommandLine::showExtraHelp( bool e ) const
 	Show show( m_output , e , m_verbose ) ;
 	const std::string & exe = m_arg.prefix() ;
 
-	show.s() << std::endl ;
-
+	show.s() << "\n" ;
 	if( m_verbose )
 	{
 		show.s()
-			<< txt("To start a 'storage' daemon in background...") << std::endl
-			<< "   " << exe << " --as-server" << std::endl
-			<< std::endl ;
-
-		show.s()
-			<< txt("To forward stored mail to \"mail.myisp.net\"...") << std::endl
-			<< "   " << exe << " --as-client mail.myisp.net:smtp" << std::endl
-			<< std::endl ;
-
-		show.s()
-			<< txt("To run as a proxy (on port 10025) to a local server (on port 25)...") << std::endl
-			<< "   " << exe << " --port 10025 --as-proxy localhost:25" << std::endl
+			<< txt("To start a 'storage' daemon in background...") << "\n"
+			<< "   " << exe << " --as-server\n\n"
+			//
+			<< txt("To forward stored mail to \"mail.myisp.net\"...") << "\n"
+			<< "   " << exe << " --as-client mail.myisp.net:smtp\n\n"
+			//
+			<< txt("To run as a proxy (on port 10025) to a local server (on port 25)...") << "\n"
+			<< "   " << exe << " --port 10025 --as-proxy localhost:25\n"
 			<< std::endl ;
 	}
 	else
 	{
 		show.s()
-			<< format(txt("For complete usage information run \"%1%\"")) % (exe+" --help --verbose") << std::endl
+			<< format(txt("For complete usage information run \"%1%\"")) % (exe+" --help --verbose") << "\n"
 			<< std::endl ;
 	}
 }
@@ -270,7 +269,17 @@ void Main::CommandLine::showSslVersion( bool e , const std::string & eot ) const
 void Main::CommandLine::showThreading( bool e , const std::string & eot ) const
 {
 	Show show( m_output , e , m_verbose ) ;
-	show.s() << "Multi-threading: " << (G::threading::works()?"enabled":"disabled") << std::endl << eot ;
+	show.s() << "Multi-threading: " << (G::threading::works()?"enabled":"disabled") << eot ;
+}
+
+void Main::CommandLine::showUds( bool e , const std::string & eot ) const
+{
+	if( !G::is_windows() || G::is_wine() )
+	{
+		bool enabled = GNet::Address::supports( GNet::Address::Family::local ) ;
+		Show show( m_output , e , m_verbose ) ;
+		show.s() << "Unix domain sockets: " << (enabled?"enabled":"disabled") << eot ;
+	}
 }
 
 void Main::CommandLine::showVersion( bool e ) const
@@ -281,6 +290,7 @@ void Main::CommandLine::showVersion( bool e ) const
 	if( m_verbose )
 	{
 		showThreading( e , "\n" ) ;
+		showUds( e , "\n" ) ;
 		showSslVersion( e , "\n" ) ;
 	}
 	showSslCredit( e , "\n" ) ;

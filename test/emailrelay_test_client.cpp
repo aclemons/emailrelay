@@ -24,15 +24,17 @@
 // of email messages on each one in turn.
 //
 // usage:
-//      emailrelay-test-client [-qQ] [-v [-v]] [<port>]
-//      emailrelay-test-client [-qQ] [-v [-v]] <addr-ipv4> <port> [<connections> [<iterations> [<lines> [<line-length> [<messages>]]]]]
+//      emailrelay_test_client [-qQ] [-v [-v]] [<port>]
+//      emailrelay_test_client [-qQ] [-v [-v]] <addr-ipv4> <port> [<connections> [<iterations> [<lines> [<line-length> [<messages>]]]]]
 //         -v -- verbose logging
 //         -q -- send "."&"QUIT" instead of "."
 //         -Q -- send "."&"QUIT" and immediately disconnect
+//         -s -- slow (if connections is 1)
 //
 
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include "gdef.h"
+#include "gsleep.h"
 #include <cstring> // std::size_t
 #include <iostream>
 #include <string>
@@ -49,6 +51,7 @@
 int cfg_verbosity = 0 ;
 bool cfg_eager_quit = false ;
 bool cfg_eager_quit_disconnect = false ;
+bool cfg_slow = false ;
 
 #ifdef _WIN32
 using read_size_type = int ;
@@ -99,6 +102,7 @@ public:
 	bool runSome() ;
 	bool done() const ;
 	void close() ;
+	bool errors() const ;
 
 private:
 	void connect( const Address & ) ;
@@ -109,12 +113,15 @@ private:
 	void sendMessage( int , int , bool ) ;
 	static void close_( SOCKET fd ) ;
 	static void shutdown( SOCKET fd ) ;
+
+private:
 	SOCKET m_fd ;
 	int m_messages{0} ;
 	int m_lines{0} ;
 	int m_line_length{0} ;
 	int m_state{0} ;
 	bool m_done{false} ;
+	std::size_t m_errors{0U} ; // unexpected protocol responses
 } ;
 
 Test::Test()
@@ -228,19 +235,33 @@ void Test::waitline( const char * match )
 		else if( c == '\n' ) line.append( "\\n" ) ;
 		else line.append( 1U , c ) ;
 	}
+	bool ok =
+		line.find("250 ") == 0U ||
+		line.find("250-") == 0U ||
+		line.find("220 ") == 0U ||
+		line.find("354 ") == 0U ;
+	if( !ok )
+		m_errors++ ;
 	if( cfg_verbosity )
-		std::cout << m_fd << ": rx<<: [" << line << "]" << std::endl ;
+		std::cout << m_fd << ": rx<<: [" << line << "]" << (ok?"":" ** ERROR **") << std::endl ;
+}
+
+bool Test::errors() const
+{
+	return m_errors != 0U ;
 }
 
 void Test::send( const char * p )
 {
 	if( cfg_verbosity ) std::cout << m_fd << ": tx>>: [" << std::string(p,strcspn(p,"\r\n")) << "]" << std::endl ;
+	if( cfg_slow ) sleep( 1 ) ;
 	::send( m_fd , p , static_cast<send_size_type>(std::strlen(p)) , 0 ) ;
 }
 
 void Test::send( const char * p , std::size_t n )
 {
 	if( cfg_verbosity > 1 ) std::cout << m_fd << ": tx>>: [<" << n << " bytes>]" << std::endl ;
+	if( cfg_slow ) sleep( 1 ) ;
 	::send( m_fd , p , static_cast<send_size_type>(n) , 0 ) ;
 }
 
@@ -299,12 +320,13 @@ int main( int argc , char * argv [] )
 			return 0 ;
 		}
 
-		while( argc > 1 && argv[1][0] == '-' && (argv[1][1] == 'v' || argv[1][1] == 'q' || argv[1][1] == 'Q') )
+		while( argc > 1 && argv[1][0] == '-' && (argv[1][1] == 'v' || argv[1][1] == 'q' || argv[1][1] == 'Q' || argv[1][1] == 's') )
 		{
 			char c = argv[1][1] ;
 			if( c == 'v' ) cfg_verbosity++ ;
 			if( c == 'q' ) cfg_eager_quit = true ;
 			if( c == 'Q' ) cfg_eager_quit = cfg_eager_quit_disconnect = true ;
+			if( c == 's' ) cfg_slow = true ;
 			for( int i = 1 ; (i+1) <= argc ; i++ )
 				argv[i] = argv[i+1] ;
 			argc-- ;
@@ -348,6 +370,7 @@ int main( int argc , char * argv [] )
 			std::cout << "messages-per-connection: " << messages << std::endl ;
 		}
 
+		bool errors = false ;
 		for( int i = 0 ; iterations < 0 || i < iterations ; i++ )
 		{
 			std::vector<Test> test( connections ) ;
@@ -367,13 +390,18 @@ int main( int argc , char * argv [] )
 			{
 				t.close() ;
 			}
+			if( std::any_of( test.begin() , test.end() , [](Test &t){return t.errors();} ) )
+				errors = true ;
 		}
+		if( errors )
+			throw std::runtime_error( "got some error responses" ) ;
 
+		std::cerr << "done" << std::endl ;
 		return 0 ;
 	}
 	catch( std::exception & e )
 	{
-		std::cerr << "exception: " << e.what() << std::endl ;
+		std::cerr << "ERROR: " << e.what() << std::endl ;
 	}
 	return 1 ;
 }

@@ -73,6 +73,30 @@ or run:
 
 	emailrelay --help --verbose
 
+Packages
+--------
+To install on Linux from a RPM or DEB package:
+
+	sudo $SHELL # or 'su'
+	rpm -i emailrelay*.rpm  # if RPM
+	dpkg -i emailrelay*.deb  # if DEB
+
+If your Linux system uses "systemd" then you should check the E-MailRelay
+configuration file "/etc/emailrelay.conf" is as you want it and then run:
+
+	systemctl enable emailrelay
+	systemctl start emailrelay
+	systemctl status emailrelay
+
+On other systems try these commands:
+
+	cp /usr/lib/emailrelay/init/emailrelay /etc/init.d/
+	update-rc.d emailrelay enable || rc-update add emailrelay
+	invoke-rc.d emailrelay start || service emailrelay start
+	tail /var/log/messages /var/log/syslog 2>/dev/null
+
+On Windows run the setup program.
+
 Documentation
 -------------
 The following documentation is provided:
@@ -86,8 +110,4 @@ The following documentation is provided:
 
 Source code documentation will be generated when building from source if
 "doxygen" is available.
-
-Feedback
---------
-Please feel free to e-mail the author at "mailto:graeme_walker@users.sourceforge.net".
 

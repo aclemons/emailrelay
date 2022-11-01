@@ -27,9 +27,9 @@ General Public License V3.
 
 What it's not
 -------------
-E-MailRelay does not do routing of individual messages; it is not a routing [MTA][].
-It forwards all e-mail messages to a pre-configured SMTP server, regardless of
-any message addressing or DNS redirects.
+E-MailRelay does not normally do routing of individual messages; it is not a
+routing [MTA][]. It forwards all e-mail messages to a pre-configured SMTP server,
+regardless of any message addressing or DNS redirects.
 
 Why use it?
 -----------
@@ -317,22 +317,33 @@ On Windows an equivalent batch script would be:
 
 Google mail
 -----------
-To send mail via Google mail's SMTP gateway you will need to create a client
-secrets file containing your account details and also enable [TLS][] support in
-E-MailRelay by using the `--client-tls` option.
+To send mail via Google mail's SMTP gateway you will need to obtain a new
+`application password` from Google. Log in to your Google account and look for
+the account's security settings and then `app passwords`. Create the password
+for E-MailRelay as application type `other`.
 
-The secrets file should contain one line of text something like this:
+Then you need to create a client secrets file for E-MailRelay containing your
+account name and the new application password. You may already have this file
+on Windows as `C:\ProgramData\E-MailRelay\emailrelay.auth`.
 
-        client plain myname@gmail.com my+20password
+You should edit the file to contain one `client` line, something like this:
 
-If your password contains a space, equals or plus sign, or any control
-character then you will need to replace those characters with their
-corresponding hexadecimal ascii value, something like `+20` or `+2B`.
+        client plain myname@gmail.com myapppassword
 
-Refer to your secrets file by using `--client-auth` on the E-MailRelay
-command-line, and also add in the `--client-tls` option:
+Then change the E-MailRelay startup batch file or configuration file to refer
+to your secrets file by using the `--client-auth` option. The `--as-proxy` or
+`--forward-to` options should be set to `smtp.gmail.com:587` and you will also
+need to add the `--client-tls` option to enable [TLS][] encryption.
 
-        emailrelay --as-proxy=smtp.gmail.com:587 --client-tls --client-auth=/etc/emailrelay.auth ...
+On Windows the E-MailRelay startup batch file should contain something like this:
+
+        emailrelay --as-proxy=smtp.gmail.com:587 --client-tls --client-auth=C:/ProgramData/E-MailRelay/emailrelay.auth ...
+
+Or in a configration file like this:
+
+        forward-to smtp.gmail.com:587
+        client-tls
+        client-auth C:/ProgramData/E-MailRelay/emailrelay.auth
 
 Connection tunnelling
 ---------------------
@@ -369,4 +380,4 @@ to `fail2ban`.
 [TLS]: https://en.wikipedia.org/wiki/Transport_Layer_Security
 
 _____________________________________
-Copyright (C) 2001-2021 Graeme Walker
+Copyright (C) 2001-2022 Graeme Walker

@@ -25,9 +25,12 @@
 #include "garg.h"
 #include "goptions.h"
 #include "goptionmap.h"
+#include "gfactoryparser.h"
+#include "gdatetime.h"
 #include "gpath.h"
-#include "gstringarray.h"
+#include "gstrings.h"
 #include "glogoutput.h"
+#include <vector>
 #include <string>
 
 namespace Main
@@ -44,11 +47,10 @@ namespace Main
 class Main::Configuration
 {
 public:
-	Configuration( const std::vector<G::Option> & , const G::OptionMap & ,
-		const G::Path & app_dir , const G::Path & base_dir ) ;
-			///< Constructor. The app-dir path is used as a substitution
-			///< value, and the base-dir path is used to turn relative paths
-			///< into absolute ones when daemon() is true.
+	Configuration( const std::vector<G::Option> & , const G::OptionMap & , const G::Path & app_dir , const G::Path & base_dir ) ;
+		///< Constructor. The app-dir path is used as a substitution
+		///< value, and the base-dir path is used to turn relative paths
+		///< into absolute ones when daemon() is true.
 
 	std::string semanticError() const ;
 		///< Returns a non-empty string if there is a fatal semantic conflict
@@ -65,11 +67,11 @@ public:
 	unsigned int port() const ;
 		///< Returns the main listening port number.
 
-	std::pair<int,int> socketLinger() const ;
-		///< Returns the socket linger option for smtp connections.
+	bool closeFiles() const ;
+		///< Returns true if the server should start by closing file descriptors.
 
-	G::StringArray listeningAddresses( const std::string & protocol = {} ) const ;
-		///< Returns the listening addresses.
+	G::StringArray listeningNames( const std::string & protocol = std::string() ) const ;
+		///< Returns the listening addresses, interfaces and file descriptors.
 
 	std::string clientBindAddress() const ;
 		///< Returns the sending address.
@@ -144,14 +146,8 @@ public:
 	unsigned int adminPort() const ;
 		///< Returns the admin port number.
 
-	std::pair<int,int> adminSocketLinger() const ;
-		///< Returns the socket linger option for admin connections.
-
 	unsigned int popPort() const ;
 		///< Returns the pop port number.
-
-	std::pair<int,int> popSocketLinger() const ;
-		///< Returns the socket linger option for pop connections.
 
 	bool allowRemoteClients() const ;
 		///< Returns true if allowing remote clients to connect.
@@ -171,11 +167,11 @@ public:
 	bool useFilter() const ;
 		///< Returns true if pre-processing.
 
-	G::Path filter() const ;
-		///< Returns the path to a server-side pre-processor.
+	GSmtp::FactoryParser::Result filter() const ;
+		///< Returns the spec for the server-side pre-processor(s).
 
-	G::Path clientFilter() const ;
-		///< Returns the path to a client-side pre-processor.
+	GSmtp::FactoryParser::Result clientFilter() const ;
+		///< Returns the spec for the client-side pre-processor(s).
 
 	unsigned int filterTimeout() const ;
 		///< Returns the timeout for executing an ansynchronous
@@ -210,6 +206,11 @@ public:
 	std::string smtpSaslServerConfig() const ;
 		///< Returns the SMTP server-side SASL configuration string.
 
+	bool smtpPipelining() const ;
+		///< Returns true if the SMTP server protocol should allow some
+		///< limited SMTP command pipelining from broken clients, esp.
+		///< QUIT in the same network packet as the DATA EOM dot.
+
 	G::Path popSecretsFile() const ;
 		///< Returns the pop-server autentication secrets (password) file.
 		///< Returns the empty string if not defined.
@@ -217,15 +218,15 @@ public:
 	std::string popSaslServerConfig() const ;
 		///< Returns the POP SASL configuration string.
 
-	std::string networkName( const std::string & default_ = {} ) const ;
+	std::string networkName( const std::string & default_ = std::string() ) const ;
 		///< Returns an override for local host's canonical network name.
 
 	std::string user() const ;
 		///< Returns the name of an unprivileged user. This is only
 		///< used if running with a real user-id of root.
 
-	G::Path verifier() const ;
-		///< Returns the path of an external address verifier program.
+	GSmtp::FactoryParser::Result verifier() const ;
+		///< Returns the spec of an address verifier.
 
 	bool doPolling() const ;
 		///< Returns true if doing poll-based forwarding.
@@ -233,7 +234,7 @@ public:
 	bool pollingLog() const ;
 		///< Returns true if polling activity should be logged.
 
-	unsigned int pollingTimeout() const ;
+	G::TimeInterval pollingTimeout() const ;
 		///< Returns the timeout for periodic polling.
 
 	bool immediate() const ;
@@ -258,8 +259,20 @@ public:
 	unsigned int scannerResponseTimeout() const ;
 		///< Returns a timeout for talking to the scanner process.
 
-	bool anonymous() const ;
+	bool anonymousServerVrfy() const ;
+		///< Returns true if the server protocol should not
+		///< allow VRFY.
+
+	bool anonymousServerSmtp() const ;
 		///< Returns true if the server protocol should be
+		///< slightly more anonymous.
+
+	bool anonymousContent() const ;
+		///< Returns true if the server should not add a
+		///< received line.
+
+	bool anonymousClientSmtp() const ;
+		///< Returns true if the client protocol should be
 		///< slightly more anonymous.
 
 	bool clientTls() const ;
@@ -286,11 +299,17 @@ public:
 	std::string tlsConfig() const ;
 		///< Returns low-level TLS configuration options.
 
+	G::Path serverTlsPrivateKey() const ;
+		///< Returns the server-side TLS private key file.
+
 	G::Path serverTlsCertificate() const ;
 		///< Returns the server-side TLS certificate file.
 
 	G::Path serverTlsCaList() const ;
 		///< Returns the server-side TLS CA file-or-directory.
+
+	G::Path clientTlsPrivateKey() const ;
+		///< Returns the client-side TLS private key file.
 
 	G::Path clientTlsCertificate() const ;
 		///< Returns the client-side TLS certificate file.
@@ -308,14 +327,9 @@ public:
 	unsigned int maxSize() const ;
 		///< Returns the maximum size of submitted messages, or zero.
 
-	int shutdownHowOnQuit() const ;
-		///< Returns the socket shutdown parameter when replying
-		///< to SMTP QUIT command (1 for the default behaviour
-		///< or -1 for no-op).
-
-	bool utf8Test() const ;
-		///< Returns true if new messages should be tested as to
-		///< whether they have 8bit mailbox names.
+	bool eightBitTest() const ;
+		///< Returns true if the new messages should be tested as to
+		///< whether they have 7bit or 8bit content.
 
 	std::string dnsbl() const ;
 		///< Returns a DNSBL configuration string including a list servers.
@@ -329,16 +343,19 @@ public:
 		///< sub-string.
 
 private:
-	G::Path pathValue( const std::string & ) const ;
-	G::Path pathValue( const char * ) const ;
-	std::string semanticError( bool & ) const ;
-	bool pathlike( const std::string & ) const ;
-	bool filterType( const std::string & ) const ;
-	bool specialFilterValue( const std::string & ) const ;
-	bool verifyType( const std::string & ) const ;
-	bool specialVerifyValue( const std::string & ) const ;
+	G::Path pathValue( const std::string & option ) const ;
+	G::Path pathValueImp( const std::string & value ) const ;
+	GSmtp::FactoryParser::Result specValue( const std::string & , bool is_filter , G::StringArray * = nullptr ) const ;
+	G::Path keyFile( const std::string & option ) const ;
+	G::Path certificateFile( const std::string & option ) const ;
+	static bool pathlike( const std::string & ) ;
+	static bool filterType( const std::string & ) ;
+	static bool verifyType( const std::string & ) ;
+	static bool specialVerifyValue( const std::string & ) ;
 	G::StringArray semantics( bool ) const ;
 	bool validSyslogFacility() const ;
+	bool anonymous( G::string_view ) const ;
+	const char * semanticErrorImp( std::string & ) const ;
 
 private:
 	std::vector<G::Option> m_options ;

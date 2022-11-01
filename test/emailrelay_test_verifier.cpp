@@ -19,7 +19,7 @@
 ///
 // A dummy network address verifier for testing "emailrelay --verifier net:<transport-address>".
 //
-// usage: emailrelay-test-verifier [--ipv6] [--port <port>] [--log] [--log-file <file>] [--debug] [--pid-file <pidfile>]
+// usage: emailrelay_test_verifier [--ipv6] [--port <port>] [--log] [--log-file <file>] [--debug] [--pid-file <pidfile>]
 //
 // The action of the verifier is dictated by special sub-strings in the
 // recipient:
@@ -42,7 +42,7 @@
 #include "gserverpeer.h"
 #include "gfile.h"
 #include "ggetopt.h"
-#include "goptionsoutput.h"
+#include "goptionsusage.h"
 #include "garg.h"
 #include "gsleep.h"
 #include "glogoutput.h"
@@ -207,7 +207,7 @@ int main( int argc , char * argv [] )
 		}
 		if( opt.contains("help") )
 		{
-			G::OptionsOutput(opt.options()).showUsage( {} , std::cout , arg.prefix() ) ;
+			G::OptionsUsage(opt.options()).output( {} , std::cout , arg.prefix() ) ;
 			return 0 ;
 		}
 		bool log = opt.contains("log") ;

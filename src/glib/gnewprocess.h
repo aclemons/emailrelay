@@ -155,8 +155,8 @@ public:
 public:
 	NewProcess( const NewProcess & ) = delete ;
 	NewProcess( NewProcess && ) = delete ;
-	void operator=( const NewProcess & ) = delete ;
-	void operator=( NewProcess && ) = delete ;
+	NewProcess & operator=( const NewProcess & ) = delete ;
+	NewProcess & operator=( NewProcess && ) = delete ;
 
 private:
 	static std::string execErrorFormat( const std::string & , int ) ;
@@ -233,8 +233,8 @@ public:
 	~NewProcessWaitable() = default ;
 	NewProcessWaitable( const NewProcessWaitable & ) = delete ;
 	NewProcessWaitable( NewProcessWaitable && ) = delete ;
-	void operator=( const NewProcessWaitable & ) = delete ;
-	void operator=( NewProcessWaitable && ) = delete ;
+	NewProcessWaitable & operator=( const NewProcessWaitable & ) = delete ;
+	NewProcessWaitable & operator=( NewProcessWaitable && ) = delete ;
 
 private:
 	std::vector<char> m_buffer ;

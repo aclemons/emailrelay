@@ -80,8 +80,8 @@ public:
 	~WinForm() = default ;
 	WinForm( const WinForm & ) = delete ;
 	WinForm( WinForm && ) = delete ;
-	void operator=( const WinForm & ) = delete ;
-	void operator=( WinForm && ) = delete ;
+	WinForm & operator=( const WinForm & ) = delete ;
+	WinForm & operator=( WinForm && ) = delete ;
 
 private:
 	static void add( G::StringArray & s , const std::string & key , const std::string & value ) ;

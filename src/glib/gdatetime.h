@@ -61,18 +61,23 @@ public:
 		///< Factory function for midnight starting the given date.
 
 	static BrokenDownTime local( SystemTime ) ;
-		///< Factory function for the locale-dependent local time of the
-		///< given epoch time. See also SystemTime::local().
+		///< Factory function for the locale-dependent local broken-down
+		///< time of the given epoch time. See also SystemTime::local().
 
 	static BrokenDownTime utc( SystemTime ) ;
-		///< Factory function for the utc time of the given epoch time.
-		///< See also SystemTime::utc().
+		///< Factory function for the utc broken-down time of the given
+		///< epoch time. See also SystemTime::utc().
+
+	bool format( char * out , std::size_t out_size , const char * fmt ) const ;
+		///< Puts the formatted date, including a terminating null character,
+		///< into the given output buffer. Returns false if the output buffer
+		///< is too small. Only simple non-locale-dependent format specifiers
+		///< are allowed, and these allowed specifiers explicitly exclude
+		///< '%z' and '%Z'.
 
 	void format( std::vector<char> & out , const char * fmt ) const ;
-		///< Puts the formatted date, including a terminating null character,
-		///< into the given buffer. Only simple non-locale-dependent format
-		///< specifiers are allowed, and these allowed specifiers explicitly
-		///< exclude '%z' and '%Z'.
+		///< Overload for an output vector. Throws if the vector is
+		///< too small for the result (with its null terminator).
 
 	std::string str( const char * fmt ) const ;
 		///< Returns the formatted date, with the same restrictions
@@ -103,22 +108,19 @@ public:
 		///< Returns week day where sunday=0 and saturday=6.
 
 	std::time_t epochTimeFromUtc() const ;
-		///< Searches std::mktime() over the range of all timezones
-		///< to convert this utc broken-down time into epoch time.
+		///< Converts this utc broken-down time into epoch time.
 
 	std::time_t epochTimeFromLocal() const ;
 		///< Uses std::mktime() to convert this locale-dependent
 		///< local broken-down time into epoch time.
 
-	bool sameMinute( const BrokenDownTime & other ) const ;
+	bool sameMinute( const BrokenDownTime & other ) const noexcept ;
 		///< Returns true if this and the other broken-down
 		///< times are the same, at minute resolution with
 		///< no rounding.
 
 private:
 	BrokenDownTime() ;
-	std::time_t epochTimeFromUtcImp( bool & , std::time_t & ) const ;
-	std::time_t epochTimeFromUtcImp() const ;
 
 private:
 	friend class G::DateTimeTest ;
@@ -141,6 +143,9 @@ public:
 		///< Constructor. The first parameter should be some
 		///< large positive number. The second parameter can be
 		///< more than 10^6.
+
+	bool isZero() const ;
+		///< Returns true if zero().
 
 	bool sameSecond( const SystemTime & other ) const noexcept ;
 		///< Returns true if this time and the other time are the same,
@@ -203,8 +208,8 @@ public:
 
 private:
 	friend class G::DateTimeTest ;
-	using duration_type = std::chrono::system_clock::duration ;
 	using time_point_type = std::chrono::time_point<std::chrono::system_clock> ;
+	using duration_type = time_point_type::duration ;
 	explicit SystemTime( time_point_type ) ;
 	SystemTime & add( unsigned long us ) ;
 
@@ -219,11 +224,14 @@ private:
 class G::TimerTime
 {
 public:
+	using time_point_type = std::chrono::time_point<std::chrono::steady_clock> ;
+
 	static TimerTime now() ;
 		///< Factory function for the current steady-clock time.
 
 	static TimerTime zero() ;
-		///< Factory function for the start of the epoch.
+		///< Factory function for the start of the epoch, guaranteed
+		///< to be less than any now().
 
 	bool isZero() const noexcept ;
 		///< Returns true if zero().
@@ -232,7 +240,9 @@ public:
 		///< Returns true if this time and the other time are the same,
 		///< at second resolution.
 
-	bool operator<( const TimerTime & ) const ;
+	static constexpr bool less_noexcept = noexcept(time_point_type() < time_point_type()) ; // NOLINT bogus cert-err58-cpp
+
+	static bool less( const TimerTime & , const TimerTime & ) noexcept(less_noexcept) ;
 		///< Comparison operator.
 
 	bool operator<=( const TimerTime & ) const ;
@@ -270,24 +280,16 @@ public:
 
 private:
 	friend class G::DateTimeTest ;
-	using duration_type = std::chrono::steady_clock::duration ;
-	using time_point_type = std::chrono::time_point<std::chrono::steady_clock> ;
-	TimerTime( time_point_type , bool ) ;
+	using duration_type = time_point_type::duration ;
+	explicit TimerTime( time_point_type ) ;
 	static TimerTime test( int , int ) ;
 	unsigned long s() const ; // DateTimeTest
 	unsigned long us() const ; // DateTimeTest
 	std::string str() const ; // DateTimeTest
 
 private:
-	bool m_is_zero ;
 	time_point_type m_tp ;
 } ;
-
-inline
-bool G::TimerTime::isZero() const noexcept
-{
-	return m_is_zero ;
-}
 
 //| \class G::TimeInterval
 /// An interval between two G::SystemTime values or two G::TimerTime
@@ -365,12 +367,6 @@ private:
 	unsigned int m_us ;
 } ;
 
-namespace G
-{
-	std::ostream & operator<<( std::ostream & , const SystemTime & ) ;
-	std::ostream & operator<<( std::ostream & , const TimeInterval & ) ;
-}
-
 //| \class G::DateTime
 /// A static class that knows about timezone offsets.
 ///
@@ -396,5 +392,20 @@ public:
 public:
 	DateTime() = delete ;
 } ;
+
+namespace G
+{
+	std::ostream & operator<<( std::ostream & , const SystemTime & ) ;
+	std::ostream & operator<<( std::ostream & , const TimeInterval & ) ;
+	inline bool operator<( const TimerTime & a , const TimerTime & b ) noexcept(TimerTime::less_noexcept)
+	{
+		return TimerTime::less( a , b ) ;
+	}
+}
+
+inline bool G::TimerTime::less( const TimerTime & a , const TimerTime & b ) noexcept(less_noexcept)
+{
+	return a.m_tp < b.m_tp ;
+}
 
 #endif

@@ -21,9 +21,10 @@
 #include "gdef.h"
 #include "gqt.h"
 #include "pages.h"
-#include "legal.h"
-#include "dir.h"
-#include "boot.h"
+#include "guilegal.h"
+#include "guidialog.h"
+#include "guidir.h"
+#include "guiboot.h"
 #include "gmapfile.h"
 #include "gstr.h"
 #include "gfile.h"
@@ -42,26 +43,18 @@
 
 #include "moc_pages.cpp"
 
-namespace
-{
-	std::string encode( const std::string & id_utf8 )
-	{
-		return G::Base64::encode( id_utf8 ) ;
-	}
-}
-
 // ==
 
-TitlePage::TitlePage( GDialog & dialog , const G::MapFile & , const std::string & name ,
+TitlePage::TitlePage( Gui::Dialog & dialog , const G::MapFile & , const std::string & name ,
 	const std::string & next_1 , const std::string & next_2 ) :
-		GPage(dialog,name,next_1,next_2)
+		Gui::Page(dialog,name,next_1,next_2)
 {
-	m_label = new QLabel( QString(Legal::text()) ) ;
+	m_label = new QLabel( QString(Gui::Legal::text()) ) ;
 	m_label->setAlignment( Qt::AlignHCenter ) ;
 
 	{
 		std::string credit = "<small><font color=\"#888\">" ;
-		credit.append( G::Str::join( "\n\n" , Legal::credits() ) ) ;
+		credit.append( G::Str::join( "\n\n" , Gui::Legal::credits() ) ) ;
 		credit.append( "</font></small>" ) ;
 		m_credit = new QLabel( QString(credit.c_str()) ) ;
 		m_credit->setAlignment( Qt::AlignHCenter ) ;
@@ -84,21 +77,21 @@ std::string TitlePage::nextPage()
 
 void TitlePage::dump( std::ostream & stream , bool for_install ) const
 {
-	GPage::dump( stream , for_install ) ;
+	Gui::Page::dump( stream , for_install ) ;
 }
 
 // ==
 
-LicensePage::LicensePage( GDialog & dialog , const G::MapFile & , const std::string & name ,
+LicensePage::LicensePage( Gui::Dialog & dialog , const G::MapFile & , const std::string & name ,
 	const std::string & next_1 , const std::string & next_2 , bool accepted ) :
-		GPage(dialog,name,next_1,next_2)
+		Gui::Page(dialog,name,next_1,next_2)
 {
 	m_text_edit = new QTextEdit ;
 	m_text_edit->setReadOnly( true ) ;
 	m_text_edit->setWordWrapMode( QTextOption::NoWrap ) ;
 	m_text_edit->setLineWrapMode( QTextEdit::NoWrap ) ;
 	m_text_edit->setFontFamily( "courier" ) ;
-	m_text_edit->setPlainText( QString(Legal::license()) ) ;
+	m_text_edit->setPlainText( QString(Gui::Legal::license()) ) ;
 
 	m_agree_checkbox = new QCheckBox( tr("I agree to the terms and conditions of the license") );
 	setFocusProxy( m_agree_checkbox ) ;
@@ -123,7 +116,7 @@ std::string LicensePage::nextPage()
 
 void LicensePage::dump( std::ostream & stream , bool for_install ) const
 {
-	GPage::dump( stream , for_install ) ;
+	Gui::Page::dump( stream , for_install ) ;
 }
 
 bool LicensePage::isComplete()
@@ -138,10 +131,10 @@ std::string LicensePage::helpUrl( const std::string & language ) const
 
 // ==
 
-DirectoryPage::DirectoryPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
+DirectoryPage::DirectoryPage( Gui::Dialog & dialog , const G::MapFile & config , const std::string & name ,
 	const std::string & next_1 , const std::string & next_2 ,
-	bool installing , bool is_windows , bool is_mac ) :
-		GPage(dialog,name,next_1,next_2) ,
+	bool installing , bool /*is_windows*/ , bool is_mac ) :
+		Gui::Page(dialog,name,next_1,next_2) ,
 		m_installing(installing) ,
 		m_is_mac(is_mac) ,
 		m_other_dir_changed(false)
@@ -264,16 +257,8 @@ DirectoryPage::DirectoryPage( GDialog & dialog , const G::MapFile & config , con
 		connect( m_spool_dir_edit_box , SIGNAL(textChanged(QString)), this, SLOT(onOtherDirChange()) );
 		connect( m_config_dir_edit_box , SIGNAL(textChanged(QString)), this, SLOT(onOtherDirChange()) );
 		connect( m_runtime_dir_edit_box , SIGNAL(textChanged(QString)), this, SLOT(onOtherDirChange()) );
-		if( testMode() )
-		{
-			QString old_value = m_install_dir_edit_box->text() ;
-			G::Path tmp_base = is_windows ? G::Path(G::Environment::get("TEMP","c:/temp")) : G::Path("/tmp" ) ;
-			G::Path tmp_dir = tmp_base + G::Process::Id().str() ;
-			G::Path old_path = GQt::stdstr( old_value , GQt::Path ) ;
-			G::Path new_path = G::Path::join( tmp_dir , old_path.withoutRoot() ) ;
-			QString new_value = GQt::qstr( new_path ) ;
-			m_install_dir_edit_box->setText( new_value ) ;
-		}
+		if( testMode() ) // todo not if windows
+			m_install_dir_edit_box->setText( qstr("/tmp/") + qstr(G::Process::Id().str()) + m_install_dir_edit_box->text() ) ;
 	}
 
 	connect( m_install_dir_edit_box , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()));
@@ -369,23 +354,23 @@ G::Path DirectoryPage::normalise( const G::Path & dir ) const
 	// leave them as relative to the bundle contents on mac
 
 	G::Path result = dir ;
-	if( dir.isRelative() && !Dir::home().empty() )
+	if( dir.isRelative() && !Gui::Dir::home().empty() )
 	{
 		if( dir.str() == "~" || dir.str() == "~/" || dir.str() == "$HOME" || dir.str() == "$HOME/" )
 		{
-			result = Dir::home() ;
+			result = Gui::Dir::home() ;
 		}
 		else if( dir.str().find("~/") == 0U )
 		{
-			result = G::Path( Dir::home() , dir.str().substr(2U) ) ;
+			result = G::Path( Gui::Dir::home() , dir.str().substr(2U) ) ;
 		}
 		else if( dir.str().find("$HOME/") == 0U )
 		{
-			result = G::Path( Dir::home() , dir.str().substr(6U) ) ;
+			result = G::Path( Gui::Dir::home() , dir.str().substr(6U) ) ;
 		}
 		else if( !m_is_mac )
 		{
-			result = G::Path::join( Dir::home() , dir ) ;
+			result = G::Path::join( Gui::Dir::home() , dir ) ;
 		}
 	}
 	return result ;
@@ -393,16 +378,16 @@ G::Path DirectoryPage::normalise( const G::Path & dir ) const
 
 void DirectoryPage::dump( std::ostream & stream , bool for_install ) const
 {
-	GPage::dump( stream , for_install ) ;
+	Gui::Page::dump( stream , for_install ) ;
 	dumpItem( stream , for_install , "dir-install" , installDir() ) ;
 	dumpItem( stream , for_install , "dir-spool" , spoolDir() ) ;
 	dumpItem( stream , for_install , "dir-config" , configDir() ) ;
 	dumpItem( stream , for_install , "dir-run" , runtimeDir() ) ;
 
-	dumpItem( stream , for_install , "dir-boot" , Dir::boot() ) ;
-	dumpItem( stream , for_install , "dir-desktop" , Dir::desktop() ) ;
-	dumpItem( stream , for_install , "dir-menu" , Dir::menu() ) ;
-	dumpItem( stream , for_install , "dir-login" , Dir::autostart() ) ;
+	dumpItem( stream , for_install , "dir-boot" , Gui::Dir::boot() ) ;
+	dumpItem( stream , for_install , "dir-desktop" , Gui::Dir::desktop() ) ;
+	dumpItem( stream , for_install , "dir-menu" , Gui::Dir::menu() ) ;
+	dumpItem( stream , for_install , "dir-login" , Gui::Dir::autostart() ) ;
 }
 
 bool DirectoryPage::isComplete()
@@ -435,9 +420,9 @@ G::Path DirectoryPage::configDir() const
 
 // ==
 
-DoWhatPage::DoWhatPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
+DoWhatPage::DoWhatPage( Gui::Dialog & dialog , const G::MapFile & config , const std::string & name ,
 	const std::string & next_1 , const std::string & next_2 ) :
-		GPage(dialog,name,next_1,next_2)
+		Gui::Page(dialog,name,next_1,next_2)
 {
 	m_pop_checkbox = new QCheckBox( tr("POP3 server") ) ;
 	m_smtp_checkbox = new QCheckBox( tr("SMTP server") ) ;
@@ -547,7 +532,7 @@ bool DoWhatPage::pop() const
 
 void DoWhatPage::dump( std::ostream & stream , bool for_install ) const
 {
-	GPage::dump( stream , for_install ) ;
+	Gui::Page::dump( stream , for_install ) ;
 	dumpItem( stream , for_install , "do-pop" , value(m_pop_checkbox) ) ;
 	dumpItem( stream , for_install , "do-smtp" , value(m_smtp_checkbox) ) ;
 	dumpItem( stream , for_install , "forward-immediate" , value(m_immediate_checkbox) ) ;
@@ -565,10 +550,10 @@ bool DoWhatPage::isComplete()
 
 // ==
 
-PopPage::PopPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
+PopPage::PopPage( Gui::Dialog & dialog , const G::MapFile & config , const std::string & name ,
 	const std::string & next_1 , const std::string & next_2 ,
 	bool have_accounts ) :
-		GPage(dialog,name,next_1,next_2) ,
+		Gui::Page(dialog,name,next_1,next_2) ,
 		m_have_accounts(have_accounts)
 {
 	//: internet address, port number
@@ -709,7 +694,7 @@ std::string PopPage::nextPage()
 
 void PopPage::dump( std::ostream & stream , bool for_install ) const
 {
-	GPage::dump( stream , for_install ) ;
+	Gui::Page::dump( stream , for_install ) ;
 	dumpItem( stream , for_install , "pop-port" , value(m_port_edit_box) ) ;
 	dumpItem( stream , for_install , "pop-simple" , value(m_one) ) ;
 	dumpItem( stream , for_install , "pop-shared" , value(m_shared) ) ;
@@ -719,12 +704,12 @@ void PopPage::dump( std::ostream & stream , bool for_install ) const
 	dumpItem( stream , for_install , "pop-auth-mechanism" , std::string("plain:b") ) ;
 	if( for_install )
 	{
-		dumpItem( stream , for_install , "pop-account-1-name" , encode(value_utf8(m_name_1)) ) ;
-		dumpItem( stream , for_install , "pop-account-1-password" , encode(value_utf8(m_pwd_1)) ) ;
-		dumpItem( stream , for_install , "pop-account-2-name" , encode(value_utf8(m_name_2)) ) ;
-		dumpItem( stream , for_install , "pop-account-2-password" , encode(value_utf8(m_pwd_2)) ) ;
-		dumpItem( stream , for_install , "pop-account-3-name" , encode(value_utf8(m_name_3)) ) ;
-		dumpItem( stream , for_install , "pop-account-3-password" , encode(value_utf8(m_pwd_3)) ) ;
+		dumpItem( stream , for_install , "pop-account-1-name" , G::Base64::encode(value_utf8(m_name_1)) ) ;
+		dumpItem( stream , for_install , "pop-account-1-password" , G::Base64::encode(value_utf8(m_pwd_1)) ) ;
+		dumpItem( stream , for_install , "pop-account-2-name" , G::Base64::encode(value_utf8(m_name_2)) ) ;
+		dumpItem( stream , for_install , "pop-account-2-password" , G::Base64::encode(value_utf8(m_pwd_2)) ) ;
+		dumpItem( stream , for_install , "pop-account-3-name" , G::Base64::encode(value_utf8(m_name_3)) ) ;
+		dumpItem( stream , for_install , "pop-account-3-password" , G::Base64::encode(value_utf8(m_pwd_3)) ) ;
 	}
 }
 
@@ -751,10 +736,10 @@ bool PopPage::withFilterCopy() const
 
 // ==
 
-SmtpServerPage::SmtpServerPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
+SmtpServerPage::SmtpServerPage( Gui::Dialog & dialog , const G::MapFile & config , const std::string & name ,
 	const std::string & next_1 , const std::string & next_2 ,
 	bool have_account , bool can_generate ) :
-		GPage(dialog,name,next_1,next_2) ,
+		Gui::Page(dialog,name,next_1,next_2) ,
 		m_have_account(have_account) ,
 		m_can_generate(can_generate)
 {
@@ -932,14 +917,14 @@ std::string SmtpServerPage::nextPage()
 
 void SmtpServerPage::dump( std::ostream & stream , bool for_install ) const
 {
-	GPage::dump( stream , for_install ) ;
+	Gui::Page::dump( stream , for_install ) ;
 	dumpItem( stream , for_install , "smtp-server-port" , value(m_port_edit_box) ) ;
 	dumpItem( stream , for_install , "smtp-server-auth" , value(m_auth_checkbox) ) ;
 	dumpItem( stream , for_install , "smtp-server-auth-mechanism" , std::string("plain:b") ) ;
 	if( for_install )
 	{
-		dumpItem( stream , for_install , "smtp-server-account-name" , encode(value_utf8(m_account_name)) ) ;
-		dumpItem( stream , for_install , "smtp-server-account-password" , encode(value_utf8(m_account_pwd)) ) ;
+		dumpItem( stream , for_install , "smtp-server-account-name" , G::Base64::encode(value_utf8(m_account_name)) ) ;
+		dumpItem( stream , for_install , "smtp-server-account-password" , G::Base64::encode(value_utf8(m_account_pwd)) ) ;
 	}
 	dumpItem( stream , for_install , "smtp-server-trust" , value(m_trust_address) ) ;
 	dumpItem( stream , for_install , "smtp-server-tls" , value(m_tls_checkbox->isChecked() && m_tls_starttls->isChecked()) ) ;
@@ -978,10 +963,10 @@ bool SmtpServerPage::isComplete()
 
 // ==
 
-FilterPage::FilterPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
+FilterPage::FilterPage( Gui::Dialog & dialog , const G::MapFile & config , const std::string & name ,
 	const std::string & next_1 , const std::string & next_2 ,
 	bool installing , bool is_windows ) :
-		GPage(dialog,name,next_1,next_2) ,
+		Gui::Page(dialog,name,next_1,next_2) ,
 		m_installing(installing) ,
 		m_is_windows(is_windows) ,
 		m_dot_exe(is_windows?".exe":"") ,
@@ -1215,16 +1200,16 @@ void FilterPage::onToggle()
 
 void FilterPage::dump( std::ostream & stream , bool for_install ) const
 {
-	GPage::dump( stream , for_install ) ;
+	Gui::Page::dump( stream , for_install ) ;
 	dumpItem( stream , for_install , "filter-server" , value(m_server_filter_edit_box) ) ;
 	dumpItem( stream , for_install , "filter-client" , value(m_client_filter_edit_box) ) ;
 }
 
 // ==
 
-SmtpClientPage::SmtpClientPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
+SmtpClientPage::SmtpClientPage( Gui::Dialog & dialog , const G::MapFile & config , const std::string & name ,
 	const std::string & next_1 , const std::string & next_2 , bool have_account ) :
-		GPage(dialog,name,next_1,next_2) ,
+		Gui::Page(dialog,name,next_1,next_2) ,
 		m_have_account(have_account)
 {
 	//: internet address, hostname of remote smtp server
@@ -1362,7 +1347,7 @@ std::string SmtpClientPage::nextPage()
 
 void SmtpClientPage::dump( std::ostream & stream , bool for_install ) const
 {
-	GPage::dump( stream , for_install ) ;
+	Gui::Page::dump( stream , for_install ) ;
 	dumpItem( stream , for_install , "smtp-client-host" , value(m_server_edit_box) ) ;
 	dumpItem( stream , for_install , "smtp-client-port" , value(m_port_edit_box) ) ;
 	dumpItem( stream , for_install , "smtp-client-tls" , value(m_tls_checkbox->isChecked()&&!m_tls_tunnel->isChecked()) ) ;
@@ -1371,8 +1356,8 @@ void SmtpClientPage::dump( std::ostream & stream , bool for_install ) const
 	dumpItem( stream , for_install , "smtp-client-auth-mechanism" , std::string("plain:b") ) ;
 	if( for_install )
 	{
-		dumpItem( stream , for_install , "smtp-client-account-name" , encode(value_utf8(m_account_name)) ) ;
-		dumpItem( stream , for_install , "smtp-client-account-password" , encode(value_utf8(m_account_pwd)) ) ;
+		dumpItem( stream , for_install , "smtp-client-account-name" , G::Base64::encode(value_utf8(m_account_name)) ) ;
+		dumpItem( stream , for_install , "smtp-client-account-password" , G::Base64::encode(value_utf8(m_account_pwd)) ) ;
 	}
 }
 
@@ -1389,9 +1374,9 @@ bool SmtpClientPage::isComplete()
 
 // ==
 
-LoggingPage::LoggingPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
+LoggingPage::LoggingPage( Gui::Dialog & dialog , const G::MapFile & config , const std::string & name ,
 	const std::string & next_1 , const std::string & next_2 ) :
-		GPage(dialog,name,next_1,next_2)
+		Gui::Page(dialog,name,next_1,next_2)
 {
 	m_config_log_file = config.value( "log-file" ) ;
 
@@ -1534,7 +1519,7 @@ void LoggingPage::onToggle()
 
 void LoggingPage::dump( std::ostream & stream , bool for_install ) const
 {
-	GPage::dump( stream , for_install ) ;
+	Gui::Page::dump( stream , for_install ) ;
 	dumpItem( stream , for_install , "logging-verbose" , value(m_log_level_verbose_checkbox) ) ;
 	dumpItem( stream , for_install , "logging-debug" , value(m_log_level_debug_checkbox) ) ;
 	dumpItem( stream , for_install , "logging-syslog" , value(m_log_output_syslog_checkbox) ) ;
@@ -1545,9 +1530,9 @@ void LoggingPage::dump( std::ostream & stream , bool for_install ) const
 
 // ==
 
-ListeningPage::ListeningPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
+ListeningPage::ListeningPage( Gui::Dialog & dialog , const G::MapFile & config , const std::string & name ,
 	const std::string & next_1 , const std::string & next_2 , bool next_is_next2 ) :
-		GPage(dialog,name,next_1,next_2) ,
+		Gui::Page(dialog,name,next_1,next_2) ,
 		m_next_is_next2(next_is_next2)
 {
 	//: server listening-address options...
@@ -1692,16 +1677,16 @@ std::string ListeningPage::normalise( const std::string & s )
 
 void ListeningPage::dump( std::ostream & stream , bool for_install ) const
 {
-	GPage::dump( stream , for_install ) ;
+	Gui::Page::dump( stream , for_install ) ;
 	dumpItem( stream , for_install , "listening-interface" , normalise(value(m_listening_interface)) ) ;
 	dumpItem( stream , for_install , "listening-remote" , value(m_remote_checkbox) ) ;
 }
 
 // ==
 
-StartupPage::StartupPage( GDialog & dialog , const G::MapFile & config , const std::string & name ,
+StartupPage::StartupPage( Gui::Dialog & dialog , const G::MapFile & config , const std::string & name ,
 	const std::string & next_1 , const std::string & next_2 , bool is_mac ) :
-		GPage(dialog,name,next_1,next_2) ,
+		Gui::Page(dialog,name,next_1,next_2) ,
 		m_is_mac(is_mac)
 {
 	m_on_boot_checkbox = new QCheckBox( tr("At system startup") ) ;
@@ -1722,10 +1707,10 @@ StartupPage::StartupPage( GDialog & dialog , const G::MapFile & config , const s
 		m_add_menu_item_checkbox->setEnabled( false ) ;
 		m_add_desktop_item_checkbox->setEnabled( false ) ;
 	}
-	m_at_login_checkbox->setEnabled( !Dir::autostart().str().empty() ) ;
+	m_at_login_checkbox->setEnabled( !Gui::Dir::autostart().str().empty() ) ;
 	m_on_boot_checkbox->setEnabled( config.booleanValue("=dir-boot-enabled",false) ) ;
 
-	m_at_login_checkbox->setChecked( !Dir::autostart().str().empty() && config.booleanValue("start-at-login",false) ) ;
+	m_at_login_checkbox->setChecked( !Gui::Dir::autostart().str().empty() && config.booleanValue("start-at-login",false) ) ;
 	m_add_menu_item_checkbox->setChecked( !m_is_mac && config.booleanValue("start-link-menu",true) ) ;
 	m_add_desktop_item_checkbox->setChecked( !m_is_mac && config.booleanValue("start-link-desktop",false) ) ;
 	m_on_boot_checkbox->setChecked( config.booleanValue("start-on-boot",false) ) ;
@@ -1760,7 +1745,7 @@ std::string StartupPage::nextPage()
 
 void StartupPage::dump( std::ostream & stream , bool for_install ) const
 {
-	GPage::dump( stream , for_install ) ;
+	Gui::Page::dump( stream , for_install ) ;
 	dumpItem( stream , for_install , "start-page" , std::string("y") ) ; // since not necessarily used at all -- see guimain.cpp
 	dumpItem( stream , for_install , "start-on-boot-enabled" , std::string(m_on_boot_checkbox->isEnabled()?"y":"n") ) ;
 	dumpItem( stream , for_install , "start-on-boot" , value(m_on_boot_checkbox) ) ;
@@ -1775,9 +1760,9 @@ void StartupPage::dump( std::ostream & stream , bool for_install ) const
 
 // ==
 
-ReadyPage::ReadyPage( GDialog & dialog , const G::MapFile & , const std::string & name , const std::string & next_1 ,
+ReadyPage::ReadyPage( Gui::Dialog & dialog , const G::MapFile & , const std::string & name , const std::string & next_1 ,
 	const std::string & next_2 , bool installing ) :
-		GPage(dialog,name,next_1,next_2) ,
+		Gui::Page(dialog,name,next_1,next_2) ,
 		m_installing(installing)
 {
 	m_label = new QLabel( text() ) ;
@@ -1815,7 +1800,7 @@ bool ReadyPage::isReadyToFinishPage() const
 
 void ReadyPage::dump( std::ostream & s , bool for_install ) const
 {
-	GPage::dump( s , for_install ) ;
+	Gui::Page::dump( s , for_install ) ;
 }
 
 // ==
@@ -1846,10 +1831,10 @@ void LogWatchThread::run()
 	}
 }
 
-ProgressPage::ProgressPage( GDialog & dialog , const G::MapFile & , const std::string & name ,
+ProgressPage::ProgressPage( Gui::Dialog & dialog , const G::MapFile & , const std::string & name ,
 	const std::string & next_1 , const std::string & next_2 ,
 	Installer & installer , bool installing ) :
-		GPage(dialog,name,next_1,next_2) ,
+		Gui::Page(dialog,name,next_1,next_2) ,
 		m_text_pos(0) ,
 		m_installer(installer) ,
 		m_state(0)
@@ -2073,7 +2058,7 @@ std::string ProgressPage::nextPage()
 
 void ProgressPage::dump( std::ostream & s , bool for_install ) const
 {
-	GPage::dump( s , for_install ) ;
+	Gui::Page::dump( s , for_install ) ;
 }
 
 bool ProgressPage::isFinishPage() const

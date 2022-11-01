@@ -17,6 +17,9 @@
 
 example_scripts_static = \
 	emailrelay-bcc-check.pl \
+	emailrelay-check-ipaddress.js \
+	emailrelay-check-ipaddress.pl \
+	emailrelay-dkim-signer.pl \
 	emailrelay-ldap-verify.py \
 	emailrelay-multicast.sh \
 	emailrelay-rot13.pl \
@@ -50,6 +53,7 @@ work_scripts = \
 	make-format \
 	make2cmake \
 	make2cdb \
+	make2unity \
 	AutoMakeParser.pm \
 	CompilationDatabase.pm \
 	ConfigStatus.pm \

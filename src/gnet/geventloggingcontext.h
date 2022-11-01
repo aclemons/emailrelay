@@ -50,8 +50,8 @@ public:
 public:
 	EventLoggingContext( const EventLoggingContext & ) = delete ;
 	EventLoggingContext( EventLoggingContext && ) = delete ;
-	void operator=( const EventLoggingContext & ) = delete ;
-	void operator=( EventLoggingContext && ) = delete ;
+	EventLoggingContext & operator=( const EventLoggingContext & ) = delete ;
+	EventLoggingContext & operator=( EventLoggingContext && ) = delete ;
 
 private:
 	static std::string fn( void * ) ;

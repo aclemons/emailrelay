@@ -24,7 +24,7 @@
 #include "gassert.h"
 #include <algorithm> // find
 
-BOOL CALLBACK gdialog_export( HWND hwnd , UINT message , WPARAM wparam , LPARAM lparam )
+INT_PTR CALLBACK gdialog_export( HWND hwnd , UINT message , WPARAM wparam , LPARAM lparam )
 {
 	try
 	{
@@ -115,7 +115,7 @@ LRESULT GGui::Dialog::sendMessage( int control , unsigned int message , WPARAM w
 	return SendMessage( hwnd_control , message , wparam , lparam ) ;
 }
 
-BOOL GGui::Dialog::dlgProc( HWND hwnd , UINT message , WPARAM wparam , LPARAM lparam )
+INT_PTR GGui::Dialog::dlgProc( HWND hwnd , UINT message , WPARAM wparam , LPARAM lparam )
 {
 	if( message == WM_INITDIALOG )
 	{
@@ -149,7 +149,7 @@ BOOL GGui::Dialog::dlgProc( HWND hwnd , UINT message , WPARAM wparam , LPARAM lp
 	}
 }
 
-BOOL GGui::Dialog::dlgProcImp( UINT message , WPARAM wparam , LPARAM lparam )
+INT_PTR GGui::Dialog::dlgProcImp( UINT message , WPARAM wparam , LPARAM lparam )
 {
 	switch( message )
 	{
@@ -334,8 +334,7 @@ bool GGui::Dialog::runEnd( int rc )
 {
 	if( rc == -1 )
 	{
-		DWORD error = GetLastError() ;
-		G_DEBUG( "GGui::Dialog::run: cannot create dialog box: " << error ) ;
+		G_DEBUG( "GGui::Dialog::run: cannot create dialog box" ) ;
 		return false ;
 	}
 	else if( rc == 0 )
@@ -450,7 +449,7 @@ bool GGui::Dialog::isValid()
 	return m_magic == Magic ;
 }
 
-BOOL GGui::Dialog::onControlColour_( WPARAM wparam , LPARAM lparam , WORD type )
+INT_PTR GGui::Dialog::onControlColour_( WPARAM wparam , LPARAM lparam , WORD type )
 {
 	return 0 != onControlColour( reinterpret_cast<HDC>(wparam) , reinterpret_cast<HWND>(lparam) , type ) ;
 }

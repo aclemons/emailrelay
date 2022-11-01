@@ -24,6 +24,7 @@
 #include "gdef.h"
 #include "gsaslserver.h"
 #include "gsecrets.h"
+#include "goptional.h"
 #include <utility>
 #include <memory>
 
@@ -39,10 +40,7 @@ class GAuth::SaslServerFactory
 {
 public:
 	static std::unique_ptr<SaslServer> newSaslServer( const SaslServerSecrets & ,
-		bool allow_pop ,
-		const std::string & config = {} ,
-		std::pair<bool,std::string> config_secure = {false,{}} ,
-		std::pair<bool,std::string> config_insecure = {false,{}} ) ;
+		bool allow_pop , const std::string & config , bool no_insecure_mechanisms ) ;
 			///< A factory function for a SaslServer.
 
 public:

@@ -47,10 +47,10 @@ public:
 
 	static ssize_t sendto( SOCKET , const void * , std::size_t , int flags , const sockaddr * , socklen_t ,
 		int fd_to_send ) ;
-			///< A sendmsg() wrapper.
+			///< A sendmsg() wrapper. Not always implemented.
 
 	static ssize_t sendto( SOCKET , const std::vector<string_view> & , int flags , const sockaddr * , socklen_t ) ;
-		///< A sendto() wrapper with scatter-gather data chunks.
+		///< A sendto() wrapper with scatter-gather data chunks. Not always implemented.
 
 	static ssize_t recv( SOCKET , void * , std::size_t , int flags ) noexcept ;
 		///< A recv() wrapper.
@@ -61,7 +61,7 @@ public:
 	static ssize_t recvfrom( SOCKET , void * , std::size_t , int , sockaddr * , socklen_t * ,
 		int * fd_received_p ) ;
 			///< A recvmsg() wrapper. The address and file descriptor pointers
-			///< can be null independently.
+			///< can be null independently. Not always implemented.
 
 	static bool fatal( int error ) noexcept ;
 		///< Returns true if the error value indicates a permanent

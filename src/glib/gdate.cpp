@@ -20,18 +20,18 @@
 
 #include "gdef.h"
 #include "gdate.h"
+#include "gstr.h"
 #include "glog.h"
 #include "gassert.h"
 #include <ctime>
-#include <iomanip>
-#include <sstream>
 
-int G::Date::yearUpperLimit()
+int G::Date::yearUpperLimit() noexcept
 {
-	return 2035 ; // see mktime()
+	//return 2035 ; // see mktime()
+	return 9999 ;
 }
 
-int G::Date::yearLowerLimit()
+int G::Date::yearLowerLimit() noexcept
 {
 	return 1970 ; // see mktime()
 }
@@ -39,26 +39,41 @@ int G::Date::yearLowerLimit()
 G::Date::Date()
 {
 	init( SystemTime::now().utc() ) ;
+	//check() ;
 }
 
 G::Date::Date( SystemTime t )
 {
 	init( t.utc() ) ;
+	//check() ;
 }
 
 G::Date::Date( SystemTime t , const LocalTime & )
 {
 	init( t.local() ) ;
+	//check() ;
 }
 
 G::Date::Date( const BrokenDownTime & tm )
 {
 	init( tm ) ;
+	//check() ;
 }
 
 G::Date::Date( const LocalTime & )
 {
 	init( SystemTime::now().local() ) ;
+	//check() ;
+}
+
+G::Date::Date( int year , Date::Month month , int day_of_month , std::nothrow_t ) noexcept :
+	m_day(day_of_month) ,
+	m_month(static_cast<int>(month)) ,
+	m_year(year)
+{
+	m_day = std::max( 1 , std::min(m_day,31) ) ;
+	m_month = std::max( 1 , std::min(m_month,12) ) ;
+	m_year = std::max( yearLowerLimit() , std::min(m_year,yearUpperLimit()) ) ;
 }
 
 G::Date::Date( int year , Date::Month month , int day_of_month ) :
@@ -66,12 +81,7 @@ G::Date::Date( int year , Date::Month month , int day_of_month ) :
 	m_month(static_cast<int>(month)) ,
 	m_year(year)
 {
-	G_ASSERT( year >= yearLowerLimit() ) ;
-	G_ASSERT( year <= yearUpperLimit() ) ;
-	G_ASSERT( day_of_month > 0 ) ;
-	G_ASSERT( day_of_month < 32 ) ;
-	G_ASSERT( static_cast<int>(month) >= 1 ) ;
-	G_ASSERT( static_cast<int>(month) <= 12 ) ;
+	check() ;
 }
 
 void G::Date::init( const BrokenDownTime & tm )
@@ -79,6 +89,19 @@ void G::Date::init( const BrokenDownTime & tm )
 	m_year = tm.year() ;
 	m_month = tm.month() ;
 	m_day = tm.day() ;
+}
+
+void G::Date::check()
+{
+	bool ok =
+		m_year >= yearLowerLimit() &&
+		m_year <= yearUpperLimit() &&
+		m_month >= 1 &&
+		m_month <= 12 &&
+		m_day >= 1 &&
+		m_day <= 31 ;
+	if( !ok )
+		throw DateError( "out of range" ) ;
 }
 
 std::string G::Date::str( Format format ) const
@@ -110,16 +133,17 @@ int G::Date::monthday() const
 
 std::string G::Date::dd() const
 {
-	std::ostringstream ss ;
-	ss << std::setw(2) << std::setfill('0') << m_day ;
-	return ss.str() ;
+	return Str::fromInt(std::min(99,std::max(0,m_day))+100).substr(1U) ;
 }
 
 std::string G::Date::mm() const
 {
-	std::ostringstream ss ;
-	ss << std::setw(2) << std::setfill('0') << m_month ;
-	return ss.str() ;
+	return Str::fromInt(std::min(99,std::max(0,m_month))+100).substr(1U) ;
+}
+
+std::string G::Date::yyyy() const
+{
+	return Str::fromInt(std::min(9999,std::max(0,m_year))+10000).substr(1U) ;
 }
 
 G::Date::Weekday G::Date::weekday() const
@@ -135,14 +159,16 @@ G::Date::Weekday G::Date::weekday() const
 
 std::string G::Date::weekdayName( bool brief ) const
 {
-	if( weekday() == Weekday::sunday ) return brief ? "Sun" : "Sunday" ;
-	if( weekday() == Weekday::monday ) return brief ? "Mon" : "Monday" ;
-	if( weekday() == Weekday::tuesday ) return brief ? "Tue" : "Tuesday" ;
-	if( weekday() == Weekday::wednesday ) return brief ? "Wed" : "Wednesday" ;
-	if( weekday() == Weekday::thursday ) return brief ? "Thu" : "Thursday" ;
-	if( weekday() == Weekday::friday ) return brief ? "Fri" : "Friday" ;
-	if( weekday() == Weekday::saturday ) return brief ? "Sat" : "Saturday" ;
-	return "" ;
+	Weekday d = weekday() ;
+	const char * p = "" ;
+	if( d == Weekday::sunday ) p = brief ? "Sun" : "Sunday" ;
+	else if( d == Weekday::monday ) p = brief ? "Mon" : "Monday" ;
+	else if( d == Weekday::tuesday ) p = brief ? "Tue" : "Tuesday" ;
+	else if( d == Weekday::wednesday ) p = brief ? "Wed" : "Wednesday" ;
+	else if( d == Weekday::thursday ) p= brief ? "Thu" : "Thursday" ;
+	else if( d == Weekday::friday ) p = brief ? "Fri" : "Friday" ;
+	else if( d == Weekday::saturday ) p = brief ? "Sat" : "Saturday" ;
+	return std::string(p) ;
 }
 
 G::Date::Month G::Date::month() const
@@ -152,31 +178,26 @@ G::Date::Month G::Date::month() const
 
 std::string G::Date::monthName( bool brief ) const
 {
-	if( month() == Month::january ) return brief ? "Jan" : "January" ;
-	if( month() == Month::february ) return brief ? "Feb" : "February" ;
-	if( month() == Month::march ) return brief ? "Mar" : "March" ;
-	if( month() == Month::april ) return brief ? "Apr" : "April" ;
-	if( month() == Month::may ) return "May" ;
-	if( month() == Month::june ) return brief ? "Jun" : "June" ;
-	if( month() == Month::july ) return brief ? "Jul" : "July" ;
-	if( month() == Month::august ) return brief ? "Aug" : "August" ;
-	if( month() == Month::september ) return brief ? "Sep" : "September" ;
-	if( month() == Month::october ) return brief ? "Oct" : "October" ;
-	if( month() == Month::november ) return brief ? "Nov" : "November" ;
-	if( month() == Month::december ) return brief ? "Dec" : "December" ;
-	return "" ;
+	Month m = month() ;
+	const char * p = "" ;
+	if( m == Month::january ) p = brief ? "Jan" : "January" ;
+	else if( m == Month::february ) p = brief ? "Feb" : "February" ;
+	else if( m == Month::march ) p = brief ? "Mar" : "March" ;
+	else if( m == Month::april ) p = brief ? "Apr" : "April" ;
+	else if( m == Month::may ) p = "May" ;
+	else if( m == Month::june ) p = brief ? "Jun" : "June" ;
+	else if( m == Month::july ) p = brief ? "Jul" : "July" ;
+	else if( m == Month::august ) p = brief ? "Aug" : "August" ;
+	else if( m == Month::september ) p = brief ? "Sep" : "September" ;
+	else if( m == Month::october ) p = brief ? "Oct" : "October" ;
+	else if( m == Month::november ) p = brief ? "Nov" : "November" ;
+	else if( m == Month::december ) p = brief ? "Dec" : "December" ;
+	return std::string(p) ;
 }
 
 int G::Date::year() const
 {
 	return m_year ;
-}
-
-std::string G::Date::yyyy() const
-{
-	std::ostringstream ss ;
-	ss << std::setw(4) << std::setfill('0') << m_year ;
-	return ss.str() ;
 }
 
 G::Date G::Date::next() const

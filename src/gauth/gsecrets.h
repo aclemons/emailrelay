@@ -60,22 +60,22 @@ public:
 	bool valid() const override ;
 		///< Override from GAuth::Valid virtual base.
 
-	Secret serverSecret( const std::string & type , const std::string & id ) const override ;
+	Secret serverSecret( G::string_view type , G::string_view id ) const override ;
 		///< Override from GAuth::SaslServerSecrets.
 
-	bool contains( const std::string & type , const std::string & id ) const override ;
+	bool contains( G::string_view type , G::string_view id ) const override ;
 		///< Override from GAuth::SaslServerSecrets.
 
 public:
 	~Secrets() override ;
 	Secrets( const Secrets & ) = delete ;
 	Secrets( Secrets && ) = delete ;
-	void operator=( const Secrets & ) = delete ;
-	void operator=( Secrets && ) = delete ;
+	Secrets & operator=( const Secrets & ) = delete ;
+	Secrets & operator=( Secrets && ) = delete ;
 
 private: // overrides
 	std::string source() const override ; // Override from GAuth::SaslServerSecrets.
-	Secret clientSecret( const std::string & ) const override ; // Override from GAuth::SaslClientSecrets.
+	Secret clientSecret( G::string_view ) const override ; // Override from GAuth::SaslClientSecrets.
 	std::pair<std::string,std::string> serverTrust( const std::string & address_range ) const override ; // Override from GAuth::SaslServerSecrets.
 
 private:

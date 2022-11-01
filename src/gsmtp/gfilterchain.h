@@ -24,6 +24,7 @@
 #include "gdef.h"
 #include "gfilter.h"
 #include "gfilterfactory.h"
+#include "gfactoryparser.h"
 #include "gtimer.h"
 #include "gslot.h"
 #include "gexceptionsink.h"
@@ -37,17 +38,25 @@ namespace GSmtp
 }
 
 //| \class GSmtp::FilterChain
-/// A Filter class that runs an external helper program.
+/// A Filter class that runs a sequence of sub-filters. The sub-filters are run
+/// in sequence only as long as they return success.
 ///
 class GSmtp::FilterChain : public Filter
 {
 public:
-	FilterChain( GNet::ExceptionSink , FileStore & , FilterFactory & ,
-		bool server_side , const std::string & spec , unsigned int timeout ) ;
+	FilterChain( GNet::ExceptionSink , FilterFactory & , bool server_side ,
+		const FactoryParser::Result & spec , unsigned int timeout ,
+		const std::string & log_prefix ) ;
 			///< Constructor.
 
 	~FilterChain() override ;
 		///< Destructor.
+
+public:
+	FilterChain( const FilterChain & ) = delete ;
+	FilterChain( FilterChain && ) = delete ;
+	FilterChain & operator=( const FilterChain & ) = delete ;
+	FilterChain & operator=( FilterChain && ) = delete ;
 
 private: // overrides
 	std::string id() const override ; // Override from from GSmtp::Filter.
@@ -60,19 +69,12 @@ private: // overrides
 	std::string reason() const override ; // Override from from GSmtp::Filter.
 	bool special() const override ; // Override from from GSmtp::Filter.
 
-public:
-	FilterChain( const FilterChain & ) = delete ;
-	FilterChain( FilterChain && ) = delete ;
-	FilterChain & operator=( const FilterChain & ) = delete ;
-	FilterChain & operator=( FilterChain && ) = delete ;
-
 private:
+	void add( GNet::ExceptionSink , FilterFactory & , bool , const FactoryParser::Result & , unsigned int , const std::string & ) ;
 	void onFilterDone( int ) ;
 
 private:
-	FileStore & m_file_store ;
 	G::Slot::Signal<int> m_done_signal ;
-	bool m_server_side ;
 	std::string m_filter_id ;
 	std::vector<std::unique_ptr<Filter>> m_filters ;
 	std::size_t m_filter_index ;

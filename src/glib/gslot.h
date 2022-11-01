@@ -27,6 +27,11 @@
 #include <functional>
 #include <memory>
 
+#ifdef emit
+// beware Qt
+#error invalid preprocessor definition of 'emit'
+#endif
+
 namespace G
 {
 	//| \namespace G::Slot
@@ -181,7 +186,7 @@ namespace G
 						m_slot.m_fn( args... ) ;
 				}
 			}
-			void reset()
+			void reset() noexcept
 			{
 				m_emitted = false ;
 			}
@@ -189,11 +194,19 @@ namespace G
 			{
 				return !! m_slot.m_fn ;
 			}
+			bool emitted() const noexcept
+			{
+				return m_emitted ;
+			}
+			void emitted( bool emitted ) noexcept
+			{
+				m_emitted = emitted ;
+			}
 			~Signal() = default ;
 			Signal( const Signal & ) = delete ;
-			Signal( Signal && ) = delete ;
-			void operator=( const Signal & ) = delete ;
-			void operator=( Signal && ) = delete ;
+			Signal( Signal && ) = default ;
+			Signal & operator=( const Signal & ) = delete ;
+			Signal & operator=( Signal && ) = default ;
 		} ;
 
 		/// A factory function for Slot objects.

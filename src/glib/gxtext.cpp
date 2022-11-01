@@ -72,7 +72,7 @@ namespace G
 	}
 }
 
-bool G::Xtext::valid( const std::string & s , bool strict )
+bool G::Xtext::valid( string_view s , bool strict )
 {
 	namespace imp = XtextImp ;
 	if( !Str::isPrintableAscii(s) || ( strict && s.find_first_of("= ") != std::string::npos ) )
@@ -92,7 +92,7 @@ bool G::Xtext::valid( const std::string & s , bool strict )
 	}
 }
 
-std::string G::Xtext::encode( const std::string & s )
+std::string G::Xtext::encode( string_view s )
 {
 	namespace imp = XtextImp ;
 	std::string result ;
@@ -114,12 +114,12 @@ std::string G::Xtext::encode( const std::string & s )
 	return result ;
 }
 
-std::string G::Xtext::decode( const std::string & s )
+std::string G::Xtext::decode( string_view s )
 {
 	namespace imp = XtextImp ;
 	std::string result ;
 	result.reserve( s.size() ) ;
-	for( std::string::const_iterator p = s.begin() ; p != s.end() ; ++p )
+	for( auto p = s.begin() ; p != s.end() ; ++p )
 	{
 		if( *p == '+' )
 		{

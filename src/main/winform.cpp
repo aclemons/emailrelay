@@ -43,6 +43,8 @@ Main::WinForm::WinForm( HINSTANCE hinstance , const Main::Configuration & cfg ,
 		m_closed(false) ,
 		m_cfg(cfg)
 {
+	using G::txt ;
+
   	addPage( txt("Configuration") , IDD_PROPPAGE_1 ) ;
   	addPage( txt("Licence") , IDD_PROPPAGE_1 ) ;
   	addPage( txt("Version") , IDD_PROPPAGE_1 ) ;

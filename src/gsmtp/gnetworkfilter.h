@@ -23,10 +23,11 @@
 
 #include "gdef.h"
 #include "gfilter.h"
-#include "gclientptr.h"
 #include "gfilestore.h"
+#include "gclientptr.h"
 #include "grequestclient.h"
 #include "geventhandler.h"
+#include "goptional.h"
 
 namespace GSmtp
 {
@@ -38,11 +39,10 @@ namespace GSmtp
 /// remote network server. The response of ok/abandon/fail is
 /// delivered via the base class's doneSignal().
 ///
-class GSmtp::NetworkFilter : public Filter
+class GSmtp::NetworkFilter : public Filter , private GNet::ExceptionHandler
 {
 public:
-	NetworkFilter( GNet::ExceptionSink , FileStore & ,
-		const std::string & server_location ,
+	NetworkFilter( GNet::ExceptionSink , FileStore & , const std::string & server_location ,
 		unsigned int connection_timeout , unsigned int response_timeout ) ;
 			///< Constructor.
 
@@ -59,26 +59,29 @@ private: // overrides
 	std::string response() const override ; // Override from from GSmtp::Filter.
 	std::string reason() const override ; // Override from from GSmtp::Filter.
 	bool special() const override ; // Override from from GSmtp::Filter.
+	void onException( GNet::ExceptionSource * , std::exception & , bool ) override ; // Override from from GNet::ExceptionHandler.
 
 public:
 	NetworkFilter( const NetworkFilter & ) = delete ;
 	NetworkFilter( NetworkFilter && ) = delete ;
-	void operator=( const NetworkFilter & ) = delete ;
-	void operator=( NetworkFilter && ) = delete ;
+	NetworkFilter & operator=( const NetworkFilter & ) = delete ;
+	NetworkFilter & operator=( NetworkFilter && ) = delete ;
 
 private:
 	void clientEvent( const std::string & , const std::string & , const std::string & ) ;
-	void clientDeleted( const std::string & ) ;
+	void sendResult( const std::string & ) ;
+	void onTimeout() ;
 
 private:
 	GNet::ExceptionSink m_es ;
 	FileStore & m_file_store ;
+	GNet::ClientPtr<RequestClient> m_client_ptr ;
+	GNet::Timer<NetworkFilter> m_timer ;
 	G::Slot::Signal<int> m_done_signal ;
 	GNet::Location m_location ;
 	unsigned int m_connection_timeout ;
 	unsigned int m_response_timeout ;
-	GNet::ClientPtr<RequestClient> m_client_ptr ;
-	std::string m_text ;
+	G::optional<std::string> m_text ;
 } ;
 
 #endif

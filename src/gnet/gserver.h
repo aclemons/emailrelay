@@ -54,16 +54,21 @@ public:
 
 	struct Config /// A configuration structure for GNet::Server.
 	{
-		int listen_queue { G::Limits<>::net_listen_queue } ; // Socket::listen() 'backlog'
-		bool uds_open_permissions {true} ;
+		StreamSocket::Config stream_socket_config ;
+		bool uds_open_permissions {false} ;
+		Config & set_stream_socket_config( const StreamSocket::Config & ) ;
 		Config & set_uds_open_permissions( bool b = true ) ;
 	} ;
 
-	Server( ExceptionSink , const Address & listening_address , ServerPeer::Config , Config ) ;
+	Server( ExceptionSink , const Address & listening_address , const ServerPeer::Config & , const Config & ) ;
 		///< Constructor. The server listens on the given address,
 		///< which can be the 'any' address. The ExceptionSink
 		///< is used for exceptions relating to the listening
 		///< socket, not the server peers.
+
+	Server( ExceptionSink , Descriptor listening_fd , const ServerPeer::Config & , const Config & ) ;
+		///< Constructor overload for adopting an externally-managed
+		///< listening file descriptor.
 
 	~Server() override ;
 		///< Destructor.
@@ -71,11 +76,6 @@ public:
 	Address address() const override ;
 		///< Returns the listening address.
 		///< Override from GNet::Listener.
-
-	static bool canBind( const Address & listening_address , bool do_throw ) ;
-		///< Checks that the specified address can be
-		///< bound. Throws CannotBind if the address cannot
-		///< be bound and 'do_throw' is true.
 
 	std::vector<std::weak_ptr<GNet::ServerPeer>> peers() ;
 		///< Returns the list of ServerPeer objects.
@@ -109,15 +109,15 @@ protected:
 		///< most-derived Server.
 
 private: // overrides
-	void readEvent( Descriptor ) override ; // Override from GNet::EventHandler.
-	void writeEvent( Descriptor ) override ; // Override from GNet::EventHandler.
+	void readEvent() override ; // Override from GNet::EventHandler.
+	void writeEvent() override ; // Override from GNet::EventHandler.
 	void onException( ExceptionSource * , std::exception & , bool ) override ; // Override from GNet::ExceptionHandler.
 
 public:
 	Server( const Server & ) = delete ;
 	Server( Server && ) = delete ;
-	void operator=( const Server & ) = delete ;
-	void operator=( Server && ) = delete ;
+	Server & operator=( const Server & ) = delete ;
+	Server & operator=( Server && ) = delete ;
 
 private:
 	void accept( ServerPeerInfo & ) ;
@@ -126,6 +126,7 @@ private:
 private:
 	using PeerList = std::vector<std::shared_ptr<ServerPeer>> ;
 	ExceptionSink m_es ;
+	Config m_config ;
 	ServerPeer::Config m_server_peer_config ;
 	StreamSocket m_socket ; // listening socket
 	PeerList m_peer_list ;
@@ -145,6 +146,7 @@ public:
 	ServerPeerInfo( Server * , ServerPeer::Config ) ;
 } ;
 
+inline GNet::Server::Config & GNet::Server::Config::set_stream_socket_config( const StreamSocket::Config & c ) { stream_socket_config = c ; return *this ; }
 inline GNet::Server::Config & GNet::Server::Config::set_uds_open_permissions( bool b ) { uds_open_permissions = b ; return *this ; }
 
 #endif

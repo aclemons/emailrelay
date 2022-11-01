@@ -32,32 +32,32 @@
 #	directory getting cleaned up.
 #
 
-MAC_SOURCES = access_mac.cpp dir_mac.cpp boot_mac.cpp glink_mac.cpp
-WIN32_SOURCES = access_win32.cpp dir_win32.cpp boot_win32.cpp glink_win32.cpp emailrelay-gui.rc
-UNIX_SOURCES = access_unix.cpp dir_unix.cpp boot_unix.cpp glink_unix.cpp
+MAC_SOURCES = guiaccess_mac.cpp guidir_mac.cpp guiboot_mac.cpp guilink_mac.cpp
+WIN32_SOURCES = guiaccess_win32.cpp guidir_win32.cpp guiboot_win32.cpp guilink_win32.cpp emailrelay-gui.rc
+UNIX_SOURCES = guiaccess_unix.cpp guidir_unix.cpp guiboot_unix.cpp guilink_unix.cpp
 
 QT_SOURCES = \
 	installer.cpp \
-	gdialog.cpp \
-	gdialog.h \
-	gpage.cpp \
-	gpage.h \
+	guidialog.cpp \
+	guidialog.h \
+	guipage.cpp \
+	guipage.h \
 	pages.h \
 	pages.cpp \
 	gqt.h
 
 LIB_SOURCES = \
 	$(OS_SOURCES) \
-	access.h \
-	boot.h \
-	dir.cpp \
-	dir.h \
+	guidir.cpp \
+	guidir.h \
 	gcominit.h \
 	glibsources.cpp \
-	glink.h \
+	guiaccess.h \
+	guiboot.h \
+	guilink.h \
+	guilegal.cpp \
+	guilegal.h \
 	installer.h \
-	legal.cpp \
-	legal.h \
 	serverconfiguration.cpp \
 	serverconfiguration.h
 
@@ -97,8 +97,8 @@ EXTRA_DIST=\
 AM_INSTALL_PROGRAM_FLAGS=-s
 
 MOC_OUTPUT=\
-	moc_gdialog.cpp \
-	moc_gpage.cpp \
+	moc_guidialog.cpp \
+	moc_guipage.cpp \
 	moc_pages.cpp
 
 CLEANFILES = $(MOC_OUTPUT) $(QM_FILES)
@@ -108,8 +108,6 @@ AM_CPPFLAGS=\
 	-I$(top_srcdir)/src/glib \
 	-I$(top_srcdir)/src/gssl \
 	-I$(top_srcdir)/src/gnet \
-	-I$(top_srcdir)/src/gsmtp \
-	-I$(top_srcdir)/src/gpop \
 	-I$(top_srcdir)/src/main \
 	-D "G_SBINDIR=$(sbindir)" \
 	-D "G_SPOOLDIR=$(e_spooldir)" \
@@ -124,17 +122,17 @@ AM_CPPFLAGS=\
 
 if GCONFIG_GUI
 
-moc_gdialog.cpp: $(srcdir)/gdialog.h
-	$(GCONFIG_QT_MOC) $(srcdir)/gdialog.h -o $@
+moc_guidialog.cpp: $(srcdir)/guidialog.h
+	$(GCONFIG_QT_MOC) $< -o $@
 
-moc_gpage.cpp: $(srcdir)/gpage.h
-	$(GCONFIG_QT_MOC) $(srcdir)/gpage.h -o $@
+moc_guipage.cpp: $(srcdir)/guipage.h
+	$(GCONFIG_QT_MOC) $< -o $@
 
 moc_pages.cpp: $(srcdir)/pages.h
-	$(GCONFIG_QT_MOC) $(srcdir)/pages.h -o $@
+	$(GCONFIG_QT_MOC) $< -o $@
 
-gdialog.o: moc_gdialog.cpp
-gpage.o: moc_gpage.cpp
+guidialog.o: moc_guidialog.cpp
+guipage.o: moc_guipage.cpp
 pages.o: moc_pages.cpp
 
 noinst_SCRIPTS = $(OS_NOINST)

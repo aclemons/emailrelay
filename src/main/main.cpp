@@ -35,7 +35,7 @@ class Main::App : public Main::Output
 {
 private: // overrides
 	void output( const std::string & text , bool e , bool ) override ;
-	G::OptionsOutputLayout outputLayout( bool verbose ) const override ;
+	G::OptionsUsage::Config outputLayout( bool verbose ) const override ;
 	bool outputSimple() const override ;
 } ;
 
@@ -45,7 +45,7 @@ void Main::App::output( const std::string & text , bool e , bool )
 	s << text << std::flush ;
 }
 
-G::OptionsOutputLayout Main::App::outputLayout( bool ) const
+G::OptionsUsage::Config Main::App::outputLayout( bool ) const
 {
 	return {} ;
 }
@@ -69,6 +69,11 @@ int main( int argc , char * argv [] )
 			run.run() ;
 			ok = true ;
 		}
+	}
+	catch( GNet::SocketBase::SocketBindError & e )
+	{
+		std::cerr << G::Arg::prefix(argv) << ": error: " << e.what() << std::endl ;
+		return 2 ;
 	}
 	catch( std::exception & e )
 	{

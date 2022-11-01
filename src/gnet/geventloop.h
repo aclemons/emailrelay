@@ -124,19 +124,24 @@ public:
 		///< See also Socket::addOtherHandler().
 
 	virtual void dropRead( Descriptor fd ) noexcept = 0 ;
-		///< Removes the given event source descriptor from the
+		///< Removes the given event descriptor from the
 		///< list of read sources.
 		///< See also Socket::dropReadHandler().
 
 	virtual void dropWrite( Descriptor fd ) noexcept = 0 ;
-		///< Removes the given event source descriptor from the
+		///< Removes the given event descriptor from the
 		///< list of write sources.
 		///< See also Socket::dropWriteHandler().
 
 	virtual void dropOther( Descriptor fd ) noexcept = 0 ;
-		///< Removes the given event source descriptor from the
-		///< list of exception sources.
+		///< Removes the given event descriptor from the
+		///< list of other-event sources.
 		///< See also Socket::dropOtherHandler().
+
+	virtual void drop( Descriptor fd ) noexcept = 0 ;
+		///< Removes the given event descriptor from the
+		///< event loop as the EventHandler is being
+		///< destructed.
 
 	virtual void disarm( ExceptionHandler * ) noexcept = 0 ;
 		///< Used to prevent the given interface from being used,
@@ -146,8 +151,8 @@ public:
 public:
 	EventLoop( const EventLoop & ) = delete ;
 	EventLoop( EventLoop && ) = delete ;
-	void operator=( const EventLoop & ) = delete ;
-	void operator=( EventLoop && ) = delete ;
+	EventLoop & operator=( const EventLoop & ) = delete ;
+	EventLoop & operator=( EventLoop && ) = delete ;
 
 private:
 	static EventLoop * m_this ;

@@ -22,9 +22,7 @@
 #define G_SMTP_ENVELOPE_H
 
 #include "gdef.h"
-#include "gmessagestore.h"
 #include "gstringarray.h"
-#include "gstringview.h"
 #include "gexception.h"
 #include <iostream>
 
@@ -42,17 +40,17 @@ class GSmtp::Envelope
 public:
 	G_EXCEPTION( ReadError , tx("cannot read envelope file") ) ;
 
+public:
 	static void read( std::istream & , Envelope & ) ;
 		///< Reads an envelope from a stream. Throws on error.
 		///< Input lines can be newline delimited, in which case
 		///< 'm_crlf' is set false.
 
 	static std::size_t write( std::ostream & , const Envelope & ) ;
-		///< Writes an envelope to a seekable stream. Returns the new
-		///< endpos value. Returns zero on error, if for example the
-		///< stream is unseekable. Output lines are CR-LF delimited.
-		///< The structure 'm_crlf' and 'm_endpos' fields should
-		///< normally be updated after using write().
+		///< Writes an envelope to a stream. Returns the new endpos
+		///< value. Returns zero on error. Output lines are CR-LF
+		///< delimited. The structure 'm_crlf' and 'm_endpos' fields
+		///< should normally be updated after using write().
 
 	static void copy( std::istream & , std::ostream & ) ;
 		///< A convenience function to copy lines from an input
@@ -60,19 +58,9 @@ public:
 		///< delimited, but output is always CR-LF. Throws on input
 		///< error; output errors are not checked.
 
-	static MessageStore::BodyType parseSmtpBodyType( const std::string & ,
-		MessageStore::BodyType default_ = MessageStore::BodyType::Unknown ) ;
-			///< Parses the SMTP MAIL-FROM BODY= parameter. Returns
-			///< the given default value if the string is empty.
-
-	static std::string smtpBodyType( MessageStore::BodyType ) ;
-		///< Converts a body type enum into the corresponding
-		///< SMTP keyword.
-
 public:
-	bool m_crlf {true} ;
-	bool m_utf8_mailboxes {false} ; // message requires next-hop server to support SMTPUTF8 (RFC-6531)
-	MessageStore::BodyType m_body_type {MessageStore::BodyType::Unknown} ;
+	bool m_crlf{true} ;
+	int m_eight_bit{-1} ;
 	std::string m_from ;
 	G::StringArray m_to_local ;
 	G::StringArray m_to_remote ;
@@ -81,7 +69,9 @@ public:
 	std::string m_client_certificate ;
 	std::string m_from_auth_in ;
 	std::string m_from_auth_out ;
-	std::size_t m_endpos {0U} ;
+	std::string m_forward_to ;
+	std::string m_forward_to_address ;
+	std::size_t m_endpos{0U} ;
 } ;
 
 #endif

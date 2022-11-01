@@ -28,9 +28,10 @@ run the *emailrelay-start.bat* batch file to start the E-MailRelay server, and
 you should then see an icon appear in the Windows system tray under the "Show
 hidden icons" button.
 
-Note that the *emailrelay-start.bat* file lives under *ProgramData*, and although
-this might be a hidden directory you can still navigate there by right-clicking
-on the E-MailRelay link under *Program Files* and selecting *Open file location*.
+Note that the *emailrelay-start.bat* file lives under *ProgramData*, and
+although this might be a hidden directory you can still navigate there by
+right-clicking on the *E-MailRelay* link under *Program Files* and selecting
+\ *Open file location*\ .
 
 Configuration
 =============
@@ -152,4 +153,4 @@ and *DATA*.
 
 .. _SMTP: https://en.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol
 
-.. footer:: Copyright (C) 2001-2021 Graeme Walker
+.. footer:: Copyright (C) 2001-2022 Graeme Walker

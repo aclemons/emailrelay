@@ -51,8 +51,8 @@ public:
 public:
 	Pipe( const Pipe & ) = delete ;
 	Pipe( Pipe && ) = delete ;
-	void operator=( const Pipe & ) = delete ;
-	void operator=( Pipe && ) = delete ;
+	Pipe & operator=( const Pipe & ) = delete ;
+	Pipe & operator=( Pipe && ) = delete ;
 
 private:
 	static void create( HANDLE & read , HANDLE & write ) ;
@@ -94,8 +94,8 @@ public:
 public:
 	NewProcessImp( const NewProcessImp & ) = delete ;
 	NewProcessImp( NewProcessImp && ) = delete ;
-	void operator=( const NewProcessImp & ) = delete ;
-	void operator=( NewProcessImp && ) = delete ;
+	NewProcessImp & operator=( const NewProcessImp & ) = delete ;
+	NewProcessImp & operator=( NewProcessImp && ) = delete ;
 
 private:
 	static std::string commandLine( const std::string & exe , const StringArray & args ) ;

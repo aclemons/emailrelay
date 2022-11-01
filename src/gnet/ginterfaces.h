@@ -107,8 +107,9 @@ public:
 			///< found or if found but not up. Does lazy load()ing.
 
 	std::vector<Address> addresses( const G::StringArray & names , unsigned int port ,
-		G::StringArray & used_names , G::StringArray & empty_names ,
-		G::StringArray & bad_names ) const ;
+		G::StringArray * used_names_out = nullptr ,
+		G::StringArray * empty_names_out = nullptr ,
+		G::StringArray * bad_names_out = nullptr ) const ;
 			///< Treats each name given as an address or interface name and
 			///< returns the total set of addresses. Returns by reference
 			///< (1) names that are, or have, addresses, (2) names that might
@@ -116,15 +117,22 @@ public:
 			///< ie. names that are not addresses and cannot be a valid
 			///< interface name.
 
+	void addresses( const std::string & name , unsigned int port ,
+		std::vector<GNet::Address> & address_out ,
+		G::StringArray * used_names_out = nullptr ,
+		G::StringArray * empty_names_out = nullptr ,
+		G::StringArray * bad_names_out = nullptr ) const ;
+			///< An overload for a single name.
+
 private: // overrides
-	void readEvent( Descriptor ) override ; // GNet::EventHandler
+	void readEvent() override ; // GNet::EventHandler
 	void onFutureEvent() override ; // GNet::FutureEventHandler
 
 public:
 	Interfaces( const Interfaces & ) = delete ;
 	Interfaces( Interfaces && ) = delete ;
-	void operator=( const Interfaces & ) = delete ;
-	void operator=( Interfaces && ) = delete ;
+	Interfaces operator=( const Interfaces & ) = delete ;
+	Interfaces operator=( Interfaces && ) = delete ;
 
 private:
 	using AddressList = std::vector<Address> ;

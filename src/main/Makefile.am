@@ -88,7 +88,9 @@ MISC_EXTRA_DIST = \
 	emailrelay-service.exe.manifest \
 	fakemc.c \
 	messages.mc \
-	resource.h
+	resource.h \
+	testrun.cpp \
+	testrun.h
 
 if GCONFIG_MAC
  MAC_PROGS = emailrelay-start
@@ -206,6 +208,7 @@ else
 	$(top_builddir)/src/gsmtp/libgsmtp.a \
 	$(top_builddir)/src/gauth/libgauth.a \
 	$(top_builddir)/src/gnet/libgnet.a \
+	$(top_builddir)/src/gssl/libgssl.a \
 	$(top_builddir)/src/glib/libglib.a
 endif
 
@@ -267,4 +270,8 @@ fakemc.exe: $(top_srcdir)/src/main/fakemc.c
 .PHONY: strip
 strip:
 	$(STRIP) $(sbin_PROGRAMS) $(e_libexec_PROGRAMS)
+
+.PHONY: map
+map:
+	$(CXXLD) -Xlinker -Map=emailrelay.map $(AM_CXXFLAGS) $(CXXFLAGS) $(emailrelay_LDFLAGS) $(LDFLAGS) -o /tmp/emailrelay.tmp $(emailrelay_OBJECTS) $(emailrelay_LDADD) $(LIBS)
 

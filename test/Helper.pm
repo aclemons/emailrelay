@@ -19,14 +19,14 @@
 # Helper.pm
 #
 # A wrapper for running test helper programs such as
-# "emailrelay-test-scanner" that use command-line
-# options such as "--port", "--log-file", "--pid-file"
+# "emailrelay_test_scanner" that use command-line options
+# such as "--port", "--log-file", "--debug", "--pid-file"
 # etc.
 #
 # Synopsis:
 #
 #	$Helper::bin_dir = "." ;
-#	my $helper = new Helper( "emailrelay-test-scanner" ) ;
+#	my $helper = new Helper( "emailrelay_test_scanner" ) ;
 #	$helper->run() ;
 #	$helper->kill() ;
 #	open $helper->logfile() ;
@@ -50,7 +50,7 @@ sub new
 	die if !defined($exe) ;
 	$port ||= 10010 ;
 
-	( my $short_name = $exe ) =~ s/emailrelay-test-// ;
+	( my $short_name = $exe ) =~ s/emailrelay_test_// ;
 	$short_name =~ s/\.[a-z]*$// ;
 
 	my $exe_path = System::exe( $bin_dir , $exe ) ;

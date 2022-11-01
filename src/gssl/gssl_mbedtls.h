@@ -80,8 +80,8 @@ public:
 public:
 	Certificate( const Certificate & ) = delete ;
 	Certificate( Certificate && ) = delete ;
-	void operator=( const Certificate & ) = delete ;
-	void operator=( Certificate && ) = delete ;
+	Certificate & operator=( const Certificate & ) = delete ;
+	Certificate & operator=( Certificate && ) = delete ;
 
 private:
 	bool m_loaded{false} ;
@@ -102,8 +102,8 @@ public:
 public:
 	Rng( const Rng & ) = delete ;
 	Rng( Rng && ) = delete ;
-	void operator=( const Rng & ) = delete ;
-	void operator=( Rng && ) = delete ;
+	Rng & operator=( const Rng & ) = delete ;
+	Rng & operator=( Rng && ) = delete ;
 
 private:
 	mbedtls_ctr_drbg_context x ; // "counter-mode deterministic random byte generator"
@@ -125,8 +125,8 @@ public:
 public:
 	Key( const Key & ) = delete ;
 	Key( Key && ) = delete ;
-	void operator=( const Key & ) = delete ;
-	void operator=( Key && ) = delete ;
+	Key & operator=( const Key & ) = delete ;
+	Key & operator=( Key && ) = delete ;
 
 private:
 	mbedtls_pk_context x ;
@@ -146,8 +146,8 @@ public:
 public:
 	Context( const Context & ) = delete ;
 	Context( Context && ) = delete ;
-	void operator=( const Context & ) = delete ;
-	void operator=( Context && ) = delete ;
+	Context & operator=( const Context & ) = delete ;
+	Context & operator=( Context && ) = delete ;
 
 private:
 	mbedtls_ssl_context x ;
@@ -173,7 +173,7 @@ private:
 class GSsl::MbedTls::SecureFile
 {
 public:
-	SecureFile( const std::string & path , bool with_nul ) ;
+	SecureFile( const std::string & path , bool with_counted_nul ) ;
 	~SecureFile() ;
 	const char * p() const ;
 	const unsigned char * pu() const ;
@@ -184,8 +184,8 @@ public:
 public:
 	SecureFile( const SecureFile & ) = delete ;
 	SecureFile( SecureFile && ) = delete ;
-	void operator=( const SecureFile & ) = delete ;
-	void operator=( SecureFile && ) = delete ;
+	SecureFile & operator=( const SecureFile & ) = delete ;
+	SecureFile & operator=( SecureFile && ) = delete ;
 
 private:
 	static std::size_t fileSize( std::filebuf & ) ;
@@ -211,7 +211,7 @@ public:
 	bool servernoverify() const ;
 
 private:
-	static bool consume( G::StringArray & , const std::string & ) ;
+	static bool consume( G::StringArray & , G::string_view ) ;
 
 private:
 	bool m_noverify ;
@@ -254,8 +254,8 @@ private: // overrides
 public:
 	LibraryImp( const LibraryImp & ) = delete ;
 	LibraryImp( LibraryImp && ) = delete ;
-	void operator=( const LibraryImp & ) = delete ;
-	void operator=( LibraryImp && ) = delete ;
+	LibraryImp & operator=( const LibraryImp & ) = delete ;
+	LibraryImp & operator=( LibraryImp && ) = delete ;
 
 private:
 	static int minVersionFrom( G::StringArray & ) ;
@@ -297,8 +297,8 @@ private: // overrides
 public:
 	ProfileImp( const ProfileImp & ) = delete ;
 	ProfileImp( ProfileImp && ) = delete ;
-	void operator=( const ProfileImp & ) = delete ;
-	void operator=( ProfileImp && ) = delete ;
+	ProfileImp & operator=( const ProfileImp & ) = delete ;
+	ProfileImp & operator=( ProfileImp && ) = delete ;
 
 private:
 	static void onDebug( void * , int , const char * , int , const char * ) ;
@@ -348,8 +348,8 @@ private: // overrides
 public:
 	ProtocolImp( const ProtocolImp & ) = delete ;
 	ProtocolImp( ProtocolImp && ) = delete ;
-	void operator=( const ProtocolImp & ) = delete ;
-	void operator=( ProtocolImp && ) = delete ;
+	ProtocolImp & operator=( const ProtocolImp & ) = delete ;
+	ProtocolImp & operator=( ProtocolImp && ) = delete ;
 
 private:
 	Result convert( const char * , int , bool more = false ) ;
@@ -377,7 +377,7 @@ public:
 	~DigesterImp() override ;
 
 private: // overrides
-	void add( const std::string & ) override ;
+	void add( G::string_view ) override ;
 	std::string value() override ;
 	std::string state() override ;
 	std::size_t blocksize() const override ;
@@ -387,8 +387,8 @@ private: // overrides
 public:
 	DigesterImp( const DigesterImp & ) = delete ;
 	DigesterImp( DigesterImp && ) = delete ;
-	void operator=( const DigesterImp & ) = delete ;
-	void operator=( DigesterImp && ) = delete ;
+	DigesterImp & operator=( const DigesterImp & ) = delete ;
+	DigesterImp & operator=( DigesterImp && ) = delete ;
 
 private:
 	static void check_ret( int , const char * ) ;

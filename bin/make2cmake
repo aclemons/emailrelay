@@ -100,7 +100,7 @@ sub create_cmake_file
 	}
 
 	my $definitions = join( " " , $m->definitions() ) ;
-	my $includes = join( " " , "." , ".." , $m->includes($m->top()) ) ;
+	my $includes = join( " " , "." , ".." , $m->includes($m->base()) ) ;
 
 	my @libraries = $m->libraries() ;
 	for my $library ( @libraries )

@@ -225,9 +225,9 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam , LPARAM lparam , boo
 			{
 				HWND window = GET_WM_COMMAND_HWND( wparam , lparam ) ;
 				UINT id = GET_WM_COMMAND_ID( wparam , lparam ) ;
-				UINT message = type ;
+				UINT command_message = type ;
 				G_DEBUG( "Cracker::onControlCommand" ) ;
-				onControlCommand( window , message , id ) ;
+				onControlCommand( window , command_message , id ) ;
 			}
 
 			return 0 ;
@@ -247,7 +247,7 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam , LPARAM lparam , boo
 				processed = onDeactivate( window ) ;
 			}
 			if( !processed )
-				call_default ;
+				call_default = true ;
 			return 0 ;
 		}
 
@@ -592,10 +592,10 @@ bool GGui::Cracker::onEraseBackground( HDC hdc )
 	return !! DefWindowProc( handle() , WM_ERASEBKGND , wparam , 0L ) ;
 }
 
-void GGui::Cracker::onMouseMove( unsigned int x , unsigned int y ,
-	bool shift_key_down , bool control_key_down ,
-	bool left_button_down , bool middle_button_down ,
-	bool right_button_down )
+void GGui::Cracker::onMouseMove( unsigned int /*x*/ , unsigned int /*y*/ ,
+	bool /*shift_key_down*/ , bool /*control_key_down*/ ,
+	bool /*left_button_down*/ , bool /*middle_button_down*/ ,
+	bool /*right_button_down*/ )
 {
 }
 
@@ -604,33 +604,33 @@ void GGui::Cracker::onMouseButton( MouseButton , MouseButtonDirection ,
 {
 }
 
-void GGui::Cracker::onLeftMouseButtonDown( int x , int y ,
-	bool shift_key_down , bool control_key_down )
+void GGui::Cracker::onLeftMouseButtonDown( int /*x*/ , int /*y*/ ,
+	bool /*shift_key_down*/ , bool /*control_key_down*/ )
 {
 }
 
-void GGui::Cracker::onLeftMouseButtonUp( int x , int y ,
-	bool shift_key_down , bool control_key_down )
+void GGui::Cracker::onLeftMouseButtonUp( int /*x*/ , int /*y*/ ,
+	bool /*shift_key_down*/ , bool /*control_key_down*/ )
 {
 }
 
-void GGui::Cracker::onMiddleMouseButtonDown( int x , int y ,
-	bool shift_key_down , bool control_key_down )
+void GGui::Cracker::onMiddleMouseButtonDown( int /*x*/ , int /*y*/ ,
+	bool /*shift_key_down*/ , bool /*control_key_down*/ )
 {
 }
 
-void GGui::Cracker::onMiddleMouseButtonUp( int x , int y ,
-	bool shift_key_down , bool control_key_down )
+void GGui::Cracker::onMiddleMouseButtonUp( int /*x*/ , int /*y*/ ,
+	bool /*shift_key_down*/ , bool /*control_key_down*/ )
 {
 }
 
-void GGui::Cracker::onRightMouseButtonDown( int x , int y ,
-	bool shift_key_down , bool control_key_down )
+void GGui::Cracker::onRightMouseButtonDown( int /*x*/ , int /*y*/ ,
+	bool /*shift_key_down*/ , bool /*control_key_down*/ )
 {
 }
 
-void GGui::Cracker::onRightMouseButtonUp( int x , int y ,
-	bool shift_key_down , bool control_key_down )
+void GGui::Cracker::onRightMouseButtonUp( int /*x*/ , int /*y*/ ,
+	bool /*shift_key_down*/ , bool /*control_key_down*/ )
 {
 }
 

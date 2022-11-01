@@ -19,7 +19,8 @@
 ///
 // A service wrapper program. When called from the command-line with
 // "--install" the wrapper registers itself with the Windows Service
-// sub-system so that it gets re-executed when the service is started.
+// sub-system so that it gets re-executed by the service manager
+// when the service is started.
 //
 // When re-executed the wrapper just registers its ServiceMain() entry
 // point and blocks within the service dispatcher function.
@@ -36,8 +37,8 @@
 // entry point to receive service stop requests.
 //
 // Once the server process is created a separate thread is used to
-// check that it is still running a short time later. If it is not
-// running then the service is reported as failed.
+// check that it is still running. If it is not running then the
+// service is reported as failed and the wrapper terminates.
 //
 // By default the "<name>-start.bat" file must be in the same directory
 // as this service wrapper, but if there is a file "<service-wrapper>.cfg"
@@ -64,8 +65,6 @@
 #include <new>
 
 #define G_SERVICE_DEBUG( expr ) do { std::ostringstream ss ; ss << expr ; ServiceImp::log( ss.str() ) ; } while(0)
-static constexpr unsigned int cfg_check_timeout_ms = 3000U ;
-static constexpr int cfg_checks = 2 ;
 static constexpr unsigned int cfg_overall_timeout_ms = 8000U ;
 using ServiceHandle = SERVICE_STATUS_HANDLE ;
 
@@ -136,32 +135,31 @@ struct ServiceChild
 
 struct ServiceEvent
 {
-	ServiceEvent( std::nullptr_t ) noexcept :
-		m_h(0)
-	{
-	}
 	ServiceEvent() :
 		m_h(0)
 	{
 		create() ;
 	}
+	explicit ServiceEvent( HANDLE h ) noexcept :
+		m_h(h)
+	{
+	}
+	ServiceEvent( std::nullptr_t ) noexcept :
+		m_h(0)
+	{
+	}
+	~ServiceEvent()
+	{
+		close() ;
+	}
 	void create()
 	{
-		const DWORD access = DELETE | SYNCHRONIZE | EVENT_MODIFY_STATE | PROCESS_DUP_HANDLE ;
 		m_h = CreateEvent( nullptr , FALSE , FALSE , nullptr ) ;
 		if( m_h == 0 )
 		{
 			DWORD e = GetLastError() ;
 			throw ServiceError( "CreateEvent" , e ) ;
 		}
-	}
-	explicit ServiceEvent( HANDLE h ) noexcept :
-		m_h(h)
-	{
-	}
-	~ServiceEvent()
-	{
-		close() ;
 	}
 	void close() noexcept
 	{
@@ -219,8 +217,8 @@ public:
 public:
 	Service( const Service & ) = delete ;
 	Service( Service && ) = delete ;
-	void operator=( const Service & ) = delete ;
-	void operator=( Service && ) = delete ;
+	Service & operator=( const Service & ) = delete ;
+	Service & operator=( Service && ) = delete ;
 
 private:
 	void setStatus( DWORD ) ;
@@ -542,30 +540,35 @@ void Service::runThread()
 
 void Service::runThread( HANDLE hthread_exit , ServiceHandle hservice , HANDLE hprocess )
 {
-	G_SERVICE_DEBUG( "Service::runThread: start" ) ;
-	ServiceEvent thread_exit( hthread_exit ) ;
-	bool set_running = false ; // setStatus(RUNNING) only once
-	for( int i = 0 ; i < cfg_checks ; i++ )
+	G_SERVICE_DEBUG( "Service::runThread: monitoring thread: start" ) ;
+	setStatus( hservice , SERVICE_RUNNING ) ;
+	for(;;)
 	{
-		if( !thread_exit.wait(cfg_check_timeout_ms) )
+		HANDLE handles[2] = { hprocess , hthread_exit } ;
+		DWORD timeout_ms = INFINITE ;
+		DWORD rc =  WaitForMultipleObjects( 2U , handles , FALSE , timeout_ms ) ;
+		if( rc == WAIT_OBJECT_0 ) // hprocess
 		{
-			G_SERVICE_DEBUG( "Service::runThread: signalled to stop" ) ;
-			break ;
-		}
-		bool is_running = ServiceChild::isRunning( hprocess ) ;
-		G_SERVICE_DEBUG( "Service::runThread: " << (is_running?"is":"not") << " running" ) ;
-		if( is_running && !set_running )
-		{
-			set_running = true ;
-			setStatus( hservice , SERVICE_RUNNING ) ;
-		}
-		else if( !is_running )
-		{
+			G_SERVICE_DEBUG( "Service::runThread: monitoring thread: server process has terminated" ) ;
 			setStatus( hservice , SERVICE_STOPPED ) ;
 			break ;
 		}
+		else if( rc == (WAIT_OBJECT_0+1) ) // hthread_exit
+		{
+			G_SERVICE_DEBUG( "Service::runThread: monitoring thread: asked to stop" ) ;
+			break ;
+		}
+		else if( rc == WAIT_TIMEOUT )
+		{
+			G_SERVICE_DEBUG( "Service::runThread: monitoring thread: timeout" ) ;
+		}
+		else
+		{
+			G_SERVICE_DEBUG( "Service::runThread: monitoring thread: wait error" ) ;
+			break ;
+		}
 	}
-	G_SERVICE_DEBUG( "Service::runThread: done" ) ;
+	G_SERVICE_DEBUG( "Service::runThread: monitoring thread: done" ) ;
 }
 
 ServiceHandle Service::statusHandle( const std::string & service_name )

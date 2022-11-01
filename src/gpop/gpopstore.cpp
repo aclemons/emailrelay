@@ -169,6 +169,7 @@ bool GPop::StoreLock::File::operator<( const File & rhs ) const
 
 GPop::StoreLock::Size GPop::StoreLock::File::toSize( const std::string & s )
 {
+	if( s.empty() || !G::Str::isULong(s) ) return 0 ;
 	return G::Str::toULong( s , G::Str::Limited() ) ;
 }
 
@@ -181,8 +182,8 @@ GPop::StoreLock::StoreLock( Store & store ) :
 
 void GPop::StoreLock::lock( const std::string & user )
 {
-	G_ASSERT( !locked() ) ;
-	G_ASSERT( !user.empty() ) ;
+	G_ASSERT( ! locked() ) ;
+	G_ASSERT( ! user.empty() ) ;
 	G_ASSERT( m_store != nullptr ) ;
 
 	m_user = user ;

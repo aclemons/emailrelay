@@ -15,36 +15,10 @@
     </p>
 
       <div class="div-pre">
-       <pre>emailrelay [&lt;option&gt; [&lt;option&gt; ...]] [&lt;config-file&gt;]
-</pre>
+       <pre>emailrelay [&lt;option&gt; [&lt;option&gt; ...]] [&lt;config-file&gt;]</pre>
       </div><!-- div-pre -->
-    <p>
-     where &lt;option&gt; is:
-    </p>
-
+   <h3><a class="a-header">Basic options</a></h3>
     <dl>
-     <dt>--address-verifier &lt;program&gt;</dt>
-      <dd>
-       Runs the specified external program to verify a message recipent's e-mail
-       address. A network verifier can be specified as <em>net:<transport-address></em>.
-      </dd>
-     <dt>--admin &lt;admin-port&gt; (-a)</dt>
-      <dd>
-       Enables an administration interface on the specified listening port number.
-       Use telnet or something similar to connect. The administration interface
-       can be used to trigger forwarding of spooled mail messages if the
-       <em>--forward-to</em> option is used.
-      </dd>
-     <dt>--admin-terminate (-Q)</dt>
-      <dd>
-       Enables the <em>terminate</em> command in the administration interface.
-      </dd>
-     <dt>--anonymous (-A)</dt>
-      <dd>
-       Disables the server's SMTP VRFY command, sends less verbose SMTP responses
-       and SMTP greeting, and stops <em>Received</em> lines being added to mail message
-       content files.
-      </dd>
      <dt>--as-client &lt;host:port&gt; (-q)</dt>
       <dd>
        This is equivalent to <em>--log</em>, <em>--no-syslog</em>, <em>--no-daemon</em>, <em>--dont-serve</em>,
@@ -65,6 +39,215 @@
        them. Use <em>--log</em> instead of <em>--as-server</em> to keep standard error stream
        open.
       </dd>
+     <dt>--spool-dir &lt;dir&gt; (-s)</dt>
+      <dd>
+       Specifies the directory used for holding mail messages that have been
+       received but not yet forwarded.
+      </dd>
+     <dt>--help (-h)</dt>
+      <dd>
+       Displays help text and then exits. Use with <em>--verbose</em> for more complete
+       output.
+      </dd>
+     <dt>--version (-V)</dt>
+      <dd>
+       Displays version information and then exits.
+      </dd>
+    </dl>
+   <h3><a class="a-header">SMTP client options</a></h3>
+    <dl>
+     <dt>--forward (-f)</dt>
+      <dd>
+       Causes spooled mail messages to be forwarded when the program first starts.
+      </dd>
+     <dt>--forward-on-disconnect (-1)</dt>
+      <dd>
+       Causes spooled mail messages to be forwarded whenever a SMTP client
+       connection disconnects.
+      </dd>
+     <dt>--forward-to &lt;host:port&gt; (-o)</dt>
+      <dd>
+       Specifies the transport address of the remote SMTP server that spooled mail
+       messages are forwarded to.
+      </dd>
+     <dt>--poll &lt;period&gt; (-O)</dt>
+      <dd>
+       Causes forwarding of spooled mail messages to happen at regular intervals
+       (with the time given in seconds).
+      </dd>
+     <dt>--client-filter &lt;program&gt; (-Y)</dt>
+      <dd>
+       Runs the specified external filter program whenever a mail message is
+       forwarded. The filter is passed the name of the message file in the spool
+       directory so that it can edit it as required. A network filter can be
+       specified as <em>net:<tcp-address></em> and prefixes of <em>spam:</em>, <em>spam-edit:</em> and
+       <em>exit:</em> are also allowed. The <em>spam:</em> and <em>spam-edit:</em> prefixes require a
+       SpamAssassin daemon to be running. For store-and-forward applications the
+       <em>--filter</em> option is normally more useful than <em>--client-filter</em>.
+      </dd>
+     <dt>--client-interface &lt;ip-address&gt; (-6)</dt>
+      <dd>
+       Specifies the IP network address to be used to bind the local end of outgoing
+       SMTP connections. By default the address will depend on the routing tables
+       in the normal way. Use <em>0.0.0.0</em> to use only IPv4 addresses returned from
+       DNS lookups of the <em>--forward-to</em> address, or <em>::</em> for IPv6.
+      </dd>
+     <dt>--connection-timeout &lt;time&gt; (-U)</dt>
+      <dd>
+       Specifies a timeout (in seconds) for establishing a TCP connection to remote
+       SMTP servers. The default is 40 seconds.
+      </dd>
+     <dt>--idle-timeout &lt;time&gt;</dt>
+      <dd>
+       Specifies a timeout (in seconds) for receiving network traffic from remote
+       SMTP and POP clients. The default is 60 seconds.
+      </dd>
+     <dt>--response-timeout &lt;time&gt; (-T)</dt>
+      <dd>
+       Specifies a timeout (in seconds) for getting responses from remote SMTP
+       servers. The default is 60 seconds.
+      </dd>
+     <dt>--forward-to-some</dt>
+      <dd>
+       Allow forwarding to continue even if some recipient addresses on an e-mail
+       envelope are rejected by the remote server.
+      </dd>
+     <dt>--immediate (-m)</dt>
+      <dd>
+       Causes mail messages to be forwarded as they are received, even before they
+       have been accepted. This can be used to do proxying without
+       store-and-forward, but in practice clients tend to to time out while
+       waiting for their mail message to be accepted.
+      </dd>
+    </dl>
+   <h3><a class="a-header">SMTP server options</a></h3>
+    <dl>
+     <dt>--port &lt;port&gt; (-p)</dt>
+      <dd>
+       Sets the port number used for listening for incoming SMTP connections.
+      </dd>
+     <dt>--remote-clients (-r)</dt>
+      <dd>
+       Allows incoming connections from addresses that are not local. The default
+       behaviour is to reject connections that are not local in order to prevent
+       accidental exposure to the public internet, although a firewall should also
+       be used. Local address ranges are defined in RFC-1918, RFC-6890 etc.
+      </dd>
+     <dt>--address-verifier &lt;program&gt;</dt>
+      <dd>
+       Runs the specified external program to verify a message recipent's e-mail
+       address. A network verifier can be specified as <em>net:<tcp-address></em>.
+      </dd>
+     <dt>--anonymous[=&lt;scope&gt;] (-A)</dt>
+      <dd>
+       Disables the server's SMTP VRFY command, sends less verbose SMTP greeting and
+       responses, stops <em>Received</em> lines being added to mail message content
+       files, and stops the SMTP client protocol adding <em>AUTH=</em> to the <em>MAIL</em>
+       command. For finer control use a comma-separated list of things to
+       anonymise: <em>vrfy</em>, <em>server</em>, <em>content</em> and/or <em>client</em>, eg.
+       <em>--anonymous</em>=server,content.
+      </dd>
+     <dt>--dnsbl &lt;config&gt;</dt>
+      <dd>
+       Specifies a list of DNSBL servers that are used to reject SMTP connections
+       from blocked addresses. The configuration string is made up of
+       comma-separated fields: the DNS server's transport address, a timeout in
+       milliseconds, a rejection threshold, and then the list of DNSBL servers.
+      </dd>
+     <dt>--domain &lt;fqdn&gt; (-D)</dt>
+      <dd>
+       Specifies the network name that is used in SMTP EHLO commands, <em>Received</em>
+       lines, and for generating authentication challenges. The default is derived
+       from a DNS lookup of the local hostname.
+      </dd>
+     <dt>--filter &lt;program&gt; (-z)</dt>
+      <dd>
+       Runs the specified external filter program whenever a mail message is stored.
+       The filter is passed the name of the message file in the spool directory so
+       that it can edit it as required. The mail message is rejected if the filter
+       program terminates with an exit code between 1 and 99. Use
+       <em>net:<tcp-address></em> to communicate with a filter daemon over the network,
+       or <em>spam:<tcp-address></em> for a spamassassin spamd daemon to accept or reject
+       mail messages, or <em>spam-edit:<tcp-address></em> to have spamassassin edit the
+       message content without rejecting it, or <em>exit:<number></em> to emulate a
+       filter program that just exits.
+      </dd>
+     <dt>--filter-timeout &lt;time&gt; (-W)</dt>
+      <dd>
+       Specifies a timeout (in seconds) for running a <em>--filter</em> program. The
+       default is 60 seconds.
+      </dd>
+     <dt>--interface &lt;ip-address-list&gt; (-I)</dt>
+      <dd>
+       Specifies the IP network addresses or interface names used to bind listening
+       ports. By default listening ports for incoming SMTP, POP and administration
+       connections will bind the 'any' address for IPv4 and for IPv6, ie.
+       <em>0.0.0.0</em> and <em>::</em>. Multiple addresses can be specified by using the option
+       more than once or by using a comma-separated list. Use a prefix of <em>smtp=</em>,
+       <em>pop=</em> or <em>admin=</em> on addresses that should apply only to those types of
+       listening port. Any link-local IPv6 addresses must include a zone name or
+       scope id.  Interface names can be used instead of addresses, in which case
+       all the addresses associated with that interface at startup will used for
+       listening. When an interface name is decorated with a <em>-ipv4</em> or <em>-ipv6</em>
+       suffix only their IPv4 or IPv6 addresses will be used (eg. <em>ppp0-ipv4</em>).
+       To inherit listening file descriptors from the parent process on unix use a
+       syntax like this: <em>--interface</em>=smtp=fd#3,smtp=fd#4,pop=fd#5.
+      </dd>
+     <dt>--prompt-timeout &lt;time&gt; (-w)</dt>
+      <dd>
+       Specifies a timeout (in seconds) for getting the initial prompt from a remote
+       SMTP server. If no prompt is received after this time then the SMTP dialog
+       goes ahead without it.
+      </dd>
+     <dt>--size &lt;bytes&gt; (-M)</dt>
+      <dd>
+       Limits the size of mail messages that can be submitted over SMTP.
+      </dd>
+    </dl>
+   <h3><a class="a-header">POP server options</a></h3>
+    <dl>
+     <dt>--pop (-B)</dt>
+      <dd>
+       Enables the POP server, listening by default on port 110, providing access to
+       spooled mail messages. Negotiated TLS using the POP <em>STLS</em> command will be
+       enabled if the <em>--server-tls</em> option is also given.
+      </dd>
+     <dt>--pop-by-name (-J)</dt>
+      <dd>
+       Modifies the spool directory used by the POP server to be a sub-directory
+       with the same name as the POP authentication user-id. This allows multiple
+       POP clients to read the spooled mail messages without interfering with each
+       other, particularly when also using <em>--pop-no-delete</em>. Content files can
+       stay in the main spool directory with only the envelope files copied into
+       user-specific sub-directories. The <em>emailrelay-filter-copy</em> program is a
+       convenient way of doing this when run via <em>--filter</em>.
+      </dd>
+     <dt>--pop-no-delete (-G)</dt>
+      <dd>
+       Disables the POP DELE command so that the command appears to succeed but mail
+       messages are not deleted from the spool directory.
+      </dd>
+     <dt>--pop-port &lt;port&gt; (-E)</dt>
+      <dd>
+       Sets the POP server's listening port number.
+      </dd>
+    </dl>
+   <h3><a class="a-header">Admin server options</a></h3>
+    <dl>
+     <dt>--admin &lt;port&gt; (-a)</dt>
+      <dd>
+       Enables an administration interface on the specified listening port number.
+       Use telnet or something similar to connect. The administration interface
+       can be used to trigger forwarding of spooled mail messages if the
+       <em>--forward-to</em> option is used.
+      </dd>
+     <dt>--admin-terminate (-Q)</dt>
+      <dd>
+       Enables the <em>terminate</em> command in the administration interface.
+      </dd>
+    </dl>
+   <h3><a class="a-header">Authentication options</a></h3>
+    <dl>
      <dt>--client-auth &lt;file&gt; (-C)</dt>
       <dd>
        Enables SMTP client authentication with the remote server, using the client
@@ -82,27 +265,43 @@
        Configures the SMTP client authentication module using a semicolon-separated
        list of configuration items. Each item is a single-character key, followed
        by a colon and then a comma-separated list. A 'm' character introduces an
-       ordered list of authentication mechanisms, and an 'x' is used for
-       blocklisted mechanisms.
+       ordered list of preferred authentication mechanisms and an 'x' introduces a
+       list of mechanisms to avoid. An 'a' list and a 'd' list can be used
+       similarly to prefer and avoid certain mechanisms once the session is
+       encrypted with TLS.
       </dd>
-     <dt>--client-filter &lt;program&gt; (-Y)</dt>
+     <dt>--server-auth &lt;file&gt; (-S)</dt>
       <dd>
-       Runs the specified external filter program whenever a mail message is
-       forwarded. The filter is passed the name of the message file in the spool
-       directory so that it can edit it as required. A network filter can be
-       specified as <em>net:<transport-address></em> and prefixes of <em>spam:</em>,
-       <em>spam-edit:</em> and <em>exit:</em> are also allowed. The <em>spam:</em> and <em>spam-edit:</em>
-       prefixes require a SpamAssassin daemon to be running. For store-and-forward
-       applications the <em>--filter</em> option is normally more useful than
-       <em>--client-filter</em>.
+       Enables SMTP server authentication of remote SMTP clients. Account names and
+       passwords are taken from the specified secrets file. The secrets file
+       should contain lines that have four space-separated fields, starting with
+       <em>server</em> in the first field; the second field is the password encoding
+       (<em>plain</em> or <em>md5</em>), the third is the client user-id and the fourth is the
+       password. The user-id is RFC-1891 xtext encoded, and the password is either
+       xtext encoded or generated by <em>emailrelay-passwd</em>. A special value of
+       <em>/pam</em> can be used for authentication using linux PAM.
       </dd>
-     <dt>--client-interface &lt;ip-address&gt; (-6)</dt>
+     <dt>--server-auth-config &lt;config&gt;</dt>
       <dd>
-       Specifies the IP network address to be used to bind the local end of outgoing
-       SMTP connections. By default the address will depend on the routing tables
-       in the normal way. Use <em>0.0.0.0</em> to use only IPv4 addresses returned from
-       DNS lookups of the <em>--forward-to</em> address, or <em>::</em> for IPv6.
+       Configures the SMTP server authentication module using a semicolon-separated
+       list of configuration items. Each item is a single-character key, followed
+       by a colon and then a comma-separated list. A 'm' character introduces an
+       ordered list of allowed authentication mechanisms and an 'x' introduces a
+       list of mechanisms to deny. An 'a' list and a 'd' list can be used
+       similarly to allow and deny mechanisms once the session is encrypted with
+       TLS. In typical usage you might have an empty allow list for an unencrypted
+       session and a single preferred mechanism once encrypted, <em>m:;a:plain</em>.
       </dd>
+     <dt>--pop-auth &lt;file&gt; (-F)</dt>
+      <dd>
+       Specifies a file containing valid POP account details. The file format is the
+       same as for the SMTP server secrets file, ie. lines starting with <em>server</em>,
+       with user-id and password in the third and fourth fields. A special value
+       of <em>/pam</em> can be used for authentication using linux PAM.
+      </dd>
+    </dl>
+   <h3><a class="a-header">TLS options</a></h3>
+    <dl>
      <dt>--client-tls (-j)</dt>
       <dd>
        Enables negotiated TLS for outgoing SMTP connections; the SMTP STARTTLS
@@ -112,8 +311,9 @@
       <dd>
        Defines the TLS certificate file when acting as a SMTP client. This file must
        contain the client's private key and certificate chain using the PEM file
-       format. Keep the file permissions tight to avoid accidental exposure of the
-       private key.
+       format. Alternatively, use this option twice with the first one specifying
+       the key file and the second the certificate file. Keep the file permissions
+       tight to avoid accidental exposure of the private key.
       </dd>
      <dt>--client-tls-connection (-b)</dt>
       <dd>
@@ -137,249 +337,13 @@
        Enables verification of the remote SMTP server's certificate against any of
        the trusted CA certificates in the specified file or directory. In many use
        cases this should be a file containing just your self-signed root
-       certificate.
+       certificate. Specify <em><default></em> for the TLS library's default set of
+       trusted CAs.
       </dd>
      <dt>--client-tls-verify-name &lt;cname&gt;</dt>
       <dd>
        Enables verification of the CNAME within the remote SMTP server's
        certificate.
-      </dd>
-     <dt>--close-stderr (-e)</dt>
-      <dd>
-       Causes the standard error stream to be closed soon after start-up. This is
-       useful when operating as a backgroud daemon and it is therefore implied by
-       <em>--as-server</em> and <em>--as-proxy</em>.
-      </dd>
-     <dt>--connection-timeout &lt;time&gt; (-U)</dt>
-      <dd>
-       Specifies a timeout (in seconds) for establishing a TCP connection to remote
-       SMTP servers. The default is 40 seconds.
-      </dd>
-     <dt>--debug (-g)</dt>
-      <dd>
-       Enables debug level logging, if built in. Debug messages are usually only
-       useful when cross-referenced with the source code and they may expose
-       plaintext passwords and mail message content.
-      </dd>
-     <dt>--dnsbl &lt;config&gt;</dt>
-      <dd>
-       Specifies a list of DNSBL servers that are used to reject SMTP connections
-       from blocked addresses. The configuration string is made up of
-       comma-separated fields: the DNS server's transport address, a timeout in
-       milliseconds, a rejection threshold, and then the list of DNSBL servers.
-      </dd>
-     <dt>--domain &lt;fqdn&gt; (-D)</dt>
-      <dd>
-       Specifies the network name that is used in SMTP EHLO commands, <em>Received</em>
-       lines, and for generating authentication challenges. The default is derived
-       from a DNS lookup of the local hostname.
-      </dd>
-     <dt>--dont-serve (-x)</dt>
-      <dd>
-       Disables all network serving, including SMTP, POP and administration
-       interfaces. The program will terminate as soon as any initial forwarding is
-       complete.
-      </dd>
-     <dt>--filter &lt;program&gt; (-z)</dt>
-      <dd>
-       Runs the specified external filter program whenever a mail message is stored.
-       The filter is passed the name of the message file in the spool directory so
-       that it can edit it as required. The mail message is rejected if the filter
-       program terminates with an exit code between 1 and 99. Use
-       <em>net:<transport-address></em> to communicate with a filter daemon over the
-       network, or <em>spam:<transport-address></em> for a spamassassin spamd daemon to
-       accept or reject mail messages, or <em>spam-edit:<transport-address></em> to have
-       spamassassin edit the message content without rejecting it, or
-       <em>exit:<number></em> to emulate a filter program that just exits.
-      </dd>
-     <dt>--filter-timeout &lt;time&gt; (-W)</dt>
-      <dd>
-       Specifies a timeout (in seconds) for running a <em>--filter</em> program. The
-       default is 300 seconds.
-      </dd>
-     <dt>--forward (-f)</dt>
-      <dd>
-       Causes spooled mail messages to be forwarded when the program first starts.
-      </dd>
-     <dt>--forward-on-disconnect (-1)</dt>
-      <dd>
-       Causes spooled mail messages to be forwarded whenever a SMTP client
-       connection disconnects.
-      </dd>
-     <dt>--forward-to &lt;host:port&gt; (-o)</dt>
-      <dd>
-       Specifies the transport address of the remote SMTP server that is use for
-       mail message forwarding.
-      </dd>
-     <dt>--forward-to-some</dt>
-      <dd>
-       Allow forwarding to continue even if some recipient addresses on an e-mail
-       envelope are rejected by the remote server.
-      </dd>
-     <dt>--help (-h)</dt>
-      <dd>
-       Displays help text and then exits. Use with <em>--verbose</em> for more complete
-       output.
-      </dd>
-     <dt>--hidden (-H)</dt>
-      <dd>
-       Windows only. Hides the application window and disables all message boxes,
-       overriding any <em>--show</em> option. This is useful when running as a windows
-       service.
-      </dd>
-     <dt>--idle-timeout &lt;time&gt;</dt>
-      <dd>
-       Specifies a timeout (in seconds) for receiving network traffic from remote
-       SMTP and POP clients. The default is 1800 seconds.
-      </dd>
-     <dt>--immediate (-m)</dt>
-      <dd>
-       Causes mail messages to be forwarded as they are received, even before they
-       have been accepted. This can be used to do proxying without
-       store-and-forward, but in practice clients tend to to time out while
-       waiting for their mail message to be accepted.
-      </dd>
-     <dt>--interface &lt;ip-address-list&gt; (-I)</dt>
-      <dd>
-       Specifies the IP network addresses or interface names used to bind listening
-       ports. By default listening ports for incoming SMTP, POP and administration
-       connections will bind the 'any' address for IPv4 and for IPv6, ie.
-       <em>0.0.0.0</em> and <em>::</em>. Multiple addresses can be specified by using the option
-       more than once or by using a comma-separated list. Use a prefix of <em>smtp=</em>,
-       <em>pop=</em> or <em>admin=</em> on addresses that should apply only to those types of
-       listening port. Any link-local IPv6 addresses must include a zone name or
-       scope id.  Interface names can be used instead of addresses, in which case
-       all the addresses associated with that interface at startup will used for
-       listening. When an interface name is decorated with a <em>-ipv4</em> or <em>-ipv6</em>
-       suffix only their IPv4 or IPv6 addresses will be used (eg. <em>ppp0-ipv4</em>).
-      </dd>
-     <dt>--localedir &lt;dir&gt;</dt>
-      <dd>
-       Enables localisation and specifies the locale base directory where message
-       catalogues can be found. An empty directory can be used for the built-in
-       default.
-      </dd>
-     <dt>--log (-l)</dt>
-      <dd>
-       Enables logging to the standard error stream and to the syslog. The
-       <em>--close-stderr</em> and <em>--no-syslog</em> options can be used to disable output to
-       standard error stream and the syslog separately. Note that <em>--as-server</em>,
-       <em>--as-client</em> and <em>--as-proxy</em> imply <em>--log</em>, and <em>--as-server</em> and
-       <em>--as-proxy</em> also imply <em>--close-stderr</em>.
-      </dd>
-     <dt>--log-address</dt>
-      <dd>
-       Adds the network address of remote clients to the logging output.
-      </dd>
-     <dt>--log-file &lt;file&gt; (-N)</dt>
-      <dd>
-       Redirects standard-error logging to the specified file. Logging to the log
-       file is not affected by <em>--close-stderr</em>. The filename can include <em>%d</em> to
-       get daily log files; the <em>%d</em> is replaced by the current date in the local
-       timezone using a <em>YYYYMMDD</em> format.
-      </dd>
-     <dt>--log-time (-L)</dt>
-      <dd>
-       Adds a timestamp to the logging output using the local timezone.
-      </dd>
-     <dt>--no-daemon (-t)</dt>
-      <dd>
-       Disables the normal backgrounding at startup so that the program runs in the
-       foreground, without forking or detaching from the terminal.  On Windows
-       this disables the system tray icon so the program uses a normal window;
-       when the window is closed the program terminates.
-      </dd>
-     <dt>--no-smtp (-X)</dt>
-      <dd>
-       Disables listening for incoming SMTP connections.
-      </dd>
-     <dt>--no-syslog (-n)</dt>
-      <dd>
-       Disables logging to the syslog. Note that <em>--as-client</em> implies
-       <em>--no-syslog</em>.
-      </dd>
-     <dt>--pid-file &lt;pid-file&gt; (-i)</dt>
-      <dd>
-       Causes the process-id to be written into the specified file when the program
-       starts up, typically after it has become a backgroud daemon.
-      </dd>
-     <dt>--poll &lt;period&gt; (-O)</dt>
-      <dd>
-       Causes forwarding of spooled mail messages to happen at regular intervals
-       (with the time given in seconds).
-      </dd>
-     <dt>--pop (-B)</dt>
-      <dd>
-       Enables the POP server listening, by default on port 110, providing access to
-       spooled mail messages. Negotiated TLS using the POP <em>STLS</em> command will be
-       enabled if the <em>--server-tls</em> option is also given.
-      </dd>
-     <dt>--pop-auth &lt;file&gt; (-F)</dt>
-      <dd>
-       Specifies a file containing valid POP account details. The file format is the
-       same as for the SMTP server secrets file, ie. lines starting with <em>server</em>,
-       with user-id and password in the third and fourth fields. A special value
-       of <em>/pam</em> can be used for authentication using linux PAM.
-      </dd>
-     <dt>--pop-by-name (-J)</dt>
-      <dd>
-       Modifies the spool directory used by the POP server to be a sub-directory
-       with the same name as the POP authentication user-id. This allows multiple
-       POP clients to read the spooled messages without interfering with each
-       other, particularly when also using <em>--pop-no-delete</em>. Content files can
-       stay in the main spool directory with only the envelope files copied into
-       user-specific sub-directories. The <em>emailrelay-filter-copy</em> program is a
-       convenient way of doing this when run via <em>--filter</em>.
-      </dd>
-     <dt>--pop-no-delete (-G)</dt>
-      <dd>
-       Disables the POP DELE command so that the command appears to succeed but mail
-       messages are not deleted from the spool directory.
-      </dd>
-     <dt>--pop-port &lt;port&gt; (-E)</dt>
-      <dd>
-       Sets the POP server's listening port number.
-      </dd>
-     <dt>--port &lt;port&gt; (-p)</dt>
-      <dd>
-       Sets the port number used for listening for incoming SMTP connections.
-      </dd>
-     <dt>--prompt-timeout &lt;time&gt; (-w)</dt>
-      <dd>
-       Specifies a timeout (in seconds) for getting the initial prompt from a remote
-       SMTP server. If no prompt is received after this time then the SMTP dialog
-       goes ahead without it.
-      </dd>
-     <dt>--remote-clients (-r)</dt>
-      <dd>
-       Allows incoming connections from addresses that are not local. The default
-       behaviour is to reject connections that are not local in order to prevent
-       accidental exposure to the public internet, although a firewall should also
-       be used. Local address ranges are defined in RFC-1918, RFC-6890 etc.
-      </dd>
-     <dt>--response-timeout &lt;time&gt; (-T)</dt>
-      <dd>
-       Specifies a timeout (in seconds) for getting responses from remote SMTP
-       servers. The default is 1800 seconds.
-      </dd>
-     <dt>--server-auth &lt;file&gt; (-S)</dt>
-      <dd>
-       Enables SMTP server authentication of remote SMTP clients. Account names and
-       passwords are taken from the specified secrets file. The secrets file
-       should contain lines that have four space-separated fields, starting with
-       <em>server</em> in the first field; the second field is the password encoding
-       (<em>plain</em> or <em>md5</em>), the third is the client user-id and the fourth is the
-       password. The user-id is RFC-1891 xtext encoded, and the password is either
-       xtext encoded or generated by <em>emailrelay-passwd</em>. A special value of
-       <em>/pam</em> can be used for authentication using linux PAM.
-      </dd>
-     <dt>--server-auth-config &lt;config&gt;</dt>
-      <dd>
-       Configures the SMTP server authentication module using a semicolon-separated
-       list of configuration items. Each item is a single-character key, followed
-       by a colon and then a comma-separated list. A 'm' character introduces a
-       preferred sub-set of the built-in authentication mechanisms, and an 'x' is
-       used for blocklisted mechanisms.
       </dd>
      <dt>--server-tls (-K)</dt>
       <dd>
@@ -392,8 +356,9 @@
       <dd>
        Defines the TLS certificate file when acting as a SMTP or POP server. This
        file must contain the server's private key and certificate chain using the
-       PEM file format. Keep the file permissions tight to avoid accidental
-       exposure of the private key.
+       PEM file format. Alternatively, use this option twice with the first one
+       specifying the key file and the second the certificate file. Keep the file
+       permissions tight to avoid accidental exposure of the private key.
       </dd>
      <dt>--server-tls-connection</dt>
       <dd>
@@ -411,22 +376,8 @@
        Enables verification of remote SMTP and POP clients' certificates against any
        of the trusted CA certificates in the specified file or directory. In many
        use cases this should be a file containing just your self-signed root
-       certificate.
-      </dd>
-     <dt>--size &lt;bytes&gt; (-M)</dt>
-      <dd>
-       Limits the size of mail messages that can be submitted over SMTP.
-      </dd>
-     <dt>--spool-dir &lt;dir&gt; (-s)</dt>
-      <dd>
-       Specifies the directory used for holding mail messages that have been
-       received but not yet forwarded.
-      </dd>
-     <dt>--syslog[=&lt;facility&gt;] (-k)</dt>
-      <dd>
-       When used with <em>--log</em> this option enables logging to the syslog even if the
-       <em>--no-syslog</em> option is also used. This is typically used as a convenient
-       override when using <em>--as-client</em>.
+       certificate. Specify <em><default></em> for the TLS library's default set of
+       trusted CAs.
       </dd>
      <dt>--tls-config &lt;options&gt; (-9)</dt>
       <dd>
@@ -436,6 +387,44 @@
        <em>tlsv1.0</em> can be used to set a minimum TLS protocol version, or <em>-tlsv1.2</em>
        to set a maximum version.
       </dd>
+    </dl>
+   <h3><a class="a-header">Process options</a></h3>
+    <dl>
+     <dt>--dont-serve (-x)</dt>
+      <dd>
+       Disables all network serving, including SMTP, POP and administration
+       interfaces. The program will terminate as soon as any initial forwarding is
+       complete.
+      </dd>
+     <dt>--hidden (-H)</dt>
+      <dd>
+       Windows only. Hides the application window and disables all message boxes,
+       overriding any <em>--show</em> option. This is useful when running as a windows
+       service.
+      </dd>
+     <dt>--localedir &lt;dir&gt;</dt>
+      <dd>
+       Enables localisation and specifies the locale base directory where message
+       catalogues can be found. An empty directory can be used for the built-in
+       default.
+      </dd>
+     <dt>--no-daemon (-t)</dt>
+      <dd>
+       Disables the normal backgrounding at startup so that the program runs in the
+       foreground, without forking or detaching from the terminal.  On Windows
+       this disables the system tray icon so the program uses a normal window;
+       when the window is closed the program terminates.
+      </dd>
+     <dt>--no-smtp (-X)</dt>
+      <dd>
+       Disables listening for incoming SMTP connections.
+      </dd>
+     <dt>--pid-file &lt;path&gt; (-i)</dt>
+      <dd>
+       Causes the process-id to be written into the specified file when the program
+       starts up, typically after it has become a background daemon. The immediate
+       parent directory is created if necessary.
+      </dd>
      <dt>--user &lt;username&gt; (-u)</dt>
       <dd>
        When started as root the program switches to a non-privileged effective
@@ -443,14 +432,59 @@
        also the group ownership of new files and sockets. Specify <em>root</em> to
        disable all user-id switching. Ignored on Windows.
       </dd>
+    </dl>
+   <h3><a class="a-header">Logging options</a></h3>
+    <dl>
      <dt>--verbose (-v)</dt>
       <dd>
        Enables more verbose logging when used with <em>--log</em>, and more verbose help
        when used with <em>--help</em>.
       </dd>
-     <dt>--version (-V)</dt>
+     <dt>--log (-l)</dt>
       <dd>
-       Displays version information and then exits.
+       Enables logging to the standard error stream and to the syslog. The
+       <em>--close-stderr</em> and <em>--no-syslog</em> options can be used to disable output to
+       standard error stream and the syslog separately. Note that <em>--as-server</em>,
+       <em>--as-client</em> and <em>--as-proxy</em> imply <em>--log</em>, and <em>--as-server</em> and
+       <em>--as-proxy</em> also imply <em>--close-stderr</em>.
+      </dd>
+     <dt>--debug (-g)</dt>
+      <dd>
+       Enables debug level logging, if built in. Debug messages are usually only
+       useful when cross-referenced with the source code and they may expose
+       plaintext passwords and mail message content.
+      </dd>
+     <dt>--log-address</dt>
+      <dd>
+       Adds the network address of remote clients to the logging output.
+      </dd>
+     <dt>--log-file &lt;file&gt; (-N)</dt>
+      <dd>
+       Redirects standard-error logging to the specified file. Logging to the log
+       file is not affected by <em>--close-stderr</em>. The filename can include <em>%d</em> to
+       get daily log files; the <em>%d</em> is replaced by the current date in the local
+       timezone using a <em>YYYYMMDD</em> format.
+      </dd>
+     <dt>--log-time (-L)</dt>
+      <dd>
+       Adds a timestamp to the logging output using the local timezone.
+      </dd>
+     <dt>--no-syslog (-n)</dt>
+      <dd>
+       Disables logging to the syslog. Note that <em>--as-client</em> implies
+       <em>--no-syslog</em>.
+      </dd>
+     <dt>--syslog[=&lt;facility&gt;] (-k)</dt>
+      <dd>
+       When used with <em>--log</em> this option enables logging to the syslog even if the
+       <em>--no-syslog</em> option is also used. This is typically used as a convenient
+       override when using <em>--as-client</em>.
+      </dd>
+     <dt>--close-stderr (-e)</dt>
+      <dd>
+       Causes the standard error stream to be closed soon after start-up. This is
+       useful when operating as a background daemon and it is therefore implied by
+       <em>--as-server</em> and <em>--as-proxy</em>.
       </dd>
     </dl>
     <p>
@@ -902,7 +936,7 @@ server plain carol my+20password
     </p>
 
       <div class="div-pre">
-       <pre>$ openssl req -x509 -nodes -subj "/CN=$USER" -newkey rsa:2048 -keyout emailrelay.pem  -out emailrelay.pem
+       <pre>$ openssl req -x509 -noenc -subj "/CN=$USER" -newkey rsa:2048 -keyout emailrelay.pem  -out emailrelay.pem
 </pre>
       </div><!-- div-pre -->
     <p>
@@ -953,21 +987,15 @@ server plain carol my+20password
 
       <div class="div-pre">
        <pre>auth requisite pam_unix.so nullok_secure
-session required pam_permit.so
-account required pam_permit.so
-password required pam_deny.so
 </pre>
       </div><!-- div-pre -->
     <p>
      With this configuration the E-MailRelay server will use normal unix system
      account names and passwords to authenticate remote clients. On some systems
      this will require special permissioning to allow the E-MailRelay server to
-     read the shadow password database.
-    </p>
-
-    <p>
-     When using PAM authentication E-MailRelay requires that remote clients
-     establish an encrypted session using TLS before authentication can proceed.
+     read the shadow password database, so run the server as <em>root</em> and also add the
+     <em>--user=root</em> command-line option to make sure that the process's effective
+     user-id stays as <em>root</em> while it accesses the PAM system.
     </p>
    <h2><a class="a-header" name="SH_1_8">IP addresses</a></h2> <!-- index:2:SH:1:8:IP addresses -->
     <p>
@@ -1409,9 +1437,7 @@ catch( e )
     <p>
      The following are some security issues that have been taken into consideration:
     </p>
-
-    <dl>
-     <dt>Effective userid</dt>
+   <h3><a class="a-header">Effective userid</a></h3>
       <dd>
        Suid privileges are revoked at start-up, switching the effective
        userid/groupid to be the real userid/groupid values. If started as <em>root</em>
@@ -1423,32 +1449,32 @@ catch( e )
        groupid, so that new files have group ownership corresponding to the
        <em>daemon</em> user.
       </dd>
-     <dt>Execution environment</dt>
+   <h3><a class="a-header">Execution environment</a></h3>
       <dd>
        The external filter programs are run with an almost empty set of environment
        variables (<em>PATH</em> and <em>IFS</em>), and with no open file descriptors other than
        <em>stdin</em> and <em>stderr</em> open onto <em>/dev/null</em>, and <em>stdout</em> open onto a pipe.
       </dd>
-     <dt>Umask</dt>
+   <h3><a class="a-header">Umask</a></h3>
       <dd>
-       The program runs for most of the time with a <em>umask</em> of 177, switching to 117
+       The program runs for most of the time with a <em>umask</em> of 077, switching to 007
        when creating spool files.
       </dd>
-     <dt>Remote clients</dt>
+   <h3><a class="a-header">Remote clients</a></h3>
       <dd>
        By default connections will be rejected if they come from remote machines.
       </dd>
-     <dt>Remote configuration</dt>
+   <h3><a class="a-header">Remote configuration</a></h3>
       <dd>
        No configuration parameters can be changed through the administrative
        interface.
       </dd>
-     <dt>Use of exec() and system()</dt>
+   <h3><a class="a-header">Use of exec() and system()</a></h3>
       <dd>
        No exec(), system() or popen() calls are used other than execve() to spawn the
        mail filter and/or address verifier.
       </dd>
-     <dt>File permissions</dt>
+   <h3><a class="a-header">File permissions</a></h3>
       <dd>
        After a normal installation the spool directory is has ownership of
        <em>root.daemon</em> with permissions of <em>-rwxrwxr-x</em> and messages files are created
@@ -1460,7 +1486,7 @@ catch( e )
        spool directory, and the files created end up owned by the submitter but with
        group ownership of <em>daemon</em>.
       </dd>
-     <dt>Logging</dt>
+   <h3><a class="a-header">Logging</a></h3>
       <dd>
        Logging output is conditioned so that ANSI escape sequences cannot appear
        in the log.
@@ -1468,17 +1494,16 @@ catch( e )
        Passwords and message content are not logged (except if using the <em>--debug</em>
        option at run time with debug logging enabled at build time).
       </dd>
-     <dt>Information leakage</dt>
+   <h3><a class="a-header">Information leakage</a></h3>
       <dd>
        The <em>--anonymous</em> option can be used to reduce the amount of information
        leaked to remote clients.
       </dd>
-     <dt>Mandatory encryption</dt>
+   <h3><a class="a-header">Mandatory encryption</a></h3>
       <dd>
        When using PAM for authentication all clients are required to use
        TLS/SSL encryption.
       </dd>
-    </dl>
     <p>
      Security issues which relate to the SMTP protocol itself are beyond the scope
      of this document, but RFC-2821 makes the following observation: "SMTP mail is
@@ -1547,7 +1572,39 @@ E-MailRelay&gt; quit
      An E-MailRelay <em>--filter</em> script can be used to reject messages with incorrect
      <em>Bcc:</em> headers, and an example script is included.
     </p>
-   <h2><a class="a-header" name="SH_1_16">Files and directories</a></h2> <!-- index:2:SH:1:16:Files and directories -->
+   <h2><a class="a-header" name="SH_1_16">Routing</a></h2> <!-- index:2:SH:1:16:Routing -->
+    <p>
+     E-MailRelay does not normally do any routing of e-mail messages; they are
+     all forwarded to a fixed <em>smarthost</em> address given by the <em>--forward-to</em> or
+     <em>--as-client</em> command-line options.
+    </p>
+
+    <p>
+     However, each message envelope file contains a <em>ForwardToAddress</em> field that
+     can be populated by filter scripts in order to route the message to some other
+     server.
+    </p>
+
+    <p>
+     If the <em>ForwardTo</em> field has any non-empty value then E-MailRelay runs its
+     client filter early to allow the client filter script to set or update the
+     <em>ForwardToAddress</em> before the outgoing connection is made. (The client filter is
+     run a second time as normal once the connection is made and the SMTP session has
+     been established.)
+    </p>
+
+    <p>
+     Typically a <em>--filter</em> script would be used to examine the message content and
+     populate the <em>ForwardTo</em> field, then a <em>--client-filter</em> script would use
+     the <em>ForwardTo</em> value to populate the <em>ForwardToAddress</em> field with an up-to-date
+     forwarding address.
+    </p>
+
+    <p>
+     Note that a successful connection to the smarthost is required even if a message
+     is routed elsewhere.
+    </p>
+   <h2><a class="a-header" name="SH_1_17">Files and directories</a></h2> <!-- index:2:SH:1:17:Files and directories -->
     <p>
      On Unix-like systems E-MailRelay installs by default under <em>/usr/local</em>, but
      binary distributions will probably have been built to install elsewhere.

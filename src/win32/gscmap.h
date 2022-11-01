@@ -60,16 +60,16 @@ public:
 public:
 	SubClassMap( const SubClassMap & ) = delete ;
 	SubClassMap( SubClassMap && ) = delete ;
-	void operator=( const SubClassMap & ) = delete ;
-	void operator=( SubClassMap && ) = delete ;
+	SubClassMap & operator=( const SubClassMap & ) = delete ;
+	SubClassMap & operator=( SubClassMap && ) = delete ;
 
 private:
 	struct Slot
 	{
-		Proc proc{0} ;
-		HWND hwnd{0} ;
-		void * context{nullptr} ;
-		Slot() = default ;
+		Proc proc ;
+		HWND hwnd ;
+		void * context ;
+		Slot() : proc(0) , hwnd(0) , context(nullptr) {}
 		Slot( Proc proc_ , HWND hwnd_ , void * context_ ) : proc(proc_) , hwnd(hwnd_) , context(context_) {}
 	} ;
 	std::vector<Slot> m_list ;

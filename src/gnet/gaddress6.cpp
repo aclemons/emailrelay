@@ -98,16 +98,6 @@ GNet::Address6::Address6( const sockaddr * addr , socklen_t len , bool ipv6_scop
 	}
 }
 
-GNet::Address6::Address6( const std::string & host_part , unsigned int port ) :
-	Address6(nullptr)
-{
-	const char * reason = setHostAddress( m_inet , host_part ) ;
-	if( !reason )
-		reason = setPort( m_inet , port ) ;
-	if( reason )
-		throw Address::BadString( std::string(reason) + ": " + host_part ) ;
-}
-
 GNet::Address6::Address6( const std::string & host_part , const std::string & port_part ) :
 	Address6(nullptr)
 {
@@ -227,7 +217,7 @@ std::string GNet::Address6::displayString( bool ipv6_with_scope_id ) const
 	return ss.str() ;
 }
 
-std::string GNet::Address6::hostPartString( bool /*raw*/ ) const
+std::string GNet::Address6::hostPartString() const
 {
 	std::array<char,INET6_ADDRSTRLEN+1U> buffer {} ;
 	const void * vp = & m_inet.sin6_addr ;

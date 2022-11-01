@@ -74,11 +74,13 @@ chomp( my $version = eval { FileHandle->new("VERSION")->gets() } || "2.4" ) ;
 # makefile conditionals
 my %switches = (
 	GCONFIG_BSD => 0 ,
+	GCONFIG_DNSBL => 1 ,
 	GCONFIG_EPOLL => 0 ,
+	GCONFIG_GETTEXT => 0 ,
 	GCONFIG_GUI => 1 , # << zero if no qt libraries
+	GCONFIG_ICONV => 0 ,
 	GCONFIG_INSTALL_HOOK => 0 ,
 	GCONFIG_INTERFACE_NAMES => 1 ,
-	GCONFIG_IPV6 => 1 ,
 	GCONFIG_MAC => 0 ,
 	GCONFIG_PAM => 0 ,
 	GCONFIG_TESTING => 1 ,
@@ -86,6 +88,7 @@ my %switches = (
 	GCONFIG_TLS_USE_OPENSSL => 0 ,
 	GCONFIG_TLS_USE_BOTH => 0 ,
 	GCONFIG_TLS_USE_NONE => 0 ,
+	GCONFIG_UDS => 0 ,
 	GCONFIG_WINDOWS => 1 ,
 ) ;
 
@@ -152,6 +155,7 @@ warn "error: cannot find mbedtls source: please download from tls.mbed.org " .
 if( $no_cmake || $no_msbuild || $no_qt || $no_mbedtls )
 {
 	warn "error: missing prerequisites: please install the missing components" ,
+		( -f "winbuild.cfg" ? "" : " or use a winbuild.cfg configuration file" ) ,
 		( ($no_qt||$no_mbedtls) ? " or unset configuration items in winbuild.pl\n" : "\n" ) ;
 	die "error: missing prerequisites\n" unless ( scalar(@ARGV) > 0 && $ARGV[0] eq "mingw" ) ;
 }
@@ -309,30 +313,31 @@ sub create_cmake_file
 
 	# force static or dynamic linking of the c++ runtime by
 	# switching between /MD and /MT -- use static linking
-	# by default but keep the gui dynamically linked to
-	# avoid separate runtime states in Qt and non-Qt code --
-	# note that the gui code is self-contained by virtue
-	# of "glibsources.cpp"
+	# by default but keep the gui dynamically linked so that
+	# it can use the Qt binary distribution -- for public
+	# distribution of a statically linked gui program use
+	# "emailrelay-gui.pro" -- note that the gui build is
+	# self-contained by virtue of "glibsources.cpp"
 	#
 	my $dynamic_runtime = ( $m->path() =~ m/gui/ ) ;
 	{
 		print $fh '# choose dynamic or static linking of the c++ runtime' , "\n" ;
 		print $fh 'set(CompilerFlags' , "\n" ;
-        print $fh '    CMAKE_CXX_FLAGS' , "\n" ;
-        print $fh '    CMAKE_CXX_FLAGS_DEBUG' , "\n" ;
-        print $fh '    CMAKE_CXX_FLAGS_RELEASE' , "\n" ;
-        print $fh '    CMAKE_C_FLAGS' , "\n" ;
-        print $fh '    CMAKE_C_FLAGS_DEBUG' , "\n" ;
-        print $fh '    CMAKE_C_FLAGS_RELEASE' , "\n" ;
-        print $fh ')' , "\n" ;
+		print $fh '    CMAKE_CXX_FLAGS' , "\n" ;
+		print $fh '    CMAKE_CXX_FLAGS_DEBUG' , "\n" ;
+		print $fh '    CMAKE_CXX_FLAGS_RELEASE' , "\n" ;
+		print $fh '    CMAKE_C_FLAGS' , "\n" ;
+		print $fh '    CMAKE_C_FLAGS_DEBUG' , "\n" ;
+		print $fh '    CMAKE_C_FLAGS_RELEASE' , "\n" ;
+		print $fh ')' , "\n" ;
 		print $fh 'foreach(CompilerFlag ${CompilerFlags})' , "\n" ;
 		if( $dynamic_runtime )
 		{
-  			print $fh '    string(REPLACE "/MT" "/MD" ${CompilerFlag} "${${CompilerFlag}}")' , "\n" ;
+			print $fh '    string(REPLACE "/MT" "/MD" ${CompilerFlag} "${${CompilerFlag}}")' , "\n" ;
 		}
 		else
 		{
-  			print $fh '    string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}")' , "\n" ;
+			print $fh '    string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}")' , "\n" ;
 		}
 		print $fh 'endforeach()' , "\n" ;
 	}
@@ -344,7 +349,7 @@ sub create_cmake_file
 	}
 
 	my $definitions = join( " " , "G_WINDOWS=1" , $m->definitions() ) ;
-	my $includes = join( " " , "." , ".." , $m->includes($m->top()) , '"${MBEDTLS_INCLUDE_DIRS}"' ) ;
+	my $includes = join( " " , "." , ".." , $m->includes($m->base()) , '"${MBEDTLS_INCLUDE_DIRS}"' ) ;
 
 	my @libraries = $m->libraries() ;
 	for my $library ( @libraries )
@@ -372,9 +377,9 @@ sub create_cmake_file
 		{
 			if( ! $tls_libs_fixed )
 			{
-  				print $fh '    string(REPLACE "/Release" "/Debug" MBEDTLS_LIBRARY_DEBUG "${MBEDTLS_LIBRARY}")' , "\n" ;
-  				print $fh '    string(REPLACE "/Release" "/Debug" MBEDX509_LIBRARY_DEBUG "${MBEDX509_LIBRARY}")' , "\n" ;
-  				print $fh '    string(REPLACE "/Release" "/Debug" MBEDCRYPTO_LIBRARY_DEBUG "${MBEDCRYPTO_LIBRARY}")' , "\n" ;
+				print $fh '    string(REPLACE "/Release" "/Debug" MBEDTLS_LIBRARY_DEBUG "${MBEDTLS_LIBRARY}")' , "\n" ;
+				print $fh '    string(REPLACE "/Release" "/Debug" MBEDX509_LIBRARY_DEBUG "${MBEDX509_LIBRARY}")' , "\n" ;
+				print $fh '    string(REPLACE "/Release" "/Debug" MBEDCRYPTO_LIBRARY_DEBUG "${MBEDCRYPTO_LIBRARY}")' , "\n" ;
 				$tls_libs_fixed = 1 ;
 			}
 			$tls_libs =
@@ -483,7 +488,7 @@ sub run_cmake
 	my $mbedtls_dir = Cwd::realpath( $mbedtls ) ;
 	my $mbedtls_include_dir = "$mbedtls_dir/include" ;
 	my $mbedtls_lib_dir = "$mbedtls_dir/$arch/library/Release" ; # fixed up to Debug elsewhere
-	my $qt_dir = Cwd::realpath( $qt_dirs->{$arch} ) ;
+	my $qt_dir = defined($qt_dirs) ? Cwd::realpath( $qt_dirs->{$arch} ) : "." ;
 	my $module_path = Cwd::realpath( "." ) ;
 
 	my @arch_args = @{$cmake_args->{$arch}} ;
@@ -606,14 +611,14 @@ sub install
 	if( $with_gui )
 	{
 		install_copy( "$arch/src/gui/Release/emailrelay-gui.exe" , "$install/emailrelay-setup.exe" ) ;
-		install_copy( "$arch/test/Release/emailrelay-test-keygen.exe" , "$install" ) ;
+		install_copy( "$arch/test/Release/emailrelay_test_keygen.exe" , "$install" ) ;
 
 		install_mkdir( "$install/payload" ) ;
 		install_payload_cfg( "$install/payload/payload.cfg" ) ;
 		install_core( "$arch/src/main/Release" , "$install/payload/files" ) ;
 
 		install_copy( "$arch/src/gui/Release/emailrelay-gui.exe" , "$install/payload/files" ) ;
-		install_copy( "$arch/test/Release/emailrelay-test-keygen.exe" , "$install/payload/files" ) ;
+		install_copy( "$arch/test/Release/emailrelay_test_keygen.exe" , "$install/payload/files" ) ;
 
 		install_gui_dependencies( $msvc_base , $arch ,
 			{ exe => "$install/emailrelay-setup.exe" } ,
@@ -680,7 +685,7 @@ sub install_mingw
 	{
 		my $fh = new FileHandle( "$install_mingw/emailrelay-submit-test.bat" , "w" ) or die ;
 		my $cmd = "\@echo off\r\n" ;
-		$cmd .= "emailrelay-submit.exe -n -s \@app --from postmaster " ;
+		$cmd .= "emailrelay-submit.exe -N -n -s \@app --from postmaster " ;
 		$cmd .= "-C U3ViamVjdDogdGVzdA== " ; # subject
 		$cmd .= "-C = " ;
 		$cmd .= "-C VGVzdCBtZXNzYWdl " ; # body
@@ -800,11 +805,11 @@ sub install_core
 		doc/forwardto.png doc
 		doc/whatisit.png doc
 		doc/serverclient.png doc
-    	doc/*.html doc
-    	doc/developer.txt doc
-    	doc/reference.txt doc
-    	doc/userguide.txt doc
-    	doc/windows.txt doc
+		doc/*.html doc
+		doc/developer.txt doc
+		doc/reference.txt doc
+		doc/userguide.txt doc
+		doc/windows.txt doc
 		doc/windows.txt readme-windows.txt
 		doc/doxygen-missing.html doc/doxygen/index.html
 	) ;
@@ -842,8 +847,7 @@ sub run_tests
 {
 	my ( $main_bin_dir , $test_bin_dir ) = @_ ;
 	my $dash_v = "" ; # or "-v"
-	my $script = "test/emailrelay-test.pl" ;
-	## $script = ( $script."_") if ! -f $script ;
+	my $script = "test/emailrelay_test.pl" ;
 	system( "perl -Itest \"$script\" $dash_v -d \"$main_bin_dir\" -x \"$test_bin_dir\" -c \"test/certificates\"" ) ;
 }
 

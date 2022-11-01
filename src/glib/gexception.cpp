@@ -21,53 +21,44 @@
 #include "gdef.h"
 #include "gexception.h"
 #include "gstr.h"
-#include "ggettext.h"
 
-G::Exception::Exception( const char * what ) :
-	std::runtime_error(what?what:"")
+G::Exception::Exception( std::initializer_list<string_view> args ) :
+	std::runtime_error(join(args))
 {
 }
 
-G::Exception::Exception( const std::string & what ) :
-	std::runtime_error(what)
+G::Exception::Exception( string_view what ) :
+	Exception{what}
 {
 }
 
-G::Exception::Exception( const char * what , const std::string & more ) :
-	std::runtime_error(Str::join(": ",what,more))
+G::Exception::Exception( string_view what , string_view more ) :
+	Exception{what,more}
 {
 }
 
-G::Exception::Exception( const std::string & what , const std::string & more ) :
-	std::runtime_error(Str::join(": ",what,more))
+G::Exception::Exception( string_view what , string_view more1 , string_view more2 ) :
+	Exception{what,more1,more2}
 {
 }
 
-G::Exception::Exception( const char * what , const std::string & more1 , const std::string & more2 ) :
-	std::runtime_error(Str::join(": ",what,more1,more2))
+G::Exception::Exception( string_view what , string_view more1 , string_view more2 ,
+	string_view more3 ) :
+		Exception{what,more1,more2,more3}
 {
 }
 
-G::Exception::Exception( const std::string & what , const std::string & more1 , const std::string & more2 ) :
-	std::runtime_error(Str::join(": ",what,more1,more2))
+G::Exception::Exception( string_view what , string_view more1 , string_view more2 ,
+	string_view more3 , string_view more4 ) :
+		Exception{what,more1,more2,more3,more4}
 {
 }
 
-G::Exception::Exception( const char * what , const std::string & more1 , const std::string & more2 ,
-	const std::string & more3 ) :
-	std::runtime_error(Str::join(": ",what,more1,more2,more3))
+std::string G::Exception::join( std::initializer_list<string_view> args )
 {
-}
-
-G::Exception::Exception( const std::string & what , const std::string & more1 , const std::string & more2 ,
-	const std::string & more3 ) :
-		std::runtime_error(Str::join(": ",what,more1,more2,more3))
-{
-}
-
-G::Exception::Exception( const std::string & what , const std::string & more1 , const std::string & more2 ,
-	const std::string & more3 , const std::string & more4 ) :
-		std::runtime_error(Str::join(": ",what,more1,more2,more3,more4))
-{
+	std::string result ;
+	for( auto arg : args )
+		result.append(": ",result.empty()||arg.empty()?0U:2U).append(arg.data(),arg.size()) ;
+	return result ;
 }
 

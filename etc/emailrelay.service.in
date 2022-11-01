@@ -8,10 +8,9 @@ Wants=network-online.target
 Type=forking
 Restart=on-success
 KillMode=control-group
-ExecStart=__INIT_DIR__/emailrelay start
-ExecStop=__INIT_DIR__/emailrelay stop
+ExecStart=__SBIN_DIR__/emailrelay --as-server --syslog --pid-file __RUN_DIR__/emailrelay.pid __SYSCONF_DIR__/emailrelay.conf
+ExecStop=/bin/kill -15 $MAINPID
 PIDFile=__RUN_DIR__/emailrelay.pid
-SuccessExitStatus=0 143
 
 [Install]
 WantedBy=multi-user.target

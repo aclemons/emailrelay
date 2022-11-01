@@ -89,8 +89,8 @@ public:
 public:
 	ResolverFuture( const ResolverFuture & ) = delete ;
 	ResolverFuture( ResolverFuture && ) = delete ;
-	void operator=( const ResolverFuture & ) = delete ;
-	void operator=( ResolverFuture && ) = delete ;
+	ResolverFuture & operator=( const ResolverFuture & ) = delete ;
+	ResolverFuture & operator=( ResolverFuture && ) = delete ;
 
 private:
 	std::string failure() const ;

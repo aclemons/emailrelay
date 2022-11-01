@@ -49,26 +49,39 @@ public:
 	~ProtocolMessageStore() override ;
 		///< Destructor.
 
-private: // overrides
-	ProtocolMessage::DoneSignal & doneSignal() override ; // GSmtp::ProtocolMessage
-	void reset() override ; // GSmtp::ProtocolMessage
-	void clear() override ; // GSmtp::ProtocolMessage
-	MessageId setFrom( const std::string & , const FromInfo & ) override ; // GSmtp::ProtocolMessage
-	bool addTo( VerifierStatus to_status ) override ; // GSmtp::ProtocolMessage
-	void addReceived( const std::string & ) override ; // GSmtp::ProtocolMessage
-	NewMessage::Status addContent( const char * , std::size_t ) override ; // GSmtp::ProtocolMessage
-	std::size_t contentSize() const override ; // GSmtp::ProtocolMessage
-	std::string from() const override ; // GSmtp::ProtocolMessage
-	ProtocolMessage::FromInfo fromInfo() const override ; // GSmtp::ProtocolMessage
-	std::string bodyType() const override ; // GSmtp::ProtocolMessage
+	ProtocolMessage::DoneSignal & doneSignal() override ;
+		///< Override from GSmtp::ProtocolMessage.
+
+	void reset() override ;
+		///< Override from GSmtp::ProtocolMessage.
+
+	void clear() override ;
+		///< Override from GSmtp::ProtocolMessage.
+
+	MessageId setFrom( const std::string & from_user , const std::string & ) override ;
+		///< Override from GSmtp::ProtocolMessage.
+
+	bool addTo( VerifierStatus to_status ) override ;
+		///< Override from GSmtp::ProtocolMessage.
+
+	void addReceived( const std::string & ) override ;
+		///< Override from GSmtp::ProtocolMessage.
+
+	bool addText( const char * , std::size_t ) override ;
+		///< Override from GSmtp::ProtocolMessage.
+
+	std::string from() const override ;
+		///< Override from GSmtp::ProtocolMessage.
+
 	void process( const std::string & auth_id , const std::string & peer_socket_address ,
-		const std::string & peer_certificate ) override ; // GSmtp::ProtocolMessage
+		const std::string & peer_certificate ) override ;
+			///< Override from GSmtp::ProtocolMessage.
 
 public:
 	ProtocolMessageStore( const ProtocolMessageStore & ) = delete ;
 	ProtocolMessageStore( ProtocolMessageStore && ) = delete ;
-	void operator=( const ProtocolMessageStore & ) = delete ;
-	void operator=( ProtocolMessageStore && ) = delete ;
+	ProtocolMessageStore & operator=( const ProtocolMessageStore & ) = delete ;
+	ProtocolMessageStore & operator=( ProtocolMessageStore && ) = delete ;
 
 private:
 	void filterDone( int ) ;
@@ -78,7 +91,6 @@ private:
 	std::unique_ptr<Filter> m_filter ;
 	std::unique_ptr<NewMessage> m_new_msg ;
 	std::string m_from ;
-	FromInfo m_from_info ;
 	ProtocolMessage::DoneSignal m_done_signal ;
 } ;
 

@@ -68,9 +68,9 @@ public:
 public:
 	ExceptionHandler() = default ;
 	ExceptionHandler( const ExceptionHandler & ) = delete ;
-	ExceptionHandler( ExceptionHandler && ) = delete ;
-	void operator=( const ExceptionHandler & ) = delete ;
-	void operator=( ExceptionHandler && ) = delete ;
+	ExceptionHandler( ExceptionHandler && ) = default ;
+	ExceptionHandler & operator=( const ExceptionHandler & ) = delete ;
+	ExceptionHandler & operator=( ExceptionHandler && ) = default ;
 } ;
 
 #endif

@@ -56,8 +56,8 @@ public:
 public:
 	DirectoryIteratorImp( const DirectoryIteratorImp & ) = delete ;
 	DirectoryIteratorImp( DirectoryIteratorImp && ) = delete ;
-	void operator=( const DirectoryIteratorImp & ) = delete ;
-	void operator=( DirectoryIteratorImp && ) = delete ;
+	DirectoryIteratorImp & operator=( const DirectoryIteratorImp & ) = delete ;
+	DirectoryIteratorImp & operator=( DirectoryIteratorImp && ) = delete ;
 
 private:
 	DIR * m_d ;
@@ -232,6 +232,6 @@ G::DirectoryIteratorImp::~DirectoryIteratorImp()
 std::string G::DirectoryIteratorImp::sizeString() const
 {
 	std::string s = File::sizeString( filePath() ) ;
-	return s.empty() ? std::string("0") : s ;
+	return s.empty() ? std::string(1U,'0') : s ;
 }
 

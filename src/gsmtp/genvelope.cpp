@@ -22,7 +22,6 @@
 #include "genvelope.h"
 #include "gfilestore.h"
 #include "gstr.h"
-#include "gstringview.h"
 #include "gxtext.h"
 
 namespace GSmtp
@@ -35,20 +34,18 @@ namespace GSmtp
 		std::string readValue( std::istream & , const std::string & , bool * = nullptr ) ;
 		std::string value( const std::string & ) ;
 		std::string readFormat( std::istream & stream , bool * ) ;
-		void readUtf8Mailboxes( std::istream & , Envelope & ) ;
-		void readBodyType( std::istream & , Envelope & ) ;
+		void readEightBitFlag( std::istream & , Envelope & ) ;
 		void readFrom( std::istream & , Envelope & ) ;
 		void readFromAuthIn( std::istream & , Envelope & ) ;
 		void readFromAuthOut( std::istream & , Envelope & ) ;
+		void readForwardTo( std::istream & , Envelope & ) ;
+		void readForwardToAddress( std::istream & , Envelope & ) ;
 		void readToList( std::istream & , Envelope & ) ;
 		void readAuthentication( std::istream & , Envelope & ) ;
 		void readClientSocketAddress( std::istream & , Envelope & ) ;
 		void readClientSocketName( std::istream & , Envelope & ) ;
 		void readClientCertificate( std::istream & , Envelope & ) ;
 		void readEnd( std::istream & , Envelope & ) ;
-		G::string_view bodyTypeName( MessageStore::BodyType ) ;
-		MessageStore::BodyType parseSmtpBodyType( G::string_view , MessageStore::BodyType ) ;
-		G::string_view smtpBodyType( MessageStore::BodyType ) ;
 	}
 }
 
@@ -56,14 +53,14 @@ std::size_t GSmtp::Envelope::write( std::ostream & stream , const GSmtp::Envelop
 {
 	namespace imp = GSmtp::EnvelopeImp ;
 	const std::string x( GSmtp::FileStore::x() ) ;
-	G::string_view crlf { "\r\n" , 2U } ;
+	const char * crlf = "\r\n" ;
 
 	std::streampos pos = stream.tellp() ;
 	if( pos < 0 || stream.fail() )
 		return 0U ;
 
 	stream << x << "Format: " << GSmtp::FileStore::format() << crlf ;
-	stream << x << "Content: " << imp::bodyTypeName(e.m_body_type) << crlf ;
+	stream << x << "Content: " << (e.m_eight_bit==1?"8bit":(e.m_eight_bit==0?"7bit":"unknown")) << crlf ;
 	stream << x << "From: " << e.m_from << crlf ;
 	stream << x << "ToCount: " << (e.m_to_local.size()+e.m_to_remote.size()) << crlf ;
 	{
@@ -81,7 +78,8 @@ std::size_t GSmtp::Envelope::write( std::ostream & stream , const GSmtp::Envelop
 	stream << x << "ClientCertificate: " << imp::folded(e.m_client_certificate) << crlf ;
 	stream << x << "MailFromAuthIn: " << imp::xnormalise(e.m_from_auth_in) << crlf ;
 	stream << x << "MailFromAuthOut: " << imp::xnormalise(e.m_from_auth_out) << crlf ;
-	stream << x << "Utf8MailboxNames: " << (e.m_utf8_mailboxes?"1":"0") << crlf ;
+	stream << x << "ForwardTo: " << imp::xnormalise(e.m_forward_to) << crlf ;
+	stream << x << "ForwardToAddress: " << e.m_forward_to_address << crlf ;
 	stream << x << "End: 1" << crlf ;
 	stream.flush() ;
 	return stream.fail() ? std::size_t(0U) : static_cast<std::size_t>( stream.tellp() - pos ) ;
@@ -92,7 +90,7 @@ void GSmtp::Envelope::copy( std::istream & in , std::ostream & out )
 	std::string line ;
 	while( in.good() )
 	{
-		G::Str::readLineFrom( in , "\n"_sv , line ) ;
+		G::Str::readLineFrom( in , "\n" , line ) ;
 		if( in )
 		{
 			G::Str::trimRight( line , {"\r",1U} ) ;
@@ -110,7 +108,7 @@ void GSmtp::Envelope::read( std::istream & stream , GSmtp::Envelope & e )
 	namespace imp = GSmtp::EnvelopeImp ;
 	std::streampos oldpos = stream.tellg() ;
 	std::string format = imp::readFormat( stream , &e.m_crlf ) ;
-	imp::readBodyType( stream , e ) ;
+	imp::readEightBitFlag( stream , e ) ;
 	imp::readFrom( stream , e ) ;
 	imp::readToList( stream , e ) ;
 	imp::readAuthentication( stream , e ) ;
@@ -120,7 +118,8 @@ void GSmtp::Envelope::read( std::istream & stream , GSmtp::Envelope & e )
 		imp::readClientCertificate( stream , e ) ;
 		imp::readFromAuthIn( stream , e ) ;
 		imp::readFromAuthOut( stream , e ) ;
-		imp::readUtf8Mailboxes( stream , e ) ;
+		imp::readForwardTo( stream , e ) ; // 2.4
+		imp::readForwardToAddress( stream , e ) ; // 2.4
 	}
 	else if( format == GSmtp::FileStore::format(-1) )
 	{
@@ -147,20 +146,6 @@ void GSmtp::Envelope::read( std::istream & stream , GSmtp::Envelope & e )
 	e.m_endpos = static_cast<std::size_t>(newpos-oldpos) ;
 }
 
-GSmtp::MessageStore::BodyType GSmtp::Envelope::parseSmtpBodyType( const std::string & s , MessageStore::BodyType default_ )
-{
-	namespace imp = GSmtp::EnvelopeImp ;
-	return imp::parseSmtpBodyType( {s.data(),s.size()} , default_ ) ;
-}
-
-std::string GSmtp::Envelope::smtpBodyType( MessageStore::BodyType type )
-{
-	namespace imp = GSmtp::EnvelopeImp ;
-	return G::sv_to_string( imp::smtpBodyType( type ) ) ;
-}
-
-// ==
-
 std::string GSmtp::EnvelopeImp::folded( const std::string & s_in )
 {
 	std::string s = s_in ;
@@ -183,22 +168,10 @@ std::string GSmtp::EnvelopeImp::readFormat( std::istream & stream , bool * crlf 
 	return format ;
 }
 
-void GSmtp::EnvelopeImp::readUtf8Mailboxes( std::istream & stream , Envelope & e )
+void GSmtp::EnvelopeImp::readEightBitFlag( std::istream & stream , Envelope & e )
 {
-	e.m_utf8_mailboxes = readValue(stream,"Utf8MailboxNames") == "1" ;
-}
-
-void GSmtp::EnvelopeImp::readBodyType( std::istream & stream , Envelope & e )
-{
-	std::string body_type = readValue( stream , "Content" ) ;
-	if( body_type == bodyTypeName(MessageStore::BodyType::SevenBit) )
-		e.m_body_type = MessageStore::BodyType::SevenBit ;
-	else if( body_type == bodyTypeName(MessageStore::BodyType::EightBitMime) )
-		e.m_body_type = MessageStore::BodyType::EightBitMime ;
-	else if( body_type == bodyTypeName(MessageStore::BodyType::BinaryMime) )
-		e.m_body_type = MessageStore::BodyType::BinaryMime ;
-	else
-		e.m_body_type = MessageStore::BodyType::Unknown ;
+	std::string content = readValue( stream , "Content" ) ;
+	e.m_eight_bit = content == "8bit" ? 1 : ( content == "7bit" ? 0 : -1 ) ;
 }
 
 void GSmtp::EnvelopeImp::readFrom( std::istream & stream , Envelope & e )
@@ -219,6 +192,16 @@ void GSmtp::EnvelopeImp::readFromAuthOut( std::istream & stream , Envelope & e )
 	e.m_from_auth_out = readValue( stream , "MailFromAuthOut" ) ;
 	if( !e.m_from_auth_out.empty() && e.m_from_auth_out != "+" && !G::Xtext::valid(e.m_from_auth_out) )
 		throw Envelope::ReadError( "invalid mail-from-auth-out encoding" ) ;
+}
+
+void GSmtp::EnvelopeImp::readForwardTo( std::istream & stream , Envelope & e )
+{
+	e.m_forward_to = readValue( stream , "ForwardTo" ) ;
+}
+
+void GSmtp::EnvelopeImp::readForwardToAddress( std::istream & stream , Envelope & e )
+{
+	e.m_forward_to_address = readValue( stream , "ForwardToAddress" ) ;
 }
 
 void GSmtp::EnvelopeImp::readToList( std::istream & stream , Envelope & e )
@@ -316,43 +299,5 @@ std::string GSmtp::EnvelopeImp::readLine( std::istream & stream , bool * crlf )
 std::string GSmtp::EnvelopeImp::value( const std::string & line )
 {
 	return G::Str::trimmed( G::Str::tail( line , line.find(':') , std::string() ) , G::Str::ws() ) ;
-}
-
-G::string_view GSmtp::EnvelopeImp::bodyTypeName( MessageStore::BodyType type )
-{
-	if( type == MessageStore::BodyType::EightBitMime )
-		return "8bit"_sv ;
-	else if( type == MessageStore::BodyType::SevenBit )
-		return "7bit"_sv ;
-	else if( type == MessageStore::BodyType::BinaryMime )
-		return "binarymime"_sv ;
-	else
-		return "unknown"_sv ;
-}
-
-GSmtp::MessageStore::BodyType GSmtp::EnvelopeImp::parseSmtpBodyType( G::string_view s , MessageStore::BodyType default_ )
-{
-	if( s.empty() )
-		return default_ ;
-	else if( G::Str::imatch( "7BIT" , 4U , s ) )
-		return MessageStore::BodyType::SevenBit ;
-	else if( G::Str::imatch( "8BITMIME" , 8U , s ) )
-		return MessageStore::BodyType::EightBitMime ;
-	else if( G::Str::imatch( "BINARYMIME" , 10U , s ) )
-		return MessageStore::BodyType::BinaryMime ;
-	else
-		return MessageStore::BodyType::Unknown ;
-}
-
-G::string_view GSmtp::EnvelopeImp::smtpBodyType( MessageStore::BodyType type )
-{
-	if( type == MessageStore::BodyType::EightBitMime )
-		return "8BITMIME"_sv ;
-	else if( type == MessageStore::BodyType::SevenBit )
-		return "7BIT"_sv ;
-	else if( type == MessageStore::BodyType::BinaryMime )
-		return "BINARYMIME"_sv ;
-	else
-		return {} ;
 }
 

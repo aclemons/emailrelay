@@ -25,12 +25,12 @@
 #include "gmultiserver.h"
 #include "gtimer.h"
 #include "gstr.h"
+#include "gstringarray.h"
+#include "gstringmap.h"
 #include "glinebuffer.h"
 #include "gsmtpserverprotocol.h"
 #include "gclientptr.h"
 #include "gsmtpclient.h"
-#include "gstringarray.h"
-#include "gstringmap.h"
 #include <string>
 #include <list>
 #include <sstream>
@@ -79,8 +79,8 @@ private: // overrides
 public:
 	AdminServerPeer( const AdminServerPeer & ) = delete ;
 	AdminServerPeer( AdminServerPeer && ) = delete ;
-	void operator=( const AdminServerPeer & ) = delete ;
-	void operator=( AdminServerPeer && ) = delete ;
+	AdminServerPeer & operator=( const AdminServerPeer & ) = delete ;
+	AdminServerPeer & operator=( AdminServerPeer && ) = delete ;
 
 private:
 	void clientDone( const std::string & ) ;
@@ -121,12 +121,10 @@ private:
 class GSmtp::AdminServer : public GNet::MultiServer
 {
 public:
-	AdminServer( GNet::ExceptionSink , MessageStore & store , FilterFactory & ,
+	AdminServer( GNet::ExceptionSink , MessageStore & store , FilterFactory & ff ,
 		G::Slot::Signal<const std::string&> & forward_request ,
-		const GNet::ServerPeer::Config & net_server_peer_config ,
-		const GNet::Server::Config & net_server_config ,
-		const GSmtp::Client::Config & smtp_client_config ,
-		const GAuth::SaslClientSecrets & client_secrets ,
+		const GNet::ServerPeer::Config & server_peer_config , const GNet::Server::Config & server_config ,
+		const GSmtp::Client::Config & client_config , const GAuth::SaslClientSecrets & client_secrets ,
 		const G::StringArray & interfaces , unsigned int port , bool allow_remote ,
 		const std::string & remote_address , unsigned int connection_timeout ,
 		const G::StringMap & info_commands , const G::StringMap & config_commands ,
@@ -177,8 +175,8 @@ protected:
 public:
 	AdminServer( const AdminServer & ) = delete ;
 	AdminServer( AdminServer && ) = delete ;
-	void operator=( const AdminServer & ) = delete ;
-	void operator=( AdminServer && ) = delete ;
+	AdminServer & operator=( const AdminServer & ) = delete ;
+	AdminServer & operator=( AdminServer && ) = delete ;
 
 private:
 	void onForwardTimeout() ;
@@ -188,7 +186,7 @@ private:
 	MessageStore & m_store ;
 	FilterFactory & m_ff ;
 	G::Slot::Signal<const std::string&> & m_forward_request ;
-	GSmtp::Client::Config m_smtp_client_config ;
+	GSmtp::Client::Config m_client_config ;
 	const GAuth::SaslClientSecrets & m_client_secrets ;
 	bool m_allow_remote ;
 	std::string m_remote_address ;

@@ -24,6 +24,7 @@
 #include "gdef.h"
 #include "gpath.h"
 #include "gdatetime.h"
+#include "gstringview.h"
 #include "gsecret.h"
 #include "gexception.h"
 #include <string>
@@ -58,11 +59,11 @@ public:
 	bool valid() const ;
 		///< Returns true if the file path was supplied in the ctor.
 
-	Secret clientSecret( const std::string & type ) const ;
+	Secret clientSecret( G::string_view type ) const ;
 		///< Returns the client id and secret for the given type.
 		///< Returns the empty string if none.
 
-	Secret serverSecret( const std::string & type , const std::string & id ) const ;
+	Secret serverSecret( G::string_view type , G::string_view id ) const ;
 		///< Returns the server secret for the given id and type.
 		///< Returns the empty string if none.
 
@@ -73,14 +74,15 @@ public:
 	std::string path() const ;
 		///< Returns the file path, as supplied to the ctor.
 
-	bool contains( const std::string & type , const std::string & id = {} ) const ;
+	bool contains( G::string_view type , G::string_view id = {} ) const ;
 		///< Returns true if a server secret of the given type
 		///< is available for the particular user or any user.
 
 private:
 	struct Value
 	{
-		Value(const std::string &s_,unsigned int n_):s(s_),n(n_) {}
+		Value( const std::string & s_ , unsigned int n_ ) : s(s_), n(n_) {}
+		Value( G::string_view s_ , unsigned int n_ ) : s(G::sv_to_string(s_)), n(n_) {}
 		std::string s ;
 		unsigned int n ;
 	} ;
@@ -102,14 +104,15 @@ private:
 	static Contents readContents( const G::Path & ) ;
 	static Contents readContents( std::istream & ) ;
 	static void processLine( Contents & ,
-		unsigned int , const std::string & side , const std::string & , const std::string & , const std::string & ) ;
+		unsigned int , G::string_view side , G::string_view , G::string_view , G::string_view ) ;
 	static void processLineImp( Contents & ,
-		unsigned int , const std::string & side , const std::string & , const std::string & , const std::string & ) ;
+		unsigned int , G::string_view side , G::string_view , G::string_view , G::string_view ) ;
 	static void showWarnings( const Warnings & warnings , const G::Path & path , const std::string & debug_name = {} ) ;
-	static void addWarning( Contents & , unsigned int , const std::string & , const std::string & = {} ) ;
-	static std::string canonical( const std::string & encoding_type ) ;
-	static std::string serverKey( const std::string & , const std::string & ) ;
-	static std::string clientKey( const std::string & ) ;
+	static void addWarning( Contents & , unsigned int , G::string_view , G::string_view = {} ) ;
+	static std::string canonical( G::string_view encoding_type ) ;
+	static std::string serverKey( G::string_view , G::string_view ) ;
+	static std::string clientKey( G::string_view ) ;
+	static std::string clientValue( G::string_view id , G::string_view secret ) ;
 	static G::SystemTime readFileTime( const G::Path & ) ;
 	static std::string line( unsigned int ) ;
 

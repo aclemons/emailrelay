@@ -12,8 +12,6 @@
 #
 # Example address verifier script using LDAP.
 #
-# See also: https://www.python-ldap.org/en/python-ldap-3.3.0
-#
 
 import sys
 import ldap

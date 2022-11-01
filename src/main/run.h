@@ -69,13 +69,13 @@ namespace Main
 /// }
 /// \endcode
 ///
-class Main::Run
+class Main::Run : private GNet::EventHandler
 {
 public:
 	Run( Output & output , const G::Arg & arg , bool is_windows = false , bool has_gui = false ) ;
 		///< Constructor. Tries not to throw.
 
-	~Run() ;
+	~Run() override ;
 		///< Destructor.
 
 	void configure() ;
@@ -124,13 +124,12 @@ private:
 public:
 	Run( const Run & ) = delete ;
 	Run( Run && ) = delete ;
-	void operator=( const Run & ) = delete ;
-	void operator=( Run && ) = delete ;
+	Run & operator=( const Run & ) = delete ;
+	Run & operator=( Run && ) = delete ;
 
 private:
 	void doForwardingOnStartup( G::PidFile & ) ;
 	void closeFiles() const ;
-	void closeMoreFiles() const ;
 	void commit( G::PidFile & ) ;
 	std::string smtpIdent() const ;
 	void recordPid() ;
@@ -142,33 +141,36 @@ private:
 	void onStoreUpdateEvent() ;
 	void onStoreRescanEvent() ;
 	void onNetworkEvent( const std::string & , const std::string & ) ;
-	void emit( const std::string & , const std::string & , const std::string & = {} , const std::string & = {} ) ;
+	void emit( const std::string & , const std::string & , const std::string & = std::string() , const std::string & = std::string() ) ;
 	void onPollTimeout() ;
-	void requestForwarding( const std::string & = {} ) ;
+	void requestForwarding( const std::string & = std::string() ) ;
 	void onRequestForwardingTimeout() ;
 	void onQueueTimeout() ;
 	std::string startForwarding() ;
 	bool logForwarding() const ;
-	void checkPorts() const ;
-	static void checkPort( bool , const std::string & , unsigned int ) ;
+	GNet::StreamSocket::Config netSocketConfig( bool server = true ) const ;
+	GSmtp::Client::Config clientConfig() const ;
+	GSmtp::ServerProtocol::Config serverProtocolConfig() const ;
+	GSmtp::Server::Config smtpServerConfig() const ;
+	GNet::Server::Config netServerConfig() const ;
 	int resolverFamily() const ;
 	static GNet::Address asAddress( const std::string & ) ;
-	void checkScripts() const ;
-	void checkVerifier( const std::string & ) const ;
-	void checkFilter( const std::string & , bool ) const ;
+	GPop::Server::Config popConfig() const ;
 	void checkThreading() const ;
 	std::string versionString() const ;
 	static std::string buildConfiguration() ;
 	G::Path appDir() const ;
-	GSmtp::MessageStore & store() ;
-	GSmtp::Client::Config smtpClientConfig() const ;
-	GSmtp::ServerProtocol::Config smtpServerProtocolConfig() const ;
-	GNet::Server::Config netServerConfig() const ;
-	GSmtp::Server::Config smtpServerConfig() const ;
-	GPop::Server::Config popServerConfig() const ;
+	std::unique_ptr<GSmtp::AdminServer> newAdminServer( GNet::ExceptionSink ,
+		const Configuration & , GSmtp::MessageStore & , GSmtp::FilterFactory & ,
+		G::Slot::Signal<const std::string&> & ,
+		const GNet::ServerPeer::Config & ,
+		const GNet::Server::Config & , const GSmtp::Client::Config & ,
+		const GAuth::Secrets & , const std::string & ) ;
 
 private:
 	Output & m_output ;
+	GNet::ExceptionSink m_es_rethrow ;
+	GNet::ExceptionSink m_es_nothrow ;
 	bool m_is_windows ;
 	G::Arg m_arg ;
 	G::Slot::Signal<const std::string&> m_forward_request_signal ;
@@ -178,12 +180,12 @@ private:
 	std::unique_ptr<G::LogOutput> m_log_output ;
 	std::unique_ptr<GNet::EventLoop> m_event_loop ;
 	std::unique_ptr<GNet::TimerList> m_timer_list ;
-	std::unique_ptr<GNet::Timer<Run>> m_forwarding_timer ;
-	std::unique_ptr<GNet::Timer<Run>> m_poll_timer ;
-	std::unique_ptr<GNet::Timer<Run>> m_queue_timer ;
+	std::unique_ptr<GNet::Timer<Run> > m_forwarding_timer ;
+	std::unique_ptr<GNet::Timer<Run> > m_poll_timer ;
+	std::unique_ptr<GNet::Timer<Run> > m_queue_timer ;
 	std::unique_ptr<GSsl::Library> m_tls_library ;
 	std::unique_ptr<GNet::Monitor> m_monitor ;
-	std::unique_ptr<GSmtp::FileStore> m_file_store ;
+	std::unique_ptr<GSmtp::FileStore> m_store ;
 	std::unique_ptr<GSmtp::FilterFactory> m_filter_factory ;
 	std::unique_ptr<GAuth::Secrets> m_client_secrets ;
 	std::unique_ptr<GAuth::Secrets> m_server_secrets ;

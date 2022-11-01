@@ -107,7 +107,6 @@ public:
 
 	static bool mkdirs( const Path & dir , std::nothrow_t , int = 100 ) ;
 		///< Creates a directory and all necessary parents.
-		///< Does chmodx() on all created directories.
 		///< Returns false on error, but EEXIST is not
 		///< an error and chmod errors are also ignored.
 		///<
@@ -118,7 +117,6 @@ public:
 
 	static void mkdirs( const Path & dir , int = 100 ) ;
 		///< Creates a directory and all necessary parents.
-		///< Does chmodx() on all created directories.
 		///< Throws on error, but EEXIST is not an error
 		///< and chmod errors are also ignored.
 
@@ -275,7 +273,7 @@ private:
 	static int linkImp( const char * , const char * ) ;
 	static bool linked( const Path & , const Path & ) ;
 	static int mkdirImp( const Path & dir ) noexcept ;
-	static bool mkdirsr( int * , const Path & dir , int ) ;
+	static bool mkdirsr( const Path & dir , int & , int & ) ;
 	static bool chmod( const Path & , const std::string & , std::nothrow_t ) ;
 } ;
 

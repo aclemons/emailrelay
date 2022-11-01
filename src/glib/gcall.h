@@ -73,8 +73,8 @@ public:
 public:
 	CallStack( const CallStack & ) = delete ;
 	CallStack( CallStack && ) = delete ;
-	void operator=( const CallStack & ) = delete ;
-	void operator=( CallStack && ) = delete ;
+	CallStack & operator=( const CallStack & ) = delete ;
+	CallStack & operator=( CallStack && ) = delete ;
 
 private:
 	CallFrame * m_inner{nullptr} ;
@@ -111,8 +111,8 @@ public:
 public:
 	CallFrame( const CallFrame & ) = delete ;
 	CallFrame( CallFrame && ) = delete ;
-	void operator=( const CallFrame & ) = delete ;
-	void operator=( CallFrame && ) = delete ;
+	CallFrame & operator=( const CallFrame & ) = delete ;
+	CallFrame & operator=( CallFrame && ) = delete ;
 
 private:
 	CallStack & m_stack ;

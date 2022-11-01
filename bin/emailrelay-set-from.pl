@@ -13,9 +13,6 @@
 # An example E-MailRelay "--filter" script that edits the content originator
 # fields (ie. From, Sender and Reply-To) to a fixed value.
 #
-# Also consider setting the envelope-from field by editing the envelope
-# file.
-#
 # See also: emailrelay-set-from.js, RFC-2822
 #
 

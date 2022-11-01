@@ -37,6 +37,7 @@
 use strict ;
 use FileHandle ;
 use NetClient ;
+use System ;
 
 package SmtpClient ;
 

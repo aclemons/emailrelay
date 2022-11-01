@@ -61,7 +61,7 @@ EXTRA_DIST = \
 	winbuild.pl \
 	runperl.bat
 
-SUBDIRS = bin src etc doc debian test m4 bsd po
+SUBDIRS = bin src etc doc debian test m4 bsd po unity
 
 # work-round PKG_CHECK_MODULES if no pkg-config
 ACLOCAL_AMFLAGS = -I m4
@@ -76,6 +76,7 @@ RPM_ROOT ?= ${HOME}/rpmbuild
 ARCH ?= x86_64
 RPM=$(RPM_ROOT)/RPMS/$(ARCH)/emailrelay-$(VERSION)-1.$(ARCH).rpm
 TAR=emailrelay-$(VERSION).tar.gz
+ZIP=emailrelay-$(VERSION)-src.zip
 DEB=emailrelay_$(VERSION)_$(ARCH).deb
 
 .PHONY: strip
@@ -102,21 +103,25 @@ deb: $(DEB)
 
 $(DEB): dist
 	-mv emailrelay-$(VERSION) emailrelay-$(VERSION).old.$$$$ || true
-	tar xzf $(TAR)
+	tar -xzf $(TAR)
 	cd emailrelay-$(VERSION) && fakeroot debian/rules binary
 	mkdir emailrelay-$(VERSION)/debian/source
 
 .PHONY: deb-src
 deb-src: dist
 	-mv emailrelay-$(VERSION) emailrelay-$(VERSION).old.$$$$ || true
-	tar xzf $(TAR)
+	tar -xzf $(TAR)
 	mkdir emailrelay-$(VERSION)/debian/source
 	echo 1.0 > emailrelay-$(VERSION)/debian/source/format
 	dpkg-source --build emailrelay-$(VERSION)
 
 .PHONY: tidy
 tidy:
-	$(MAKE) -C src tidy
+	$(MAKE) -C unity tidy
+
+.PHONY: unitybuild
+unitybuild:
+	$(MAKE) -C unity programs
 
 .PHONY: format
 format:
@@ -129,4 +134,23 @@ cmake:
 	test -d build || mkdir build
 	cd build && cmake -DCMAKE_MAKE_PROGRAM:FILEPATH=/usr/bin/make -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ..
 	@echo now run make from the '"build"' directory
+
+.PHONY: tar
+tar: $(TAR)
+
+$(TAR):
+	$(MAKE) dist
+
+.PHONY: zip
+zip: $(ZIP)
+
+$(ZIP): $(TAR)
+	tar -xzf $(TAR)
+	sh -c "cd emailrelay-$(VERSION) && zip -r ../$(ZIP) ."
+
+.PHONY: mbedtls
+mbedtls:
+	test -d mbedtls || git clone https://salsa.debian.org/debian/mbedtls.git
+	make -C mbedtls/library WINDOWS=0
+	-@echo now run ./configure.sh
 

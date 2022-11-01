@@ -25,16 +25,15 @@
 GSmtp::InternalVerifier::InternalVerifier()
 = default;
 
-void GSmtp::InternalVerifier::verify( Command command , const std::string & to ,
-	const std::string & , const GNet::Address & ,
+void GSmtp::InternalVerifier::verify( const std::string & to , const std::string & , const GNet::Address & ,
 	const std::string & , const std::string & )
 {
 	// accept all addresses as if remote
 	VerifierStatus status = VerifierStatus::remote( to ) ;
-	doneSignal().emit( command , status ) ;
+	doneSignal().emit( status ) ;
 }
 
-G::Slot::Signal<GSmtp::Verifier::Command,const GSmtp::VerifierStatus&> & GSmtp::InternalVerifier::doneSignal()
+G::Slot::Signal<const GSmtp::VerifierStatus&> & GSmtp::InternalVerifier::doneSignal()
 {
 	return m_done_signal ;
 }

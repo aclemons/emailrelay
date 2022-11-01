@@ -84,7 +84,7 @@ namespace GNet
 	}
 }
 
-GNet::DnsBlock::DnsBlock( DnsBlockCallback & callback , ExceptionSink es , const std::string & config ) :
+GNet::DnsBlock::DnsBlock( DnsBlockCallback & callback , ExceptionSink es , G::string_view config ) :
 	m_callback(callback) ,
 	m_es(es) ,
 	m_timer(*this,&DnsBlock::onTimeout,es) ,
@@ -110,12 +110,12 @@ void GNet::DnsBlock::checkConfig( const std::string & config )
 	}
 }
 
-void GNet::DnsBlock::configure( const std::string & config )
+void GNet::DnsBlock::configure( G::string_view config )
 {
 	configureImp( config , this ) ;
 }
 
-void GNet::DnsBlock::configureImp( const std::string & config , DnsBlock * p )
+void GNet::DnsBlock::configureImp( G::string_view config , DnsBlock * p )
 {
 	G::StringArray list = G::Str::splitIntoFields( config , ',' ) ;
 	if( list.size() < 4U )
@@ -167,7 +167,9 @@ void GNet::DnsBlock::start( const Address & address )
 		id_generator = 10 ;
 
 	// create a socket to receive responses
-	m_socket_ptr = std::make_unique<DatagramSocket>( m_dns_server.family() ) ;
+	int protocol = 0 ;
+	DatagramSocket::Config datagram_socket_config ;
+	m_socket_ptr = std::make_unique<DatagramSocket>( m_dns_server.family() , protocol , datagram_socket_config ) ;
 	m_socket_ptr->addReadHandler( *this , m_es ) ;
 
 	// send a DNS query to each configured server
@@ -197,7 +199,7 @@ bool GNet::DnsBlock::busy() const
 	return m_timer.active() ;
 }
 
-void GNet::DnsBlock::readEvent( Descriptor )
+void GNet::DnsBlock::readEvent()
 {
 	static std::vector<char> buffer;
 	buffer.resize( 4096U ) ; // 512 in RFC-1035 4.2.1

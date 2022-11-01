@@ -124,8 +124,8 @@ public:
 public:
 	TimerList( const TimerList & ) = delete ;
 	TimerList( TimerList && ) = delete ;
-	void operator=( const TimerList & ) = delete ;
-	void operator=( TimerList && ) = delete ;
+	TimerList & operator=( const TimerList & ) = delete ;
+	TimerList & operator=( TimerList && ) = delete ;
 
 private:
 	struct Value /// A value type for the GNet::TimerList.
@@ -145,8 +145,8 @@ private:
 		~Lock() ;
 		Lock( const Lock & ) = delete ;
 		Lock( Lock && ) = delete ;
-		void operator=( const Lock & ) = delete ;
-		void operator=( Lock && ) = delete ;
+		Lock & operator=( const Lock & ) = delete ;
+		Lock & operator=( Lock && ) = delete ;
 		TimerList & m_timer_list ;
 	} ;
 	friend class GNet::TimerListTest ;

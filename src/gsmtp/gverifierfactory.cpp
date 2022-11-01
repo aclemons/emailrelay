@@ -20,33 +20,29 @@
 
 #include "gdef.h"
 #include "gverifierfactory.h"
-#include "gfactoryparser.h"
 #include "ginternalverifier.h"
 #include "gexecutableverifier.h"
 #include "gnetworkverifier.h"
 #include "gexception.h"
 
 std::unique_ptr<GSmtp::Verifier> GSmtp::VerifierFactory::newVerifier( GNet::ExceptionSink es ,
-	const std::string & identifier , unsigned int timeout )
+	const FactoryParser::Result & spec , unsigned int timeout )
 {
-	const bool allow_spam = false ;
-	const bool allow_chain = false ;
-	FactoryParser::Result p = FactoryParser::parse( identifier , allow_spam , allow_chain ) ;
-	if( p.first == "exit" )
+	if( spec.first == "exit" )
 	{
 		return std::make_unique<InternalVerifier>() ;
 	}
-	else if( p.first == "net" )
+	else if( spec.first == "net" )
 	{
-		return std::make_unique<NetworkVerifier>( es , p.second , timeout , timeout ) ;
+		return std::make_unique<NetworkVerifier>( es , spec.second , timeout , timeout ) ;
 	}
-	else if( p.first == "file" )
+	else if( spec.first == "file" )
 	{
-		return std::make_unique<ExecutableVerifier>( es , G::Path(p.second) ) ;
+		return std::make_unique<ExecutableVerifier>( es , G::Path(spec.second) ) ;
 	}
 	else
 	{
-		throw G::Exception( "invalid verifier" ) ; // never gets here
+		throw G::Exception( "invalid verifier" , spec.second ) ; // never gets here
 	}
 }
 

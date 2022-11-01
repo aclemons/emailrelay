@@ -19,7 +19,7 @@
 ///
 // A dummy smtp server for testing purposes.
 //
-// usage: emailrelay-test-server [--quiet] [--tls] [--auth-foo-bar] [--auth-cram] [--auth-login] [--auth-plain]
+// usage: emailrelay_test_server [--quiet] [--tls] [--auth-foo-bar] [--auth-cram] [--auth-login] [--auth-plain]
 //        [--auth-ok] [--slow] [--fail-at <n>] [--drop] [--ipv6] [--port <port>]
 //
 
@@ -31,7 +31,7 @@
 #include "gstr.h"
 #include "garg.h"
 #include "ggetopt.h"
-#include "goptionsoutput.h"
+#include "goptionsusage.h"
 #include "gpath.h"
 #include "gserver.h"
 #include "gserverpeer.h"
@@ -130,7 +130,7 @@ Server::Server( GNet::ExceptionSink es , TestServerConfig config ) :
 	GNet::Server(es,
 		GNet::Address(config.m_ipv6?GNet::Address::Family::ipv6:GNet::Address::Family::ipv4,config.m_port),
 		GNet::ServerPeer::Config()
-			.set_read_buffer_size(config.m_slow?3U:0U)
+			.set_socket_protocol_config( GNet::SocketProtocol::Config().set_read_buffer_size(config.m_slow?3U:G::limits::net_buffer) )
 			.set_idle_timeout(config.m_idle_timeout),
 		GNet::Server::Config()) ,
 	m_config(config)
@@ -175,7 +175,7 @@ Peer::Peer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo && peer_info ,
 
 void Peer::onSlowTimeout()
 {
-	sleep_ms( 800 ) ;
+	sleep_ms( 10 ) ;
 	m_slow_timer.startTimer( 0U , 10 ) ;
 }
 
@@ -352,7 +352,7 @@ int main( int argc , char * argv [] )
 		}
 		if( opt.contains("help") )
 		{
-			G::OptionsOutput(opt.options()).showUsage( {} , std::cout , arg.prefix() ) ;
+			G::OptionsUsage(opt.options()).output( {} , std::cout , arg.prefix() ) ;
 			return 0 ;
 		}
 

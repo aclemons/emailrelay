@@ -101,7 +101,6 @@ void GNet::Interfaces::loadImp( ExceptionSink es , std::vector<Item> & list )
 		if( info_p->ifa_name == nullptr )
 			continue ;
 
-		G_ASSERT( info_p->ifa_addr ) ;
 		if( info_p->ifa_addr == nullptr )
 			continue ;
 
@@ -131,8 +130,7 @@ void GNet::Interfaces::loadImp( ExceptionSink es , std::vector<Item> & list )
 	}
 }
 
-// TODO feature test for conditional compilation
-#if 1
+#if GCONFIG_HAVE_IFINDEX
 #include <sys/ioctl.h>
 #include <net/if.h>
 int GNet::Interfaces::index( const std::string & name )

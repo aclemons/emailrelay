@@ -27,3 +27,8 @@ void G::Daemon::detach()
 	// no-op
 }
 
+void G::Daemon::detach( const G::Path & )
+{
+	detach() ;
+}
+

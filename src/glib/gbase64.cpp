@@ -35,24 +35,22 @@ namespace G
 		using uint32_type = g_uint32_t ;
 		#endif
 
-		static constexpr string_view character_map_with_pad( "=ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-			"abcdefghijklmnopqrstuvwxyz" "0123456789+/" , nullptr ) ;
+		static constexpr string_view character_map_with_pad = "=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"_sv ;
 		static constexpr string_view character_map( character_map_with_pad.data()+1 , character_map_with_pad.size()-1 ) ;
 		static constexpr char pad = '=' ;
 
 		static_assert( character_map_with_pad.size() == 1+26+26+10+2 , "" ) ;
 		static_assert( character_map.size() == 26+26+10+2 , "" ) ;
 
-		using string_in = string_view ;
 		using iterator_in = string_view::const_iterator ;
 		using iterator_out = std::back_insert_iterator<std::string> ;
 
-		std::string encode( string_in , string_in eol ) ;
-		std::string decode( string_in , bool do_throw , bool strict ) ;
-		bool valid( string_in , bool strict ) ;
+		std::string encode( string_view , string_view eol ) ;
+		std::string decode( string_view , bool do_throw , bool strict ) ;
+		bool valid( string_view , bool strict ) ;
 
-		void encode_imp( iterator_out , string_in , string_in , std::size_t ) ;
-		void decode_imp( iterator_out , string_in s , bool & error ) ;
+		void encode_imp( iterator_out , string_view , string_view , std::size_t ) ;
+		void decode_imp( iterator_out , string_view s , bool & error ) ;
 		void generate_6( uint32_type & n , int & i , iterator_out & ) ;
 		void accumulate_8( uint32_type & n , iterator_in & , iterator_in , int & ) ;
 		void accumulate_6( g_uint32_t & n , iterator_in & , iterator_in , std::size_t & , bool & error ) ;
@@ -81,39 +79,24 @@ namespace G
 
 // ==
 
-std::string G::Base64::encode( const std::string & s , const std::string & eol )
+std::string G::Base64::encode( string_view s , string_view eol )
 {
-	return Base64Imp::encode( {s.data(),s.size()} , {eol.data(),eol.size()} ) ;
+	return Base64Imp::encode( s , eol ) ;
 }
 
-std::string G::Base64::encode( G::string_view sv , const std::string & eol )
+std::string G::Base64::decode( string_view s , bool do_throw , bool strict )
 {
-	return Base64Imp::encode( sv , {eol.data(),eol.size()} ) ;
+	return Base64Imp::decode( s , do_throw , strict ) ;
 }
 
-std::string G::Base64::decode( const std::string & s , bool do_throw , bool strict )
+bool G::Base64::valid( string_view s , bool strict )
 {
-	return Base64Imp::decode( {s.data(),s.size()} , do_throw , strict ) ;
-}
-
-std::string G::Base64::decode( G::string_view sv , bool do_throw , bool strict )
-{
-	return Base64Imp::decode( sv , do_throw , strict ) ;
-}
-
-bool G::Base64::valid( const std::string & s , bool strict )
-{
-	return Base64Imp::valid( {s.data(),s.size()} , strict ) ;
-}
-
-bool G::Base64::valid( G::string_view sv , bool strict )
-{
-	return Base64Imp::valid( sv , strict ) ;
+	return Base64Imp::valid( s , strict ) ;
 }
 
 // ==
 
-std::string G::Base64Imp::encode( string_in input , string_in eol )
+std::string G::Base64Imp::encode( string_view input , string_view eol )
 {
 	std::string result ;
 	result.reserve( input.size() + input.size()/2U ) ;
@@ -121,7 +104,7 @@ std::string G::Base64Imp::encode( string_in input , string_in eol )
 	return result ;
 }
 
-void G::Base64Imp::encode_imp( iterator_out result_p , string_in input , string_in eol , std::size_t blocks_per_line )
+void G::Base64Imp::encode_imp( iterator_out result_p , string_view input , string_view eol , std::size_t blocks_per_line )
 {
 	std::size_t blocks = 0U ;
 	auto const end = input.end() ;
@@ -142,7 +125,7 @@ void G::Base64Imp::encode_imp( iterator_out result_p , string_in input , string_
 	}
 }
 
-std::string G::Base64Imp::decode( string_in input , bool do_throw , bool strict )
+std::string G::Base64Imp::decode( string_view input , bool do_throw , bool strict )
 {
 	bool error = false ;
 	if( strict && !strictlyValid(input) )
@@ -160,7 +143,7 @@ std::string G::Base64Imp::decode( string_in input , bool do_throw , bool strict 
 	return result ;
 }
 
-void G::Base64Imp::decode_imp( iterator_out result_p , string_in s , bool & error )
+void G::Base64Imp::decode_imp( iterator_out result_p , string_view s , bool & error )
 {
 	auto const end = s.end() ;
 	for( auto p = s.begin() ; p != end ; )
@@ -185,7 +168,7 @@ void G::Base64Imp::decode_imp( iterator_out result_p , string_in s , bool & erro
 	}
 }
 
-bool G::Base64Imp::valid( string_in input , bool strict )
+bool G::Base64Imp::valid( string_view input , bool strict )
 {
 	if( strict && !strictlyValid(input) )
 		return false ;

@@ -23,7 +23,7 @@
 
 #include "gdef.h"
 #include "gdialog.h"
-#include "gstringarray.h"
+#include "gstrings.h"
 #include <string>
 #include <list>
 #include <vector>
@@ -65,7 +65,7 @@ public:
 		private: Control & m_control ;
 		public: NoRedraw(Control&) ;
 		public: ~NoRedraw() ;
-		private: void operator=( const NoRedraw & ) ;
+		private: NoRedraw & operator=( const NoRedraw & ) ;
 		private: NoRedraw( const NoRedraw & ) ;
 	} ;
 
@@ -139,8 +139,8 @@ protected:
 public:
 	Control( const Control & ) = delete ;
 	Control( Control && ) = delete ;
-	void operator=( const Control & ) = delete ;
-	void operator=( Control && ) = delete ;
+	Control & operator=( const Control & ) = delete ;
+	Control & operator=( Control && ) = delete ;
 
 private:
 	static void load() ;
@@ -187,8 +187,8 @@ public:
 public:
 	ListBox( const ListBox & ) = delete ;
 	ListBox( ListBox && ) = delete ;
-	void operator=( const ListBox & ) = delete ;
-	void operator=( ListBox && ) = delete ;
+	ListBox & operator=( const ListBox & ) = delete ;
+	ListBox & operator=( ListBox && ) = delete ;
 } ;
 
 //| \class GGui::ListView
@@ -220,8 +220,8 @@ public:
 public:
 	ListView( const ListView & ) = delete ;
 	ListView( ListView && ) = delete ;
-	void operator=( const ListView & ) = delete ;
-	void operator=( ListView && ) = delete ;
+	ListView & operator=( const ListView & ) = delete ;
+	ListView & operator=( ListView && ) = delete ;
 
 private:
 	static LPTSTR ptext( const std::string & s ) ;
@@ -246,13 +246,7 @@ public:
 	void set( const std::string & string ) ;
 		///< Sets the text of the edit control.
 
-	void set( const std::string & string , int utf8_overload ) ;
-		///< Sets the text of the edit control.
-
 	std::string get() const ;
-		///< Gets the text of a single-line edit control.
-
-	std::string get( int utf8_overload ) const ;
 		///< Gets the text of a single-line edit control.
 
 	unsigned lines() ;
@@ -292,8 +286,8 @@ public:
 public:
 	EditBox( const EditBox & ) = delete ;
 	EditBox( EditBox && ) = delete ;
-	void operator=( const EditBox & ) = delete ;
-	void operator=( EditBox && ) = delete ;
+	EditBox & operator=( const EditBox & ) = delete ;
+	EditBox & operator=( EditBox && ) = delete ;
 
 private:
 	unsigned windowHeight() ; // not const
@@ -324,8 +318,8 @@ public:
 public:
 	CheckBox( const CheckBox & ) = delete ;
 	CheckBox( CheckBox && ) = delete ;
-	void operator=( const CheckBox & ) = delete ;
-	void operator=( CheckBox && ) = delete ;
+	CheckBox & operator=( const CheckBox & ) = delete ;
+	CheckBox & operator=( CheckBox && ) = delete ;
 } ;
 
 //| \class GGui::Button
@@ -353,8 +347,8 @@ public:
 public:
 	Button( const Button & ) = delete ;
 	Button( Button && ) = delete ;
-	void operator=( const Button & ) = delete ;
-	void operator=( Button && ) = delete ;
+	Button & operator=( const Button & ) = delete ;
+	Button & operator=( Button && ) = delete ;
 } ;
 
 #endif

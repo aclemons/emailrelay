@@ -84,7 +84,7 @@ public:
 
 	static int errno_( const SignalSafe & , int e_new ) noexcept ;
 		///< Sets the process's 'errno' value. Returns the old
-		///< value. Typicaly used in signal handlers.
+		///< value. Typically used in signal handlers.
 
 	static std::string strerror( int errno_ ) ;
 		///< Translates an 'errno' value into a meaningful diagnostic string.
@@ -178,24 +178,24 @@ public:
 	public:
 		enum class Mode
 		{
-			NoChange , // so typically 0022 -rwxr-xr-x
-			TightenOther , // see Umask::tightenOther()
-			LoosenGroup , // see Umask::loosenGroup()
-			Readable , // 0133 -rw-r--r--
-			Tighter ,  // 0117 -rw-rw----
-			Tightest , // 0177 -rw-------
-			GroupOpen ,// 0113 -rw-rw-r--
-			Open       // 0111 -rw-rw-rw-
+			NoChange , // typically 0022
+			TightenOther , // -......---
+			LoosenGroup , // -...rwx...
+			Readable , // 0022 -rw-r--r-- for open(0666) and -rwxr-xr-x for mkdir(0777)
+			Tighter ,  // 0007 -rw-rw---- for open(0666) and -rwxrwx--- for mkdir(0777)
+			Tightest , // 0077 -rw------- for open(0666) and -rwx------ for mkdir(0777)
+			GroupOpen ,// 0002 -rw-rw-r-- for open(0666) and -rwxrwxr-x for mkdir(0777)
+			Open       // 0000 -rw-rw-rw- for open(0666) and -rwxrwxrwx for mkdir(0777)
 		} ;
 		explicit Umask( Mode ) ;
 		~Umask() ;
 		static void set( Mode ) ;
 		static void tightenOther() ; // deny "other" access, user and group unchanged
-		static void loosenGroup() ; // allow group read/write, user and "other" unchanged
+		static void loosenGroup() ; // allow group access, user and "other" unchanged
 		Umask( const Umask & ) = delete ;
 		Umask( Umask && ) = delete ;
-		void operator=( const Umask & ) = delete ;
-		void operator=( Umask && ) = delete ;
+		Umask & operator=( const Umask & ) = delete ;
+		Umask & operator=( Umask && ) = delete ;
 
 	private:
 		std::unique_ptr<UmaskImp> m_imp ;

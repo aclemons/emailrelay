@@ -58,7 +58,7 @@ sub send
 	my $nsent = $this->{m_s}->send( $tx ) ;
 	if( !defined($nsent) or $nsent != length($tx) )
 	{
-		die "send: socket send error" ;
+		die "send: socket send error: $$this{m_server} $$this{m_port}" ;
 	}
 }
 

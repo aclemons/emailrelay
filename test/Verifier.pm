@@ -18,7 +18,7 @@
 #
 # Verifier.pm
 #
-# A wrapper for running the "emailrelay-test-verifier" program.
+# A wrapper for running the "emailrelay_test_verifier" program.
 #
 # See also: Helper
 #
@@ -31,7 +31,7 @@ package Verifier ;
 sub new
 {
 	my ( $classname , $port ) = @_ ;
-	return bless { h => new Helper( "emailrelay-test-verifier" , $port ) } , $classname ;
+	return bless { h => new Helper( "emailrelay_test_verifier" , $port ) } , $classname ;
 }
 
 sub port { return shift->{h}->port(@_) }

@@ -43,7 +43,7 @@ e_systemd_DATA = \
 emailrelay: emailrelay.pam
 	cp $(top_srcdir)/etc/emailrelay.pam $@
 
-do_sed = sed -e "s:__INIT_DIR__:$(e_initdir):g" -e "s:__RUN_DIR__:$(e_rundir):g"
+do_sed = sed -e "s:__INIT_DIR__:$(e_initdir):g" -e "s:__RUN_DIR__:$(e_rundir):g" -e "s:__SYSCONF_DIR__:$(e_sysconfdir):g" -e "s:__SBIN_DIR__:$(sbindir):g"
 
 emailrelay.service: emailrelay.service.in
 	$(do_sed) < $(srcdir)/emailrelay.service.in > emailrelay.service

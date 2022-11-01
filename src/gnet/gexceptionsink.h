@@ -145,8 +145,8 @@ public:
 		///< Returns true if eh() is not null.
 
 private:
-	ExceptionHandler * m_eh ;
-	ExceptionSource * m_esrc{nullptr} ;
+	ExceptionHandler * m_eh {nullptr} ;
+	ExceptionSource * m_esrc {nullptr} ;
 } ;
 
 //| \class GNet::ExceptionSinkUnbound
@@ -169,13 +169,7 @@ public:
 		///< Returns a sink object with the source pointer set.
 
 private:
-	ExceptionHandler * m_eh ;
+	ExceptionHandler * m_eh {nullptr} ;
 } ;
-
-inline
-GNet::ExceptionSink::ExceptionSink() noexcept :
-	m_eh(nullptr)
-{
-}
 
 #endif

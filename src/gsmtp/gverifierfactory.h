@@ -24,6 +24,7 @@
 #include "gdef.h"
 #include "gverifier.h"
 #include "gexceptionsink.h"
+#include "gfactoryparser.h"
 #include <string>
 #include <utility>
 #include <memory>
@@ -40,15 +41,9 @@ class GSmtp::VerifierFactory
 {
 public:
 	static std::unique_ptr<Verifier> newVerifier( GNet::ExceptionSink ,
-		const std::string & spec , unsigned int timeout ) ;
-			///< Returns a Verifier on the heap. The verifier specification
-			///< is normally prefixed with a verifier type, or it is the
-			///< file system path of an exectuable. Throws an exception
-			///< if an invalid or unsupported specification.
-
-	static std::string check( const std::string & spec ) ;
-		///< Checks a verifier specification. Returns an empty string if
-		///< okay, or a diagnostic reason string.
+		const FactoryParser::Result & spec , unsigned int timeout ) ;
+			///< Returns a Verifier on the heap. Throws if
+			///< an invalid or unsupported specification.
 
 public:
 	VerifierFactory() = delete ;

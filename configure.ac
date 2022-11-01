@@ -19,7 +19,7 @@ dnl
 dnl Process this file with autoconf to produce a configure script.
 dnl
 
-AC_INIT([E-MailRelay],[2.4dev1],[],[emailrelay])
+AC_INIT([E-MailRelay],[2.4],[],[emailrelay])
 AC_CONFIG_SRCDIR([src/glib/gdef.h])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([no-define])
@@ -85,8 +85,6 @@ AC_ARG_ENABLE([install-hook],AS_HELP_STRING([--enable-install-hook],[enable fixi
 GCONFIG_FN_ENABLE_INSTALL_HOOK
 AC_ARG_ENABLE([interface-names],AS_HELP_STRING([--enable-interface-names],[allow network interface names for defining listening addresses (default yes)]))
 GCONFIG_FN_ENABLE_INTERFACE_NAMES
-AC_ARG_ENABLE([ipv6],AS_HELP_STRING([--enable-ipv6],[enable ipv6 (default auto)]))
-GCONFIG_FN_ENABLE_IPV6
 AC_ARG_ENABLE([mac],AS_HELP_STRING([--enable-mac],[enable building for mac os x (default auto)]))
 GCONFIG_FN_ENABLE_MAC
 AC_ARG_ENABLE([std-thread],AS_HELP_STRING([--enable-std-thread],[use std::thread or not (default auto)]))
@@ -97,12 +95,16 @@ AC_ARG_ENABLE([verbose],AS_HELP_STRING([--enable-verbose],[enable verbose loggin
 GCONFIG_FN_ENABLE_VERBOSE
 AC_ARG_ENABLE([windows],AS_HELP_STRING([--enable-windows],[enable building for windows (default auto)]))
 GCONFIG_FN_ENABLE_WINDOWS
+AC_ARG_ENABLE([uds],AS_HELP_STRING([--enable-uds],[enable unix domain sockets (default auto)]))
+GCONFIG_FN_ENABLE_UDS
+AC_ARG_ENABLE([dnsbl],AS_HELP_STRING([--enable-dnsbl],[enable DNSBL (default yes)]))
+GCONFIG_FN_ENABLE_DNSBL
 
 dnl "--with-whatever"
 dnl
 AC_ARG_WITH([doxygen],AS_HELP_STRING([--with-doxygen],[generate source code documentation with doxygen (default auto)]))
 GCONFIG_FN_WITH_DOXYGEN
-AC_ARG_WITH([gettext],AS_HELP_STRING([--with-gettext],[use gettext (default auto)]))
+AC_ARG_WITH([gettext],AS_HELP_STRING([--with-gettext],[use GNU gettext (default no)]))
 GCONFIG_FN_WITH_GETTEXT
 AC_ARG_WITH([man2html],AS_HELP_STRING([--with-man2html],[convert man pages to html using man2html (default auto)]))
 GCONFIG_FN_WITH_MAN2HTML
@@ -111,8 +113,6 @@ AC_ARG_WITH([mbedtls],AS_HELP_STRING([--with-mbedtls],[use mbedtls for tls layer
 GCONFIG_FN_TLS
 AC_ARG_WITH([pam],AS_HELP_STRING([--with-pam],[use linux pam for authentication (default auto)]))
 GCONFIG_FN_WITH_PAM
-AC_ARG_WITH([uds],AS_HELP_STRING([--with-uds],[enable unix domain sockets (default auto)]))
-GCONFIG_FN_WITH_UDS
 
 dnl directory tweaking -- define e_ prefixed directory variables
 dnl
@@ -121,7 +121,7 @@ GCONFIG_FN_SET_DIRECTORIES_E
 
 dnl generate files
 dnl
-AC_CONFIG_FILES([Makefile src/Makefile src/glib/Makefile src/gssl/Makefile src/gnet/Makefile src/gauth/Makefile src/gsmtp/Makefile src/gpop/Makefile src/main/Makefile src/main/icon/Makefile src/win32/Makefile src/gui/Makefile bin/Makefile doc/Makefile etc/Makefile test/Makefile test/certificates/Makefile m4/Makefile bsd/Makefile debian/Makefile po/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile src/glib/Makefile src/gssl/Makefile src/gnet/Makefile src/gauth/Makefile src/gsmtp/Makefile src/gpop/Makefile src/main/Makefile src/main/icon/Makefile src/win32/Makefile src/gui/Makefile bin/Makefile doc/Makefile etc/Makefile test/Makefile test/certificates/Makefile m4/Makefile bsd/Makefile debian/Makefile po/Makefile unity/Makefile])
 AC_OUTPUT
 
 dnl final warnings

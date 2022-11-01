@@ -41,7 +41,6 @@ public:
 	explicit Address6( unsigned int ) ;
 	explicit Address6( const std::string & ) ;
 	Address6( const std::string & , const std::string & ) ;
-	Address6( const std::string & , unsigned int ) ;
 	Address6( unsigned int port , int /*for overload resolution*/ ) ; // canonical loopback address
 	Address6( const sockaddr * addr , socklen_t len , bool ipv6_scope_id_fixup = false ) ;
 
@@ -70,7 +69,7 @@ public:
 	bool isAny() const ;
 	unsigned int bits() const ;
 	std::string displayString( bool ipv6_with_scope = false ) const ;
-	std::string hostPartString( bool raw = false ) const ;
+	std::string hostPartString() const ;
 	std::string queryString() const ;
 	G::StringArray wildcards() const ;
 

@@ -31,8 +31,8 @@
 #         -w64 cross-compile for windows 64-bit with mingw-w64
 #         -p   cross-compile for rpi
 #         -g   git-clone mbedtls and exit
-#
-# For systemd add "e_systemddir=/usr/lib/systemd/system".
+#         -S   force e_systemddir for systemd
+#         -X   suppress e_systemddir for systemd
 #
 # When cross-compiling with mbedtls the mbedtls source should be unpacked
 # into this base directory (see MBEDTLS_DIR below), or use '-g' to
@@ -42,6 +42,7 @@
 thisdir="`cd \`dirname $0\` && pwd`"
 
 usage="[-g] [{-d|-s <>}] [{-o|-w|-p}] -- <configure-args>"
+opt_systemd=0 ; if test "`systemctl is-system-running 2>/dev/null | sed 's/offline//'`" != "" ; then opt_systemd=1 ; fi
 while expr "x$1" : "x-" >/dev/null
 do
 	valued=0
@@ -54,6 +55,8 @@ do
 		w32) opt_mingw=1 ; opt_win=32 ;;
 		w64) opt_mingw=1 ; opt_win=64 ;;
 		p) opt_rpi=1 ;;
+		S) opt_systemd=1 ;;
+		X) opt_systemd=0 ;;
 		h) echo usage: `basename $0` $usage "..." ; $thisdir/configure --help=short ; exit 0 ;;
 		#\?) echo usage: `basename $0` $usage >&2 ; exit 2 ;;
 		*) opt_passthrough="$opt_passthrough $1" ;;
@@ -76,7 +79,7 @@ if test "0$opt_git" -eq 1
 then
 	git clone https://salsa.debian.org/debian/mbedtls.git
 	e="$?"
-	patch -d mbedtls/library -p1 < src/gssl/mbedtls-vsnprintf-fix.p1
+	sed -i 's/defined._TRUNCATE./0/' mbedtls/library/platform.c
 	if test "$e" -eq 0 -a "0$opt_mingw" -eq 0
 	then
 		echo build with...
@@ -240,6 +243,15 @@ then
 	export LDFLAGS="$LDFLAGS -L/opt/local/lib -L/opt/X11/lib"
 	$thisdir/configure $enable_debug $with_mbedtls \
 		--prefix=/opt/local --mandir=/opt/local/man $opt_passthrough "$@"
+:
+elif test "`uname`" = "Linux" -a "$opt_systemd" -eq 1
+then
+	export CXXFLAGS
+	export LDFLAGS
+	$thisdir/configure $enable_debug $with_mbedtls \
+		--prefix=/usr --libexecdir=/usr/lib --sysconfdir=/etc \
+		--localstatedir=/var e_systemddir=/usr/lib/systemd/system \
+		$opt_passthrough e_rundir=/run/emailrelay "$@"
 :
 elif test "`uname`" = "Linux"
 then

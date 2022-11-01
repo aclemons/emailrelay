@@ -29,7 +29,6 @@
 #include "gsaslserver.h"
 #include "gtimer.h"
 #include "gexception.h"
-#include <memory>
 
 namespace GPop
 {
@@ -150,8 +149,8 @@ public:
 	~ServerProtocol() = default ;
 	ServerProtocol( const ServerProtocol & ) = delete ;
 	ServerProtocol( ServerProtocol && ) = delete ;
-	void operator=( const ServerProtocol & ) = delete ;
-	void operator=( ServerProtocol && ) = delete ;
+	ServerProtocol & operator=( const ServerProtocol & ) = delete ;
+	ServerProtocol & operator=( ServerProtocol && ) = delete ;
 
 private:
 	void doQuit( const std::string & line , bool & ) ;
@@ -198,7 +197,7 @@ private:
 	Security & m_security ;
 	Store & m_store ;
 	StoreLock m_store_lock ;
-	std::unique_ptr<GAuth::SaslServer> m_sasl ;
+	std::unique_ptr<GAuth::SaslServer> m_sasl_server ;
 	GNet::Address m_peer_address ;
 	Fsm m_fsm ;
 	std::string m_user ;
@@ -206,7 +205,7 @@ private:
 	long m_body_limit ;
 	bool m_in_body ;
 	bool m_secure ;
-	bool m_sasl_init_apop ;
+	bool m_sasl_server_init_apop ;
 } ;
 
 //| \class GPop::ServerProtocolText
@@ -222,8 +221,8 @@ public:
 	~ServerProtocolText() override = default ;
 	ServerProtocolText( const ServerProtocolText & ) = delete ;
 	ServerProtocolText( ServerProtocolText && ) = delete ;
-	void operator=( const ServerProtocolText & ) = delete ;
-	void operator=( ServerProtocolText && ) = delete ;
+	ServerProtocolText & operator=( const ServerProtocolText & ) = delete ;
+	ServerProtocolText & operator=( ServerProtocolText && ) = delete ;
 
 private: // overrides
 	std::string greeting() const override ; // Override from GPop::ServerProtocol::Text.

@@ -52,11 +52,11 @@ public:
 public:
 	FutureEventImp( const FutureEventImp & ) = delete ;
 	FutureEventImp( FutureEventImp && ) = delete ;
-	void operator=( const FutureEventImp & ) = delete ;
-	void operator=( FutureEventImp && ) = delete ;
+	FutureEventImp & operator=( const FutureEventImp & ) = delete ;
+	FutureEventImp & operator=( FutureEventImp && ) = delete ;
 
 private: // overrides
-	void readEvent( Descriptor ) override ; // Override from GNet::EventHandler.
+	void readEvent() override ; // Override from GNet::EventHandler.
 
 private:
 	static int init( int ) ;
@@ -70,8 +70,8 @@ private:
 		int fd{-1} ;
 		Fd( const Fd & ) = delete ;
 		Fd( Fd && ) = delete ;
-		void operator=( const Fd & ) = delete ;
-		void operator=( Fd && ) = delete ;
+		Fd & operator=( const Fd & ) = delete ;
+		Fd & operator=( Fd && ) = delete ;
 	} ;
 
 private:
@@ -136,7 +136,7 @@ bool GNet::FutureEventImp::send( HANDLE handle , bool close ) noexcept
 	return ok ;
 }
 
-void GNet::FutureEventImp::readEvent( Descriptor )
+void GNet::FutureEventImp::readEvent()
 {
 	receive() ;
 	if( !m_triggered )

@@ -21,9 +21,8 @@
 #include "gdef.h"
 #include "gprotocolmessage.h"
 
-void GSmtp::ProtocolMessage::addContentLine( const std::string & line )
+bool GSmtp::ProtocolMessage::addTextLine( const std::string & line )
 {
-	addContent( line.data() , line.size() ) ;
-	addContent( "\r\n" , 2U ) ;
+	return addText( line.data() , line.size() ) && addText( "\r\n" , 2U ) ;
 }
 

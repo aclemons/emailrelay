@@ -40,7 +40,7 @@ namespace Main
 /// A class which deals with the command-line interface to the process, both
 /// input from command-line parameters and feedback to (eg.) stdout.
 ///
-/// Higher-level access to command-line options is provided by the Configuration class.
+/// Higher-level access to command-line options is provided by Main::Configuration.
 ///
 class Main::CommandLine
 {
@@ -57,6 +57,9 @@ public:
 
 	const std::vector<G::Option> & options() const ;
 		///< Exposes the command-line options.
+
+	G::StringArray usageErrors() const ;
+		///< Returns the usage error list.
 
 	std::size_t argc() const ;
 		///< Returns the number of non-option arguments on the command line.
@@ -106,8 +109,8 @@ public:
 public:
 	CommandLine( const CommandLine & ) = delete ;
 	CommandLine( CommandLine && ) = delete ;
-	void operator=( const CommandLine & ) = delete ;
-	void operator=( CommandLine && ) = delete ;
+	CommandLine & operator=( const CommandLine & ) = delete ;
+	CommandLine & operator=( CommandLine && ) = delete ;
 
 private:
 	void showUsage( bool e ) const ;
@@ -117,7 +120,7 @@ private:
 	void showSslCredit( bool e = false , const std::string & eot = {} ) const ;
 	void showSslVersion( bool e = false , const std::string & eot = {} ) const ;
 	void showThreading( bool e = false , const std::string & eot = {} ) const ;
-	bool sanityCheck( const G::Path & ) ;
+	void showUds( bool e = false , const std::string & eod = {} ) const ;
 
 private:
 	Output & m_output ;
@@ -125,7 +128,6 @@ private:
 	G::Arg m_arg ;
 	G::GetOpt m_getopt ;
 	bool m_verbose ;
-	std::string m_insanity ;
 } ;
 
 #endif

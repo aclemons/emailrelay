@@ -23,7 +23,9 @@
 #
 # Synopsis:
 #  use ConfigStatus ;
-#  my $cs = new ConfigStatus( "config.status" ) ;
+#  my $cs = new ConfigStatus() ;
+#  my $cs = new ConfigStatus( "./config.status" ) ;
+#  my $cs = new ConfigStatus("") ; $cs->parse( "/tmp/config.status" ) ;
 #  my %vars = $cs->vars() ;
 #  my %switches = $cs->switches() ;
 #
@@ -42,6 +44,18 @@ sub new
 		m_vars => {} ,
 		m_switches => {} ,
 	} , $classname ;
+	if( !defined($filename) )
+	{
+		for my $dir ( "." , ".." , "../.." )
+		{
+			if( -e "$dir/config.status" )
+			{
+				$filename = "$dir/config.status" ;
+				last ;
+			}
+		}
+		$filename or die ;
+	}
 	$this->parse( $filename ) if $filename ;
 	return $this ;
 }
