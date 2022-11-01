@@ -83,7 +83,7 @@ public:
 	} ;
 
 	Client( GNet::ExceptionSink , const GNet::Location & remote ,
-		const GAuth::Secrets & secrets , const Config & config ) ;
+		const GAuth::SaslClientSecrets & secrets , const Config & config ) ;
 			///< Constructor. Starts connecting immediately.
 			///<
 			///< Use sendMessagesFrom() once, or use sendMessage()

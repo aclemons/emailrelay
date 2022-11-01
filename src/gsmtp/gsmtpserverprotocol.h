@@ -123,7 +123,7 @@ public:
 	} ;
 
 	ServerProtocol( GNet::ExceptionSink , Sender & , Verifier & , ProtocolMessage & ,
-		const GAuth::Secrets & secrets , const std::string & sasl_server_config ,
+		const GAuth::SaslServerSecrets & secrets , const std::string & sasl_server_config ,
 		Text & text , const GNet::Address & peer_address , const Config & config ) ;
 			///< Constructor.
 			///<

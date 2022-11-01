@@ -323,7 +323,7 @@ bool GSmtp::AdminServerPeer::notifying() const
 
 GSmtp::AdminServer::AdminServer( GNet::ExceptionSink es , MessageStore & store ,
 	const GNet::ServerPeerConfig & server_peer_config ,
-	const GSmtp::Client::Config & client_config , const GAuth::Secrets & client_secrets ,
+	const GSmtp::Client::Config & client_config , const GAuth::SaslClientSecrets & client_secrets ,
 	const G::StringArray & interfaces , unsigned int port , bool allow_remote ,
 	const std::string & remote_address , unsigned int connection_timeout ,
 	const G::StringMap & info_commands , const G::StringMap & config_commands ,
@@ -398,7 +398,7 @@ GSmtp::MessageStore & GSmtp::AdminServer::store()
 	return m_store ;
 }
 
-const GAuth::Secrets & GSmtp::AdminServer::clientSecrets() const
+const GAuth::SaslClientSecrets & GSmtp::AdminServer::clientSecrets() const
 {
 	return m_client_secrets ;
 }

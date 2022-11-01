@@ -76,7 +76,7 @@ std::string GSmtp::AnonymousText::received( const std::string & , bool , bool ,
 
 GSmtp::ServerPeer::ServerPeer( GNet::ExceptionSinkUnbound esu ,
 	const GNet::ServerPeerInfo & peer_info , Server & server ,
-	const GAuth::Secrets & server_secrets , const Server::Config & server_config ,
+	const GAuth::SaslServerSecrets & server_secrets , const Server::Config & server_config ,
 	std::unique_ptr<ServerProtocol::Text> ptext ) :
 		GNet::ServerPeer(esu.bind(this),peer_info,GNet::LineBufferConfig::transparent()) ,
 		m_server(server) ,
@@ -204,7 +204,8 @@ void GSmtp::ServerPeer::onCheckTimeout()
 // ===
 
 GSmtp::Server::Server( GNet::ExceptionSink es , MessageStore & store ,
-	const GAuth::Secrets & client_secrets , const GAuth::Secrets & server_secrets ,
+	const GAuth::SaslClientSecrets & client_secrets , 
+	const GAuth::SaslServerSecrets & server_secrets ,
 	const Config & server_config , const std::string & forward_to ,
 	const GSmtp::Client::Config & client_config ) :
 		GNet::MultiServer(es,server_config.interfaces,server_config.port,"smtp",server_config.server_peer_config) ,

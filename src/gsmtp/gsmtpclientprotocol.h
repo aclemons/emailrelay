@@ -211,7 +211,7 @@ public:
 	} ;
 
 	ClientProtocol( GNet::ExceptionSink , Sender & sender ,
-		const GAuth::Secrets & secrets , const std::string & sasl_client_config ,
+		const GAuth::SaslClientSecrets & secrets , const std::string & sasl_client_config ,
 		const Config & config , bool in_secure_tunnel ) ;
 			///< Constructor. The Sender interface is used to send protocol
 			///< messages to the peer. The references are kept.
@@ -320,7 +320,7 @@ private:
 
 private:
 	Sender & m_sender ;
-	const GAuth::Secrets & m_secrets ;
+	const GAuth::SaslClientSecrets & m_secrets ;
 	std::unique_ptr<GAuth::SaslClient> m_sasl ;
 	std::weak_ptr<StoredMessage> m_message ;
 	Config m_config ;

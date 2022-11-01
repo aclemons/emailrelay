@@ -36,14 +36,14 @@
 
 GSmtp::ServerProtocol::ServerProtocol( GNet::ExceptionSink es , Sender & sender ,
 	Verifier & verifier , ProtocolMessage & pmessage ,
-	const GAuth::Secrets & secrets , const std::string & sasl_server_config ,
+	const GAuth::SaslServerSecrets & server_secrets , const std::string & sasl_server_config ,
 	Text & text , const GNet::Address & peer_address , const Config & config ) :
 		m_sender(sender) ,
 		m_verifier(verifier) ,
 		m_text(text) ,
 		m_message(pmessage) ,
 		m_process_timer(*this,&ServerProtocol::onProcessTimeout,es) ,
-		m_sasl(GAuth::SaslServerFactory::newSaslServer(secrets,sasl_server_config,false/*apop*/)) ,
+		m_sasl(GAuth::SaslServerFactory::newSaslServer(server_secrets,sasl_server_config,false/*apop*/)) ,
 		m_config(config) ,
 		m_fsm(State::sStart,State::sEnd,State::s_Same,State::s_Any) ,
 		m_with_starttls(false) ,

@@ -32,7 +32,7 @@
 #include "glog.h"
 
 GSmtp::Client::Client( GNet::ExceptionSink es , const GNet::Location & remote ,
-	const GAuth::Secrets & secrets , const Config & config ) :
+	const GAuth::SaslClientSecrets & secrets , const Config & config ) :
 		GNet::Client(es,remote,netConfig(config)) ,
 		m_store(nullptr) ,
 		m_filter(FilterFactory::newFilter(es,false,config.filter_address,config.filter_timeout)) ,

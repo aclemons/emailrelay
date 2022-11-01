@@ -118,7 +118,7 @@ class GSmtp::AdminServer : public GNet::MultiServer
 public:
 	AdminServer( GNet::ExceptionSink , MessageStore & store ,
 		const GNet::ServerPeerConfig & server_peer_config ,
-		const GSmtp::Client::Config & client_config , const GAuth::Secrets & client_secrets ,
+		const GSmtp::Client::Config & client_config , const GAuth::SaslClientSecrets & client_secrets ,
 		const G::StringArray & interfaces , unsigned int port , bool allow_remote ,
 		const std::string & remote_address , unsigned int connection_timeout ,
 		const G::StringMap & info_commands , const G::StringMap & config_commands ,
@@ -135,7 +135,7 @@ public:
 		///< Returns a reference to the message store, as
 		///< passed in to the constructor.
 
-	const GAuth::Secrets & clientSecrets() const ;
+	const GAuth::SaslClientSecrets & clientSecrets() const ;
 		///< Returns a reference to the client secrets object, as passed
 		///< in to the constructor. This is a client-side secrets file,
 		///< used to authenticate ourselves with a remote server.
@@ -168,7 +168,7 @@ public:
 private:
 	MessageStore & m_store ;
 	GSmtp::Client::Config m_client_config ;
-	const GAuth::Secrets & m_client_secrets ;
+	const GAuth::SaslClientSecrets & m_client_secrets ;
 	bool m_allow_remote ;
 	std::string m_remote_address ;
 	unsigned int m_connection_timeout ;

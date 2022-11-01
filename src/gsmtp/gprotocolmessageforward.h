@@ -57,7 +57,7 @@ public:
 	ProtocolMessageForward( GNet::ExceptionSink , MessageStore & store ,
 		std::unique_ptr<ProtocolMessage> pm ,
 		const GSmtp::Client::Config & client_config ,
-		const GAuth::Secrets & client_secrets ,
+		const GAuth::SaslClientSecrets & client_secrets ,
 		const std::string & remote_server_address ) ;
 			///< Constructor. The 'store' and 'client-secrets' references
 			///< are kept.
@@ -106,7 +106,7 @@ private:
 	G::CallStack m_call_stack ;
 	GNet::Location m_client_location ;
 	Client::Config m_client_config ;
-	const GAuth::Secrets & m_client_secrets ;
+	const GAuth::SaslClientSecrets & m_client_secrets ;
 	std::unique_ptr<ProtocolMessage> m_pm ;
 	GNet::ClientPtr<GSmtp::Client> m_client_ptr ;
 	unsigned long m_id ;

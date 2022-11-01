@@ -30,7 +30,7 @@
 GSmtp::ProtocolMessageForward::ProtocolMessageForward( GNet::ExceptionSink es ,
 	MessageStore & store , std::unique_ptr<ProtocolMessage> pm ,
 	const GSmtp::Client::Config & client_config ,
-	const GAuth::Secrets & client_secrets , const std::string & server ) :
+	const GAuth::SaslClientSecrets & client_secrets , const std::string & server ) :
 		m_es(es) ,
 		m_store(store) ,
 		m_client_location(server) ,
