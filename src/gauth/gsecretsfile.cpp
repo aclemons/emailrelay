@@ -166,11 +166,14 @@ void GAuth::SecretsFile::processLine( Contents & contents ,
             addWarning( contents , line_number , "invalid base64 encoding in fourth field"_sv ) ;
 		if( !valid_id || !valid_secret )
 			return ;
-		type = "plain"_sv ;
-        id_or_ip = G::Xtext::encode( G::Base64::decode(id_or_ip) ) ;
-        secret = G::Xtext::encode( G::Base64::decode(secret) ) ;
+        std::string xtext_id_or_ip = G::Xtext::encode( G::Base64::decode(id_or_ip) ) ;
+        std::string xtext_secret = G::Xtext::encode( G::Base64::decode(secret) ) ;
+		processLineImp( contents , line_number , side , "plain"_sv , xtext_id_or_ip , xtext_secret ) ;
 	}
-	processLineImp( contents , line_number , side , type , id_or_ip , secret ) ;
+	else
+	{
+		processLineImp( contents , line_number , side , type , id_or_ip , secret ) ;
+	}
 }
 
 void GAuth::SecretsFile::processLineImp( Contents & contents ,

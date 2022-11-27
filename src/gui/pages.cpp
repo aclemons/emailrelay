@@ -701,7 +701,7 @@ void PopPage::dump( std::ostream & stream , bool for_install ) const
 	dumpItem( stream , for_install , "pop-shared-no-delete" , value(m_no_delete_checkbox) ) ;
 	dumpItem( stream , for_install , "pop-by-name" , value(m_pop_by_name) ) ;
 
-	dumpItem( stream , for_install , "pop-auth-mechanism" , std::string("plain:b") ) ;
+	dumpItem( stream , for_install , "pop-auth-mechanism" , std::string("plain") ) ;
 	if( for_install )
 	{
 		dumpItem( stream , for_install , "pop-account-1-name" , G::Base64::encode(value_utf8(m_name_1)) ) ;
@@ -920,7 +920,7 @@ void SmtpServerPage::dump( std::ostream & stream , bool for_install ) const
 	Gui::Page::dump( stream , for_install ) ;
 	dumpItem( stream , for_install , "smtp-server-port" , value(m_port_edit_box) ) ;
 	dumpItem( stream , for_install , "smtp-server-auth" , value(m_auth_checkbox) ) ;
-	dumpItem( stream , for_install , "smtp-server-auth-mechanism" , std::string("plain:b") ) ;
+	dumpItem( stream , for_install , "smtp-server-auth-mechanism" , std::string("plain") ) ;
 	if( for_install )
 	{
 		dumpItem( stream , for_install , "smtp-server-account-name" , G::Base64::encode(value_utf8(m_account_name)) ) ;
@@ -1353,7 +1353,7 @@ void SmtpClientPage::dump( std::ostream & stream , bool for_install ) const
 	dumpItem( stream , for_install , "smtp-client-tls" , value(m_tls_checkbox->isChecked()&&!m_tls_tunnel->isChecked()) ) ;
 	dumpItem( stream , for_install , "smtp-client-tls-connection" , value(m_tls_checkbox->isChecked()&&m_tls_tunnel->isChecked()) ) ;
 	dumpItem( stream , for_install , "smtp-client-auth" , value(m_auth_checkbox) ) ;
-	dumpItem( stream , for_install , "smtp-client-auth-mechanism" , std::string("plain:b") ) ;
+	dumpItem( stream , for_install , "smtp-client-auth-mechanism" , std::string("plain") ) ;
 	if( for_install )
 	{
 		dumpItem( stream , for_install , "smtp-client-account-name" , G::Base64::encode(value_utf8(m_account_name)) ) ;
