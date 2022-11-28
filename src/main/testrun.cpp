@@ -87,7 +87,7 @@ namespace { std::string localedir() { return std::string() ; } }
 
 std::string Main::Run::versionNumber()
 {
-	return "2.4" ;
+	return "2.4.1" ;
 }
 
 Main::Run::Unit::Unit( std::size_t unit_id , Run * run , const Configuration & config , int resolver_family ) :
