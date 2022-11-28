@@ -247,15 +247,21 @@ struct CreateSecrets : public ActionBase
 {
 	G::Path m_path ;
 	G::Path m_template ;
-	G::StringMap m_content ;
+	struct Item
+	{
+		std::string key ; // "client plain:b" or "server plain:b BOB==" or "server none"
+		std::string key2 ; // "client plain" or "server plain b+0B" or ""
+		std::string line ; // "client plain:b ALICE== PWD==" or "server plain:b BOB== PWD==" or "server none 127.0.0.1 trusted"
+	} ;
+	std::vector<Item> m_content ;
 	CreateSecrets( const std::string & config_dir , const std::string & filename , G::Path template_ , const G::MapFile & pvalues ) ;
 	void run() override ;
 	trstring text() const override ;
 	std::string subject() const override ;
 	static bool match( std::string , std::string ) ;
 	static bool yes( const std::string & ) ;
-	void addSecret( G::StringMap & , const G::MapFile & , const std::string & k ) const ;
-	void addSecret( G::StringMap & , const G::MapFile & , const std::string & side , const std::string & k1 , const std::string & k2 ) const ;
+	void addSecret( const G::MapFile & , const std::string & k ) ;
+	void addSecret( const G::MapFile & , const std::string & side , const std::string & k1 , const std::string & k2 ) ;
 	Q_DECLARE_TR_FUNCTIONS(CreateSecrets)
 } ;
 
@@ -703,18 +709,18 @@ CreateSecrets::CreateSecrets( const std::string & config_dir , const std::string
 {
 	if( yes(p.value("do-pop")) )
 	{
-		addSecret( m_content , p , "server" , "pop-auth-mechanism" , "pop-account-1" ) ;
-		addSecret( m_content , p , "server" , "pop-auth-mechanism" , "pop-account-2" ) ;
-		addSecret( m_content , p , "server" , "pop-auth-mechanism" , "pop-account-3" ) ;
+		addSecret( p , "server" , "pop-auth-mechanism" , "pop-account-1" ) ;
+		addSecret( p , "server" , "pop-auth-mechanism" , "pop-account-2" ) ;
+		addSecret( p , "server" , "pop-auth-mechanism" , "pop-account-3" ) ;
 	}
 	if( yes(p.value("do-smtp")) && yes(p.value("smtp-server-auth")) )
 	{
-		addSecret( m_content , p , "server" , "smtp-server-auth-mechanism" , "smtp-server-account" ) ;
-		addSecret( m_content , p , "smtp-server-trust" ) ;
+		addSecret( p , "server" , "smtp-server-auth-mechanism" , "smtp-server-account" ) ;
+		addSecret( p , "smtp-server-trust" ) ;
 	}
 	if( yes(p.value("do-smtp")) && yes(p.value("smtp-client-auth")) )
 	{
-		addSecret( m_content , p , "client" , "smtp-client-auth-mechanism" , "smtp-client-account" ) ;
+		addSecret( p , "client" , "smtp-client-auth-mechanism" , "smtp-client-account" ) ;
 	}
 }
 
@@ -723,32 +729,42 @@ bool CreateSecrets::yes( const std::string & s )
 	return G::Str::isPositive( s ) ;
 }
 
-void CreateSecrets::addSecret( G::StringMap & content , const G::MapFile & p , const std::string & k ) const
+void CreateSecrets::addSecret( const G::MapFile & p , const std::string & k )
 {
 	if( !p.value(k).empty() )
 	{
-		std::string head = "server none " + p.value(k) ;
-		std::string tail = "trusted" ;
-		content[head] = head + " " + tail ;
+		std::string address_range = p.value( k ) ;
+		m_content.push_back( {
+			"" ,
+			"" ,
+			"server none " + address_range + " trusted" } ) ;
 	}
 }
 
-void CreateSecrets::addSecret( G::StringMap & content , const G::MapFile & p ,
-	const std::string & side , const std::string & k1 , const std::string & k2 ) const
+void CreateSecrets::addSecret( const G::MapFile & p ,
+	const std::string & side , const std::string & k1_in , const std::string & k2 )
 {
 	if( !p.value(k2+"-name").empty() )
 	{
+		// see pages.cpp -- mechanism is "plain", name and secret are base64
+		//std::string mechanism = p.value( k1 ) ; // plain
+		std::string name_base64 = p.value( k2+"-name" ) ;
+		std::string secret_base64 = p.value( k2+"-password" ) ;
+		std::string name_xtext = G::Xtext::encode( G::Base64::decode(name_base64) ) ;
+		std::string secret_xtext = G::Xtext::encode( G::Base64::decode(secret_base64) ) ;
 		if( side == "server" )
 		{
-			std::string head = side + " " + p.value(k1) + " " + p.value(k2+"-name") ; // eg. "server plain joe"
-			std::string tail = p.value(k2+"-password") ; // eg. "secret"
-			content[head] = head + " " + tail ;
+			m_content.push_back( {
+				"server plain:b " + name_base64 ,
+				"server plain " + name_xtext ,
+				"server plain:b " + name_base64 + " " + secret_base64 } ) ;
 		}
 		else
 		{
-			std::string head = side + " " + p.value(k1) ; // eg. "client plain"
-			std::string tail = p.value(k2+"-name") + " " + p.value(k2+"-password") ; // eg. "joe secret"
-			content[head] = head + " " + tail ;
+			m_content.push_back( {
+				"client plain:b" ,
+				"client plain" ,
+				"client plain:b " + name_base64 + " " + secret_base64 } ) ;
 		}
 	}
 }
@@ -766,6 +782,7 @@ std::string CreateSecrets::subject() const
 bool CreateSecrets::match( std::string p1 , std::string p2 )
 {
 	// true if p1 starts with p2
+	if( p2.empty() ) return false ;
 	G::Str::replaceAll( p1 , "\t" , " " ) ;
 	while( G::Str::replaceAll( p1 , "  " , " " ) ) ;
 	G::Str::trimLeft( p1 , G::Str::ws() ) ;
@@ -829,16 +846,16 @@ void CreateSecrets::run()
 		bool replaced = false ;
 		for( auto & line : line_list )
 		{
-			if( match( line , map_item.first ) )
+			if( match(line,map_item.key) || match(line,map_item.key2) )
 			{
-				line = map_item.second ;
+				line = map_item.line ;
 				replaced = true ;
 				break ;
 			}
 		}
 		if( !replaced )
 		{
-			line_list.push_back( map_item.second ) ;
+			line_list.push_back( map_item.line ) ;
 		}
 	}
 

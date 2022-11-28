@@ -68,7 +68,7 @@ namespace { std::string localedir() { return std::string() ; } }
 
 std::string Main::Run::versionNumber()
 {
-	return "2.4" ;
+	return "2.4.1" ;
 }
 
 Main::Run::Run( Main::Output & output , const G::Arg & arg , bool is_windows , bool has_gui ) :
