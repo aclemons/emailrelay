@@ -37,7 +37,7 @@ template <typename T>
 class G::optional
 {
 public:
-	optional() noexcept(noexcept(T())) ;
+	optional() noexcept(noexcept(T())) {}
 	explicit optional( const T & ) ;
 	optional( bool has_value , const T & value ) ; // not in std::optional()
 	void clear() ; // not in std::optional()
@@ -61,10 +61,6 @@ private:
 	T m_value {} ;
 	bool m_has_value {false} ;
 } ;
-
-template <typename T>
-G::optional<T>::optional() noexcept(noexcept(T()))
-= default ;
 
 template <typename T>
 G::optional<T>::optional( const T & t ) :
