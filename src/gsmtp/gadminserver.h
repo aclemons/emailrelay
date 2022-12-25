@@ -25,12 +25,13 @@
 #include "gmultiserver.h"
 #include "gtimer.h"
 #include "gstr.h"
-#include "gstringarray.h"
-#include "gstringmap.h"
 #include "glinebuffer.h"
 #include "gsmtpserverprotocol.h"
 #include "gclientptr.h"
 #include "gsmtpclient.h"
+#include "gstringview.h"
+#include "gstringarray.h"
+#include "gstringmap.h"
 #include <string>
 #include <list>
 #include <sstream>
@@ -84,23 +85,24 @@ public:
 
 private:
 	void clientDone( const std::string & ) ;
-	static bool is( const std::string & , const std::string & ) ;
-	static std::pair<bool,std::string> find( const std::string & line , const G::StringMap & map ) ;
-	static std::string argument( const std::string & ) ;
+	static bool is( G::string_view , G::string_view ) ;
+	static G::string_view argument( G::string_view ) ;
+	static std::pair<bool,std::string> find( G::string_view , const G::StringMap & map ) ;
 	void flush() ;
 	void forward() ;
 	void help() ;
 	void status() ;
-	std::shared_ptr<MessageStore::Iterator> spooled() ;
-	std::shared_ptr<MessageStore::Iterator> failures() ;
-	void sendList( std::shared_ptr<MessageStore::Iterator> ) ;
-	void sendLine( std::string , bool = true ) ;
+	std::shared_ptr<GStore::MessageStore::Iterator> spooled() ;
+	std::shared_ptr<GStore::MessageStore::Iterator> failures() ;
+	void sendList( std::shared_ptr<GStore::MessageStore::Iterator> ) ;
+	void sendLine( std::string && ) ;
+	void sendLineCopy( std::string ) ;
 	void warranty() ;
 	void version() ;
 	void copyright() ;
 	std::string eol() const ;
 	void unfailAll() ;
-	void send_( const std::string & ) ;
+	void sendImp( const std::string & ) ;
 
 private:
 	GNet::ExceptionSink m_es ;
@@ -121,14 +123,34 @@ private:
 class GSmtp::AdminServer : public GNet::MultiServer
 {
 public:
-	AdminServer( GNet::ExceptionSink , MessageStore & store , FilterFactory & ff ,
+	struct Config /// A configuration structure for GSmtp::AdminServer.
+	{
+		unsigned int port {10026U} ;
+		bool with_terminate {false} ;
+		bool allow_remote {false} ;
+		std::string remote_address ;
+		G::StringMap info_commands ;
+		G::StringMap config_commands ;
+		Client::Config smtp_client_config ;
+		GNet::Server::Config net_server_config ;
+		GNet::ServerPeer::Config net_server_peer_config ;
+
+		Config & set_port( unsigned int ) noexcept ;
+		Config & set_with_terminate( bool = true ) noexcept ;
+		Config & set_allow_remote( bool = true ) noexcept ;
+		Config & set_remote_address( const std::string & ) ;
+		Config & set_info_commands( const G::StringMap & ) ;
+		Config & set_config_commands( const G::StringMap & ) ;
+		Config & set_smtp_client_config( const Client::Config & ) ;
+		Config & set_net_server_config( const GNet::Server::Config & ) ;
+		Config & set_net_server_peer_config( const GNet::ServerPeer::Config & ) ;
+	} ;
+
+	AdminServer( GNet::ExceptionSink , GStore::MessageStore & store , FilterFactoryBase & ,
 		G::Slot::Signal<const std::string&> & forward_request ,
-		const GNet::ServerPeer::Config & server_peer_config , const GNet::Server::Config & server_config ,
-		const GSmtp::Client::Config & client_config , const GAuth::SaslClientSecrets & client_secrets ,
-		const G::StringArray & interfaces , unsigned int port , bool allow_remote ,
-		const std::string & remote_address , unsigned int connection_timeout ,
-		const G::StringMap & info_commands , const G::StringMap & config_commands ,
-		bool with_terminate ) ;
+		const GAuth::SaslClientSecrets & client_secrets ,
+		const G::StringArray & interfaces ,
+		const Config & config ) ;
 			///< Constructor.
 
 	~AdminServer() override ;
@@ -137,11 +159,11 @@ public:
 	void report() const ;
 		///< Generates helpful diagnostics.
 
-	MessageStore & store() ;
+	GStore::MessageStore & store() ;
 		///< Returns a reference to the message store, as
 		///< passed in to the constructor.
 
-	FilterFactory & ff() ;
+	FilterFactoryBase & ff() ;
 		///< Returns a reference to the filter factory, as
 		///< passed in to the constructor.
 
@@ -152,10 +174,6 @@ public:
 
 	GSmtp::Client::Config clientConfig() const ;
 		///< Returns the client configuration.
-
-	unsigned int connectionTimeout() const ;
-		///< Returns the connection timeout, as passed in to the
-		///< constructor.
 
 	void forward() ;
 		///< Called to trigger asynchronous forwarding.
@@ -183,17 +201,21 @@ private:
 
 private:
 	GNet::Timer<AdminServer> m_forward_timer ;
-	MessageStore & m_store ;
-	FilterFactory & m_ff ;
+	GStore::MessageStore & m_store ;
+	FilterFactoryBase & m_ff ;
 	G::Slot::Signal<const std::string&> & m_forward_request ;
-	GSmtp::Client::Config m_client_config ;
 	const GAuth::SaslClientSecrets & m_client_secrets ;
-	bool m_allow_remote ;
-	std::string m_remote_address ;
-	unsigned int m_connection_timeout ;
-	G::StringMap m_info_commands ;
-	G::StringMap m_config_commands ;
-	bool m_with_terminate ;
+	Config m_config ;
 } ;
+
+inline GSmtp::AdminServer::Config & GSmtp::AdminServer::Config::set_port( unsigned int n ) noexcept { port = n ; return *this ; }
+inline GSmtp::AdminServer::Config & GSmtp::AdminServer::Config::set_with_terminate( bool b ) noexcept { with_terminate = b ; return *this ; }
+inline GSmtp::AdminServer::Config & GSmtp::AdminServer::Config::set_allow_remote( bool b ) noexcept { allow_remote = b ; return *this ; }
+inline GSmtp::AdminServer::Config & GSmtp::AdminServer::Config::set_remote_address( const std::string & s ) { remote_address = s ; return *this ; }
+inline GSmtp::AdminServer::Config & GSmtp::AdminServer::Config::set_info_commands( const G::StringMap & m ) { info_commands = m ; return *this ; }
+inline GSmtp::AdminServer::Config & GSmtp::AdminServer::Config::set_config_commands( const G::StringMap & m ) { config_commands = m ; return *this ; }
+inline GSmtp::AdminServer::Config & GSmtp::AdminServer::Config::set_smtp_client_config( const Client::Config & c ) { smtp_client_config = c ; return *this ; }
+inline GSmtp::AdminServer::Config & GSmtp::AdminServer::Config::set_net_server_config( const GNet::Server::Config & c ) { net_server_config = c ; return *this ; }
+inline GSmtp::AdminServer::Config & GSmtp::AdminServer::Config::set_net_server_peer_config( const GNet::ServerPeer::Config & c ) { net_server_peer_config = c ; return *this ; }
 
 #endif

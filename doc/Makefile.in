@@ -352,7 +352,7 @@ man1_MANS = $(man_files_install)
 e_doc_DATA = $(txt_files_install) $(html_files_install) $(css_files_install) $(png_files_install)
 CLEANFILES = $(noinst_SCRIPTS) $(man_files_clean) emailrelay-man.html doxygen.out doxygen.cfg doxygen/search/* doxygen/*
 SUFFIXES = .txt .html
-run_doxygen = $(top_srcdir)/bin/doxygen.sh
+run_doxygen = $(top_srcdir)/libexec/doxygen.sh
 all: all-am
 
 .SUFFIXES:

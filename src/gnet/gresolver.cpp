@@ -214,6 +214,7 @@ std::string GNet::Resolver::resolve( Location & location )
 	}
 }
 
+#ifndef G_LIB_SMALL
 GNet::Resolver::AddressList GNet::Resolver::resolve( const std::string & host , const std::string & service ,
 	int family , bool dgram )
 {
@@ -227,6 +228,7 @@ GNet::Resolver::AddressList GNet::Resolver::resolve( const std::string & host , 
 	G_DEBUG( "GNet::Resolver::resolve: resolve result: list of " << list.size() ) ;
 	return list ;
 }
+#endif
 
 void GNet::Resolver::start( const Location & location )
 {

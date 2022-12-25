@@ -43,7 +43,7 @@ namespace G
 		constexpr int stderr_fileno = 2 ; // STDERR_FILENO
 		LogOutput * this_ = nullptr ;
 		constexpr std::size_t margin = 7U ;
-		constexpr std::size_t buffer_base_size = limits::log + 40U ;
+		constexpr std::size_t buffer_base_size = Limits<>::log + 40U ;
 		std::array<char,buffer_base_size+margin> buffer {} ;
 		struct ostream : std::ostream /// An ostream using G::omembuf.
 		{
@@ -107,6 +107,7 @@ G::LogOutput::LogOutput( const std::string & exename , const Config & config ,
 		LogOutputImp::this_ = this ;
 }
 
+#ifndef G_LIB_SMALL
 G::LogOutput::LogOutput( bool output_enabled_and_summary_info ,
 	bool verbose_info_and_debug , const std::string & path ) :
 		m_path(path)
@@ -124,6 +125,7 @@ G::LogOutput::LogOutput( bool output_enabled_and_summary_info ,
 	if( LogOutputImp::this_ == nullptr )
 		LogOutputImp::this_ = this ;
 }
+#endif
 
 G::LogOutput::Config G::LogOutput::config() const
 {

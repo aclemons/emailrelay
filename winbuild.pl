@@ -48,7 +48,7 @@ use FileHandle ;
 use File::Find ;
 use File::Basename ;
 use File::Copy ;
-use lib dirname($0) , dirname($0)."/bin" ;
+use lib dirname($0) , dirname($0)."/libexec" ;
 require "winbuild.pm" ;
 
 # configuration ...
@@ -247,8 +247,10 @@ for my $part ( @run_parts )
 	}
 	elsif( $part eq "install" )
 	{
-		install( $install_x64 , "x64" , $qt_dirs , $switches{GCONFIG_GUI} ) ;
-		install( $install_x86 , "x86" , $qt_dirs , $switches{GCONFIG_GUI} ) ;
+		my $with_gui = $switches{GCONFIG_GUI} ;
+		my $with_mbedtls = $switches{GCONFIG_TLS_USE_MBEDTLS} || $switches{GCONFIG_TLS_USE_BOTH} ;
+		install( $install_x64 , "x64" , $qt_dirs , $with_gui , $with_mbedtls ) ;
+		install( $install_x86 , "x86" , $qt_dirs , $with_gui , $with_mbedtls ) ;
 	}
 	elsif( $part eq "mingw" )
 	{
@@ -319,7 +321,7 @@ sub create_cmake_file
 	# "emailrelay-gui.pro" -- note that the gui build is
 	# self-contained by virtue of "glibsources.cpp"
 	#
-	my $dynamic_runtime = ( $m->path() =~ m/gui/ ) ;
+	my $dynamic_runtime = ( $m->path() =~ m/gui/ && $m->path !~ m/keygen/ ) ;
 	{
 		print $fh '# choose dynamic or static linking of the c++ runtime' , "\n" ;
 		print $fh 'set(CompilerFlags' , "\n" ;
@@ -348,7 +350,7 @@ sub create_cmake_file
 		print $fh "add_subdirectory($subdir)\n" ;
 	}
 
-	my $definitions = join( " " , "G_WINDOWS=1" , $m->definitions() ) ;
+	my $definitions = join( " " , "G_WINDOWS=1" , grep {!m/G_LIB_SMALL/} $m->definitions() ) ;
 	my $includes = join( " " , "." , ".." , $m->includes($m->base()) , '"${MBEDTLS_INCLUDE_DIRS}"' ) ;
 
 	my @libraries = $m->libraries() ;
@@ -372,7 +374,7 @@ sub create_cmake_file
 		my $sys_libs = join( " " , $m->sys_libs( $program ) ) ;
 
 		my $tls_libs = "" ;
-		if( ( $our_libs =~ m/gssl/ ) &&
+		if( ( $our_libs =~ m/gssl/ || $program =~ m/keygen/ ) &&
 			( $switches->{GCONFIG_TLS_USE_MBEDTLS} || $switches->{GCONFIG_TLS_USE_BOTH} ) )
 		{
 			if( ! $tls_libs_fixed )
@@ -389,9 +391,11 @@ sub create_cmake_file
 		}
 
 		my $qt_libs = ( $m->path() =~ m/gui/ ) ? "Qt5::OpenGL Qt5::Widgets Qt5::Gui Qt5::Core" : "" ;
+		$qt_libs = "" if ( $program =~ m/keygen/ ) ;
 
 		my $win32 = ( $m->path() =~ m/gui/ || $program eq "emailrelay" ) ? "WIN32 " : "" ;
 		$win32 = "" if ( $program =~ m/textmode/ ) ;
+		$win32 = "" if ( $program =~ m/keygen/ ) ;
 
 		my $resources = "" ;
 		my $resource_includes = "" ;
@@ -595,7 +599,7 @@ sub clean_mbedtls_files
 
 sub install
 {
-	my ( $install , $arch , $qt_dirs , $with_gui ) = @_ ;
+	my ( $install , $arch , $qt_dirs , $with_gui , $with_mbedtls ) = @_ ;
 
 	my $msvc_base = winbuild::find_msvc_base( $arch ) ;
 	print "msvc-base=[$msvc_base]\n" ;
@@ -611,14 +615,14 @@ sub install
 	if( $with_gui )
 	{
 		install_copy( "$arch/src/gui/Release/emailrelay-gui.exe" , "$install/emailrelay-setup.exe" ) ;
-		install_copy( "$arch/test/Release/emailrelay_test_keygen.exe" , "$install" ) ;
+		install_copy( "$arch/src/gui/Release/emailrelay-keygen.exe" , "$install" ) if $with_mbedtls ;
 
 		install_mkdir( "$install/payload" ) ;
 		install_payload_cfg( "$install/payload/payload.cfg" ) ;
 		install_core( "$arch/src/main/Release" , "$install/payload/files" ) ;
 
 		install_copy( "$arch/src/gui/Release/emailrelay-gui.exe" , "$install/payload/files" ) ;
-		install_copy( "$arch/test/Release/emailrelay_test_keygen.exe" , "$install/payload/files" ) ;
+		install_copy( "$arch/src/gui/Release/emailrelay-keygen.exe" , "$install/payload/files" ) if $with_mbedtls ;
 
 		install_gui_dependencies( $msvc_base , $arch ,
 			{ exe => "$install/emailrelay-setup.exe" } ,

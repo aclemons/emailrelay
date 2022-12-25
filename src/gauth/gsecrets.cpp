@@ -42,11 +42,13 @@ GAuth::Secrets::Secrets( const std::string & path , const std::string & log_name
 		m_imp = std::make_unique<SecretsFile>( path , true , log_name ) ;
 }
 
+#ifndef G_LIB_SMALL
 GAuth::Secrets::Secrets()
 {
 	if( m_source != "/pam" )
 		m_imp = std::make_unique<SecretsFile>( std::string() , false , std::string() ) ;
 }
+#endif
 
 GAuth::Secrets::~Secrets()
 = default ;

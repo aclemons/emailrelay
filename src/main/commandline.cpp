@@ -26,6 +26,8 @@
 #include "options.h"
 #include "gmessagestore.h"
 #include "ggetopt.h"
+#include "goptionparser.h"
+#include "goptionreader.h"
 #include "goptionsusage.h"
 #include "gaddress.h"
 #include "gprocess.h"
@@ -36,6 +38,7 @@
 #include "gtest.h"
 #include "gstr.h"
 #include "glog.h"
+#include <algorithm>
 
 namespace Main
 {
@@ -69,66 +72,132 @@ private:
 
 // ==
 
-Main::CommandLine::CommandLine( Output & output , const G::Arg & arg ,
-	const G::Options & spec ,
+Main::CommandLine::CommandLine( Output & output , const G::Arg & args_in ,
+	const G::Options & options_spec ,
 	const std::string & version ) :
 		m_output(output) ,
+		m_options_spec(options_spec) ,
 		m_version(version) ,
-		m_arg(arg) ,
-		m_getopt(m_arg,spec) ,
-		m_verbose(m_getopt.contains("verbose"))
+		m_arg_prefix(args_in.prefix())
 {
-	if( !m_getopt.hasErrors() && m_getopt.args().c() == 2U )
+	// look for special config names
+	G::StringArray special_names ;
 	{
-		m_getopt.addOptionsFromFile( 1U , "@app" , G::Path(G::Process::exe()).dirname().str() ) ;
+		for( std::size_t i = 1U ; i < args_in.c() ; i++ )
+		{
+			std::string arg = args_in.v( i ) ;
+			if( G::Str::headMatch(arg,"--spool-dir-") )
+				special_names.push_back( G::Str::head(arg.substr(12U),"=",false) ) ;
+		}
+	}
+	if( !special_names.empty() )
+	{
+		for( std::size_t i = 0U ; i < special_names.size() ; i++ )
+		{
+			m_option_maps.emplace_back() ;
+			G::OptionParser parser( options_spec , m_option_maps.back() , &m_errors ) ;
+			G::StringArray args = parser.parse( args_in.array() , 1U , 0U ,
+				[&special_names,i]( const std::string & name_ ){ return onParse(special_names,i,name_) ; } ) ;
+			if( !args.empty() && m_errors.empty() )
+				m_errors.push_back( "config files cannot be used with a multi-dimensional command-line" ) ;
+		}
+		m_errors.erase( std::unique( m_errors.begin() , m_errors.end() ) , m_errors.end() ) ;
+	}
+	else
+	{
+		// normal command-line parsing
+		m_option_maps.emplace_back() ;
+		G::OptionParser parser0( options_spec , m_option_maps.back() , &m_errors ) ;
+		G::StringArray args = parser0.parse( args_in.array() ) ;
+		m_verbose = m_option_maps.back().contains( "verbose" ) ;
+
+		// any non-option arguments are treated as config files - each
+		// config file after the first creates a new configuration
+		if( m_errors.empty() )
+		{
+			std::string app_dir = G::Path(G::Process::exe()).dirname().str() ;
+			for( std::size_t i = 0U ; i < args.size() ; i++ )
+			{
+				std::string config_file = args[i] ;
+				if( config_file.find("@app") == 0U && !app_dir.empty() )
+					G::Str::replace( config_file , "@app" , app_dir ) ;
+
+				if( i != 0U ) m_option_maps.push_back( G::OptionMap() ) ;
+				G::OptionParser parser( options_spec , m_option_maps.back() , &m_errors ) ;
+				parser.parse( G::OptionReader::read(config_file) , 0U ) ;
+			}
+		}
 	}
 }
 
 Main::CommandLine::~CommandLine()
-= default;
+= default ;
 
-const G::OptionMap & Main::CommandLine::map() const
+std::string Main::CommandLine::onParse( const G::StringArray & special_names , std::size_t i , const std::string & name )
 {
-	return m_getopt.map() ;
+	// we want names like "port-in" where "in" is the current (i'th) special-name to be
+	// parsed as if "port", but we want to ignore "port-out" where "out" is some
+	// other (non-i'th) special name
+
+	std::string _special = std::string(1U,'-').append(special_names.at(i)) ; // "-in"
+	std::string result = name ;
+	if( G::Str::tailMatch( name , _special ) )
+	{
+		result = name.substr( 0U , name.size()-_special.size() ) ; // "port"
+	}
+	else
+	{
+		for( const auto & special : special_names )
+		{
+			_special = std::string(1U,'-').append(special) ; // "-out"
+			if( G::Str::tailMatch( name , _special ) ) // "port-out"
+			{
+				char discard = '-' ; // see OptionParser::parse()
+				result = std::string(1U,discard).append( name.substr(0U,name.size()-_special.size()) ) ; // "-port"
+				break ;
+			}
+		}
+	}
+	return result ;
 }
 
-const std::vector<G::Option> & Main::CommandLine::options() const
+std::size_t Main::CommandLine::configurations() const
 {
-	return m_getopt.options() ;
+	return m_option_maps.size() ;
 }
 
-std::size_t Main::CommandLine::argc() const
+const G::OptionMap & Main::CommandLine::options( std::size_t i ) const
 {
-	return m_getopt.args().c() ;
+	return m_option_maps.at( i ) ;
 }
 
-G::StringArray Main::CommandLine::usageErrors() const
+bool Main::CommandLine::argcError() const
 {
-	return m_getopt.errorList() ;
+	return false ; // we now accept any number of arguments
 }
 
 bool Main::CommandLine::hasUsageErrors() const
 {
-	return m_getopt.hasErrors() ;
+	return !m_errors.empty() ;
 }
 
 void Main::CommandLine::showUsage( bool is_error ) const
 {
-	std::string args = " [<config-file>]" ;
+	std::string args_help = " [<config-file>]" ;
 	auto layout = m_output.outputLayout( m_verbose ) ;
 	layout.set_column( m_verbose ? 42U : 30U ) ;
 	layout.set_extra( m_verbose ) ;
 	layout.set_alt_usage( !m_verbose ) ;
 	layout.set_level_max( m_verbose ? 99U : 20U ) ;
 
-	G::OptionsUsage usage( m_getopt.options() ) ;
+	G::OptionsUsage usage( m_options_spec.list() ) ;
 	if( m_verbose )
 	{
 		// show help in sections...
 		bool help_state = false ;
 		usage.help( layout , &help_state ) ;
 		Show show( m_output , is_error , m_verbose ) ;
-		show.s() << usage.summary(layout,m_arg.prefix(),args) << "\n" ;
+		show.s() << usage.summary(layout,m_arg_prefix,args_help) << "\n" ;
 		auto tags = Options::tags() ;
 		for( const auto & tag : tags )
 		{
@@ -139,14 +208,17 @@ void Main::CommandLine::showUsage( bool is_error ) const
 	else
 	{
 		Show show( m_output , is_error , m_verbose ) ;
-		usage.output( layout , show.s() , m_arg.prefix() , args ) ;
+		usage.output( layout , show.s() , m_arg_prefix , args_help ) ;
 	}
 }
 
 void Main::CommandLine::showUsageErrors( bool e ) const
 {
 	Show show( m_output , e , m_verbose ) ;
-	m_getopt.showErrors( show.s() ) ;
+	for( const auto & error : m_errors )
+	{
+		show.s() << m_arg_prefix << ": error: " << error << "\n" ;
+	}
 	showShortHelp( e ) ;
 }
 
@@ -154,7 +226,7 @@ void Main::CommandLine::showArgcError( bool e ) const
 {
 	using G::txt ;
 	Show show( m_output , e , m_verbose ) ;
-	show.s() << m_arg.prefix() << ": " << txt("usage error: too many non-option arguments") << std::endl ;
+	show.s() << m_arg_prefix << ": " << txt("usage error: too many non-option arguments") << std::endl ;
 	showShortHelp( e ) ;
 }
 
@@ -163,7 +235,7 @@ void Main::CommandLine::showShortHelp( bool e ) const
 	using G::format ;
 	using G::txt ;
 	Show show( m_output , e , m_verbose ) ;
-	const std::string & exe = m_arg.prefix() ;
+	const std::string & exe = m_arg_prefix ;
 	show.s()
 		<< std::string(exe.length()+2U,' ')
 		<< str(format(txt("try \"%1%\" for more information"))%(exe+" --help --verbose")) << std::endl ;
@@ -184,7 +256,7 @@ void Main::CommandLine::showExtraHelp( bool e ) const
 	using G::format ;
 	using G::txt ;
 	Show show( m_output , e , m_verbose ) ;
-	const std::string & exe = m_arg.prefix() ;
+	const std::string & exe = m_arg_prefix ;
 
 	show.s() << "\n" ;
 	if( m_verbose )
@@ -212,27 +284,21 @@ void Main::CommandLine::showNothingToSend( bool e ) const
 {
 	using G::txt ;
 	Show show( m_output , e , m_verbose ) ;
-	show.s() << m_arg.prefix() << ": " << txt("no messages to send") << std::endl ;
+	show.s() << m_arg_prefix << ": " << txt("no messages to send") << std::endl ;
 }
 
 void Main::CommandLine::showNothingToDo( bool e ) const
 {
 	using G::txt ;
 	Show show( m_output , e , m_verbose ) ;
-	show.s() << m_arg.prefix() << ": " << txt("nothing to do") << std::endl ;
+	show.s() << m_arg_prefix << ": " << txt("nothing to do") << std::endl ;
 }
 
 void Main::CommandLine::showFinished( bool e ) const
 {
 	using G::txt ;
 	Show show( m_output , e , m_verbose ) ;
-	show.s() << m_arg.prefix() << ": " << txt("finished") << std::endl ;
-}
-
-void Main::CommandLine::showError( const std::string & reason , bool e ) const
-{
-	Show show( m_output , e , m_verbose ) ;
-	show.s() << m_arg.prefix() << ": " << reason << std::endl ;
+	show.s() << m_arg_prefix << ": " << txt("finished") << std::endl ;
 }
 
 void Main::CommandLine::showBanner( bool e , const std::string & eot ) const
@@ -301,7 +367,7 @@ void Main::CommandLine::showSemanticError( const std::string & error ) const
 {
 	using G::txt ;
 	Show show( m_output , true , m_verbose ) ;
-	show.s() << m_arg.prefix() << ": " << txt("usage error: ") << error << std::endl ;
+	show.s() << m_arg_prefix << ": " << txt("usage error: ") << error << std::endl ;
 }
 
 void Main::CommandLine::showSemanticWarnings( const G::StringArray & warnings ) const
@@ -311,8 +377,8 @@ void Main::CommandLine::showSemanticWarnings( const G::StringArray & warnings ) 
 	{
 		Show show( m_output , true , m_verbose ) ;
 		const char * warning = txt( "warning" ) ;
-		std::string sep = std::string(1U,'\n').append(m_arg.prefix()).append(": ",2U).append(warning).append(": ",2U) ;
-		show.s() << m_arg.prefix() << ": " << warning << ": "
+		std::string sep = std::string(1U,'\n').append(m_arg_prefix).append(": ",2U).append(warning).append(": ",2U) ;
+		show.s() << m_arg_prefix << ": " << warning << ": "
 			<< G::Str::join(sep,warnings) << std::endl ;
 	}
 }

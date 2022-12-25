@@ -23,7 +23,7 @@
 
 #include "gdef.h"
 #include "gdialog.h"
-#include "gstrings.h"
+#include "gstringarray.h"
 #include <string>
 #include <list>
 #include <vector>
@@ -246,7 +246,13 @@ public:
 	void set( const std::string & string ) ;
 		///< Sets the text of the edit control.
 
+	void set( const std::string & string , int utf8_overload ) ;
+		///< Sets the text of the edit control.
+
 	std::string get() const ;
+		///< Gets the text of a single-line edit control.
+
+	std::string get( int utf8_overload ) const ;
 		///< Gets the text of a single-line edit control.
 
 	unsigned lines() ;

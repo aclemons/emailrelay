@@ -23,7 +23,7 @@
 
 #include "gdef.h"
 #include "gverifierstatus.h"
-#include "gaddress.h"
+#include "gbasicaddress.h"
 #include "gslot.h"
 #include "gexception.h"
 #include <string>
@@ -42,8 +42,10 @@ namespace GSmtp
 class GSmtp::Verifier
 {
 public:
-	virtual void verify( const std::string & rcpt_to_parameter ,
-		const std::string & mail_from_parameter , const GNet::Address & client_ip ,
+	enum class Command { VRFY , RCPT } ;
+
+	virtual void verify( Command , const std::string & rcpt_to_parameter ,
+		const std::string & mail_from_parameter , const G::BasicAddress & client_ip ,
 		const std::string & auth_mechanism , const std::string & auth_extra ) = 0 ;
 			///< Checks a recipient address and asynchronously returns a
 			///< structure to indicate whether the address is a local
@@ -52,7 +54,7 @@ public:
 			///< The 'mail-from' address is passed in for RCPT commands, but
 			///< not VRFY.
 
-	virtual G::Slot::Signal<const VerifierStatus&> & doneSignal() = 0 ;
+	virtual G::Slot::Signal<Command,const VerifierStatus&> & doneSignal() = 0 ;
 		///< Returns a signal that is emit()ed when the verify() request
 		///< is complete.
 

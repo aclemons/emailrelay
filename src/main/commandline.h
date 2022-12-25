@@ -23,13 +23,14 @@
 
 #include "gdef.h"
 #include "garg.h"
-#include "ggetopt.h"
 #include "goption.h"
+#include "goptions.h"
+#include "goptionmap.h"
 #include "output.h"
-#include "configuration.h"
 #include "output.h"
 #include "gstringarray.h"
 #include <string>
+#include <vector>
 
 namespace Main
 {
@@ -45,24 +46,22 @@ namespace Main
 class Main::CommandLine
 {
 public:
-	CommandLine( Main::Output & output , const G::Arg & arg , const G::Options & spec ,
+	CommandLine( Main::Output & output , const G::Arg & arg , const G::Options & options_spec ,
 		const std::string & version ) ;
 			///< Constructor.
 
 	~CommandLine() ;
 		///< Destructor.
 
-	const G::OptionMap & map() const ;
-		///< Exposes the option-map sub-object.
+	std::size_t configurations() const ;
+		///< Returns the number of separate configurations contained in the
+		///< one command-line.
 
-	const std::vector<G::Option> & options() const ;
-		///< Exposes the command-line options.
+	const G::OptionMap & options( std::size_t i ) const ;
+		///< Exposes the i'th option map sub-object.
 
-	G::StringArray usageErrors() const ;
-		///< Returns the usage error list.
-
-	std::size_t argc() const ;
-		///< Returns the number of non-option arguments on the command line.
+	bool argcError() const ;
+		///< Returns true if the command line has non-option argument errors.
 
 	bool hasUsageErrors() const ;
 		///< Returns true if the command line has usage errors (eg. invalid option).
@@ -84,9 +83,6 @@ public:
 
 	void showFinished( bool error_stream = false ) const ;
 		///< Writes an all-done message.
-
-	void showError( const std::string & reason , bool error_stream = true ) const ;
-		///< Writes a failed message.
 
 	void showVersion( bool error_stream = false ) const ;
 		///< Writes the version number.
@@ -121,13 +117,16 @@ private:
 	void showSslVersion( bool e = false , const std::string & eot = {} ) const ;
 	void showThreading( bool e = false , const std::string & eot = {} ) const ;
 	void showUds( bool e = false , const std::string & eod = {} ) const ;
+	static std::string onParse( const G::StringArray & , std::size_t i , const std::string & ) ;
 
 private:
 	Output & m_output ;
+	G::Options m_options_spec ;
+	G::StringArray m_errors ;
+	std::vector<G::OptionMap> m_option_maps ;
 	std::string m_version ;
-	G::Arg m_arg ;
-	G::GetOpt m_getopt ;
-	bool m_verbose ;
+	std::string m_arg_prefix ;
+	bool m_verbose {false} ;
 } ;
 
 #endif

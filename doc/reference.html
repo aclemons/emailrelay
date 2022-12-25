@@ -56,6 +56,12 @@
     </dl>
    <h3><a class="a-header">SMTP client options</a></h3>
     <dl>
+     <dt>--client-smtp-config &lt;config&gt; (-c)</dt>
+      <dd>
+       Configures the SMTP client protocol using a comma-separated list of optional
+       features, includeing 'pipelining', 'smtputf8strict', 'eightbitstrict' and
+       'binarymimestrict'.
+      </dd>
      <dt>--forward (-f)</dt>
       <dd>
        Causes spooled mail messages to be forwarded when the program first starts.
@@ -198,6 +204,12 @@
        Specifies a timeout (in seconds) for getting the initial prompt from a remote
        SMTP server. If no prompt is received after this time then the SMTP dialog
        goes ahead without it.
+      </dd>
+     <dt>--server-smtp-config &lt;config&gt; (-Z)</dt>
+      <dd>
+       Configures the SMTP server protocol using a comma-separated list of optional
+       features, includeing 'pipelining', 'chunking', 'smtputf8', and
+       'smtputf8strict'.
       </dd>
      <dt>--size &lt;bytes&gt; (-M)</dt>
       <dd>
@@ -521,7 +533,7 @@
      <li><em>.new</em> -- while the envelope is first being written</li>
      <li><em>.busy</em> -- while the message is being forwarded</li>
      <li><em>.bad</em> -- if the message cannot be forwarded</li>
-     <li><em>.local</em> -- for copies of the envelope file for delivery to local recipients</li>
+     <li><em>.local</em> -- for copies for delivery to local recipients</li>
     </ul>
 
     <p>
@@ -611,7 +623,7 @@
     <p>
      If the filter program creates completely new e-mail messages in the spool
      directory then they may not be processed immediately, or they may be completely
-     ignored.  To get E-MailRelay to pick up any new messages you create in the
+     ignored. To get E-MailRelay to pick up any new messages you create in the
      spool directory use the special 103 exit code, or rely on the <em>--poll</em>
      mechanism, or perhaps run <em>emailrelay --as-client</em> from within the filter
      program.
@@ -639,12 +651,10 @@ exit 0
 </pre>
       </div><!-- div-pre -->
     <p>
-     The first thing this script does is convert the path of the content file which
-     it is given, into the corresponding envelope file. It then extracts the
-     client's IP address out of the envelope file using <em>awk</em>. If this matches the
-     fixed address then it pipes the message content into sendmail, deletes the
-     e-mail message and exits with a value of 100. The exit value of 100 tells
-     E-MailRelay to forget the message, and not to complain about the files
+     It extracts the client's IP address out of the envelope file using <em>awk</em>. If
+     this matches the fixed address then it pipes the message content into sendmail,
+     deletes the e-mail message and exits with a value of 100. The exit value of 100
+     tells E-MailRelay to forget the message, and not to complain about the files
      disappearing.
     </p>
 
@@ -712,7 +722,7 @@ WScript.Quit( 0 ) ;
 
     <p>
      It is also possible to do message filtering in a separate process by using
-     <em>net:<tcp-address></em> as the <em>--filter</em> or <em>--client-filter</em> option parameter.
+     <em>net:<tcp-address></em> as the <em>--filter</em> or <em>--client-filter</em> option value.
      E-MailRelay connects to this address and then uses a simple line-based dialog
      as each e-mail message is processed: it sends the full path of the message
      content file in one line and expects the remote process to respond with an <em>ok</em>
@@ -1462,7 +1472,8 @@ catch( e )
       </dd>
    <h3><a class="a-header">Remote clients</a></h3>
       <dd>
-       By default connections will be rejected if they come from remote machines.
+       By default connections will be rejected if they come from remote machines
+       not on the local network.
       </dd>
    <h3><a class="a-header">Remote configuration</a></h3>
       <dd>
@@ -1471,13 +1482,13 @@ catch( e )
       </dd>
    <h3><a class="a-header">Use of exec() and system()</a></h3>
       <dd>
-       No exec(), system() or popen() calls are used other than execve() to spawn the
-       mail filter and/or address verifier.
+       No exec(), system() or popen() calls are used other than execve() to spawn an
+       external mail filter or address verifier.
       </dd>
    <h3><a class="a-header">File permissions</a></h3>
       <dd>
        After a normal installation the spool directory is has ownership of
-       <em>root.daemon</em> with permissions of <em>-rwxrwxr-x</em> and messages files are created
+       <em>root.daemon</em> with permissions of <em>-rwxrwsr-x</em> and messages files are created
        with permissions of <em>-rw-rw----</em>. This allows normal users to list messages
        files but not read them.
        <p class="p-break"></p>
@@ -1498,11 +1509,6 @@ catch( e )
       <dd>
        The <em>--anonymous</em> option can be used to reduce the amount of information
        leaked to remote clients.
-      </dd>
-   <h3><a class="a-header">Mandatory encryption</a></h3>
-      <dd>
-       When using PAM for authentication all clients are required to use
-       TLS/SSL encryption.
       </dd>
     <p>
      Security issues which relate to the SMTP protocol itself are beyond the scope
@@ -1572,39 +1578,7 @@ E-MailRelay&gt; quit
      An E-MailRelay <em>--filter</em> script can be used to reject messages with incorrect
      <em>Bcc:</em> headers, and an example script is included.
     </p>
-   <h2><a class="a-header" name="SH_1_16">Routing</a></h2> <!-- index:2:SH:1:16:Routing -->
-    <p>
-     E-MailRelay does not normally do any routing of e-mail messages; they are
-     all forwarded to a fixed <em>smarthost</em> address given by the <em>--forward-to</em> or
-     <em>--as-client</em> command-line options.
-    </p>
-
-    <p>
-     However, each message envelope file contains a <em>ForwardToAddress</em> field that
-     can be populated by filter scripts in order to route the message to some other
-     server.
-    </p>
-
-    <p>
-     If the <em>ForwardTo</em> field has any non-empty value then E-MailRelay runs its
-     client filter early to allow the client filter script to set or update the
-     <em>ForwardToAddress</em> before the outgoing connection is made. (The client filter is
-     run a second time as normal once the connection is made and the SMTP session has
-     been established.)
-    </p>
-
-    <p>
-     Typically a <em>--filter</em> script would be used to examine the message content and
-     populate the <em>ForwardTo</em> field, then a <em>--client-filter</em> script would use
-     the <em>ForwardTo</em> value to populate the <em>ForwardToAddress</em> field with an up-to-date
-     forwarding address.
-    </p>
-
-    <p>
-     Note that a successful connection to the smarthost is required even if a message
-     is routed elsewhere.
-    </p>
-   <h2><a class="a-header" name="SH_1_17">Files and directories</a></h2> <!-- index:2:SH:1:17:Files and directories -->
+   <h2><a class="a-header" name="SH_1_16">Files and directories</a></h2> <!-- index:2:SH:1:16:Files and directories -->
     <p>
      On Unix-like systems E-MailRelay installs by default under <em>/usr/local</em>, but
      binary distributions will probably have been built to install elsewhere.

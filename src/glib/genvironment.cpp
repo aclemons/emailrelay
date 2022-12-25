@@ -29,11 +29,13 @@ G::Environment::Environment()
 	setup() ;
 }
 
+#ifndef G_LIB_SMALL
 G::Environment::Environment( const std::map<std::string,std::string> & map ) :
 	m_map(map)
 {
 	setup() ;
 }
+#endif
 
 G::Environment::Environment( const Environment & other ) :
 	m_map(other.m_map)
@@ -57,6 +59,7 @@ void G::Environment::swap( Environment & other ) noexcept
 	std::swap( m_block , other.m_block ) ;
 }
 
+#ifndef G_LIB_SMALL
 bool G::Environment::valid() const
 {
 	return
@@ -64,18 +67,23 @@ bool G::Environment::valid() const
 		(m_list.size()+1U) == m_pointers.size() &&
 		( m_list.empty() || m_pointers.at(0U) == m_list.at(0U).c_str() ) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 G::Environment & G::Environment::operator=( const Environment & other )
 {
 	Environment(other).swap( *this ) ;
 	return *this ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 G::Environment & G::Environment::operator=( Environment && other ) noexcept
 {
 	Environment(std::move(other)).swap( *this ) ;
 	return *this ;
 }
+#endif
 
 void G::Environment::setup()
 {
@@ -127,29 +135,35 @@ void G::Environment::add( const std::string & name , const std::string & value )
 	setup() ;
 }
 
+#ifndef G_LIB_SMALL
 void G::Environment::set( const std::string & name , const std::string & value )
 {
 	m_map[name] = value ;
 	setup() ;
 }
+#endif
 
 char ** G::Environment::v() const noexcept
 {
 	return const_cast<char**>(&m_pointers[0]) ;
 }
 
+#ifndef G_LIB_SMALL
 const char * G::Environment::ptr() const noexcept
 {
 	return m_block.data() ;
 }
+#endif
 
 bool G::Environment::contains( const std::string & name ) const
 {
 	return m_map.find(name) != m_map.end() ;
 }
 
+#ifndef G_LIB_SMALL
 std::string G::Environment::value( const std::string & name , const std::string & default_ ) const
 {
 	return contains(name) ? (*m_map.find(name)).second : default_ ;
 }
+#endif
 

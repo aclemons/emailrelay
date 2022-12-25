@@ -24,8 +24,8 @@
 #include "gsaslserverbasic.h"
 
 std::unique_ptr<GAuth::SaslServer> GAuth::SaslServerFactory::newSaslServer( const SaslServerSecrets & secrets ,
-	bool allow_pop , const std::string & config , bool no_insecure_mechanisms )
+	bool allow_pop , const std::string & config , const std::string & challenge_domain )
 {
-	return std::make_unique<SaslServerBasic>( secrets , allow_pop , config , no_insecure_mechanisms ) ;
+	return std::make_unique<SaslServerBasic>( secrets , allow_pop , config , challenge_domain ) ;
 }
 

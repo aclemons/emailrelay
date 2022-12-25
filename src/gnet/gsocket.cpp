@@ -50,7 +50,7 @@ GNet::SocketBase::SocketBase( Address::Family family , int type , int protocol )
 GNet::SocketBase::SocketBase( const SocketBase::Raw & , int domain , int type , int protocol ) :
 	m_reason(0) ,
 	m_domain(domain) ,
-	m_family(Address::Family::local) , // bogus value, see isFamily()
+	m_family(Address::Family::local) ,
 	m_read_added(false) ,
 	m_write_added(false) ,
 	m_other_added(false) ,
@@ -313,9 +313,9 @@ void GNet::Socket::listen()
 {
 	int listen_queue = m_config.listen_queue ;
 	if( listen_queue <= 0 )
-		listen_queue = G::limits::net_listen_queue ;
+		listen_queue = G::Limits<>::net_listen_queue ;
 
-	int rc = ::listen( fd() , std::max(1,listen_queue) ) ;
+	int rc = ::listen( fd() , std::max(1,listen_queue) ) ; // see also SOMAXCONN
 	if( error(rc) )
 	{
 		saveReason() ;
@@ -583,12 +583,14 @@ GNet::DatagramSocket::DatagramSocket( Address::Family af , int protocol , const 
 {
 }
 
+#ifndef G_LIB_SMALL
 void GNet::DatagramSocket::disconnect()
 {
 	int rc = ::connect( fd() , nullptr , 0 ) ;
 	if( error(rc) )
 		saveReason() ;
 }
+#endif
 
 GNet::Socket::ssize_type GNet::DatagramSocket::read( char * buffer , size_type length )
 {
@@ -604,6 +606,7 @@ GNet::Socket::ssize_type GNet::DatagramSocket::read( char * buffer , size_type l
 	return nread ;
 }
 
+#ifndef G_LIB_SMALL
 GNet::Socket::ssize_type GNet::DatagramSocket::readfrom( char * buffer , size_type length , Address & src_address )
 {
 	if( length == 0 ) return 0 ;
@@ -618,6 +621,7 @@ GNet::Socket::ssize_type GNet::DatagramSocket::readfrom( char * buffer , size_ty
 	src_address = Address( &sender , sender_len ) ;
 	return nread ;
 }
+#endif
 
 GNet::Socket::ssize_type GNet::DatagramSocket::writeto( const char * buffer , size_type length , const Address & dst )
 {

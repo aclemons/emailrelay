@@ -68,32 +68,29 @@ public:
 		///< Returns the empty string if none.
 
 	std::pair<std::string,std::string> serverTrust( const std::string & address_range ) const ;
-		///< Returns a non-empty trustee name if the server trusts clients
-		///< in the given address range, together with context information.
+		///< Returns a non-empty trustee name if the server trusts remote
+		///< clients in the given address range, together with context
+		///< information.
 
 	std::string path() const ;
 		///< Returns the file path, as supplied to the ctor.
 
 	bool contains( G::string_view type , G::string_view id = {} ) const ;
 		///< Returns true if a server secret of the given type
-		///< is available for the particular user or any user.
+		///< is available for the particular user or for any user
+		///< if defaulted.
 
 private:
-	struct Value
-	{
-		Value( const std::string & s_ , unsigned int n_ ) : s(s_), n(n_) {}
-		Value( G::string_view s_ , unsigned int n_ ) : s(G::sv_to_string(s_)), n(n_) {}
-		std::string s ;
-		unsigned int n ;
-	} ;
-	using Map = std::map<std::string,Value> ;
+	using Map = std::map<std::string,Secret> ;
 	using Set = std::set<std::string> ;
 	using Warning = std::pair<unsigned long,std::string> ;
 	using Warnings = std::vector<Warning> ;
+	using TrustMap = std::map<std::string,std::pair<std::string,int>> ;
 	struct Contents
 	{
 		Map m_map ;
 		Set m_types ;
+		TrustMap m_trust_map ;
 		Warnings m_warnings ;
 	} ;
 
@@ -105,16 +102,14 @@ private:
 	static Contents readContents( std::istream & ) ;
 	static void processLine( Contents & ,
 		unsigned int , G::string_view side , G::string_view , G::string_view , G::string_view ) ;
-	static void processLineImp( Contents & ,
-		unsigned int , G::string_view side , G::string_view , G::string_view , G::string_view ) ;
 	static void showWarnings( const Warnings & warnings , const G::Path & path , const std::string & debug_name = {} ) ;
 	static void addWarning( Contents & , unsigned int , G::string_view , G::string_view = {} ) ;
-	static std::string canonical( G::string_view encoding_type ) ;
+	static G::string_view canonicalView( G::string_view encoding_type ) ;
+	static std::string serverKey( const std::string & , const std::string & ) ;
 	static std::string serverKey( G::string_view , G::string_view ) ;
 	static std::string clientKey( G::string_view ) ;
-	static std::string clientValue( G::string_view id , G::string_view secret ) ;
 	static G::SystemTime readFileTime( const G::Path & ) ;
-	static std::string line( unsigned int ) ;
+	static std::string lineContext( unsigned int ) ;
 
 private:
 	G::Path m_path ;

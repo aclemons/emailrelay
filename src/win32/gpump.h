@@ -72,7 +72,7 @@ public:
 		///< empty. If the idle message handler returns 0
 		///< then multiple idle message can be sent.
 
-	static void quit( std::string reason = std::string() ) ;
+	static void quit( const std::string & reason = {} ) ;
 		///< Causes run() to return as soon as the call stack
 		///< has unwound, or sets the return value for
 		///< runToEmpty().

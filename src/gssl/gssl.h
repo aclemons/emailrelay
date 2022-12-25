@@ -217,13 +217,13 @@ public:
 	explicit Digester( std::unique_ptr<DigesterImpBase> ) ;
 		///< Constructor, used by the Library class.
 
-	std::size_t blocksize() const ;
+	std::size_t blocksize() const noexcept ;
 		///< Returns the hash function's block size in bytes.
 
-	std::size_t valuesize() const ;
+	std::size_t valuesize() const noexcept ;
 		///< Returns the hash function's value size in bytes.
 
-	std::size_t statesize() const ;
+	std::size_t statesize() const noexcept ;
 		///< Returns the size of the state() string in bytes,
 		///< or zero if state() is not implemented.
 
@@ -333,15 +333,6 @@ public:
 	std::string id() const ;
 		///< Returns the TLS library name and version.
 
-	bool generateKeyAvailable() const ;
-		///< Returns true if generateKey() is implemented.
-
-	std::string generateKey( const std::string & name ) const ;
-		///< Generates a test certificate as a PEM string with embedded newlines,
-		///< also containing the private-key. Returns the empty string if not
-		///< implemented. Throws on error. The implementation will normally
-		///< be slow and blocking.
-
 	static LibraryImpBase & impstance() ;
 		///< Returns a reference to the pimple object when enabled(). Used in
 		///< implementations. Throws if none.
@@ -414,12 +405,6 @@ public:
 
 	virtual Digester digester( const std::string & , const std::string & , bool ) const = 0 ;
 		///< Implements Library::digester().
-
-	virtual bool generateKeyAvailable() const = 0 ;
-		///< Implements Library::generateKeyAvailable().
-
-	virtual std::string generateKey( const std::string & ) const = 0 ;
-		///< Implements Library::generateKey().
 
 	static bool consume( G::StringArray & list , G::string_view item ) ;
 		///< A convenience function that removes the item from
@@ -498,13 +483,13 @@ public:
 	virtual std::string state() = 0 ;
 		///< Implements Digester::state().
 
-	virtual std::size_t blocksize() const = 0 ;
+	virtual std::size_t blocksize() const noexcept = 0 ;
 		///< Implements Digester::blocksize().
 
-	virtual std::size_t valuesize() const = 0 ;
+	virtual std::size_t valuesize() const noexcept = 0 ;
 		///< Implements Digester::valuesize().
 
-	virtual std::size_t statesize() const = 0 ;
+	virtual std::size_t statesize() const noexcept = 0 ;
 		///< Implements Digester::statesize().
 } ;
 

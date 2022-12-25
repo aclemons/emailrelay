@@ -27,7 +27,6 @@
 #include "gassert.h"
 #include <cstring>
 
-bool G::Arg::m_first = true ;
 std::string G::Arg::m_v0 ;
 std::string G::Arg::m_cwd ;
 
@@ -38,11 +37,12 @@ G::Arg::Arg( int argc , char **argv )
 	for( int i = 0 ; i < argc ; i++ )
 		m_array.push_back( argv[i] ) ;
 
-	if( m_first )
+	static bool first = true ;
+	if( first )
 	{
 		m_v0 = std::string( argv[0] ) ;
 		m_cwd = Process::cwd(true/*nothrow*/) ; // don't throw yet - we may "cd /" to deamonise
-		m_first = false ;
+		first = false ;
 	}
 }
 
@@ -52,8 +52,9 @@ G::Arg::Arg( const StringArray & args ) :
 }
 
 G::Arg::Arg()
-= default ; // now use parse()
+= default ;
 
+#ifndef G_LIB_SMALL
 void G::Arg::parse( HINSTANCE , const std::string & command_line_tail )
 {
 	std::string proc_exe = Process::exe() ;
@@ -62,6 +63,7 @@ void G::Arg::parse( HINSTANCE , const std::string & command_line_tail )
 	m_array.push_back( proc_exe ) ;
 	parseImp( command_line_tail ) ;
 }
+#endif
 
 void G::Arg::parse( const std::string & command_line )
 {
@@ -70,17 +72,21 @@ void G::Arg::parse( const std::string & command_line )
 	parseImp( command_line ) ;
 }
 
+#ifndef G_LIB_SMALL
 void G::Arg::reparse( const std::string & command_line_tail )
 {
 	auto p = m_array.begin() ;
 	m_array.erase( ++p , m_array.end() ) ;
 	parseImp( command_line_tail ) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 std::string G::Arg::v0()
 {
 	return m_v0 ;
 }
+#endif
 
 G::StringArray G::Arg::array( unsigned int shift ) const
 {
@@ -95,10 +101,12 @@ bool G::Arg::contains( const std::string & option , std::size_t option_args , bo
 	return find( cs , option , option_args , nullptr ) != 0U ;
 }
 
+#ifndef G_LIB_SMALL
 std::size_t G::Arg::count( const std::string & option )
 {
 	return find( true , option , 0U , nullptr ) ;
 }
+#endif
 
 std::size_t G::Arg::find( bool cs , const std::string & option , std::size_t option_args ,
 	std::size_t * index_p ) const
@@ -137,10 +145,18 @@ bool G::Arg::strmatch( bool cs , const std::string & s1 , const std::string & s2
 bool G::Arg::remove( const std::string & option , std::size_t option_args )
 {
 	std::size_t i = 0U ;
-	const bool found = find( true , option , option_args , &i ) ;
+	const bool found = find( true , option , option_args , &i ) != 0U ;
 	if( found )
 		removeAt( i , option_args ) ;
 	return found ;
+}
+
+std::string G::Arg::removeValue( const std::string & option , const std::string & default_ )
+{
+	std::size_t option_args = 1U ;
+	std::size_t i = 0U ;
+	const bool found = find( true , option , option_args , &i ) != 0U ;
+	return found ? removeAt( i , option_args ) : default_ ;
 }
 
 std::string G::Arg::removeAt( std::size_t option_index , std::size_t option_args )
@@ -162,7 +178,7 @@ std::size_t G::Arg::index( const std::string & option , std::size_t option_args 
 	std::size_t default_ ) const
 {
 	std::size_t i = 0U ;
-	const bool found = find( true , option , option_args , &i ) ;
+	const bool found = find( true , option , option_args , &i ) != 0U ;
 	return found ? i : default_ ;
 }
 
@@ -194,8 +210,8 @@ const char * G::Arg::prefix( char ** argv ) noexcept
 	const char * exe = argv[0] ;
 	const char * p1 = std::strrchr( exe , '/' ) ;
 	const char * p2 = std::strrchr( exe , '\\' ) ;
-	p1 = p1 ? (p1+1U) : exe ;
-	p2 = p2 ? (p2+1U) : exe ;
+	p1 = p1 == nullptr ? exe : (p1+1U) ;
+	p2 = p2 == nullptr ? exe : (p2+1U) ;
 	return p1 > p2 ? p1 : p2 ;
 }
 
@@ -219,7 +235,7 @@ std::string G::Arg::exe( bool do_throw )
 			throw Exception( "cannot determine the absolute path of the current executable" ,
 				G::is_windows() ? "" : "try mounting procfs" ) ;
 		}
-		return std::string() ;
+		return {} ;
 	}
 	else if( proc_exe.empty() && Path(m_v0).isRelative() )
 	{

@@ -64,6 +64,11 @@ namespace G
 	///   {
 	///     m_source.m_signal.disconnect() ;
 	///   }
+	///   Sink( const Sink & ) = delete ;
+	///   Sink( Sink && ) noexcept { rebind() ; }
+	///   Sink & operator=( const Sink & ) = delete ;
+	///   Sink & operator=( Sink && ) noexcept { rebind() ; return *this ; }
+	///   void rebind() noexcept( check( m_source.m_signal.rebind(*this) ) ; }
 	///   Source & m_source ;
 	/// } ;
 	/// \endcode
@@ -84,7 +89,7 @@ namespace G
 	///   void onEvent( int n ) ;
 	///   Sink( Source & source ) : m_source(source)
 	///   {
-	///     throw_if( !source.m_signal ) ;
+	///     throw_already_connected_if( !source.m_signal ) ;
 	///     source.m_signal = std::bind_front(&Sink::onEvent,this) ;
 	///   }
 	///   ~Sink()
@@ -119,6 +124,10 @@ namespace G
 				m_mf(mf)
 			{
 			}
+			void rebind( T * sink ) noexcept
+			{
+				m_sink = sink ;
+			}
 			void operator()( Args... args )
 			{
 				return (m_sink->*m_mf)( args... ) ;
@@ -139,9 +148,22 @@ namespace G
 				m_fn(std::function<void(Args...)>(Binder<T,Args...>(&sink,mf)))
 			{
 			}
+			explicit Slot( std::function<void(Args...)> fn ) :
+				m_fn(fn)
+			{
+			}
 			void invoke( Args... args )
 			{
-				m_fn( args... ) ;
+				if( m_fn )
+					m_fn( args... ) ;
+			}
+			template <typename T> bool rebind( T & sink ) noexcept
+			{
+				using BinderType = Binder<T,Args...> ;
+				bool rebindable = m_fn && m_fn.template target<BinderType>() ;
+				if( rebindable )
+					m_fn.template target<BinderType>()->rebind( &sink ) ;
+				return rebindable ;
 			}
 		} ;
 
@@ -183,7 +205,7 @@ namespace G
 				{
 					m_emitted = true ;
 					if( connected() )
-						m_slot.m_fn( args... ) ;
+						m_slot.invoke( args... ) ;
 				}
 			}
 			void reset() noexcept
@@ -201,6 +223,10 @@ namespace G
 			void emitted( bool emitted ) noexcept
 			{
 				m_emitted = emitted ;
+			}
+			template <typename T> bool rebind( T & sink ) noexcept
+			{
+				return m_slot.rebind( sink ) ;
 			}
 			~Signal() = default ;
 			Signal( const Signal & ) = delete ;

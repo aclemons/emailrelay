@@ -72,6 +72,9 @@ Displays help text and then exits. Use with \fI--verbose\fR for more complete ou
 Displays version information and then exits.
 .SS SMTP client options
 .TP
+.B \-c, --client-smtp-config \fI<config>\fR
+Configures the SMTP client protocol using a comma-separated list of optional features, includeing 'pipelining', 'smtputf8strict', 'eightbitstrict' and 'binarymimestrict'.
+.TP
 .B \-f, --forward
 Causes spooled mail messages to be forwarded when the program first starts.
 .TP
@@ -135,6 +138,9 @@ Specifies the IP network addresses or interface names used to bind listening por
 .TP
 .B \-w, --prompt-timeout \fI<time>\fR
 Specifies a timeout (in seconds) for getting the initial prompt from a remote SMTP server. If no prompt is received after this time then the SMTP dialog goes ahead without it.
+.TP
+.B \-Z, --server-smtp-config \fI<config>\fR
+Configures the SMTP server protocol using a comma-separated list of optional features, includeing 'pipelining', 'chunking', 'smtputf8', and 'smtputf8strict'.
 .TP
 .B \-M, --size \fI<bytes>\fR
 Limits the size of mail messages that can be submitted over SMTP.

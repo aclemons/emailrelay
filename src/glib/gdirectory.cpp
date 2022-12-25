@@ -28,10 +28,12 @@
 #include <functional>
 #include <iterator> // std::distance
 
+#ifndef G_LIB_SMALL
 G::Directory::Directory() :
 	m_path(".")
 {
 }
+#endif
 
 G::Directory::Directory( const Path & path ) :
 	m_path(path)
@@ -66,12 +68,14 @@ bool G::Directory::valid( bool for_creation ) const
 G::DirectoryList::DirectoryList()
 = default;
 
+#ifndef G_LIB_SMALL
 void G::DirectoryList::readAll( const G::Path & dir , std::vector<G::DirectoryList::Item> & out )
 {
 	DirectoryList list ;
 	list.readAll( dir ) ;
 	list.m_list.swap( out ) ;
 }
+#endif
 
 void G::DirectoryList::readAll( const G::Path & dir )
 {
@@ -118,10 +122,12 @@ bool G::DirectoryList::more()
 	return more ;
 }
 
+#ifndef G_LIB_SMALL
 bool G::DirectoryList::isLink() const
 {
 	return m_list.at(m_index).m_is_link ;
 }
+#endif
 
 bool G::DirectoryList::isDir() const
 {

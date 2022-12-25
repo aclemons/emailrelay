@@ -2,6 +2,16 @@
 E-MailRelay Change Log
 **********************
 
+2.4 -> 2.5
+==========
+
+* SMTP_ PIPELINING (RFC-2920_).
+* SMTP CHUNKING/8BITMIME 'BDAT' (RFC-3030_) (\ *--server-smtp-config*\ ).
+* SMTP SMTPUTF8 (RFC-6531_) (\ *--server-smtp-config*\ , *--client-smtp-config*).
+* No 7-bit/8-bit check on received message content (see NEWS file).
+* Multiple configurations in one process (see NEWS file).
+* Main binary acts as a submission tool if named *emailrelay-submit*.
+
 2.3 -> 2.4
 ==========
 
@@ -35,7 +45,7 @@ E-MailRelay Change Log
 * New *--log-address* option to aid adaptive firewalling.
 * Dynamic log file rolling when using *--log-file=%d*.
 * Choice of syslog 'facility' on Linux with *--syslog=local0* etc.
-* Pipelined SMTP_ QUIT commands sent by broken clients are tolerated.
+* Pipelined SMTP QUIT commands sent by broken clients are tolerated.
 * Better handling of overly-verbose or unkillable *--filter* scripts.
 * Optional epoll event loop on Linux (\ *configure --enable-epoll*\ ).
 * Some internationalisation support (see NEWS file).
@@ -458,8 +468,11 @@ Windows fixes and improvements...
 .. _FHS: https://wiki.linuxfoundation.org/lsb/fhs
 .. _PAM: https://en.wikipedia.org/wiki/Linux_PAM
 .. _POP: https://en.wikipedia.org/wiki/Post_Office_Protocol
+.. _RFC-2920: https://tools.ietf.org/html/rfc2920
+.. _RFC-3030: https://tools.ietf.org/html/rfc3030
 .. _RFC-3848: https://tools.ietf.org/html/rfc3848
 .. _RFC-5782: https://tools.ietf.org/html/rfc5782
+.. _RFC-6531: https://tools.ietf.org/html/rfc6531
 .. _RFC-8314: https://tools.ietf.org/html/rfc8314
 .. _SMTP: https://en.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol
 .. _SOCKS: https://en.wikipedia.org/wiki/SOCKS

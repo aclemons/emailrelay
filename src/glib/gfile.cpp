@@ -122,7 +122,7 @@ void G::File::copy( std::istream & in , std::ostream & out , std::streamsize lim
 {
 	std::ios_base::iostate in_state = in.rdstate() ;
 
-	block = block ? block : static_cast<std::string::size_type>(limits::file_buffer) ;
+	block = block ? block : static_cast<std::string::size_type>(Limits<>::file_buffer) ;
 	std::vector<char> buffer ;
 	buffer.reserve( block ) ;
 
@@ -276,11 +276,13 @@ bool G::File::mkdirsr( const Path & path , int & e , int & limit )
 	return true ;
 }
 
+#ifndef G_LIB_SMALL
 bool G::File::mkdirs( const Path & path , std::nothrow_t , int limit )
 {
 	int e = 0 ;
 	return mkdirsr( path , e , limit ) ;
 }
+#endif
 
 #ifndef G_LIB_SMALL
 void G::File::mkdirs( const Path & path , int limit )

@@ -562,17 +562,21 @@ std::string G::Md5::value()
 	return Md5Imp::format::encode( m_d ) ;
 }
 
+#ifndef G_LIB_SMALL
 std::string G::Md5::digest( const std::string & input )
 {
 	Md5Imp::digest dd( input ) ;
 	return Md5Imp::format::encode( dd.state() ) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 std::string G::Md5::digest( string_view input )
 {
 	Md5Imp::digest dd( input ) ;
 	return Md5Imp::format::encode( dd.state() ) ;
 }
+#endif
 
 std::string G::Md5::digest( const std::string & input_1 , const std::string & input_2 )
 {
@@ -631,8 +635,10 @@ std::size_t G::Md5::valuesize()
 	return 16U ;
 }
 
+#ifndef G_LIB_SMALL
 std::size_t G::Md5::statesize()
 {
 	return 20U ;
 }
+#endif
 

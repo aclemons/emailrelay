@@ -33,7 +33,7 @@ GGui::Tray::Tray( unsigned int icon_id , const WindowBase & window ,
 	m_info.uID = message ;
 	m_info.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP ;
 	m_info.uCallbackMessage = message ;
-	m_info.hIcon = LoadIcon( ApplicationInstance::hinstance() , MAKEINTRESOURCE(icon_id)) ;
+	m_info.hIcon = LoadIcon( ApplicationInstance::hinstance() , MAKEINTRESOURCE(icon_id) ) ;
 	G::Str::strncpy_s( m_info.szTip , sizeof(m_info.szTip) , tip.c_str() , G::Str::truncate ) ;
 	//m_info.dwState = 0 ;
 	//m_info.dwStateMask = 0 ;

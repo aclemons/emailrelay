@@ -24,8 +24,10 @@
 #include "gtest.h"
 #include <algorithm>
 
+#ifndef G_LIB_SMALL
 GNet::Interfaces::Interfaces()
 = default;
+#endif
 
 GNet::Interfaces::Interfaces( ExceptionSink es , InterfacesHandler & handler ) :
 	m_es(es) ,
@@ -45,10 +47,12 @@ void GNet::Interfaces::load()
 	swap( m_list , new_list ) ;
 }
 
+#ifndef G_LIB_SMALL
 bool GNet::Interfaces::supported()
 {
 	return true ;
 }
+#endif
 
 bool GNet::Interfaces::loaded() const
 {
@@ -97,24 +101,37 @@ std::vector<GNet::Address> GNet::Interfaces::find( const std::string & name_in ,
 	return result ;
 }
 
-std::vector<GNet::Address> GNet::Interfaces::addresses( const G::StringArray & names , unsigned int port ,
-	G::StringArray * used_names , G::StringArray * empty_names , G::StringArray * bad_names ) const
+GNet::Interfaces::Addresses GNet::Interfaces::addresses( const G::StringArray & names , unsigned int port ) const
 {
-	AddressList result ;
+	Addresses result ;
 	for( const auto & name : names )
 	{
-		addresses( name , port , result , used_names , empty_names , bad_names ) ;
+		addressesImp( name , port , result ) ;
 	}
+	result.finish() ;
 	return result ;
 }
 
-void GNet::Interfaces::addresses( const std::string & name , unsigned int port ,
-	std::vector<GNet::Address> & result ,
-	G::StringArray * used_names , G::StringArray * empty_names , G::StringArray * bad_names ) const
+void GNet::Interfaces::addresses( const std::string & name , unsigned int port , Addresses & result ) const
+{
+	addressesImp( name , port , result ) ;
+	result.finish() ;
+}
+
+void GNet::Interfaces::Addresses::finish()
+{
+	good_names.clear() ;
+    good_names.insert( good_names.end() , used_names.begin() , used_names.end() ) ;
+    good_names.insert( good_names.end() , empty_names.begin() , empty_names.end() ) ;
+    std::sort( good_names.begin() , good_names.end() ) ;
+    good_names.erase( std::unique(good_names.begin(),good_names.end()) , good_names.end() ) ;
+}
+
+void GNet::Interfaces::addressesImp( const std::string & name , unsigned int port , Addresses & result ) const
 {
 	if( Address::validStrings( name , G::Str::fromUInt(port) ) )
 	{
-		result.push_back( Address::parse(name,port) ) ;
+		result.addresses.push_back( Address::parse(name,port) ) ;
 	}
 	else
 	{
@@ -124,20 +141,21 @@ void GNet::Interfaces::addresses( const std::string & name , unsigned int port ,
 		AddressList list = find( name , port , true ) ;
 		if( list.empty() && ( name.empty() || ( name.find('/') != std::string::npos && name.find("/dev/") != 0U ) ) )
 		{
-			if( bad_names ) bad_names->push_back( name ) ;
+			result.bad_names.push_back( name ) ;
 		}
 		else if( list.empty() )
 		{
-			if( empty_names ) empty_names->push_back( name ) ;
+			result.empty_names.push_back( name ) ;
 		}
 		else
 		{
-			if( used_names ) used_names->push_back( name ) ;
+			result.used_names.push_back( name ) ;
 		}
-		result.insert( result.end() , list.begin() , list.end() ) ;
+		result.addresses.insert( result.addresses.end() , list.begin() , list.end() ) ;
 	}
 }
 
+#ifndef G_LIB_SMALL
 G::StringArray GNet::Interfaces::names( bool all ) const
 {
 	G::StringArray list ;
@@ -150,6 +168,7 @@ G::StringArray GNet::Interfaces::names( bool all ) const
 	list.erase( std::unique(list.begin(),list.end()) , list.end() ) ;
 	return list ;
 }
+#endif
 
 GNet::Interfaces::const_iterator GNet::Interfaces::begin() const
 {

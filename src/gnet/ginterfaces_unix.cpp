@@ -144,10 +144,12 @@ int GNet::Interfaces::index( const std::string & name )
 	return rc ? 0 : req.ifr_ifindex ;
 }
 #else
+#ifndef G_LIB_SMALL
 int GNet::Interfaces::index( const std::string & )
 {
 	return 0 ;
 }
+#endif
 #endif
 
 // ==
@@ -306,9 +308,11 @@ bool GNet::InterfacesNotifierImp::active()
 	return false ;
 }
 
+#ifndef G_LIB_SMALL
 GNet::InterfacesNotifierImp::InterfacesNotifierImp( Interfaces * , ExceptionSink )
 {
 }
+#endif
 
 std::string GNet::InterfacesNotifierImp::readEvent()
 {

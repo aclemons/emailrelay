@@ -98,16 +98,16 @@ public:
 		Config & set_stream_socket_config( const StreamSocket::Config & ) ;
 		Config & set_line_buffer_config( const LineBufferConfig & ) ;
 		Config & set_socket_protocol_config( const SocketProtocol::Config & ) ;
-		Config & set_sync_dns( bool = true ) ;
-		Config & set_auto_start( bool = true ) ;
-		Config & set_bind_local_address( bool = true ) ;
+		Config & set_sync_dns( bool = true ) noexcept ;
+		Config & set_auto_start( bool = true ) noexcept ;
+		Config & set_bind_local_address( bool = true ) noexcept ;
 		Config & set_local_address( const Address & ) ;
-		Config & set_connection_timeout( unsigned int ) ;
-		Config & set_secure_connection_timeout( unsigned int ) ;
-		Config & set_response_timeout( unsigned int ) ;
-		Config & set_idle_timeout( unsigned int ) ;
-		Config & set_all_timeouts( unsigned int ) ;
-		Config & set_no_throw_on_peer_disconnect( bool = true ) ;
+		Config & set_connection_timeout( unsigned int ) noexcept ;
+		Config & set_secure_connection_timeout( unsigned int ) noexcept ;
+		Config & set_response_timeout( unsigned int ) noexcept ;
+		Config & set_idle_timeout( unsigned int ) noexcept ;
+		Config & set_all_timeouts( unsigned int ) noexcept ;
+		Config & set_no_throw_on_peer_disconnect( bool = true ) noexcept ;
 	} ;
 
 	Client( ExceptionSink , const Location & remote_location , const Config & ) ;
@@ -116,6 +116,9 @@ public:
 		///< should delete this Client object when an exception is
 		///< delivered to it, otherwise the the underlying socket
 		///< might continue to raise events.
+
+	~Client() override ;
+		///< Destructor.
 
 	void connect() ;
 		///< Initiates a connection to the remote server. Calls back
@@ -195,8 +198,10 @@ public:
 		///< Returns information about the state of the internal
 		///< line-buffer.
 
-	~Client() override ;
-		///< Destructor.
+	bool secureConnectCapable() const ;
+		///< Returns true if currently connected and secureConnect()
+		///< can be used. Typically called from within the onConnect()
+		///< callback.
 
 protected:
 	StreamSocket & socket() ;
@@ -308,14 +313,14 @@ private:
 inline GNet::Client::Config & GNet::Client::Config::set_stream_socket_config( const StreamSocket::Config & cfg ) { stream_socket_config = cfg ; return *this ; }
 inline GNet::Client::Config & GNet::Client::Config::set_line_buffer_config( const LineBufferConfig & cfg ) { line_buffer_config = cfg ; return *this ; }
 inline GNet::Client::Config & GNet::Client::Config::set_socket_protocol_config( const SocketProtocol::Config & cfg ) { socket_protocol_config = cfg ; return *this ; }
-inline GNet::Client::Config & GNet::Client::Config::set_sync_dns( bool b ) { sync_dns = b ; return *this ; }
-inline GNet::Client::Config & GNet::Client::Config::set_auto_start( bool b ) { auto_start = b ; return *this ; }
-inline GNet::Client::Config & GNet::Client::Config::set_bind_local_address( bool b ) { bind_local_address = b ; return *this ; }
+inline GNet::Client::Config & GNet::Client::Config::set_sync_dns( bool b ) noexcept { sync_dns = b ; return *this ; }
+inline GNet::Client::Config & GNet::Client::Config::set_auto_start( bool b ) noexcept { auto_start = b ; return *this ; }
+inline GNet::Client::Config & GNet::Client::Config::set_bind_local_address( bool b ) noexcept { bind_local_address = b ; return *this ; }
 inline GNet::Client::Config & GNet::Client::Config::set_local_address( const Address & a ) { local_address = a ; return *this ; }
-inline GNet::Client::Config & GNet::Client::Config::set_connection_timeout( unsigned int t ) { connection_timeout = t ; return *this ; }
-inline GNet::Client::Config & GNet::Client::Config::set_secure_connection_timeout( unsigned int t ) { socket_protocol_config.secure_connection_timeout = t ; return *this ; }
-inline GNet::Client::Config & GNet::Client::Config::set_response_timeout( unsigned int t ) { response_timeout = t ; return *this ; }
-inline GNet::Client::Config & GNet::Client::Config::set_idle_timeout( unsigned int t ) { idle_timeout = t ; return *this ; }
-inline GNet::Client::Config & GNet::Client::Config::set_no_throw_on_peer_disconnect( bool b ) { no_throw_on_peer_disconnect = b ; return *this ; }
+inline GNet::Client::Config & GNet::Client::Config::set_connection_timeout( unsigned int t ) noexcept { connection_timeout = t ; return *this ; }
+inline GNet::Client::Config & GNet::Client::Config::set_secure_connection_timeout( unsigned int t ) noexcept { socket_protocol_config.secure_connection_timeout = t ; return *this ; }
+inline GNet::Client::Config & GNet::Client::Config::set_response_timeout( unsigned int t ) noexcept { response_timeout = t ; return *this ; }
+inline GNet::Client::Config & GNet::Client::Config::set_idle_timeout( unsigned int t ) noexcept { idle_timeout = t ; return *this ; }
+inline GNet::Client::Config & GNet::Client::Config::set_no_throw_on_peer_disconnect( bool b ) noexcept { no_throw_on_peer_disconnect = b ; return *this ; }
 
 #endif

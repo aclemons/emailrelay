@@ -1,34 +1,146 @@
 News
-----
-Low-level changes include a rework of the event-loops. The Unix event loop
-defaults to an epoll() implementation.
+====
 
-The i18n of the main server (not the gui) has been extended somewhat by marking
-for translation the text of most C++ exceptions. This is only relevant if
-building "--with-gettext" and running with "--localedir".
+7BIT/8BITMIME
+-------------
+Previous versions of E-MailRelay test message content when a message is received
+and populate the "Content" field of the envelope file as either "7bit" or
+"8bit". However, the SMTP client code has always largely ignored this field and
+it will attempt to forward 8-bit messages to a remote server that does not
+advertise 8BITMIME, albeit with a warning in the log.
 
-The "--anonyous" option has changed slightly in v2.4 so that it will now force
-the AUTH parameter on the MAIL command to be "AUTH=<>". Replace "--anonymous"
-with "--anonymous=vrfy,server,content" to keep the same behaviour as before.
+In this release E-MailRelay no longer tests messages for eight-bit content,
+so the envelope "Content" field will always be "8bit". If this is not desired
+behaviour then a filter script should be used to test for seven-bit or eight-bit
+content and edit the "Content" value in the envelope file accordingly.
 
-The "emailrelay-submit" utility's "--content" option no longer suppresses
-reading of the standard input stream; there is a new "--no-stdin" option
-instead. A dot on its own does not terminate the input any more, so use ^D or
-^Z to stop reading from the terminal. Header-only content with no body text is
-now permitted.
+The SMTP client can now be made to behave more strictly by using the new
+"--client-smtp-config" command-line option so that it no longer tries to forward
+eight-bit messages to seven-bit servers; eight-bit messages are failed
+immediately by marking the envelope as ".bad". Using this option will need a
+filter script to identify seven-bit messages otherwise all messages forwarded
+to a seven-bit server will fail.
 
-Authentication using PAM no longer insists on TLS encryption because the
-"--server-auth-config" option can be used to disable password authentication
-over an unencypted connection.
+PIPELINING
+----------
+This release adds support for the PIPELINING SMTP extension.
 
-Limited support for routing is included. The envelope files have two new fields:
-ForwardTo and ForwardToAddress. A filter script can examine the message content
-and deposit the appropriate domain name and port number in the ForwardTo field.
-If the SMTP client sees a ForwardTo value then it runs the client-filter early
-allowing the client filter to do a DNS MX lookup of the ForwardTo value and
-deposit the address into the ForwardToAddress field. If the SMTP client sees a
-ForwardToAddress it will initiate a connection to that address to send the
-message. The client-filter is run a second time in the normal way once the SMTP
-session has been established. A connection to the main "--forward-to" address
-will always be made even if all the messages are routed elsewhere, and each
-routed connection will carry only one message.
+Previous releases allow pipelining of the SMTP QUIT command but otherwise
+require SMTP requests and responses in turn. In this release the SMTP server
+code allows all SMTP commands to be pipelined, whether or not the PIPELINING
+extension is advertised. The PIPELINING advertisement can be disabled with the
+new "--server-smtp-config" command-line option.
+
+The response batching behaviour described by RFC-2920 is not implemented.
+
+The SMTP client code uses pipelining only for MAIL-FROM and RCPT-TO SMTP
+commands when talking to a remote server that supports the PIPELINING extension.
+This can be disabled using the "--client-smtp-config" command-line option so
+then each MAIL-FROM or RCPT-TO request waits for a response before continuing.
+
+CHUNKING/BINARYMIME and SMTPUTF8
+--------------------------------
+This release adds support for the CHUNKING+BINARYMIME and SMTPUTF8 extensions
+to SMTP, although they are disabled by default.
+
+It is important to note that if CHUNKING+BINARYMIME or SMTPUTF8 support is
+enabled in the E-MailRelay server then the destination next-hop server must
+also support these extensions. If the remote server does not support these
+extensions then messages may fail immediately when they are forwarded.
+
+In principle filter scripts can be used to convert BINARYMIME and SMTPUTF8
+messages to non-BINARYMIME and non-SMTPUTF8 forms (RFC-3030 calls these
+"gateway transformations"), but it might be easier to leave these extensions
+disabled in the E-MailRelay server if there is any doubt about the capabilities
+of the next-hop server.
+
+Furthermore, if the the SMTPUTF8 extension is enabled in the E-MailRelay server
+then the mailbox addresses passed to any address-verifier script might contain
+UTF-8 characters. This might in turn require changes to the script if it assumes
+that mailbox addresses are printable ASCII.
+
+In passing, note that mailbox addresses passed to address-verifier scripts are
+as they appear on the wire, so a badly-behaved SMTP client might send addresses
+containing double-quotes and backslash escapes that are semantically redundant.
+For example, a message submitted to "\A\l\i\c\e"@example.com will have that
+address passed to the verifier with all the redundant double quotes and
+backslashes present. Removing quotes and backslashes is reasonably easy for a
+verifier to do, but with SMTPUTF8 things become more complex due to the way
+Unicode can represent the same string in more than one way.
+
+Another corner case with SMTPUTF8 is that the remote client might use the VRFY
+SMTP command without the optional SMTPUTF8 parameter. In principle the address
+verifier script should not then return UTF-8 results, but in practice it has
+no way of knowning whether the SMTPUTF8 parameter was used or not. However, this
+issue only arises when a verifier script determines that an address is a local
+mailbox because for remote addresses the returned address strings are
+effectively ignored by E-MailRelay. The issue does not arise at all when the
+verifier is called as the result of a RCPT-TO command because although the
+results are stored in the envelope file they are not passed back to the remote
+client. If necessary the VRFY command can be disabled by using "--anonymous".
+
+Hashed passwords
+----------------
+Hashed passwords using the SHA-1 or SHA-256 hashing algorithm will no longer
+work when E-MailRelay is built using the latest versions of the OpenSSL and
+MbedTLS libraries. Both libraries have stopped exposing the relevant state
+variables used within their hashing functions. MD5 hashed passwords will still
+work.
+
+Multiple configurations
+-----------------------
+In previous releases it has been possible to specifiy options on the
+command-line and/or in a configuration file named on the command-line, and
+then have the options from the configuration file added to those from the
+command-line.
+
+For example:
+	./emailrelay --log -v /etc/emailrelay.conf
+
+In this release more than one configuration file can be specified. The first
+file is added to the options on the command-line as before, but now each
+subsequent configuration file gives rise to a whole new configuration, as if
+multiple emailrelays are running in parallel.
+
+For example:
+	./emailrelay --log -v /etc/emailrelay-in.conf /etc/emailrelay-out.conf
+
+Some options, such as "--verbose" and "--no-daemon" are only relevant if they
+are in the first configuration because they affect the process as a whole.
+If they are used in subsequent configurations they are ignored. (Also, event
+notification via the admin interface only works for the first configuration.)
+
+Another way to get the same result is to use suffixes on option names, so you
+can use "--spool-dir-in=/tmp/in" and "--spool-dir-out=/tmp/out", and then also
+"--port-in=25" and "--port-out=587" etc. When using this approach configuration
+files are not allowed.
+
+The motivation for multiple configurations is to have a single emailrelay
+process relaying messages in two directions: "in" and "out". The "in"
+direction might be for incoming traffic from the internet, and the "out"
+direction for outgoing traffic to a "smarthost".
+
+More built-in filters and address verifiers
+-------------------------------------------
+By default E-MailRelay allows filters like "--filter=exit:99" and address
+verifiers like "--address-verifer=net:127.0.0.1:99", with a small number of
+supported prefixes including "exit:", "net:", "file:" and "spam:" built-in.
+
+In this release more filters and address verifiers can be enabled at build
+time by using "./configure.sh --enable-extra-filters --enable-extra-verifiers".
+
+The key source files supporting this are "src/main/filterfactory.cpp" and
+"src/main/verifierfactory.cpp".
+
+Code size
+---------
+The source code now contains a lot of conditional compilation directives like
+"#ifndef G_LIB_SMALL" that reduce the size of the built binaries.
+
+This code uglification can be removed if not required by running:
+	libexec/reduce.sh --undo
+
+The Windows build and the build of the GUI on Linux are not affected because
+they are built without the "G_LIB_SMALL" switch.
+
+

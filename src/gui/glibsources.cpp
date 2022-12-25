@@ -55,6 +55,7 @@
 #include "goption.cpp"
 #include "goptionmap.cpp"
 #include "goptionparser.cpp"
+#include "goptionreader.cpp"
 #include "goptions.cpp"
 #include "goptionsusage.cpp"
 #include "gpath.cpp"

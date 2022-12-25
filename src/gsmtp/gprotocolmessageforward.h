@@ -26,12 +26,12 @@
 #include "gclientptr.h"
 #include "gprotocolmessage.h"
 #include "gprotocolmessagestore.h"
-#include "gsecrets.h"
 #include "gsmtpclient.h"
+#include "gsaslclientsecrets.h"
 #include "gmessagestore.h"
 #include "gnewmessage.h"
+#include "gfilterfactorybase.h"
 #include "gverifierstatus.h"
-#include "gfilterfactory.h"
 #include "gcall.h"
 #include <string>
 #include <memory>
@@ -55,13 +55,13 @@ namespace GSmtp
 class GSmtp::ProtocolMessageForward : public ProtocolMessage
 {
 public:
-	ProtocolMessageForward( GNet::ExceptionSink , MessageStore & store , FilterFactory & ,
+	ProtocolMessageForward( GNet::ExceptionSink ,
+		GStore::MessageStore & store , FilterFactoryBase & ,
 		std::unique_ptr<ProtocolMessage> pm ,
 		const GSmtp::Client::Config & client_config ,
 		const GAuth::SaslClientSecrets & client_secrets ,
 		const std::string & forward_to , int forward_to_family ) ;
-			///< Constructor. The 'store' and 'client-secrets' references
-			///< are kept.
+			///< Constructor.
 
 	~ProtocolMessageForward() override ;
 		///< Destructor.
@@ -73,22 +73,25 @@ protected:
 		///< intercept the storage-done signal emit()ed by
 		///< the ProtocolMessageStore object.
 
-	void processDone( bool , const MessageId & , const std::string & , const std::string & ) ;
+	void processDone( bool , const GStore::MessageId & , const std::string & , const std::string & ) ;
 		///< Called by derived classes that have intercepted
 		///< the storageDoneSignal() when their own post-storage
 		///< processing is complete.
 
 private: // overrides
-	ProtocolMessage::DoneSignal & doneSignal() override ; // Override from GSmtp::ProtocolMessage.
-	void reset() override ; // Override from GSmtp::ProtocolMessage.
-	void clear() override ; // Override from GSmtp::ProtocolMessage.
-	MessageId setFrom( const std::string & from_user , const std::string & ) override ; // Override from GSmtp::ProtocolMessage.
-	bool addTo( VerifierStatus to_status ) override ; // Override from GSmtp::ProtocolMessage.
-	void addReceived( const std::string & ) override ; // Override from GSmtp::ProtocolMessage.
-	bool addText( const char * , std::size_t ) override ; // Override from GSmtp::ProtocolMessage.
-	std::string from() const override ; // Override from GSmtp::ProtocolMessage.
+	ProtocolMessage::DoneSignal & doneSignal() override ; // GSmtp::ProtocolMessage
+	void reset() override ; // GSmtp::ProtocolMessage
+	void clear() override ; // GSmtp::ProtocolMessage
+	GStore::MessageId setFrom( const std::string & from_user , const FromInfo & ) override ; // GSmtp::ProtocolMessage
+	bool addTo( const ToInfo & ) override ; // GSmtp::ProtocolMessage
+	void addReceived( const std::string & ) override ; // GSmtp::ProtocolMessage
+	GStore::NewMessage::Status addContent( const char * , std::size_t ) override ; // GSmtp::ProtocolMessage
+	std::size_t contentSize() const override ; // GSmtp::ProtocolMessage
+	std::string from() const override ; // GSmtp::ProtocolMessage
+	ProtocolMessage::FromInfo fromInfo() const override ; // GSmtp::ProtocolMessage
+	std::string bodyType() const override ; // GSmtp::ProtocolMessage
 	void process( const std::string & auth_id, const std::string & peer_socket_address ,
-		const std::string & peer_certificate ) override ; // Override from GSmtp::ProtocolMessage.
+		const std::string & peer_certificate ) override ; // GSmtp::ProtocolMessage
 
 public:
 	ProtocolMessageForward( const ProtocolMessageForward & ) = delete ;
@@ -99,19 +102,19 @@ public:
 private:
 	void clientDone( const std::string & ) ; // GNet::Client::doneSignal()
 	void messageDone( const std::string & ) ; // GSmtp::Client::messageDoneSignal()
-	std::string forward( const MessageId & , bool & ) ;
+	std::string forward( const GStore::MessageId & , bool & ) ;
 
 private:
 	GNet::ExceptionSink m_es ;
-	MessageStore & m_store ;
-	FilterFactory & m_ff ;
+	GStore::MessageStore & m_store ;
+	FilterFactoryBase & m_ff ;
 	G::CallStack m_call_stack ;
 	GNet::Location m_client_location ;
 	Client::Config m_client_config ;
 	const GAuth::SaslClientSecrets & m_client_secrets ;
 	std::unique_ptr<ProtocolMessage> m_pm ;
 	GNet::ClientPtr<GSmtp::Client> m_client_ptr ;
-	MessageId m_id ;
+	GStore::MessageId m_id ;
 	ProtocolMessage::DoneSignal m_done_signal ;
 } ;
 

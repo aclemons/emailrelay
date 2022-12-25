@@ -38,14 +38,31 @@ class G::optional
 {
 public:
 	optional() noexcept(noexcept(T())) ;
+		///< Default constructor for no value.
+
 	explicit optional( const T & ) ;
-	optional( bool has_value , const T & value ) ; // not in std::optional()
-	void clear() ; // not in std::optional()
+		///< Constructor for a defined value.
+
+	optional( bool has_value , const T & value ) ;
+		///< Constructor. Not in std::optional.
+
+	void clear() ;
+		///< Clears the value. Not in std::optional.
+
 	bool has_value() const noexcept ;
+		///< Returns true if a defined value.
+
 	explicit operator bool() const noexcept ;
+		///< Returns true if a defined value.
+
 	const T & value() const ;
+		///< Returns the value.
+
 	T value_or( const T & ) const ;
+		///< Returns the value or a default.
+
 	optional<T> & operator=( const T & ) ;
+		///< Assignment for a defined value.
 
 public:
 	~optional() = default ;

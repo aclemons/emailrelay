@@ -26,7 +26,9 @@
 #include "goptions.h"
 #include "goptionvalue.h"
 #include "goptionmap.h"
+#include "gpath.h"
 #include <string>
+#include <functional>
 
 namespace G
 {
@@ -51,7 +53,8 @@ public:
 		///< Constructor overload taking an optional errors-out parameter.
 
 	StringArray parse( const StringArray & args_in , std::size_t start_position = 1U ,
-		std::size_t ignore_non_options = 0U ) ;
+		std::size_t ignore_non_options = 0U ,
+		std::function<std::string(const std::string&)> callback_fn = {} ) ;
 			///< Parses the given command-line arguments into the value map and/or
 			///< error list defined by the constructor. This can be called
 			///< more than once, with options accumulating in the internal
@@ -74,6 +77,12 @@ public:
 			///<
 			///< Errors are appended to the caller's error list.
 			///<
+			///< The optional callback function can be used to modify the parsing
+			///< of each double-dash option. The callback should convert the option
+			///< name as given to the option name used for parsing, with an
+			///< optional leading '-' character to indicate that the parsing
+			///< results should be discarded.
+			///<
 			///< Returns the non-option arguments.
 
 	void errorDuplicate( const std::string & ) ;
@@ -82,7 +91,8 @@ public:
 
 	static StringArray parse( const StringArray & args_in , const Options & spec ,
 		OptionMap & values_out , StringArray * errors_out = nullptr ,
-		std::size_t start_position = 1U , std::size_t ignore_non_options = 0U ) ;
+		std::size_t start_position = 1U , std::size_t ignore_non_options = 0U ,
+		std::function<std::string(const std::string&)> callback_fn = {} ) ;
 			///< A static function to contruct an OptionParser object
 			///< and call its parse() method. Returns the residual
 			///< non-option arguments. Throws on error.

@@ -390,6 +390,7 @@ G::NewProcessWaitable::NewProcessWaitable() :
 {
 }
 
+#ifndef G_LIB_SMALL
 G::NewProcessWaitable::NewProcessWaitable( pid_t pid , int fd ) :
 	m_buffer(1024U) ,
 	m_pid(pid) ,
@@ -397,6 +398,7 @@ G::NewProcessWaitable::NewProcessWaitable( pid_t pid , int fd ) :
 	m_test_mode(G::Test::enabled("waitpid-slow"))
 {
 }
+#endif
 
 void G::NewProcessWaitable::assign( pid_t pid , int fd )
 {
@@ -411,6 +413,7 @@ void G::NewProcessWaitable::assign( pid_t pid , int fd )
 	m_read_error = 0 ;
 }
 
+#ifndef G_LIB_SMALL
 void G::NewProcessWaitable::waitp( std::promise<std::pair<int,std::string>> p ) noexcept
 {
 	try
@@ -424,6 +427,7 @@ void G::NewProcessWaitable::waitp( std::promise<std::pair<int,std::string>> p ) 
 		try { p.set_exception( std::current_exception() ) ; } catch(...) {}
 	}
 }
+#endif
 
 G::NewProcessWaitable & G::NewProcessWaitable::wait()
 {

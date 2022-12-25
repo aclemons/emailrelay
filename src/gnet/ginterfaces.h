@@ -106,23 +106,27 @@ public:
 			///< the given port number. Returns the empty list if not
 			///< found or if found but not up. Does lazy load()ing.
 
-	std::vector<Address> addresses( const G::StringArray & names , unsigned int port ,
-		G::StringArray * used_names_out = nullptr ,
-		G::StringArray * empty_names_out = nullptr ,
-		G::StringArray * bad_names_out = nullptr ) const ;
-			///< Treats each name given as an address or interface name and
-			///< returns the total set of addresses. Returns by reference
-			///< (1) names that are, or have, addresses, (2) names that might
-			///< be interfaces with no bound addresses, and (3) the remainder,
-			///< ie. names that are not addresses and cannot be a valid
-			///< interface name.
+	struct Addresses
+	{
+		std::vector<Address> addresses ;
+		G::StringArray used_names ; // addresses and interface names that have addresses
+		G::StringArray empty_names ; // interface names having no addresses
+		G::StringArray bad_names ; // non-address non-interface names
+		G::StringArray good_names ; // used and empty names, sorted and uniq
+		void finish() ; // sets good_names
+	} ;
 
-	void addresses( const std::string & name , unsigned int port ,
-		std::vector<GNet::Address> & address_out ,
-		G::StringArray * used_names_out = nullptr ,
-		G::StringArray * empty_names_out = nullptr ,
-		G::StringArray * bad_names_out = nullptr ) const ;
-			///< An overload for a single name.
+	Addresses addresses( const G::StringArray & names , unsigned int port ) const ;
+		///< Treats each name given as an address or interface name and
+		///< returns the total set of addresses. Also returns (1)
+		///< names that are, or have, addresses, (2) names that might
+		///< be interfaces with no bound addresses, and (3) the remainder,
+		///< ie. names that are not addresses and cannot be a valid
+		///< interface name.
+
+	void addresses( const std::string & name , unsigned int port , Addresses & out ) const ;
+		///< An overload for a single name that accumulates into an output
+		///< structure.
 
 private: // overrides
 	void readEvent() override ; // GNet::EventHandler
@@ -138,6 +142,7 @@ private:
 	using AddressList = std::vector<Address> ;
 	void loadImp( ExceptionSink , std::vector<Item> & list ) ;
 	static int index( const std::string & ) ;
+	void addressesImp( const std::string & name , unsigned int port , Addresses & result ) const ;
 
 private:
 	ExceptionSink m_es ;

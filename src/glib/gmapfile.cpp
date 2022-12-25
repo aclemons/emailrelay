@@ -35,9 +35,12 @@
 #include <stdexcept>
 #include <array>
 
+#ifndef G_LIB_SMALL
 G::MapFile::MapFile()
 = default;
+#endif
 
+#ifndef G_LIB_SMALL
 G::MapFile::MapFile( const Path & path , string_view kind ) :
 	m_kind(sv_to_string(kind))
 {
@@ -47,12 +50,16 @@ G::MapFile::MapFile( const Path & path , string_view kind ) :
 		readFrom( path , kind ) ;
 	}
 }
+#endif
 
+#ifndef G_LIB_SMALL
 G::MapFile::MapFile( std::istream & stream )
 {
 	readFrom( stream ) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 G::MapFile::MapFile( const StringMap & map ) :
 	m_map(map)
 {
@@ -60,7 +67,9 @@ G::MapFile::MapFile( const StringMap & map ) :
 	for( auto & p : m_map )
 		m_keys.push_back( p.first ) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 G::MapFile::MapFile( const OptionMap & map , string_view yes )
 {
 	for( auto p = map.begin() ; p != map.end() ; )
@@ -75,7 +84,9 @@ G::MapFile::MapFile( const OptionMap & map , string_view yes )
 			++p ;
 	}
 }
+#endif
 
+#ifndef G_LIB_SMALL
 void G::MapFile::readFrom( const Path & path , string_view kind )
 {
 	std::ifstream stream ;
@@ -87,13 +98,15 @@ void G::MapFile::readFrom( const Path & path , string_view kind )
 	if( stream.bad() ) // eg. EISDIR
 		throw readError( path , sv_to_string(kind) ) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 void G::MapFile::readFrom( std::istream & stream )
 {
 	std::string line ;
 	while( stream.good() )
 	{
-		Str::readLineFrom( stream , "\n"_sv , line ) ;
+		Str::readLine( stream , line ) ;
 		Str::trimRight( line , "\r"_sv ) ;
 		if( line.empty() )
 			continue ;
@@ -120,7 +133,9 @@ void G::MapFile::readFrom( std::istream & stream )
 		add( key , value ) ;
 	}
 }
+#endif
 
+#ifndef G_LIB_SMALL
 bool G::MapFile::ignore( const std::string & line ) const
 {
 	std::string::size_type pos_interesting = line.find_first_not_of(" \t\r#") ;
@@ -130,13 +145,17 @@ bool G::MapFile::ignore( const std::string & line ) const
 	std::string::size_type pos_hash = line.find('#') ;
 	return pos_hash != std::string::npos && pos_hash < pos_interesting ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 void G::MapFile::check( const Path & path , string_view kind )
 {
 	MapFile tmp ;
 	tmp.readFrom( path , kind ) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 void G::MapFile::log( const std::string & prefix_in ) const
 {
 	std::string prefix = prefix_in.empty() ? std::string() : ( prefix_in + ": " ) ;
@@ -152,7 +171,9 @@ void G::MapFile::log( const std::string & prefix_in ) const
 			) << "]" ) ;
 	}
 }
+#endif
 
+#ifndef G_LIB_SMALL
 void G::MapFile::writeItem( std::ostream & stream , string_view key ) const
 {
 	auto p = find( key ) ;
@@ -161,18 +182,24 @@ void G::MapFile::writeItem( std::ostream & stream , string_view key ) const
 	else
 		writeItem( stream , key , (*p).second ) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 void G::MapFile::writeItem( std::ostream & stream , string_view key , string_view value )
 {
 	const char * qq = value.find(' ') == std::string::npos ? "" : "\"" ;
 	stream << key << "=" << qq << value << qq << "\n" ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 std::string G::MapFile::quote( const std::string & s )
 {
 	return s.find_first_of(" \t") == std::string::npos ? s : ("\""+s+"\"") ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 void G::MapFile::editInto( const Path & path , bool make_backup ,
 	bool allow_read_error , bool allow_write_error ) const
 {
@@ -182,7 +209,9 @@ void G::MapFile::editInto( const Path & path , bool make_backup ,
 	if( make_backup ) backup( path ) ;
 	save( path , lines , allow_write_error ) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 G::MapFile::List G::MapFile::read( const Path & path , string_view kind , bool allow_read_error ) const
 {
 	List line_list ;
@@ -192,14 +221,16 @@ G::MapFile::List G::MapFile::read( const Path & path , string_view kind , bool a
 		throw readError( path , kind ) ;
 	while( file_in.good() )
 	{
-		std::string line = Str::readLineFrom( file_in , "\n" ) ;
+		std::string line = Str::readLineFrom( file_in ) ;
 		Str::trimRight( line , "\r"_sv ) ;
 		if( !file_in ) break ;
 		line_list.push_back( line ) ;
 	}
 	return line_list ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 void G::MapFile::commentOut( List & line_list ) const
 {
 	for( auto & line : line_list )
@@ -209,7 +240,9 @@ void G::MapFile::commentOut( List & line_list ) const
 		line.insert( 0U , 1U , '#' ) ;
 	}
 }
+#endif
 
+#ifndef G_LIB_SMALL
 void G::MapFile::replace( List & line_list ) const
 {
 	for( const auto & map_item : m_map )
@@ -237,7 +270,9 @@ void G::MapFile::replace( List & line_list ) const
 		}
 	}
 }
+#endif
 
+#ifndef G_LIB_SMALL
 void G::MapFile::backup( const Path & path )
 {
 	// ignore errors
@@ -247,7 +282,9 @@ void G::MapFile::backup( const Path & path )
 	Process::Umask umask( Process::Umask::Mode::Tightest ) ;
 	File::copy( path , backup , std::nothrow ) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 void G::MapFile::save( const Path & path , List & line_list , bool allow_write_error )
 {
 	std::ofstream file_out ;
@@ -257,7 +294,9 @@ void G::MapFile::save( const Path & path , List & line_list , bool allow_write_e
 	if( file_out.fail() && !allow_write_error )
 		throw writeError( path ) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 bool G::MapFile::booleanValue( string_view key , bool default_ ) const
 {
 	auto p = find( key ) ;
@@ -274,45 +313,61 @@ bool G::MapFile::booleanValue( string_view key , bool default_ ) const
 		return Str::isPositive( (*p).second ) ;
 	}
 }
+#endif
 
+#ifndef G_LIB_SMALL
 std::string G::MapFile::value( string_view key , string_view default_ ) const
 {
 	auto p = find( key ) ;
 	return ( p == m_map.end() || (*p).second.empty() ) ? sv_to_string(default_) : (*p).second ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 std::string G::MapFile::mandatoryValue( string_view key ) const
 {
 	if( find(key) == m_map.end() )
 		throw missingValueError( m_path , m_kind , sv_to_string(key) ) ;
 	return value( key ) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 G::Path G::MapFile::expandedPathValue( string_view key , const Path & default_ ) const
 {
 	return { expand(value(key,default_.str())) } ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 G::Path G::MapFile::expandedPathValue( string_view key ) const
 {
 	return { expand(mandatoryValue(key)) } ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 G::Path G::MapFile::pathValue( string_view key , const Path & default_ ) const
 {
 	return { value(key,default_.str()) } ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 G::Path G::MapFile::pathValue( string_view key ) const
 {
 	return { mandatoryValue(key) } ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 unsigned int G::MapFile::numericValue( string_view key , unsigned int default_ ) const
 {
 	return Str::toUInt( value(key,{}) , default_ ) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 void G::MapFile::remove( string_view key )
 {
 	auto p = find( key ) ;
@@ -323,13 +378,16 @@ void G::MapFile::remove( string_view key )
 		m_keys.erase( std::find(m_keys.begin(),m_keys.end(),key) ) ;
 	}
 }
+#endif
 
+#ifndef G_LIB_SMALL
 std::string G::MapFile::expand( string_view value_in ) const
 {
 	std::string value = sv_to_string(value_in) ;
 	expand_( value ) ;
 	return value ;
 }
+#endif
 
 namespace G
 {
@@ -366,6 +424,7 @@ namespace G
 	}
 }
 
+#ifndef G_LIB_SMALL
 bool G::MapFile::expand_( std::string & value ) const
 {
 	bool changed = false ;
@@ -393,7 +452,9 @@ bool G::MapFile::expand_( std::string & value ) const
 	}
 	return changed ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 void G::MapFile::add( string_view key_in , string_view value , bool clear )
 {
 	std::string key = sv_to_string( key_in ) ;
@@ -412,56 +473,77 @@ void G::MapFile::add( string_view key_in , string_view value , bool clear )
 		m_map[key].append( value.data() , value.size() ) ;
 	}
 }
+#endif
 
+#ifndef G_LIB_SMALL
 G::StringMap::iterator G::MapFile::find( string_view key )
 {
 	return m_map.find( sv_to_string(key) ) ; // or c++14 'generic associative lookup' of string_view
 }
+#endif
 
+#ifndef G_LIB_SMALL
 G::StringMap::const_iterator G::MapFile::find( string_view key ) const
 {
 	return m_map.find( sv_to_string(key) ) ; // or c++14 'generic associative lookup' of string_view
 }
+#endif
 
+#ifndef G_LIB_SMALL
 bool G::MapFile::contains( string_view key ) const
 {
 	return find( key ) != m_map.end() ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 const G::StringMap & G::MapFile::map() const
 {
 	return m_map ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 const G::StringArray & G::MapFile::keys() const
 {
 	return m_keys ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 std::string G::MapFile::ekind( string_view kind )
 {
 	return kind.empty() ? std::string("map") : sv_to_string(kind) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 std::string G::MapFile::epath( const Path & path_in )
 {
 	return path_in.empty() ? std::string() : (" ["+path_in.str()+"]") ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 G::MapFile::Error G::MapFile::readError( const Path & path , string_view kind )
 {
 	std::string description = "cannot read " + ekind(kind) + " file" + epath(path) ;
 	return Error( description ) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 G::MapFile::Error G::MapFile::writeError( const Path & path , string_view kind )
 {
 	return Error( std::string("cannot create ").append(ekind(kind)).append(" file ").append(epath(path)) ) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 G::MapFile::Error G::MapFile::missingValueError( const Path & path , const std::string & kind ,
 	const std::string & key )
 {
 	return Error( std::string("no item [").append(key).append("] in ").append(ekind(kind)).append(" file ").append(epath(path)) ) ;
 }
+#endif
 

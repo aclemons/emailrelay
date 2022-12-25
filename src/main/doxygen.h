@@ -74,18 +74,57 @@ Key classes are:
 
 /*! \namespace GSmtp
 \short
-SMTP and message-store classes.
+SMTP classes.
 
 The GSmtp namespace contains classes relating to the SMTP
-protocol and to e-mail storage.
+protocol.
 
 Key classes are:
 - Client
 - ClientProtocol
 - ProtocolMessage
-- MessageStore
 - Server
 - ServerProtocol
+
+ */
+
+/*! \namespace GFilters
+\short
+Message filter classes.
+
+The GFilters namespace contains classes relating to message filtering.
+
+Key classes are:
+- FilterFactory
+- ExecutableFilter
+- NetworkFilter
+
+ */
+
+/*! \namespace GVerifiers
+\short
+Address verifier classes.
+
+The GVerifiers namespace contains classes for address verification.
+
+Key classes are:
+- VerifierFactory
+
+ */
+
+/*! \namespace GStore
+\short
+Message store classes.
+
+The GStore namespace contains classes relating to e-mail storage.
+
+Key classes are:
+- MessageStore
+- FileStore
+- NewMessage
+- NewFile
+- StoredMessage
+- StoredFile
 
  */
 

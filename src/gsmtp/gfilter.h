@@ -22,8 +22,8 @@
 #define G_SMTP_FILTER_H
 
 #include "gdef.h"
-#include "gmessagestore.h"
 #include "gslot.h"
+#include "gmessagestore.h"
 
 namespace GSmtp
 {
@@ -59,7 +59,7 @@ public:
 		///< Returns true if the concrete filter class is one that can
 		///< never change the file (eg. a do-nothing filter class).
 
-	virtual void start( const MessageId & ) = 0 ;
+	virtual void start( const GStore::MessageId & ) = 0 ;
 		///< Starts the filter for the given message. Any previous,
 		///< incomplete filtering is cancel()ed. Asynchronous completion
 		///< is indicated by a doneSignal().
@@ -92,9 +92,9 @@ public:
 public:
 	enum class Result // Filter tri-state result value.
 	{
-		f_ok = 0 ,
-		f_abandon = 1 ,
-		f_fail = 2
+		ok = 0 ,
+		abandon = 1 ,
+		fail = 2
 	} ;
 
 protected:

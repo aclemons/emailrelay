@@ -20,9 +20,19 @@
 
 #include "gdef.h"
 #include "gprotocolmessage.h"
+#include "gsmtpserverparser.h"
 
-bool GSmtp::ProtocolMessage::addTextLine( const std::string & line )
+#ifndef G_LIB_SMALL
+void GSmtp::ProtocolMessage::addContentLine( const std::string & line )
 {
-	return addText( line.data() , line.size() ) && addText( "\r\n" , 2U ) ;
+	addContent( line.data() , line.size() ) ;
+	addContent( "\r\n" , 2U ) ;
+}
+#endif
+
+GSmtp::ProtocolMessage::ToInfo::ToInfo( const VerifierStatus & status_in ) :
+	status(status_in) ,
+	utf8address(status_in.utf8address())
+{
 }
 

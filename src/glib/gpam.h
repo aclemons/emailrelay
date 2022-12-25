@@ -24,6 +24,7 @@
 #include "gdef.h"
 #include "gstr.h"
 #include "gexception.h"
+#include <memory>
 #include <string>
 #include <vector>
 

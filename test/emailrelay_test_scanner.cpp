@@ -115,7 +115,7 @@ bool Main::ScannerPeer::processFile( std::string path , std::string eol )
 	bool do_delete = false ;
 	while( file.good() )
 	{
-		std::string line = G::Str::readLineFrom( file , "\n" ) ;
+		std::string line = G::Str::readLineFrom( file ) ;
 		G_LOG( "ScannerPeer::processFile: line: \"" << G::Str::printable(line) << "\"" ) ;
 		if( line.find("send") == 0U )
 		{

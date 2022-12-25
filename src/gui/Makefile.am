@@ -85,13 +85,27 @@ OS_NOINST =
 endif
 endif
 
+if GCONFIG_TLS_USE_MBEDTLS
+TLS_EXTRA_DIST=
+TLS_KEYGEN_SOURCES=emailrelay_keygen.cpp gssl_mbedtls_keygen.cpp gssl_mbedtls_keygen.h
+else
+if GCONFIG_TLS_USE_BOTH
+TLS_EXTRA_DIST=
+TLS_KEYGEN_SOURCES=emailrelay_keygen.cpp gssl_mbedtls_keygen.cpp gssl_mbedtls_keygen.h
+else
+TLS_EXTRA_DIST=emailrelay_keygen.cpp gssl_mbedtls_keygen.cpp gssl_mbedtls_keygen.h
+TLS_KEYGEN_SOURCES=
+endif
+endif
+
 EXTRA_DIST=\
 	$(TS_FILES) \
 	$(QM_IN_FILES) \
 	emailrelay-gui.exe.manifest \
 	emailrelay-gui.pro \
 	messages.mc \
-	$(OS_EXTRA_DIST)
+	$(OS_EXTRA_DIST) \
+	$(TLS_EXTRA_DIST)
 
 # force symbol stripping on 'make install' -- see also make 'install-strip'
 AM_INSTALL_PROGRAM_FLAGS=-s
@@ -183,6 +197,24 @@ install-exec-hook:
 
 uninstall-hook:
 
+endif
+
+if GCONFIG_TLS_USE_BOTH
+noinst_PROGRAMS = emailrelay-keygen
+emailrelay_keygen_SOURCES = $(TLS_KEYGEN_SOURCES)
+if GCONFIG_WINDOWS
+emailrelay_keygen_LDFLAGS = -static
+endif
+emailrelay_keygen_LDADD = $(GCONFIG_TLS_LIBS)
+else
+if GCONFIG_TLS_USE_MBEDTLS
+noinst_PROGRAMS = emailrelay-keygen
+emailrelay_keygen_SOURCES = $(TLS_KEYGEN_SOURCES)
+if GCONFIG_WINDOWS
+emailrelay_keygen_LDFLAGS = -static
+endif
+emailrelay_keygen_LDADD = $(GCONFIG_TLS_LIBS)
+endif
 endif
 
 payload: $(top_srcdir)/bin/make-setup.sh

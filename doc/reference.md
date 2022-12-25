@@ -46,6 +46,12 @@ The `emailrelay` program supports the following command-line usage:
 
 ### [SMTP][] client options ###
 
+*   \-\-client-smtp-config &lt;config&gt; (-c)
+
+    Configures the SMTP client protocol using a comma-separated list of optional
+    features, includeing 'pipelining', 'smtputf8strict', 'eightbitstrict' and
+    'binarymimestrict'.
+
 *   \-\-forward (-f)
 
     Causes spooled mail messages to be forwarded when the program first starts.
@@ -188,6 +194,12 @@ The `emailrelay` program supports the following command-line usage:
     Specifies a timeout (in seconds) for getting the initial prompt from a remote
     SMTP server. If no prompt is received after this time then the SMTP dialog
     goes ahead without it.
+
+*   \-\-server-smtp-config &lt;config&gt; (-Z)
+
+    Configures the SMTP server protocol using a comma-separated list of optional
+    features, includeing 'pipelining', 'chunking', 'smtputf8', and
+    'smtputf8strict'.
 
 *   \-\-size &lt;bytes&gt; (-M)
 
@@ -501,7 +513,7 @@ The envelope file suffixes are:
 * `.new` \-\- while the envelope is first being written
 * `.busy` \-\- while the message is being forwarded
 * `.bad` \-\- if the message cannot be forwarded
-* `.local` \-\- for copies of the envelope file for delivery to local recipients
+* `.local` \-\- for copies for delivery to local recipients
 
 If an e-mail message cannot be forwarded the envelope file is given a `.bad`
 suffix, and the failure reason is written into the file.
@@ -569,7 +581,7 @@ message use an exit code of 100.
 
 If the filter program creates completely new e-mail messages in the spool
 directory then they may not be processed immediately, or they may be completely
-ignored.  To get E-MailRelay to pick up any new messages you create in the
+ignored. To get E-MailRelay to pick up any new messages you create in the
 spool directory use the special 103 exit code, or rely on the `--poll`
 mechanism, or perhaps run `emailrelay --as-client` from within the filter
 program.
@@ -591,12 +603,10 @@ the sending client's IP address and conditionally passes the message into
         fi
         exit 0
 
-The first thing this script does is convert the path of the content file which
-it is given, into the corresponding envelope file. It then extracts the
-client's IP address out of the envelope file using `awk`. If this matches the
-fixed address then it pipes the message content into sendmail, deletes the
-e-mail message and exits with a value of 100. The exit value of 100 tells
-E-MailRelay to forget the message, and not to complain about the files
+It extracts the client's IP address out of the envelope file using `awk`. If
+this matches the fixed address then it pipes the message content into sendmail,
+deletes the e-mail message and exits with a value of 100. The exit value of 100
+tells E-MailRelay to forget the message, and not to complain about the files
 disappearing.
 
 For Windows this example can be rewritten in JavaScript:
@@ -646,7 +656,7 @@ Bear in mind the following points when writing `--filter` programs:
 * Windows scripts may need to be run via `cscript` or a batch file wrapper.
 
 It is also possible to do message filtering in a separate process by using
-`net:<tcp-address>` as the `--filter` or `--client-filter` option parameter.
+`net:<tcp-address>` as the `--filter` or `--client-filter` option value.
 E-MailRelay connects to this address and then uses a simple line-based dialog
 as each e-mail message is processed: it sends the full path of the message
 content file in one line and expects the remote process to respond with an `ok`
@@ -1193,7 +1203,8 @@ The following are some security issues that have been taken into consideration:
 
 ### Remote clients ###
 
-    By default connections will be rejected if they come from remote machines.
+    By default connections will be rejected if they come from remote machines
+    not on the local network.
 
 
 ### Remote configuration ###
@@ -1204,14 +1215,14 @@ The following are some security issues that have been taken into consideration:
 
 ### Use of exec() and system() ###
 
-    No exec(), system() or popen() calls are used other than execve() to spawn the
-    mail filter and/or address verifier.
+    No exec(), system() or popen() calls are used other than execve() to spawn an
+    external mail filter or address verifier.
 
 
 ### File permissions ###
 
     After a normal installation the spool directory is has ownership of
-    `root.daemon` with permissions of `-rwxrwxr-x` and messages files are created
+    `root.daemon` with permissions of `-rwxrwsr-x` and messages files are created
     with permissions of `-rw-rw----`. This allows normal users to list messages
     files but not read them.
 
@@ -1234,12 +1245,6 @@ The following are some security issues that have been taken into consideration:
 
     The `--anonymous` option can be used to reduce the amount of information
     leaked to remote clients.
-
-
-### Mandatory encryption ###
-
-    When using PAM for authentication all clients are required to use
-    TLS/SSL encryption.
 
 Security issues which relate to the SMTP protocol itself are beyond the scope
 of this document, but [RFC-2821][] makes the following observation: "SMTP mail is
@@ -1291,30 +1296,6 @@ and `Cc` message recipients.
 
 An E-MailRelay `--filter` script can be used to reject messages with incorrect
 `Bcc:` headers, and an example script is included.
-
-Routing
--------
-E-MailRelay does not normally do any routing of e-mail messages; they are
-all forwarded to a fixed `smarthost` address given by the `--forward-to` or
-`--as-client` command-line options.
-
-However, each message envelope file contains a `ForwardToAddress` field that
-can be populated by filter scripts in order to route the message to some other
-server.
-
-If the `ForwardTo` field has any non-empty value then E-MailRelay runs its
-client filter early to allow the client filter script to set or update the
-`ForwardToAddress` before the outgoing connection is made. (The client filter is
-run a second time as normal once the connection is made and the SMTP session has
-been established.)
-
-Typically a `--filter` script would be used to examine the message content and
-populate the `ForwardTo` field, then a `--client-filter` script would use
-the `ForwardTo` value to populate the `ForwardToAddress` field with an up-to-date
-forwarding address.
-
-Note that a successful connection to the smarthost is required even if a message
-is routed elsewhere.
 
 Files and directories
 ---------------------

@@ -334,7 +334,8 @@ bool GGui::Dialog::runEnd( int rc )
 {
 	if( rc == -1 )
 	{
-		G_DEBUG( "GGui::Dialog::run: cannot create dialog box" ) ;
+		DWORD error = GetLastError() ;
+		G_DEBUG( "GGui::Dialog::run: cannot create dialog box: " << error ) ;
 		return false ;
 	}
 	else if( rc == 0 )
@@ -451,7 +452,8 @@ bool GGui::Dialog::isValid()
 
 INT_PTR GGui::Dialog::onControlColour_( WPARAM wparam , LPARAM lparam , WORD type )
 {
-	return 0 != onControlColour( reinterpret_cast<HDC>(wparam) , reinterpret_cast<HWND>(lparam) , type ) ;
+	HBRUSH rc = onControlColour( reinterpret_cast<HDC>(wparam) , reinterpret_cast<HWND>(lparam) , type ) ;
+	return rc ? 1 : 0 ;
 }
 
 LPARAM GGui::Dialog::toLongParam( Dialog * p )

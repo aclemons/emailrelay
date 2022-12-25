@@ -107,7 +107,7 @@ public:
 		///< current mechanism has failed. Returns the empty string if
 		///< there is no preference. This allows the negotiation of the
 		///< mechanism to be user-specific, perhaps by having the
-		///< first probe mechanism fail for all users.
+		///< first mechanism a probe mechanism that fails for all users.
 
 	virtual bool mustChallenge() const = 0 ;
 		///< Returns true if authentication using the current mechanism
@@ -116,7 +116,7 @@ public:
 		///<
 		///< Returns false for the "LOGIN" mechanism since the initial
 		///< challenge ("Username:") is not essential, ie. it is a
-		///< "variable" mechanism.
+		///< RFC-4422 "variable" mechanism.
 		///<
 		///< The server should call initialChallenge() to decide whether
 		///< to send an initial challenge; this method is only to
@@ -144,9 +144,11 @@ public:
 		///< Returns the authenticated or trusted identity. Returns the
 		///< empty string if not authenticated and not trusted.
 
-	virtual bool trusted( const GNet::Address & ) const = 0 ;
-		///< Returns true if a trusted client that does not need
-		///< to authenticate.
+	virtual bool trusted( const G::StringArray & address_wildcards ,
+		const std::string & address_display ) const = 0 ;
+			///< Returns true if a trusted client that does not need
+			///< to authenticate. Pass Address::wildcards() and
+			///< Address::hostPartString().
 } ;
 
 #endif

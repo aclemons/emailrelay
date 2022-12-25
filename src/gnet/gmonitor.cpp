@@ -165,10 +165,12 @@ void GNet::Monitor::report( std::ostream & s , const std::string & px , const st
 	m_imp->report( s , px , eol ) ;
 }
 
+#ifndef G_LIB_SMALL
 void GNet::Monitor::report( G::StringArray & out ) const
 {
 	m_imp->report( out ) ;
 }
+#endif
 
 // ==
 

@@ -110,46 +110,16 @@ am__v_AR_0 = @echo "  AR      " $@;
 am__v_AR_1 = 
 libgsmtp_a_AR = $(AR) $(ARFLAGS)
 libgsmtp_a_LIBADD =
-am__libgsmtp_a_SOURCES_DIST = gadminserver.cpp gadminserver.h \
-	gmessagestore_unix.cpp gmessagestore_win32.cpp genvelope.cpp \
-	genvelope.h gexecutablefilter.cpp gexecutablefilter.h \
-	gexecutableverifier.cpp gexecutableverifier.h \
-	gfactoryparser.cpp gfactoryparser.h gfilestore.cpp \
-	gfilestore.h gfilter.cpp gfilter.h gfilterchain.cpp \
-	gfilterchain.h gfilterfactory.cpp gfilterfactory.h \
-	ginternalverifier.cpp ginternalverifier.h gmessagestore.cpp \
-	gmessagestore.h gnetworkfilter.cpp gnetworkfilter.h \
-	gnetworkverifier.cpp gnetworkverifier.h gnewfile.cpp \
-	gnewfile.h gnewmessage.cpp gnewmessage.h gnullfilter.cpp \
-	gnullfilter.h gprotocolmessage.cpp gprotocolmessage.h \
-	gprotocolmessageforward.cpp gprotocolmessageforward.h \
-	gprotocolmessagestore.cpp gprotocolmessagestore.h \
-	grequestclient.cpp grequestclient.h gsmtpclient.cpp \
-	gsmtpclient.h gsmtpclientprotocol.cpp gsmtpclientprotocol.h \
-	gsmtpserver.cpp gsmtpserver.h gsmtpserverprotocol.cpp \
-	gsmtpserverprotocol.h gspamclient.cpp gspamclient.h \
-	gspamfilter.cpp gspamfilter.h gstoredfile.cpp gstoredfile.h \
-	gstoredmessage.cpp gstoredmessage.h gverifier.cpp gverifier.h \
-	gverifierfactory.cpp gverifierfactory.h gverifierstatus.cpp \
-	gverifierstatus.h
-am__objects_1 = gadminserver.$(OBJEXT)
-@GCONFIG_WINDOWS_FALSE@am__objects_2 = gmessagestore_unix.$(OBJEXT)
-@GCONFIG_WINDOWS_TRUE@am__objects_2 = gmessagestore_win32.$(OBJEXT)
-am_libgsmtp_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
-	genvelope.$(OBJEXT) gexecutablefilter.$(OBJEXT) \
-	gexecutableverifier.$(OBJEXT) gfactoryparser.$(OBJEXT) \
-	gfilestore.$(OBJEXT) gfilter.$(OBJEXT) gfilterchain.$(OBJEXT) \
-	gfilterfactory.$(OBJEXT) ginternalverifier.$(OBJEXT) \
-	gmessagestore.$(OBJEXT) gnetworkfilter.$(OBJEXT) \
-	gnetworkverifier.$(OBJEXT) gnewfile.$(OBJEXT) \
-	gnewmessage.$(OBJEXT) gnullfilter.$(OBJEXT) \
+am_libgsmtp_a_OBJECTS = gadminserver.$(OBJEXT) \
+	grequestclient.$(OBJEXT) gspamclient.$(OBJEXT) \
+	gfilter.$(OBJEXT) gfilterfactorybase.$(OBJEXT) \
 	gprotocolmessage.$(OBJEXT) gprotocolmessageforward.$(OBJEXT) \
-	gprotocolmessagestore.$(OBJEXT) grequestclient.$(OBJEXT) \
-	gsmtpclient.$(OBJEXT) gsmtpclientprotocol.$(OBJEXT) \
-	gsmtpserver.$(OBJEXT) gsmtpserverprotocol.$(OBJEXT) \
-	gspamclient.$(OBJEXT) gspamfilter.$(OBJEXT) \
-	gstoredfile.$(OBJEXT) gstoredmessage.$(OBJEXT) \
-	gverifier.$(OBJEXT) gverifierfactory.$(OBJEXT) \
+	gprotocolmessagestore.$(OBJEXT) gsmtpclient.$(OBJEXT) \
+	gsmtpclientprotocol.$(OBJEXT) gsmtpclientreply.$(OBJEXT) \
+	gsmtpserver.$(OBJEXT) gsmtpserverbufferin.$(OBJEXT) \
+	gsmtpserverparser.$(OBJEXT) gsmtpserverprotocol.$(OBJEXT) \
+	gsmtpserversend.$(OBJEXT) gsmtpservertext.$(OBJEXT) \
+	gverifier.$(OBJEXT) gverifierfactorybase.$(OBJEXT) \
 	gverifierstatus.$(OBJEXT)
 libgsmtp_a_OBJECTS = $(am_libgsmtp_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
@@ -168,24 +138,20 @@ DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/gadminserver.Po \
-	./$(DEPDIR)/genvelope.Po ./$(DEPDIR)/gexecutablefilter.Po \
-	./$(DEPDIR)/gexecutableverifier.Po \
-	./$(DEPDIR)/gfactoryparser.Po ./$(DEPDIR)/gfilestore.Po \
-	./$(DEPDIR)/gfilter.Po ./$(DEPDIR)/gfilterchain.Po \
-	./$(DEPDIR)/gfilterfactory.Po ./$(DEPDIR)/ginternalverifier.Po \
-	./$(DEPDIR)/gmessagestore.Po ./$(DEPDIR)/gmessagestore_unix.Po \
-	./$(DEPDIR)/gmessagestore_win32.Po \
-	./$(DEPDIR)/gnetworkfilter.Po ./$(DEPDIR)/gnetworkverifier.Po \
-	./$(DEPDIR)/gnewfile.Po ./$(DEPDIR)/gnewmessage.Po \
-	./$(DEPDIR)/gnullfilter.Po ./$(DEPDIR)/gprotocolmessage.Po \
+	./$(DEPDIR)/gfilter.Po ./$(DEPDIR)/gfilterfactorybase.Po \
+	./$(DEPDIR)/gprotocolmessage.Po \
 	./$(DEPDIR)/gprotocolmessageforward.Po \
 	./$(DEPDIR)/gprotocolmessagestore.Po \
 	./$(DEPDIR)/grequestclient.Po ./$(DEPDIR)/gsmtpclient.Po \
-	./$(DEPDIR)/gsmtpclientprotocol.Po ./$(DEPDIR)/gsmtpserver.Po \
-	./$(DEPDIR)/gsmtpserverprotocol.Po ./$(DEPDIR)/gspamclient.Po \
-	./$(DEPDIR)/gspamfilter.Po ./$(DEPDIR)/gstoredfile.Po \
-	./$(DEPDIR)/gstoredmessage.Po ./$(DEPDIR)/gverifier.Po \
-	./$(DEPDIR)/gverifierfactory.Po ./$(DEPDIR)/gverifierstatus.Po
+	./$(DEPDIR)/gsmtpclientprotocol.Po \
+	./$(DEPDIR)/gsmtpclientreply.Po ./$(DEPDIR)/gsmtpserver.Po \
+	./$(DEPDIR)/gsmtpserverbufferin.Po \
+	./$(DEPDIR)/gsmtpserverparser.Po \
+	./$(DEPDIR)/gsmtpserverprotocol.Po \
+	./$(DEPDIR)/gsmtpserversend.Po ./$(DEPDIR)/gsmtpservertext.Po \
+	./$(DEPDIR)/gspamclient.Po ./$(DEPDIR)/gverifier.Po \
+	./$(DEPDIR)/gverifierfactorybase.Po \
+	./$(DEPDIR)/gverifierstatus.Po
 am__mv = mv -f
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -213,7 +179,7 @@ am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = $(libgsmtp_a_SOURCES)
-DIST_SOURCES = $(am__libgsmtp_a_SOURCES_DIST)
+DIST_SOURCES = $(libgsmtp_a_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -366,85 +332,57 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-@GCONFIG_WINDOWS_FALSE@OS_SOURCES = gmessagestore_unix.cpp
-@GCONFIG_WINDOWS_TRUE@OS_SOURCES = gmessagestore_win32.cpp
-@GCONFIG_WINDOWS_FALSE@OS_SOURCES_EXTRA_DIST = gmessagestore_win32.cpp
-@GCONFIG_WINDOWS_TRUE@OS_SOURCES_EXTRA_DIST = gmessagestore_unix.cpp
-ADMIN_SOURCES = gadminserver.cpp gadminserver.h
-ADMIN_EXTRA_DIST = 
-EXTRA_DIST = \
-	$(ADMIN_EXTRA_DIST) \
-	$(OS_SOURCES_EXTRA_DIST)
-
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/glib \
 	-I$(top_srcdir)/src/gssl \
 	-I$(top_srcdir)/src/gnet \
 	-I$(top_srcdir)/src/gauth \
-	-D "G_SPOOLDIR=$(e_spooldir)"
+	-I$(top_srcdir)/src/gstore \
+	-D "G_SPOOLDIR=$(e_spooldir)" \
+	-D G_LIB_SMALL
 
 noinst_LIBRARIES = libgsmtp.a
 libgsmtp_a_SOURCES = \
-	$(ADMIN_SOURCES) \
-	$(OS_SOURCES) \
-	genvelope.cpp \
-	genvelope.h \
-	gexecutablefilter.cpp \
-	gexecutablefilter.h \
-	gexecutableverifier.cpp \
-	gexecutableverifier.h \
-	gfactoryparser.cpp \
-	gfactoryparser.h \
-	gfilestore.cpp \
-	gfilestore.h \
-	gfilter.cpp \
-	gfilter.h \
-	gfilterchain.cpp \
-	gfilterchain.h \
-	gfilterfactory.cpp \
-	gfilterfactory.h \
-	ginternalverifier.cpp \
-	ginternalverifier.h \
-	gmessagestore.cpp \
-	gmessagestore.h \
-	gnetworkfilter.cpp \
-	gnetworkfilter.h \
-	gnetworkverifier.cpp \
-	gnetworkverifier.h \
-	gnewfile.cpp \
-	gnewfile.h \
-	gnewmessage.cpp \
-	gnewmessage.h \
-	gnullfilter.cpp \
-	gnullfilter.h \
-	gprotocolmessage.cpp \
-	gprotocolmessage.h \
-	gprotocolmessageforward.cpp \
-	gprotocolmessageforward.h \
-	gprotocolmessagestore.cpp \
-	gprotocolmessagestore.h \
+	gadminserver.cpp \
+	gadminserver.h \
 	grequestclient.cpp \
 	grequestclient.h \
+	gspamclient.cpp \
+	gspamclient.h \
+	gfilter.cpp \
+	gfilter.h \
+	gfilterfactorybase.cpp \
+	gfilterfactorybase.h \
+	gprotocolmessage.cpp \
+	gprotocolmessageforward.cpp \
+	gprotocolmessageforward.h \
+	gprotocolmessage.h \
+	gprotocolmessagestore.cpp \
+	gprotocolmessagestore.h \
 	gsmtpclient.cpp \
 	gsmtpclient.h \
 	gsmtpclientprotocol.cpp \
 	gsmtpclientprotocol.h \
+	gsmtpclientreply.cpp \
+	gsmtpclientreply.h \
 	gsmtpserver.cpp \
 	gsmtpserver.h \
+	gsmtpserverbufferin.cpp \
+	gsmtpserverbufferin.h \
+	gsmtpserverflowcontrol.h \
+	gsmtpserverparser.cpp \
+	gsmtpserverparser.h \
 	gsmtpserverprotocol.cpp \
 	gsmtpserverprotocol.h \
-	gspamclient.cpp \
-	gspamclient.h \
-	gspamfilter.cpp \
-	gspamfilter.h \
-	gstoredfile.cpp \
-	gstoredfile.h \
-	gstoredmessage.cpp \
-	gstoredmessage.h \
+	gsmtpserversend.cpp \
+	gsmtpserversend.h \
+	gsmtpserversender.h \
+	gsmtpservertext.cpp \
+	gsmtpservertext.h \
 	gverifier.cpp \
 	gverifier.h \
-	gverifierfactory.cpp \
-	gverifierfactory.h \
+	gverifierfactorybase.cpp \
+	gverifierfactorybase.h \
 	gverifierstatus.cpp \
 	gverifierstatus.h
 
@@ -497,37 +435,24 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gadminserver.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/genvelope.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gexecutablefilter.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gexecutableverifier.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfactoryparser.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfilestore.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfilter.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfilterchain.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfilterfactory.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ginternalverifier.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmessagestore.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmessagestore_unix.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmessagestore_win32.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnetworkfilter.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnetworkverifier.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnewfile.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnewmessage.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnullfilter.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfilterfactorybase.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gprotocolmessage.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gprotocolmessageforward.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gprotocolmessagestore.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/grequestclient.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsmtpclient.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsmtpclientprotocol.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsmtpclientreply.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsmtpserver.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsmtpserverbufferin.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsmtpserverparser.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsmtpserverprotocol.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsmtpserversend.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsmtpservertext.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gspamclient.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gspamfilter.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gstoredfile.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gstoredmessage.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gverifier.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gverifierfactory.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gverifierfactorybase.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gverifierstatus.Po@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
@@ -675,37 +600,24 @@ clean-am: clean-generic clean-noinstLIBRARIES mostlyclean-am
 
 distclean: distclean-am
 		-rm -f ./$(DEPDIR)/gadminserver.Po
-	-rm -f ./$(DEPDIR)/genvelope.Po
-	-rm -f ./$(DEPDIR)/gexecutablefilter.Po
-	-rm -f ./$(DEPDIR)/gexecutableverifier.Po
-	-rm -f ./$(DEPDIR)/gfactoryparser.Po
-	-rm -f ./$(DEPDIR)/gfilestore.Po
 	-rm -f ./$(DEPDIR)/gfilter.Po
-	-rm -f ./$(DEPDIR)/gfilterchain.Po
-	-rm -f ./$(DEPDIR)/gfilterfactory.Po
-	-rm -f ./$(DEPDIR)/ginternalverifier.Po
-	-rm -f ./$(DEPDIR)/gmessagestore.Po
-	-rm -f ./$(DEPDIR)/gmessagestore_unix.Po
-	-rm -f ./$(DEPDIR)/gmessagestore_win32.Po
-	-rm -f ./$(DEPDIR)/gnetworkfilter.Po
-	-rm -f ./$(DEPDIR)/gnetworkverifier.Po
-	-rm -f ./$(DEPDIR)/gnewfile.Po
-	-rm -f ./$(DEPDIR)/gnewmessage.Po
-	-rm -f ./$(DEPDIR)/gnullfilter.Po
+	-rm -f ./$(DEPDIR)/gfilterfactorybase.Po
 	-rm -f ./$(DEPDIR)/gprotocolmessage.Po
 	-rm -f ./$(DEPDIR)/gprotocolmessageforward.Po
 	-rm -f ./$(DEPDIR)/gprotocolmessagestore.Po
 	-rm -f ./$(DEPDIR)/grequestclient.Po
 	-rm -f ./$(DEPDIR)/gsmtpclient.Po
 	-rm -f ./$(DEPDIR)/gsmtpclientprotocol.Po
+	-rm -f ./$(DEPDIR)/gsmtpclientreply.Po
 	-rm -f ./$(DEPDIR)/gsmtpserver.Po
+	-rm -f ./$(DEPDIR)/gsmtpserverbufferin.Po
+	-rm -f ./$(DEPDIR)/gsmtpserverparser.Po
 	-rm -f ./$(DEPDIR)/gsmtpserverprotocol.Po
+	-rm -f ./$(DEPDIR)/gsmtpserversend.Po
+	-rm -f ./$(DEPDIR)/gsmtpservertext.Po
 	-rm -f ./$(DEPDIR)/gspamclient.Po
-	-rm -f ./$(DEPDIR)/gspamfilter.Po
-	-rm -f ./$(DEPDIR)/gstoredfile.Po
-	-rm -f ./$(DEPDIR)/gstoredmessage.Po
 	-rm -f ./$(DEPDIR)/gverifier.Po
-	-rm -f ./$(DEPDIR)/gverifierfactory.Po
+	-rm -f ./$(DEPDIR)/gverifierfactorybase.Po
 	-rm -f ./$(DEPDIR)/gverifierstatus.Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
@@ -753,37 +665,24 @@ installcheck-am:
 
 maintainer-clean: maintainer-clean-am
 		-rm -f ./$(DEPDIR)/gadminserver.Po
-	-rm -f ./$(DEPDIR)/genvelope.Po
-	-rm -f ./$(DEPDIR)/gexecutablefilter.Po
-	-rm -f ./$(DEPDIR)/gexecutableverifier.Po
-	-rm -f ./$(DEPDIR)/gfactoryparser.Po
-	-rm -f ./$(DEPDIR)/gfilestore.Po
 	-rm -f ./$(DEPDIR)/gfilter.Po
-	-rm -f ./$(DEPDIR)/gfilterchain.Po
-	-rm -f ./$(DEPDIR)/gfilterfactory.Po
-	-rm -f ./$(DEPDIR)/ginternalverifier.Po
-	-rm -f ./$(DEPDIR)/gmessagestore.Po
-	-rm -f ./$(DEPDIR)/gmessagestore_unix.Po
-	-rm -f ./$(DEPDIR)/gmessagestore_win32.Po
-	-rm -f ./$(DEPDIR)/gnetworkfilter.Po
-	-rm -f ./$(DEPDIR)/gnetworkverifier.Po
-	-rm -f ./$(DEPDIR)/gnewfile.Po
-	-rm -f ./$(DEPDIR)/gnewmessage.Po
-	-rm -f ./$(DEPDIR)/gnullfilter.Po
+	-rm -f ./$(DEPDIR)/gfilterfactorybase.Po
 	-rm -f ./$(DEPDIR)/gprotocolmessage.Po
 	-rm -f ./$(DEPDIR)/gprotocolmessageforward.Po
 	-rm -f ./$(DEPDIR)/gprotocolmessagestore.Po
 	-rm -f ./$(DEPDIR)/grequestclient.Po
 	-rm -f ./$(DEPDIR)/gsmtpclient.Po
 	-rm -f ./$(DEPDIR)/gsmtpclientprotocol.Po
+	-rm -f ./$(DEPDIR)/gsmtpclientreply.Po
 	-rm -f ./$(DEPDIR)/gsmtpserver.Po
+	-rm -f ./$(DEPDIR)/gsmtpserverbufferin.Po
+	-rm -f ./$(DEPDIR)/gsmtpserverparser.Po
 	-rm -f ./$(DEPDIR)/gsmtpserverprotocol.Po
+	-rm -f ./$(DEPDIR)/gsmtpserversend.Po
+	-rm -f ./$(DEPDIR)/gsmtpservertext.Po
 	-rm -f ./$(DEPDIR)/gspamclient.Po
-	-rm -f ./$(DEPDIR)/gspamfilter.Po
-	-rm -f ./$(DEPDIR)/gstoredfile.Po
-	-rm -f ./$(DEPDIR)/gstoredmessage.Po
 	-rm -f ./$(DEPDIR)/gverifier.Po
-	-rm -f ./$(DEPDIR)/gverifierfactory.Po
+	-rm -f ./$(DEPDIR)/gverifierfactorybase.Po
 	-rm -f ./$(DEPDIR)/gverifierstatus.Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic

@@ -149,10 +149,12 @@ std::size_t G::string_view::find_first_not_of( string_view chars , std::size_t p
 	return std::string::npos ;
 }
 
+#ifndef G_LIB_SMALL
 std::size_t G::string_view::find_last_of( const char * chars , std::size_t pos , std::size_t chars_size ) const noexcept
 {
 	return find_last_of( string_view(chars,chars_size) , pos ) ;
 }
+#endif
 
 std::size_t G::string_view::find_last_of( string_view chars , std::size_t pos ) const noexcept
 {
@@ -175,10 +177,12 @@ std::size_t G::string_view::find_last_of( string_view chars , std::size_t pos ) 
 	return std::string::npos ;
 }
 
+#ifndef G_LIB_SMALL
 std::size_t G::string_view::find_last_not_of( const char * chars , std::size_t pos , std::size_t chars_size ) const noexcept
 {
 	return find_last_not_of( string_view(chars,chars_size) , pos ) ;
 }
+#endif
 
 std::size_t G::string_view::find_last_not_of( string_view chars , std::size_t pos ) const noexcept
 {

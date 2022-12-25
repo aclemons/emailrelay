@@ -236,7 +236,7 @@ std::string GAuth::SaslServerPam::preferredMechanism( bool ) const
 	return std::string() ;
 }
 
-bool GAuth::SaslServerPam::trusted( const GNet::Address & ) const
+bool GAuth::SaslServerPam::trusted( const G::StringArray & , const std::string & ) const
 {
 	return false ;
 }

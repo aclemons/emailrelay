@@ -48,4 +48,4 @@ echo error: perl command failed: no output file created
 goto end
 
 :end
-pause
+if "%RUNPERL_NOPAUSE%"=="" pause

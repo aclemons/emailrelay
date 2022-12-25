@@ -73,6 +73,10 @@ public:
 	std::string str() const ;
 		///< Returns a string representation of the structure.
 
+	bool utf8address() const ;
+		///< Returns true if 'address' is utf8 according to
+		///< GSmtp::ServerParser::mailboxStyle().
+
 public:
 	bool is_valid{false} ;
 	bool is_local{false} ;

@@ -20,6 +20,7 @@
 
 #include "gdef.h"
 #include "goptionmap.h"
+#include "gstringfield.h"
 #include <algorithm>
 
 void G::OptionMap::insert( const Map::value_type & value )
@@ -43,6 +44,7 @@ G::OptionMap::const_iterator G::OptionMap::find( string_view key ) const
 	return pair.first == pair.second ? m_map.end() : pair.first ;
 }
 
+#ifndef G_LIB_SMALL
 void G::OptionMap::replace( string_view key , const std::string & value )
 {
 	auto pair = findRange( key ) ;
@@ -50,6 +52,7 @@ void G::OptionMap::replace( string_view key , const std::string & value )
 		m_map.erase( pair.first , pair.second ) ;
 	m_map.insert( Map::value_type(sv_to_string(key),OptionValue(value)) ) ;
 }
+#endif
 
 void G::OptionMap::increment( string_view key )
 {
@@ -63,20 +66,24 @@ G::OptionMap::const_iterator G::OptionMap::begin() const
 	return m_map.begin() ;
 }
 
+#ifndef G_LIB_SMALL
 G::OptionMap::const_iterator G::OptionMap::cbegin() const
 {
 	return begin() ;
 }
+#endif
 
 G::OptionMap::const_iterator G::OptionMap::end() const
 {
 	return m_map.end() ;
 }
 
+#ifndef G_LIB_SMALL
 G::OptionMap::const_iterator G::OptionMap::cend() const
 {
 	return end() ;
 }
+#endif
 
 void G::OptionMap::clear()
 {
@@ -137,5 +144,11 @@ std::string G::OptionMap::join( Map::const_iterator p , Map::const_iterator end 
 			return sv_to_string(off_value) ;
 	}
 	return result ;
+}
+
+unsigned int G::OptionMap::number( string_view key , unsigned int default_ ) const
+{
+	G_ASSERT( !G::Str::isUInt("") ) ;
+	return G::Str::isUInt(value(key)) ? G::Str::toUInt(value(key)) : default_ ;
 }
 

@@ -15,30 +15,80 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+AM_CPPFLAGS = -I$(top_srcdir)/src/glib -DG_LIB_SMALL
+
 if GCONFIG_TLS_USE_NONE
-SSL_EXTRA_DIST = gssl.cpp gssl_openssl.cpp gssl_openssl.h gssl_mbedtls.cpp gssl_mbedtls.h gssl_use_both.cpp gssl_use_openssl.cpp gssl_use_mbedtls.cpp
-SSL_SOURCES = gssl.h gssl_none.cpp
+SSL_EXTRA_DIST = \
+	gssl.cpp \
+	gssl_openssl.cpp \
+	gssl_openssl.h \
+	gssl_mbedtls.cpp \
+	gssl_mbedtls.h \
+	gssl_mbedtls_headers.h \
+	gssl_mbedtls_utils.h \
+	gssl_use_both.cpp \
+	gssl_use_openssl.cpp \
+	gssl_use_mbedtls.cpp
+SSL_SOURCES = \
+	gssl.h \
+	gssl_none.cpp
 endif
 
 if GCONFIG_TLS_USE_BOTH
-SSL_EXTRA_DIST = gssl_none.cpp gssl_use_openssl.cpp gssl_use_mbedtls.cpp
-SSL_SOURCES = gssl.h gssl.cpp gssl_openssl.cpp gssl_openssl.h gssl_mbedtls.cpp gssl_mbedtls.h gssl_use_both.cpp
+SSL_EXTRA_DIST = \
+	gssl_none.cpp \
+	gssl_use_openssl.cpp \
+	gssl_use_mbedtls.cpp
+SSL_SOURCES = \
+	gssl.h \
+	gssl.cpp \
+	gssl_openssl.cpp \
+	gssl_openssl.h \
+	gssl_mbedtls.cpp \
+	gssl_mbedtls.h \
+	gssl_mbedtls_headers.h \
+	gssl_mbedtls_utils.h \
+	gssl_use_both.cpp
 endif
 
 if GCONFIG_TLS_USE_OPENSSL
-SSL_EXTRA_DIST = gssl_none.cpp gssl_mbedtls.cpp gssl_mbedtls.h gssl_use_mbedtls.cpp gssl_use_both.cpp
-SSL_SOURCES = gssl.h gssl.cpp gssl_openssl.cpp gssl_openssl.h gssl_use_openssl.cpp
+SSL_EXTRA_DIST = \
+	gssl_none.cpp \
+	gssl_mbedtls.cpp \
+	gssl_mbedtls.h \
+	gssl_mbedtls_headers.h \
+	gssl_mbedtls_utils.h \
+	gssl_use_mbedtls.cpp \
+	gssl_use_both.cpp
+SSL_SOURCES = \
+	gssl.h \
+	gssl.cpp \
+	gssl_openssl.cpp \
+	gssl_openssl.h \
+	gssl_use_openssl.cpp
 endif
 
 if GCONFIG_TLS_USE_MBEDTLS
-SSL_EXTRA_DIST = gssl_none.cpp gssl_openssl.cpp gssl_openssl.h gssl_use_openssl.cpp gssl_use_both.cpp
-SSL_SOURCES = gssl.h gssl.cpp gssl_mbedtls.cpp gssl_mbedtls.h gssl_use_mbedtls.cpp
+SSL_EXTRA_DIST = \
+	gssl_none.cpp \
+	gssl_openssl.cpp \
+	gssl_openssl.h \
+	gssl_use_openssl.cpp \
+	gssl_use_both.cpp
+SSL_SOURCES = \
+	gssl.h \
+	gssl.cpp \
+	gssl_mbedtls.cpp \
+	gssl_mbedtls.h \
+	gssl_mbedtls_headers.h \
+	gssl_mbedtls_utils.h \
+	gssl_use_mbedtls.cpp
 endif
 
 EXTRA_DIST = \
+	mbedtls-vsnprintf-fix.p1 \
 	$(SSL_EXTRA_DIST)
 
-AM_CPPFLAGS = -I$(top_srcdir)/src/glib
 noinst_LIBRARIES = libgssl.a
 
 libgssl_a_SOURCES = $(SSL_SOURCES)

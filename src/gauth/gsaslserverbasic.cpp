@@ -43,7 +43,8 @@
 class GAuth::SaslServerBasicImp
 {
 public:
-	SaslServerBasicImp( const SaslServerSecrets & , bool , const std::string & , bool ) ;
+	SaslServerBasicImp( const SaslServerSecrets & , bool ,
+		const std::string & config , const std::string & challenge_domain ) ;
 	G::StringArray mechanisms( bool ) const ;
 	void reset() ;
 	bool init( bool , const std::string & mechanism ) ;
@@ -51,8 +52,8 @@ public:
 	std::string preferredMechanism( bool ) const ;
 	std::string initialChallenge() const ;
 	std::string apply( const std::string & response , bool & done ) ;
-	bool trusted( const GNet::Address & ) const ;
-	bool trustedCore( const std::string & , const GNet::Address & ) const ;
+	bool trusted( const G::StringArray & , const std::string & ) const ;
+	bool trustedCore( const std::string & , const std::string & ) const ;
 	std::string id() const ;
 	bool authenticated() const ;
 
@@ -63,6 +64,7 @@ private:
 	G::StringArray m_mechanisms_insecure ;
 	std::string m_mechanism ;
 	std::string m_challenge ;
+	std::string m_challenge_domain ;
 	bool m_authenticated ;
 	std::string m_id ;
 	std::string m_trustee ;
@@ -76,9 +78,10 @@ G::string_view GAuth::SaslServerBasicImp::login_challenge_2 {"Password:",9U} ;
 // ===
 
 GAuth::SaslServerBasicImp::SaslServerBasicImp( const SaslServerSecrets & secrets ,
-	bool with_apop , const std::string & config , bool force_no_insecure_mechanisms ) :
+	bool with_apop , const std::string & config , const std::string & challenge_domain ) :
 		m_first_apply(true) ,
 		m_secrets(secrets) ,
+		m_challenge_domain(challenge_domain) ,
 		m_authenticated(false)
 {
 	// prepare a list of mechanisms, but remove any that are completely unusable
@@ -147,9 +150,6 @@ GAuth::SaslServerBasicImp::SaslServerBasicImp( const SaslServerSecrets & secrets
 		G::StringList::Filter(m_mechanisms_insecure).allow(m_).deny(x) ;
 		G::StringList::Filter(m_mechanisms_secure).allow(m_).deny(x) ;
 	}
-
-	if( force_no_insecure_mechanisms )
-		m_mechanisms_insecure.clear() ;
 }
 
 void GAuth::SaslServerBasicImp::reset()
@@ -182,7 +182,7 @@ bool GAuth::SaslServerBasicImp::init( bool secure , const std::string & mechanis
 	else if( mechanism == "APOP" || mechanism.find("CRAM-") == 0U )
 	{
 		m_mechanism = mechanism ;
-		m_challenge = Cram::challenge( G::Random::rand() ) ;
+		m_challenge = Cram::challenge( G::Random::rand() , m_challenge_domain ) ;
 		return true ;
 	}
 	else
@@ -275,7 +275,7 @@ std::string GAuth::SaslServerBasicImp::apply( const std::string & response , boo
 		G::string_view pwd_in = G::Str::tailView( id_pwd_in , sep ) ;
 		secret = m_secrets.serverSecret( "plain"_sv , id ) ;
 
-		m_authenticated = secret.valid() && !id.empty() && !pwd_in.empty() && pwd_in == secret.key() ;
+		m_authenticated = secret.valid() && !id.empty() && !pwd_in.empty() && pwd_in == secret.secret() ;
 		m_id = id ;
 		done = true ;
 	}
@@ -292,7 +292,7 @@ std::string GAuth::SaslServerBasicImp::apply( const std::string & response , boo
 		G_ASSERT( m_mechanism == "LOGIN" ) ;
 		id = m_id ;
 		secret = m_secrets.serverSecret( "plain"_sv , m_id ) ;
-		m_authenticated = secret.valid() && !response.empty() && response == secret.key() ;
+		m_authenticated = secret.valid() && !response.empty() && response == secret.secret() ;
 		done = true ;
 	}
 
@@ -311,22 +311,20 @@ std::string GAuth::SaslServerBasicImp::apply( const std::string & response , boo
 	return next_challenge ;
 }
 
-bool GAuth::SaslServerBasicImp::trusted( const GNet::Address & address ) const
+bool GAuth::SaslServerBasicImp::trusted( const G::StringArray & address_wildcards , const std::string & address_display ) const
 {
-	G_DEBUG( "GAuth::SaslServerBasicImp::trusted: \"" << address.hostPartString() << "\"" ) ;
-	G::StringArray wildcards = address.wildcards() ;
-	return std::any_of( wildcards.cbegin() , wildcards.cend() ,
-		[&](const std::string &wca){return trustedCore(wca,address);} ) ;
+	return std::any_of( address_wildcards.cbegin() , address_wildcards.cend() ,
+		[&](const std::string &wca){return trustedCore(wca,address_display);} ) ;
 }
 
-bool GAuth::SaslServerBasicImp::trustedCore( const std::string & address_wildcard , const GNet::Address & address ) const
+bool GAuth::SaslServerBasicImp::trustedCore( const std::string & address_wildcard , const std::string & address_display ) const
 {
-	G_DEBUG( "GAuth::SaslServerBasicImp::trustedCore: \"" << address_wildcard << "\", \"" << address.hostPartString() << "\"" ) ;
+	G_DEBUG( "GAuth::SaslServerBasicImp::trustedCore: \"" << address_wildcard << "\", \"" << address_display << "\"" ) ;
 	std::pair<std::string,std::string> pair = m_secrets.serverTrust( address_wildcard ) ;
 	std::string & trustee = pair.first ;
 	if( !trustee.empty() )
 	{
-		G_LOG( "GAuth::SaslServer::trusted: trusting [" << address.hostPartString() << "]: "
+		G_LOG( "GAuth::SaslServer::trusted: trusting [" << address_display << "]: "
 			<< "matched [" << address_wildcard << "] from " << pair.second ) ;
 		const_cast<SaslServerBasicImp*>(this)->m_trustee = trustee ;
 		return true ;
@@ -354,9 +352,9 @@ bool GAuth::SaslServerBasicImp::authenticated() const
 
 // ===
 
-GAuth::SaslServerBasic::SaslServerBasic( const SaslServerSecrets & secrets ,
-	bool with_apop , const std::string & config , bool no_insecure_mechanisms ) :
-		m_imp(std::make_unique<SaslServerBasicImp>(secrets,with_apop,config,no_insecure_mechanisms))
+GAuth::SaslServerBasic::SaslServerBasic( const SaslServerSecrets & secrets , bool with_apop ,
+	const std::string & config , const std::string & challenge_domain ) :
+		m_imp(std::make_unique<SaslServerBasicImp>(secrets,with_apop,config,challenge_domain))
 {
 }
 
@@ -378,9 +376,10 @@ std::string GAuth::SaslServerBasic::preferredMechanism( bool secure ) const
 	return m_imp->preferredMechanism( secure ) ;
 }
 
-bool GAuth::SaslServerBasic::trusted( const GNet::Address & address ) const
+bool GAuth::SaslServerBasic::trusted( const G::StringArray & address_wildcards ,
+	const std::string & address_display ) const
 {
-	return m_imp->trusted( address ) ;
+	return m_imp->trusted( address_wildcards , address_display ) ;
 }
 
 void GAuth::SaslServerBasic::reset()

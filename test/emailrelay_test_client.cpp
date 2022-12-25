@@ -29,13 +29,13 @@
 //         -v -- verbose logging
 //         -q -- send "."&"QUIT" instead of "."
 //         -Q -- send "."&"QUIT" and immediately disconnect
-//         -s -- slow (if connections is 1)
 //
 
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include "gdef.h"
 #include "gsleep.h"
 #include <cstring> // std::size_t
+#include <sstream>
 #include <iostream>
 #include <string>
 #include <stdexcept>
@@ -48,10 +48,20 @@
 #include <csignal>
 #endif
 
-int cfg_verbosity = 0 ;
-bool cfg_eager_quit = false ;
-bool cfg_eager_quit_disconnect = false ;
-bool cfg_slow = false ;
+struct Config
+{
+	int verbosity {0} ;
+	bool eager_quit {false} ;
+	bool eager_quit_disconnect {false} ;
+	bool no_wait {false} ;
+	std::string address ;
+	int port {10025} ;
+	int connections {1} ;
+	int iterations {-1} ;
+	int lines {1000} ;
+	int line_length {998} ;
+	int messages {2} ;
+} cfg ;
 
 #ifdef _WIN32
 using read_size_type = int ;
@@ -102,26 +112,28 @@ public:
 	bool runSome() ;
 	bool done() const ;
 	void close() ;
-	bool errors() const ;
 
 private:
 	void connect( const Address & ) ;
-	void send( const char * ) ;
+	void send( const std::string & ) ;
 	void send( const char * , std::size_t ) ;
+	void sendData( const char * , std::size_t ) ;
 	void waitline() ;
 	void waitline( const char * ) ;
-	void sendMessage( int , int , bool ) ;
+	void sendMessage( int , int , int , bool ) ;
 	static void close_( SOCKET fd ) ;
 	static void shutdown( SOCKET fd ) ;
+	static std::string printable( std::string ) ;
 
 private:
 	SOCKET m_fd ;
-	int m_messages{0} ;
-	int m_lines{0} ;
-	int m_line_length{0} ;
-	int m_state{0} ;
-	bool m_done{false} ;
-	std::size_t m_errors{0U} ; // unexpected protocol responses
+	int m_messages {0} ;
+	int m_lines {0} ;
+	int m_recipients {3} ;
+	int m_line_length {0} ;
+	int m_state {0} ;
+	bool m_done {false} ;
+	unsigned m_wait {0} ;
 } ;
 
 Test::Test()
@@ -146,7 +158,7 @@ void Test::init( const Address & a , int messages , int lines , int line_length 
 
 void Test::connect( const Address & a )
 {
-	if( cfg_verbosity ) std::cout << "connect: fd=" << m_fd << std::endl ;
+	if( cfg.verbosity ) std::cout << "connect: fd=" << m_fd << std::endl ;
 	int rc = ::connect( m_fd , a.ptr() , static_cast<connect_size_type>(a.size()) ) ;
 	if( rc != 0 )
 		throw std::runtime_error( "connect error" ) ;
@@ -167,7 +179,7 @@ bool Test::runSome()
 	}
 	else if( m_state > 1 && m_state < (m_messages+2) )
 	{
-		sendMessage( m_lines , m_line_length , m_state == (m_messages+1) ) ;
+		sendMessage( m_recipients , m_lines , m_line_length , m_state == (m_messages+1) ) ;
 		m_state++ ;
 	}
 	else
@@ -179,12 +191,15 @@ bool Test::runSome()
 	return m_done ;
 }
 
-void Test::sendMessage( int lines , int length , bool last )
+void Test::sendMessage( int recipients , int lines , int length , bool last )
 {
 	send( "MAIL FROM:<test>\r\n" ) ;
 	waitline() ;
-	send( "RCPT TO:<test>\r\n" ) ;
-	waitline() ;
+	for( int i = 0 ; i < recipients ; i++ )
+	{
+		send( "RCPT TO:<test>\r\n" ) ;
+		waitline() ;
+	}
 	send( "DATA\r\n" ) ;
 	waitline() ;
 
@@ -193,12 +208,12 @@ void Test::sendMessage( int lines , int length , bool last )
 	buffer[buffer.size()-1U] = '\n' ;
 	buffer[buffer.size()-2U] = '\r' ;
 	for( int i = 0 ; i < lines ; i++ )
-		send( &buffer[0] , buffer.size() ) ;
+		sendData( &buffer[0] , buffer.size() ) ;
 
-	if( last && cfg_eager_quit )
+	if( last && cfg.eager_quit )
 	{
 		send( ".\r\nQUIT\r\n" ) ;
-		if( cfg_eager_quit_disconnect )
+		if( cfg.eager_quit_disconnect )
 		{
 			close() ;
 			return ;
@@ -220,6 +235,12 @@ void Test::waitline()
 
 void Test::waitline( const char * match )
 {
+	if( cfg.no_wait )
+	{
+		m_wait++ ;
+		return ;
+	}
+
 	std::string line ;
 	for(;;)
 	{
@@ -235,34 +256,30 @@ void Test::waitline( const char * match )
 		else if( c == '\n' ) line.append( "\\n" ) ;
 		else line.append( 1U , c ) ;
 	}
-	bool ok =
-		line.find("250 ") == 0U ||
-		line.find("250-") == 0U ||
-		line.find("220 ") == 0U ||
-		line.find("354 ") == 0U ;
-	if( !ok )
-		m_errors++ ;
-	if( cfg_verbosity )
-		std::cout << m_fd << ": rx<<: [" << line << "]" << (ok?"":" ** ERROR **") << std::endl ;
+	if( cfg.verbosity )
+		std::cout << m_fd << ": rx<<: [" << line << "]" << std::endl ;
 }
 
-bool Test::errors() const
+void Test::send( const std::string & s )
 {
-	return m_errors != 0U ;
-}
-
-void Test::send( const char * p )
-{
-	if( cfg_verbosity ) std::cout << m_fd << ": tx>>: [" << std::string(p,strcspn(p,"\r\n")) << "]" << std::endl ;
-	if( cfg_slow ) sleep( 1 ) ;
-	::send( m_fd , p , static_cast<send_size_type>(std::strlen(p)) , 0 ) ;
+	send( s.data() , s.size() ) ;
 }
 
 void Test::send( const char * p , std::size_t n )
 {
-	if( cfg_verbosity > 1 ) std::cout << m_fd << ": tx>>: [<" << n << " bytes>]" << std::endl ;
-	if( cfg_slow ) sleep( 1 ) ;
+	if( cfg.verbosity ) std::cout << m_fd << ": tx>>: [" << printable(std::string(p,n)) << "]" << std::endl ;
 	::send( m_fd , p , static_cast<send_size_type>(n) , 0 ) ;
+}
+
+void Test::sendData( const char * p , std::size_t n )
+{
+	if( cfg.verbosity > 1 ) std::cout << m_fd << ": tx>>: [<" << n << " bytes>]" << std::endl ;
+	::send( m_fd , p , static_cast<send_size_type>(n) , 0 ) ;
+}
+
+std::string Test::printable( std::string s )
+{
+	return s.substr( 0U , s.find_first_of("\r\n") ) ;
 }
 
 void Test::shutdown( SOCKET fd )
@@ -272,7 +289,7 @@ void Test::shutdown( SOCKET fd )
 
 void Test::close()
 {
-	if( cfg_verbosity ) std::cout << "close: fd=" << m_fd << std::endl ;
+	if( cfg.verbosity ) std::cout << "close: fd=" << m_fd << std::endl ;
 	close_( m_fd ) ;
 }
 
@@ -296,11 +313,28 @@ void init()
 	#endif
 }
 
-static int to_int( const char * p )
+static int to_int( const std::string & s )
 {
-	if( *p == '\0' ) return 0 ;
-	if( *p == '-' ) return -1 ;
-	return static_cast<int>( std::strtoul(p,nullptr,10) ) ;
+	if( s.empty() || s.at(0) == '-' ) throw std::runtime_error( "not a number" ) ;
+	const char * p = s.c_str() ;
+	char * end = nullptr ;
+	auto n = std::strtoul( p , &end , 10 ) ;
+	if( end != (p+s.size()) ) throw std::runtime_error( "not a number" ) ;
+	return static_cast<int>( n ) ;
+}
+
+std::string usage( const char * argv0 )
+{
+	std::ostringstream ss ;
+	ss
+		<< "usage: " << argv0 << " [-q | -Q] [-v [-v]] "
+		<< "[--connections <connections-in-parallel>] "
+		<< "[--iterations <iterations>] "
+		<< "[--lines <lines-per-message>] "
+		<< "[--line-length <line-length>] "
+		<< "[--messages <messages-per-connection>] "
+		<< "[<ipaddress>] <port>" ;
+	return ss.str() ;
 }
 
 int main( int argc , char * argv [] )
@@ -309,74 +343,68 @@ int main( int argc , char * argv [] )
 	{
 		if( argc > 1 && argv[1][0] == '-' && argv[1][1] == 'h' )
 		{
-			std::cout
-				<< "usage: " << argv[0] << " [-v [-v]] "
-				<< "<ipaddress> <port> "
-				<< "<connections-in-parallel> "
-				<< "<iterations> "
-				<< "<lines-per-message> <line-length> "
-				<< "<messages-per-connection>"
-				<< std::endl ;
+			std::cout << usage(argv[0]) << std::endl ;
 			return 0 ;
 		}
 
-		while( argc > 1 && argv[1][0] == '-' && (argv[1][1] == 'v' || argv[1][1] == 'q' || argv[1][1] == 'Q' || argv[1][1] == 's') )
-		{
-			char c = argv[1][1] ;
-			if( c == 'v' ) cfg_verbosity++ ;
-			if( c == 'q' ) cfg_eager_quit = true ;
-			if( c == 'Q' ) cfg_eager_quit = cfg_eager_quit_disconnect = true ;
-			if( c == 's' ) cfg_slow = true ;
-			for( int i = 1 ; (i+1) <= argc ; i++ )
-				argv[i] = argv[i+1] ;
-			argc-- ;
-		}
-
 		// by default loop forever with one connection sending two large messages
-		const char * arg_address = nullptr ;
-		const char * arg_port = "10025" ;
-		const char * arg_connections = "1" ;
-		const char * arg_iterations = "-1" ;
-		const char * arg_lines = "1000" ;
-		const char * arg_line_length = "998" ;
-		const char * arg_messages = "2" ;
 
-		if( argc == 2 ) arg_port = argv[1] ;
-		if( argc > 2 ) arg_address = argv[1] , arg_port = argv[2] ;
-		if( argc > 3 ) arg_connections = argv[3] ;
-		if( argc > 4 ) arg_iterations = argv[4] ;
-		if( argc > 5 ) arg_lines = argv[5] ;
-		if( argc > 6 ) arg_line_length = argv[6] ;
-		if( argc > 7 ) arg_messages = argv[7] ;
-		int port = to_int( arg_port ) ;
-		int connections = to_int( arg_connections ) ;
-		int iterations = to_int( arg_iterations ) ;
-		int lines = to_int( arg_lines ) ;
-		int line_length = to_int( arg_line_length ) ;
-		int messages = to_int( arg_messages ) ;
+		while( argc > 1 )
+		{
+			int remove = 0 ;
+			std::string arg = argv[1] ;
+			std::string value = argc > 2 ? argv[2] : "" ;
+			if( arg == "-v" ) cfg.verbosity++ , remove = 1 ;
+			if( arg == "-q" ) cfg.eager_quit = true , remove = 1 ;
+			if( arg == "-Q" ) cfg.eager_quit = cfg.eager_quit_disconnect = true , remove = 1 ;
+			if( arg == "--connections" ) cfg.connections = to_int(value) , remove = 2 ;
+			if( arg == "--iterations" ) cfg.iterations = to_int(value) , remove = 2 ;
+			if( arg == "--lines" ) cfg.lines = to_int(value) , remove = 2 ;
+			if( arg == "--line-length" ) cfg.line_length = to_int(value) , remove = 2 ;
+			if( arg == "--messages" ) cfg.messages = to_int(value) , remove = 2 ;
+			if( remove == 0 ) break ;
+			while( remove-- && argc > 1 )
+			{
+				for( int i = 1 ; (i+1) <= argc ; i++ )
+					argv[i] = argv[i+1] ;
+				argc-- ;
+			}
+		}
+		if( argc == 2 )
+		{
+			cfg.port = to_int( argv[1] )  ;
+		}
+		else if( argc == 3 )
+		{
+			cfg.address = argv[1] , cfg.port = to_int( argv[2] ) ;
+		}
+		else
+		{
+			std::cerr << usage(argv[0]) << std::endl ;
+			return 2 ;
+		}
 
 		init() ;
 
-		Address a = arg_address ? Address(arg_address,port) : Address(port) ;
+		Address a = cfg.address.empty() ? Address(cfg.port) : Address(cfg.address.c_str(),cfg.port) ;
 
-		if( cfg_verbosity )
+		//if( cfg.verbosity )
 		{
-			std::cout << "address: " << (arg_address?arg_address:"<default>") << std::endl ;
-			std::cout << "port: " << port << std::endl ;
-			std::cout << "connections-in-parallel: " << connections << std::endl ;
-			std::cout << "iterations: " << iterations << std::endl ;
-			std::cout << "lines-per-message: " << lines << std::endl ;
-			std::cout << "line-length: " << line_length << std::endl ;
-			std::cout << "messages-per-connection: " << messages << std::endl ;
+			std::cout << "connections: " << cfg.connections << std::endl ;
+			std::cout << "iterations: " << cfg.iterations << std::endl ;
+			std::cout << "lines: " << cfg.lines << std::endl ;
+			std::cout << "line-length: " << cfg.line_length << std::endl ;
+			std::cout << "messages: " << cfg.messages << std::endl ;
+			std::cout << "address: " << (cfg.address.length()?cfg.address:"<default>") << std::endl ;
+			std::cout << "port: " << cfg.port << std::endl ;
 		}
 
-		bool errors = false ;
-		for( int i = 0 ; iterations < 0 || i < iterations ; i++ )
+		for( int i = 0 ; cfg.iterations < 0 || i < cfg.iterations ; i++ )
 		{
-			std::vector<Test> test( connections ) ;
+			std::vector<Test> test( cfg.connections ) ;
 			for( auto & t : test )
 			{
-				t.init( a , messages , lines , line_length ) ;
+				t.init( a , cfg.messages , cfg.lines , cfg.line_length ) ;
 			}
 			for( unsigned done_count = 0 ; done_count < test.size() ; )
 			{
@@ -390,18 +418,13 @@ int main( int argc , char * argv [] )
 			{
 				t.close() ;
 			}
-			if( std::any_of( test.begin() , test.end() , [](Test &t){return t.errors();} ) )
-				errors = true ;
 		}
-		if( errors )
-			throw std::runtime_error( "got some error responses" ) ;
 
-		std::cerr << "done" << std::endl ;
 		return 0 ;
 	}
 	catch( std::exception & e )
 	{
-		std::cerr << "ERROR: " << e.what() << std::endl ;
+		std::cerr << "exception: " << e.what() << std::endl ;
 	}
 	return 1 ;
 }

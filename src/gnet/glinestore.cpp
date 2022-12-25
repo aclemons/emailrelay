@@ -402,6 +402,7 @@ const char * GNet::LineStore::dataimp( std::size_t pos , std::size_t n )
 	}
 }
 
+#ifndef G_LIB_SMALL
 std::string GNet::LineStore::str() const
 {
 	std::string result( m_store ) ;
@@ -409,6 +410,7 @@ std::string GNet::LineStore::str() const
 		result.append( m_extra_data , m_extra_size ) ;
 	return result ;
 }
+#endif
 
 std::string GNet::LineStore::head( std::size_t n ) const
 {

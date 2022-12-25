@@ -45,7 +45,7 @@ G::Identity::Identity( const std::string & , const std::string & ) :
 
 std::pair<uid_t,gid_t> G::Identity::lookupUser( const std::string & )
 {
-	return {0,0} ;
+	return { 0 , 0 } ;
 }
 
 gid_t G::Identity::lookupGroup( const std::string & )

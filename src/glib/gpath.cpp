@@ -40,7 +40,7 @@ namespace G
 }
 
 template <>
-struct G::PathImp::PathPlatform<G::PathImp::Platform::Windows> /// A windows specialisation of G::PathImp::PathPlatform used by G::Path.
+struct G::PathImp::PathPlatform<G::PathImp::Platform::Windows>
 {
 	static string_view sep() noexcept
 	{
@@ -163,8 +163,6 @@ namespace G
 		static bool use_posix = !G::is_windows() ; // gdef.h // NOLINT bogus cert-err58-cpp
 		using U = PathPlatform<Platform::Unix> ;
 		using W = PathPlatform<Platform::Windows> ;
-		static void usePosix() { use_posix = true ; }
-		static void useWindows() { use_posix = false ; }
 		static string_view sep() { return use_posix ? U::sep() : W::sep() ; }
 		static void normalise( std::string & s ) { use_posix ? U::normalise(s) : W::normalise(s) ; }
 		static bool simple( const std::string & s ) { return use_posix ? U::simple(s) : W::simple(s) ; }
@@ -245,25 +243,24 @@ namespace G
 		{
 			return join( a.begin() , a.end() ) ;
 		}
-
-		static bool string_less( const std::string & a , const std::string & b ) noexcept
-		{
-			return a.compare(b) < 0 ; // uses std::char_traits<char>::compare()
-		}
 	}
 }
 
 // ==
 
+#ifndef G_LIB_SMALL
 void G::Path::setPosixStyle()
 {
-	PathImp::usePosix() ;
+	PathImp::use_posix = true ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 void G::Path::setWindowsStyle()
 {
-	PathImp::useWindows() ;
+	PathImp::use_posix = false ;
 }
+#endif
 
 G::Path::Path()
 = default;
@@ -293,6 +290,7 @@ G::Path::Path( const Path & path , const std::string & tail ) :
 	PathImp::normalise( m_str ) ;
 }
 
+#ifndef G_LIB_SMALL
 G::Path::Path( const Path & path , const std::string & tail_1 , const std::string & tail_2 ) :
 	m_str(path.m_str)
 {
@@ -300,7 +298,9 @@ G::Path::Path( const Path & path , const std::string & tail_1 , const std::strin
 	pathAppend( tail_2 ) ;
 	PathImp::normalise( m_str ) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 G::Path::Path( const Path & path , const std::string & tail_1 , const std::string & tail_2 ,
 	const std::string & tail_3 ) :
 		m_str(path.m_str)
@@ -310,6 +310,7 @@ G::Path::Path( const Path & path , const std::string & tail_1 , const std::strin
 	pathAppend( tail_3 ) ;
 	PathImp::normalise( m_str ) ;
 }
+#endif
 
 G::Path::Path( std::initializer_list<std::string> args )
 {
@@ -389,6 +390,7 @@ G::Path G::Path::withExtension( const std::string & ext ) const
 	return { result } ;
 }
 
+#ifndef G_LIB_SMALL
 G::Path G::Path::withoutRoot() const
 {
 	if( isAbsolute() )
@@ -404,8 +406,9 @@ G::Path G::Path::withoutRoot() const
 		return *this ;
 	}
 }
+#endif
 
-void G::Path::pathAppend( const std::string & tail )
+G::Path & G::Path::pathAppend( const std::string & tail )
 {
 	if( tail.empty() )
 	{
@@ -419,6 +422,7 @@ void G::Path::pathAppend( const std::string & tail )
 		Path result = join( *this , tail ) ;
 		result.swap( *this ) ;
 	}
+	return *this ;
 }
 
 std::string G::Path::extension() const
@@ -497,10 +501,12 @@ bool G::Path::operator==( const Path & other ) const
 	return m_str == other.m_str ; // noexcept only in c++14
 }
 
+#ifndef G_LIB_SMALL
 bool G::Path::operator!=( const Path & other ) const
 {
 	return m_str != other.m_str ; // noexcept only in c++14
 }
+#endif
 
 void G::Path::swap( Path & other ) noexcept
 {
@@ -508,6 +514,7 @@ void G::Path::swap( Path & other ) noexcept
 	swap( m_str , other.m_str ) ;
 }
 
+#ifndef G_LIB_SMALL
 bool G::Path::less( const G::Path & a , const G::Path & b )
 {
 	StringArray a_parts = a.split() ;
@@ -515,9 +522,11 @@ bool G::Path::less( const G::Path & a , const G::Path & b )
 	return std::lexicographical_compare(
 		a_parts.begin() , a_parts.end() ,
 		b_parts.begin() , b_parts.end() ,
-		PathImp::string_less ) ;
+		[](const std::string & a_,const std::string & b_){return a_.compare(b_) < 0;} ) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 G::Path G::Path::difference( const G::Path & root_in , const G::Path & path_in )
 {
 	StringArray path_parts ;
@@ -540,4 +549,5 @@ G::Path G::Path::difference( const G::Path & root_in , const G::Path & path_in )
 	else
 		return { PathImp::join(p.second,path_parts.end()) } ;
 }
+#endif
 

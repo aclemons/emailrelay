@@ -852,7 +852,7 @@ sub testServerSizeLimit
 	Check::that( $rsp =~ m/^552 / , "large message submission did not fail as it should have" ) ;
 	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.content" , 0 ) ;
 	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.envelope*" , 0 ) ;
-	Check::fileContains( $server->log() , "552 message exceeds fixed maximum message size" ) ;
+	Check::fileContains( $server->log() , "552 message size exceeds fixed maximum message size" ) ;
 
 	# tear down
 	$server->kill() ;
@@ -1733,7 +1733,6 @@ sub testClientNetworkFilter
 
 	# test that the messages are fowarded or not according to the filter
 	System::waitForFiles( $spool_dir_2."/emailrelay.*.envelope", 2 ) ;
-	System::waitForFiles( $spool_dir_1."/emailrelay.*.envelope.bad", 1 ) ;
 	Check::allFilesContain( $spool_dir_1."/emailrelay.*.envelope.bad" , "_failed_" ) ;
 	Check::fileContains( $scanner->logfile() , "info:.*new connection" , undef , 1 ) ;
 	Check::fileContains( $scanner->logfile() , "info:.*file: " , undef , 3 ) ;

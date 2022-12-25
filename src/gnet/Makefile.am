@@ -17,6 +17,74 @@
 
 noinst_LIBRARIES = libgnet.a
 
+COMMON_SOURCES = \
+	gaddress.cpp \
+	gaddress.h \
+	gaddress4.h \
+	gaddress4.cpp \
+	gaddress6.h \
+	gaddress6.cpp \
+	gaddresslocal.h \
+	gclient.cpp \
+	gclient.h \
+	gclientptr.cpp \
+	gclientptr.h \
+	gconnection.cpp \
+	gconnection.h \
+	gdescriptor.h \
+	gevent.h \
+	geventemitter.cpp \
+	geventemitter.h \
+	geventhandler.cpp \
+	geventhandler.h \
+	geventloggingcontext.cpp \
+	geventloggingcontext.h \
+	geventloop.cpp \
+	geventloop.h \
+	gexceptionhandler.cpp \
+	gexceptionhandler.h \
+	gexceptionsink.cpp \
+	gexceptionsink.h \
+	gexceptionsource.cpp \
+	gexceptionsource.h \
+	gfutureevent.h \
+	ginterfaces.h \
+	glinebuffer.cpp \
+	glinebuffer.h \
+	glinestore.cpp \
+	glinestore.h \
+	glistener.h \
+	glocal.cpp \
+	glocal.h \
+	glocation.cpp \
+	glocation.h \
+	gmonitor.cpp \
+	gmonitor.h \
+	gmultiserver.cpp \
+	gmultiserver.h \
+	gnetdone.cpp \
+	gnetdone.h \
+	gresolver.cpp \
+	gresolver.h \
+	gresolverfuture.cpp \
+	gresolverfuture.h \
+	gserver.cpp \
+	gserver.h \
+	gserverpeer.cpp \
+	gserverpeer.h \
+	gsocket.h \
+	gsocket.cpp \
+	gsocketprotocol.cpp \
+	gsocketprotocol.h \
+	gsocks.cpp \
+	gsocks.h \
+	gtask.cpp \
+	gtask.h \
+	gtimer.cpp \
+	gtimer.h \
+	gtimerlist.cpp \
+	gtimerlist.h
+
 # -- OS
 
 if GCONFIG_WINDOWS
@@ -36,7 +104,7 @@ OS_SOURCES = \
 
 else
 
-AM_CPPFLAGS = -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl
+AM_CPPFLAGS = -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl -DG_LIB_SMALL
 
 OS_EXTRA_DIST = \
 	gdescriptor_win32.cpp \
@@ -162,7 +230,7 @@ EVENTLOOP_EXTRA_DIST = \
 EVENTLOOP_SOURCES = \
 	geventloop_win32.cpp \
 	geventloophandles.h \
-	geventloophandles.cpp
+	geventloophandles_st.cpp
 
 else
 
@@ -171,7 +239,7 @@ if GCONFIG_EPOLL
 EVENTLOOP_EXTRA_DIST = \
 	geventloop_win32.cpp \
 	geventloophandles.h \
-	geventloophandles.cpp \
+	geventloophandles_st.cpp \
 	geventloop_select.cpp
 
 EVENTLOOP_SOURCES = \
@@ -181,8 +249,8 @@ else
 
 EVENTLOOP_EXTRA_DIST = \
 	geventloop_win32.cpp \
-	geventloophandles.cpp \
 	geventloophandles.h \
+	geventloophandles_st.cpp \
 	geventloop_select.cpp
 
 EVENTLOOP_SOURCES = \
@@ -202,75 +270,10 @@ EXTRA_DIST = \
 	$(UDS_EXTRA_DIST)
 
 libgnet_a_SOURCES = \
+	$(COMMON_SOURCES) \
 	$(DNSBL_SOURCES) \
 	$(EVENTLOOP_SOURCES) \
 	$(INTERFACES_SOURCES) \
 	$(OS_SOURCES) \
-	$(UDS_SOURCES) \
-	gaddress.cpp \
-	gaddress.h \
-	gaddress4.h \
-	gaddress4.cpp \
-	gaddress6.h \
-	gaddress6.cpp \
-	gaddresslocal.h \
-	gclient.cpp \
-	gclient.h \
-	gclientptr.cpp \
-	gclientptr.h \
-	gconnection.cpp \
-	gconnection.h \
-	gdescriptor.h \
-	gevent.h \
-	geventemitter.cpp \
-	geventemitter.h \
-	geventhandler.cpp \
-	geventhandler.h \
-	geventloggingcontext.cpp \
-	geventloggingcontext.h \
-	geventloop.cpp \
-	geventloop.h \
-	gexceptionhandler.cpp \
-	gexceptionhandler.h \
-	gexceptionsink.cpp \
-	gexceptionsink.h \
-	gexceptionsource.cpp \
-	gexceptionsource.h \
-	gfutureevent.h \
-	ginterfaces.h \
-	glinebuffer.cpp \
-	glinebuffer.h \
-	glinestore.cpp \
-	glinestore.h \
-	glistener.h \
-	glocal.cpp \
-	glocal.h \
-	glocation.cpp \
-	glocation.h \
-	gmonitor.cpp \
-	gmonitor.h \
-	gmultiserver.cpp \
-	gmultiserver.h \
-	gnetdone.cpp \
-	gnetdone.h \
-	gresolver.cpp \
-	gresolver.h \
-	gresolverfuture.cpp \
-	gresolverfuture.h \
-	gserver.cpp \
-	gserver.h \
-	gserverpeer.cpp \
-	gserverpeer.h \
-	gsocket.h \
-	gsocket.cpp \
-	gsocketprotocol.cpp \
-	gsocketprotocol.h \
-	gsocks.cpp \
-	gsocks.h \
-	gtask.cpp \
-	gtask.h \
-	gtimer.cpp \
-	gtimer.h \
-	gtimerlist.cpp \
-	gtimerlist.h
+	$(UDS_SOURCES)
 

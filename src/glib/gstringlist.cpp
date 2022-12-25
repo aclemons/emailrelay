@@ -81,11 +81,13 @@ bool G::StringList::headMatch( const StringArray & in , string_view head )
 		[&head](const std::string &x){return Str::headMatch(x,head);} ) ;
 }
 
+#ifndef G_LIB_SMALL
 bool G::StringList::tailMatch( const StringArray & in , string_view tail )
 {
 	return std::any_of( in.begin() , in.end() ,
 		[&tail](const std::string &x){return Str::tailMatch(x,tail);} ) ;
 }
+#endif
 
 std::string G::StringList::headMatchResidue( const StringArray & in , string_view head )
 {

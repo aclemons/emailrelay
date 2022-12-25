@@ -190,10 +190,12 @@ GNet::Address GNet::Address::parse( const std::string & host_part , unsigned int
 	return { host_part , port } ;
 }
 
+#ifndef G_LIB_SMALL
 GNet::Address GNet::Address::parse( const std::string & host_part , const std::string & port_part )
 {
 	return { host_part , port_part } ;
 }
+#endif
 
 bool GNet::Address::isFamilyLocal( const std::string & s ) noexcept
 {
@@ -210,6 +212,11 @@ GNet::Address GNet::Address::loopback( Family f , unsigned int port )
 	return { f , port , 1 } ;
 }
 
+GNet::Address::operator G::BasicAddress() const
+{
+	return G::BasicAddress( displayString() ) ;
+}
+
 GNet::Address & GNet::Address::setPort( unsigned int port )
 {
 	G_ASSERT( m_ipv4 || m_ipv6 || m_local ) ;
@@ -219,6 +226,7 @@ GNet::Address & GNet::Address::setPort( unsigned int port )
 	return *this ;
 }
 
+#ifndef G_LIB_SMALL
 bool GNet::Address::setZone( const std::string & ipv6_zone )
 {
 	G_ASSERT( m_ipv4 || m_ipv6 || m_local ) ;
@@ -227,6 +235,7 @@ bool GNet::Address::setZone( const std::string & ipv6_zone )
 	if( m_local ) m_local->setZone( ipv6_zone ) ;
 	return true ;
 }
+#endif
 
 GNet::Address & GNet::Address::setScopeId( unsigned long ipv6_scope_id )
 {
@@ -273,6 +282,7 @@ bool GNet::Address::isLinkLocal() const
 		( m_local && m_local->isLinkLocal() ) ;
 }
 
+#ifndef G_LIB_SMALL
 bool GNet::Address::isMulticast() const
 {
 	G_ASSERT( m_ipv4 || m_ipv6 || m_local ) ;
@@ -281,6 +291,7 @@ bool GNet::Address::isMulticast() const
 		( m_ipv6 && m_ipv6->isMulticast() ) ||
 		( m_local && m_local->isMulticast() ) ;
 }
+#endif
 
 bool GNet::Address::isUniqueLocal() const
 {
@@ -328,11 +339,14 @@ bool GNet::Address::operator==( const Address & other ) const
 		( m_local && other.m_local && m_local->same(*other.m_local) ) ;
 }
 
+#ifndef G_LIB_SMALL
 bool GNet::Address::operator!=( const Address & other ) const
 {
 	return !( *this == other ) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 bool GNet::Address::sameHostPart( const Address & other ) const
 {
 	G_ASSERT( m_ipv4 || m_ipv6 || m_local ) ;
@@ -341,6 +355,7 @@ bool GNet::Address::sameHostPart( const Address & other ) const
 		( m_ipv6 && other.m_ipv6 && m_ipv6->sameHostPart(*other.m_ipv6) ) ||
 		( m_local && other.m_local && m_local->sameHostPart(*other.m_local) ) ;
 }
+#endif
 
 std::string GNet::Address::displayString( bool ipv6_with_scope_id ) const
 {
@@ -392,6 +407,7 @@ bool GNet::Address::validStrings( const std::string & s1 , const std::string & s
 		AddressLocal::validStrings( s1 , s2 , reason_p ) ;
 }
 
+#ifndef G_LIB_SMALL
 sockaddr * GNet::Address::address()
 {
 	G_ASSERT( m_ipv4 || m_ipv6 || m_local ) ;
@@ -400,6 +416,7 @@ sockaddr * GNet::Address::address()
 	if( m_local ) return m_local->address() ;
 	return nullptr ;
 }
+#endif
 
 const sockaddr * GNet::Address::address() const
 {

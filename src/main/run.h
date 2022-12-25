@@ -22,27 +22,19 @@
 #define G_MAIN_RUN_H
 
 #include "gdef.h"
+#include "unit.h"
 #include "gssl.h"
 #include "configuration.h"
 #include "commandline.h"
 #include "output.h"
 #include "geventloop.h"
 #include "gtimerlist.h"
-#include "gclientptr.h"
 #include "glogoutput.h"
 #include "gmonitor.h"
 #include "gdaemon.h"
 #include "gpidfile.h"
 #include "gslot.h"
 #include "garg.h"
-#include "gsecrets.h"
-#include "gmessagestore.h"
-#include "gfilestore.h"
-#include "gsmtpclient.h"
-#include "gsmtpserver.h"
-#include "gadminserver.h"
-#include "gpopserver.h"
-#include "gpopstore.h"
 #include <iostream>
 #include <exception>
 #include <memory>
@@ -69,16 +61,16 @@ namespace Main
 /// }
 /// \endcode
 ///
-class Main::Run : private GNet::EventHandler
+class Main::Run
 {
 public:
-	Run( Output & output , const G::Arg & arg , bool is_windows = false , bool has_gui = false ) ;
+	Run( Output & output , const G::Arg & arg , bool has_gui = false ) ;
 		///< Constructor. Tries not to throw.
 
-	~Run() override ;
+	~Run() ;
 		///< Destructor.
 
-	void configure() ;
+	void configure( const G::Options & ) ;
 		///< Prepares to run() typically by parsing the commandline.
 
 	bool hidden() const ;
@@ -94,11 +86,23 @@ public:
 		///< interface.
 		///< Precondition: runnable()
 
-	const Configuration & configuration() const ;
+	std::size_t configurations() const ;
+		///< Returns the number of configuration.
+
+	const Configuration & configuration( std::size_t = 0U ) const ;
 		///< Returns a configuration object.
+
+	const Unit & unit( unsigned int unit_id = 0U ) const ;
+		///< Returns a reference to a unit.
 
 	static std::string versionNumber() ;
 		///< Returns the application version number string.
+
+	std::string defaultDomain() const ;
+		///< Returns the local machine's fully qualified domain name,
+		///< with some reasonable non-empty default if that cannot be
+		///< determined. Used as a default for the configured domain
+		///< name.
 
 	G::Slot::Signal<std::string,std::string,std::string,std::string> & signal() ;
 		///< Provides a signal which is activated when something changes.
@@ -128,84 +132,33 @@ public:
 	Run & operator=( Run && ) = delete ;
 
 private:
-	void doForwardingOnStartup( G::PidFile & ) ;
 	void closeFiles() const ;
 	void commit( G::PidFile & ) ;
-	std::string smtpIdent() const ;
-	void recordPid() ;
 	const CommandLine & commandline() const ;
-	void onForwardRequest( const std::string & ) ; // m_forward_request_signal
-	void onClientDone( const std::string & ) ; // Client::doneSignal()
-	void onClientEvent( const std::string & , const std::string & , const std::string & ) ; // Client::eventSignal()
-	void onServerEvent( const std::string & , const std::string & ) ; // Server::eventSignal()
-	void onStoreUpdateEvent() ;
-	void onStoreRescanEvent() ;
+	void onUnitDone( unsigned int , std::string , bool ) ;
+	void onUnitClientEvent( unsigned int , std::string , std::string , std::string ) ;
 	void onNetworkEvent( const std::string & , const std::string & ) ;
-	void emit( const std::string & , const std::string & , const std::string & = std::string() , const std::string & = std::string() ) ;
-	void onPollTimeout() ;
-	void requestForwarding( const std::string & = std::string() ) ;
-	void onRequestForwardingTimeout() ;
+	void emit( const std::string & , const std::string & , const std::string & = {} , const std::string & = {} ) ;
 	void onQueueTimeout() ;
-	std::string startForwarding() ;
-	bool logForwarding() const ;
-	GNet::StreamSocket::Config netSocketConfig( bool server = true ) const ;
-	GSmtp::Client::Config clientConfig() const ;
-	GSmtp::ServerProtocol::Config serverProtocolConfig() const ;
-	GSmtp::Server::Config smtpServerConfig() const ;
-	GNet::Server::Config netServerConfig() const ;
-	int resolverFamily() const ;
-	static GNet::Address asAddress( const std::string & ) ;
-	GPop::Server::Config popConfig() const ;
 	void checkThreading() const ;
-	std::string versionString() const ;
-	static std::string buildConfiguration() ;
 	G::Path appDir() const ;
-	std::unique_ptr<GSmtp::AdminServer> newAdminServer( GNet::ExceptionSink ,
-		const Configuration & , GSmtp::MessageStore & , GSmtp::FilterFactory & ,
-		G::Slot::Signal<const std::string&> & ,
-		const GNet::ServerPeer::Config & ,
-		const GNet::Server::Config & , const GSmtp::Client::Config & ,
-		const GAuth::Secrets & , const std::string & ) ;
 
 private:
 	Output & m_output ;
-	GNet::ExceptionSink m_es_rethrow ;
-	GNet::ExceptionSink m_es_nothrow ;
-	bool m_is_windows ;
 	G::Arg m_arg ;
-	G::Slot::Signal<const std::string&> m_forward_request_signal ;
+	mutable std::string m_default_domain ;
+	bool m_has_gui ;
 	G::Slot::Signal<std::string,std::string,std::string,std::string> m_signal ;
 	std::unique_ptr<CommandLine> m_commandline ;
-	std::unique_ptr<Configuration> m_configuration ;
 	std::unique_ptr<G::LogOutput> m_log_output ;
 	std::unique_ptr<GNet::EventLoop> m_event_loop ;
 	std::unique_ptr<GNet::TimerList> m_timer_list ;
-	std::unique_ptr<GNet::Timer<Run> > m_forwarding_timer ;
-	std::unique_ptr<GNet::Timer<Run> > m_poll_timer ;
-	std::unique_ptr<GNet::Timer<Run> > m_queue_timer ;
-	std::unique_ptr<GSsl::Library> m_tls_library ;
 	std::unique_ptr<GNet::Monitor> m_monitor ;
-	std::unique_ptr<GSmtp::FileStore> m_store ;
-	std::unique_ptr<GSmtp::FilterFactory> m_filter_factory ;
-	std::unique_ptr<GAuth::Secrets> m_client_secrets ;
-	std::unique_ptr<GAuth::Secrets> m_server_secrets ;
-	std::unique_ptr<GAuth::Secrets> m_pop_secrets ;
-	std::unique_ptr<GSmtp::Server> m_smtp_server ;
-	std::unique_ptr<GPop::Store> m_pop_store ;
-	std::unique_ptr<GPop::Server> m_pop_server ;
-	std::unique_ptr<GSmtp::AdminServer> m_admin_server ;
-	GNet::ClientPtr<GSmtp::Client> m_client_ptr ;
+	std::unique_ptr<GNet::Timer<Run>> m_queue_timer ;
+	std::unique_ptr<GSsl::Library> m_tls_library ;
 	std::deque<QueueItem> m_queue ;
-	std::string m_forwarding_reason ;
-	bool m_forwarding_pending ;
-	bool m_quit_when_sent ;
-	bool m_has_gui ;
+	std::vector<Configuration> m_configurations ;
+	std::vector<std::unique_ptr<Unit>> m_units ;
 } ;
-
-inline
-const Main::Configuration & Main::Run::configuration() const
-{
-	return *m_configuration ;
-}
 
 #endif

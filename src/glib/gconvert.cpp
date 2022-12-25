@@ -28,46 +28,46 @@ void G::Convert::convert( G::Convert::utf8 & out_ , const G::Convert::utf8 & s )
 
 void G::Convert::convert( std::string & out_ , const std::string & s )
 {
-	out_ = s ; // ansi -> ansi
+	out_ = s ; // 8bit -> 8bit
 }
 
 void G::Convert::convert( std::string & out_ , const std::string & s , const ThrowOnError & )
 {
-	out_ = s ;
+	out_ = s ; // degenerate
 }
 
 void G::Convert::convert( std::wstring & out_ , const std::wstring & s )
 {
-	out_ = s ;
+	out_ = s ; // degenerate
 }
 
 void G::Convert::convert( G::Convert::utf8 & out_ , const std::string & s )
 {
-	out_ = utf8(narrow(widen(s,false),true)) ; // ansi -> utf16 -> utf8
+	out_ = utf8( narrow(widen(s,false),true) ) ; // 8bit -> utf16 -> utf8
 }
 
 void G::Convert::convert( G::Convert::utf8 & out_ , const std::wstring & s )
 {
-	out_ = utf8(narrow(s,true)) ; // utf16 -> utf8
+	out_ = utf8( narrow(s,true) ) ; // utf16 -> utf8
 }
 
 void G::Convert::convert( std::string & out_ , const G::Convert::utf8 & s , const ThrowOnError & e )
 {
-	out_ = narrow(widen(s.s,true),false,e.context) ; // utf8 -> utf16 -> ansi
+	out_ = narrow( widen(s.s,true) , false , e.context ) ; // utf8 -> utf16 -> 8bit
 }
 
 void G::Convert::convert( std::string & out_ , const std::wstring & s , const ThrowOnError & e )
 {
-	out_ = narrow(s,false,e.context) ;
+	out_ = narrow( s , false , e.context ) ;
 }
 
 void G::Convert::convert( std::wstring & out_ , const std::string & s )
 {
-	out_ = widen(s,false) ;
+	out_ = widen( s , false ) ;
 }
 
 void G::Convert::convert( std::wstring & out_ , const G::Convert::utf8 & s )
 {
-	out_ = widen(s.s,true) ;
+	out_ = widen( s.s , true ) ;
 }
 

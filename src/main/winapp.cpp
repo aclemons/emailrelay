@@ -24,6 +24,7 @@
 #include "gwindow.h"
 #include "glog.h"
 #include "gstr.h"
+#include "gscope.h"
 #include "gtest.h"
 #include "gcontrol.h"
 #include "gdialog.h"
@@ -50,9 +51,9 @@ namespace Main
 
 Main::PixelLayout::PixelLayout( bool verbose )
 {
-    m_tabstop = verbose ? 122 : 90 ;
-    m_width = verbose ? 60U : 80U ;
-    m_width2 = verbose ? 48U : 80U ;
+	m_tabstop = verbose ? 122 : 90 ;
+	m_width = verbose ? 60U : 80U ;
+	m_width2 = verbose ? 48U : 80U ;
 }
 
 bool Main::PixelLayout::isWine()
@@ -97,10 +98,10 @@ void Main::WinApp::disableOutput()
 	m_disable_output = true ;
 }
 
-void Main::WinApp::init( const Configuration & cfg )
+void Main::WinApp::init( const Configuration & configuration , const G::Options & options_spec )
 {
-	m_form_cfg = std::make_unique<Configuration>( cfg ) ;
-	m_cfg = Config::create( cfg ) ;
+	m_configuration_data = configuration.display( options_spec ) ;
+	m_cfg = Config::create( configuration ) ;
 }
 
 int Main::WinApp::exitCode() const
@@ -151,10 +152,10 @@ bool Main::WinApp::onCreate()
 
 namespace Main
 {
-	struct ScopeFinalReset
+	struct ScopeExitReset
 	{
-		ScopeFinalReset( std::unique_ptr<Main::WinMenu> & ptr ) : m_ptr(ptr) {}
-		~ScopeFinalReset() { m_ptr.reset() ; }
+		ScopeExitReset( std::unique_ptr<Main::WinMenu> & ptr ) : m_ptr(ptr) {}
+		~ScopeExitReset() { m_ptr.reset() ; }
 		std::unique_ptr<Main::WinMenu> & m_ptr ;
 	} ;
 }
@@ -166,7 +167,7 @@ void Main::WinApp::onTrayRightMouseButtonDown()
 	// (popup() returns when the mouse released, but we might get
 	// other event notifications before then, so make the menu
 	// accessible to them via a data member)
-	ScopeFinalReset final_reset( m_menu ) ;
+	ScopeExitReset _( m_menu ) ;
 	m_menu = std::make_unique<WinMenu>( IDR_MENU1 ) ;
 
 	bool form_is_visible = m_form.get() != nullptr && m_form.get()->visible() ;
@@ -214,21 +215,11 @@ LRESULT Main::WinApp::onUserOther( WPARAM wparam , LPARAM )
 	return 0L ;
 }
 
-namespace Main
-{
-	struct ScopeSet
-	{
-		explicit ScopeSet( bool & b ) : m_b(b) { b = true ; }
-		~ScopeSet() { m_b = false ; }
-		bool & m_b ;
-	} ;
-}
-
 void Main::WinApp::doOpen()
 {
 	G_DEBUG( "Main::WinApp::doOpen: do-open" ) ;
 	if( m_in_do_open || m_in_do_close ) return ;
-	ScopeSet scope_set( m_in_do_open ) ;
+	G::ScopeExitSetFalse _( m_in_do_open ) ;
 
 	if( m_cfg.never_open )
 		return ;
@@ -258,7 +249,7 @@ void Main::WinApp::doOpen()
 		bool form_with_icon = true ;
 		bool form_with_system_menu_quit = m_cfg.with_sysmenu_quit ;
 
-		m_form = std::make_unique<WinForm>( hinstance() , *m_form_cfg.get() ,
+		m_form = std::make_unique<WinForm>( hinstance() , m_configuration_data ,
 			form_hparent , handle() , form_style , form_allow_apply ,
 			form_with_icon , form_with_system_menu_quit ) ;
 	}
@@ -274,7 +265,7 @@ void Main::WinApp::doClose()
 {
 	G_DEBUG( "Main::WinApp::doClose: do-close" ) ;
 	if( m_in_do_open || m_in_do_close ) return ;
-	ScopeSet _( m_in_do_close ) ;
+	G::ScopeExitSetFalse _( m_in_do_close ) ;
 
 	if( m_form.get() != nullptr )
 	{
@@ -395,22 +386,6 @@ bool Main::Box::run()
 
 // ==
 
-Main::WinApp::Config::Config() :
-	with_tray(false) ,
-	with_sysmenu_quit(false) ,
-	never_open(false) ,
-	open_on_create(true) ,
-	allow_apply(false) ,
-	quit_on_form_ok(false) ,
-	close_on_form_ok(false) ,
-	close_on_close(false) ,
-	form_minimisable(false) ,
-	form_parentless(false) ,
-	minimise_on_close(false) ,
-	restore_on_open(false)
-{
-}
-
 Main::WinApp::Config Main::WinApp::Config::hidden()
 {
 	Config cfg ;
@@ -431,7 +406,6 @@ Main::WinApp::Config Main::WinApp::Config::tray()
 Main::WinApp::Config Main::WinApp::Config::nodaemon()
 {
 	Config cfg ;
-	cfg.with_tray = false ;
 	cfg.quit_on_form_ok = true ;
 	cfg.close_on_close = true ;
 	return cfg ;
@@ -450,34 +424,34 @@ Main::WinApp::Config Main::WinApp::Config::window( bool with_tray )
 	return cfg ;
 }
 
-Main::WinApp::Config Main::WinApp::Config::create( const Main::Configuration & cfg_in )
+Main::WinApp::Config Main::WinApp::Config::create( const Main::Configuration & configuration )
 {
-	if( cfg_in.hidden() )
+	if( configuration.hidden() )
 	{
 		// "--hidden" for no window, no tray icon and no message boxes
 		return hidden() ;
 	}
-	else if( cfg_in.nodaemon() )
+	else if( !configuration.daemon() )
 	{
 		// "--no-daemon" for a foreground window with no taskbar button and no tray icon; close terminates
 		return nodaemon() ;
 	}
-	else if( cfg_in.show("window") )
+	else if( configuration.show("window") )
 	{
 		// "--show=window" or "--show=window,tray" for a minimisable window and with a sysmenu quit item; close minimises
-		return window( cfg_in.show("tray") ) ;
+		return window( configuration.show("tray") ) ;
 	}
-	else if( cfg_in.show("nodaemon") || cfg_in.show("popup") )
+	else if( configuration.show("nodaemon") || configuration.show("popup") )
 	{
 		// "--show=popup" or "--show=nodaemon" are like "--no-daemon", ie. a foreground window with no taskbar button and no tray icon; close terminates
 		return nodaemon() ;
 	}
-	else if( cfg_in.show("hidden") )
+	else if( configuration.show("hidden") )
 	{
 		// "--show=hidden" is like "--hidden"
 		return hidden() ;
 	}
-	else if( cfg_in.show("tray") )
+	else if( configuration.show("tray") )
 	{
 		// "--show=tray" for a foreground window hidden/shown by a tray icon; close hides
 		return tray() ;

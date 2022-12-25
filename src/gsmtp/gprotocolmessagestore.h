@@ -43,39 +43,26 @@ namespace GSmtp
 class GSmtp::ProtocolMessageStore : public ProtocolMessage
 {
 public:
-	ProtocolMessageStore( MessageStore & store , std::unique_ptr<Filter> ) ;
+	ProtocolMessageStore( GStore::MessageStore & store , std::unique_ptr<Filter> ) ;
 		///< Constructor.
 
 	~ProtocolMessageStore() override ;
 		///< Destructor.
 
-	ProtocolMessage::DoneSignal & doneSignal() override ;
-		///< Override from GSmtp::ProtocolMessage.
-
-	void reset() override ;
-		///< Override from GSmtp::ProtocolMessage.
-
-	void clear() override ;
-		///< Override from GSmtp::ProtocolMessage.
-
-	MessageId setFrom( const std::string & from_user , const std::string & ) override ;
-		///< Override from GSmtp::ProtocolMessage.
-
-	bool addTo( VerifierStatus to_status ) override ;
-		///< Override from GSmtp::ProtocolMessage.
-
-	void addReceived( const std::string & ) override ;
-		///< Override from GSmtp::ProtocolMessage.
-
-	bool addText( const char * , std::size_t ) override ;
-		///< Override from GSmtp::ProtocolMessage.
-
-	std::string from() const override ;
-		///< Override from GSmtp::ProtocolMessage.
-
+private: // overrides
+	ProtocolMessage::DoneSignal & doneSignal() override ; // GSmtp::ProtocolMessage
+	void reset() override ; // GSmtp::ProtocolMessage
+	void clear() override ; // GSmtp::ProtocolMessage
+	GStore::MessageId setFrom( const std::string & , const FromInfo & ) override ; // GSmtp::ProtocolMessage
+	bool addTo( const ToInfo & ) override ; // GSmtp::ProtocolMessage
+	void addReceived( const std::string & ) override ; // GSmtp::ProtocolMessage
+	GStore::NewMessage::Status addContent( const char * , std::size_t ) override ; // GSmtp::ProtocolMessage
+	std::size_t contentSize() const override ; // GSmtp::ProtocolMessage
+	std::string from() const override ; // GSmtp::ProtocolMessage
+	ProtocolMessage::FromInfo fromInfo() const override ; // GSmtp::ProtocolMessage
+	std::string bodyType() const override ; // GSmtp::ProtocolMessage
 	void process( const std::string & auth_id , const std::string & peer_socket_address ,
-		const std::string & peer_certificate ) override ;
-			///< Override from GSmtp::ProtocolMessage.
+		const std::string & peer_certificate ) override ; // GSmtp::ProtocolMessage
 
 public:
 	ProtocolMessageStore( const ProtocolMessageStore & ) = delete ;
@@ -87,10 +74,11 @@ private:
 	void filterDone( int ) ;
 
 private:
-	MessageStore & m_store ;
+	GStore::MessageStore & m_store ;
 	std::unique_ptr<Filter> m_filter ;
-	std::unique_ptr<NewMessage> m_new_msg ;
+	std::unique_ptr<GStore::NewMessage> m_new_msg ;
 	std::string m_from ;
+	FromInfo m_from_info ;
 	ProtocolMessage::DoneSignal m_done_signal ;
 } ;
 

@@ -156,11 +156,13 @@ GPop::StoreLock::File::File( const G::Path & content_path ) :
 {
 }
 
+#ifndef G_LIB_SMALL
 GPop::StoreLock::File::File( const std::string & content_name , const std::string & size_string ) :
 	name(content_name) ,
 	size(toSize(size_string))
 {
 }
+#endif
 
 bool GPop::StoreLock::File::operator<( const File & rhs ) const
 {
@@ -182,8 +184,8 @@ GPop::StoreLock::StoreLock( Store & store ) :
 
 void GPop::StoreLock::lock( const std::string & user )
 {
-	G_ASSERT( ! locked() ) ;
-	G_ASSERT( ! user.empty() ) ;
+	G_ASSERT( !locked() ) ;
+	G_ASSERT( !user.empty() ) ;
 	G_ASSERT( m_store != nullptr ) ;
 
 	m_user = user ;
@@ -199,7 +201,8 @@ void GPop::StoreLock::lock( const std::string & user )
 		while( iter.more() )
 		{
 			File file( contentPath(iter.fileName()) ) ;
-			m_initial.insert( file ) ;
+			if( file.size )
+				m_initial.insert( file ) ;
 		}
 	}
 
@@ -254,7 +257,7 @@ GPop::StoreLock::Set::iterator GPop::StoreLock::find( int id )
 {
 	G_ASSERT( valid(id) ) ;
 	auto initial_p = m_initial.begin() ;
-	for( int i = 1 ; i < id && initial_p != m_initial.end() ; i++ , ++initial_p ) ;
+	for( int i = 1 ; i < id && initial_p != m_initial.end() ; i++ , ++initial_p ) {;}
 	return initial_p ;
 }
 
@@ -262,7 +265,7 @@ GPop::StoreLock::Set::const_iterator GPop::StoreLock::find( int id ) const
 {
 	G_ASSERT( valid(id) ) ;
 	auto initial_p = m_initial.begin() ;
-	for( int i = 1 ; i < id && initial_p != m_initial.end() ; i++ , ++initial_p ) ;
+	for( int i = 1 ; i < id && initial_p != m_initial.end() ; i++ , ++initial_p ) {;}
 	return initial_p ;
 }
 
@@ -374,12 +377,14 @@ void GPop::StoreLock::deleteFile( const G::Path & path , bool & all_ok ) const
 		G_ERROR( "StoreLock::remove: failed to delete " << path ) ;
 }
 
+#ifndef G_LIB_SMALL
 std::string GPop::StoreLock::uidl( int id ) const
 {
 	G_ASSERT( valid(id) ) ;
 	auto p = find( id ) ;
 	return (*p).name ;
 }
+#endif
 
 G::Path GPop::StoreLock::path( int id ) const
 {

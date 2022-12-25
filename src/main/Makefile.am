@@ -26,71 +26,98 @@ noinst_LIBRARIES = libmain.a
 AM_INSTALL_PROGRAM_FLAGS = -s
 
 AM_CPPFLAGS = \
-	-I$(top_srcdir)/src/glib \
-	-I$(top_srcdir)/src/gssl \
-	-I$(top_srcdir)/src/gnet \
-	-I$(top_srcdir)/src/win32 \
-	-I$(top_srcdir)/src/gauth \
-	-I$(top_srcdir)/src/gsmtp \
-	-I$(top_srcdir)/src/gpop \
-	-D "G_SPOOLDIR=$(e_spooldir)" \
-	-D "G_LOCALEDIR=$(localedir)"
+ -I$(top_srcdir)/src/glib \
+ -I$(top_srcdir)/src/gssl \
+ -I$(top_srcdir)/src/gnet \
+ -I$(top_srcdir)/src/win32 \
+ -I$(top_srcdir)/src/gauth \
+ -I$(top_srcdir)/src/gstore \
+ -I$(top_srcdir)/src/gsmtp \
+ -I$(top_srcdir)/src/gpop \
+ -I$(top_srcdir)/src/gfilters \
+ -I$(top_srcdir)/src/gverifiers \
+ -D "G_SPOOLDIR=$(e_spooldir)" \
+ -D "G_LOCALEDIR=$(localedir)"
 
 WINDOWS_MAIN_SOURCES = \
-	winmain.cpp \
-	winapp.cpp \
-	winapp.h \
-	winform.cpp \
-	winform.h \
-	winmenu.cpp \
-	winmenu.h \
-	licence.cpp \
-	licence.h \
-	news.cpp \
-	news.h
+ winmain.cpp \
+ winapp.cpp \
+ winapp.h \
+ winform.cpp \
+ winform.h \
+ winmenu.cpp \
+ winmenu.h \
+ licence.cpp \
+ licence.h \
+ news.cpp \
+ news.h
 
 TEXTMODE_MAIN_SOURCES = \
-	main.cpp
+ main.cpp
 
 OTHER_SOURCES = \
-	commandline.h \
-	commandline.cpp \
-	configuration.h \
-	configuration.cpp \
-	legal.cpp \
-	legal.h \
-	output.cpp \
-	output.h \
-	run.cpp \
-	run.h
+ commandline.h \
+ commandline.cpp \
+ configuration.h \
+ configuration.cpp \
+ filterfactory.h \
+ filterfactory.cpp \
+ legal.cpp \
+ legal.h \
+ output.cpp \
+ output.h \
+ run.cpp \
+ run.h \
+ unit.cpp \
+ unit.h \
+ verifierfactory.h \
+ verifierfactory.cpp
 
 WINDOWS_SERVICEWRAPPER_SOURCES = \
-	servicewrapper.cpp
+ servicewrapper.cpp
+
+if GCONFIG_EXTRA_FILTERS
+ FILTER_SOURCES = demofilter.cpp demofilter.h
+ FILTER_EXTRA_DIST =
+else
+ FILTER_SOURCES =
+ FILTER_EXTRA_DIST = demofilter.cpp demofilter.h
+endif
+
+if GCONFIG_EXTRA_VERIFIERS
+ VERIFIER_SOURCES = demoverifier.cpp demoverifier.h
+ VERIFIER_EXTRA_DIST =
+else
+ VERIFIER_SOURCES =
+ VERIFIER_EXTRA_DIST = demoverifier.cpp demoverifier.h
+endif
 
 WINDOWS_LIBMAIN_SOURCES = \
-	serviceimp_win32.cpp \
-	servicecontrol_win32.cpp
+ serviceimp_win32.cpp \
+ servicecontrol_win32.cpp
 
 UNIX_LIBMAIN_SOURCES = \
-	serviceimp_none.cpp \
-	servicecontrol_unix.cpp
+ serviceimp_none.cpp \
+ servicecontrol_unix.cpp
 
 LIBMAIN_SOURCES = \
-	options.cpp \
-	options.h \
-	serviceimp.h \
-	servicecontrol.h
+ $(FILTER_SOURCES) \
+ $(VERIFIER_SOURCES) \
+ options.cpp \
+ options.h \
+ serviceimp.h \
+ servicecontrol.h \
+ submission.cpp \
+ submission.h
 
 MISC_EXTRA_DIST = \
-	doxygen.h \
-	emailrelay.rc \
-	emailrelay.exe.manifest \
-	emailrelay-service.exe.manifest \
-	fakemc.c \
-	messages.mc \
-	resource.h \
-	testrun.cpp \
-	testrun.h
+ doxygen.h \
+ emailrelay.rc \
+ emailrelay.exe.manifest \
+ emailrelay-service.exe.manifest \
+ fakemc.c \
+ messages.mc \
+ resource.h
 
 if GCONFIG_MAC
  MAC_PROGS = emailrelay-start
@@ -110,16 +137,20 @@ endif
 
 if GCONFIG_WINDOWS
  EXTRA_DIST=\
-	$(MAC_EXTRA_DIST) \
-	$(MISC_EXTRA_DIST) \
-	$(UNIX_LIBMAIN_SOURCES)
+  $(MAC_EXTRA_DIST) \
+  $(MISC_EXTRA_DIST) \
+  $(FILTER_EXTRA_DIST) \
+  $(VERIFIER_EXTRA_DIST) \
+  $(UNIX_LIBMAIN_SOURCES)
 else
  EXTRA_DIST=\
-	$(MAC_EXTRA_DIST) \
-	$(MISC_EXTRA_DIST) \
-	$(WINDOWS_MAIN_SOURCES) \
-	$(WINDOWS_SERVICEWRAPPER_SOURCES) \
-	$(WINDOWS_LIBMAIN_SOURCES)
+  $(MAC_EXTRA_DIST) \
+  $(MISC_EXTRA_DIST) \
+  $(FILTER_EXTRA_DIST) \
+  $(VERIFIER_EXTRA_DIST) \
+  $(WINDOWS_MAIN_SOURCES) \
+  $(WINDOWS_SERVICEWRAPPER_SOURCES) \
+  $(WINDOWS_LIBMAIN_SOURCES)
 endif
 
 if GCONFIG_WINDOWS
@@ -131,104 +162,108 @@ endif
 if GCONFIG_WINDOWS
  RESOURCES = emailrelay.o
  $(RESOURCES): emailrelay.rc MSG00001.bin messages.rc
-	$(GCONFIG_WINDRES) --preprocessor "$(CC) -E -xc-header -DRC_INVOKED" -D_WIN32=1 --include-dir . --include-dir icon --include-dir $(top_srcdir)/src/main/icon -i $(top_srcdir)/src/main/emailrelay.rc -o $(RESOURCES)
+ $(GCONFIG_WINDRES) --preprocessor "$(CC) -E -xc-header -DRC_INVOKED" -D_WIN32=1 --include-dir . --include-dir icon --include-dir $(top_srcdir)/src/main/icon -i $(top_srcdir)/src/main/emailrelay.rc -o $(RESOURCES)
  emailrelay_SOURCES = $(WINDOWS_MAIN_SOURCES) $(OTHER_SOURCES)
  emailrelay_LDFLAGS = -mwindows -static
  emailrelay_LDADD = \
-	libmain.a \
-	$(top_builddir)/src/gpop/libgpop.a \
-	$(top_builddir)/src/gsmtp/libgsmtp.a \
-	$(top_builddir)/src/gauth/libgauth.a \
-	$(top_builddir)/src/gnet/libgnet.a \
-	$(top_builddir)/src/gssl/libgssl.a \
-	$(top_builddir)/src/win32/libextra.a \
-	$(top_builddir)/src/glib/libglib.a \
-	$(RESOURCES) \
-	$(GCONFIG_TLS_LIBS) \
-	-lws2_32 -liphlpapi -lcomctl32
+ libmain.a \
+ $(top_builddir)/src/gfilters/libgfilters.a \
+ $(top_builddir)/src/gverifiers/libgverifiers.a \
+ $(top_builddir)/src/gpop/libgpop.a \
+ $(top_builddir)/src/gsmtp/libgsmtp.a \
+ $(top_builddir)/src/gstore/libgstore.a \
+ $(top_builddir)/src/gauth/libgauth.a \
+ $(top_builddir)/src/gnet/libgnet.a \
+ $(top_builddir)/src/gssl/libgssl.a \
+ $(top_builddir)/src/win32/libextra.a \
+ $(top_builddir)/src/glib/libglib.a \
+ $(RESOURCES) \
+ $(GCONFIG_TLS_LIBS) \
+ -lws2_32 -liphlpapi -lcomctl32
 else
  emailrelay_SOURCES = $(TEXTMODE_MAIN_SOURCES) $(OTHER_SOURCES)
  emailrelay_LDFLAGS =
  emailrelay_LDADD = \
-	libmain.a \
-	$(top_builddir)/src/gpop/libgpop.a \
-	$(top_builddir)/src/gsmtp/libgsmtp.a \
-	$(top_builddir)/src/gauth/libgauth.a \
-	$(top_builddir)/src/gnet/libgnet.a \
-	$(top_builddir)/src/gssl/libgssl.a \
-	$(top_builddir)/src/glib/libglib.a \
-	$(GCONFIG_TLS_LIBS)
+ libmain.a \
+ $(top_builddir)/src/gfilters/libgfilters.a \
+ $(top_builddir)/src/gverifiers/libgverifiers.a \
+ $(top_builddir)/src/gpop/libgpop.a \
+ $(top_builddir)/src/gsmtp/libgsmtp.a \
+ $(top_builddir)/src/gstore/libgstore.a \
+ $(top_builddir)/src/gauth/libgauth.a \
+ $(top_builddir)/src/gnet/libgnet.a \
+ $(top_builddir)/src/gssl/libgssl.a \
+ $(top_builddir)/src/glib/libglib.a \
+ $(GCONFIG_TLS_LIBS)
 endif
 
 if GCONFIG_WINDOWS
  emailrelay_textmode_SOURCES = $(TEXTMODE_MAIN_SOURCES) $(OTHER_SOURCES)
  emailrelay_textmode_LDFLAGS = -static
  emailrelay_textmode_LDADD = \
-	libmain.a \
-	$(top_builddir)/src/gpop/libgpop.a \
-	$(top_builddir)/src/gsmtp/libgsmtp.a \
-	$(top_builddir)/src/gauth/libgauth.a \
-	$(top_builddir)/src/gnet/libgnet.a \
-	$(top_builddir)/src/gssl/libgssl.a \
-	$(top_builddir)/src/win32/libextra.a \
-	$(top_builddir)/src/glib/libglib.a \
-	$(GCONFIG_TLS_LIBS) \
-	-lws2_32 -liphlpapi -lcomctl32
+ libmain.a \
+ $(top_builddir)/src/gfilters/libgfilters.a \
+ $(top_builddir)/src/gverifiers/libgverifiers.a \
+ $(top_builddir)/src/gpop/libgpop.a \
+ $(top_builddir)/src/gsmtp/libgsmtp.a \
+ $(top_builddir)/src/gstore/libgstore.a \
+ $(top_builddir)/src/gauth/libgauth.a \
+ $(top_builddir)/src/gnet/libgnet.a \
+ $(top_builddir)/src/gssl/libgssl.a \
+ $(top_builddir)/src/win32/libextra.a \
+ $(top_builddir)/src/glib/libglib.a \
+ $(GCONFIG_TLS_LIBS) \
+ -lws2_32 -liphlpapi -lcomctl32
 endif
 
 emailrelay_passwd_SOURCES = passwd.cpp legal.cpp legal.h
 if GCONFIG_WINDOWS
  emailrelay_passwd_LDFLAGS = -static
  emailrelay_passwd_LDADD = \
-	$(top_builddir)/src/gssl/libgssl.a \
-	$(top_builddir)/src/glib/libglib.a \
-	$(GCONFIG_TLS_LIBS) \
-	-lws2_32 -liphlpapi -lcomctl32
+ $(top_builddir)/src/gssl/libgssl.a \
+ $(top_builddir)/src/glib/libglib.a \
+ $(GCONFIG_TLS_LIBS) \
+ -lws2_32 -liphlpapi -lcomctl32
 else
  emailrelay_passwd_LDFLAGS =
  emailrelay_passwd_LDADD =  \
-	$(top_builddir)/src/gssl/libgssl.a \
-	$(top_builddir)/src/glib/libglib.a \
-	$(GCONFIG_TLS_LIBS)
+ $(top_builddir)/src/gssl/libgssl.a \
+ $(top_builddir)/src/glib/libglib.a \
+ $(GCONFIG_TLS_LIBS)
 endif
 
 emailrelay_submit_SOURCES = submit.cpp legal.cpp legal.h
 if GCONFIG_WINDOWS
  emailrelay_submit_LDFLAGS = -static
  emailrelay_submit_LDADD = \
-	$(top_builddir)/src/gsmtp/libgsmtp.a \
-	$(top_builddir)/src/gauth/libgauth.a \
-	$(top_builddir)/src/gnet/libgnet.a \
-	$(top_builddir)/src/win32/libextra.a \
-	$(top_builddir)/src/glib/libglib.a \
-	-lws2_32 -liphlpapi -lcomctl32
+ $(top_builddir)/src/gstore/libgstore.a \
+ $(top_builddir)/src/win32/libextra.a \
+ $(top_builddir)/src/glib/libglib.a \
+ -lws2_32 -liphlpapi -lcomctl32
 else
  emailrelay_submit_LDFLAGS =
  emailrelay_submit_LDADD = \
-	$(top_builddir)/src/gsmtp/libgsmtp.a \
-	$(top_builddir)/src/gauth/libgauth.a \
-	$(top_builddir)/src/gnet/libgnet.a \
-	$(top_builddir)/src/gssl/libgssl.a \
-	$(top_builddir)/src/glib/libglib.a
+ $(top_builddir)/src/gstore/libgstore.a \
+ $(top_builddir)/src/glib/libglib.a
 endif
 
 emailrelay_filter_copy_SOURCES = filter.cpp legal.cpp legal.h
 if GCONFIG_WINDOWS
  emailrelay_filter_copy_LDFLAGS = -static
  emailrelay_filter_copy_LDADD = \
-	$(top_builddir)/src/glib/libglib.a \
-	-lws2_32 -liphlpapi -lcomctl32
+ $(top_builddir)/src/glib/libglib.a \
+ -lws2_32 -liphlpapi -lcomctl32
 else
  emailrelay_filter_copy_LDFLAGS =
  emailrelay_filter_copy_LDADD = \
-	$(top_builddir)/src/glib/libglib.a
+ $(top_builddir)/src/glib/libglib.a
 endif
 
 emailrelay_start_SOURCES = start.cpp
 if GCONFIG_WINDOWS
  emailrelay_start_LDFLAGS = -static
  emailrelay_start_LDADD = \
-	-lws2_32 -liphlpapi -lcomctl32
+ -lws2_32 -liphlpapi -lcomctl32
 else
  emailrelay_start_LDFLAGS =
  emailrelay_start_LDADD =
@@ -236,12 +271,12 @@ endif
 
 if GCONFIG_WINDOWS
  emailrelay_service_SOURCES = \
-	$(WINDOWS_SERVICEWRAPPER_SOURCES)
+ $(WINDOWS_SERVICEWRAPPER_SOURCES)
  emailrelay_service_LDFLAGS = -static
  emailrelay_service_LDADD = \
-	libmain.a \
-	$(top_builddir)/src/glib/libglib.a \
-	-lws2_32 -liphlpapi -lcomctl32
+ libmain.a \
+ $(top_builddir)/src/glib/libglib.a \
+ -lws2_32 -liphlpapi -lcomctl32
 endif
 
 install-data-local: install-sbinPROGRAMS install-e_spoolDATA install-e_libexecPROGRAMS

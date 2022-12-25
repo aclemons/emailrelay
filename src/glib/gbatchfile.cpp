@@ -28,6 +28,7 @@
 #include <stdexcept>
 #include <fstream>
 
+#ifndef G_LIB_SMALL
 G::BatchFile::BatchFile( const Path & path )
 {
 	std::ifstream stream ;
@@ -37,7 +38,9 @@ G::BatchFile::BatchFile( const Path & path )
 	m_line = readFrom( stream , path.str() , true ) ;
 	m_args = split( m_line ) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 G::BatchFile::BatchFile( const Path & path , std::nothrow_t )
 {
 	std::ifstream stream ;
@@ -48,13 +51,17 @@ G::BatchFile::BatchFile( const Path & path , std::nothrow_t )
 		m_args = split( m_line ) ;
 	}
 }
+#endif
 
+#ifndef G_LIB_SMALL
 G::BatchFile::BatchFile( std::istream & stream , const std::string & name )
 {
 	m_line = readFrom( stream , name , true ) ;
 	m_args = split( m_line ) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 bool G::BatchFile::ignorable( const std::string & trimmed_line )
 {
 	return
@@ -62,19 +69,25 @@ bool G::BatchFile::ignorable( const std::string & trimmed_line )
 		Str::lower(trimmed_line+" ").find("@echo ") == 0U ||
 		Str::lower(trimmed_line+" ").find("rem ") == 0U ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 bool G::BatchFile::relevant( const std::string & trimmed_line )
 {
 	return ! ignorable( trimmed_line ) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 std::string G::BatchFile::join( const std::string & file_name , unsigned int line_number )
 {
 	std::ostringstream ss ;
 	ss << file_name << "(" << line_number << ")" ;
 	return ss.str() ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 std::string G::BatchFile::readFrom( std::istream & stream , const std::string & stream_name , bool strict )
 {
 	std::string line ;
@@ -136,22 +149,30 @@ std::string G::BatchFile::readFrom( std::istream & stream , const std::string & 
 
 	return line ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 std::string G::BatchFile::line() const
 {
 	return m_line ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 std::string G::BatchFile::name() const
 {
 	return m_name ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 const G::StringArray & G::BatchFile::args() const
 {
 	return m_args ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 std::size_t G::BatchFile::lineArgsPos() const
 {
 	// cf. G::Str::dequote()
@@ -180,13 +201,17 @@ std::size_t G::BatchFile::lineArgsPos() const
 	}
 	return i ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 void G::BatchFile::dequote( std::string & s )
 {
 	if( s.size() >= 2U && s.find('\"') == 0U && (s.rfind('\"')+1U) == s.size() )
 		s = s.substr( 1U , s.size()-2U ) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 void G::BatchFile::write( const Path & path , const StringArray & args , const std::string & name_in )
 {
 	G_ASSERT( !args.empty() ) ;
@@ -217,7 +242,9 @@ void G::BatchFile::write( const Path & path , const StringArray & args , const s
 	if( stream.fail() )
 		throw Error( "cannot write batch file" , path.str() ) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 G::StringArray G::BatchFile::split( const std::string & line )
 {
 	// get G::Arg to deal with the quotes
@@ -226,18 +253,23 @@ G::StringArray G::BatchFile::split( const std::string & line )
 		args.parse( line ) ;
 	return args.array() ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 std::string G::BatchFile::percents( const std::string & s )
 {
 	std::string result( s ) ;
 	Str::replaceAll( result , "%" , "%%" ) ;
 	return result ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 std::string G::BatchFile::quote( const std::string & s )
 {
 	return
 		s.find('\"') == std::string::npos && s.find_first_of(" \t") != std::string::npos ?
 			"\"" + s + "\"" : s ;
 }
+#endif
 

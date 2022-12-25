@@ -22,16 +22,19 @@
 #include "gformat.h"
 #include "gstr.h"
 
+#ifndef G_LIB_SMALL
 G::format::format( const std::string & fmt ) :
 	m_fmt(fmt)
 {
 }
+#endif
 
 G::format::format( const char * fmt ) :
 	m_fmt(fmt)
 {
 }
 
+#ifndef G_LIB_SMALL
 G::format & G::format::parse( const std::string & fmt )
 {
 	m_fmt = fmt ;
@@ -39,7 +42,9 @@ G::format & G::format::parse( const std::string & fmt )
 	m_values.clear() ;
 	return *this ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 G::format & G::format::parse( const char * fmt )
 {
 	m_fmt = fmt ;
@@ -47,6 +52,7 @@ G::format & G::format::parse( const char * fmt )
 	m_values.clear() ;
 	return *this ;
 }
+#endif
 
 bool G::format::isdigit( char c )
 {
@@ -83,10 +89,12 @@ std::string G::format::str() const
 	return s ;
 }
 
+#ifndef G_LIB_SMALL
 std::size_t G::format::size() const
 {
 	return str().size() ;
 }
+#endif
 
 void G::format::apply( const std::string & value )
 {

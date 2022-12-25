@@ -56,9 +56,12 @@ public:
 	G_EXCEPTION( TimeError , tx("cannot get file modification time") ) ;
 	enum class InOut { In , Out } ;
 	enum class InOutAppend { In , Out , Append } ;
+	enum class Seek { Start , Current , End } ;
 	class Append /// An overload discriminator for G::File::open().
 		{} ;
 	class Text /// An overload discriminator for G::File::open().
+		{} ;
+	struct CreateExclusive /// An overload discriminator for G::File::open().
 		{} ;
 	struct Stat /// A portable 'struct stat'.
 	{
@@ -117,8 +120,7 @@ public:
 
 	static void mkdirs( const Path & dir , int = 100 ) ;
 		///< Creates a directory and all necessary parents.
-		///< Throws on error, but EEXIST is not an error
-		///< and chmod errors are also ignored.
+		///< Throws on error, but EEXIST is not an error.
 
 	static bool mkdir( const Path & dir , std::nothrow_t ) ;
 		///< Creates a directory. Returns false on error
@@ -237,6 +239,11 @@ public:
 		///< Opens a file descriptor. Returns -1 on error.
 		///< Uses SH_DENYNO and O_BINARY on windows.
 
+	static int open( const char * , CreateExclusive ) noexcept ;
+		///< Creates a file and returns a writable file descriptor.
+		///< Fails if the file already exists. Returns -1 on error.
+		///< Uses SH_DENYNO and O_BINARY on windows.
+
 	static bool probe( const char * ) noexcept ;
 		///< Creates and deletes a temporary probe file. Fails if
 		///< the file already exists. Returns false on error.
@@ -249,6 +256,9 @@ public:
 
 	static void close( int fd ) noexcept ;
 		///< Calls ::close() or equivalent.
+
+	static std::streamoff seek( int fd , std::streamoff offset , Seek ) noexcept ;
+		///< Does ::lseek() or equivalent.
 
 	static void setNonBlocking( int fd ) noexcept ;
 		///< Sets the file descriptor to non-blocking mode.

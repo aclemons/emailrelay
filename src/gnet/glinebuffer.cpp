@@ -49,13 +49,16 @@ void GNet::LineBuffer::clear()
 
 void GNet::LineBuffer::add( const char * data , std::size_t size )
 {
-	m_in.append( data , size ) ;
+	if( data != nullptr && size != 0U )
+		m_in.append( data , size ) ;
 }
 
+#ifndef G_LIB_SMALL
 void GNet::LineBuffer::add( const std::string & s )
 {
 	m_in.append( s ) ;
 }
+#endif
 
 void GNet::LineBuffer::extensionStart( const char * data , std::size_t size )
 {
@@ -240,6 +243,7 @@ GNet::LineBufferConfig::LineBufferConfig( const std::string & eol , std::size_t 
 {
 }
 
+#ifndef G_LIB_SMALL
 bool GNet::LineBufferConfig::operator==( const LineBufferConfig & other ) const
 {
 	return
@@ -248,6 +252,7 @@ bool GNet::LineBufferConfig::operator==( const LineBufferConfig & other ) const
 		m_fmin == other.m_fmin &&
 		m_expect == other.m_expect ;
 }
+#endif
 
 GNet::LineBufferConfig GNet::LineBufferConfig::transparent()
 {
@@ -281,7 +286,9 @@ GNet::LineBufferConfig GNet::LineBufferConfig::pop()
 	return crlf() ;
 }
 
+#ifndef G_LIB_SMALL
 GNet::LineBufferConfig GNet::LineBufferConfig::http()
 {
 	return crlf() ;
 }
+#endif

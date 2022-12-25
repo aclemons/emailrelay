@@ -487,6 +487,24 @@ G::Options Main::Options::spec( bool is_windows )
 				// unencrypted session and a single preferred mechanism once
 				// encrypted, "m:;a:plain".
 
+		G::Options::add( opt , 'Z' , "server-smtp-config" ,
+			tx("configures the smtp server protocol") , "" ,
+			M::many , "config" , 30 ,
+			t_smtpserver ) ;
+				//example: +chunking,+smtputf8
+				// Configures the SMTP server protocol using a comma-separated
+				// list of optional features, includeing 'pipelining', 'chunking',
+				// 'smtputf8', and 'smtputf8strict'.
+
+		G::Options::add( opt , 'c' , "client-smtp-config" ,
+			tx("configures the smtp client protocol") , "" ,
+			M::many , "config" , 30 ,
+			t_smtpclient ) ;
+				//example: +eightbitstrict,-pipelining
+				// Configures the SMTP client protocol using a comma-separated
+				// list of optional features, includeing 'pipelining',
+				// 'smtputf8strict', 'eightbitstrict' and 'binarymimestrict'.
+
 		G::Options::add( opt , 'e' , "close-stderr" ,
 			tx("closes the standard error stream soon after start-up") , "" ,
 			M::zero , "" , 31 ,

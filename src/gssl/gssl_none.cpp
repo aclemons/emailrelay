@@ -52,16 +52,6 @@ std::string GSsl::Library::id() const
 	return ids() ;
 }
 
-bool GSsl::Library::generateKeyAvailable() const
-{
-	return false ;
-}
-
-std::string GSsl::Library::generateKey( const std::string & ) const
-{
-	return {} ;
-}
-
 GSsl::Library * GSsl::Library::instance()
 {
 	return m_this ;
@@ -198,17 +188,17 @@ std::string GSsl::Digester::state()
 	return {} ;
 }
 
-std::size_t GSsl::Digester::blocksize() const
+std::size_t GSsl::Digester::blocksize() const noexcept
 {
 	return 1U ;
 }
 
-std::size_t GSsl::Digester::valuesize() const
+std::size_t GSsl::Digester::valuesize() const noexcept
 {
 	return 1U ;
 }
 
-std::size_t GSsl::Digester::statesize() const
+std::size_t GSsl::Digester::statesize() const noexcept
 {
 	return 0U ;
 }

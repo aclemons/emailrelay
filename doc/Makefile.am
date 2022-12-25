@@ -86,7 +86,7 @@ CLEANFILES = $(noinst_SCRIPTS) $(man_files_clean) emailrelay-man.html doxygen.ou
 
 SUFFIXES = .txt .html
 
-run_doxygen=$(top_srcdir)/bin/doxygen.sh
+run_doxygen=$(top_srcdir)/libexec/doxygen.sh
 
 .dox:
 	-@chmod +x $(run_doxygen)

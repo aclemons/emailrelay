@@ -58,6 +58,12 @@ public:
 	struct Hex /// Overload discrimiator for G::Str::toUWhatever() indicating hexadecimal strings.
 		{} ;
 
+	enum Eol // See G::Str::readLine().
+	{
+		CrLf ,
+		Cr_Lf_CrLf
+	} ;
+
 	static bool replace( std::string & s , string_view from , string_view to ,
 		std::size_t * pos_p = nullptr ) ;
 			///< A string_view overload. Replaces 'from' with 'to', starting at
@@ -334,11 +340,6 @@ public:
 		///< chacter code ranges 0x20 to 0x7e and 0xa0 to 0xfe inclusive.
 		///< Typically used to prevent escape sequences getting into log files.
 
-	static std::string printable( std::string && in , char escape = '\\' ) ;
-		///< Returns a printable representation of the given input string, using
-		///< chacter code ranges 0x20 to 0x7e and 0xa0 to 0xfe inclusive.
-		///< Typically used to prevent escape sequences getting into log files.
-
 	static std::string printable( string_view in , char escape = '\\' ) ;
 		///< Returns a printable representation of the given input string, using
 		///< chacter code ranges 0x20 to 0x7e and 0xa0 to 0xfe inclusive.
@@ -385,7 +386,7 @@ public:
 		///< first character. Does not contain the nul character. This is
 		///< typically used with escape().
 
-	static std::string readLineFrom( std::istream & stream , const std::string & eol = {} ) ;
+	static std::string readLineFrom( std::istream & stream , string_view eol = {} ) ;
 		///< Reads a line from the stream using the given line terminator.
 		///< The line terminator is not part of the returned string.
 		///< The terminator defaults to the newline.
@@ -395,37 +396,37 @@ public:
 		///< in the standard "string" header are limited to a single
 		///< character as the terminator.
 		///<
-		///< The stream's fail bit is set if (1) an empty string was
-		///< returned because the stream was already at eof or (2)
-		///< the string overflowed. Therefore, ignoring overflow, if
-		///< the stream ends in an incomplete line that line fragment
-		///< is returned with the stream's eof flag set but the fail bit
-		///< reset and the next attempted read will return an empty string
-		///< with the fail bit set. If the stream ends with a complete
-		///< line then the last line is returned with eof and fail
-		///< bits reset and the next attempted read will return
-		///< an empty string with eof and fail bits set.
+		///< The side-effects on the stream state follow std::getline():
+		///< reading an unterminated line at the end of the stream sets
+		///< eof, but a fully-terminated line does not; the next read
+		///< will set failbit; if no characters are read (including
+		///< terminators) (eg. already eof) then failbit is set.
 		///<
-		///< Boolean tests on a stream are equivalent to using fail(),
-		///< and fail() tests for failbit or badbit, so to process
-		///< even incomplete lines at the end we can use a read
-		///< loop like "while(s.good()){read(s);if(s)...}".
+		///< A read loop that processes even incomplete lines at the end
+		///< of the stream should do:
+		///< \code
+		///< while(stream.good()){read(stream);if(stream)process(line)} // or
+		///< while(read(stream)){process(line)}
+		///< \endcode
+		///< or to process only complete lines:
+		///< \code
+		///< while(stream){read(stream);if(stream.good())process(line)} // or
+		///< while(read(stream)&&stream.good()){process(line)}
+		///< \endcode
 
-	static void readLineFrom( std::istream & stream , const std::string & eol , std::string & result ,
-		bool pre_erase_result = true ) ;
-			///< An overload which avoids string copying.
+	static std::istream & readLine( std::istream & stream , std::string & result ,
+		string_view eol = {} , bool pre_erase_result = true , std::size_t limit = 0U ) ;
+			///< Reads a line from the stream using the given line
+			///< terminator, which may be multi-character. Behaves like
+			///< std::getline() when the trailing parameters are defaulted.
+			///< Also behaves like std::getline() by not clearing the
+			///< result if the stream is initially not good(), even if
+			///< the pre-erase flag is set.
 
-	static void readLineFrom( std::istream & stream , string_view eol , std::string & result ,
-		bool pre_erase_result = true ) ;
-			///< An overload using string_view for eol.
-
-	static void readLineFrom( std::istream & stream , const char * eol , std::string & result ,
-		bool pre_erase_result = true ) ;
-			///< An overload using c-string for eol.
-
-	static void readLineFrom( std::istream & stream , string_view eol , std::vector<char> & result ,
-		bool pre_erase_result = true ) ;
-			///< An overload for a vector buffer.
+	static std::istream & readLine( std::istream & stream , std::string & result ,
+		Eol , bool pre_erase_result = true , std::size_t limit = 0U ) ;
+			///< An overload where lines are terminated with some
+			///< enumerated combination of CR, LF or CRLF.
 
 	static void splitIntoTokens( const std::string & in , StringArray & out , string_view ws , char esc = '\0' ) ;
 		///< Splits the string into 'ws'-delimited tokens. The behaviour is like

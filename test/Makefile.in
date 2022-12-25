@@ -38,7 +38,6 @@
 # If "make check" fails then examine the relevant ".log" files and
 # re-run individual tests with "emailrelay_test.sh -q -v -t <test-name>".
 #
-
 VPATH = @srcdir@
 am__is_gnu_make = { \
   if test -z '$(MAKELEVEL)'; then \
@@ -111,9 +110,8 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-noinst_PROGRAMS = $(am__EXEEXT_4)
-check_PROGRAMS = $(am__EXEEXT_3)
-TESTS = $(am__EXEEXT_5)
+check_PROGRAMS = $(am__EXEEXT_2)
+TESTS = $(am__EXEEXT_3)
 subdir = test
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acinclude.m4 \
@@ -131,23 +129,13 @@ am__EXEEXT_1 = emailrelay_test_scanner$(EXEEXT) \
 	emailrelay_test_client$(EXEEXT) \
 	emailrelay_test_server$(EXEEXT) \
 	emailrelay_test_verifier$(EXEEXT)
-am__EXEEXT_2 =
-@GCONFIG_TESTING_TRUE@am__EXEEXT_3 = $(am__EXEEXT_1) $(am__EXEEXT_2)
-am__EXEEXT_4 = emailrelay_test_keygen$(EXEEXT)
-PROGRAMS = $(noinst_PROGRAMS)
+@GCONFIG_TESTING_TRUE@am__EXEEXT_2 = $(am__EXEEXT_1)
 am_emailrelay_test_client_OBJECTS = emailrelay_test_client.$(OBJEXT)
 emailrelay_test_client_OBJECTS = $(am_emailrelay_test_client_OBJECTS)
 am__DEPENDENCIES_1 =
 emailrelay_test_client_DEPENDENCIES = $(am__DEPENDENCIES_1)
 emailrelay_test_client_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(emailrelay_test_client_LDFLAGS) $(LDFLAGS) -o $@
-am_emailrelay_test_keygen_OBJECTS = emailrelay_test_keygen.$(OBJEXT)
-emailrelay_test_keygen_OBJECTS = $(am_emailrelay_test_keygen_OBJECTS)
-emailrelay_test_keygen_DEPENDENCIES =  \
-	$(top_builddir)/src/gssl/libgssl.a $(COMMON_LDADD) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-emailrelay_test_keygen_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
-	$(emailrelay_test_keygen_LDFLAGS) $(LDFLAGS) -o $@
 am_emailrelay_test_scanner_OBJECTS =  \
 	emailrelay_test_scanner.$(OBJEXT)
 emailrelay_test_scanner_OBJECTS =  \
@@ -195,7 +183,6 @@ DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/emailrelay_test_client.Po \
-	./$(DEPDIR)/emailrelay_test_keygen.Po \
 	./$(DEPDIR)/emailrelay_test_scanner.Po \
 	./$(DEPDIR)/emailrelay_test_server.Po \
 	./$(DEPDIR)/emailrelay_test_verifier.Po
@@ -214,12 +201,10 @@ am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
 SOURCES = $(emailrelay_test_client_SOURCES) \
-	$(emailrelay_test_keygen_SOURCES) \
 	$(emailrelay_test_scanner_SOURCES) \
 	$(emailrelay_test_server_SOURCES) \
 	$(emailrelay_test_verifier_SOURCES)
 DIST_SOURCES = $(emailrelay_test_client_SOURCES) \
-	$(emailrelay_test_keygen_SOURCES) \
 	$(emailrelay_test_scanner_SOURCES) \
 	$(emailrelay_test_server_SOURCES) \
 	$(emailrelay_test_verifier_SOURCES)
@@ -446,7 +431,7 @@ am__set_TESTS_bases = \
   bases=`for i in $$bases; do echo $$i; done | sed 's/\.log$$//'`; \
   bases=`echo $$bases`
 RECHECK_LOGS = $(TEST_LOGS)
-@GCONFIG_TESTING_TRUE@am__EXEEXT_5 = $(test_names) $(test_scripts)
+@GCONFIG_TESTING_TRUE@am__EXEEXT_3 = $(test_names) $(test_scripts)
 TEST_SUITE_LOG = test-suite.log
 am__test_logs1 = $(TESTS:=.log)
 am__test_logs2 = $(am__test_logs1:@EXEEXT@.log=.log)
@@ -622,9 +607,6 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-utility_programs = \
-	emailrelay_test_keygen
-
 helper_programs = \
 	emailrelay_test_scanner \
 	emailrelay_test_client \
@@ -645,7 +627,6 @@ other_scripts = \
 test_scripts = \
 	emailrelay_chain_test.sh
 
-test_programs = 
 test_names = \
 	testServerShowsHelp.test \
 	testServerStartsAndStops.test \
@@ -734,7 +715,7 @@ modules = \
 @GCONFIG_TESTING_FALSE@TESTING_TESTS = 
 @GCONFIG_TESTING_TRUE@TESTING_TESTS = $(test_names) $(test_scripts)
 @GCONFIG_TESTING_FALSE@TESTING_HELPERS = 
-@GCONFIG_TESTING_TRUE@TESTING_HELPERS = $(helper_programs) $(test_programs)
+@GCONFIG_TESTING_TRUE@TESTING_HELPERS = $(helper_programs)
 EXTRA_DIST = \
 	$(TESTING_EXTRA_DIST) \
 	$(other_scripts) \
@@ -755,8 +736,6 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/glib \
 	-I$(top_srcdir)/src/gssl \
 	-I$(top_srcdir)/src/gnet \
-	-I$(top_srcdir)/src/gauth \
-	-I$(top_srcdir)/src/gsmtp \
 	-D "G_SPOOLDIR=$(e_spooldir)"
 
 COMMON_LDADD = \
@@ -764,14 +743,6 @@ COMMON_LDADD = \
 
 @GCONFIG_WINDOWS_FALSE@SYS_LIBS = 
 @GCONFIG_WINDOWS_TRUE@SYS_LIBS = -lws2_32 -liphlpapi -lcomctl32
-emailrelay_test_keygen_SOURCES = emailrelay_test_keygen.cpp
-@GCONFIG_WINDOWS_TRUE@emailrelay_test_keygen_LDFLAGS = -static
-emailrelay_test_keygen_LDADD = \
-	$(top_builddir)/src/gssl/libgssl.a \
-	$(COMMON_LDADD) \
-	$(GCONFIG_TLS_LIBS) \
-	$(SYS_LIBS)
-
 emailrelay_test_scanner_SOURCES = emailrelay_test_scanner.cpp
 @GCONFIG_WINDOWS_TRUE@emailrelay_test_scanner_LDFLAGS = -static
 emailrelay_test_scanner_LDADD = \
@@ -844,16 +815,9 @@ $(am__aclocal_m4_deps):
 clean-checkPROGRAMS:
 	-test -z "$(check_PROGRAMS)" || rm -f $(check_PROGRAMS)
 
-clean-noinstPROGRAMS:
-	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-
 emailrelay_test_client$(EXEEXT): $(emailrelay_test_client_OBJECTS) $(emailrelay_test_client_DEPENDENCIES) $(EXTRA_emailrelay_test_client_DEPENDENCIES) 
 	@rm -f emailrelay_test_client$(EXEEXT)
 	$(AM_V_CXXLD)$(emailrelay_test_client_LINK) $(emailrelay_test_client_OBJECTS) $(emailrelay_test_client_LDADD) $(LIBS)
-
-emailrelay_test_keygen$(EXEEXT): $(emailrelay_test_keygen_OBJECTS) $(emailrelay_test_keygen_DEPENDENCIES) $(EXTRA_emailrelay_test_keygen_DEPENDENCIES) 
-	@rm -f emailrelay_test_keygen$(EXEEXT)
-	$(AM_V_CXXLD)$(emailrelay_test_keygen_LINK) $(emailrelay_test_keygen_OBJECTS) $(emailrelay_test_keygen_LDADD) $(LIBS)
 
 emailrelay_test_scanner$(EXEEXT): $(emailrelay_test_scanner_OBJECTS) $(emailrelay_test_scanner_DEPENDENCIES) $(EXTRA_emailrelay_test_scanner_DEPENDENCIES) 
 	@rm -f emailrelay_test_scanner$(EXEEXT)
@@ -874,7 +838,6 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emailrelay_test_client.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emailrelay_test_keygen.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emailrelay_test_scanner.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emailrelay_test_server.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emailrelay_test_verifier.Po@am__quote@ # am--include-marker
@@ -1230,7 +1193,7 @@ check-am: all-am
 	$(MAKE) $(AM_MAKEFLAGS) $(check_PROGRAMS) $(check_SCRIPTS)
 	$(MAKE) $(AM_MAKEFLAGS) check-TESTS
 check: check-recursive
-all-am: Makefile $(PROGRAMS)
+all-am: Makefile
 installdirs: installdirs-recursive
 installdirs-am:
 install: install-recursive
@@ -1269,12 +1232,10 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-recursive
 
-clean-am: clean-checkPROGRAMS clean-generic clean-noinstPROGRAMS \
-	mostlyclean-am
+clean-am: clean-checkPROGRAMS clean-generic mostlyclean-am
 
 distclean: distclean-recursive
 		-rm -f ./$(DEPDIR)/emailrelay_test_client.Po
-	-rm -f ./$(DEPDIR)/emailrelay_test_keygen.Po
 	-rm -f ./$(DEPDIR)/emailrelay_test_scanner.Po
 	-rm -f ./$(DEPDIR)/emailrelay_test_server.Po
 	-rm -f ./$(DEPDIR)/emailrelay_test_verifier.Po
@@ -1324,7 +1285,6 @@ installcheck-am:
 
 maintainer-clean: maintainer-clean-recursive
 		-rm -f ./$(DEPDIR)/emailrelay_test_client.Po
-	-rm -f ./$(DEPDIR)/emailrelay_test_keygen.Po
 	-rm -f ./$(DEPDIR)/emailrelay_test_scanner.Po
 	-rm -f ./$(DEPDIR)/emailrelay_test_server.Po
 	-rm -f ./$(DEPDIR)/emailrelay_test_verifier.Po
@@ -1349,25 +1309,24 @@ uninstall-am:
 
 .PHONY: $(am__recursive_targets) CTAGS GTAGS TAGS all all-am \
 	am--depfiles check check-TESTS check-am clean \
-	clean-checkPROGRAMS clean-generic clean-noinstPROGRAMS \
-	cscopelist-am ctags ctags-am distclean distclean-compile \
-	distclean-generic distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-dvi install-dvi-am install-exec \
-	install-exec-am install-html install-html-am install-info \
-	install-info-am install-man install-pdf install-pdf-am \
-	install-ps install-ps-am install-strip installcheck \
-	installcheck-am installdirs installdirs-am maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic pdf pdf-am ps ps-am recheck tags tags-am \
-	uninstall uninstall-am
+	clean-checkPROGRAMS clean-generic cscopelist-am ctags ctags-am \
+	distclean distclean-compile distclean-generic distclean-tags \
+	distdir dvi dvi-am html html-am info info-am install \
+	install-am install-data install-data-am install-dvi \
+	install-dvi-am install-exec install-exec-am install-html \
+	install-html-am install-info install-info-am install-man \
+	install-pdf install-pdf-am install-ps install-ps-am \
+	install-strip installcheck installcheck-am installdirs \
+	installdirs-am maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-compile mostlyclean-generic pdf pdf-am \
+	ps ps-am recheck tags tags-am uninstall uninstall-am
 
 .PRECIOUS: Makefile
 
 
 .PHONY: programs
 @GCONFIG_WINDOWS_TRUE@programs: emailrelay_test_keygen.exe emailrelay_test_scanner.exe emailrelay_test_client.exe emailrelay_test_server.exe emailrelay_test_verifier.exe
-@GCONFIG_WINDOWS_FALSE@programs: $(utility_programs) $(helper_programs) $(test_programs)
+@GCONFIG_WINDOWS_FALSE@programs: $(utility_programs) $(helper_programs)
 
 # the .test files are empty files passed to emailrelay_test.sh
 $(test_names):

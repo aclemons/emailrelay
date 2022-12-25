@@ -30,6 +30,7 @@
 #include <memory>
 #include <utility> // std::pair<>
 #include <vector>
+#include <new> // std::nothrow_t
 
 namespace GNet
 {
@@ -106,19 +107,24 @@ public:
 	MultiServer & operator=( MultiServer && ) = delete ;
 
 private:
+	using ServerPtr = std::unique_ptr<MultiServerImp> ;
+	using ServerList = std::vector<ServerPtr> ;
 	friend class GNet::MultiServerImp ;
 	void parse( const G::StringArray & , unsigned int port ,
 		AddressList & , std::vector<int> & ,
 		G::StringArray & , G::StringArray & , G::StringArray & ) ;
 	static int parseFd( const std::string & ) ;
-	bool gotServerFor( const Address & ) const ;
+	bool gotServerFor( Address ) const ;
+	bool gotAddressFor( const Listener & , const AddressList & ) const ;
 	void onInterfaceEventTimeout() ;
 	static bool match( const Address & , const Address & ) ;
 	static std::string displayString( const Address & ) ;
+	void createServer( Descriptor ) ;
+	void createServer( const Address & ) ;
+	void createServer( const Address & , std::nothrow_t ) ;
+	ServerList::iterator removeServer( ServerList::iterator ) ;
 
 private:
-	using ServerPtr = std::unique_ptr<MultiServerImp> ;
-	using ServerList = std::vector<ServerPtr> ;
 	ExceptionSink m_es ;
 	unsigned int m_port ;
 	std::string m_server_type ;

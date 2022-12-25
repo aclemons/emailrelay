@@ -23,6 +23,7 @@
 #include <clocale>
 #include <libintl.h>
 
+#ifndef G_LIB_SMALL
 void G::gettext_init( const std::string & localedir , const std::string & appname )
 {
 	if( !appname.empty() )
@@ -34,9 +35,12 @@ void G::gettext_init( const std::string & localedir , const std::string & appnam
 		textdomain( appname.c_str() ) ;
 	}
 }
+#endif
 
+#ifndef G_LIB_SMALL
 const char * G::gettext( const char * p ) noexcept
 {
-	return ::gettext( p ) ;
+		return ::gettext( p ) ;
 }
+#endif
 

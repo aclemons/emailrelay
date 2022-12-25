@@ -22,7 +22,7 @@
 #define G_ARG_H
 
 #include "gdef.h"
-#include "gstrings.h"
+#include "gstringarray.h"
 #include <vector>
 #include <string>
 
@@ -123,9 +123,14 @@ public:
 		///< Removes the given option and its arguments. Returns false if
 		///< the option does not exist.
 
+	std::string removeValue( const std::string & option , const std::string & default_ = {} ) ;
+		///< Removes the given single-valued option and its value. Returns
+		///< the option value or the default if the option does not exist.
+
 	std::string removeAt( std::size_t option_index , std::size_t option_args = 0U ) ;
 		///< Removes the given argument and the following 'option_args' ones.
-		///< Returns v(option_index+(option_args?1:0),"").
+		///< Returns v(option_index+(option_args?1:0),""). Does nothing and
+		///< returns the empty string if the index is zero or out of range.
 
 	StringArray array( unsigned int shift = 0U ) const ;
 		///< Returns the arguments as a string array, with an optional shift.
@@ -138,7 +143,6 @@ private:
 
 private:
 	StringArray m_array ;
-	static bool m_first ;
 	static std::string m_v0 ;
 	static std::string m_cwd ;
 } ;

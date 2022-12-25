@@ -28,23 +28,23 @@
 // * the header "From:" line is defaulted from the envelope "From" field
 //
 // If the verbose switch is used then the full path of the new
-// content file is printed on the standard output (suitable
-// for shell-script backticks).
+// content file is printed on the standard output (suitable for
+// shell-script backticks).
 //
 // usage: submit [options] [--spool-dir <spool-dir>] [--from <envelope-from>] [<to> ...]
 //
+// Eg:
+//  submit -d -F -t --content `echo Subject: motd | base64` --content "" --from me@here you@there < /etc/motd
+//
 
 #include "gdef.h"
-#include "glocal.h"
-#include "gaddress.h"
-#include "geventloop.h"
 #include "garg.h"
 #include "gstr.h"
+#include "goptional.h"
 #include "gxtext.h"
 #include "ggetopt.h"
 #include "goptionsusage.h"
 #include "gpath.h"
-#include "gverifier.h"
 #include "gfilestore.h"
 #include "gfile.h"
 #include "gdirectory.h"
@@ -63,10 +63,10 @@
 
 std::string versionNumber()
 {
-	return "2.4.1" ;
+	return "2.5dev1" ;
 }
 
-static std::string writeFiles( const G::Path & spool_dir ,
+static std::pair<G::Path,G::Path> writeFiles( const G::Path & spool_dir ,
 	const G::StringArray & envelope_to_list , const std::string & from ,
 	const std::string & from_auth_in , const std::string & from_auth_out ,
 	const G::StringArray & content , std::istream & instream )
@@ -74,16 +74,21 @@ static std::string writeFiles( const G::Path & spool_dir ,
 	// create the output file
 	//
 	std::string envelope_from = from.empty() ? "anonymous" : from ;
-	GSmtp::FileStore store( spool_dir , /*max_size=*/0U , /*test_for_eight_bit=*/true ) ;
-	std::unique_ptr<GSmtp::NewMessage> msg = store.newMessage( envelope_from , from_auth_in , from_auth_out ) ;
+	GStore::FileStore file_store( spool_dir , {} ) ;
+	GStore::MessageStore & store = file_store ;
+	GStore::MessageStore::SmtpInfo smtp_info ;
+	smtp_info.auth = from_auth_in ;
+	smtp_info.utf8address = !G::Str::isPrintableAscii( envelope_from ) ;
+	std::unique_ptr<GStore::NewMessage> msg = store.newMessage( envelope_from , smtp_info , from_auth_out ) ;
 
 	// add "To:" lines to the envelope
 	//
 	for( auto to : envelope_to_list )
 	{
 		G::Str::trim( to , {" \t\r\n",4U} ) ;
-		GSmtp::VerifierStatus status = GSmtp::VerifierStatus::remote( to ) ;
-		msg->addTo( status.address , status.is_local ) ;
+		bool is_local = false ;
+		bool utf8address = !G::Str::isPrintableAscii( to ) ;
+		msg->addTo( to , is_local , utf8address ) ;
 	}
 
 	// stream out the content header section
@@ -92,10 +97,10 @@ static std::string writeFiles( const G::Path & spool_dir ,
 		for( const auto & line : content )
 		{
 			eoh_in_content = eoh_in_content || line.empty() ;
-			msg->addTextLine( line ) ;
+			msg->addContentLine( line ) ;
 		}
 		if( !eoh_in_content )
-			msg->addTextLine( std::string() ) ;
+			msg->addContentLine( std::string() ) ;
 	}
 
 	// read and stream out more content body
@@ -106,23 +111,24 @@ static std::string writeFiles( const G::Path & spool_dir ,
 		G::Str::trimRight( line , {"\r",1U} , 1U ) ;
 		if( instream.fail() || line == "." )
 			break ;
-		msg->addTextLine( line ) ;
+		msg->addContentLine( line ) ;
 	}
 
 	// commit the file
 	//
-	GNet::Address ip = GNet::Address::loopback( GNet::Address::Family::ipv4 ) ;
 	std::string auth_id = std::string() ;
-	msg->prepare( auth_id , ip.hostPartString() , std::string() ) ;
+	msg->prepare( auth_id , "127.0.0.1" , std::string() ) ;
 	msg->commit( true ) ;
 
-	return store.contentPath(msg->id()).str() ;
+	return {
+		file_store.contentPath(msg->id()) ,
+		file_store.envelopePath(msg->id()) } ;
 }
 
-static void copyIntoSubDirectories( const G::Path & content_path )
+static void copyIntoSubDirectories( const G::Path & envelope_path )
 {
-	G::Directory spool_dir( content_path.simple() ? G::Path(".") : content_path.dirname() ) ;
-	std::string envelope_filename = content_path.withExtension("envelope").basename() ;
+	G::Directory spool_dir( envelope_path.simple() ? G::Path(".") : envelope_path.dirname() ) ;
+	std::string envelope_filename = envelope_path.basename() ;
 	G::Path src = spool_dir.path() + envelope_filename ;
 
 	G::Process::Umask set_umask( G::Process::Umask::Mode::Tighter ) ; // 0117 => -rw-rw----
@@ -193,6 +199,11 @@ static G::Options options()
 		tx("add a date content header") , "" ,
 		M::zero , "" , 2 , t_undef ) ;
 			// Adds a "Date:" content header if there is none.
+
+	G::Options::add( opt , 'I' , "content-message-id" ,
+		tx("add a message-id content header") , "" ,
+		M::one , "domain-part" , 2 , t_undef ) ;
+			// Adds a "Message-ID:" content header if there is none.
 
 	G::Options::add( opt , 'c' , "copy" ,
 		tx("copy into spool sub-directories") , "" ,
@@ -284,15 +295,16 @@ static void run( const G::Arg & arg )
 	}
 	else
 	{
-		// parse the command-line options
+		// unpack the command-line options
 		bool opt_copy = opt.contains( "copy" ) ;
 		bool opt_no_stdin = opt.contains( "no-stdin" ) ;
-		std::string opt_spool_dir = opt.value( "spool-dir" , GSmtp::MessageStore::defaultDirectory().str() ) ;
+		std::string opt_spool_dir = opt.value( "spool-dir" , GStore::MessageStore::defaultDirectory().str() ) ;
 		std::string opt_from = opt.value( "from" ) ;
 		G::StringArray opt_content = G::Str::splitIntoFields( opt.value("content") , ',' ) ;
-		bool opt_content_date = opt.contains( "content-date" ) ;
-		bool opt_content_from = opt.contains( "content-from" ) ;
-		bool opt_content_to = opt.contains( "content-to" ) ;
+		bool opt_add_content_date = opt.contains( "content-date" ) ;
+		bool opt_add_content_from = opt.contains( "content-from" ) ;
+		bool opt_add_content_to = opt.contains( "content-to" ) ;
+		G::optional<std::string> opt_add_content_id = opt.optional( "content-message-id" ) ;
 		std::string opt_from_auth_in = opt.contains("from-auth-in") ?
 			( opt.value("from-auth-in","").empty() ? std::string("<>") : G::Xtext::encode(opt.value("from-auth-in","")) ) :
 			std::string() ;
@@ -312,10 +324,9 @@ static void run( const G::Arg & arg )
 
 		// read in the content headers
 		G::StringArray content ; // or just headers
-		if( opt.contains("content") )
+		for( const auto & part : opt_content )
 		{
-			for( const auto & part : opt_content )
-				content.push_back( part.size() <= 1U ? std::string() : G::Base64::decode(part,true) ) ;
+			content.push_back( part.size() <= 1U ? std::string() : G::Base64::decode(part,true) ) ;
 		}
 		if( !opt_no_stdin )
 		{
@@ -332,14 +343,14 @@ static void run( const G::Arg & arg )
 
 		// find an 'envelope-from' address if necessary from the headers
 		std::string from = opt_from ;
-		bool from_in_headers = false ;
+		bool have_from_in_headers = false ;
 		if( from.empty() )
 		{
 			for( const auto & line : content )
 			{
-				if( line.find("From: ") == 0U )
+				if( G::Str::imatch( line.substr(0U,6U) , "From: " ) )
 				{
-					from_in_headers = true ;
+					have_from_in_headers = true ;
 					from = line.substr(5U) ;
 					G::Str::trim( from , {" \t\r\n",4U} ) ;
 					G::Str::replaceAll( from , "\r" , "" ) ;
@@ -350,52 +361,65 @@ static void run( const G::Arg & arg )
 			}
 		}
 
-		// add synthetic content headers
-		if( opt_content_date )
+		// see if we have date and message-id headers
+		bool have_date_in_headers = false ;
+		bool have_id_in_headers = false ;
+		if( opt_add_content_date || opt_add_content_id )
 		{
-			bool have_date = false ;
 			for( const auto & line : content )
 			{
-				have_date = line.find("Date: ") == 0U ;
-				if( have_date || line.empty() )
+				have_date_in_headers = G::Str::imatch( line.substr(0U,6U) , "Date: " ) ;
+				have_id_in_headers = G::Str::imatch( line.substr(0U,12U) , "Message-ID: " ) ;
+				if( line.empty() || ( have_date_in_headers && have_id_in_headers ) )
 					break ;
 			}
-			if( !have_date )
-			{
-				auto now = G::SystemTime::now() ;
-				auto tm = now.local() ;
-				G::Date date( tm ) ;
-				std::string zone = G::DateTime::offsetString( G::DateTime::offset(now) ) ;
-				std::string date_str = date.dd() + " " + date.monthName(true) + " " + date.yyyy() ;
-				std::string time_str = G::Time(tm).hhmmss(":") ;
-				content.insert( content.begin() , G::Str::join(" ","Date:",date_str,time_str,zone) ) ;
-			}
 		}
-		if( opt_content_to ) // add 'envelope-to' addresses as content To: headers
+
+		// add synthetic content headers
+		if( opt_add_content_date && !have_date_in_headers )
+		{
+			auto now = G::SystemTime::now() ;
+			auto tm = now.local() ;
+			G::Date date( tm ) ;
+			std::string zone = G::DateTime::offsetString( G::DateTime::offset(now) ) ;
+			std::string date_str = date.dd() + " " + date.monthName(true) + " " + date.yyyy() ;
+			std::string time_str = G::Time(tm).hhmmss(":") ;
+			content.insert( content.begin() , G::Str::join(" ","Date:",date_str,time_str,zone) ) ;
+		}
+		if( opt_add_content_to ) // add 'envelope-to' addresses as content To: headers
 		{
 			for( const auto & to : envelope_to_list )
 				content.insert( content.begin() , "To: "+to ) ;
 		}
-		if( opt_content_from && !from_in_headers )
+		if( opt_add_content_from && !have_from_in_headers )
 		{
 			content.insert( content.begin() , "From: "+from ) ;
+		}
+		if( opt_add_content_id && !have_id_in_headers )
+		{
+			std::ostringstream ss ;
+			ss << "Message-ID: <" << G::SystemTime::now() << "." << G::Process::Id() << "@" << opt_add_content_id.value() << ">" ;
+			content.insert( content.begin() , ss.str() ) ;
 		}
 
 		// generate the two files
 		std::stringstream empty ;
-		std::string new_path = writeFiles( opt_spool_dir , envelope_to_list , from ,
+		G::Path new_content ;
+		G::Path new_envelope ;
+		std::tie( new_content , new_envelope ) = writeFiles( opt_spool_dir ,
+			envelope_to_list , from ,
 			opt_from_auth_in , opt_from_auth_out , content ,
 			opt_no_stdin ? empty : std::cin ) ;
 
 		// copy into spool-dir subdirectories (cf. emailrelay-filter-copy)
 		if( opt_copy )
-			copyIntoSubDirectories( new_path ) ;
+			copyIntoSubDirectories( new_envelope ) ;
 
 		// print the content filename
 		if( opt.contains("verbose") )
-			std::cout << new_path << std::endl ;
+			std::cout << new_content << std::endl ;
 		else if( opt.contains("filename") )
-			std::cout << G::Path(new_path).basename() << std::endl ;
+			std::cout << new_content.basename() << std::endl ;
 	}
 }
 

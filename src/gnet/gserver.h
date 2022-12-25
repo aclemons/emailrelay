@@ -57,7 +57,7 @@ public:
 		StreamSocket::Config stream_socket_config ;
 		bool uds_open_permissions {false} ;
 		Config & set_stream_socket_config( const StreamSocket::Config & ) ;
-		Config & set_uds_open_permissions( bool b = true ) ;
+		Config & set_uds_open_permissions( bool b = true ) noexcept ;
 	} ;
 
 	Server( ExceptionSink , const Address & listening_address , const ServerPeer::Config & , const Config & ) ;
@@ -147,6 +147,6 @@ public:
 } ;
 
 inline GNet::Server::Config & GNet::Server::Config::set_stream_socket_config( const StreamSocket::Config & c ) { stream_socket_config = c ; return *this ; }
-inline GNet::Server::Config & GNet::Server::Config::set_uds_open_permissions( bool b ) { uds_open_permissions = b ; return *this ; }
+inline GNet::Server::Config & GNet::Server::Config::set_uds_open_permissions( bool b ) noexcept { uds_open_permissions = b ; return *this ; }
 
 #endif

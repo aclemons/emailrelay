@@ -68,14 +68,14 @@ public:
 
 	struct Config /// A configuration structure for GNet::SocketProtocol.
 	{
-		std::size_t read_buffer_size {G::limits::net_buffer} ;
+		std::size_t read_buffer_size {G::Limits<>::net_buffer} ;
 		unsigned int secure_connection_timeout {0U} ;
 		std::string server_tls_profile ;
 		std::string client_tls_profile ;
-		Config & set_read_buffer_size( std::size_t n ) { read_buffer_size = n ; return *this ; }
-		Config & set_secure_connection_timeout( unsigned int t ) { secure_connection_timeout = t ; return *this ; }
-		Config & set_server_tls_profile( const std::string & s ) { server_tls_profile = s ; return *this ; }
-		Config & set_client_tls_profile( const std::string & s ) { client_tls_profile = s ; return *this ; }
+		Config & set_read_buffer_size( std::size_t n ) noexcept ;
+		Config & set_secure_connection_timeout( unsigned int t ) noexcept ;
+		Config & set_server_tls_profile( const std::string & s ) ;
+		Config & set_client_tls_profile( const std::string & s ) ;
 	} ;
 
 	SocketProtocol( EventHandler & , ExceptionSink , Sink & ,
@@ -196,5 +196,10 @@ public:
 		///< done our own shutdown then both directions are now closed
 		///< and the connection is defunct.
 } ;
+
+inline GNet::SocketProtocol::Config & GNet::SocketProtocol::Config::set_read_buffer_size( std::size_t n ) noexcept { read_buffer_size = n ; return *this ; }
+inline GNet::SocketProtocol::Config & GNet::SocketProtocol::Config::set_secure_connection_timeout( unsigned int t ) noexcept { secure_connection_timeout = t ; return *this ; }
+inline GNet::SocketProtocol::Config & GNet::SocketProtocol::Config::set_server_tls_profile( const std::string & s ) { server_tls_profile = s ; return *this ; }
+inline GNet::SocketProtocol::Config & GNet::SocketProtocol::Config::set_client_tls_profile( const std::string & s ) { client_tls_profile = s ; return *this ; }
 
 #endif

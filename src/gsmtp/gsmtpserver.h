@@ -24,15 +24,19 @@
 #include "gdef.h"
 #include "gmultiserver.h"
 #include "gsmtpclient.h"
-#include "gfilterfactory.h"
-#include "gfactoryparser.h"
 #include "gdnsbl.h"
 #include "glinebuffer.h"
 #include "gverifier.h"
 #include "gmessagestore.h"
+#include "gfilterfactorybase.h"
+#include "gverifierfactorybase.h"
 #include "gsmtpserverprotocol.h"
+#include "gsmtpserversender.h"
+#include "gsmtpserverbufferin.h"
 #include "gprotocolmessage.h"
+#include "glimits.h"
 #include "gexception.h"
+#include <algorithm>
 #include <string>
 #include <sstream>
 #include <memory>
@@ -52,44 +56,46 @@ class GSmtp::Server : public GNet::MultiServer
 public:
 	using AddressList = std::vector<GNet::Address> ;
 
-	struct Config /// A structure containing GSmtp::Server configuration parameters.
+	struct Config /// A configuration structure for GSmtp::Server.
 	{
-		bool allow_remote{false} ;
+		bool allow_remote {false} ;
 		G::StringArray interfaces ;
-		unsigned int port{0U} ;
+		unsigned int port {0U} ;
 		std::string ident ;
-		bool anonymous_smtp{false} ;
-		bool anonymous_content{false} ;
-		FactoryParser::Result filter_spec ;
-		unsigned int filter_timeout{0U} ;
-		FactoryParser::Result verifier_spec ;
-		unsigned int verifier_timeout{0U} ;
-		GNet::ServerPeer::Config server_peer_config ;
-		GNet::Server::Config server_config ;
+		bool anonymous_smtp {false} ;
+		bool anonymous_content {false} ;
+		FilterFactoryBase::Spec filter_spec ;
+		unsigned int filter_timeout {0U} ;
+		VerifierFactoryBase::Spec verifier_spec ;
+		unsigned int verifier_timeout {0U} ;
+		GNet::ServerPeer::Config net_server_peer_config ;
+		GNet::Server::Config net_server_config ;
 		ServerProtocol::Config protocol_config ;
-		std::string sasl_server_config ;
 		std::string dnsbl_config ;
+		ServerBufferIn::Config buffer_config ;
+		std::string domain ;
 
-		Config & set_allow_remote( bool = true ) ;
+		Config & set_allow_remote( bool = true ) noexcept ;
 		Config & set_interfaces( const G::StringArray & ) ;
-		Config & set_port( unsigned int ) ;
+		Config & set_port( unsigned int ) noexcept ;
 		Config & set_ident( const std::string & ) ;
-		Config & set_anonymous( bool = true ) ;
-		Config & set_anonymous_smtp( bool = true ) ;
-		Config & set_anonymous_content( bool = true ) ;
-		Config & set_filter_spec( const FactoryParser::Result & ) ;
-		Config & set_filter_timeout( unsigned int ) ;
-		Config & set_verifier_spec( const FactoryParser::Result & ) ;
-		Config & set_verifier_timeout( unsigned int ) ;
-		Config & set_server_peer_config( const GNet::ServerPeer::Config & ) ;
-		Config & set_server_config( const GNet::Server::Config & ) ;
+		Config & set_anonymous( bool = true ) noexcept ;
+		Config & set_anonymous_smtp( bool = true ) noexcept ;
+		Config & set_anonymous_content( bool = true ) noexcept ;
+		Config & set_filter_spec( const FilterFactoryBase::Spec & ) ;
+		Config & set_filter_timeout( unsigned int ) noexcept ;
+		Config & set_verifier_spec( const VerifierFactoryBase::Spec & ) ;
+		Config & set_verifier_timeout( unsigned int ) noexcept ;
+		Config & set_net_server_peer_config( const GNet::ServerPeer::Config & ) ;
+		Config & set_net_server_config( const GNet::Server::Config & ) ;
 		Config & set_protocol_config( const ServerProtocol::Config & ) ;
-		Config & set_sasl_server_config( const std::string & ) ;
 		Config & set_dnsbl_config( const std::string & ) ;
+		Config & set_buffer_config( const ServerBufferIn::Config & ) ;
+		Config & set_domain( const std::string & ) ;
 	} ;
 
-	Server( GNet::ExceptionSink es , MessageStore & store , FilterFactory & ,
-		const GAuth::SaslClientSecrets & client_secrets , const GAuth::SaslServerSecrets & server_secrets ,
+	Server( GNet::ExceptionSink es , GStore::MessageStore & file_store , FilterFactoryBase & ,
+		VerifierFactoryBase & , const GAuth::SaslClientSecrets & , const GAuth::SaslServerSecrets & ,
 		const Config & server_config , const std::string & forward_to , int forward_to_family ,
 		const GSmtp::Client::Config & client_config ) ;
 			///< Constructor. Listens on the given port number using INET_ANY
@@ -98,6 +104,8 @@ public:
 			///<
 			///< If the forward-to address is given then all messages are
 			///< forwarded immediately, using the given client configuration.
+			///< The forward-to-family is used if the forward-to address
+			///< is a DNS name that needs to be resolved.
 
 	~Server() override ;
 		///< Destructor.
@@ -112,7 +120,8 @@ public:
 		///< Called by GSmtp::ServerPeer to construct a ProtocolMessage.
 
 private: // overrides
-	std::unique_ptr<GNet::ServerPeer> newPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo && , GNet::MultiServer::ServerInfo ) override ; // Override from GNet::MultiServer.
+	std::unique_ptr<GNet::ServerPeer> newPeer( GNet::ExceptionSinkUnbound ,
+		GNet::ServerPeerInfo && , GNet::MultiServer::ServerInfo ) override ; // Override from GNet::MultiServer.
 
 public:
 	Server( const Server & ) = delete ;
@@ -124,11 +133,12 @@ private:
 	std::unique_ptr<Filter> newFilter( GNet::ExceptionSink ) const ;
 	std::unique_ptr<ProtocolMessage> newProtocolMessageStore( std::unique_ptr<Filter> ) ;
 	std::unique_ptr<ProtocolMessage> newProtocolMessageForward( GNet::ExceptionSink , std::unique_ptr<ProtocolMessage> ) ;
-	std::unique_ptr<ServerProtocol::Text> newProtocolText( bool , bool , const GNet::Address & ) const ;
+	std::unique_ptr<ServerProtocol::Text> newProtocolText( bool , bool , const GNet::Address & , const std::string & domain ) const ;
 
 private:
-	MessageStore & m_store ;
-	FilterFactory & m_ff ;
+	GStore::MessageStore & m_store ;
+	FilterFactoryBase & m_ff ;
+	VerifierFactoryBase & m_vf ;
 	Config m_server_config ;
 	Client::Config m_client_config ;
 	const GAuth::SaslServerSecrets & m_server_secrets ;
@@ -144,64 +154,72 @@ private:
 /// Handles a connection from a remote SMTP client.
 /// \see GSmtp::Server
 ///
-class GSmtp::ServerPeer : public GNet::ServerPeer , private ServerProtocol::Sender
+class GSmtp::ServerPeer : public GNet::ServerPeer , private ServerSender
 {
 public:
+	G_EXCEPTION( Error , tx("smtp server error") ) ;
 	G_EXCEPTION( SendError , tx("failed to send smtp response") ) ;
 
 	ServerPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo && peer_info , Server & server ,
-		const GAuth::SaslServerSecrets & server_secrets , const Server::Config & server_config ,
-		std::unique_ptr<ServerProtocol::Text> ptext ) ;
+		VerifierFactoryBase & vf , const GAuth::SaslServerSecrets & server_secrets ,
+		const Server::Config & server_config , std::unique_ptr<ServerProtocol::Text> ptext ) ;
 			///< Constructor.
 
+	~ServerPeer() override ;
+		///< Destructor.
+
 private: // overrides
-	void onSendComplete() override ; // Override from GNet::ServerPeer.
-	void onDelete( const std::string & reason ) override ; // Override from GNet::ServerPeer.
-	bool onReceive( const char * , std::size_t , std::size_t , std::size_t , char ) override ; // Override from GNet::ServerPeer.
-	void onSecure( const std::string & , const std::string & , const std::string & ) override ; // Override from GNet::SocketProtocolSink.
-	void protocolSend( const std::string & line , bool ) override ; // Override from ServerProtocol::Sender.
-	void protocolShutdown() override ; // Override from ServerProtocol::Sender.
-	void onData( const char * , std::size_t ) override ; // Override from GNet::ServerPeer.
+	void onSendComplete() override ; // GNet::ServerPeer
+	void onDelete( const std::string & reason ) override ; // GNet::ServerPeer
+	bool onReceive( const char * , std::size_t , std::size_t , std::size_t , char ) override ; // GNet::ServerPeer
+	void onSecure( const std::string & , const std::string & , const std::string & ) override ; // GNet::SocketProtocolSink
+	void protocolSecure() override ; // GSmtp::ServerSender
+	void protocolSend( const std::string & line , bool ) override ; // GSmtp::ServerSender
+	void protocolShutdown( int how ) override ; // GSmtp::ServerSender
+	void protocolExpect( std::size_t ) override ; // GSmtp::ServerSender
+	void onData( const char * , std::size_t ) override ; // GNet::ServerPeer
 
 public:
-	~ServerPeer() override = default ;
 	ServerPeer( const ServerPeer & ) = delete ;
 	ServerPeer( ServerPeer && ) = delete ;
 	ServerPeer & operator=( const ServerPeer & ) = delete ;
 	ServerPeer & operator=( ServerPeer && ) = delete ;
 
 private:
+	void onDnsBlockResult( bool ) ; // GNet::Dnsbl callback
 	void onCheckTimeout() ;
-	void onFlushTimeout() ;
-	void onDnsBlockResult( bool allow ) ;
+	void onFlow( bool ) ;
 
 private:
 	Server & m_server ;
+	Server::Config m_server_config ;
 	GNet::Dnsbl m_block ;
-	GNet::Timer<ServerPeer> m_flush_timer ;
 	GNet::Timer<ServerPeer> m_check_timer ;
 	std::unique_ptr<Verifier> m_verifier ;
 	std::unique_ptr<ProtocolMessage> m_pmessage ;
 	std::unique_ptr<ServerProtocol::Text> m_ptext ;
-	GNet::LineBuffer m_line_buffer ;
-	ServerProtocol m_protocol ; // order dependency -- last
+	ServerProtocol m_protocol ;
+	ServerBufferIn m_input_buffer ;
+	std::string m_output_buffer ;
+	bool m_output_blocked ;
 } ;
 
-inline GSmtp::Server::Config & GSmtp::Server::Config::set_allow_remote( bool b ) { allow_remote = b ; return *this ; }
+inline GSmtp::Server::Config & GSmtp::Server::Config::set_allow_remote( bool b ) noexcept { allow_remote = b ; return *this ; }
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_interfaces( const G::StringArray & a ) { interfaces = a ; return *this ; }
-inline GSmtp::Server::Config & GSmtp::Server::Config::set_port( unsigned int n ) { port = n ; return *this ; }
+inline GSmtp::Server::Config & GSmtp::Server::Config::set_port( unsigned int n ) noexcept { port = n ; return *this ; }
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_ident( const std::string & s ) { ident = s ; return *this ; }
-inline GSmtp::Server::Config & GSmtp::Server::Config::set_anonymous( bool b ) { anonymous_smtp = anonymous_content = b ; return *this ; }
-inline GSmtp::Server::Config & GSmtp::Server::Config::set_anonymous_smtp( bool b ) { anonymous_smtp = b ; return *this ; }
-inline GSmtp::Server::Config & GSmtp::Server::Config::set_anonymous_content( bool b ) { anonymous_content = b ; return *this ; }
-inline GSmtp::Server::Config & GSmtp::Server::Config::set_filter_spec( const FactoryParser::Result & r ) { filter_spec = r ; return *this ; }
-inline GSmtp::Server::Config & GSmtp::Server::Config::set_filter_timeout( unsigned int t ) { filter_timeout = t ; return *this ; }
-inline GSmtp::Server::Config & GSmtp::Server::Config::set_verifier_spec( const FactoryParser::Result & r ) { verifier_spec = r ; return *this ; }
-inline GSmtp::Server::Config & GSmtp::Server::Config::set_verifier_timeout( unsigned int t ) { verifier_timeout = t ; return *this ; }
-inline GSmtp::Server::Config & GSmtp::Server::Config::set_server_peer_config( const GNet::ServerPeer::Config & c ) { server_peer_config = c ; return *this ; }
-inline GSmtp::Server::Config & GSmtp::Server::Config::set_server_config( const GNet::Server::Config & c ) { server_config = c ; return *this ; }
+inline GSmtp::Server::Config & GSmtp::Server::Config::set_anonymous( bool b ) noexcept { anonymous_smtp = anonymous_content = b ; return *this ; }
+inline GSmtp::Server::Config & GSmtp::Server::Config::set_anonymous_smtp( bool b ) noexcept { anonymous_smtp = b ; return *this ; }
+inline GSmtp::Server::Config & GSmtp::Server::Config::set_anonymous_content( bool b ) noexcept { anonymous_content = b ; return *this ; }
+inline GSmtp::Server::Config & GSmtp::Server::Config::set_filter_spec( const FilterFactoryBase::Spec & r ) { filter_spec = r ; return *this ; }
+inline GSmtp::Server::Config & GSmtp::Server::Config::set_filter_timeout( unsigned int t ) noexcept { filter_timeout = t ; return *this ; }
+inline GSmtp::Server::Config & GSmtp::Server::Config::set_verifier_spec( const VerifierFactoryBase::Spec & r ) { verifier_spec = r ; return *this ; }
+inline GSmtp::Server::Config & GSmtp::Server::Config::set_verifier_timeout( unsigned int t ) noexcept { verifier_timeout = t ; return *this ; }
+inline GSmtp::Server::Config & GSmtp::Server::Config::set_net_server_peer_config( const GNet::ServerPeer::Config & c ) { net_server_peer_config = c ; return *this ; }
+inline GSmtp::Server::Config & GSmtp::Server::Config::set_net_server_config( const GNet::Server::Config & c ) { net_server_config = c ; return *this ; }
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_protocol_config( const ServerProtocol::Config & c ) { protocol_config = c ; return *this ; }
-inline GSmtp::Server::Config & GSmtp::Server::Config::set_sasl_server_config( const std::string & s ) { sasl_server_config = s ; return *this ; }
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_dnsbl_config( const std::string & s ) { dnsbl_config = s ; return *this ; }
+inline GSmtp::Server::Config & GSmtp::Server::Config::set_buffer_config( const ServerBufferIn::Config & c ) { buffer_config = c ; return *this ; }
+inline GSmtp::Server::Config & GSmtp::Server::Config::set_domain( const std::string & s ) { domain = s ; return *this ; }
 
 #endif

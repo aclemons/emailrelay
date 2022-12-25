@@ -1,3 +1,12 @@
+emailrelay (2.5) unstable; urgency=low
+  * SMTP PIPELINING (RFC-2920).
+  * SMTP CHUNKING/8BITMIME 'BDAT' (RFC-3030) ("--server-smtp-config").
+  * SMTP SMTPUTF8 (RFC-6531) ("--server-smtp-config", "--client-smtp-config").
+  * No 7-bit/8-bit check on received message content (see NEWS file).
+  * Multiple configurations in one process (see NEWS file).
+  * Main binary acts as a submission tool if named "emailrelay-submit".
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Sun, 11 Dec 2022 00:00:00 +0000
+
 emailrelay (2.4) unstable; urgency=low
   * Multiple "--filter" and "--client-filter" options allowed.
   * TLS key and certificate files can be specified separately.
@@ -9,7 +18,7 @@ emailrelay (2.4) unstable; urgency=low
   * The Linux event loop uses "epoll" by default rather than "select".
   * Some support for message routing (see NEWS).
   * Fix of error handling in network client filters ("--client-filter=net:...") [bug-id #50].
- -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Sun, 27 Nov 2022 00:00:00 +0000
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Sun, 11 Dec 2022 00:00:00 +0000
 
 emailrelay (2.3) unstable; urgency=low
   * Unix domain sockets supported (eg. "--interface=/tmp/smtp.s").

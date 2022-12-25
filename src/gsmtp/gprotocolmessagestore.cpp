@@ -25,7 +25,7 @@
 #include "gassert.h"
 #include "glog.h"
 
-GSmtp::ProtocolMessageStore::ProtocolMessageStore( MessageStore & store , std::unique_ptr<Filter> filter ) :
+GSmtp::ProtocolMessageStore::ProtocolMessageStore( GStore::MessageStore & store , std::unique_ptr<Filter> filter ) :
 	m_store(store) ,
 	m_filter(std::move(filter))
 {
@@ -48,10 +48,12 @@ void GSmtp::ProtocolMessageStore::clear()
 	G_DEBUG( "GSmtp::ProtocolMessageStore::clear" ) ;
 	m_new_msg.reset() ;
 	m_from.erase() ;
+	m_from_info = FromInfo() ;
 	m_filter->cancel() ;
 }
 
-GSmtp::MessageId GSmtp::ProtocolMessageStore::setFrom( const std::string & from , const std::string & from_auth )
+GStore::MessageId GSmtp::ProtocolMessageStore::setFrom( const std::string & from ,
+	const FromInfo & from_info )
 {
 	G_DEBUG( "GSmtp::ProtocolMessageStore::setFrom: " << from ) ;
 
@@ -61,29 +63,36 @@ GSmtp::MessageId GSmtp::ProtocolMessageStore::setFrom( const std::string & from 
 	G_ASSERT( m_new_msg == nullptr ) ;
 	clear() ; // just in case
 
-	m_new_msg = m_store.newMessage( from , from_auth , "" ) ;
+	GStore::MessageStore::SmtpInfo smtp_info ;
+	smtp_info.auth = from_info.auth ;
+	smtp_info.body = from_info.body ;
+	smtp_info.utf8address = from_info.utf8address ;
+	const std::string & from_auth_out = std::string() ;
+	m_new_msg = m_store.newMessage( from , smtp_info , from_auth_out ) ;
 
 	m_from = from ;
+	m_from_info = from_info ;
 	return m_new_msg->id() ;
 }
 
-bool GSmtp::ProtocolMessageStore::addTo( VerifierStatus to_status )
+bool GSmtp::ProtocolMessageStore::addTo( const ToInfo & to_info )
 {
-	G_DEBUG( "GSmtp::ProtocolMessageStore::addTo: " << to_status.recipient ) ;
+	G_DEBUG( "GSmtp::ProtocolMessageStore::addTo: " << to_info.status.recipient ) ;
 	G_ASSERT( m_new_msg != nullptr ) ;
-	if( to_status.recipient.empty() )
+
+	if( to_info.status.recipient.empty() )
 	{
 		return false ;
 	}
-	else if( !to_status.is_valid )
+	else if( !to_info.status.is_valid )
 	{
-		G_WARNING( "GSmtp::ProtocolMessage: rejecting recipient \"" << to_status.recipient << "\": "
-			<< to_status.response << (to_status.reason.empty()?"":": ") << to_status.reason ) ;
+		G_WARNING( "GSmtp::ProtocolMessage: rejecting recipient \"" << to_info.status.recipient << "\": "
+			<< to_info.status.response << (to_info.status.reason.empty()?"":": ") << to_info.status.reason ) ;
 		return false ;
 	}
 	else
 	{
-		m_new_msg->addTo( to_status.address , to_status.is_local ) ;
+		m_new_msg->addTo( to_info.status.address , to_info.status.is_local , to_info.utf8address ) ;
 		return true ;
 	}
 }
@@ -92,20 +101,33 @@ void GSmtp::ProtocolMessageStore::addReceived( const std::string & received_line
 {
 	G_DEBUG( "GSmtp::ProtocolMessageStore::addReceived" ) ;
 	if( m_new_msg != nullptr )
-		m_new_msg->addTextLine( received_line ) ;
+		m_new_msg->addContentLine( received_line ) ;
 }
 
-bool GSmtp::ProtocolMessageStore::addText( const char * line_data , std::size_t line_size )
+GStore::NewMessage::Status GSmtp::ProtocolMessageStore::addContent( const char * data , std::size_t data_size )
 {
 	G_ASSERT( m_new_msg != nullptr ) ;
-	if( m_new_msg == nullptr )
-		return true ;
-	return m_new_msg->addText( line_data , line_size ) ;
+	return m_new_msg->addContent( data , data_size ) ;
+}
+
+std::size_t GSmtp::ProtocolMessageStore::contentSize() const
+{
+	return m_new_msg ? m_new_msg->contentSize() : 0U ;
 }
 
 std::string GSmtp::ProtocolMessageStore::from() const
 {
-	return m_new_msg ? m_from : std::string() ;
+	return m_from ;
+}
+
+GSmtp::ProtocolMessage::FromInfo GSmtp::ProtocolMessageStore::fromInfo() const
+{
+	return m_from_info ;
+}
+
+std::string GSmtp::ProtocolMessageStore::bodyType() const
+{
+	return m_from_info.body ;
 }
 
 void GSmtp::ProtocolMessageStore::process( const std::string & session_auth_id ,
@@ -116,15 +138,13 @@ void GSmtp::ProtocolMessageStore::process( const std::string & session_auth_id ,
 		G_DEBUG( "GSmtp::ProtocolMessageStore::process: \""
 			<< session_auth_id << "\", \"" << peer_socket_address << "\"" ) ;
 		G_ASSERT( m_new_msg != nullptr ) ;
-		if( m_new_msg == nullptr )
-			throw G::Exception( "internal error" ) ; // never gets here
 
 		// write ".new" envelope
 		bool local_only = m_new_msg->prepare( session_auth_id , peer_socket_address , peer_certificate ) ;
 		if( local_only )
 		{
 			// local-mailbox only -- handle a bit like filter-abandonded
-			m_done_signal.emit( true , MessageId::none() , std::string() , std::string() ) ;
+			m_done_signal.emit( true , GStore::MessageId::none() , std::string() , std::string() ) ;
 		}
 		else
 		{
@@ -135,11 +155,11 @@ void GSmtp::ProtocolMessageStore::process( const std::string & session_auth_id ,
 			m_filter->start( m_new_msg->id() ) ;
 		}
 	}
-	catch( std::exception & e ) // catch filtering errors
+	catch( std::exception & e ) // catch filtering errors, size-limit errors, and file i/o errors
 	{
 		G_WARNING( "GSmtp::ProtocolMessageStore::process: message processing exception: " << e.what() ) ;
 		clear() ;
-		m_done_signal.emit( false , MessageId::none() , "failed" , e.what() ) ;
+		m_done_signal.emit( false , GStore::MessageId::none() , "failed" , e.what() ) ;
 	}
 }
 
@@ -149,8 +169,6 @@ void GSmtp::ProtocolMessageStore::filterDone( int filter_result )
 	{
 		G_DEBUG( "GSmtp::ProtocolMessageStore::filterDone: " << filter_result ) ;
 		G_ASSERT( m_new_msg != nullptr ) ;
-		if( m_new_msg == nullptr )
-			throw G::Exception( "internal error" ) ; // never gets here
 
 		const bool ok = filter_result == 0 ;
 		const bool abandon = filter_result == 1 ;
@@ -160,12 +178,12 @@ void GSmtp::ProtocolMessageStore::filterDone( int filter_result )
 		if( !m_filter->simple() )
 			G_LOG( "GSmtp::ProtocolMessageStore::filterDone: filter done: " << m_filter->str(true) ) ;
 
-		MessageId id = MessageId::none() ;
+		GStore::MessageId message_id = GStore::MessageId::none() ;
 		if( ok )
 		{
 			// commit the message to the store
 			m_new_msg->commit( true ) ;
-			id = m_new_msg->id() ;
+			message_id = m_new_msg->id() ;
 		}
 		else if( abandon )
 		{
@@ -189,13 +207,13 @@ void GSmtp::ProtocolMessageStore::filterDone( int filter_result )
 		std::string filter_reason = (ok||abandon) ? std::string() : m_filter->reason() ;
 
 		clear() ;
-		m_done_signal.emit( ok || abandon , id , filter_response , filter_reason ) ;
+		m_done_signal.emit( ok || abandon , message_id , filter_response , filter_reason ) ;
 	}
 	catch( std::exception & e ) // catch filtering errors
 	{
 		G_WARNING( "GSmtp::ProtocolMessageStore::filterDone: filter exception: " << e.what() ) ;
 		clear() ;
-		m_done_signal.emit( false , MessageId::none() , "rejected" , e.what() ) ;
+		m_done_signal.emit( false , GStore::MessageId::none() , "rejected" , e.what() ) ;
 	}
 }
 

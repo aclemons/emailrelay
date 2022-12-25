@@ -51,7 +51,7 @@ std::string ServiceImp::remove( const std::string & name )
 std::pair<ServiceImp::StatusHandle,DWORD> ServiceImp::statusHandle( const std::string & , HandlerFn )
 {
 	StatusHandle h = 1 ;
-	return std::make_pair( h , 0 ) ;
+	return { h , 0 } ;
 }
 
 DWORD ServiceImp::dispatch( ServiceMainFn fn )

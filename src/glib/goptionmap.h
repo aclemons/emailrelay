@@ -98,6 +98,9 @@ public:
 		///< corresponding to the first one, being G::Str::positive() if 'on'
 		///< or the supplied default if 'off'.
 
+	unsigned int number( string_view key , unsigned int default_ ) const ;
+		///< Returns the matching value as a number.
+
 private:
 	using Range = std::pair<Map::const_iterator,Map::const_iterator> ;
 	Range findRange( string_view key ) const ;

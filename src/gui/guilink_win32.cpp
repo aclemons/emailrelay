@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
-///
-/// \file guilink_win32.cpp
-///
+//
+// guilink_win32.cpp
+//
 
 #include "gdef.h"
 #include "guilink.h"
@@ -254,3 +254,4 @@ bool Gui::Link::remove( const G::Path & link_path )
 	return G::File::remove( link_path , std::nothrow ) ;
 }
 
+/// \file glink_win32.cpp

@@ -15,8 +15,8 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-SUBDIRS = glib gssl gnet gauth gsmtp gpop win32 main gui
-EXTRA_DIST = .clang-tidy .clang-format
+SUBDIRS = glib gssl gnet gauth gstore gsmtp gpop win32 gfilters gverifiers main gui
+EXTRA_DIST = .clang-tidy .clang-format .reduce.dat
 CLEANFILES = compile_commands.json
 
 TIDY ?= clang-tidy
@@ -25,17 +25,17 @@ TIDY ?= clang-tidy
 cdb: compile_commands.json
 
 compile_commands.json: Makefile
-	@chmod +x $(top_srcdir)/bin/make2cdb || true
-	$(top_srcdir)/bin/make2cdb > $@.tmp && mv $@.tmp $@
+	@chmod +x $(top_srcdir)/libexec/make2cdb || true
+	$(top_srcdir)/libexec/make2cdb > $@.tmp && mv $@.tmp $@
 
 .PHONY: tidy
 tidy: compile_commands.json
-	@chmod +x $(top_srcdir)/bin/make2cdb || true
+	@chmod +x $(top_srcdir)/libexec/make2cdb || true
 	@touch $(top_srcdir)/gconfig_defs.h
-	$(top_srcdir)/bin/make2cdb --list | xargs -- "$(TIDY)" -p . || true
+	$(top_srcdir)/libexec/make2cdb --list | xargs -- "$(TIDY)" -p . || true
 
 .PHONY: format
 format:
-	@chmod +x $(top_srcdir)/bin/make-format || true
-	$(top_srcdir)/bin/make-format -f "$(FORMAT)" -d $(top_srcdir)
+	@chmod +x $(top_srcdir)/libexec/make-format || true
+	$(top_srcdir)/libexec/make-format -f "$(FORMAT)" -d $(top_srcdir)
 

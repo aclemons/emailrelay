@@ -51,26 +51,26 @@ public:
 	static OptionValue off() ;
 		///< A factory function for an unvalued option-disabled option.
 
-	bool isOn() const ;
+	bool isOn() const noexcept ;
 		///< Returns true if on().
 
-	bool isOff() const ;
+	bool isOff() const noexcept ;
 		///< Returns true if off().
 
 	std::string value() const ;
 		///< Returns the value as a string.
 
-	bool numeric() const ;
+	bool numeric() const noexcept ;
 		///< Returns true if value() is an unsigned integer.
 
 	unsigned int number( unsigned int default_ = 0U ) const ;
 		///< Returns value() as an unsigned integer.
 		///< Returns the default if not numeric().
 
-	size_t count() const ;
+	size_t count() const noexcept ;
 		///< Returns an instance count that is one by default.
 
-	void increment() ;
+	void increment() noexcept ;
 		///< Increments the instance count().
 
 private:
@@ -108,13 +108,13 @@ G::OptionValue G::OptionValue::off()
 }
 
 inline
-bool G::OptionValue::isOn() const
+bool G::OptionValue::isOn() const noexcept
 {
 	return m_on_off && G::Str::isPositive(m_value) ;
 }
 
 inline
-bool G::OptionValue::isOff() const
+bool G::OptionValue::isOff() const noexcept
 {
 	return m_on_off && G::Str::isNegative(m_value) ;
 }
@@ -126,7 +126,7 @@ std::string G::OptionValue::value() const
 }
 
 inline
-bool G::OptionValue::numeric() const
+bool G::OptionValue::numeric() const noexcept
 {
 	return !m_on_off && G::Str::isUInt(m_value) ;
 }
@@ -138,13 +138,13 @@ unsigned int G::OptionValue::number( unsigned int default_ ) const
 }
 
 inline
-std::size_t G::OptionValue::count() const
+std::size_t G::OptionValue::count() const noexcept
 {
 	return m_count ;
 }
 
 inline
-void G::OptionValue::increment()
+void G::OptionValue::increment() noexcept
 {
 	m_count++ ;
 }

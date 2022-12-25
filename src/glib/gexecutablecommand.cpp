@@ -24,6 +24,7 @@
 #include "gstr.h"
 #include <algorithm>
 
+#ifndef G_LIB_SMALL
 G::ExecutableCommand::ExecutableCommand( const std::string & s )
 {
 	if( s.find(' ') == std::string::npos ) // optimisation
@@ -49,6 +50,7 @@ G::ExecutableCommand::ExecutableCommand( const std::string & s )
 		osAddWrapper() ;
 	}
 }
+#endif
 
 G::ExecutableCommand::ExecutableCommand( const G::Path & exe_ , const G::StringArray & args_ , bool add_wrapper ) :
 	m_exe(exe_) ,

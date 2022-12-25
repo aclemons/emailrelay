@@ -87,7 +87,10 @@ IFLAGS = \
 	-I$(top_srcdir)/src/gnet \
 	-I$(top_srcdir)/src/gauth \
 	-I$(top_srcdir)/src/gpop \
+	-I$(top_srcdir)/src/gstore \
 	-I$(top_srcdir)/src/gsmtp \
+	-I$(top_srcdir)/src/gfilters \
+	-I$(top_srcdir)/src/gverifiers \
 	-I$(top_srcdir)/src/win32 \
 	-I$(top_srcdir)/src/gui \
 	-I$(top_srcdir)/src/main
@@ -95,8 +98,8 @@ IFLAGS = \
 CDB = compile_commands.json
 
 $(SOURCES_) $(CDB): Makefile Makefile.in
-	-chmod +x $(top_srcdir)/bin/make2unity || true
-	$(top_srcdir)/bin/make2unity --cdb --cdb-cxx="$(CXX)" --cdb-top=$(top_srcdir) --base=$(top_srcdir)/src $(SOURCES_)
+	-chmod +x $(top_srcdir)/libexec/make2unity || true
+	$(top_srcdir)/libexec/make2unity --cdb --cdb-cxx="$(CXX)" --cdb-top=$(top_srcdir) --base=$(top_srcdir)/src $(SOURCES_)
 
 .PHONY: programs
 programs: $(PROGRAMS_)
@@ -111,15 +114,15 @@ cdb: $(CDB)
 moc: $(MOC)
 
 emailrelay: emailrelay.cpp
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(IFLAGS) -o $@ $< $(LIBS) $(GCONFIG_TLS_LIBS)
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(IFLAGS) -DG_LIB_SMALL -o $@ $< $(LIBS) $(GCONFIG_TLS_LIBS)
 	-strip $@
 
 emailrelay-submit: emailrelay-submit.cpp
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(IFLAGS) -o $@ $< $(LIBS) $(GCONFIG_TLS_LIBS)
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(IFLAGS) -DG_LIB_SMALL -o $@ $< $(LIBS) $(GCONFIG_TLS_LIBS)
 	-strip $@
 
 emailrelay-passwd: emailrelay-passwd.cpp
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(IFLAGS) -o $@ $< $(LIBS) $(GCONFIG_TLS_LIBS)
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(IFLAGS) -DG_LIB_SMALL -o $@ $< $(LIBS) $(GCONFIG_TLS_LIBS)
 	-strip $@
 
 emailrelay-gui: emailrelay-gui.cpp $(MOC)

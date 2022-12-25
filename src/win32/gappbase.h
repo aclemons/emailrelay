@@ -32,7 +32,7 @@ namespace GGui
 }
 
 //| \class GGui::ApplicationBase
-/// The ApplicationBase class is a convienient GGui::Window for
+/// The ApplicationBase class is a convenient GGui::Window for
 /// the application's main window.
 ///
 /// It is initialised by calling createWindow() from WinMain().

@@ -71,11 +71,11 @@ public:
 		std::string separator ; ///< separator between syntax and description
 		std::size_t separator_spaces {1U} ; ///< extra spaces on wrapped lines if using a separator
 		std::size_t column {30U} ; ///< left hand column width if no separator (includes margin)
-		std::size_t width {default_} ; ///< overall width for wrapping, or zero for none
-		std::size_t width2 {default_} ; ///< width after the first line, or zero for 'width'
+		std::size_t width {default_} ; ///< overall width for wrapping, or zero for none, defaults to $COLUMNS
+		std::size_t width2 {0U} ; ///< width after the first line, or zero for 'width'
 		std::size_t margin {2U} ; ///< spaces added to the left
 		std::size_t overflow {20U} ; ///< use 'overflow' format if rhs is squashed down to this
-		std::size_t overflow_spaces {6U} ; ///< 'overflow' format extra spaces on wrapped lines
+		std::size_t overflow_spaces {1U} ; ///< 'overflow' format extra spaces on wrapped lines
 
 		bool extra {false} ; ///< include descriptions' extra text
 		bool alt_usage {false} ; ///< use alternate "usage:" string
@@ -139,15 +139,15 @@ public:
 private:
 	std::string summaryPartOne( const Config & ) const ;
 	std::string summaryPartTwo( const Config & ) const ;
-	std::string helpSyntax( const Option & , char ) const ;
-	std::string helpDescription( const Option & , const Config & ) const ;
+	std::string helpSyntax( const Option & , bool = false , char = '\0' ) const ;
+	std::string helpDescription( const Option & , bool ) const ;
 	std::string helpSeparator( const Config & , std::size_t syntax_length ) const ;
 	std::string helpPadding( const Config & ) const ;
-	std::string helpImp( const Config & , bool * = nullptr ) const ;
-	std::string optionHelp( const Config & , const Option & option , bool * ) const ;
+	std::string helpImp( const Config & , bool , bool & ) const ;
+	std::string optionHelp( const Config & , const Option & option , bool , bool & ) const ;
 	std::string helpWrap( const Config & , const std::string & separator ,
-		const std::string & syntax , const std::string & description , bool * ) const ;
-	static std::size_t longestSubLine( const std::string & ) ;
+		const std::string & syntax , const std::string & syntax2 ,
+		const std::string & description , bool , bool & ) const ;
 	static Config setDefaults( const Config & ) ;
 	static Config setWidthsWrtMargin( const Config & ) ;
 
@@ -158,7 +158,7 @@ private:
 	char m_space_indent {' '} ;
 	char m_space_padding {' '} ;
 	char m_space_overflow {' '} ;
-	char m_space_placeholder {' '} ;
+	char m_space_syntax {' '} ;
 } ;
 
 inline G::OptionsUsage::Config & G::OptionsUsage::Config::set_separator( const std::string & s ) { separator = s ; return *this ; }

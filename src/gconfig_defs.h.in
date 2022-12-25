@@ -6,6 +6,9 @@
 /* Define true to use std::thread */
 #undef GCONFIG_ENABLE_STD_THREAD
 
+/* Bitmask of built-in filters */
+#undef GCONFIG_FILTER_MASK
+
 /* Define true if arpa/inet.h is available */
 #undef GCONFIG_HAVE_ARPA_INET_H
 
@@ -263,6 +266,9 @@
 
 /* Define true if the PAM API uses const */
 #undef GCONFIG_PAM_CONST
+
+/* Bitmask of built-in address-verifiers */
+#undef GCONFIG_VERIFIER_MASK
 
 /* Define true for a windows build */
 #undef GCONFIG_WINDOWS

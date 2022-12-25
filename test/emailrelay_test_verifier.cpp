@@ -191,15 +191,16 @@ int main( int argc , char * argv [] )
 	try
 	{
 		G::Arg arg( argc , argv ) ;
-		G::GetOpt opt( arg ,
-			"h!help!show help!!0!!1" "|"
-			"l!log!logging!!0!!1" "|"
-			"f!log-file!log file!!1!file!1" "|"
-			"d!debug!more logging!!0!!1" "|"
-			"6!ipv6!use ipv6!!0!!1" "|"
-			"P!port!port number!!1!port!1" "|"
-			"f!pid-file!pid file!!1!path!1" "|"
-		) ;
+		G::Options options ;
+		using M = G::Option::Multiplicity ;
+		G::Options::add( options , 'h' , "help" , "show help" , "" , M::zero , "" , 1 , 0 ) ;
+		G::Options::add( options , 'l' , "log" , "logging" , "" , M::zero , "" , 1 , 0 ) ;
+		G::Options::add( options , 'f' , "log-file" , "log file" , "" , M::one , "file" , 1 , 0 ) ;
+		G::Options::add( options , 'd' , "debug" , "more logging" , "" , M::zero , "" , 1 , 0 ) ;
+		G::Options::add( options , '6' , "ipv6" , "use ipv6" , "" , M::zero , "" , 1 , 0 ) ;
+		G::Options::add( options , 'P' , "port" , "port number" , "" , M::one , "port" , 1 , 0 ) ;
+		G::Options::add( options , 'f' , "pid-file" , "pid file" , "" , M::one , "path" , 1 , 0 ) ;
+		G::GetOpt opt( arg , options ) ;
 		if( opt.hasErrors() )
 		{
 			opt.showErrors(std::cerr) ;
@@ -225,7 +226,14 @@ int main( int argc , char * argv [] )
 			file << G::Process::Id().str() << std::endl ;
 		}
 
-		G::LogOutput log_output( log , debug , log_file ) ;
+		G::LogOutput log_output( arg.prefix() ,
+			G::LogOutput::Config()
+				.set_output_enabled(log)
+				.set_summary_info(log)
+				.set_verbose_info(debug)
+				.set_debug(debug) ,
+			log_file ) ;
+
 		int rc = run( ipv6 , port , idle_timeout ) ;
 		std::cout << "done" << std::endl ;
 		return rc ;

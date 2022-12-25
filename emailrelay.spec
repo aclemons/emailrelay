@@ -1,11 +1,11 @@
 Summary: Simple e-mail message transfer agent and proxy using SMTP
 Name: emailrelay
-Version: 2.4.1
+Version: 2.5dev1
 Release: 1
 License: GPL3
 Group: System Environment/Daemons
 URL: http://emailrelay.sourceforge.net
-Source: http://sourceforge.net/projects/emailrelay/files/emailrelay/2.4.1/emailrelay-2.4.1-src.tar.gz
+Source: http://sourceforge.net/projects/emailrelay/files/emailrelay/2.5dev1/emailrelay-2.5dev1-src.tar.gz
 BuildRoot: /tmp/emailrelay-install
 ##BuildRequires: systemd-rpm-macros
 
@@ -83,6 +83,7 @@ test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
 /usr/lib/emailrelay/examples/emailrelay-sendmail.pl
 /usr/lib/emailrelay/examples/emailrelay-set-from.js
 /usr/lib/emailrelay/examples/emailrelay-set-from.pl
+/usr/lib/emailrelay/examples/emailrelay-set-message-id.js
 /usr/lib/emailrelay/examples/emailrelay-submit.sh
 /usr/lib/emailrelay/init/emailrelay
 /usr/lib/systemd/system/emailrelay.service

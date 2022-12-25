@@ -147,10 +147,12 @@ bool G::Options::visible( const std::string & name , unsigned int level , bool l
 	return p == m_list.end() ? false : (*p).visible({level_exact?level:1U,level}) ;
 }
 
+#ifndef G_LIB_SMALL
 bool G::Options::visible( const std::string & name ) const
 {
 	return visible( name , 99U , false ) ;
 }
+#endif
 
 bool G::Options::valid( const std::string & name ) const
 {

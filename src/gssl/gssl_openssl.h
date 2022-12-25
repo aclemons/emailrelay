@@ -217,8 +217,6 @@ private: // overrides
 	bool hasProfile( const std::string & ) const override ;
 	const GSsl::Profile & profile( const std::string & ) const override ;
 	std::string id() const override ;
-	bool generateKeyAvailable() const override ;
-	std::string generateKey( const std::string & ) const override ;
 	G::StringArray digesters( bool ) const override ;
 	Digester digester( const std::string & , const std::string & , bool ) const override ;
 
@@ -309,9 +307,9 @@ private: // overrides
 	void add( G::string_view ) override ;
 	std::string value() override ;
 	std::string state() override ;
-	std::size_t blocksize() const override ;
-	std::size_t valuesize() const override ;
-	std::size_t statesize() const override ;
+	std::size_t blocksize() const noexcept override ;
+	std::size_t valuesize() const noexcept override ;
+	std::size_t statesize() const noexcept override ;
 
 public:
 	DigesterImp( const DigesterImp & ) = delete ;

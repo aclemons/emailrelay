@@ -92,14 +92,14 @@ private:
 	LogStream & m_logstream ;
 } ;
 
-// The DEBUG macro is for debugging during development, the LOG macro
-// generates informational logging in verbose mode only, the 'summary'
-// LOG_S macro generates informational logging even when not verbose,
-// and the WARNING and ERROR macros are used for error warning/error
-// messages although in programs where logging can be disabled completely (see
-// G::LogOutput) error conditions should be made visible by some other means
-// (such as stderr).
-//
+/// The DEBUG macro is for debugging during development, the LOG macro
+/// generates informational logging in verbose mode only, the 'summary'
+/// LOG_S macro generates informational logging even when not verbose,
+/// and the WARNING and ERROR macros are used for error warning/error
+/// messages although in programs where logging can be disabled completely (see
+/// G::LogOutput) error conditions should be made visible by some other means
+/// (such as stderr).
+
 #define G_LOG_IMP( expr , severity ) do { if(G::Log::at(severity)) G::Log((severity),__FILE__,__LINE__) << expr ; } while(0) /* NOLINT bugprone-macro-parentheses */
 #define G_LOG_IMP_IF( cond , expr , severity ) do { if(G::Log::at(severity)&&(cond)) G::Log((severity),__FILE__,__LINE__) << expr ; } while(0) /* NOLINT bugprone-macro-parentheses */
 #define G_LOG_IMP_ONCE( expr , severity ) do { static bool done__ = false ; if(!done__&&G::Log::at(severity)) { G::Log((severity),__FILE__,__LINE__) << expr ;  done__ = true ; } } while(0) /* NOLINT bugprone-macro-parentheses */

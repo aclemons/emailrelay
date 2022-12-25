@@ -222,10 +222,10 @@ public:
 		bool bind_reuse {true} ;
 		bool bind_exclusive {false} ; // (windows, einval if also bind_reuse)
 		bool free_bind {false} ; // (linux) (not yet implemented)
-		Config & set_listen_queue( int ) ;
-		Config & set_bind_reuse( bool ) ;
-		Config & set_bind_exclusive( bool ) ;
-		Config & set_free_bind( bool ) ;
+		Config & set_listen_queue( int ) noexcept ;
+		Config & set_bind_reuse( bool ) noexcept ;
+		Config & set_bind_exclusive( bool ) noexcept ;
+		Config & set_free_bind( bool ) noexcept ;
 		template <typename T> const T & set_last() ;
 	} ;
 
@@ -354,12 +354,12 @@ public:
 		int accept_linger_time {0} ;
 		bool create_keepalive {false} ;
 		bool accept_keepalive {false} ;
-		Config & set_create_linger( std::pair<int,int> ) ;
-		Config & set_create_linger_onoff( int ) ;
-		Config & set_create_linger_time( int ) ;
-		Config & set_accept_linger( std::pair<int,int> ) ;
-		Config & set_accept_linger_onoff( int ) ;
-		Config & set_accept_linger_time( int ) ;
+		Config & set_create_linger( std::pair<int,int> ) noexcept ;
+		Config & set_create_linger_onoff( int ) noexcept ;
+		Config & set_create_linger_time( int ) noexcept ;
+		Config & set_accept_linger( std::pair<int,int> ) noexcept ;
+		Config & set_accept_linger_onoff( int ) noexcept ;
+		Config & set_accept_linger_time( int ) noexcept ;
 	} ;
 
 	static bool supports( Address::Family ) ;
@@ -483,17 +483,17 @@ public:
 	RawSocket & operator=( RawSocket && ) = delete ;
 } ;
 
-inline GNet::Socket::Config & GNet::Socket::Config::set_listen_queue( int n ) { listen_queue = n ; return *this ; }
-inline GNet::Socket::Config & GNet::Socket::Config::set_bind_reuse( bool b ) { bind_reuse = b ; return *this ; }
-inline GNet::Socket::Config & GNet::Socket::Config::set_bind_exclusive( bool b ) { bind_exclusive = b ; return *this ; }
-inline GNet::Socket::Config & GNet::Socket::Config::set_free_bind( bool b ) { free_bind = b ; return *this ; }
+inline GNet::Socket::Config & GNet::Socket::Config::set_listen_queue( int n ) noexcept { listen_queue = n ; return *this ; }
+inline GNet::Socket::Config & GNet::Socket::Config::set_bind_reuse( bool b ) noexcept { bind_reuse = b ; return *this ; }
+inline GNet::Socket::Config & GNet::Socket::Config::set_bind_exclusive( bool b ) noexcept { bind_exclusive = b ; return *this ; }
+inline GNet::Socket::Config & GNet::Socket::Config::set_free_bind( bool b ) noexcept { free_bind = b ; return *this ; }
 template <typename T> const T & GNet::Socket::Config::set_last() { return static_cast<const T&>(*this) ; }
 
-inline GNet::StreamSocket::Config & GNet::StreamSocket::Config::set_create_linger( std::pair<int,int> p ) { create_linger_onoff = p.first ; create_linger_time = p.second ; return *this ; }
-inline GNet::StreamSocket::Config & GNet::StreamSocket::Config::set_create_linger_onoff( int n ) { create_linger_onoff = n ; return *this ; }
-inline GNet::StreamSocket::Config & GNet::StreamSocket::Config::set_create_linger_time( int n ) { create_linger_time = n ; return *this ; }
-inline GNet::StreamSocket::Config & GNet::StreamSocket::Config::set_accept_linger( std::pair<int,int> p ) { accept_linger_onoff = p.first ; accept_linger_time = p.second ; return *this ; }
-inline GNet::StreamSocket::Config & GNet::StreamSocket::Config::set_accept_linger_onoff( int n ) { accept_linger_onoff = n ; return *this ; }
-inline GNet::StreamSocket::Config & GNet::StreamSocket::Config::set_accept_linger_time( int n ) { accept_linger_time = n ; return *this ; }
+inline GNet::StreamSocket::Config & GNet::StreamSocket::Config::set_create_linger( std::pair<int,int> p ) noexcept { create_linger_onoff = p.first ; create_linger_time = p.second ; return *this ; }
+inline GNet::StreamSocket::Config & GNet::StreamSocket::Config::set_create_linger_onoff( int n ) noexcept { create_linger_onoff = n ; return *this ; }
+inline GNet::StreamSocket::Config & GNet::StreamSocket::Config::set_create_linger_time( int n ) noexcept { create_linger_time = n ; return *this ; }
+inline GNet::StreamSocket::Config & GNet::StreamSocket::Config::set_accept_linger( std::pair<int,int> p ) noexcept { accept_linger_onoff = p.first ; accept_linger_time = p.second ; return *this ; }
+inline GNet::StreamSocket::Config & GNet::StreamSocket::Config::set_accept_linger_onoff( int n ) noexcept { accept_linger_onoff = n ; return *this ; }
+inline GNet::StreamSocket::Config & GNet::StreamSocket::Config::set_accept_linger_time( int n ) noexcept { accept_linger_time = n ; return *this ; }
 
 #endif

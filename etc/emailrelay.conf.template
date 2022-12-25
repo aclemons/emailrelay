@@ -55,6 +55,14 @@
 # SMTP client options
 # -------------------
 
+# Name: client-smtp-config
+# Format: client-smtp-config <config>
+# Description: Configures the SMTP client protocol using a comma-separated
+# list of optional features, includeing 'pipelining', 'smtputf8strict',
+# 'eightbitstrict' and 'binarymimestrict'.
+#
+#client-smtp-config +eightbitstrict,-pipelining
+
 # Name: forward
 # Format: forward
 # Description: Causes spooled mail messages to be forwarded when the program
@@ -245,6 +253,14 @@
 # then the SMTP dialog goes ahead without it.
 #
 #prompt-timeout 3
+
+# Name: server-smtp-config
+# Format: server-smtp-config <config>
+# Description: Configures the SMTP server protocol using a comma-separated
+# list of optional features, includeing 'pipelining', 'chunking', 'smtputf8',
+# and 'smtputf8strict'.
+#
+#server-smtp-config +chunking,+smtputf8
 
 # Name: size
 # Format: size <bytes>

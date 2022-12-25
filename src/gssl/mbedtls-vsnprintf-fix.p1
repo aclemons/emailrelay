@@ -1,0 +1,24 @@
+#
+# mbedtls-vsnprintf-fix.p1
+#
+# A patch for mbedtls so that it does not try to link with vsnprintf_s(). This
+# is a workround for building with mingw when targeting old versions of 32-bit
+# windows that do not provide vsnprintf_s() in the msvc run-time. A more
+# correct approach would be to compile everything, including the mingw run-time
+# with the correct value for _WIN32_WINNT, but this patch is more practical.
+# Note that setting MINGW_PLATFORM_C and MINGW_PLATFORM_VSNPRINTF_ALT does not
+# work because mbedtls_platform_win32_vsnprintf() in library/platform.c is
+# compiled unconditionally, even though it is never used.
+#
+diff -Naur old/platform.c new/platform.c
+--- old/platform.c	2022-03-17 19:15:29.904188069 +0000
++++ new/platform.c	2022-03-17 19:15:44.404259786 +0000
+@@ -132,7 +132,7 @@
+     if( s == NULL || n == 0 || fmt == NULL )
+         return( -1 );
+
+-#if defined(_TRUNCATE)
++#if 0
+     ret = vsnprintf_s( s, n, _TRUNCATE, fmt, arg );
+ #else
+     ret = vsnprintf( s, n, fmt, arg );

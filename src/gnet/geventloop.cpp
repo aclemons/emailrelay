@@ -56,9 +56,11 @@ bool GNet::EventLoop::exists()
 	return m_this != nullptr ;
 }
 
+#ifndef G_LIB_SMALL
 void GNet::EventLoop::stop( const G::SignalSafe & signal_safe )
 {
 	if( m_this != nullptr )
 		m_this->quit( signal_safe ) ;
 }
+#endif
 

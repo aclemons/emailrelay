@@ -79,16 +79,6 @@ std::string GSsl::OpenSSL::LibraryImp::id() const
 	return sid() ;
 }
 
-bool GSsl::OpenSSL::LibraryImp::generateKeyAvailable() const
-{
-	return false ;
-}
-
-std::string GSsl::OpenSSL::LibraryImp::generateKey( const std::string & ) const
-{
-	return std::string() ;
-}
-
 GSsl::OpenSSL::Config GSsl::OpenSSL::LibraryImp::config() const
 {
 	return m_config ;
@@ -224,17 +214,17 @@ GSsl::OpenSSL::DigesterImp::~DigesterImp()
 		EVP_MD_CTX_destroy( m_evp_ctx ) ;
 }
 
-std::size_t GSsl::OpenSSL::DigesterImp::blocksize() const
+std::size_t GSsl::OpenSSL::DigesterImp::blocksize() const noexcept
 {
 	return m_block_size ;
 }
 
-std::size_t GSsl::OpenSSL::DigesterImp::valuesize() const
+std::size_t GSsl::OpenSSL::DigesterImp::valuesize() const noexcept
 {
 	return m_value_size ;
 }
 
-std::size_t GSsl::OpenSSL::DigesterImp::statesize() const
+std::size_t GSsl::OpenSSL::DigesterImp::statesize() const noexcept
 {
 	return m_state_size ;
 }

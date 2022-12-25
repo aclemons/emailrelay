@@ -133,7 +133,7 @@ std::string LicensePage::helpUrl( const std::string & language ) const
 
 DirectoryPage::DirectoryPage( Gui::Dialog & dialog , const G::MapFile & config , const std::string & name ,
 	const std::string & next_1 , const std::string & next_2 ,
-	bool installing , bool /*is_windows*/ , bool is_mac ) :
+	bool installing , bool is_windows , bool is_mac ) :
 		Gui::Page(dialog,name,next_1,next_2) ,
 		m_installing(installing) ,
 		m_is_mac(is_mac) ,
@@ -257,8 +257,16 @@ DirectoryPage::DirectoryPage( Gui::Dialog & dialog , const G::MapFile & config ,
 		connect( m_spool_dir_edit_box , SIGNAL(textChanged(QString)), this, SLOT(onOtherDirChange()) );
 		connect( m_config_dir_edit_box , SIGNAL(textChanged(QString)), this, SLOT(onOtherDirChange()) );
 		connect( m_runtime_dir_edit_box , SIGNAL(textChanged(QString)), this, SLOT(onOtherDirChange()) );
-		if( testMode() ) // todo not if windows
-			m_install_dir_edit_box->setText( qstr("/tmp/") + qstr(G::Process::Id().str()) + m_install_dir_edit_box->text() ) ;
+		if( testMode() )
+		{
+			QString old_value = m_install_dir_edit_box->text() ;
+			G::Path tmp_base = is_windows ? G::Path(G::Environment::get("TEMP","c:/temp")) : G::Path("/tmp" ) ;
+			G::Path tmp_dir = tmp_base + G::Process::Id().str() ;
+			G::Path old_path = GQt::stdstr( old_value , GQt::Path ) ;
+			G::Path new_path = G::Path::join( tmp_dir , old_path.withoutRoot() ) ;
+			QString new_value = GQt::qstr( new_path ) ;
+			m_install_dir_edit_box->setText( new_value ) ;
+		}
 	}
 
 	connect( m_install_dir_edit_box , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()));

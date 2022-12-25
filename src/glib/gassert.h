@@ -24,14 +24,10 @@
 #include "gdef.h"
 #include "glogoutput.h"
 
-#if defined(G_WITH_ASSERT)
-	#define G_ASSERT( test ) G::LogOutput::assertion( __FILE__ , __LINE__ , test , #test )
+#if defined(G_WITH_ASSERT) || ( defined(_DEBUG) && ! defined(G_NO_ASSERT) )
+	#define G_ASSERT( test ) G::LogOutput::assertion( __FILE__ , __LINE__ , (test) , #test )
 #else
-	#if defined(_DEBUG) && ! defined(G_NO_ASSERT)
-		#define G_ASSERT( test ) G::LogOutput::assertion( __FILE__ , __LINE__ , test , #test )
-	#else
-		#define G_ASSERT( test )
-	#endif
+	#define G_ASSERT( test )
 #endif
 
 #endif

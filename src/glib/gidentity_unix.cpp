@@ -161,10 +161,12 @@ G::Identity G::Identity::invalid() noexcept
 	return {} ;
 }
 
+#ifndef G_LIB_SMALL
 G::Identity G::Identity::invalid( SignalSafe safe ) noexcept
 {
 	return Identity(safe) ;
 }
+#endif
 
 G::Identity G::Identity::root() noexcept
 {
@@ -174,12 +176,14 @@ G::Identity G::Identity::root() noexcept
 	return id ;
 }
 
+#ifndef G_LIB_SMALL
 std::string G::Identity::str() const
 {
 	std::ostringstream ss ;
 	ss << m_uid << "/" << m_gid ;
 	return ss.str() ;
 }
+#endif
 
 uid_t G::Identity::userid() const noexcept
 {

@@ -21,7 +21,6 @@ noinst_LIBRARIES = libglib.a
 
 UNIX_SOURCES = \
 	gcleanup_unix.cpp \
-	gconvert_unix.cpp \
 	gdaemon_unix.cpp \
 	gdirectory_unix.cpp \
 	genvironment_unix.cpp \
@@ -30,12 +29,13 @@ UNIX_SOURCES = \
 	ghostname_unix.cpp \
 	gidentity_unix.cpp \
 	glogoutput_unix.cpp \
-	gmsg_unix.cpp \
 	gnewprocess_unix.cpp \
 	gprocess_unix.cpp
 
 WINDOWS_SOURCES = \
 	gcleanup_win32.cpp \
+	gconvert.h \
+	gconvert.cpp \
 	gconvert_win32.cpp \
 	gdaemon_win32.cpp \
 	gdirectory_win32.cpp \
@@ -45,24 +45,21 @@ WINDOWS_SOURCES = \
 	ghostname_win32.cpp \
 	gidentity_win32.cpp \
 	glogoutput_win32.cpp \
-	gmsg_win32.cpp \
 	gnewprocess_win32.cpp \
 	gprocess_win32.cpp
 
 COMMON_SOURCES = \
-	galign.h \
 	garg.h \
 	garg.cpp \
 	gassert.h \
 	gbase64.h \
 	gbase64.cpp \
+	gbasicaddress.h \
 	gbatchfile.h \
 	gbatchfile.cpp \
 	gbuffer.h \
 	gcall.h \
 	gcleanup.h \
-	gconvert.h \
-	gconvert.cpp \
 	gdaemon.h \
 	gdate.h \
 	gdate.cpp \
@@ -71,7 +68,6 @@ COMMON_SOURCES = \
 	gdef.h \
 	gdirectory.h \
 	gdirectory.cpp \
-	geightbit.h \
 	genvironment.h \
 	genvironment.cpp \
 	gexception.h \
@@ -113,6 +109,8 @@ COMMON_SOURCES = \
 	goptionmap.cpp \
 	goptionparser.h \
 	goptionparser.cpp \
+	goptionreader.h \
+	goptionreader.cpp \
 	goptions.h \
 	goptions.cpp \
 	goptionsusage.h \
@@ -135,6 +133,7 @@ COMMON_SOURCES = \
 	gslot.h \
 	gslot.cpp \
 	gstatemachine.h \
+	gstatemachine.cpp \
 	gstr.h \
 	gstr.cpp \
 	gstringarray.h \
@@ -143,7 +142,6 @@ COMMON_SOURCES = \
 	gstringlist.h \
 	gstringlist.cpp \
 	gstringmap.h \
-	gstrings.h \
 	gstringwrap.cpp \
 	gstringwrap.h \
 	gstringview.h \
@@ -155,6 +153,33 @@ COMMON_SOURCES = \
 	gtime.cpp \
 	gxtext.h \
 	gxtext.cpp
+
+# -- GMSG
+
+if GCONFIG_WINDOWS
+GMSG_SOURCES = \
+	gmsg.h \
+	gmsg_win32.cpp
+GMSG_EXTRA_DIST = \
+	gmsg_unix.cpp \
+	gmsg_mac.cpp
+else
+if GCONFIG_MAC
+GMSG_SOURCES = \
+	gmsg.h \
+	gmsg_mac.cpp
+GMSG_EXTRA_DIST = \
+	gmsg_unix.cpp \
+	gmsg_win32.cpp
+else
+GMSG_SOURCES = \
+	gmsg.h \
+	gmsg_unix.cpp
+GMSG_EXTRA_DIST = \
+	gmsg_mac.cpp \
+	gmsg_win32.cpp
+endif
+endif
 
 # -- PAM
 
@@ -226,11 +251,13 @@ endif
 # ===
 
 libglib_a_SOURCES = \
+	$(GMSG_SOURCES) \
 	$(GETTEXT_SOURCES) \
 	$(OS_SOURCES) \
 	$(PAM_SOURCES)
 
 EXTRA_DIST = \
+	$(GMSG_EXTRA_DIST) \
 	$(GETTEXT_EXTRA_DIST) \
 	$(OS_EXTRA_DIST) \
 	$(PAM_EXTRA_DIST)

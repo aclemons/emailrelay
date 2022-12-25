@@ -199,7 +199,7 @@ GAuth::SaslClient::Response GAuth::SaslClientImp::response( G::string_view mecha
 	else if( mechanism == PLAIN )
 	{
 		secret = m_secrets.clientSecret( "plain"_sv ) ;
-		rsp.data = std::string(1U,'\0').append(secret.id()).append(1U,'\0').append(secret.key()) ;
+		rsp.data = std::string(1U,'\0').append(secret.id()).append(1U,'\0').append(secret.secret()) ;
 		rsp.error = !secret.valid() ;
 		rsp.final = true ;
 	}
@@ -214,14 +214,14 @@ GAuth::SaslClient::Response GAuth::SaslClientImp::response( G::string_view mecha
 	else if( mechanism == LOGIN && challenge == login_challenge_2 )
 	{
 		secret = m_secrets.clientSecret( "plain"_sv ) ;
-		rsp.data = secret.key() ;
+		rsp.data = secret.secret() ;
 		rsp.error = !secret.valid() ;
 		rsp.final = true ;
 	}
 	else if( mechanism == "XOAUTH2"_sv && challenge.empty() )
 	{
 		secret = m_secrets.clientSecret( "oauth"_sv ) ;
-		rsp.data = secret.key() ;
+		rsp.data = secret.secret() ;
 		rsp.error = !secret.valid() ;
 		rsp.final = true ; // not always -- may get an informational challenge
 	}
@@ -302,11 +302,13 @@ bool GAuth::SaslClient::next()
 	return m_imp->next() ;
 }
 
+#ifndef G_LIB_SMALL
 std::string GAuth::SaslClient::next( const std::string & s )
 {
 	if( s.empty() ) return s ;
 	return m_imp->next() ? mechanism() : std::string() ;
 }
+#endif
 
 std::string GAuth::SaslClient::mechanism() const
 {

@@ -107,10 +107,10 @@ GNet::TaskImp::TaskImp( Task & task , ExceptionSink es , bool sync ,
 			fd_stdout ,
 			fd_stderr ,
 			cd ,
-			true , // strict path
+			true ,
 			id ,
-			true, // strict id
-			127 , // exec error exit
+			true,
+			127 ,
 			exec_error_format )
 {
 	if( sync )
@@ -256,6 +256,7 @@ void GNet::Task::stop()
 	m_busy = false ;
 }
 
+#ifndef G_LIB_SMALL
 std::pair<int,std::string> GNet::Task::run( const G::ExecutableCommand & commandline ,
 	const G::Environment & env ,
 	G::NewProcess::Fd fd_stdin ,
@@ -269,6 +270,7 @@ std::pair<int,std::string> GNet::Task::run( const G::ExecutableCommand & command
 		m_exec_error_format , m_id ) ;
 	return m_imp->wait() ;
 }
+#endif
 
 void GNet::Task::start( const G::ExecutableCommand & commandline )
 {

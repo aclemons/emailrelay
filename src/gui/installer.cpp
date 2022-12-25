@@ -742,7 +742,7 @@ void CreateSecrets::addSecret( const G::MapFile & p , const std::string & k )
 }
 
 void CreateSecrets::addSecret( const G::MapFile & p ,
-	const std::string & side , const std::string & k1_in , const std::string & k2 )
+	const std::string & side , const std::string & /*k1*/ , const std::string & k2 )
 {
 	if( !p.value(k2+"-name").empty() )
 	{
@@ -803,7 +803,7 @@ void CreateSecrets::run()
 		G::File::open( file , m_path , G::File::Text() ) ;
 		while( file.good() )
 		{
-			std::string line = G::Str::readLineFrom( file , "\n" ) ;
+			std::string line = G::Str::readLineFrom( file ) ;
 			G::Str::trimRight( line , {"\r",1U} ) ;
 			if( !file ) break ;
 			line_list.push_back( line ) ;
@@ -818,7 +818,7 @@ void CreateSecrets::run()
 			std::ifstream file( m_template.cstr() ) ;
 			while( file.good() )
 			{
-				std::string line = G::Str::readLineFrom( file , "\n" ) ;
+				std::string line = G::Str::readLineFrom( file ) ;
 				G::Str::trimRight( line , {"\r",1U} ) ;
 				if( !file ) break ;
 				line_list.push_back( line ) ;
@@ -1202,11 +1202,12 @@ GenerateKey::GenerateKey( G::Path path_out , const std::string & issuer ) :
 
 G::Path GenerateKey::exe( bool is_windows )
 {
+	// (guimain.cpp tests for this binary and tells the gui 'smtp server' page)
 	std::string this_exe = G::Process::exe() ;
 	return
 		this_exe.empty() ?
 			G::Path() :
-			G::Path(this_exe).dirname() + (is_windows?"emailrelay_test_keygen.exe":"emailrelay_test_keygen") ;
+			G::Path(this_exe).dirname() + (is_windows?"emailrelay-keygen.exe":"emailrelay-keygen") ;
 }
 
 void GenerateKey::run()

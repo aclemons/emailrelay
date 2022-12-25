@@ -17,12 +17,12 @@
 #
 # Makefile.am
 #
-# This makefile does not build or install anything by default.
+# By default this makefile does nothing.
 #
 # Consider using 'gettextize' to convert the project files canonically, and
 # after that this makefile should not be used.
 #
-# This makefile can be used for testing, something like this:
+# For testing do something like this:
 #
 #   $ apt-get install locales-all # or equivalent
 #   $ ./configure.sh --with-gettext --disable-gui --without-doxygen
@@ -39,8 +39,8 @@
 # baked-in from the configure script's '--localedir' path, which is in turn
 # based on its '--prefix' directory (eg. /usr/local). However, when
 # installing with DESTDIR the emailrelay program needs the '--localedir'
-# command-line option, as shown above, in order to find them
-# (see src/main/run.cpp).
+# command-line option, as shown above, in order to find them (see
+# src/main/run.cpp).
 #
 
 EXTRA_DIST = Makevars POTFILES.in
