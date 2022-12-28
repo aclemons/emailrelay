@@ -24,6 +24,7 @@
 #include "gdef.h"
 #include "gslot.h"
 #include "gmessagestore.h"
+#include "gstringview.h"
 
 namespace GSmtp
 {
@@ -35,12 +36,12 @@ namespace GSmtp
 /// The interface is asynchronous, using a slot/signal completion
 /// callback.
 ///
-/// Filters return a tri-state value (ok, abandon, fail) and
-/// a 'special' flag which is interpreted as 're-scan' for
-/// server filters and 'stop-scanning' for client filters.
+/// Filters return a tri-state value (ok, abandon, fail) and a
+/// 'special' flag which is interpreted as 're-scan' for server
+/// filters and 'stop-scanning' for client filters.
 ///
-/// The abandon state is treated more like success on the
-/// server side but more like failure on the client side.
+/// The abandon state is treated more like success on the server
+/// side but more like failure on the client side.
 ///
 /// The fail state has an associated public response (eg.
 /// "rejected") and a more expansive private reason.
@@ -48,6 +49,19 @@ namespace GSmtp
 class GSmtp::Filter
 {
 public:
+	enum class Result // Filter tri-state result value.
+	{
+		ok = 0 ,
+		abandon = 1 ,
+		fail = 2
+	} ;
+	enum class Type // Filter type enum.
+	{
+		server ,
+		client ,
+		routing
+	} ;
+
 	virtual ~Filter() = default ;
 		///< Destructor.
 
@@ -57,7 +71,7 @@ public:
 
 	virtual bool simple() const = 0 ;
 		///< Returns true if the concrete filter class is one that can
-		///< never change the file (eg. a do-nothing filter class).
+		///< never change the message (eg. a do-nothing filter class).
 
 	virtual void start( const GStore::MessageId & ) = 0 ;
 		///< Starts the filter for the given message. Any previous,
@@ -66,13 +80,15 @@ public:
 
 	virtual G::Slot::Signal<int> & doneSignal() = 0 ;
 		///< Returns a signal which is raised once start() has completed
-		///< or failed. The signal parameter is ok=0, abandon=1, fail=2.
+		///< or failed. The signal parameter is the integer value
+		///< of result().
 
 	virtual void cancel() = 0 ;
 		///< Aborts any incomplete filtering.
 
-	virtual bool abandoned() const = 0 ;
-		///< Returns true if the filter result was 'abandoned'.
+	virtual Result result() const = 0 ;
+		///< Returns the filter result, after the doneSignal() has been
+		///< emitted.
 
 	virtual std::string response() const = 0 ;
 		///< Returns a non-empty response string iff the filter failed,
@@ -86,21 +102,16 @@ public:
 		///< Returns true if the filter indicated special handling is
 		///< required.
 
-	std::string str( bool server_side ) const ;
+	std::string str( Type type ) const ;
 		///< Returns a diagnostic string for logging.
 
-public:
-	enum class Result // Filter tri-state result value.
-	{
-		ok = 0 ,
-		abandon = 1 ,
-		fail = 2
-	} ;
+	static G::string_view strtype( Type type ) noexcept ;
+		///< Returns a type string for logging.
 
 protected:
 	struct Exit /// Interprets an executable filter's exit code.
 	{
-		Exit( int exit_code , bool server_side ) ;
+		Exit( int exit_code , Type ) ;
 		bool ok() const ;
 		bool abandon() const ;
 		bool fail() const ;

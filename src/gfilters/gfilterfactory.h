@@ -73,7 +73,7 @@ public:
 
 protected: // overrides
 	std::unique_ptr<GSmtp::Filter> newFilter( GNet::ExceptionSink ,
-		bool server_side , const Spec & , unsigned int timeout ,
+		GSmtp::Filter::Type , const Spec & , unsigned int timeout ,
 		const std::string & log_prefix ) override ;
 
 private:

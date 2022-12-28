@@ -42,7 +42,7 @@ namespace GFilters
 class GFilters::FilterChain : public GSmtp::Filter
 {
 public:
-	FilterChain( GNet::ExceptionSink , GSmtp::FilterFactoryBase & , bool server_side ,
+	FilterChain( GNet::ExceptionSink , GSmtp::FilterFactoryBase & , Filter::Type ,
 		const GSmtp::FilterFactoryBase::Spec & spec , unsigned int timeout ,
 		const std::string & log_prefix ) ;
 			///< Constructor.
@@ -62,13 +62,13 @@ private: // overrides
 	G::Slot::Signal<int> & doneSignal() override ; // GSmtp::Filter
 	void start( const GStore::MessageId & ) override ; // GSmtp::Filter
 	void cancel() override ; // GSmtp::Filter
-	bool abandoned() const override ; // GSmtp::Filter
+	Result result() const override ; // GSmtp::Filter
 	std::string response() const override ; // GSmtp::Filter
 	std::string reason() const override ; // GSmtp::Filter
 	bool special() const override ; // GSmtp::Filter
 
 private:
-	void add( GNet::ExceptionSink , GSmtp::FilterFactoryBase & , bool ,
+	void add( GNet::ExceptionSink , GSmtp::FilterFactoryBase & , Filter::Type ,
 		const GSmtp::FilterFactoryBase::Spec & , unsigned int , const std::string & ) ;
 	void onFilterDone( int ) ;
 

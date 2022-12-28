@@ -492,6 +492,11 @@ A configuration file can be used to provide additional options; put each
 option on a separate line, use the long option names but without the double
 dash, and separate the option name from the option value with spaces.
 
+Additional configuration files can be used to effectively run multiple
+E-MailRelay processes in one. Alternatively, the same effect can be obtained by
+extending the long options with arbitrary names, for example `--spool-dir-in`
+and `--spool-dir-out`, and then `--port-in` and `--port-out` etc.
+
 All command-line options that specify a filename can use a special `@app`
 substitution variable that is interpreted as the directory that contains
 the `emailrelay` executable or MacOS application bundle.
@@ -1143,6 +1148,16 @@ expected response is another pipe-delimited line containing the same
 information as returned by verifier scripts but in reverse, such as
 `0|postmaster|Local Postmaster <postmaster@eg.com>` or `2|mailbox unavailable`.
 
+SMTP extensions
+---------------
+Some standard extensions of the SMTP protocol can be enabled by using the
+`--server-smtp-config` and `--client-smtp-config` command-line options.
+These include the CHUNKING and SMTPUTF8 extensions defined in [RFC-3030][] and
+[RFC-6531][] respectively. However, these extensions should only be enabled if the
+next hop SMTP server that you are forwarding to also supports them, otherwise
+there is a risk that any mail messages that require those extensions will fail
+to be forwarded.
+
 Connection blocking
 -------------------
 All incoming connections from remote network addresses are blocked by default,
@@ -1350,8 +1365,10 @@ and these default to `%ProgramFiles%/E-MailRelay` for programs and
 [RFC-1891]: https://tools.ietf.org/html/rfc1891
 [RFC-1918]: https://tools.ietf.org/html/rfc1918
 [RFC-2821]: https://tools.ietf.org/html/rfc2821
+[RFC-3030]: https://tools.ietf.org/html/rfc3030
 [RFC-3461]: https://tools.ietf.org/html/rfc3461
 [RFC-4013]: https://tools.ietf.org/html/rfc4013
+[RFC-6531]: https://tools.ietf.org/html/rfc6531
 [RFC-822]: https://tools.ietf.org/html/rfc822
 [SMTP]: https://en.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol
 [SOCKS]: https://en.wikipedia.org/wiki/SOCKS

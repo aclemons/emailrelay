@@ -33,7 +33,8 @@ GFilters::SpamFilter::SpamFilter( GNet::ExceptionSink es , GStore::FileStore & f
 		m_read_only(read_only) ,
 		m_always_pass(always_pass) ,
 		m_connection_timeout(connection_timeout) ,
-		m_response_timeout(response_timeout)
+		m_response_timeout(response_timeout) ,
+		m_result(Result::fail)
 {
 	m_client_ptr.eventSignal().connect( G::Slot::slot(*this,&GFilters::SpamFilter::clientEvent) ) ;
 	m_client_ptr.deletedSignal().connect( G::Slot::slot(*this,&GFilters::SpamFilter::clientDeleted) ) ;
@@ -90,14 +91,20 @@ void GFilters::SpamFilter::clientEvent( const std::string & s1 , const std::stri
 	}
 }
 
-void GFilters::SpamFilter::emit( bool ok )
-{
-	m_done_signal.emit( ok ? 0 : 2 ) ;
-}
-
 bool GFilters::SpamFilter::special() const
 {
 	return false ;
+}
+
+void GFilters::SpamFilter::emit( bool ok )
+{
+	m_result = ok ? Result::ok : Result::fail ;
+	m_done_signal.emit( static_cast<int>(m_result) ) ;
+}
+
+GSmtp::Filter::Result GFilters::SpamFilter::result() const
+{
+	return m_result ;
 }
 
 std::string GFilters::SpamFilter::response() const
@@ -123,8 +130,4 @@ void GFilters::SpamFilter::cancel()
 		m_client_ptr.reset() ;
 }
 
-bool GFilters::SpamFilter::abandoned() const
-{
-	return false ;
-}
 

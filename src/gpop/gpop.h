@@ -44,7 +44,7 @@ namespace GPop
 	std::unique_ptr<Server> newServer( GNet::ExceptionSink , Store & , const GAuth::SaslServerSecrets & , const Server::Config & ) ;
 		///< Creates a new server.
 
-	void report( const Server * ) ;
+	void report( const Server * , const std::string & group = {} ) ;
 		///< Calls GPop::Server::report().
 }
 

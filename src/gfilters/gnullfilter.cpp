@@ -22,17 +22,15 @@
 #include "gnullfilter.h"
 #include "gstr.h"
 
-#ifndef G_LIB_SMALL
-GFilters::NullFilter::NullFilter( GNet::ExceptionSink es , bool server_side ) :
-	m_exit(0,server_side) ,
+GFilters::NullFilter::NullFilter( GNet::ExceptionSink es , Filter::Type filter_type ) :
+	m_exit(0,filter_type) ,
 	m_id("none") ,
 	m_timer(*this,&NullFilter::onTimeout,es)
 {
 }
-#endif
 
-GFilters::NullFilter::NullFilter( GNet::ExceptionSink es , bool server_side , unsigned int exit_code ) :
-	m_exit(static_cast<int>(exit_code),server_side) ,
+GFilters::NullFilter::NullFilter( GNet::ExceptionSink es , Filter::Type filter_type , unsigned int exit_code ) :
+	m_exit(static_cast<int>(exit_code),filter_type) ,
 	m_id("exit:"+G::Str::fromUInt(exit_code)) ,
 	m_timer(*this,&NullFilter::onTimeout,es)
 {
@@ -51,6 +49,11 @@ bool GFilters::NullFilter::simple() const
 bool GFilters::NullFilter::special() const
 {
 	return m_exit.special ;
+}
+
+GSmtp::Filter::Result GFilters::NullFilter::result() const
+{
+	return m_exit.result ;
 }
 
 std::string GFilters::NullFilter::response() const
@@ -80,10 +83,5 @@ void GFilters::NullFilter::start( const GStore::MessageId & )
 void GFilters::NullFilter::onTimeout()
 {
 	m_done_signal.emit( static_cast<int>(m_exit.result) ) ;
-}
-
-bool GFilters::NullFilter::abandoned() const
-{
-	return m_exit.abandon() ;
 }
 

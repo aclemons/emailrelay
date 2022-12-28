@@ -43,6 +43,6 @@ std::unique_ptr<GPop::Server> GPop::newServer( GNet::ExceptionSink , Store & ,
 	return {} ;
 }
 
-void GPop::report( const Server * )
+void GPop::report( const Server * , const std::string & )
 {
 }

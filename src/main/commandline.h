@@ -57,8 +57,15 @@ public:
 		///< Returns the number of separate configurations contained in the
 		///< one command-line.
 
-	const G::OptionMap & options( std::size_t i ) const ;
-		///< Exposes the i'th option map sub-object.
+	const G::OptionMap & configurationOptionMap( std::size_t i ) const ;
+		///< Exposes the i'th configuration's option map.
+
+	const G::OptionMap & operator[]( std::size_t i ) const ;
+		///< Operator alias for configurationOptionMap().
+
+	std::string configurationName( std::size_t i ) const ;
+		///< Returns the i'th configuration's name, or the empty
+		///< string for the default configuration.
 
 	bool argcError() const ;
 		///< Returns true if the command line has non-option argument errors.
@@ -124,9 +131,16 @@ private:
 	G::Options m_options_spec ;
 	G::StringArray m_errors ;
 	std::vector<G::OptionMap> m_option_maps ;
+	G::StringArray m_config_names ;
 	std::string m_version ;
 	std::string m_arg_prefix ;
 	bool m_verbose {false} ;
 } ;
+
+inline
+const G::OptionMap & Main::CommandLine::operator[]( std::size_t i ) const
+{
+	return configurationOptionMap( i ) ;
+}
 
 #endif

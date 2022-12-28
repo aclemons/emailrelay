@@ -29,6 +29,7 @@
 #include "gnetworkfilter.h"
 #include "gexecutablefilter.h"
 #include "gspamfilter.h"
+#include "gcopyfilter.h"
 #include "gexception.h"
 
 GFilters::FilterFactory::FilterFactory( GStore::FileStore & file_store ) :
@@ -83,6 +84,10 @@ GFilters::FilterFactory::Spec GFilters::FilterFactory::parse( const std::string 
 		result = Spec( "spam-edit" , tail ) ;
 		checkNet( result ) ;
 	}
+	else if( spec_in.find("copy:") == 0U )
+	{
+		result = Spec( "copy" , tail ) ;
+	}
 
 	if( result.first.empty() )
 		result.second = "[" + spec_in + "]" ;
@@ -91,13 +96,13 @@ GFilters::FilterFactory::Spec GFilters::FilterFactory::parse( const std::string 
 }
 
 std::unique_ptr<GSmtp::Filter> GFilters::FilterFactory::newFilter( GNet::ExceptionSink es ,
-	bool server_side , const FilterFactory::Spec & spec , unsigned int timeout ,
+	GSmtp::Filter::Type filter_type , const FilterFactory::Spec & spec , unsigned int timeout ,
 	const std::string & log_prefix )
 {
 	if( spec.first == "chain" )
 	{
 		// (one level of recursion -- FilterChain::ctor calls newFilter())
-		return std::make_unique<FilterChain>( es , *this , server_side , spec , timeout , log_prefix ) ;
+		return std::make_unique<FilterChain>( es , *this , filter_type , spec , timeout , log_prefix ) ;
 	}
 	else if( spec.first == "spam" )
 	{
@@ -115,11 +120,15 @@ std::unique_ptr<GSmtp::Filter> GFilters::FilterFactory::newFilter( GNet::Excepti
 	}
 	else if( spec.first == "exit" )
 	{
-		return std::make_unique<NullFilter>( es , server_side , G::Str::toUInt(spec.second) ) ;
+		return std::make_unique<NullFilter>( es , filter_type , G::Str::toUInt(spec.second) ) ;
 	}
 	else if( spec.first == "file" )
 	{
-		return std::make_unique<ExecutableFilter>( es , m_file_store , server_side , spec.second , timeout , log_prefix ) ;
+		return std::make_unique<ExecutableFilter>( es , m_file_store , filter_type , spec.second , timeout , log_prefix ) ;
+	}
+	else if( spec.first == "copy" )
+	{
+		return std::make_unique<CopyFilter>( es , m_file_store , filter_type , spec.second ) ;
 	}
 
 	throw G::Exception( "invalid filter" , spec.second ) ;

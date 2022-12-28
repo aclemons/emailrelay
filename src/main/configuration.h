@@ -58,11 +58,15 @@ namespace Main
 class Main::Configuration
 {
 public:
-	Configuration( const G::OptionMap & , const G::Path & app_dir ,
-		const G::Path & base_dir ) ;
+	Configuration( const G::OptionMap & , const std::string & name ,
+		const G::Path & app_dir , const G::Path & base_dir ) ;
 			///< Constructor. The app-dir path is used as a substitution
 			///< value, and the base-dir path is used to turn relative paths
 			///< into absolute ones when daemon() is true.
+
+	std::string name() const ;
+		///< Returns the configuration name, or the empty string for the
+		///< default configuration.
 
 	std::string semanticError() const ;
 		///< Returns a non-empty string if there is a fatal semantic conflict
@@ -232,11 +236,11 @@ public:
 
 	GSmtp::Server::Config smtpServerConfig( const std::string & smtp_ident ,
 		bool server_secrets_valid , const std::string & server_tls_profile ,
-		std::function<std::string()> default_domain_fn ) const ;
+		const std::string & domain ) const ;
 			///< Returns the smtp server configuration structure.
 
 	GPop::Server::Config popServerConfig( const std::string & server_tls_profile ,
-		std::function<std::string()> default_domain_fn ) const ;
+		const std::string & domain ) const ;
 			///< Returns the pop server configuration structure.
 
 	G::LogOutput::Config logOutputConfig( bool has_gui ) const ;
@@ -323,6 +327,7 @@ private:
 
 private:
 	G::OptionMap m_map ;
+	std::string m_name ;
 	G::Path m_app_dir ;
 	G::Path m_base_dir ;
 } ;

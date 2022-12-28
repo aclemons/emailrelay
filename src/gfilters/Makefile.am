@@ -27,6 +27,8 @@ AM_CPPFLAGS = \
 	-DG_LIB_SMALL
 
 libgfilters_a_SOURCES = \
+	gcopyfilter.cpp \
+	gcopyfilter.h \
 	gexecutablefilter.cpp \
 	gexecutablefilter.h \
 	gfilterchain.cpp \

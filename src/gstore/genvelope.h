@@ -70,20 +70,20 @@ public:
 		///< SMTP keyword.
 
 public:
-	bool m_crlf {true} ;
-	bool m_utf8_mailboxes {false} ; // message requires next-hop server to support SMTPUTF8 (RFC-6531)
-	MessageStore::BodyType m_body_type {MessageStore::BodyType::Unknown} ;
-	std::string m_from ;
-	G::StringArray m_to_local ;
-	G::StringArray m_to_remote ;
-	std::string m_authentication ;
-	std::string m_client_socket_address ;
-	std::string m_client_certificate ;
-	std::string m_from_auth_in ;
-	std::string m_from_auth_out ;
-	std::string m_forward_to ;
-	std::string m_forward_to_address ;
-	std::size_t m_endpos {0U} ;
+	bool crlf {true} ;
+	bool utf8_mailboxes {false} ; // message requires next-hop server to support SMTPUTF8 (RFC-6531)
+	MessageStore::BodyType body_type {MessageStore::BodyType::Unknown} ;
+	std::string from ;
+	G::StringArray to_local ;
+	G::StringArray to_remote ;
+	std::string authentication ;
+	std::string client_socket_address ;
+	std::string client_certificate ;
+	std::string from_auth_in ;
+	std::string from_auth_out ;
+	std::string forward_to ;
+	std::string forward_to_address ;
+	std::size_t endpos {0U} ;
 } ;
 
 #endif

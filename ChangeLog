@@ -8,6 +8,7 @@ E-MailRelay Change Log
 * SMTP SMTPUTF8 (RFC-6531) ("--server-smtp-config", "--client-smtp-config").
 * No 7-bit/8-bit check on received message content (see NEWS file).
 * Multiple configurations in one process (see NEWS file).
+* New built-in "copy:" filter replaces the "emailrelay-filter-copy" utility.
 * Main binary acts as a submission tool if named "emailrelay-submit".
 
 2.3 -> 2.4

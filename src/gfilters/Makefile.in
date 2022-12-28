@@ -110,10 +110,10 @@ am__v_AR_0 = @echo "  AR      " $@;
 am__v_AR_1 = 
 libgfilters_a_AR = $(AR) $(ARFLAGS)
 libgfilters_a_LIBADD =
-am_libgfilters_a_OBJECTS = gexecutablefilter.$(OBJEXT) \
-	gfilterchain.$(OBJEXT) gfilterfactory.$(OBJEXT) \
-	gnetworkfilter.$(OBJEXT) gnullfilter.$(OBJEXT) \
-	gspamfilter.$(OBJEXT)
+am_libgfilters_a_OBJECTS = gcopyfilter.$(OBJEXT) \
+	gexecutablefilter.$(OBJEXT) gfilterchain.$(OBJEXT) \
+	gfilterfactory.$(OBJEXT) gnetworkfilter.$(OBJEXT) \
+	gnullfilter.$(OBJEXT) gspamfilter.$(OBJEXT)
 libgfilters_a_OBJECTS = $(am_libgfilters_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -130,10 +130,10 @@ am__v_at_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = ./$(DEPDIR)/gexecutablefilter.Po \
-	./$(DEPDIR)/gfilterchain.Po ./$(DEPDIR)/gfilterfactory.Po \
-	./$(DEPDIR)/gnetworkfilter.Po ./$(DEPDIR)/gnullfilter.Po \
-	./$(DEPDIR)/gspamfilter.Po
+am__depfiles_remade = ./$(DEPDIR)/gcopyfilter.Po \
+	./$(DEPDIR)/gexecutablefilter.Po ./$(DEPDIR)/gfilterchain.Po \
+	./$(DEPDIR)/gfilterfactory.Po ./$(DEPDIR)/gnetworkfilter.Po \
+	./$(DEPDIR)/gnullfilter.Po ./$(DEPDIR)/gspamfilter.Po
 am__mv = mv -f
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -325,6 +325,8 @@ AM_CPPFLAGS = \
 	-DG_LIB_SMALL
 
 libgfilters_a_SOURCES = \
+	gcopyfilter.cpp \
+	gcopyfilter.h \
 	gexecutablefilter.cpp \
 	gexecutablefilter.h \
 	gfilterchain.cpp \
@@ -386,6 +388,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gcopyfilter.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gexecutablefilter.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfilterchain.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfilterfactory.Po@am__quote@ # am--include-marker
@@ -537,7 +540,8 @@ clean: clean-am
 clean-am: clean-generic clean-noinstLIBRARIES mostlyclean-am
 
 distclean: distclean-am
-		-rm -f ./$(DEPDIR)/gexecutablefilter.Po
+		-rm -f ./$(DEPDIR)/gcopyfilter.Po
+	-rm -f ./$(DEPDIR)/gexecutablefilter.Po
 	-rm -f ./$(DEPDIR)/gfilterchain.Po
 	-rm -f ./$(DEPDIR)/gfilterfactory.Po
 	-rm -f ./$(DEPDIR)/gnetworkfilter.Po
@@ -588,7 +592,8 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-		-rm -f ./$(DEPDIR)/gexecutablefilter.Po
+		-rm -f ./$(DEPDIR)/gcopyfilter.Po
+	-rm -f ./$(DEPDIR)/gexecutablefilter.Po
 	-rm -f ./$(DEPDIR)/gfilterchain.Po
 	-rm -f ./$(DEPDIR)/gfilterfactory.Po
 	-rm -f ./$(DEPDIR)/gnetworkfilter.Po

@@ -25,6 +25,7 @@
 #include "gsmtpclientreply.h"
 #include "gmessagestore.h"
 #include "gstoredmessage.h"
+#include "gfilter.h"
 #include "gsaslclient.h"
 #include "gsaslclientsecrets.h"
 #include "gslot.h"
@@ -140,11 +141,12 @@ public:
 		///< To be called when a blocked connection becomes unblocked.
 		///< See ClientProtocol::Sender::protocolSend().
 
-	void filterDone( bool ok , const std::string & response , const std::string & reason ) ;
+	void filterDone( Filter::Result result , const std::string & response , const std::string & reason ) ;
 		///< To be called when the Filter interface has done its thing.
-		///< If ok then the message processing continues; if not ok
-		///< then the message processing fails with a done signal
-		///< code of -1 if the response is empty, or -2.
+		///< If the result is Result::ok then the message processing
+		///< continues; otherwise the message processing fails with
+		///< a doneSignal() code of -1 for Result::abandon or -2 for
+		///< Result::fail.
 
 	void secure() ;
 		///< To be called when the secure socket protocol has been

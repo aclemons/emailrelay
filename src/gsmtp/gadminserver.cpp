@@ -400,9 +400,9 @@ void GSmtp::AdminServer::onForwardTimeout()
 	}
 }
 
-void GSmtp::AdminServer::report() const
+void GSmtp::AdminServer::report( const std::string & group ) const
 {
-	serverReport() ;
+	serverReport( group ) ;
 }
 
 void GSmtp::AdminServer::notify( const std::string & s0 , const std::string & s1 ,

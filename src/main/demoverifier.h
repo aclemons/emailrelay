@@ -56,10 +56,13 @@ private:
 	void onTimeout() ;
 
 private:
-	Command m_command ;
-	std::string m_address ;
+	using Signal = G::Slot::Signal<GSmtp::Verifier::Command,const GSmtp::VerifierStatus&> ;
+	Run & m_run ;
+	Unit & m_unit ;
 	GNet::Timer<DemoVerifier> m_timer ;
-	G::Slot::Signal<GSmtp::Verifier::Command,const GSmtp::VerifierStatus&> m_done_signal ;
+	Command m_command ;
+	GSmtp::VerifierStatus m_result ;
+	Signal m_done_signal ;
 } ;
 
 #endif

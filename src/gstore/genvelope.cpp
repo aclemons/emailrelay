@@ -61,31 +61,33 @@ std::size_t GStore::Envelope::write( std::ostream & stream , const GStore::Envel
 	G::string_view crlf = "\r\n"_sv ;
 
 	std::streampos pos = stream.tellp() ;
-	if( pos < 0 || stream.fail() )
+	if( pos < 0 )
+		stream.setstate( std::ios_base::failbit ) ;
+	if( stream.fail() )
 		return 0U ;
 
 	stream << x << "Format: " << GStore::FileStore::format() << crlf ;
-	stream << x << "Content: " << imp::bodyTypeName(e.m_body_type) << crlf ;
-	stream << x << "From: " << e.m_from << crlf ;
-	stream << x << "ToCount: " << (e.m_to_local.size()+e.m_to_remote.size()) << crlf ;
+	stream << x << "Content: " << imp::bodyTypeName(e.body_type) << crlf ;
+	stream << x << "From: " << e.from << crlf ;
+	stream << x << "ToCount: " << (e.to_local.size()+e.to_remote.size()) << crlf ;
 	{
-		auto to_p = e.m_to_local.begin() ;
-		for( ; to_p != e.m_to_local.end() ; ++to_p )
+		auto to_p = e.to_local.begin() ;
+		for( ; to_p != e.to_local.end() ; ++to_p )
 			stream << x << "To-Local: " << *to_p << crlf ;
 	}
 	{
-		auto to_p = e.m_to_remote.begin() ;
-		for( ; to_p != e.m_to_remote.end() ; ++to_p )
+		auto to_p = e.to_remote.begin() ;
+		for( ; to_p != e.to_remote.end() ; ++to_p )
 			stream << x << "To-Remote: " << *to_p << crlf ;
 	}
-	stream << x << "Authentication: " << G::Xtext::encode(e.m_authentication) << crlf ;
-	stream << x << "Client: " << e.m_client_socket_address << crlf ;
-	stream << x << "ClientCertificate: " << imp::folded(e.m_client_certificate) << crlf ;
-	stream << x << "MailFromAuthIn: " << imp::xnormalise(e.m_from_auth_in) << crlf ;
-	stream << x << "MailFromAuthOut: " << imp::xnormalise(e.m_from_auth_out) << crlf ;
-	stream << x << "ForwardTo: " << imp::xnormalise(e.m_forward_to) << crlf ;
-	stream << x << "ForwardToAddress: " << e.m_forward_to_address << crlf ;
-	stream << x << "Utf8MailboxNames: " << (e.m_utf8_mailboxes?"1":"0") << crlf ;
+	stream << x << "Authentication: " << G::Xtext::encode(e.authentication) << crlf ;
+	stream << x << "Client: " << e.client_socket_address << crlf ;
+	stream << x << "ClientCertificate: " << imp::folded(e.client_certificate) << crlf ;
+	stream << x << "MailFromAuthIn: " << imp::xnormalise(e.from_auth_in) << crlf ;
+	stream << x << "MailFromAuthOut: " << imp::xnormalise(e.from_auth_out) << crlf ;
+	stream << x << "ForwardTo: " << imp::xnormalise(e.forward_to) << crlf ;
+	stream << x << "ForwardToAddress: " << e.forward_to_address << crlf ;
+	stream << x << "Utf8MailboxNames: " << (e.utf8_mailboxes?"1":"0") << crlf ;
 	stream << x << "End: 1" << crlf ;
 	stream.flush() ;
 	return stream.fail() ? std::size_t(0U) : static_cast<std::size_t>( stream.tellp() - pos ) ;
@@ -109,7 +111,7 @@ void GStore::Envelope::read( std::istream & stream , GStore::Envelope & e )
 {
 	namespace imp = GStore::EnvelopeImp ;
 	std::streampos oldpos = stream.tellg() ;
-	std::string format = imp::readFormat( stream , &e.m_crlf ) ;
+	std::string format = imp::readFormat( stream , &e.crlf ) ;
 	imp::readBodyType( stream , e ) ;
 	imp::readFrom( stream , e ) ;
 	imp::readToList( stream , e ) ;
@@ -154,7 +156,7 @@ void GStore::Envelope::read( std::istream & stream , GStore::Envelope & e )
 	if( newpos <= 0 || newpos < oldpos )
 		throw ReadError() ; // never gets here
 
-	e.m_endpos = static_cast<std::size_t>(newpos-oldpos) ;
+	e.endpos = static_cast<std::size_t>(newpos-oldpos) ;
 }
 
 GStore::MessageStore::BodyType GStore::Envelope::parseSmtpBodyType( const std::string & s , MessageStore::BodyType default_ )
@@ -197,56 +199,56 @@ std::string GStore::EnvelopeImp::readFormat( std::istream & stream , bool * crlf
 
 void GStore::EnvelopeImp::readUtf8Mailboxes( std::istream & stream , Envelope & e )
 {
-	e.m_utf8_mailboxes = readValue(stream,"Utf8MailboxNames") == "1" ;
+	e.utf8_mailboxes = readValue(stream,"Utf8MailboxNames") == "1" ;
 }
 
 void GStore::EnvelopeImp::readBodyType( std::istream & stream , Envelope & e )
 {
 	std::string body_type = readValue( stream , "Content" ) ;
 	if( body_type == bodyTypeName(MessageStore::BodyType::SevenBit) )
-		e.m_body_type = MessageStore::BodyType::SevenBit ;
+		e.body_type = MessageStore::BodyType::SevenBit ;
 	else if( body_type == bodyTypeName(MessageStore::BodyType::EightBitMime) )
-		e.m_body_type = MessageStore::BodyType::EightBitMime ;
+		e.body_type = MessageStore::BodyType::EightBitMime ;
 	else if( body_type == bodyTypeName(MessageStore::BodyType::BinaryMime) )
-		e.m_body_type = MessageStore::BodyType::BinaryMime ;
+		e.body_type = MessageStore::BodyType::BinaryMime ;
 	else
-		e.m_body_type = MessageStore::BodyType::Unknown ;
+		e.body_type = MessageStore::BodyType::Unknown ;
 }
 
 void GStore::EnvelopeImp::readFrom( std::istream & stream , Envelope & e )
 {
-	e.m_from = readValue( stream , "From" ) ;
-	G_DEBUG( "GStore::EnvelopeImp::readFrom: from \"" << e.m_from << "\"" ) ;
+	e.from = readValue( stream , "From" ) ;
+	G_DEBUG( "GStore::EnvelopeImp::readFrom: from \"" << e.from << "\"" ) ;
 }
 
 void GStore::EnvelopeImp::readFromAuthIn( std::istream & stream , Envelope & e )
 {
-	e.m_from_auth_in = readValue( stream , "MailFromAuthIn" ) ;
-	if( !e.m_from_auth_in.empty() && e.m_from_auth_in != "+" && !G::Xtext::valid(e.m_from_auth_in) )
+	e.from_auth_in = readValue( stream , "MailFromAuthIn" ) ;
+	if( !e.from_auth_in.empty() && e.from_auth_in != "+" && !G::Xtext::valid(e.from_auth_in) )
 		throw Envelope::ReadError( "invalid mail-from-auth-in encoding" ) ;
 }
 
 void GStore::EnvelopeImp::readFromAuthOut( std::istream & stream , Envelope & e )
 {
-	e.m_from_auth_out = readValue( stream , "MailFromAuthOut" ) ;
-	if( !e.m_from_auth_out.empty() && e.m_from_auth_out != "+" && !G::Xtext::valid(e.m_from_auth_out) )
+	e.from_auth_out = readValue( stream , "MailFromAuthOut" ) ;
+	if( !e.from_auth_out.empty() && e.from_auth_out != "+" && !G::Xtext::valid(e.from_auth_out) )
 		throw Envelope::ReadError( "invalid mail-from-auth-out encoding" ) ;
 }
 
 void GStore::EnvelopeImp::readForwardTo( std::istream & stream , Envelope & e )
 {
-	e.m_forward_to = readValue( stream , "ForwardTo" ) ;
+	e.forward_to = readValue( stream , "ForwardTo" ) ;
 }
 
 void GStore::EnvelopeImp::readForwardToAddress( std::istream & stream , Envelope & e )
 {
-	e.m_forward_to_address = readValue( stream , "ForwardToAddress" ) ;
+	e.forward_to_address = readValue( stream , "ForwardToAddress" ) ;
 }
 
 void GStore::EnvelopeImp::readToList( std::istream & stream , Envelope & e )
 {
-	e.m_to_local.clear() ;
-	e.m_to_remote.clear() ;
+	e.to_local.clear() ;
+	e.to_remote.clear() ;
 
 	unsigned int to_count = G::Str::toUInt( readValue(stream,"ToCount") ) ;
 
@@ -259,20 +261,20 @@ void GStore::EnvelopeImp::readToList( std::istream & stream , Envelope & e )
 			throw Envelope::ReadError( "bad 'to' line" ) ;
 
 		if( is_local )
-			e.m_to_local.push_back( value(to_line) ) ;
+			e.to_local.push_back( value(to_line) ) ;
 		else
-			e.m_to_remote.push_back( value(to_line) ) ;
+			e.to_remote.push_back( value(to_line) ) ;
 	}
 }
 
 void GStore::EnvelopeImp::readAuthentication( std::istream & stream , Envelope & e )
 {
-	e.m_authentication = G::Xtext::decode( readValue(stream,"Authentication") ) ;
+	e.authentication = G::Xtext::decode( readValue(stream,"Authentication") ) ;
 }
 
 void GStore::EnvelopeImp::readClientSocketAddress( std::istream & stream , Envelope & e )
 {
-	e.m_client_socket_address = readValue( stream , "Client" ) ;
+	e.client_socket_address = readValue( stream , "Client" ) ;
 }
 
 void GStore::EnvelopeImp::readClientSocketName( std::istream & stream , Envelope & )
@@ -282,7 +284,7 @@ void GStore::EnvelopeImp::readClientSocketName( std::istream & stream , Envelope
 
 void GStore::EnvelopeImp::readClientCertificate( std::istream & stream , Envelope & e )
 {
-	e.m_client_certificate = readValue( stream , "ClientCertificate" ) ;
+	e.client_certificate = readValue( stream , "ClientCertificate" ) ;
 }
 
 void GStore::EnvelopeImp::readEnd( std::istream & stream , Envelope & )

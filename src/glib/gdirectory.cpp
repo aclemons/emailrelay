@@ -82,14 +82,24 @@ void G::DirectoryList::readAll( const G::Path & dir )
 	readType( dir , {} ) ;
 }
 
+void G::DirectoryList::readDirectories( const G::Path & dir , unsigned int limit )
+{
+	readImp( dir , true , {} , limit ) ;
+}
+
 void G::DirectoryList::readType( const G::Path & dir , G::string_view suffix , unsigned int limit )
+{
+	readImp( dir , false , suffix , limit ) ;
+}
+
+void G::DirectoryList::readImp( const G::Path & dir , bool sub_dirs , G::string_view suffix , unsigned int limit )
 {
 	Directory directory( dir ) ;
 	DirectoryIterator iter( directory ) ;
 	for( unsigned int i = 0U ; iter.more() && !iter.error() ; ++i )
 	{
 		// (we do our own filename matching here to avoid glob())
-		if( suffix.empty() || Str::tailMatch(iter.fileName(),suffix) )
+		if( sub_dirs ? iter.isDir() : ( suffix.empty() || Str::tailMatch(iter.fileName(),suffix) ) )
 		{
 			if( limit == 0U || m_list.size() < limit )
 			{

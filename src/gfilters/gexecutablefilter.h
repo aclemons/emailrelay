@@ -42,7 +42,7 @@ namespace GFilters
 class GFilters::ExecutableFilter : public GSmtp::Filter, private GNet::TaskCallback
 {
 public:
-	ExecutableFilter( GNet::ExceptionSink , GStore::FileStore & , bool server_side ,
+	ExecutableFilter( GNet::ExceptionSink , GStore::FileStore & , Filter::Type ,
 		const std::string & path , unsigned int timeout , const std::string & log_prefix ) ;
 			///< Constructor.
 
@@ -55,7 +55,7 @@ private: // overrides
 	G::Slot::Signal<int> & doneSignal() override ; // Override from from GSmtp::Filter.
 	void start( const GStore::MessageId & ) override ; // Override from from GSmtp::Filter.
 	void cancel() override ; // Override from from GSmtp::Filter.
-	bool abandoned() const override ; // Override from from GSmtp::Filter.
+	Result result() const override ; // Override from from GSmtp::Filter.
 	std::string response() const override ; // Override from from GSmtp::Filter.
 	std::string reason() const override ; // Override from from GSmtp::Filter.
 	bool special() const override ; // Override from from GSmtp::Filter.
@@ -74,7 +74,7 @@ private:
 private:
 	GStore::FileStore & m_file_store ;
 	G::Slot::Signal<int> m_done_signal ;
-	bool m_server_side ;
+	Filter::Type m_filter_type ;
 	std::string m_prefix ;
 	Exit m_exit ;
 	G::Path m_path ;

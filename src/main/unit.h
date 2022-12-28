@@ -53,6 +53,9 @@ public:
 	unsigned int id() const ;
 		///< Returns the unit id.
 
+	std::string name( const std::string & default_ = {} ) const ;
+		///< Returns the unit name, or the empty string if the default unit.
+
 	void start() ;
 		///< Starts things off.
 
@@ -91,6 +94,9 @@ public:
 		///< "resolving" "connected", "sending", "sent", "forward start"
 		///< and "forward end". See also Main::WinForm.
 
+	std::string domain() const ;
+		///< Returns the configured domain.
+
 public:
 	Unit( const Unit & ) = delete ;
 	Unit( Unit && ) = delete ;
@@ -120,6 +126,7 @@ private:
 	Configuration m_configuration ;
 	std::string m_version_number ;
 	unsigned int m_unit_id ;
+	std::string m_domain ;
 	bool m_serving {false} ;
 	bool m_forwarding {false} ;
 	int m_resolver_family {AF_UNSPEC} ;

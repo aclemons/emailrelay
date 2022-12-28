@@ -26,6 +26,7 @@
 #include "filterfactory.h"
 #include "verifierfactory.h"
 #include "gmessagestore.h"
+#include "gtest.h"
 #include "gpop.h"
 #include "gaddress.h"
 #include "gprocess.h"
@@ -37,6 +38,7 @@
 #include <utility>
 #include <algorithm>
 #include <iterator>
+#include <iostream>
 
 unsigned int Main::Configuration::_adminPort() const { return numberValue( "admin" , 0U ) ; }
 std::pair<int,int> Main::Configuration::_adminServerSocketLinger() const { return std::make_pair( -1 , -1 ) ; }
@@ -107,13 +109,24 @@ std::string Main::Configuration::user() const { return stringValue( "user" , "da
 
 // ==
 
-Main::Configuration::Configuration( const G::OptionMap & map ,
+Main::Configuration::Configuration( const G::OptionMap & map , const std::string & name ,
 	const G::Path & app_dir , const G::Path & base_dir ) :
 		m_map(map) ,
+		m_name(name) ,
 		m_app_dir(app_dir) ,
 		m_base_dir(base_dir)
 {
 	G_ASSERT( m_base_dir.isAbsolute() ) ;
+	if( G::Test::enabled("configuration-dump") )
+	{
+		for( auto p : map )
+			std::cout << "config: [" << name << "] " << p.first << "=[" << p.second.value() << "]\n" ;
+	}
+}
+
+std::string Main::Configuration::name() const
+{
+	return m_name ;
 }
 
 bool Main::Configuration::contains( const char * key ) const
@@ -670,7 +683,7 @@ GStore::FileStore::Config Main::Configuration::fileStoreConfig() const
 }
 
 GSmtp::ServerProtocol::Config Main::Configuration::_smtpServerProtocolConfig( bool server_secrets_valid ,
-	const std::string & domain ) const
+	const std::string & domain_in ) const
 {
 	Switches smtp_server_switches( stringValue("server-smtp-config") ) ;
 	return
@@ -681,7 +694,7 @@ GSmtp::ServerProtocol::Config Main::Configuration::_smtpServerProtocolConfig( bo
 			.set_mail_requires_authentication( server_secrets_valid )
 			.set_mail_requires_encryption( _serverTlsRequired() )
 			.set_sasl_server_config( _smtpSaslServerConfig() )
-			.set_sasl_server_challenge_hostname( domain )
+			.set_sasl_server_challenge_hostname( domain_in )
 			.set_tls_starttls( serverTls() )
 			.set_tls_connection( serverTlsConnection() )
 			.set_with_pipelining( smtp_server_switches("pipelining"_sv,true) )
@@ -712,7 +725,7 @@ GNet::StreamSocket::Config Main::Configuration::_netSocketConfig( std::pair<int,
 
 GSmtp::Server::Config Main::Configuration::smtpServerConfig( const std::string & smtp_ident ,
 	bool server_secrets_valid , const std::string & server_tls_profile ,
-	std::function<std::string()> default_domain_fn ) const
+	const std::string & domain_in ) const
 {
 	return
 		GSmtp::Server::Config()
@@ -731,14 +744,14 @@ GSmtp::Server::Config Main::Configuration::smtpServerConfig( const std::string &
 					.set_socket_protocol_config( _socketProtocolConfig(server_tls_profile) )
 					.set_idle_timeout( _idleTimeout() ) )
 			.set_net_server_config( _netServerConfig(_smtpServerSocketLinger()) )
-			.set_protocol_config( _smtpServerProtocolConfig(server_secrets_valid,domain(default_domain_fn)) )
+			.set_protocol_config( _smtpServerProtocolConfig(server_secrets_valid,domain_in) )
 			.set_dnsbl_config( dnsbl() )
 			.set_buffer_config( GSmtp::ServerBufferIn::Config() )
-			.set_domain( domain(default_domain_fn) ) ;
+			.set_domain( domain_in ) ;
 }
 
 GPop::Server::Config Main::Configuration::popServerConfig( const std::string & server_tls_profile ,
-	std::function<std::string()> default_domain_fn ) const
+	const std::string & domain_in ) const
 {
 	return
 		GPop::Server::Config()
@@ -751,7 +764,7 @@ GPop::Server::Config Main::Configuration::popServerConfig( const std::string & s
 					.set_idle_timeout( _idleTimeout() ) )
 			.set_net_server_config( _netServerConfig(_popServerSocketLinger()) )
 			.set_sasl_server_config( _popSaslServerConfig() )
-			.set_sasl_server_challenge_domain( domain(default_domain_fn) ) ;
+			.set_sasl_server_challenge_domain( domain_in ) ;
 }
 
 GSmtp::Client::Config Main::Configuration::smtpClientConfig( const std::string & client_tls_profile ) const

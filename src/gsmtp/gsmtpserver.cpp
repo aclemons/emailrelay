@@ -203,9 +203,9 @@ G::Slot::Signal<const std::string&,const std::string&> & GSmtp::Server::eventSig
 	return m_event_signal ;
 }
 
-void GSmtp::Server::report() const
+void GSmtp::Server::report( const std::string & group ) const
 {
-	serverReport() ; // base class
+	serverReport( group ) ; // base class
 }
 
 std::unique_ptr<GNet::ServerPeer> GSmtp::Server::newPeer( GNet::ExceptionSinkUnbound esu ,
@@ -247,7 +247,7 @@ std::unique_ptr<GSmtp::ServerProtocol::Text> GSmtp::Server::newProtocolText( boo
 
 std::unique_ptr<GSmtp::Filter> GSmtp::Server::newFilter( GNet::ExceptionSink es ) const
 {
-	return m_ff.newFilter( es , true , m_server_config.filter_spec , m_server_config.filter_timeout , {} ) ;
+	return m_ff.newFilter( es , Filter::Type::server , m_server_config.filter_spec , m_server_config.filter_timeout , {} ) ;
 }
 
 std::unique_ptr<GSmtp::ProtocolMessage> GSmtp::Server::newProtocolMessageStore( std::unique_ptr<Filter> filter )

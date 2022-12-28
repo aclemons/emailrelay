@@ -57,7 +57,7 @@ public:
 		bool temporary = false ,
 		const std::string & response = {} ,
 		const std::string & reason = {} ) ;
-			///< Factory for an invalid address.
+			///< Factory function for an invalid address.
 
 	static VerifierStatus remote( const std::string & recipient ,
 		const std::string & address = {} ) ;

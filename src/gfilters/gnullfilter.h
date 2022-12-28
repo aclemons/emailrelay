@@ -36,10 +36,10 @@ namespace GFilters
 class GFilters::NullFilter : public GSmtp::Filter
 {
 public:
-	NullFilter( GNet::ExceptionSink , bool server_side ) ;
+	NullFilter( GNet::ExceptionSink , Filter::Type ) ;
 		///< Constructor.
 
-	NullFilter( GNet::ExceptionSink , bool server_side , unsigned int exit_code ) ;
+	NullFilter( GNet::ExceptionSink , Filter::Type , unsigned int exit_code ) ;
 		///< Constructor for a processor that behaves like an
 		///< executable that always exits with the given
 		///< exit code.
@@ -50,7 +50,7 @@ private: // overrides
 	G::Slot::Signal<int> & doneSignal() override ; // GSmtp::Filter
 	void start( const GStore::MessageId & ) override ; // GSmtp::Filter
 	void cancel() override ; // GSmtp::Filter
-	bool abandoned() const override ; // GSmtp::Filter
+	Result result() const override ; // GSmtp::Filter
 	std::string response() const override ; // GSmtp::Filter
 	std::string reason() const override ; // GSmtp::Filter
 	bool special() const override ; // GSmtp::Filter

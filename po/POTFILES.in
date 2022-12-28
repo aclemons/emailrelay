@@ -190,4 +190,5 @@
 ./src/gfilters/gexecutablefilter.cpp
 ./src/gfilters/gspamfilter.cpp
 ./src/gfilters/gfilterchain.cpp
+./src/gfilters/gcopyfilter.cpp
 ./src/gfilters/gfilterfactory.cpp

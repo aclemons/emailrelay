@@ -137,6 +137,11 @@ Main::Unit::Unit( Run & run , unsigned int unit_id , const std::string & version
 	if( do_pop )
 		m_pop_secrets = GPop::newSecrets( m_configuration.popSecretsFile().str() ) ;
 
+	// prepare the domain (lazy wrt Run::defaultDomain())
+	//
+	if( do_smtp || do_pop )
+		m_domain = m_configuration.domain( std::bind(&Run::defaultDomain,&m_run) ) ;
+
 	// create the smtp server
 	//
 	if( do_smtp )
@@ -155,7 +160,7 @@ Main::Unit::Unit( Run & run , unsigned int unit_id , const std::string & version
 			*m_verifier_factory ,
 			*m_client_secrets ,
 			*m_server_secrets ,
-			m_configuration.smtpServerConfig( ident() , m_server_secrets->valid() , serverTlsProfile() , std::bind(&Run::defaultDomain,&run) ) ,
+			m_configuration.smtpServerConfig( ident() , m_server_secrets->valid() , serverTlsProfile() , m_domain ) ,
 			m_configuration.immediate() ? m_configuration.serverAddress() : std::string() ,
 			m_resolver_family ,
 			m_configuration.smtpClientConfig( clientTlsProfile() ) ) ;
@@ -173,7 +178,7 @@ Main::Unit::Unit( Run & run , unsigned int unit_id , const std::string & version
 			GNet::ExceptionSink() ,
 			*m_pop_store ,
 			*m_pop_secrets ,
-			m_configuration.popServerConfig( serverTlsProfile() , std::bind(&Run::defaultDomain,&run) ) ) ;
+			m_configuration.popServerConfig( serverTlsProfile() , m_domain ) ) ;
 	}
 
 	// create the admin server
@@ -207,6 +212,11 @@ Main::Unit::Unit( Run & run , unsigned int unit_id , const std::string & version
 unsigned int Main::Unit::id() const
 {
 	return m_unit_id ;
+}
+
+std::string Main::Unit::name( const std::string & default_ ) const
+{
+	return m_configuration.name().empty() ? default_ : m_configuration.name() ;
 }
 
 void Main::Unit::onClientEvent( const std::string & p1 , const std::string & p2 , const std::string & p3 )
@@ -346,9 +356,9 @@ bool Main::Unit::nothingToSend() const
 void Main::Unit::start()
 {
 	// report stuff
-	if( m_smtp_server ) m_smtp_server->report() ;
-	if( m_admin_server ) m_admin_server->report() ;
-	if( m_pop_server ) GPop::report( m_pop_server.get() ) ;
+	if( m_smtp_server ) m_smtp_server->report( name() ) ;
+	if( m_admin_server ) m_admin_server->report( name() ) ;
+	if( m_pop_server ) GPop::report( m_pop_server.get() , name() ) ;
 
 	// kick off some forwarding
 	//
@@ -439,3 +449,9 @@ std::string Main::Unit::ident() const
 {
 	return std::string("E-MailRelay V").append(m_version_number) ;
 }
+
+std::string Main::Unit::domain() const
+{
+	return m_domain ;
+}
+

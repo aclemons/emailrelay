@@ -92,7 +92,7 @@ G::Path GStore::StoredFile::epath( State state ) const
 
 GStore::MessageStore::BodyType GStore::StoredFile::bodyType() const
 {
-	return m_env.m_body_type ;
+	return m_env.body_type ;
 }
 
 void GStore::StoredFile::close()
@@ -135,7 +135,7 @@ void GStore::StoredFile::readEnvelopeCore( bool check_recipients )
 
 	GStore::Envelope::read( stream , m_env ) ;
 
-	if( check_recipients && m_env.m_to_remote.empty() )
+	if( check_recipients && m_env.to_remote.empty() )
 		throw FormatError( "no recipients" ) ;
 
 	if( ! stream.good() )
@@ -173,7 +173,7 @@ const std::string & GStore::StoredFile::eol() const
 {
 	static const std::string crlf( "\r\n" ) ;
 	static const std::string lf( "\n" ) ;
-	return m_env.m_crlf ? crlf : lf ;
+	return m_env.crlf ? crlf : lf ;
 }
 
 bool GStore::StoredFile::lock()
@@ -199,7 +199,7 @@ void GStore::StoredFile::edit( const G::StringArray & rejectees )
 	G_ASSERT( !rejectees.empty() ) ;
 
 	GStore::Envelope env_copy( m_env ) ;
-	env_copy.m_to_remote = rejectees ;
+	env_copy.to_remote = rejectees ;
 
 	const G::Path path_in = epath( m_state ) ;
 	const G::Path path_out = epath(m_state).str().append(".tmp") ;
@@ -231,11 +231,11 @@ void GStore::StoredFile::edit( const G::StringArray & rejectees )
 	// re-read the existing file's endpos, just in case
 	GStore::Envelope env_check ;
 	GStore::Envelope::read( in , env_check ) ;
-	if( env_check.m_endpos != m_env.m_endpos )
+	if( env_check.endpos != m_env.endpos )
 		G_WARNING( "GStore::StoredFile::edit: unexpected change to envelope file detected: " << path_in ) ;
 
 	// copy the existing file's tail to the new file
-	in.seekg( env_check.m_endpos ) ; // NOLINT narrowing
+	in.seekg( env_check.endpos ) ; // NOLINT narrowing
 	if( !in.good() )
 		throw EditError( path_in.basename() ) ;
 	GStore::Envelope::copy( in , out ) ;
@@ -257,9 +257,9 @@ void GStore::StoredFile::edit( const G::StringArray & rejectees )
 		throw EditError( "renaming" , path_in.basename() , G::Process::strerror(e) ) ;
 	file_deleter.release() ;
 
-	m_env.m_crlf = true ;
-	m_env.m_endpos = endpos ;
-	m_env.m_to_remote = rejectees ;
+	m_env.crlf = true ;
+	m_env.endpos = endpos ;
+	m_env.to_remote = rejectees ;
 }
 
 void GStore::StoredFile::fail( const std::string & reason , int reason_code )
@@ -350,17 +350,17 @@ void GStore::StoredFile::destroy()
 
 std::string GStore::StoredFile::from() const
 {
-	return m_env.m_from ;
+	return m_env.from ;
 }
 
 std::string GStore::StoredFile::to( std::size_t i ) const
 {
-	return i < m_env.m_to_remote.size() ? m_env.m_to_remote[i] : std::string() ;
+	return i < m_env.to_remote.empty() ? std::string() : m_env.to_remote[i] ;
 }
 
 std::size_t GStore::StoredFile::toCount() const
 {
-	return m_env.m_to_remote.size() ;
+	return m_env.to_remote.size() ;
 }
 
 std::size_t GStore::StoredFile::contentSize() const
@@ -380,32 +380,32 @@ std::istream & GStore::StoredFile::contentStream()
 
 std::string GStore::StoredFile::authentication() const
 {
-	return m_env.m_authentication ;
+	return m_env.authentication ;
 }
 
 std::string GStore::StoredFile::fromAuthIn() const
 {
-	return m_env.m_from_auth_in ;
+	return m_env.from_auth_in ;
 }
 
 std::string GStore::StoredFile::forwardTo() const
 {
-	return m_env.m_forward_to ;
+	return m_env.forward_to ;
 }
 
 std::string GStore::StoredFile::forwardToAddress() const
 {
-	return m_env.m_forward_to_address ;
+	return m_env.forward_to_address ;
 }
 
 bool GStore::StoredFile::utf8Mailboxes() const
 {
-	return m_env.m_utf8_mailboxes ;
+	return m_env.utf8_mailboxes ;
 }
 
 std::string GStore::StoredFile::fromAuthOut() const
 {
-	return m_env.m_from_auth_out ;
+	return m_env.from_auth_out ;
 }
 
 // ==

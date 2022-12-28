@@ -93,7 +93,7 @@ protected:
 		///< so that peer objects can use their Server objects
 		///< safely during their own destruction.
 
-	void serverReport() const ;
+	void serverReport( const std::string & group = {} ) const ;
 		///< Writes to the system log a summary of the underlying server
 		///< objects and their addresses.
 

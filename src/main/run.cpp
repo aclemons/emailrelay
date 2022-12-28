@@ -77,7 +77,16 @@ Main::Run::Run( Main::Output & output , const G::Arg & arg , bool has_gui ) :
 }
 
 Main::Run::~Run()
-= default ;
+{
+	if( m_monitor )
+		m_monitor->signal().disconnect() ;
+	for( auto & unit_ptr : m_units )
+	{
+		G_ASSERT( unit_ptr.get() != nullptr ) ;
+		unit_ptr->clientDoneSignal().disconnect() ;
+		unit_ptr->clientEventSignal().disconnect() ;
+	}
+}
 
 void Main::Run::configure( const G::Options & options_spec )
 {
@@ -94,7 +103,10 @@ void Main::Run::configure( const G::Options & options_spec )
 	// several active 'units' running in parallel
 	//
 	for( std::size_t i = 0U ; i < m_commandline->configurations() ; i++ )
-		m_configurations.emplace_back( m_commandline->options(i) , appDir() , cwd ) ;
+	{
+		m_configurations.emplace_back( m_commandline->configurationOptionMap(i) ,
+			m_commandline->configurationName(i) , appDir() , cwd ) ;
+	}
 }
 
 const Main::Configuration & Main::Run::configuration( std::size_t i ) const
@@ -115,7 +127,7 @@ std::size_t Main::Run::configurations() const
 
 bool Main::Run::runnable()
 {
-	if( commandline().options(0U).contains("help") )
+	if( commandline()[0].contains("help") )
 	{
 		commandline().showHelp( false ) ;
 		return true ;
@@ -125,7 +137,7 @@ bool Main::Run::runnable()
 		commandline().showUsageErrors( true ) ;
 		return false ;
 	}
-	else if( commandline().options(0U).contains("version") )
+	else if( commandline()[0].contains("version") )
 	{
 		commandline().showVersion( false ) ;
 		return true ;
@@ -156,9 +168,9 @@ bool Main::Run::runnable()
 		}
 	}
 
-	if( commandline().options(0U).contains("test") )
+	if( commandline()[0].contains("test") )
 	{
-		G::Test::set( commandline().options(0U).value("test") ) ;
+		G::Test::set( commandline()[0].value("test") ) ;
 	}
 
 	return true ;
@@ -168,7 +180,7 @@ void Main::Run::run()
 {
 	// optionally show help and quit
 	//
-	if( commandline().options(0U).contains("help") || commandline().options(0U).contains("version") )
+	if( commandline()[0].contains("help") || commandline()[0].contains("version") )
 		return ;
 
 	// tighten the umask

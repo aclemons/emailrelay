@@ -56,7 +56,7 @@ private: // overrides
 	G::Slot::Signal<int> & doneSignal() override ; // Override from from GSmtp::Filter.
 	void start( const GStore::MessageId & ) override ; // Override from from GSmtp::Filter.
 	void cancel() override ; // Override from from GSmtp::Filter.
-	bool abandoned() const override ; // Override from from GSmtp::Filter.
+	Result result() const override ; // Override from from GSmtp::Filter.
 	std::string response() const override ; // Override from from GSmtp::Filter.
 	std::string reason() const override ; // Override from from GSmtp::Filter.
 	bool special() const override ; // Override from from GSmtp::Filter.
@@ -83,6 +83,7 @@ private:
 	unsigned int m_response_timeout ;
 	GNet::ClientPtr<GSmtp::SpamClient> m_client_ptr ;
 	std::string m_text ;
+	Result m_result ;
 } ;
 
 #endif

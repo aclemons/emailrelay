@@ -506,6 +506,13 @@
     </p>
 
     <p>
+     Additional configuration files can be used to effectively run multiple
+     E-MailRelay processes in one. Alternatively, the same effect can be obtained by
+     extending the long options with arbitrary names, for example <em>--spool-dir-in</em>
+     and <em>--spool-dir-out</em>, and then <em>--port-in</em> and <em>--port-out</em> etc.
+    </p>
+
+    <p>
      All command-line options that specify a filename can use a special <em>@app</em>
      substitution variable that is interpreted as the directory that contains
      the <em>emailrelay</em> executable or MacOS application bundle.
@@ -1403,7 +1410,17 @@ catch( e )
      information as returned by verifier scripts but in reverse, such as
      <em>0|postmaster|Local Postmaster <postmaster@eg.com></em> or <em>2|mailbox unavailable</em>.
     </p>
-   <h2><a class="a-header" name="SH_1_12">Connection blocking</a></h2> <!-- index:2:SH:1:12:Connection blocking -->
+   <h2><a class="a-header" name="SH_1_12">SMTP extensions</a></h2> <!-- index:2:SH:1:12:SMTP extensions -->
+    <p>
+     Some standard extensions of the SMTP protocol can be enabled by using the
+     <em>--server-smtp-config</em> and <em>--client-smtp-config</em> command-line options.
+     These include the CHUNKING and SMTPUTF8 extensions defined in RFC-3030 and
+     RFC-6531 respectively. However, these extensions should only be enabled if the
+     next hop SMTP server that you are forwarding to also supports them, otherwise
+     there is a risk that any mail messages that require those extensions will fail
+     to be forwarded.
+    </p>
+   <h2><a class="a-header" name="SH_1_13">Connection blocking</a></h2> <!-- index:2:SH:1:13:Connection blocking -->
     <p>
      All incoming connections from remote network addresses are blocked by default,
      but can be allowed by using the <em>--remote-clients</em>/<em>-r</em> option. This is to
@@ -1443,7 +1460,7 @@ catch( e )
      Connections from loopback and private (RFC-1918) network addresses are never
      checked.
     </p>
-   <h2><a class="a-header" name="SH_1_13">Security issues</a></h2> <!-- index:2:SH:1:13:Security issues -->
+   <h2><a class="a-header" name="SH_1_14">Security issues</a></h2> <!-- index:2:SH:1:14:Security issues -->
     <p>
      The following are some security issues that have been taken into consideration:
     </p>
@@ -1523,7 +1540,7 @@ catch( e )
      The <em>Authentication</em>, <em>PAM Authentication</em> and <em>TLS encryption</em> sections
      above also relate to security.
     </p>
-   <h2><a class="a-header" name="SH_1_14">Administration interface</a></h2> <!-- index:2:SH:1:14:Administration interface -->
+   <h2><a class="a-header" name="SH_1_15">Administration interface</a></h2> <!-- index:2:SH:1:15:Administration interface -->
     <p>
      If enabled with the <em>--admin</em> command-line option, the E-MailRelay server will
      provide a network interface for performing administration tasks. This is a
@@ -1557,7 +1574,7 @@ E-MailRelay&gt; quit
      network status information and activity statistics, and <em>notify</em> enables
      asynchronous event notification.
     </p>
-   <h2><a class="a-header" name="SH_1_15">Bcc handling</a></h2> <!-- index:2:SH:1:15:Bcc handling -->
+   <h2><a class="a-header" name="SH_1_16">Bcc handling</a></h2> <!-- index:2:SH:1:16:Bcc handling -->
     <p>
      E-MailRelay transfers e-mail messages without changing their content in any
      way, other than by adding a <em>Received</em> header. In particular, if a message
@@ -1578,7 +1595,7 @@ E-MailRelay&gt; quit
      An E-MailRelay <em>--filter</em> script can be used to reject messages with incorrect
      <em>Bcc:</em> headers, and an example script is included.
     </p>
-   <h2><a class="a-header" name="SH_1_16">Files and directories</a></h2> <!-- index:2:SH:1:16:Files and directories -->
+   <h2><a class="a-header" name="SH_1_17">Files and directories</a></h2> <!-- index:2:SH:1:17:Files and directories -->
     <p>
      On Unix-like systems E-MailRelay installs by default under <em>/usr/local</em>, but
      binary distributions will probably have been built to install elsewhere.

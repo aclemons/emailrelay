@@ -110,7 +110,7 @@ public:
 	~Server() override ;
 		///< Destructor.
 
-	void report() const ;
+	void report( const std::string & group = {} ) const ;
 		///< Generates helpful diagnostics after construction.
 
 	constexpr static bool enabled() ;

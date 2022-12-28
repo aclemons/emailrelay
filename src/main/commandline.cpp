@@ -81,23 +81,24 @@ Main::CommandLine::CommandLine( Output & output , const G::Arg & args_in ,
 		m_arg_prefix(args_in.prefix())
 {
 	// look for special config names
-	G::StringArray special_names ;
+	G::StringArray config_names ; // with "-"
 	{
 		for( std::size_t i = 1U ; i < args_in.c() ; i++ )
 		{
 			std::string arg = args_in.v( i ) ;
 			if( G::Str::headMatch(arg,"--spool-dir-") )
-				special_names.push_back( G::Str::head(arg.substr(12U),"=",false) ) ;
+				config_names.push_back( G::Str::head(arg.substr(11U),"=",false) ) ; // eg. "-in"
 		}
 	}
-	if( !special_names.empty() )
+	if( !config_names.empty() )
 	{
-		for( std::size_t i = 0U ; i < special_names.size() ; i++ )
+		for( std::size_t i = 0U ; i < config_names.size() ; i++ )
 		{
 			m_option_maps.emplace_back() ;
+			m_config_names.push_back( config_names.at(i).substr(1U) ) ;
 			G::OptionParser parser( options_spec , m_option_maps.back() , &m_errors ) ;
 			G::StringArray args = parser.parse( args_in.array() , 1U , 0U ,
-				[&special_names,i]( const std::string & name_ ){ return onParse(special_names,i,name_) ; } ) ;
+				[&config_names,i]( const std::string & name_ ){ return onParse(config_names,i,name_) ; } ) ;
 			if( !args.empty() && m_errors.empty() )
 				m_errors.push_back( "config files cannot be used with a multi-dimensional command-line" ) ;
 		}
@@ -107,13 +108,14 @@ Main::CommandLine::CommandLine( Output & output , const G::Arg & args_in ,
 	{
 		// normal command-line parsing
 		m_option_maps.emplace_back() ;
+		m_config_names.push_back( "" ) ;
 		G::OptionParser parser0( options_spec , m_option_maps.back() , &m_errors ) ;
 		G::StringArray args = parser0.parse( args_in.array() ) ;
 		m_verbose = m_option_maps.back().contains( "verbose" ) ;
 
 		// any non-option arguments are treated as config files - each
 		// config file after the first creates a new configuration
-		if( m_errors.empty() )
+		if( m_errors.empty() && !args.empty() )
 		{
 			std::string app_dir = G::Path(G::Process::exe()).dirname().str() ;
 			for( std::size_t i = 0U ; i < args.size() ; i++ )
@@ -122,7 +124,12 @@ Main::CommandLine::CommandLine( Output & output , const G::Arg & args_in ,
 				if( config_file.find("@app") == 0U && !app_dir.empty() )
 					G::Str::replace( config_file , "@app" , app_dir ) ;
 
-				if( i != 0U ) m_option_maps.push_back( G::OptionMap() ) ;
+				if( i != 0U )
+				{
+					m_option_maps.push_back( G::OptionMap() ) ;
+					m_config_names.emplace_back() ;
+				}
+				m_config_names.back() = G::Path(config_file).withoutExtension().basename() ;
 				G::OptionParser parser( options_spec , m_option_maps.back() , &m_errors ) ;
 				parser.parse( G::OptionReader::read(config_file) , 0U ) ;
 			}
@@ -133,29 +140,30 @@ Main::CommandLine::CommandLine( Output & output , const G::Arg & args_in ,
 Main::CommandLine::~CommandLine()
 = default ;
 
-std::string Main::CommandLine::onParse( const G::StringArray & special_names , std::size_t i , const std::string & name )
+std::string Main::CommandLine::onParse( const G::StringArray & config_names , std::size_t i , const std::string & parser_name )
 {
-	// we want names like "port-in" where "in" is the current (i'th) special-name to be
-	// parsed as if "port", but we want to ignore "port-out" where "out" is some
-	// other (non-i'th) special name
+	// we want parser names like "port-in" (where "-in" is the current (i'th) config-name)
+	// to be parsed as if "port", but we want to ignore "port-out" where "-out" is
+	// some other (non-i'th) config name -- also plain "port" should be discarded if
+	// not the zero'th name
 
-	std::string _special = std::string(1U,'-').append(special_names.at(i)) ; // "-in"
-	std::string result = name ;
-	if( G::Str::tailMatch( name , _special ) )
+	std::string result = parser_name ;
+	if( G::Str::tailMatch( parser_name , config_names.at(i) ) ) // "port-in" and "-in"
 	{
-		result = name.substr( 0U , name.size()-_special.size() ) ; // "port"
+		result = parser_name.substr( 0U , parser_name.size()-config_names[i].size() ) ; // "port"
 	}
 	else
 	{
-		for( const auto & special : special_names )
+		for( const auto & config_name : config_names )
 		{
-			_special = std::string(1U,'-').append(special) ; // "-out"
-			if( G::Str::tailMatch( name , _special ) ) // "port-out"
+			const char discard = '-' ; // see OptionParser::parse()
+			if( G::Str::tailMatch( parser_name , config_name ) ) // "port-out" and "-out"
 			{
-				char discard = '-' ; // see OptionParser::parse()
-				result = std::string(1U,discard).append( name.substr(0U,name.size()-_special.size()) ) ; // "-port"
+				result = std::string(1U,discard).append(parser_name.substr(0U,parser_name.size()-config_name.size())) ; // "-port"
 				break ;
 			}
+			if( i != 0U )
+				result = std::string(1U,discard).append(parser_name) ;
 		}
 	}
 	return result ;
@@ -166,9 +174,14 @@ std::size_t Main::CommandLine::configurations() const
 	return m_option_maps.size() ;
 }
 
-const G::OptionMap & Main::CommandLine::options( std::size_t i ) const
+const G::OptionMap & Main::CommandLine::configurationOptionMap( std::size_t i ) const
 {
 	return m_option_maps.at( i ) ;
+}
+
+std::string Main::CommandLine::configurationName( std::size_t i ) const
+{
+	return m_config_names.at( i ) ;
 }
 
 bool Main::CommandLine::argcError() const

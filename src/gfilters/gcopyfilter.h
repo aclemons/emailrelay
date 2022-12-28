@@ -15,35 +15,37 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
-/// \file demofilter.h
+/// \file gcopyfilter.h
 ///
 
-#ifndef MAIN_DEMO_FILTER_H
-#define MAIN_DEMO_FILTER_H
+#ifndef G_COPY_FILTER_H
+#define G_COPY_FILTER_H
 
 #include "gdef.h"
 #include "gfilter.h"
 #include "gfilestore.h"
 #include "gexceptionsink.h"
+#include "gstringarray.h"
 #include "gtimer.h"
-#include "run.h"
 
-namespace Main
+namespace GFilters
 {
-	class DemoFilter ;
+	class CopyFilter ;
 }
 
-//| \class Main::DemoFilter
-/// A concrete GSmtp::Filter class that does nothing useful.
+//| \class GFilters::CopyFilter
+/// A concrete GSmtp::Filter class that copies the envelope file into
+/// all sub-directories of the spool directory and then deletes the
+/// original. (This is useful for distributing to multiple POP clients.)
 ///
-class Main::DemoFilter : public GSmtp::Filter
+class GFilters::CopyFilter : public GSmtp::Filter
 {
 public:
-	DemoFilter( GNet::ExceptionSink es , Main::Run & , unsigned int unit_id ,
-		GStore::FileStore & , const std::string & spec , Filter::Type ) ;
+	CopyFilter( GNet::ExceptionSink es , GStore::FileStore & ,
+		Filter::Type , const std::string & spec ) ;
 			///< Constructor.
 
-	~DemoFilter() override ;
+	~CopyFilter() override ;
 		///< Destructor.
 
 private: // overrided
@@ -61,13 +63,13 @@ private:
 	void onTimeout() ;
 
 private:
-	Main::Run & m_run ;
-	unsigned int m_unit_id ;
 	GStore::FileStore & m_store ;
+	Filter::Type m_filter_type ;
 	std::string m_spec ;
-	GSmtp::Filter::Type m_filter_type ;
-	GNet::Timer<DemoFilter> m_timer ;
+	GNet::Timer<CopyFilter> m_timer ;
 	G::Slot::Signal<int> m_done_signal ;
+	std::size_t m_copies ;
+	G::StringArray m_failures ;
 	Result m_result ;
 } ;
 

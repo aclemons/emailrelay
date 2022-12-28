@@ -227,11 +227,14 @@ std::string GNet::MultiServer::displayString( const Address & address )
 	return address.displayString( true ) ;
 }
 
-void GNet::MultiServer::serverReport() const
+void GNet::MultiServer::serverReport( const std::string & group ) const
 {
 	for( const auto & server : m_server_list )
 	{
-		G_LOG_S( "GNet::MultiServer: " << m_server_type << " server on " << displayString(server->address()) ) ;
+		G_ASSERT( server.get() != nullptr ) ;
+		if( !server ) continue ;
+		G_LOG_S( "GNet::MultiServer: " << (group.empty()?"":"[") << group << (group.empty()?"":"] ")
+			<< m_server_type << " server on " << displayString(server->address()) ) ;
 	}
 }
 
@@ -245,6 +248,8 @@ bool GNet::MultiServer::hasPeers() const
 {
 	for( const auto & server : m_server_list )
 	{
+		G_ASSERT( server.get() != nullptr ) ;
+		if( !server ) continue ;
 		if( server->hasPeers() )
 			return true ;
 	}
@@ -257,6 +262,8 @@ std::vector<std::weak_ptr<GNet::ServerPeer>> GNet::MultiServer::peers()
 	List result ;
 	for( auto & server : m_server_list )
 	{
+		G_ASSERT( server.get() != nullptr ) ;
+		if( !server ) continue ;
 		List list = server->peers() ;
 		result.insert( result.end() , list.begin() , list.end() ) ;
 	}

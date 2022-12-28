@@ -71,12 +71,20 @@ G::StringArray G::OptionParser::parse( const StringArray & args_in , std::size_t
 		if( isAnOptionSet(arg) ) // eg. "-ltv"
 		{
 			for( std::size_t n = 1U ; n < arg.length() ; n++ )
-				processOptionOn( arg.at(n) ) ;
+			{
+				char c = arg.at( n ) ;
+				bool discard = callback_fn ? callback_fn(m_spec.lookup(c)).substr(0,1) == "-" : false ;
+				if( !discard )
+					processOptionOn( c ) ;
+			}
 		}
 		else if( isOldOption(arg) ) // eg. "-v"
 		{
 			char c = arg.at(1U) ;
-			if( m_spec.valued(c) && (i+1U) >= args_in.size() )
+			bool discard = callback_fn ? callback_fn(m_spec.lookup(c)).substr(0,1) == "-" : false ;
+			if( discard )
+				i += ( m_spec.valued(c) ? 1U : 0U ) ;
+			else if( m_spec.valued(c) && (i+1U) >= args_in.size() )
 				errorNoValue( c ) ;
 			else if( m_spec.valued(c) )
 				processOption( c , args_in.at(++i) ) ;

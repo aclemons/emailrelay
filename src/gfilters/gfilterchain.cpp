@@ -27,7 +27,7 @@
 #include <algorithm>
 
 GFilters::FilterChain::FilterChain( GNet::ExceptionSink es , GSmtp::FilterFactoryBase & ff ,
-	bool server_side , const GSmtp::FilterFactoryBase::Spec & spec , unsigned int timeout ,
+	Filter::Type filter_type , const GSmtp::FilterFactoryBase::Spec & spec , unsigned int timeout ,
 	const std::string & log_prefix ) :
 		m_filter_index(0U) ,
 		m_filter(nullptr) ,
@@ -40,18 +40,18 @@ GFilters::FilterChain::FilterChain( GNet::ExceptionSink es , GSmtp::FilterFactor
 	{
 		std::string first = G::Str::head( t() , ":"_sv , false ) ;
 		std::string second = G::Str::tail( t() , ":"_sv ) ;
-		add( es , ff , server_side , Spec(first,second) , timeout , log_prefix ) ;
+		add( es , ff , filter_type , Spec(first,second) , timeout , log_prefix ) ;
 	}
 
 	if( m_filters.empty() )
-		add( es , ff , server_side , {"exit","0"} , timeout , log_prefix ) ;
+		add( es , ff , filter_type , {"exit","0"} , timeout , log_prefix ) ;
 }
 
 void GFilters::FilterChain::add( GNet::ExceptionSink es , GSmtp::FilterFactoryBase & ff ,
-	bool server_side , const GSmtp::FilterFactoryBase::Spec & spec , unsigned int timeout ,
+	Filter::Type filter_type , const GSmtp::FilterFactoryBase::Spec & spec , unsigned int timeout ,
 	const std::string & log_prefix )
 {
-	m_filters.push_back( ff.newFilter( es , server_side , spec , timeout , log_prefix ) ) ;
+	m_filters.push_back( ff.newFilter( es , filter_type , spec , timeout , log_prefix ) ) ;
 	m_filter_id.append(m_filter_id.empty()?0U:1U,',').append( m_filters.back()->id() ) ;
 }
 
@@ -128,9 +128,9 @@ void GFilters::FilterChain::cancel()
 	m_running = false ;
 }
 
-bool GFilters::FilterChain::abandoned() const
+GSmtp::Filter::Result GFilters::FilterChain::result() const
 {
-	return m_filter->abandoned() ;
+	return m_filter->result() ;
 }
 
 std::string GFilters::FilterChain::response() const

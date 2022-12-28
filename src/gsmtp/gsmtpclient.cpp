@@ -42,8 +42,8 @@ GSmtp::Client::Client( GNet::ExceptionSink es , GStore::MessageStore & store ,
 		m_config(config) ,
 		m_secrets(secrets) ,
 		m_store(&store) ,
-		m_filter(ff.newFilter(es,false,config.filter_spec,config.filter_timeout,{})) ,
-		m_routing_filter(ff.newFilter(es,false,config.filter_spec,config.filter_timeout,"routing filter")) ,
+		m_filter(ff.newFilter(es,Filter::Type::client,config.filter_spec,config.filter_timeout,{})) ,
+		m_routing_filter(ff.newFilter(es,Filter::Type::routing,config.filter_spec,config.filter_timeout,"routing filter")) ,
 		m_protocol(es,*this,secrets,config.sasl_client_config,config.client_protocol_config,config.secure_tunnel) ,
 		m_message_count(0U)
 {
@@ -64,8 +64,8 @@ GSmtp::Client::Client( GNet::ExceptionSink es ,
 		m_config(config) ,
 		m_secrets(secrets) ,
 		m_store(nullptr) ,
-		m_filter(ff.newFilter(es,false,config.filter_spec,config.filter_timeout,{})) ,
-		m_routing_filter(ff.newFilter(es,false,config.filter_spec,config.filter_timeout,"routing filter")) ,
+		m_filter(ff.newFilter(es,Filter::Type::client,config.filter_spec,config.filter_timeout,{})) ,
+		m_routing_filter(ff.newFilter(es,Filter::Type::routing,config.filter_spec,config.filter_timeout,"routing filter")) ,
 		m_protocol(es,*this,secrets,config.sasl_client_config,config.client_protocol_config,config.secure_tunnel) ,
 		m_message_count(0U)
 {
@@ -227,10 +227,11 @@ void GSmtp::Client::filterStart()
 
 void GSmtp::Client::filterDone( int filter_result )
 {
+	G_ASSERT( static_cast<int>(m_filter->result()) == filter_result ) ;
+
 	const bool ok = filter_result == 0 ;
 	const bool abandon = filter_result == 1 ;
 	const bool stop_scanning = m_filter->special() ;
-	G_ASSERT( m_filter->reason().empty() == (ok || abandon) ) ;
 
 	if( stop_scanning )
 	{
@@ -241,7 +242,7 @@ void GSmtp::Client::filterDone( int filter_result )
 	std::string reopen_error ;
 	if( !m_filter->simple() )
 	{
-		G_LOG( "GSmtp::Client::filterDone: client filter done: " << m_filter->str(false) ) ;
+		G_LOG( "GSmtp::Client::filterDone: client filter done: " << m_filter->str(Filter::Type::client) ) ;
 		if( ok && !abandon )
 			reopen_error = message()->reopen() ;
 	}
@@ -249,19 +250,19 @@ void GSmtp::Client::filterDone( int filter_result )
 	// pass the event on to the client protocol
 	if( ok && reopen_error.empty() )
 	{
-		m_protocol.filterDone( true , std::string() , std::string() ) ;
+		m_protocol.filterDone( Filter::Result::ok , {} , {} ) ;
 	}
 	else if( abandon )
 	{
-		m_protocol.filterDone( false , std::string() , std::string() ) ; // protocolDone(-1)
+		m_protocol.filterDone( Filter::Result::abandon , {} , {} ) ; // protocolDone(-1)
 	}
 	else if( !reopen_error.empty() )
 	{
-		m_protocol.filterDone( false , "failed" , reopen_error ) ; // protocolDone(-2)
+		m_protocol.filterDone( Filter::Result::fail , "failed" , reopen_error ) ; // protocolDone(-2)
 	}
 	else
 	{
-		m_protocol.filterDone( false , m_filter->response() , m_filter->reason() ) ; // protocolDone(-2)
+		m_protocol.filterDone( Filter::Result::fail , m_filter->response() , m_filter->reason() ) ; // protocolDone(-2)
 	}
 }
 
@@ -380,15 +381,21 @@ void GSmtp::Client::onSendComplete()
 
 void GSmtp::Client::routingFilterDone( int filter_result )
 {
+	G_ASSERT( static_cast<int>(m_routing_filter->result()) == filter_result ) ;
 	G_ASSERT( m_config.with_routing ) ;
-	G_LOG( "GSmtp::Client::routingFilterDone: routing filter done: " << m_routing_filter->str(false) ) ;
-	std::string reopen_error = filter_result == 0 && !m_routing_filter->simple() ? message()->reopen() : std::string() ;
+	G_LOG( "GSmtp::Client::routingFilterDone: routing filter done: " << m_routing_filter->str(Filter::Type::client) ) ;
+
+	const bool ok = filter_result == 0 ;
+	const bool abandon = filter_result == 1 ;
+	const bool fail = filter_result == 2 ;
+	std::string reopen_error = ok && !m_routing_filter->simple() ? message()->reopen() : std::string() ;
+
 	bool move_on = false ;
-	if( filter_result == 1 ) // abandon
+	if( abandon )
 	{
 		move_on  = true ;
 	}
-	else if( filter_result == 2 ) // fail
+	else if( fail )
 	{
 		messageFail( 550 , "routing filter failed" ) ;
 		move_on = true ;
@@ -398,6 +405,7 @@ void GSmtp::Client::routingFilterDone( int filter_result )
 		messageFail( 550 , "routing filter error" ) ;
 		move_on = true ;
 	}
+
 	if( move_on )
 	{
 		G_ASSERT( m_store != nullptr ) ;

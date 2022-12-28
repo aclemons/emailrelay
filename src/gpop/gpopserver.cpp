@@ -97,10 +97,11 @@ GPop::Server::~Server()
 	serverCleanup() ; // base class early cleanup
 }
 
-void GPop::Server::report() const
+void GPop::Server::report( const std::string & group ) const
 {
-	serverReport() ; // base class implementation
-	G_LOG_S( "GPop::Server: pop authentication secrets from \"" << m_secrets.source() << "\"" ) ;
+	serverReport( group ) ; // base class implementation
+	G_LOG_S( "GPop::Server: " << (group.empty()?"":"[") << group << (group.empty()?"":"] ")
+		<< "pop server authentication secrets from \"" << m_secrets.source() << "\"" ) ;
 }
 
 std::unique_ptr<GNet::ServerPeer> GPop::Server::newPeer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo && peer_info , GNet::MultiServer::ServerInfo )

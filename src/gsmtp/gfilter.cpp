@@ -20,25 +20,39 @@
 
 #include "gdef.h"
 #include "gfilter.h"
+#include "gstringview.h"
 #include "gstr.h"
 
-std::string GSmtp::Filter::str( bool server_side ) const
+std::string GSmtp::Filter::str( Filter::Type type ) const
 {
-	std::string part1 = response().empty() ? "ok=1" : "ok=0" ;
-	std::string part2( abandoned() ? "abandon" : "" ) ;
-	std::string part3( special() ? (server_side?"rescan":"break") : "" ) ;
-
 	std::ostringstream ss ;
-	ss
-		<< G::Str::join( " " , part1 , part2 , part3 ) << " "
-		<< "response=[" << response() << "]" ;
+
+	auto r = result() ;
+	if( r == Result::fail )
+		ss << "failed " ;
+	else if( r == Result::abandon )
+		ss << "ok(abandon) " ;
+	else
+		ss << "ok " ;
+
+	if( special() )
+		ss << ( type == Filter::Type::server ? "rescan " : "break " ) ;
+
+	ss << "response=[" << response() << "]" ;
+
 	if( reason() != response() )
 		ss << " reason=[" << reason() << "]" ;
 
 	return ss.str() ;
 }
 
-GSmtp::Filter::Exit::Exit( int exit_code , bool server_side ) :
+G::string_view GSmtp::Filter::strtype( Filter::Type type ) noexcept
+{
+	return type == Type::server ? "filter"_sv :
+		( type == Type::client ? "client filter"_sv : "routing filter"_sv ) ;
+}
+
+GSmtp::Filter::Exit::Exit( int exit_code , Filter::Type type ) :
 	result(Result::fail) ,
 	special(false)
 {
@@ -58,6 +72,8 @@ GSmtp::Filter::Exit::Exit( int exit_code , bool server_side ) :
 	{
 		result = Result::ok ;
 	}
+
+	bool server_side = type == Filter::Type::server ;
 	if( server_side )
 	{
 		const bool rescan = true ;

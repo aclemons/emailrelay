@@ -44,8 +44,8 @@ std::unique_ptr<GPop::Server> GPop::newServer( GNet::ExceptionSink es , Store & 
 	return std::make_unique<Server>( es , store , secrets , config ) ;
 }
 
-void GPop::report( const Server * server )
+void GPop::report( const Server * server , const std::string & group )
 {
 	if( server )
-		server->report() ;
+		server->report( group ) ;
 }

@@ -156,7 +156,7 @@ public:
 	~AdminServer() override ;
 		///< Destructor.
 
-	void report() const ;
+	void report( const std::string & group = {} ) const ;
 		///< Generates helpful diagnostics.
 
 	GStore::MessageStore & store() ;

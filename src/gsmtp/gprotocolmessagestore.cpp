@@ -168,15 +168,18 @@ void GSmtp::ProtocolMessageStore::filterDone( int filter_result )
 	try
 	{
 		G_DEBUG( "GSmtp::ProtocolMessageStore::filterDone: " << filter_result ) ;
+		G_ASSERT( static_cast<int>(m_filter->result()) == filter_result ) ;
 		G_ASSERT( m_new_msg != nullptr ) ;
 
 		const bool ok = filter_result == 0 ;
 		const bool abandon = filter_result == 1 ;
 		const bool rescan = m_filter->special() ;
-		G_ASSERT( m_filter->reason().empty() == (ok || abandon) ) ; // filter post-condition
+
+		std::string filter_response = (ok||abandon) ? std::string() : m_filter->response() ;
+		std::string filter_reason = (ok||abandon) ? std::string() : m_filter->reason() ;
 
 		if( !m_filter->simple() )
-			G_LOG( "GSmtp::ProtocolMessageStore::filterDone: filter done: " << m_filter->str(true) ) ;
+			G_LOG( "GSmtp::ProtocolMessageStore::filterDone: filter done: " << m_filter->str(Filter::Type::server) ) ;
 
 		GStore::MessageId message_id = GStore::MessageId::none() ;
 		if( ok )
@@ -193,7 +196,7 @@ void GSmtp::ProtocolMessageStore::filterDone( int filter_result )
 		}
 		else
 		{
-			G_LOG_S( "GSmtp::ProtocolMessageStore::filterDone: rejected by filter: [" << m_filter->reason() << "]" ) ;
+			G_LOG_S( "GSmtp::ProtocolMessageStore::filterDone: rejected by filter: [" << filter_reason << "]" ) ;
 		}
 
 		if( rescan )
@@ -201,10 +204,6 @@ void GSmtp::ProtocolMessageStore::filterDone( int filter_result )
 			// pick up any new messages create by the filter
 			m_store.rescan() ;
 		}
-
-		// save the filter output before it is clear()ed
-		std::string filter_response = (ok||abandon) ? std::string() : m_filter->response() ;
-		std::string filter_reason = (ok||abandon) ? std::string() : m_filter->reason() ;
 
 		clear() ;
 		m_done_signal.emit( ok || abandon , message_id , filter_response , filter_reason ) ;

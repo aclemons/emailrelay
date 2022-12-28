@@ -44,11 +44,11 @@ GStore::NewFile::NewFile( FileStore & store , const std::string & from ,
 		m_size(0U) ,
 		m_max_size(max_size)
 {
-	m_env.m_from = from ;
-	m_env.m_from_auth_in = smtp_info.auth ;
-	m_env.m_from_auth_out = from_auth_out ;
-	m_env.m_body_type = Envelope::parseSmtpBodyType( smtp_info.body ) ;
-	m_env.m_utf8_mailboxes = smtp_info.utf8address ;
+	m_env.from = from ;
+	m_env.from_auth_in = smtp_info.auth ;
+	m_env.from_auth_out = from_auth_out ;
+	m_env.body_type = Envelope::parseSmtpBodyType( smtp_info.body ) ;
+	m_env.utf8_mailboxes = smtp_info.utf8address ;
 
 	// ask the store for a content stream
 	G_LOG( "GStore::NewMessage: content file: " << cpath() ) ;
@@ -88,20 +88,20 @@ bool GStore::NewFile::prepare( const std::string & session_auth_id ,
 	m_content.reset() ;
 
 	// write the envelope
-	m_env.m_authentication = session_auth_id ;
-	m_env.m_client_socket_address = peer_socket_address ;
-	m_env.m_client_certificate = peer_certificate ;
+	m_env.authentication = session_auth_id ;
+	m_env.client_socket_address = peer_socket_address ;
+	m_env.client_certificate = peer_certificate ;
 	if( !saveEnvelope() )
 		throw FileError( "cannot write envelope file " + epath(State::New).str() ) ;
 
 	// copy or move aside for local mailboxes
-	if( !m_env.m_to_local.empty() && m_env.m_to_remote.empty() )
+	if( !m_env.to_local.empty() && m_env.to_remote.empty() )
 	{
 		moveToLocal( cpath() , epath(State::New) , epath(State::Normal) ) ;
 		static_cast<MessageStore&>(m_store).updated() ;
 		return true ; // no commit() needed
 	}
-	else if( !m_env.m_to_local.empty() )
+	else if( !m_env.to_local.empty() )
 	{
 		copyToLocal( cpath() , epath(State::New) , epath(State::Normal) ) ;
 		return false ;
@@ -126,13 +126,13 @@ void GStore::NewFile::addTo( const std::string & to , bool local , bool utf8addr
 {
 	if( local )
 	{
-		m_env.m_to_local.push_back( to ) ;
+		m_env.to_local.push_back( to ) ;
 	}
 	else
 	{
-		m_env.m_to_remote.push_back( to ) ;
+		m_env.to_remote.push_back( to ) ;
 		if( utf8address )
-			m_env.m_utf8_mailboxes = true ;
+			m_env.utf8_mailboxes = true ;
 	}
 }
 
@@ -190,8 +190,8 @@ bool GStore::NewFile::saveEnvelope()
 {
 	G_LOG( "GStore::NewMessage: envelope file: " << epath(State::New).basename() ) ; // (was full path)
 	std::unique_ptr<std::ofstream> envelope_stream = m_store.stream( epath(State::New) ) ;
-	m_env.m_endpos = GStore::Envelope::write( *envelope_stream , m_env ) ;
-	m_env.m_crlf = true ;
+	m_env.endpos = GStore::Envelope::write( *envelope_stream , m_env ) ;
+	m_env.crlf = true ;
 	envelope_stream->close() ;
 	return !envelope_stream->fail() ;
 }

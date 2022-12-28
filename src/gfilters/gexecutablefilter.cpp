@@ -30,12 +30,12 @@
 #include <tuple>
 
 GFilters::ExecutableFilter::ExecutableFilter( GNet::ExceptionSink es ,
-	GStore::FileStore & file_store , bool server_side , const std::string & path ,
+	GStore::FileStore & file_store , Filter::Type filter_type , const std::string & path ,
 	unsigned int timeout , const std::string & log_prefix ) :
 		m_file_store(file_store) ,
-		m_server_side(server_side) ,
-		m_prefix(log_prefix.empty()?std::string(server_side?"filter":"client filter"):log_prefix) ,
-		m_exit(0,server_side) ,
+		m_filter_type(filter_type) ,
+		m_prefix(log_prefix.empty()?G::sv_to_string(Filter::strtype(filter_type)):log_prefix) ,
+		m_exit(0,filter_type) ,
 		m_path(path) ,
 		m_timeout(timeout) ,
 		m_timer(*this,&ExecutableFilter::onTimeout,es) ,
@@ -61,9 +61,9 @@ bool GFilters::ExecutableFilter::special() const
 	return m_exit.special ;
 }
 
-bool GFilters::ExecutableFilter::abandoned() const
+GSmtp::Filter::Result GFilters::ExecutableFilter::result() const
 {
-	return m_exit.abandon() ;
+	return m_exit.result ;
 }
 
 std::string GFilters::ExecutableFilter::response() const
@@ -86,7 +86,8 @@ std::string GFilters::ExecutableFilter::reason() const
 
 void GFilters::ExecutableFilter::start( const GStore::MessageId & message_id )
 {
-	GStore::FileStore::State state = m_server_side ? GStore::FileStore::State::New : GStore::FileStore::State::Locked ;
+	GStore::FileStore::State state = m_filter_type == Filter::Type::server ?
+		GStore::FileStore::State::New : GStore::FileStore::State::Locked ;
 	G::Path cpath = m_file_store.contentPath( message_id ) ;
 	G::Path epath = m_file_store.envelopePath( message_id , state ) ;
 
@@ -105,8 +106,8 @@ void GFilters::ExecutableFilter::onTimeout()
 {
 	G_WARNING( "GFilters::ExecutableFilter::onTimeout: " << m_prefix << " timed out after " << m_timeout << "s" ) ;
 	m_task.stop() ;
-	m_exit = Exit( 1 , m_server_side ) ;
-	G_ASSERT( m_exit.fail() && !special() && !abandoned() ) ;
+	m_exit = Exit( 1 , m_filter_type ) ;
+	G_ASSERT( m_exit.fail() ) ;
 	m_response = "error" ;
 	m_reason = "timeout" ;
 	m_done_signal.emit( static_cast<int>(m_exit.result) ) ;
@@ -124,7 +125,7 @@ void GFilters::ExecutableFilter::onTaskDone( int exit_code , const std::string &
 		m_response = "rejected" ;
 	}
 
-	m_exit = Exit( exit_code , m_server_side ) ;
+	m_exit = Exit( exit_code , m_filter_type ) ;
 	if( !m_exit.ok() )
 	{
 		G_WARNING( "GFilters::ExecutableFilter::onTaskDone: " << m_prefix << " failed: "

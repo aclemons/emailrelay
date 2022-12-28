@@ -33,7 +33,8 @@ GFilters::NetworkFilter::NetworkFilter( GNet::ExceptionSink es , GStore::FileSto
 		m_done_signal(true) ,
 		m_location(server) ,
 		m_connection_timeout(connection_timeout) ,
-		m_response_timeout(response_timeout)
+		m_response_timeout(response_timeout) ,
+		m_result(Result::fail)
 {
 	m_client_ptr.eventSignal().connect( G::Slot::slot(*this,&GFilters::NetworkFilter::clientEvent) ) ;
 }
@@ -91,13 +92,19 @@ void GFilters::NetworkFilter::sendResult( const std::string & reason )
 	{
 		m_text = reason ;
 		m_timer.startTimer( 0 ) ;
+		m_result = m_text.value().empty() ? Result::ok : Result::fail ;
 	}
 }
 
 void GFilters::NetworkFilter::onTimeout()
 {
 	if( m_text.has_value() )
-		m_done_signal.emit( m_text.value().empty() ? 0 : 2 ) ;
+		m_done_signal.emit( static_cast<int>(m_result) ) ;
+}
+
+GSmtp::Filter::Result GFilters::NetworkFilter::result() const
+{
+	return m_result ;
 }
 
 bool GFilters::NetworkFilter::special() const
@@ -127,10 +134,5 @@ void GFilters::NetworkFilter::cancel()
 	m_timer.cancelTimer() ;
 	m_done_signal.emitted( true ) ;
 	m_client_ptr.reset() ;
-}
-
-bool GFilters::NetworkFilter::abandoned() const
-{
-	return false ;
 }
 

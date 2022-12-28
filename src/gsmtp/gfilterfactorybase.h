@@ -51,8 +51,8 @@ public:
 	} ;
 
 	virtual std::unique_ptr<Filter> newFilter( GNet::ExceptionSink ,
-		bool server_side , const Spec & spec ,
-		unsigned int timeout , const std::string & log_prefix ) = 0 ;
+		Filter::Type , const Spec & spec , unsigned int timeout ,
+		const std::string & log_prefix ) = 0 ;
 			///< Returns a Filter on the heap. Optionally throws if
 			///< an invalid or unsupported filter specification.
 

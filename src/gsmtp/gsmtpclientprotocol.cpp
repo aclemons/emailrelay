@@ -537,14 +537,14 @@ void GSmtp::ClientProtocol::startFiltering()
 	m_filter_signal.emit() ;
 }
 
-void GSmtp::ClientProtocol::filterDone( bool ok , const std::string & response , const std::string & reason )
+void GSmtp::ClientProtocol::filterDone( Filter::Result result , const std::string & response , const std::string & reason )
 {
-	if( ok )
+	if( result == Filter::Result::ok )
 	{
 		// apply filter response event to continue with this message
 		applyEvent( ClientReply::ok(ClientReply::Value::Internal_filter_ok) ) ;
 	}
-	else if( response.empty() )
+	else if( result == Filter::Result::abandon )
 	{
 		// apply filter response event to abandon this message (done-code -1)
 		applyEvent( ClientReply::ok(ClientReply::Value::Internal_filter_abandon) ) ;

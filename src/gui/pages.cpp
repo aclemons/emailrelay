@@ -588,7 +588,7 @@ PopPage::PopPage( Gui::Dialog & dialog , const G::MapFile & config , const std::
 	tip( m_no_delete_checkbox , tr("--pop-no-delete") ) ;
 	//: copy incoming email messages to all pop clients
 	m_pop_filter_copy_checkbox = new QCheckBox( tr("Copy SMTP messages to all") ) ;
-	tip( m_pop_filter_copy_checkbox , tr("--filter=emailrelay-filter-copy") ) ;
+	tip( m_pop_filter_copy_checkbox , tr("--filter=copy:") ) ;
 
 	auto * type_layout = new QGridLayout ;
 	type_layout->addWidget( m_one , 0 , 0 ) ;
@@ -599,7 +599,9 @@ PopPage::PopPage( Gui::Dialog & dialog , const G::MapFile & config , const std::
 
 	bool pop_by_name = config.booleanValue("pop-by-name",false) ;
 	bool pop_no_delete = config.booleanValue("pop-no-delete",false) ;
-	bool pop_filter_copy = config.value("filter").find("emailrelay-filter-copy") != std::string::npos ;
+	bool pop_filter_copy =
+		config.value("filter").find("emailrelay-filter-copy") != std::string::npos ||
+		config.value("filter").find("copy:") != std::string::npos ;
 	if( pop_by_name ) // "many clients with separate spool directories"
 	{
 		m_pop_by_name->setChecked( true ) ;
@@ -1092,7 +1094,7 @@ void FilterPage::onShow( bool )
 	G::Path exe_dir = m_is_windows ? dir_page.installDir() : ( dir_page.installDir() + "lib" + "emailrelay" ) ;
 
 	m_server_filter_script_path_default = script_dir + ("emailrelay-filter"+m_dot_script) ;
-	m_server_filter_copy_path_default = exe_dir + ("emailrelay-filter-copy"+m_dot_exe) ;
+	m_server_filter_copy_default = "copy:" ;
 	m_client_filter_script_path_default = script_dir + ("emailrelay-client-filter"+m_dot_script) ;
 	m_pop_page_with_filter_copy = do_what_page.pop() && pop_page.withFilterCopy() ;
 
@@ -1115,9 +1117,9 @@ void FilterPage::onShow( bool )
 		m_server_filter_choice_script->setEnabled( true ) ;
 		m_server_filter_choice_spamd->setEnabled( true ) ;
 		m_server_filter_choice_copy->setEnabled( true ) ;
-		tip( m_server_filter_choice_script , tr("--filter") ) ;
-		tip( m_server_filter_choice_spamd , tr("--filter") ) ;
-		tip( m_server_filter_choice_copy , tr("--filter") ) ;
+		tip( m_server_filter_choice_script , tr("--filter:file") ) ;
+		tip( m_server_filter_choice_spamd , tr("--filter:spam-edit") ) ;
+		tip( m_server_filter_choice_copy , tr("--filter:copy") ) ;
 	}
 
 	if( m_installing )
@@ -1125,7 +1127,7 @@ void FilterPage::onShow( bool )
 		// if installing the the directories can change on each show
 		// and there is no existing config to preserve
 		m_server_filter_script_path = m_server_filter_script_path_default ;
-		m_server_filter_copy_path = m_server_filter_copy_path_default ;
+		m_server_filter_copy = m_server_filter_copy_default ;
 		m_server_filter_spam = m_server_filter_spam_default ;
 		m_client_filter_script_path = m_client_filter_script_path_default ;
 	}
@@ -1134,7 +1136,7 @@ void FilterPage::onShow( bool )
 		// if reconfiguring then set the initial checkboxes from the configuration
 		// value, unless overridden by the pop page (below)
 		m_server_filter_script_path = m_server_filter_script_path_default ;
-		m_server_filter_copy_path = m_server_filter_copy_path_default ;
+		m_server_filter_copy = m_server_filter_copy_default ;
 		m_server_filter_spam = m_server_filter_spam_default ;
 		if( m_server_filter.empty() )
 		{
@@ -1145,10 +1147,11 @@ void FilterPage::onShow( bool )
 			m_server_filter_choice_spamd->setChecked( true ) ;
 			m_server_filter_spam = m_server_filter ;
 		}
-		else if( m_server_filter.find("emailrelay-filter-copy") != std::string::npos )
+		else if( m_server_filter.find("emailrelay-filter-copy") != std::string::npos ||
+			m_server_filter.find("copy:") != std::string::npos )
 		{
 			m_server_filter_choice_copy->setChecked( true ) ;
-			m_server_filter_copy_path = m_server_filter ;
+			m_server_filter_copy = m_server_filter ;
 		}
 		else
 		{
@@ -1193,7 +1196,7 @@ void FilterPage::onToggle()
 	}
 	else if( m_server_filter_choice_copy->isChecked() )
 	{
-		m_server_filter_edit_box->setText( qstr(m_server_filter_copy_path.str()) ) ;
+		m_server_filter_edit_box->setText( qstr(m_server_filter_copy.str()) ) ;
 	}
 
 	if( m_client_filter_choice_none->isChecked() )
