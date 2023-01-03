@@ -189,6 +189,11 @@ The `emailrelay` program supports the following command-line usage:
     To inherit listening file descriptors from the parent process on unix use a
     syntax like this: `--interface`=smtp=fd#3,smtp=fd#4,pop=fd#5.
 
+*   \-\-local-delivery-dir &lt;dir&gt; (-s)
+
+    Enables local delivery of mail messages that have local recipients, as
+    determined by an address verifier.
+
 *   \-\-prompt-timeout &lt;time&gt; (-w)
 
     Specifies a timeout (in seconds) for getting the initial prompt from a remote
@@ -494,8 +499,8 @@ dash, and separate the option name from the option value with spaces.
 
 Additional configuration files can be used to effectively run multiple
 E-MailRelay processes in one. Alternatively, the same effect can be obtained by
-extending the long options with arbitrary names, for example `--spool-dir-in`
-and `--spool-dir-out`, and then `--port-in` and `--port-out` etc.
+prefixing the long options with arbitrary names, for example `--in-spool-dir`
+and `--out-spool-dir`, and then `--in-port` and `--out-port` etc.
 
 All command-line options that specify a filename can use a special `@app`
 substitution variable that is interpreted as the directory that contains

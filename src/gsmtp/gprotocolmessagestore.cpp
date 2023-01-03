@@ -21,13 +21,16 @@
 #include "gdef.h"
 #include "gprotocolmessagestore.h"
 #include "gmessagestore.h"
+#include "gmessagedelivery.h"
 #include "gstr.h"
 #include "gassert.h"
 #include "glog.h"
 
-GSmtp::ProtocolMessageStore::ProtocolMessageStore( GStore::MessageStore & store , std::unique_ptr<Filter> filter ) :
-	m_store(store) ,
-	m_filter(std::move(filter))
+GSmtp::ProtocolMessageStore::ProtocolMessageStore( GStore::MessageStore & store ,
+	GStore::MessageDelivery & delivery , std::unique_ptr<Filter> filter ) :
+		m_store(store) ,
+		m_delivery(delivery) ,
+		m_filter(std::move(filter))
 {
 	m_filter->doneSignal().connect( G::Slot::slot(*this,&ProtocolMessageStore::filterDone) ) ;
 }
@@ -141,6 +144,10 @@ void GSmtp::ProtocolMessageStore::process( const std::string & session_auth_id ,
 
 		// write ".new" envelope
 		bool local_only = m_new_msg->prepare( session_auth_id , peer_socket_address , peer_certificate ) ;
+
+		// do local delivery
+		m_delivery.deliver( m_new_msg->id() ) ;
+
 		if( local_only )
 		{
 			// local-mailbox only -- handle a bit like filter-abandonded

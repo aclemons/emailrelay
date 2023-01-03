@@ -26,8 +26,7 @@ GVerifiers::InternalVerifier::InternalVerifier()
 = default;
 
 void GVerifiers::InternalVerifier::verify( Command command , const std::string & to ,
-	const std::string & , const G::BasicAddress & ,
-	const std::string & , const std::string & )
+	const GSmtp::Verifier::Info & )
 {
 	// accept all addresses as if remote
 	auto status = GSmtp::VerifierStatus::remote( to ) ;

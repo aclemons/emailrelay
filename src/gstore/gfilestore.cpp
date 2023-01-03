@@ -91,13 +91,10 @@ std::unique_ptr<GStore::StoredMessage> GStore::FileIterator::next()
 
 		bool ok = false ;
 		std::string reason ;
-		ok = message_ptr->readEnvelope( reason , m_lock ) && message_ptr->openContent( reason ) ;
+		ok = message_ptr->readEnvelope( reason ) && message_ptr->openContent( reason ) ;
 		if( !ok )
 		{
-			if( m_lock )
-				static_cast<StoredMessage&>(*message_ptr).fail( reason , 0 ) ; // side-effect
-			else
-				G_WARNING( "GStore::MessageStore: ignoring \"" << m_iter.filePath() << "\": " << reason ) ;
+			G_WARNING( "GStore::MessageStore: ignoring \"" << m_iter.filePath() << "\": " << reason ) ;
 			continue ;
 		}
 
@@ -114,6 +111,11 @@ GStore::FileStore::FileStore( const G::Path & dir , const Config & config ) :
 	m_config(config)
 {
 	checkPath( dir ) ;
+}
+
+G::Path GStore::FileStore::directory() const
+{
+	return m_dir ;
 }
 
 std::string GStore::FileStore::x()
@@ -210,14 +212,17 @@ G::Path GStore::FileStore::envelopePath( const MessageId & id , State state ) co
 
 GStore::MessageId GStore::FileStore::newId()
 {
-	unsigned long timestamp = static_cast<unsigned long>(G::SystemTime::now().s()) ;
-
 	m_seq++ ;
 	if( m_seq == 0UL )
 		m_seq++ ;
+	return newId( m_seq ) ;
+}
 
+GStore::MessageId GStore::FileStore::newId( unsigned long seq )
+{
+	unsigned long timestamp = static_cast<unsigned long>(G::SystemTime::now().s()) ;
 	std::ostringstream ss ;
-	ss << "emailrelay." << G::Process::Id().str() << "." << timestamp << "." << m_seq ;
+	ss << "emailrelay." << G::Process::Id().str() << "." << timestamp << "." << seq ;
 	return MessageId( ss.str() ) ;
 }
 
@@ -230,19 +235,14 @@ bool GStore::FileStore::empty() const
 	return no_more ;
 }
 
-std::shared_ptr<GStore::MessageStore::Iterator> GStore::FileStore::iterator( bool lock )
+std::unique_ptr<GStore::MessageStore::Iterator> GStore::FileStore::iterator( bool lock )
 {
-	return iteratorImp( lock ) ;
+	return std::make_unique<FileIterator>( *this , m_dir , lock , false ) ;
 }
 
-std::shared_ptr<GStore::MessageStore::Iterator> GStore::FileStore::iteratorImp( bool lock )
+std::unique_ptr<GStore::MessageStore::Iterator> GStore::FileStore::failures()
 {
-	return std::make_shared<FileIterator>( *this , m_dir , lock , false ) ; // up-cast
-}
-
-std::shared_ptr<GStore::MessageStore::Iterator> GStore::FileStore::failures()
-{
-	return std::make_shared<FileIterator>( *this , m_dir , false , true ) ; // up-cast
+	return std::make_unique<FileIterator>( *this , m_dir , false , true ) ;
 }
 
 std::unique_ptr<GStore::StoredMessage> GStore::FileStore::get( const MessageId & id )
@@ -251,15 +251,14 @@ std::unique_ptr<GStore::StoredMessage> GStore::FileStore::get( const MessageId &
 
 	auto message = std::make_unique<StoredFile>( *this , path ) ;
 	if( !message->lock() )
-		throw GetError( path.str() + ": cannot lock the file" ) ;
+		throw GetError( path.str().append(": cannot lock the file") ) ;
 
 	std::string reason ;
-	const bool check_recipients = false ; // don't check for no-remote-recipients
-	if( !message->readEnvelope(reason,check_recipients) )
-		throw GetError( path.str() + ": cannot read the envelope: " + reason ) ;
+	if( !message->readEnvelope( reason ) )
+		throw GetError( path.str().append(": cannot read the envelope: ").append(reason) ) ;
 
-	if( !message->openContent(reason) )
-		throw GetError( path.str() + ": cannot read the content: " + reason ) ;
+	if( !message->openContent( reason ) )
+		throw GetError( path.str().append(": cannot read the content: ").append(reason) ) ;
 
 	return std::unique_ptr<StoredMessage>( message.release() ) ; // up-cast
 }
@@ -308,22 +307,6 @@ void GStore::FileStore::unfailAllImp()
 		message->unfail() ;
 	}
 }
-
-#ifndef G_LIB_SMALL
-void GStore::FileStore::clearAll()
-{
-	// for testing...
-	std::shared_ptr<MessageStore::Iterator> iter( iteratorImp(true) ) ;
-	for(;;)
-	{
-		std::unique_ptr<StoredMessage> message = iter->next() ;
-		if( message )
-			message->destroy() ;
-		else
-			break ;
-	}
-}
-#endif
 
 // ===
 

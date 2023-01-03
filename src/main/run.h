@@ -136,9 +136,9 @@ private:
 	void commit( G::PidFile & ) ;
 	const CommandLine & commandline() const ;
 	void onUnitDone( unsigned int , std::string , bool ) ;
-	void onUnitClientEvent( unsigned int , std::string , std::string , std::string ) ;
+	void onUnitEvent( unsigned int , std::string , std::string , std::string ) ;
 	void onNetworkEvent( const std::string & , const std::string & ) ;
-	void emit( const std::string & , const std::string & , const std::string & = {} , const std::string & = {} ) ;
+	void addToSignalQueue( const std::string & , const std::string & , const std::string & = {} , const std::string & = {} ) ;
 	void onQueueTimeout() ;
 	void checkThreading() const ;
 	G::Path appDir() const ;

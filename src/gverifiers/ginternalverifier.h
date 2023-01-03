@@ -42,11 +42,10 @@ public:
 		///< Constructor.
 
 private: // overrides
-	G::Slot::Signal<GSmtp::Verifier::Command,const GSmtp::VerifierStatus&> & doneSignal() override ; // Override from GSmtp::Verifier.
+	G::Slot::Signal<GSmtp::Verifier::Command,const GSmtp::VerifierStatus&> & doneSignal() override ; // GSmtp::Verifier
 	void cancel() override ; // Override from GSmtp::Verifier.
 	void verify( GSmtp::Verifier::Command , const std::string & rcpt_to_parameter ,
-		const std::string & mail_from_parameter , const G::BasicAddress & client_ip ,
-		const std::string & auth_mechanism , const std::string & auth_extra ) override ; // Override from GSmtp::Verifier.
+		const GSmtp::Verifier::Info & ) override ; // GSmtp::Verifier
 
 public:
 	~InternalVerifier() override = default ;

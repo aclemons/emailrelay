@@ -112,7 +112,7 @@ libgverifiers_a_AR = $(AR) $(ARFLAGS)
 libgverifiers_a_LIBADD =
 am_libgverifiers_a_OBJECTS = gexecutableverifier.$(OBJEXT) \
 	gnetworkverifier.$(OBJEXT) ginternalverifier.$(OBJEXT) \
-	gverifierfactory.$(OBJEXT)
+	guserverifier.$(OBJEXT) gverifierfactory.$(OBJEXT)
 libgverifiers_a_OBJECTS = $(am_libgverifiers_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -131,7 +131,7 @@ depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/gexecutableverifier.Po \
 	./$(DEPDIR)/ginternalverifier.Po \
-	./$(DEPDIR)/gnetworkverifier.Po \
+	./$(DEPDIR)/gnetworkverifier.Po ./$(DEPDIR)/guserverifier.Po \
 	./$(DEPDIR)/gverifierfactory.Po
 am__mv = mv -f
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
@@ -330,6 +330,8 @@ libgverifiers_a_SOURCES = \
 	gnetworkverifier.h \
 	ginternalverifier.cpp \
 	ginternalverifier.h \
+	guserverifier.cpp \
+	guserverifier.h \
 	gverifierfactory.cpp \
 	gverifierfactory.h
 
@@ -384,6 +386,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gexecutableverifier.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ginternalverifier.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnetworkverifier.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/guserverifier.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gverifierfactory.Po@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
@@ -533,6 +536,7 @@ distclean: distclean-am
 		-rm -f ./$(DEPDIR)/gexecutableverifier.Po
 	-rm -f ./$(DEPDIR)/ginternalverifier.Po
 	-rm -f ./$(DEPDIR)/gnetworkverifier.Po
+	-rm -f ./$(DEPDIR)/guserverifier.Po
 	-rm -f ./$(DEPDIR)/gverifierfactory.Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
@@ -582,6 +586,7 @@ maintainer-clean: maintainer-clean-am
 		-rm -f ./$(DEPDIR)/gexecutableverifier.Po
 	-rm -f ./$(DEPDIR)/ginternalverifier.Po
 	-rm -f ./$(DEPDIR)/gnetworkverifier.Po
+	-rm -f ./$(DEPDIR)/guserverifier.Po
 	-rm -f ./$(DEPDIR)/gverifierfactory.Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic

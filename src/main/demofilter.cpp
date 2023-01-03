@@ -25,15 +25,19 @@
 #include "gfile.h"
 #include "gscope.h"
 #include "gstringarray.h"
+#include "gassert.h"
+#include "glog.h"
 #include <stdexcept>
 
 Main::DemoFilter::DemoFilter( GNet::ExceptionSink es , Main::Run & run , unsigned int unit_id ,
-	GStore::FileStore & store , const std::string & spec , GSmtp::Filter::Type filter_type ) :
+	GStore::FileStore & store , GSmtp::Filter::Type filter_type ,
+	const GSmtp::Filter::Config & filter_config , const std::string & spec ) :
 		m_run(run) ,
 		m_unit_id(unit_id) ,
 		m_store(store) ,
-		m_spec(spec) ,
 		m_filter_type(filter_type) ,
+		m_filter_config(filter_config) ,
+		m_spec(spec) ,
 		m_timer(*this,&DemoFilter::onTimeout,es) ,
 		m_result(Result::fail)
 {
@@ -85,8 +89,7 @@ void Main::DemoFilter::start( const GStore::MessageId & message_id )
 	G::ScopeExit clean_up( [content_path_tmp](){G::File::remove(content_path_tmp,std::nothrow);} ) ;
 
 	// prepare a new header line
-	std::string domain = m_run.unit(m_unit_id).domain() ;
-	std::string new_header = std::string("X-MailRelay-Demo: ").append(domain).append("\r\n",2U) ;
+	std::string new_header = std::string("X-MailRelay-Demo: ").append(m_filter_config.domain).append("\r\n",2U) ;
 
 	// copy the content
 	bool in_headers = true ;
@@ -159,7 +162,7 @@ void Main::DemoFilter::onTimeout()
 	m_done_signal.emit( static_cast<int>(m_result) ) ;
 }
 
-G::Slot::Signal<int> & Main::DemoFilter::doneSignal()
+G::Slot::Signal<int> & Main::DemoFilter::doneSignal() noexcept
 {
 	return m_done_signal ;
 }

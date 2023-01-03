@@ -56,7 +56,7 @@ namespace Main { std::string localedir() { return std::string() ; } }
 
 std::string Main::Run::versionNumber()
 {
-	return "2.5dev1" ;
+	return "2.5dev2" ;
 }
 
 Main::Run::Run( Main::Output & output , const G::Arg & arg , bool has_gui ) :
@@ -84,7 +84,7 @@ Main::Run::~Run()
 	{
 		G_ASSERT( unit_ptr.get() != nullptr ) ;
 		unit_ptr->clientDoneSignal().disconnect() ;
-		unit_ptr->clientEventSignal().disconnect() ;
+		unit_ptr->eventSignal().disconnect() ;
 	}
 }
 
@@ -279,7 +279,7 @@ void Main::Run::run()
 	{
 		m_units.push_back( std::make_unique<Unit>( *this , static_cast<unsigned>(i) , versionNumber() ) ) ;
 		m_units.back()->clientDoneSignal().connect( G::Slot::slot(*this,&Run::onUnitDone) ) ;
-		m_units.back()->clientEventSignal().connect( G::Slot::slot(*this,&Run::onUnitClientEvent) ) ;
+		m_units.back()->eventSignal().connect( G::Slot::slot(*this,&Run::onUnitEvent) ) ;
 	}
 
 	// do serving and/or forwarding
@@ -386,17 +386,17 @@ void Main::Run::onUnitDone( unsigned int unit_id , std::string reason , bool qui
 	}
 }
 
-void Main::Run::onUnitClientEvent( unsigned int /*unit_id*/ , std::string s1 , std::string s2 , std::string s3 )
+void Main::Run::onUnitEvent( unsigned int /*unit_id*/ , std::string s1 , std::string s2 , std::string s3 )
 {
-	emit( "client" , s1 , s2 , s3 ) ;
+	addToSignalQueue( "client" , s1 , s2 , s3 ) ; // eg. client,connecting,127.0.0.1:25
 }
 
 void Main::Run::onNetworkEvent( const std::string & s1 , const std::string & s2 )
 {
-	emit( "network" , s1 , s2 ) ;
+	addToSignalQueue( "network" , s1 , s2 ) ; // eg. network,out,start
 }
 
-void Main::Run::emit( const std::string & s0 , const std::string & s1 ,
+void Main::Run::addToSignalQueue( const std::string & s0 , const std::string & s1 ,
 	const std::string & s2 , const std::string & s3 )
 {
 	// emit events via an asynchronous queue to avoid side-effects from callbacks
@@ -426,6 +426,7 @@ void Main::Run::emit( const std::string & s0 , const std::string & s1 ,
 
 void Main::Run::onQueueTimeout()
 {
+	// send queued items to gui (via the signal()) and to the first unit's admin interface
 	if( !m_queue.empty() )
 	{
 		m_queue_timer->startTimer( 0U ) ;

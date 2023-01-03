@@ -66,12 +66,20 @@ G::Identity::Identity( const std::string & name , const std::string & group ) :
 
 std::pair<uid_t,gid_t> G::Identity::lookupUser( const std::string & name )
 {
+	std::pair<uid_t,gid_t> result = { 0 , 0 } ;
+	if( !lookupUser( name , result.first , result.second ) )
+		throw NoSuchUser( name ) ;
+	return result ;
+}
+
+bool G::Identity::lookupUser( const std::string & name , uid_t & uid , gid_t & gid )
+{
 	using passwd_t = struct passwd ;
-	std::pair<uid_t,gid_t> result( 0 , 0 ) ;
 	std::array<int,3U> sizes {{ 120 , 0 , 16000 }} ;
 	sizes[1] = IdentityImp::sysconf_value( _SC_GETPW_R_SIZE_MAX ) ;
-	for( auto size : sizes )
+	for( std::size_t i = 0U ; i < sizes.size() ; i++ )
 	{
+		int size = sizes[i] ;
 		if( size <= 0 ) continue ;
 		auto buffer_size = static_cast<std::size_t>(size) ;
 		std::vector<char> buffer( buffer_size ) ;
@@ -79,28 +87,32 @@ std::pair<uid_t,gid_t> G::Identity::lookupUser( const std::string & name )
 		passwd_t * result_p = nullptr ;
 		int rc = ::getpwnam_r( name.c_str() , &pwd , &buffer[0] , buffer_size , &result_p ) ;
 		int e = Process::errno_() ;
-		if( rc == 0 && result_p )
+		if( rc != 0 && e == ERANGE && (i+1U) < sizes.size() )
 		{
-			result.first = result_p->pw_uid ;
-			result.second = result_p->pw_gid ;
-			break ;
+			continue ; // try again with with bigger buffer
+		}
+		else if( rc == 0 && result_p )
+		{
+			uid = result_p->pw_uid ;
+			gid = result_p->pw_gid ;
+			return true ;
 		}
 		else if( rc == 0 && name == "root" ) // in case of no /etc/passwd file
 		{
-			result.first = 0 ;
-			result.second = 0 ;
-			break ;
+			uid = 0 ;
+			gid = 0 ;
+			return true ;
 		}
 		else if( rc == 0 )
 		{
-			throw NoSuchUser( name ) ;
+			break ; // no such user
 		}
-		else if( e != ERANGE )
+		else
 		{
 			throw Error( Process::strerror(e) ) ;
 		}
 	}
-	return result ;
+	return false ;
 }
 
 gid_t G::Identity::lookupGroup( const std::string & group )

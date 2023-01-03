@@ -48,7 +48,7 @@ public:
 	} ;
 
 	virtual std::unique_ptr<Verifier> newVerifier( GNet::ExceptionSink ,
-		const Spec & spec , unsigned int timeout ) = 0 ;
+		const Verifier::Config & config , const Spec & spec ) = 0 ;
 			///< Returns a Verifier on the heap. Throws if an invalid
 			///< or unsupported specification.
 

@@ -50,12 +50,12 @@ GSmtp::VerifierFactoryBase::Spec Main::VerifierFactory::parse( const std::string
 }
 
 std::unique_ptr<GSmtp::Verifier> Main::VerifierFactory::newVerifier( GNet::ExceptionSink es ,
-	const Spec & spec , unsigned int timeout )
+	const GSmtp::Verifier::Config & config , const Spec & spec )
 {
 	#ifdef VERIFIER_DEMO
 		if( spec.first == "demo" )
-			return std::make_unique<DemoVerifier>( es , m_run , m_unit , spec.second ) ;
+			return std::make_unique<DemoVerifier>( es , m_run , m_unit , config , spec.second ) ;
 	#endif
-	return GVerifiers::VerifierFactory::newVerifier( es , spec , timeout ) ;
+	return GVerifiers::VerifierFactory::newVerifier( es , config , spec ) ;
 }
 

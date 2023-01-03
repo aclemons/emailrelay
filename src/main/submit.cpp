@@ -63,7 +63,7 @@
 
 std::string versionNumber()
 {
-	return "2.5dev1" ;
+	return "2.5dev2" ;
 }
 
 static std::pair<G::Path,G::Path> writeFiles( const G::Path & spool_dir ,
@@ -117,7 +117,7 @@ static std::pair<G::Path,G::Path> writeFiles( const G::Path & spool_dir ,
 	// commit the file
 	//
 	std::string auth_id = std::string() ;
-	msg->prepare( auth_id , "127.0.0.1" , std::string() ) ;
+	msg->prepare( auth_id , "127.0.0.1" , {} ) ;
 	msg->commit( true ) ;
 
 	return {

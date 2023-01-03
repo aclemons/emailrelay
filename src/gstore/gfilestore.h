@@ -74,11 +74,16 @@ public:
 		///< Constructor. Throws an exception if the storage directory
 		///< is invalid.
 
+	G::Path directory() const ;
+		///< Returns the spool directory path, as passed in to the
+		///< constructor.
+
 	MessageId newId() ;
 		///< Hands out a new unique message id.
 
-	std::unique_ptr<std::ofstream> stream( const G::Path & path ) ;
-		///< Returns a stream to the given content.
+	static std::unique_ptr<std::ofstream> stream( const G::Path & path ) ;
+		///< Opens an output stream to a message file using the appropriate
+		///< effective userid and umask.
 
 	G::Path contentPath( const MessageId & id ) const ;
 		///< Returns the path for a content file.
@@ -101,8 +106,8 @@ private: // overrides
 	bool empty() const override ;
 	std::string location( const MessageId & ) const override ;
 	std::unique_ptr<StoredMessage> get( const MessageId & ) override ;
-	std::shared_ptr<MessageStore::Iterator> iterator( bool lock ) override ;
-	std::shared_ptr<MessageStore::Iterator> failures() override ;
+	std::unique_ptr<MessageStore::Iterator> iterator( bool lock ) override ;
+	std::unique_ptr<MessageStore::Iterator> failures() override ;
 	std::unique_ptr<NewMessage> newMessage( const std::string & , const MessageStore::SmtpInfo & , const std::string & ) override ;
 	void updated() override ;
 	G::Slot::Signal<> & messageStoreUpdateSignal() override ;
@@ -122,11 +127,11 @@ private:
 	G::Path fullPath( const std::string & filename ) const ;
 	std::string getline( std::istream & ) const ;
 	std::string value( const std::string & ) const ;
-	std::shared_ptr<MessageStore::Iterator> iteratorImp( bool ) ;
 	void unfailAllImp() ;
 	static const std::string & crlf() ;
 	bool emptyCore() const ;
 	void clearAll() ;
+	static MessageId newId( unsigned long ) ;
 
 private:
 	unsigned long m_seq ;

@@ -22,16 +22,17 @@
 #define G_MAIN_UNIT_H
 
 #include "gdef.h"
+#include "configuration.h"
 #include "gclientptr.h"
 #include "gslot.h"
 #include "gsecrets.h"
 #include "gfilestore.h"
+#include "gfiledelivery.h"
 #include "gsmtpclient.h"
 #include "gsmtpserver.h"
 #include "gadminserver.h"
 #include "gpopserver.h"
 #include "gpopstore.h"
-#include "configuration.h"
 #include <memory>
 
 namespace Main
@@ -89,13 +90,18 @@ public:
 		///< that unit's configuration is such that that program should
 		///< now terminate.
 
-	G::Slot::Signal<unsigned,std::string,std::string,std::string> & clientEventSignal() ;
+	G::Slot::Signal<unsigned,std::string,std::string,std::string> & eventSignal() ;
 		///< Returns a signal that emits messages like "connecting",
 		///< "resolving" "connected", "sending", "sent", "forward start"
-		///< and "forward end". See also Main::WinForm.
+		///< "forward end" and "local". (The Main::Run object distributes
+		///< these events to other Main::Unit objects and the GUI -- see
+		///< Main::WinForm.)
 
 	std::string domain() const ;
 		///< Returns the configured domain.
+
+	G::Path spoolDir() const ;
+		///< Returns the spool directory.
 
 public:
 	Unit( const Unit & ) = delete ;
@@ -126,19 +132,21 @@ private:
 	Configuration m_configuration ;
 	std::string m_version_number ;
 	unsigned int m_unit_id ;
-	std::string m_domain ;
+	mutable std::string m_domain ;
 	bool m_serving {false} ;
 	bool m_forwarding {false} ;
 	int m_resolver_family {AF_UNSPEC} ;
 	bool m_quit_when_sent {false} ;
 	bool m_forwarding_pending {false} ;
 	std::string m_forwarding_reason ;
+	GNet::ExceptionSink m_es ;
 	G::Slot::Signal<unsigned,std::string,bool> m_client_done_signal ;
-	G::Slot::Signal<unsigned,std::string,std::string,std::string> m_client_event_signal ;
+	G::Slot::Signal<unsigned,std::string,std::string,std::string> m_event_signal ;
 	G::Slot::Signal<const std::string&> m_forward_request_signal ;
 	std::unique_ptr<GNet::Timer<Unit>> m_forwarding_timer ;
 	std::unique_ptr<GNet::Timer<Unit>> m_poll_timer ;
 	std::unique_ptr<GStore::FileStore> m_file_store ;
+	std::unique_ptr<GStore::FileDelivery> m_file_delivery ;
 	std::unique_ptr<GSmtp::FilterFactoryBase> m_filter_factory ;
 	std::unique_ptr<GSmtp::VerifierFactoryBase> m_verifier_factory ;
 	std::unique_ptr<GAuth::Secrets> m_client_secrets ;

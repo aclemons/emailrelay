@@ -61,6 +61,13 @@ public:
 		client ,
 		routing
 	} ;
+	struct Config /// Configuration passed to filter constructors.
+	{
+		unsigned int timeout ;
+		std::string domain ; // postcondition: !domain.empty()
+		Config & set_timeout( unsigned int ) noexcept ;
+		Config & set_domain( const std::string & ) ;
+	} ;
 
 	virtual ~Filter() = default ;
 		///< Destructor.
@@ -78,7 +85,7 @@ public:
 		///< incomplete filtering is cancel()ed. Asynchronous completion
 		///< is indicated by a doneSignal().
 
-	virtual G::Slot::Signal<int> & doneSignal() = 0 ;
+	virtual G::Slot::Signal<int> & doneSignal() noexcept = 0 ;
 		///< Returns a signal which is raised once start() has completed
 		///< or failed. The signal parameter is the integer value
 		///< of result().
@@ -119,5 +126,8 @@ protected:
 		bool special ;
 	} ;
 } ;
+
+inline GSmtp::Filter::Config & GSmtp::Filter::Config::set_timeout( unsigned int n ) noexcept { timeout = n ; return *this ; }
+inline GSmtp::Filter::Config & GSmtp::Filter::Config::set_domain( const std::string & s ) { domain = s ; return *this ; }
 
 #endif

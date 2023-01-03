@@ -73,10 +73,11 @@ protected:
 		///< intercept the storage-done signal emit()ed by
 		///< the ProtocolMessageStore object.
 
-	void processDone( bool , const GStore::MessageId & , const std::string & , const std::string & ) ;
-		///< Called by derived classes that have intercepted
-		///< the storageDoneSignal() when their own post-storage
-		///< processing is complete.
+	void processDone( bool , const GStore::MessageId & , const std::string & ,
+		const std::string & ) ;
+			///< Called by derived classes that have intercepted
+			///< the storageDoneSignal() when their own post-storage
+			///< processing is complete.
 
 private: // overrides
 	ProtocolMessage::DoneSignal & doneSignal() override ; // GSmtp::ProtocolMessage

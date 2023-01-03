@@ -58,8 +58,8 @@ public:
 	{
 		GNet::StreamSocket::Config stream_socket_config ;
 		ClientProtocol::Config client_protocol_config ;
+		Filter::Config filter_config ;
 		FilterFactoryBase::Spec filter_spec ;
-		unsigned int filter_timeout {0U} ;
 		bool bind_local_address {false} ;
 		GNet::Address local_address ;
 		unsigned int connection_timeout {0U} ;
@@ -72,8 +72,8 @@ public:
 		Config() ;
 		Config & set_stream_socket_config( const GNet::StreamSocket::Config & ) ;
 		Config & set_client_protocol_config( const ClientProtocol::Config & ) ;
+		Config & set_filter_config( const Filter::Config & ) ;
 		Config & set_filter_spec( const FilterFactoryBase::Spec & ) ;
-		Config & set_filter_timeout( unsigned int ) noexcept ;
 		Config & set_bind_local_address( bool = true ) noexcept ;
 		Config & set_local_address( const GNet::Address & ) ;
 		Config & set_connection_timeout( unsigned int ) noexcept ;
@@ -178,7 +178,7 @@ private:
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_stream_socket_config( const GNet::StreamSocket::Config & c ) { stream_socket_config = c ; return *this ; }
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_client_protocol_config( const ClientProtocol::Config & c ) { client_protocol_config = c ; return *this ; }
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_filter_spec( const FilterFactoryBase::Spec & r ) { filter_spec = r ; return *this ; }
-inline GSmtp::Client::Config & GSmtp::Client::Config::set_filter_timeout( unsigned int t ) noexcept { filter_timeout = t ; return *this ; }
+inline GSmtp::Client::Config & GSmtp::Client::Config::set_filter_config( const Filter::Config & c ) { filter_config = c ; return *this ; }
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_bind_local_address( bool b ) noexcept { bind_local_address = b ; return *this ; }
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_local_address( const GNet::Address & a ) { local_address = a ; return *this ; }
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_connection_timeout( unsigned int t ) noexcept { connection_timeout = t ; return *this ; }

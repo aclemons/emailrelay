@@ -327,6 +327,11 @@ bool G::File::chgrp( const Path & path , const std::string & group , std::nothro
 }
 #endif
 
+bool G::File::hardlink( const Path & src , const Path & dst , std::nothrow_t )
+{
+	return 0 == ::link( src.cstr() , dst.cstr() ) ;
+}
+
 #ifndef G_LIB_SMALL
 void G::File::link( const Path & target , const Path & new_link )
 {

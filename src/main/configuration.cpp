@@ -46,8 +46,6 @@ bool Main::Configuration::_allowRemoteClients() const { return contains( "remote
 GSmtp::FilterFactoryBase::Spec Main::Configuration::_clientFilter() const { return filterValue( "client-filter" ) ; }
 std::pair<int,int> Main::Configuration::_clientSocketLinger() const { return std::make_pair( -1 , -1 ) ; }
 unsigned int Main::Configuration::_connectionTimeout() const { return numberValue( "connection-timeout" , 40U ) ; }
-GSmtp::FilterFactoryBase::Spec Main::Configuration::_filter() const { return filterValue( "filter" ) ; }
-unsigned int Main::Configuration::_filterTimeout() const { return numberValue( "filter-timeout" , 60U ) ; } // was 300
 unsigned int Main::Configuration::_idleTimeout() const { return numberValue( "idle-timeout" , 1800U ) ; }
 unsigned int Main::Configuration::_maxSize() const { return numberValue( "size" , 0U ) ; }
 unsigned int Main::Configuration::_popPort() const { return numberValue( "pop-port" , 110U ) ; }
@@ -79,18 +77,21 @@ bool Main::Configuration::closeStderr() const { return contains( "close-stderr" 
 bool Main::Configuration::daemon() const { return !_nodaemon() ; }
 bool Main::Configuration::debug() const { return contains( "debug" ) ; }
 std::string Main::Configuration::dnsbl() const { return stringValue( "dnsbl" ) ; }
+std::string Main::Configuration::domain( std::function<std::string()> default_domain_fn ) const { return stringValue( "domain" , default_domain_fn ) ; }
 bool Main::Configuration::doAdmin() const { return contains( "admin" ) ; }
 bool Main::Configuration::doPolling() const { return contains( "poll" ) && pollingTimeout() > 0U ; }
 bool Main::Configuration::doPop() const { return contains( "pop" ) ; }
 bool Main::Configuration::doServing() const { return !contains( "dont-serve" ) && !contains( "as-client" ) ; }
 bool Main::Configuration::doSmtp() const { return !contains( "no-smtp" ) ; }
+GSmtp::FilterFactoryBase::Spec Main::Configuration::filter() const { return filterValue( "filter" ) ; }
+unsigned int Main::Configuration::filterTimeout() const { return numberValue( "filter-timeout" , 60U ) ; } // was 300
 bool Main::Configuration::forwardOnDisconnect() const { return contains( "forward-on-disconnect" ) || contains( "as-proxy" ) ; }
 bool Main::Configuration::forwardOnStartup() const { return contains( "forward" ) || contains( "as-client" ) ; }
 bool Main::Configuration::hidden() const { return contains( "hidden" ) ; }
 bool Main::Configuration::immediate() const { return contains( "immediate" ) ; }
+G::Path Main::Configuration::localDeliveryDir() const { return contains("local-delivery-dir") ? pathValue("local-delivery-dir") : G::Path() ; }
 bool Main::Configuration::log() const { return contains( "log" ) || contains( "as-client" ) || contains( "as-proxy" ) || contains( "as-server" ) ; }
 std::string Main::Configuration::logFile() const { return contains("log-file") ? pathValue("log-file").str() : std::string() ; }
-std::string Main::Configuration::domain( std::function<std::string()> default_domain_fn ) const { return stringValue( "domain" , default_domain_fn ) ; }
 G::Path Main::Configuration::pidFile() const { return pathValue( "pid-file" ) ; }
 bool Main::Configuration::pollingLog() const { return doPolling() && pollingTimeout() > 60U ; }
 unsigned int Main::Configuration::pollingTimeout() const { return numberValue( "poll" , 0U ) ; }
@@ -321,7 +322,6 @@ const char * Main::Configuration::semanticError1() const
 	if( !have_forward_to )
 	{
 		if( contains("forward") ) return tx("--forward requires --forward-to") ;
-		if( contains_poll ) return tx("--poll requires --forward-to") ;
 		if( contains("forward-on-disconnect") ) return tx("--forward-on-disconnect requires --forward-to") ;
 		if( contains("client-filter") ) return tx("--client-filter requires --forward-to") ;
 	}
@@ -478,7 +478,7 @@ std::string Main::Configuration::semanticError2() const
 	using G::format ;
 
 	GSmtp::FilterFactoryBase::Spec f ;
-	if( (f=_filter()).first.empty() )
+	if( (f=filter()).first.empty() )
 		return str( format( txt("invalid filter specification: %1%") ) % f.second ) ;
 	if( (f=_clientFilter()).first.empty() )
 		return str( format( txt("invalid client filter specification: %1%") ) % f.second ) ;
@@ -579,6 +579,7 @@ bool Main::Configuration::pathlike( G::string_view option_name )
 	return
 		option_name == "log-file"_sv ||
 		option_name == "spool-dir"_sv ||
+		option_name == "local-delivery-dir"_sv ||
 		option_name == "pid-file"_sv ||
 		option_name == "client-auth"_sv ||
 		option_name == "server-tls-certificate"_sv ||
@@ -625,6 +626,8 @@ G::StringArray Main::Configuration::display( const G::Options & options ) const
 				result.push_back( useSyslog()?yes:no ) ;
 			else if( option.name == "spool-dir" )
 				result.push_back( spoolDir().str() ) ;
+			else if( option.name == "local-delivery-dir" )
+				result.push_back( localDeliveryDir().str() ) ;
 			else if( option.name == "close-stderr" )
 				result.push_back( closeStderr()?yes:no ) ;
 			else if( option.name == "no-daemon" )
@@ -683,7 +686,7 @@ GStore::FileStore::Config Main::Configuration::fileStoreConfig() const
 }
 
 GSmtp::ServerProtocol::Config Main::Configuration::_smtpServerProtocolConfig( bool server_secrets_valid ,
-	const std::string & domain_in ) const
+	const std::string & domain ) const
 {
 	Switches smtp_server_switches( stringValue("server-smtp-config") ) ;
 	return
@@ -694,7 +697,7 @@ GSmtp::ServerProtocol::Config Main::Configuration::_smtpServerProtocolConfig( bo
 			.set_mail_requires_authentication( server_secrets_valid )
 			.set_mail_requires_encryption( _serverTlsRequired() )
 			.set_sasl_server_config( _smtpSaslServerConfig() )
-			.set_sasl_server_challenge_hostname( domain_in )
+			.set_sasl_server_challenge_hostname( domain )
 			.set_tls_starttls( serverTls() )
 			.set_tls_connection( serverTlsConnection() )
 			.set_with_pipelining( smtp_server_switches("pipelining"_sv,true) )
@@ -725,7 +728,7 @@ GNet::StreamSocket::Config Main::Configuration::_netSocketConfig( std::pair<int,
 
 GSmtp::Server::Config Main::Configuration::smtpServerConfig( const std::string & smtp_ident ,
 	bool server_secrets_valid , const std::string & server_tls_profile ,
-	const std::string & domain_in ) const
+	const std::string & domain ) const
 {
 	return
 		GSmtp::Server::Config()
@@ -735,23 +738,29 @@ GSmtp::Server::Config Main::Configuration::smtpServerConfig( const std::string &
 			.set_ident( smtp_ident )
 			.set_anonymous_smtp( anonymous("server") )
 			.set_anonymous_content( anonymous("content") )
-			.set_filter_spec( _filter() )
-			.set_filter_timeout( _filterTimeout() )
+			.set_filter_config(
+				GSmtp::Filter::Config()
+					.set_domain( domain )
+					.set_timeout( filterTimeout() ) )
+			.set_filter_spec( filter() )
+			.set_verifier_config(
+				GSmtp::Verifier::Config()
+					.set_domain( domain )
+					.set_timeout( filterTimeout() ) )
 			.set_verifier_spec( _verifier() )
-			.set_verifier_timeout( _filterTimeout() )
 			.set_net_server_peer_config(
 				GNet::ServerPeer::Config()
 					.set_socket_protocol_config( _socketProtocolConfig(server_tls_profile) )
 					.set_idle_timeout( _idleTimeout() ) )
 			.set_net_server_config( _netServerConfig(_smtpServerSocketLinger()) )
-			.set_protocol_config( _smtpServerProtocolConfig(server_secrets_valid,domain_in) )
+			.set_protocol_config( _smtpServerProtocolConfig(server_secrets_valid,domain) )
 			.set_dnsbl_config( dnsbl() )
 			.set_buffer_config( GSmtp::ServerBufferIn::Config() )
-			.set_domain( domain_in ) ;
+			.set_domain( domain ) ;
 }
 
 GPop::Server::Config Main::Configuration::popServerConfig( const std::string & server_tls_profile ,
-	const std::string & domain_in ) const
+	const std::string & domain ) const
 {
 	return
 		GPop::Server::Config()
@@ -764,10 +773,11 @@ GPop::Server::Config Main::Configuration::popServerConfig( const std::string & s
 					.set_idle_timeout( _idleTimeout() ) )
 			.set_net_server_config( _netServerConfig(_popServerSocketLinger()) )
 			.set_sasl_server_config( _popSaslServerConfig() )
-			.set_sasl_server_challenge_domain( domain_in ) ;
+			.set_sasl_server_challenge_domain( domain ) ;
 }
 
-GSmtp::Client::Config Main::Configuration::smtpClientConfig( const std::string & client_tls_profile ) const
+GSmtp::Client::Config Main::Configuration::smtpClientConfig( const std::string & client_tls_profile ,
+	const std::string & domain ) const
 {
 	std::string local_address_str = clientBindAddress() ;
 	GNet::Address local_address = GNet::Address::defaultAddress() ;
@@ -783,8 +793,11 @@ GSmtp::Client::Config Main::Configuration::smtpClientConfig( const std::string &
 	return
 		GSmtp::Client::Config()
 			.set_stream_socket_config( _netSocketConfig(_clientSocketLinger()) )
+			.set_filter_config(
+				GSmtp::Filter::Config()
+					.set_domain( domain )
+					.set_timeout( filterTimeout() ) )
 			.set_filter_spec( _clientFilter() )
-			.set_filter_timeout( _filterTimeout() )
 			.set_bind_local_address( !local_address_str.empty() )
 			.set_local_address( local_address )
 			.set_client_tls_profile( client_tls_profile )
@@ -809,7 +822,8 @@ GSmtp::Client::Config Main::Configuration::smtpClientConfig( const std::string &
 }
 
 GSmtp::AdminServer::Config Main::Configuration::adminServerConfig( const G::StringMap & info_map ,
-	const G::StringMap & config_map , const std::string & client_tls_profile ) const
+	const G::StringMap & config_map , const std::string & client_tls_profile ,
+	const std::string & domain ) const
 {
 	return
 		GSmtp::AdminServer::Config()
@@ -819,7 +833,7 @@ GSmtp::AdminServer::Config Main::Configuration::adminServerConfig( const G::Stri
 			.set_remote_address( serverAddress() )
 			.set_info_commands( info_map )
 			.set_config_commands( config_map )
-			.set_smtp_client_config( smtpClientConfig(client_tls_profile) )
+			.set_smtp_client_config( smtpClientConfig(client_tls_profile,domain) )
 			.set_net_server_config( _netServerConfig(_adminServerSocketLinger()) )
 			.set_net_server_peer_config(
 				GNet::ServerPeer::Config()

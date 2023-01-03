@@ -246,6 +246,13 @@
 #
 #interface 127.0.0.1,smtp=eth0
 
+# Name: local-delivery-dir
+# Format: local-delivery-dir <dir>
+# Description: Enables local delivery of mail messages that have local
+# recipients, as determined by an address verifier.
+#
+#local-delivery-dir /var/spool/emailrelay/delivery
+
 # Name: prompt-timeout
 # Format: prompt-timeout <time>
 # Description: Specifies a timeout (in seconds) for getting the initial

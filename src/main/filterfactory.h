@@ -51,8 +51,8 @@ public:
 
 private: // overrides
 	std::unique_ptr<GSmtp::Filter> newFilter( GNet::ExceptionSink ,
-		GSmtp::Filter::Type , const Spec & , unsigned int timeout ,
-		const std::string & log_prefix ) override ;
+		GSmtp::Filter::Type , const GSmtp::Filter::Config & , const Spec & ,
+		const std::string & log_prefix ) override ; // GFilters::FilterFactory
 
 private:
 	Main::Run & m_run ;

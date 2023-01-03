@@ -42,7 +42,7 @@ GSmtp::ServerPeer::ServerPeer( GNet::ExceptionSinkUnbound esu ,
 		m_server_config(server_config) ,
 		m_block(std::bind(&ServerPeer::onDnsBlockResult,this,std::placeholders::_1),esu.bind(this),server_config.dnsbl_config) ,
 		m_check_timer(*this,&ServerPeer::onCheckTimeout,esu.bind(this)) ,
-		m_verifier(vf.newVerifier(esu.bind(this),server_config.verifier_spec,server_config.verifier_timeout)) ,
+		m_verifier(vf.newVerifier(esu.bind(this),server_config.verifier_config,server_config.verifier_spec)) ,
 		m_pmessage(server.newProtocolMessage(esu.bind(this))) ,
 		m_ptext(ptext.release()) ,
 		m_protocol(*this,*m_verifier,*m_pmessage,server_secrets,
@@ -173,7 +173,8 @@ void GSmtp::ServerPeer::onCheckTimeout()
 
 // ===
 
-GSmtp::Server::Server( GNet::ExceptionSink es , GStore::MessageStore & store , FilterFactoryBase & ff ,
+GSmtp::Server::Server( GNet::ExceptionSink es , GStore::MessageStore & store ,
+	GStore::MessageDelivery & delivery , FilterFactoryBase & ff ,
 	VerifierFactoryBase & vf , const GAuth::SaslClientSecrets & client_secrets ,
 	const GAuth::SaslServerSecrets & server_secrets , const Config & server_config ,
 	const std::string & forward_to , int forward_to_family ,
@@ -182,6 +183,7 @@ GSmtp::Server::Server( GNet::ExceptionSink es , GStore::MessageStore & store , F
 			server_config.net_server_peer_config,
 			server_config.net_server_config) ,
 		m_store(store) ,
+		m_delivery(delivery) ,
 		m_ff(ff) ,
 		m_vf(vf) ,
 		m_server_config(server_config) ,
@@ -247,12 +249,13 @@ std::unique_ptr<GSmtp::ServerProtocol::Text> GSmtp::Server::newProtocolText( boo
 
 std::unique_ptr<GSmtp::Filter> GSmtp::Server::newFilter( GNet::ExceptionSink es ) const
 {
-	return m_ff.newFilter( es , Filter::Type::server , m_server_config.filter_spec , m_server_config.filter_timeout , {} ) ;
+	return m_ff.newFilter( es , Filter::Type::server , m_server_config.filter_config ,
+		m_server_config.filter_spec , {} ) ;
 }
 
 std::unique_ptr<GSmtp::ProtocolMessage> GSmtp::Server::newProtocolMessageStore( std::unique_ptr<Filter> filter )
 {
-	return std::make_unique<ProtocolMessageStore>( m_store , std::move(filter) ) ; // up-cast
+	return std::make_unique<ProtocolMessageStore>( m_store , m_delivery , std::move(filter) ) ;
 }
 
 std::unique_ptr<GSmtp::ProtocolMessage> GSmtp::Server::newProtocolMessageForward( GNet::ExceptionSink es ,

@@ -86,7 +86,12 @@ public:
 		///< Comparison operator.
 
 	static std::pair<uid_t,gid_t> lookupUser( const std::string & user ) ;
-		///< Does a username lookup. Throws on error.
+		///< Does a username lookup. Throws if no such user
+		///< or on error.
+
+	static bool lookupUser( const std::string & user , uid_t & , gid_t & ) ;
+		///< Does a username lookup. Returns false if no such user.
+		///< Throws on error.
 
 	static gid_t lookupGroup( const std::string & group ) ;
 		///< Does a groupname lookup. Throws on error.

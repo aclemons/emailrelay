@@ -106,7 +106,7 @@ public:
 			///< the given port number. Returns the empty list if not
 			///< found or if found but not up. Does lazy load()ing.
 
-	struct Addresses
+	struct Addresses /// Addresses returned from GNet::Interfaces::addresses().
 	{
 		std::vector<Address> addresses ;
 		G::StringArray used_names ; // addresses and interface names that have addresses

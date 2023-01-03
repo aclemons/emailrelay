@@ -299,19 +299,19 @@ Main()
 
 	RunServer \
 		--pid-file=$cfg_base_dir/pid --log --verbose --log-time --no-syslog \
-		--port-1=${cfg_pp}01 --spool-dir-1=$cfg_base_dir/store-2 \
-		--port-2=${cfg_pp}02 --spool-dir-2=$cfg_base_dir/store-2 \
-			--admin-2=${cfg_admin_port} --admin-terminate-2 \
-			--forward-to-2=localhost:${cfg_pp}03 --client-auth-2=$cfg_base_dir/client-carol.auth \
-		--port-3=${cfg_pp}03 --spool-dir-3=$cfg_base_dir/store-3 \
-			--immediate-3 --forward-to-3=localhost:${cfg_pp}04 --filter-3=$cfg_null_filter \
-			--client-auth-3=$cfg_base_dir/client-alice.auth --server-auth-3=$cfg_base_dir/server.auth \
-		--port-4=${cfg_pp}04 --spool-dir-4=$cfg_base_dir/store-4 \
-			--server-auth-4=$cfg_base_dir/server.auth \
-		--port-5=${cfg_pp}05 --spool-dir-5=$cfg_base_dir/store-4 \
-			--poll-5=1 --forward-to-5=localhost:${cfg_pp}06 --client-filter-5=$cfg_base_dir/filter.sh \
-		--port-6=${cfg_pp}06 --spool-dir-6=$cfg_base_dir/store-5 \
-			--filter-6=$cfg_base_dir/filter.sh
+		--1-port=${cfg_pp}01 --1-spool-dir=$cfg_base_dir/store-2 \
+		--2-port=${cfg_pp}02 --2-spool-dir=$cfg_base_dir/store-2 \
+			--2-admin=${cfg_admin_port} --2-admin-terminate \
+			--2-forward-to=localhost:${cfg_pp}03 --2-client-auth=$cfg_base_dir/client-carol.auth \
+		--3-port=${cfg_pp}03 --3-spool-dir=$cfg_base_dir/store-3 \
+			--3-immediate --3-forward-to=localhost:${cfg_pp}04 --3-filter=$cfg_null_filter \
+			--3-client-auth=$cfg_base_dir/client-alice.auth --3-server-auth=$cfg_base_dir/server.auth \
+		--4-port=${cfg_pp}04 --4-spool-dir=$cfg_base_dir/store-4 \
+			--4-server-auth=$cfg_base_dir/server.auth \
+		--5-port=${cfg_pp}05 --5-spool-dir=$cfg_base_dir/store-4 \
+			--5-poll=1 --5-forward-to=localhost:${cfg_pp}06 --5-client-filter=$cfg_base_dir/filter.sh \
+		--6-port=${cfg_pp}06 --6-spool-dir=$cfg_base_dir/store-5 \
+			--6-filter=$cfg_base_dir/filter.sh
 
 	Sleep 1
 
@@ -323,9 +323,9 @@ Main()
 	RunPoke ${cfg_admin_port} forward
 
 	local success="0"
-	for i in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
+	for i in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19
 	do
-		Sleep 5
+		Sleep 1
 		if TestDone store-5
 		then
 			success="1"

@@ -114,26 +114,16 @@ public:
 	virtual std::unique_ptr<StoredMessage> get( const MessageId & id ) = 0 ;
 		///< Pulls the specified message out of the store. Throws
 		///< execptions on error.
-		///<
-		///< As a side effect some stored messages may be marked as bad,
-		///< or deleted (if they have no recipients).
 
-	virtual std::shared_ptr<Iterator> iterator( bool lock ) = 0 ;
+	virtual std::unique_ptr<Iterator> iterator( bool lock ) = 0 ;
 		///< Returns an iterator for stored messages.
 		///<
 		///< If 'lock' is true then stored messages returned by the
 		///< iterator are locked. They can then be deleted by
 		///< StoredMessage::destroy() once they have been fully
 		///< processed.
-		///<
-		///< If 'lock' is true invalid messages having no receipients
-		///< are not returned by the iterator.
-		///<
-		///< If 'lock' is true then as a side effect of iteration some
-		///< stored messages may be marked as bad, or get deleted
-		///< if they have no recipients.
 
-	virtual std::shared_ptr<Iterator> failures() = 0 ;
+	virtual std::unique_ptr<Iterator> failures() = 0 ;
 		///< Returns an iterator for failed messages.
 
 	virtual void unfailAll() = 0 ;

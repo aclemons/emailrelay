@@ -22,17 +22,20 @@
 #include "gnullfilter.h"
 #include "gstr.h"
 
-GFilters::NullFilter::NullFilter( GNet::ExceptionSink es , Filter::Type filter_type ) :
-	m_exit(0,filter_type) ,
-	m_id("none") ,
-	m_timer(*this,&NullFilter::onTimeout,es)
+GFilters::NullFilter::NullFilter( GNet::ExceptionSink es , GStore::FileStore & ,
+	Filter::Type filter_type , const Filter::Config & ) :
+		m_exit(0,filter_type) ,
+		m_id("none") ,
+		m_timer(*this,&NullFilter::onTimeout,es)
 {
 }
 
-GFilters::NullFilter::NullFilter( GNet::ExceptionSink es , Filter::Type filter_type , unsigned int exit_code ) :
-	m_exit(static_cast<int>(exit_code),filter_type) ,
-	m_id("exit:"+G::Str::fromUInt(exit_code)) ,
-	m_timer(*this,&NullFilter::onTimeout,es)
+GFilters::NullFilter::NullFilter( GNet::ExceptionSink es , GStore::FileStore & ,
+	Filter::Type filter_type , const Filter::Config & ,
+	unsigned int exit_code ) :
+		m_exit(static_cast<int>(exit_code),filter_type) ,
+		m_id("exit:"+G::Str::fromUInt(exit_code)) ,
+		m_timer(*this,&NullFilter::onTimeout,es)
 {
 }
 
@@ -66,7 +69,7 @@ std::string GFilters::NullFilter::reason() const
 	return ( m_exit.ok() || m_exit.abandon() ) ? std::string() : m_id ;
 }
 
-G::Slot::Signal<int> & GFilters::NullFilter::doneSignal()
+G::Slot::Signal<int> & GFilters::NullFilter::doneSignal() noexcept
 {
 	return m_done_signal ;
 }

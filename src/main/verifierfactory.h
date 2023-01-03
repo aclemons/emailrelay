@@ -49,7 +49,7 @@ public:
 
 private: // overrides
 	std::unique_ptr<GSmtp::Verifier> newVerifier( GNet::ExceptionSink ,
-		const Spec & spec , unsigned int timeout ) override ;
+		const GSmtp::Verifier::Config & config , const Spec & spec ) override ;
 
 private:
 	Run & m_run ;

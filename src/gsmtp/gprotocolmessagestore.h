@@ -24,6 +24,7 @@
 #include "gdef.h"
 #include "gprotocolmessage.h"
 #include "gmessagestore.h"
+#include "gmessagedelivery.h"
 #include "gnewmessage.h"
 #include "gfilter.h"
 #include "gslot.h"
@@ -43,8 +44,9 @@ namespace GSmtp
 class GSmtp::ProtocolMessageStore : public ProtocolMessage
 {
 public:
-	ProtocolMessageStore( GStore::MessageStore & store , std::unique_ptr<Filter> ) ;
-		///< Constructor.
+	ProtocolMessageStore( GStore::MessageStore & store , GStore::MessageDelivery & delivery ,
+		std::unique_ptr<Filter> ) ;
+			///< Constructor.
 
 	~ProtocolMessageStore() override ;
 		///< Destructor.
@@ -75,6 +77,7 @@ private:
 
 private:
 	GStore::MessageStore & m_store ;
+	GStore::MessageDelivery & m_delivery ;
 	std::unique_ptr<Filter> m_filter ;
 	std::unique_ptr<GStore::NewMessage> m_new_msg ;
 	std::string m_from ;

@@ -42,24 +42,24 @@ class GFilters::SpamFilter : public GSmtp::Filter
 {
 public:
 	SpamFilter( GNet::ExceptionSink , GStore::FileStore & ,
+		Filter::Type , const Filter::Config & ,
 		const std::string & server_location ,
-		bool read_only , bool always_pass , unsigned int connection_timeout ,
-		unsigned int response_timeout ) ;
+		bool read_only , bool always_pass ) ;
 			///< Constructor.
 
 	~SpamFilter() override ;
 		///< Destructor.
 
 private: // overrides
-	std::string id() const override ; // Override from from GSmtp::Filter.
-	bool simple() const override ; // Override from from GSmtp::Filter.
-	G::Slot::Signal<int> & doneSignal() override ; // Override from from GSmtp::Filter.
-	void start( const GStore::MessageId & ) override ; // Override from from GSmtp::Filter.
-	void cancel() override ; // Override from from GSmtp::Filter.
-	Result result() const override ; // Override from from GSmtp::Filter.
-	std::string response() const override ; // Override from from GSmtp::Filter.
-	std::string reason() const override ; // Override from from GSmtp::Filter.
-	bool special() const override ; // Override from from GSmtp::Filter.
+	std::string id() const override ; // GSmtp::Filter
+	bool simple() const override ; // GSmtp::Filter
+	G::Slot::Signal<int> & doneSignal() noexcept override ; // GSmtp::Filter
+	void start( const GStore::MessageId & ) override ; // GSmtp::Filter
+	void cancel() override ; // GSmtp::Filter
+	Result result() const override ; // GSmtp::Filter
+	std::string response() const override ; // GSmtp::Filter
+	std::string reason() const override ; // GSmtp::Filter
+	bool special() const override ; // GSmtp::Filter
 
 public:
 	SpamFilter( const SpamFilter & ) = delete ;

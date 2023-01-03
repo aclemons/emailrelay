@@ -81,13 +81,15 @@ Main::CommandLine::CommandLine( Output & output , const G::Arg & args_in ,
 		m_arg_prefix(args_in.prefix())
 {
 	// look for special config names
-	G::StringArray config_names ; // with "-"
+	G::StringArray config_names ;
 	{
 		for( std::size_t i = 1U ; i < args_in.c() ; i++ )
 		{
 			std::string arg = args_in.v( i ) ;
-			if( G::Str::headMatch(arg,"--spool-dir-") )
-				config_names.push_back( G::Str::head(arg.substr(11U),"=",false) ) ; // eg. "-in"
+			std::size_t keypos = arg.find( "-spool-dir" ) ;
+			std::size_t eqpos = arg.find( '=' ) ;
+			if( G::Str::headMatch(arg,"--") && keypos > 2U && keypos < eqpos )
+				config_names.push_back( arg.substr(2U,keypos-2U) ) ;
 		}
 	}
 	if( !config_names.empty() )
@@ -95,13 +97,14 @@ Main::CommandLine::CommandLine( Output & output , const G::Arg & args_in ,
 		for( std::size_t i = 0U ; i < config_names.size() ; i++ )
 		{
 			m_option_maps.emplace_back() ;
-			m_config_names.push_back( config_names.at(i).substr(1U) ) ;
+			m_config_names.push_back( config_names.at(i) ) ;
 			G::OptionParser parser( options_spec , m_option_maps.back() , &m_errors ) ;
 			G::StringArray args = parser.parse( args_in.array() , 1U , 0U ,
 				[&config_names,i]( const std::string & name_ ){ return onParse(config_names,i,name_) ; } ) ;
 			if( !args.empty() && m_errors.empty() )
 				m_errors.push_back( "config files cannot be used with a multi-dimensional command-line" ) ;
 		}
+		std::sort( m_errors.begin() , m_errors.end() ) ;
 		m_errors.erase( std::unique( m_errors.begin() , m_errors.end() ) , m_errors.end() ) ;
 	}
 	else
@@ -142,28 +145,30 @@ Main::CommandLine::~CommandLine()
 
 std::string Main::CommandLine::onParse( const G::StringArray & config_names , std::size_t i , const std::string & parser_name )
 {
-	// we want parser names like "port-in" (where "-in" is the current (i'th) config-name)
-	// to be parsed as if "port", but we want to ignore "port-out" where "-out" is
+	// we want parser names like "in-port" (where "in" is the current (i'th) config-name)
+	// to be parsed as if "port", but we want to ignore "out-port" where "out" is
 	// some other (non-i'th) config name -- also plain "port" should be discarded if
 	// not the zero'th name
 
 	std::string result = parser_name ;
-	if( G::Str::tailMatch( parser_name , config_names.at(i) ) ) // "port-in" and "-in"
+	if( G::Str::headMatch( parser_name , config_names.at(i)+"-" ) ) // "in-port" and "in-"
 	{
-		result = parser_name.substr( 0U , parser_name.size()-config_names[i].size() ) ; // "port"
+		result = parser_name.substr( config_names[i].size()+1U ) ; // "port"
 	}
 	else
 	{
 		for( const auto & config_name : config_names )
 		{
-			const char discard = '-' ; // see OptionParser::parse()
-			if( G::Str::tailMatch( parser_name , config_name ) ) // "port-out" and "-out"
+			if( G::Str::headMatch( parser_name , config_name+"-" ) ) // "out-port" and "out"
 			{
-				result = std::string(1U,discard).append(parser_name.substr(0U,parser_name.size()-config_name.size())) ; // "-port"
+				result = parser_name.substr( config_name.size() ) ; // "-port"
 				break ;
 			}
 			if( i != 0U )
+			{
+				const char discard = '-' ; // see OptionParser::parse()
 				result = std::string(1U,discard).append(parser_name) ;
+			}
 		}
 	}
 	return result ;

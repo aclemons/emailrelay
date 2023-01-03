@@ -41,18 +41,26 @@ class GStore::Envelope
 {
 public:
 	G_EXCEPTION( ReadError , tx("cannot read envelope file") ) ;
+	G_EXCEPTION( WriteError , tx("cannot write envelope file") ) ;
 
 	static void read( std::istream & , Envelope & ) ;
 		///< Reads an envelope from a stream. Throws on error.
 		///< Input lines can be newline delimited, in which case
-		///< 'm_crlf' is set false.
+		///< 'crlf' is set false.
 
 	static std::size_t write( std::ostream & , const Envelope & ) ;
 		///< Writes an envelope to a seekable stream. Returns the new
-		///< endpos value. Returns zero on error, if for example the
-		///< stream is unseekable. Output lines are CR-LF delimited.
-		///< The structure 'm_crlf' and 'm_endpos' fields should
-		///< normally be updated after using write().
+		///< endpos value. Returns zero and sets the fail state on
+		///< error, if for example the stream is unseekable. Output
+		///< lines are CR-LF delimited. The structure 'crlf' and
+		///< 'endpos' fields should normally be updated after
+		///< using write().
+
+	static void copy( Envelope & new_envelope , const G::Path & ,
+		const Envelope & old_envelope ) ;
+			///< A convenience function that writes a new envelope file
+			///< and adds extra diagnostic headers from the old envelope.
+			///< Throws on error.
 
 	static void copy( std::istream & , std::ostream & ) ;
 		///< A convenience function to copy lines from an input

@@ -65,14 +65,14 @@ class GSmtp::ProtocolMessage
 {
 public:
 	using DoneSignal = G::Slot::Signal<bool,const GStore::MessageId&,const std::string&,const std::string&> ;
-	struct FromInfo /// Extra information from the SMTP MAIL-FROM command passed to setFrom().
+	struct FromInfo /// Extra information from the SMTP MAIL-FROM command passed to GSmtp::ProtocolMessage::setFrom().
 	{
 		std::string auth ; // RFC-2554 MAIL-FROM with AUTH= ie. 'auth-in' (xtext or "<>")
 		std::string body ; // RFC-1652 MAIL-FROM with BODY={7BIT|8BITMIME|BINARYMIME}
 		bool smtputf8 {true} ; // RFC-6531 MAIL-FROM with SMTPUTF8
 		bool utf8address {false} ; // GSmtp::ServerParser::MailboxStyle
 	} ;
-	struct ToInfo
+	struct ToInfo /// Extra information passed to GSmtp::ProtocolMessage::addTo().
 	{
 		explicit ToInfo( const VerifierStatus & ) ;
 		VerifierStatus status ;
@@ -86,10 +86,11 @@ public:
 		///< Returns a signal which is raised once process() has
 		///< completed.
 		///<
-		///< The signal parameters are 'success', 'id', 'short-response' and
-		///< 'full-reason'. As a special case, if success is true and id
-		///< is invalid then the message processing was either abandoned
-		///< or it only had local-mailbox recipients.
+		///< The signal parameters are 'success', 'id', 'with-local',
+		///< 'short-response' and 'full-reason'. As a special case,
+		///< if success is true and id is invalid then the message
+		///< processing was either abandoned or it had only local
+		///< recipients.
 
 	virtual void reset() = 0 ;
 		///< Clears the message state, terminates any asynchronous message

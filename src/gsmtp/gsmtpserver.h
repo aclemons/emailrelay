@@ -28,6 +28,7 @@
 #include "glinebuffer.h"
 #include "gverifier.h"
 #include "gmessagestore.h"
+#include "gmessagedelivery.h"
 #include "gfilterfactorybase.h"
 #include "gverifierfactorybase.h"
 #include "gsmtpserverprotocol.h"
@@ -64,10 +65,10 @@ public:
 		std::string ident ;
 		bool anonymous_smtp {false} ;
 		bool anonymous_content {false} ;
+		Filter::Config filter_config ;
 		FilterFactoryBase::Spec filter_spec ;
-		unsigned int filter_timeout {0U} ;
+		Verifier::Config verifier_config ;
 		VerifierFactoryBase::Spec verifier_spec ;
-		unsigned int verifier_timeout {0U} ;
 		GNet::ServerPeer::Config net_server_peer_config ;
 		GNet::Server::Config net_server_config ;
 		ServerProtocol::Config protocol_config ;
@@ -82,10 +83,10 @@ public:
 		Config & set_anonymous( bool = true ) noexcept ;
 		Config & set_anonymous_smtp( bool = true ) noexcept ;
 		Config & set_anonymous_content( bool = true ) noexcept ;
+		Config & set_filter_config( const Filter::Config & ) ;
 		Config & set_filter_spec( const FilterFactoryBase::Spec & ) ;
-		Config & set_filter_timeout( unsigned int ) noexcept ;
+		Config & set_verifier_config( const Verifier::Config & ) ;
 		Config & set_verifier_spec( const VerifierFactoryBase::Spec & ) ;
-		Config & set_verifier_timeout( unsigned int ) noexcept ;
 		Config & set_net_server_peer_config( const GNet::ServerPeer::Config & ) ;
 		Config & set_net_server_config( const GNet::Server::Config & ) ;
 		Config & set_protocol_config( const ServerProtocol::Config & ) ;
@@ -94,9 +95,10 @@ public:
 		Config & set_domain( const std::string & ) ;
 	} ;
 
-	Server( GNet::ExceptionSink es , GStore::MessageStore & file_store , FilterFactoryBase & ,
-		VerifierFactoryBase & , const GAuth::SaslClientSecrets & , const GAuth::SaslServerSecrets & ,
-		const Config & server_config , const std::string & forward_to , int forward_to_family ,
+	Server( GNet::ExceptionSink es , GStore::MessageStore & , GStore::MessageDelivery & ,
+		FilterFactoryBase & , VerifierFactoryBase & , const GAuth::SaslClientSecrets & ,
+		const GAuth::SaslServerSecrets & , const Config & server_config ,
+		const std::string & forward_to , int forward_to_family ,
 		const GSmtp::Client::Config & client_config ) ;
 			///< Constructor. Listens on the given port number using INET_ANY
 			///< if 'server_config.interfaces' is empty, or on specific
@@ -137,6 +139,7 @@ private:
 
 private:
 	GStore::MessageStore & m_store ;
+	GStore::MessageDelivery & m_delivery ;
 	FilterFactoryBase & m_ff ;
 	VerifierFactoryBase & m_vf ;
 	Config m_server_config ;
@@ -211,10 +214,10 @@ inline GSmtp::Server::Config & GSmtp::Server::Config::set_ident( const std::stri
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_anonymous( bool b ) noexcept { anonymous_smtp = anonymous_content = b ; return *this ; }
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_anonymous_smtp( bool b ) noexcept { anonymous_smtp = b ; return *this ; }
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_anonymous_content( bool b ) noexcept { anonymous_content = b ; return *this ; }
+inline GSmtp::Server::Config & GSmtp::Server::Config::set_filter_config( const Filter::Config & c ) { filter_config = c ; return *this ; }
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_filter_spec( const FilterFactoryBase::Spec & r ) { filter_spec = r ; return *this ; }
-inline GSmtp::Server::Config & GSmtp::Server::Config::set_filter_timeout( unsigned int t ) noexcept { filter_timeout = t ; return *this ; }
+inline GSmtp::Server::Config & GSmtp::Server::Config::set_verifier_config( const Verifier::Config & c ) { verifier_config = c ; return *this ; }
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_verifier_spec( const VerifierFactoryBase::Spec & r ) { verifier_spec = r ; return *this ; }
-inline GSmtp::Server::Config & GSmtp::Server::Config::set_verifier_timeout( unsigned int t ) noexcept { verifier_timeout = t ; return *this ; }
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_net_server_peer_config( const GNet::ServerPeer::Config & c ) { net_server_peer_config = c ; return *this ; }
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_net_server_config( const GNet::Server::Config & c ) { net_server_config = c ; return *this ; }
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_protocol_config( const ServerProtocol::Config & c ) { protocol_config = c ; return *this ; }

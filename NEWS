@@ -1,6 +1,85 @@
 News
 ====
 
+Multiple configurations
+-----------------------
+In previous releases it has been possible to specifiy options on the
+command-line and/or in a configuration file named on the command-line, and
+then have the options from the configuration file added to those from the
+command-line.
+
+For example:
+
+	./emailrelay --log -v /etc/emailrelay.conf
+
+In this release more than one configuration file can be specified. The first
+file is added to the options on the command-line as before, but then each
+subsequent configuration file gives rise to a whole new configuration, as if
+multiple emailrelays are running in parallel.
+
+For example:
+
+	./emailrelay --log -v /etc/emailrelay-in.conf /etc/emailrelay-out.conf
+
+Some options, such as "--verbose" and "--no-daemon" are only relevant if they
+are in the first configuration because they affect the process as a whole.
+If they are used in subsequent configurations they are ignored.
+
+Another way to get multiple configurations is to use prefixes on option names;
+for example you can use "--in-spool-dir=/tmp/in" and "--out-spool-dir=/tmp/out",
+and then also "--in-port=25" and "--out-port=587" etc.
+
+The configuration prefixes ("in" and "out" in this example) are identified
+from the "--spool-dir" options.
+
+When using this approach configuration files are not allowed.
+
+More built-in filters and address verifiers
+-------------------------------------------
+E-MailRelay allows filters that are not simple scripts by using command-line
+options like "--filter=exit:99" and "--filter=spam:localhost:783", with a
+small number of special prefixes that include "exit:", "net:", "file:" and
+"spam:".
+
+In this release there is a new built-in "deliver:" filter (see below), and
+similarly new "allow:" and "local:" address verifiers.
+
+A compile-time option can be used to enable any additional optional filters
+and address verifiers, as follows:
+
+	./configure.sh --enable-extra-filters --enable-extra-verifiers
+
+The "allow:" address verifier checks that the recipient address has a username
+that exists in the password database and a domain that matches the configured
+"--domain". If it does not match then the address is rejected and an SMTP error
+is returned to the submitting client.
+
+The "local:" address verifier checks the recipient address against the password
+database and the configured "--domain" in the same way. If the address matches
+then it is treated as a local address (see below), and if it does not match
+then it is accepted as a remote address with no SMTP error.
+
+Delivery
+--------
+E-MailRelay does normally concern itself with the process of mail delivery; that
+is, copying mail messages into an individual user's mailbox from where they can
+read and ulitmatelty delete it. However, if a mail message has local recipients,
+as determined by an address verifier, then the envelope and content files are
+copied to files with a ".local" filename extension so that some external system
+can perform message delivery.
+
+This release adds more built-in support for message delivery by providing an
+option to distribute a ".local" message into a separate mailbox sub-directory
+for each message recipient. The new "--local-delivery-dir" command-line option
+enables this functionality and specifies the base directory for the mailboxes.
+
+There is also a new built-in filter that can do message delivery
+("--filter=deliver:"). It assumes all message recipients are local users, so
+there is no need to use an address verifier, but to avoid creating too many
+mailboxes the recipient address is strictly validated against the password
+database. Any message recipient that is not valid results in delivery to a
+default "postmaster" mailbox.
+
 7BIT/8BITMIME
 -------------
 Previous versions of E-MailRelay test message content when a message is received
@@ -87,60 +166,16 @@ MbedTLS libraries. Both libraries have stopped exposing the relevant state
 variables used within their hashing functions. MD5 hashed passwords will still
 work.
 
-Multiple configurations
------------------------
-In previous releases it has been possible to specifiy options on the
-command-line and/or in a configuration file named on the command-line, and
-then have the options from the configuration file added to those from the
-command-line.
-
-For example:
-	./emailrelay --log -v /etc/emailrelay.conf
-
-In this release more than one configuration file can be specified. The first
-file is added to the options on the command-line as before, but now each
-subsequent configuration file gives rise to a whole new configuration, as if
-multiple emailrelays are running in parallel.
-
-For example:
-	./emailrelay --log -v /etc/emailrelay-in.conf /etc/emailrelay-out.conf
-
-Some options, such as "--verbose" and "--no-daemon" are only relevant if they
-are in the first configuration because they affect the process as a whole.
-If they are used in subsequent configurations they are ignored. (Also, event
-notification via the admin interface only works for the first configuration.)
-
-Another way to get the same result is to use suffixes on option names, so you
-can use "--spool-dir-in=/tmp/in" and "--spool-dir-out=/tmp/out", and then also
-"--port-in=25" and "--port-out=587" etc. When using this approach configuration
-files are not allowed.
-
-The motivation for multiple configurations is to have a single emailrelay
-process relaying messages in two directions: "in" and "out". The "in"
-direction might be for incoming traffic from the internet, and the "out"
-direction for outgoing traffic to a "smarthost".
-
-More built-in filters and address verifiers
--------------------------------------------
-By default E-MailRelay allows filters like "--filter=exit:99" and address
-verifiers like "--address-verifer=net:127.0.0.1:99", with a small number of
-supported prefixes including "exit:", "net:", "file:" and "spam:" built-in.
-
-In this release more filters and address verifiers can be enabled at build
-time by using "./configure.sh --enable-extra-filters --enable-extra-verifiers".
-
-The key source files supporting this are "src/main/filterfactory.cpp" and
-"src/main/verifierfactory.cpp".
-
 Code size
 ---------
 The source code now contains a lot of conditional compilation directives like
 "#ifndef G_LIB_SMALL" that reduce the size of the built binaries.
 
-This code uglification can be removed if not required by running:
-	libexec/reduce.sh --undo
-
 The Windows build and the build of the GUI on Linux are not affected because
 they are built without the "G_LIB_SMALL" switch.
 
+These extra directives make the code rather ugly so they can be removed if
+necessary by running:
+
+	libexec/reduce.sh --undo
 

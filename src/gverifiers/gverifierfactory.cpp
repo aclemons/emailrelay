@@ -23,6 +23,7 @@
 #include "ginternalverifier.h"
 #include "gexecutableverifier.h"
 #include "gnetworkverifier.h"
+#include "guserverifier.h"
 #include "gfile.h"
 #include "gstr.h"
 #include "gexception.h"
@@ -56,6 +57,16 @@ GVerifiers::VerifierFactory::Spec GVerifiers::VerifierFactory::parse( const std:
 		result = Spec( "net" , tail ) ;
 		checkNet( result ) ;
 	}
+	else if( spec_in.find("allow:") == 0U )
+	{
+		result = Spec( "allow" , tail ) ;
+		UserVerifier::check( result.second ) ;
+	}
+	else if( spec_in.find("local:") == 0U )
+	{
+		result = Spec( "local" , tail ) ;
+		UserVerifier::check( result.second ) ;
+	}
 	else if( spec_in.find("file:") == 0U )
 	{
 		result = Spec( "file" , tail ) ;
@@ -70,7 +81,7 @@ GVerifiers::VerifierFactory::Spec GVerifiers::VerifierFactory::parse( const std:
 }
 
 std::unique_ptr<GSmtp::Verifier> GVerifiers::VerifierFactory::newVerifier( GNet::ExceptionSink es ,
-	const Spec & spec , unsigned int timeout )
+	const GSmtp::Verifier::Config & config , const Spec & spec )
 {
 	if( spec.first == "exit" )
 	{
@@ -78,11 +89,23 @@ std::unique_ptr<GSmtp::Verifier> GVerifiers::VerifierFactory::newVerifier( GNet:
 	}
 	else if( spec.first == "net" )
 	{
-		return std::make_unique<NetworkVerifier>( es , spec.second , timeout , timeout ) ;
+		return std::make_unique<NetworkVerifier>( es , config , spec.second ) ;
+	}
+	else if( spec.first == "allow" )
+	{
+		bool local = false ;
+		bool allow_postmaster = false ;
+		return std::make_unique<UserVerifier>( es , local , config , spec.second , allow_postmaster ) ;
+	}
+	else if( spec.first == "local" )
+	{
+		bool local = true ;
+		bool allow_postmaster = false ;
+		return std::make_unique<UserVerifier>( es , local , config , spec.second , allow_postmaster ) ;
 	}
 	else if( spec.first == "file" )
 	{
-		return std::make_unique<ExecutableVerifier>( es , G::Path(spec.second) ) ;
+		return std::make_unique<ExecutableVerifier>( es , G::Path(spec.second) , config.timeout ) ;
 	}
 
 	throw G::Exception( "invalid verifier" , spec.second ) ;

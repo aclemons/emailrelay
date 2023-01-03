@@ -22,10 +22,11 @@
 #include "demoverifier.h"
 #include "run.h"
 #include "unit.h"
+#include "gidentity.h"
 #include "gstr.h"
 
 Main::DemoVerifier::DemoVerifier( GNet::ExceptionSink es , Main::Run & run ,
-	Main::Unit & unit , const std::string & spec ) :
+	Main::Unit & unit , const GSmtp::Verifier::Config & , const std::string & spec ) :
 		m_run(run) ,
 		m_unit(unit) ,
 		m_timer(*this,&DemoVerifier::onTimeout,es) ,
@@ -37,8 +38,7 @@ Main::DemoVerifier::~DemoVerifier()
 = default ;
 
 void Main::DemoVerifier::verify( Command command , const std::string & rcpt_to_parameter ,
-	const std::string & /*mail_from_parameter*/ , const G::BasicAddress & /*client_ip*/ ,
-	const std::string & /*auth_mechanism*/ , const std::string & /*auth_extra*/ )
+	const GSmtp::Verifier::Info & info )
 {
 	// squirrel away the RCPT/VRFY enum
 	m_command = command ;
@@ -48,25 +48,24 @@ void Main::DemoVerifier::verify( Command command , const std::string & rcpt_to_p
 	std::string domain = G::Str::lower( G::Str::tail( rcpt_to_parameter , "@" ) ) ;
 
 	// verify as valid-local, valid-remote or invalid
-	std::string this_domain = m_unit.domain() ;
-	if( domain == this_domain && ( user == "postmaster" || user == "webmaster" ) )
+	if( user == "postmaster" || user == "webmaster" )
 	{
 		// (note that messages to local recipients are not forwarded)
 		m_result = GSmtp::VerifierStatus::local( rcpt_to_parameter ,
-			"Postmaster" , "<postmaster@"+this_domain+">" ) ;
+			"Postmaster" , "<postmaster@"+info.domain+">" ) ;
 	}
-	else if( user == "alice" )
+	else if( domain == info.domain && user == "alice" )
 	{
 		m_result = GSmtp::VerifierStatus::remote( rcpt_to_parameter ) ;
 	}
 	else
 	{
 		m_result = GSmtp::VerifierStatus::invalid( rcpt_to_parameter , false ,
-			"rejected" , "not postmaster or alice" ) ;
+			"rejected" , "not a valid user at " + info.domain  ) ;
 	}
 
 	// asynchronous completion via a timer
-	m_timer.startTimer(1U) ;
+	m_timer.startTimer( 1U ) ;
 }
 
 Main::DemoVerifier::Signal & Main::DemoVerifier::doneSignal()

@@ -42,9 +42,8 @@ namespace GFilters
 class GFilters::NetworkFilter : public GSmtp::Filter , private GNet::ExceptionHandler
 {
 public:
-	NetworkFilter( GNet::ExceptionSink , GStore::FileStore & ,
-		const std::string & server_location ,
-		unsigned int connection_timeout , unsigned int response_timeout ) ;
+	NetworkFilter( GNet::ExceptionSink , GStore::FileStore & , Filter::Type ,
+		const Filter::Config & , const std::string & server_location ) ;
 			///< Constructor.
 
 	~NetworkFilter() override ;
@@ -53,7 +52,7 @@ public:
 private: // overrides
 	std::string id() const override ; // GSmtp::Filter
 	bool simple() const override ; // GSmtp::Filter
-	G::Slot::Signal<int> & doneSignal() override ; // GSmtp::Filter
+	G::Slot::Signal<int> & doneSignal() noexcept override ; // GSmtp::Filter
 	void start( const GStore::MessageId & ) override ; // GSmtp::Filter
 	void cancel() override ; // GSmtp::Filter
 	Result result() const override ; // GSmtp::Filter

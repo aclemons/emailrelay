@@ -25,13 +25,12 @@
 #include "gstringfield.h"
 #include "glog.h"
 
-GVerifiers::NetworkVerifier::NetworkVerifier( GNet::ExceptionSink es ,
-	const std::string & server , unsigned int connection_timeout ,
-	unsigned int response_timeout ) :
+GVerifiers::NetworkVerifier::NetworkVerifier( GNet::ExceptionSink es , const GSmtp::Verifier::Config & config ,
+	const std::string & server ) :
 		m_es(es) ,
 		m_location(server) ,
-		m_connection_timeout(connection_timeout) ,
-		m_response_timeout(response_timeout) ,
+		m_connection_timeout(config.timeout) ,
+		m_response_timeout(config.timeout) ,
 		m_command(Command::VRFY)
 {
 	G_DEBUG( "GVerifiers::NetworkVerifier::ctor: " << server ) ;
@@ -46,8 +45,7 @@ GVerifiers::NetworkVerifier::~NetworkVerifier()
 }
 
 void GVerifiers::NetworkVerifier::verify( Command command , const std::string & mail_to_address ,
-	const std::string & mail_from_address , const G::BasicAddress & client_ip ,
-	const std::string & auth_mechanism , const std::string & auth_extra )
+	const GSmtp::Verifier::Info & info )
 {
 	m_command = command ;
 	if( m_client_ptr.get() == nullptr )
@@ -59,15 +57,15 @@ void GVerifiers::NetworkVerifier::verify( Command command , const std::string & 
 	}
 
 	G_LOG( "GVerifiers::NetworkVerifier: verification request: ["
-		<< G::Str::printable(mail_to_address) << "] (" << client_ip.displayString() << ")" ) ;
+		<< G::Str::printable(mail_to_address) << "] (" << info.client_ip.displayString() << ")" ) ;
 
 	G::StringArray args ;
 	args.push_back( mail_to_address ) ;
-	args.push_back( mail_from_address ) ;
-	args.push_back( client_ip.displayString() ) ;
-	args.push_back( GNet::Local::canonicalName() ) ;
-	args.push_back( G::Str::lower(auth_mechanism) ) ;
-	args.push_back( auth_extra ) ;
+	args.push_back( info.mail_from_parameter ) ;
+	args.push_back( info.client_ip.displayString() ) ;
+	args.push_back( info.domain ) ;
+	args.push_back( G::Str::lower(info.auth_mechanism) ) ;
+	args.push_back( info.auth_extra ) ;
 
 	m_to_address = mail_to_address ;
 	m_client_ptr->request( G::Str::join("|",args) ) ;

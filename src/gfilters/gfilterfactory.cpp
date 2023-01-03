@@ -29,7 +29,7 @@
 #include "gnetworkfilter.h"
 #include "gexecutablefilter.h"
 #include "gspamfilter.h"
-#include "gcopyfilter.h"
+#include "gdeliveryfilter.h"
 #include "gexception.h"
 
 GFilters::FilterFactory::FilterFactory( GStore::FileStore & file_store ) :
@@ -84,9 +84,9 @@ GFilters::FilterFactory::Spec GFilters::FilterFactory::parse( const std::string 
 		result = Spec( "spam-edit" , tail ) ;
 		checkNet( result ) ;
 	}
-	else if( spec_in.find("copy:") == 0U )
+	else if( spec_in.find("deliver:") == 0U )
 	{
-		result = Spec( "copy" , tail ) ;
+		result = Spec( "deliver" , tail ) ;
 	}
 
 	if( result.first.empty() )
@@ -96,39 +96,39 @@ GFilters::FilterFactory::Spec GFilters::FilterFactory::parse( const std::string 
 }
 
 std::unique_ptr<GSmtp::Filter> GFilters::FilterFactory::newFilter( GNet::ExceptionSink es ,
-	GSmtp::Filter::Type filter_type , const FilterFactory::Spec & spec , unsigned int timeout ,
-	const std::string & log_prefix )
+	GSmtp::Filter::Type filter_type , const GSmtp::Filter::Config & filter_config ,
+	const FilterFactory::Spec & spec , const std::string & log_prefix )
 {
 	if( spec.first == "chain" )
 	{
 		// (one level of recursion -- FilterChain::ctor calls newFilter())
-		return std::make_unique<FilterChain>( es , *this , filter_type , spec , timeout , log_prefix ) ;
+		return std::make_unique<FilterChain>( es , *this , filter_type , filter_config , spec , log_prefix ) ;
 	}
 	else if( spec.first == "spam" )
 	{
 		// "spam:" is read-only, not-always-pass
-		return std::make_unique<SpamFilter>( es , m_file_store , spec.second , true , false , timeout , timeout ) ;
+		return std::make_unique<SpamFilter>( es , m_file_store , filter_type , filter_config , spec.second , true , false ) ;
 	}
 	else if( spec.first == "spam-edit" )
 	{
 		// "spam-edit:" is read-write, always-pass
-		return std::make_unique<SpamFilter>( es , m_file_store , spec.second , false , true , timeout , timeout ) ;
+		return std::make_unique<SpamFilter>( es , m_file_store , filter_type , filter_config , spec.second , false , true ) ;
 	}
 	else if( spec.first == "net" )
 	{
-		return std::make_unique<NetworkFilter>( es , m_file_store , spec.second , timeout , timeout ) ;
+		return std::make_unique<NetworkFilter>( es , m_file_store , filter_type , filter_config , spec.second ) ;
 	}
 	else if( spec.first == "exit" )
 	{
-		return std::make_unique<NullFilter>( es , filter_type , G::Str::toUInt(spec.second) ) ;
+		return std::make_unique<NullFilter>( es , m_file_store , filter_type , filter_config , G::Str::toUInt(spec.second) ) ;
 	}
 	else if( spec.first == "file" )
 	{
-		return std::make_unique<ExecutableFilter>( es , m_file_store , filter_type , spec.second , timeout , log_prefix ) ;
+		return std::make_unique<ExecutableFilter>( es , m_file_store , filter_type , filter_config , spec.second , log_prefix ) ;
 	}
-	else if( spec.first == "copy" )
+	else if( spec.first == "deliver" )
 	{
-		return std::make_unique<CopyFilter>( es , m_file_store , filter_type , spec.second ) ;
+		return std::make_unique<DeliveryFilter>( es , m_file_store , filter_type , filter_config , spec.second ) ;
 	}
 
 	throw G::Exception( "invalid filter" , spec.second ) ;

@@ -66,7 +66,8 @@ public:
 
 protected: // overrides
 	std::unique_ptr<GSmtp::Verifier> newVerifier( GNet::ExceptionSink ,
-		const GSmtp::VerifierFactoryBase::Spec & spec , unsigned int timeout ) override ;
+		const GSmtp::Verifier::Config & config ,
+		const GSmtp::VerifierFactoryBase::Spec & spec ) override ;
 
 private:
 	static void checkFile( Spec & result , G::StringArray * warnings_p ) ;

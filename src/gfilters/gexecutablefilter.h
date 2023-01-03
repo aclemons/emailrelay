@@ -43,23 +43,23 @@ class GFilters::ExecutableFilter : public GSmtp::Filter, private GNet::TaskCallb
 {
 public:
 	ExecutableFilter( GNet::ExceptionSink , GStore::FileStore & , Filter::Type ,
-		const std::string & path , unsigned int timeout , const std::string & log_prefix ) ;
+		const Filter::Config & , const std::string & path , const std::string & log_prefix ) ;
 			///< Constructor.
 
 	~ExecutableFilter() override ;
 		///< Destructor.
 
 private: // overrides
-	std::string id() const override ; // Override from from GSmtp::Filter.
-	bool simple() const override ; // Override from from GSmtp::Filter.
-	G::Slot::Signal<int> & doneSignal() override ; // Override from from GSmtp::Filter.
-	void start( const GStore::MessageId & ) override ; // Override from from GSmtp::Filter.
-	void cancel() override ; // Override from from GSmtp::Filter.
-	Result result() const override ; // Override from from GSmtp::Filter.
-	std::string response() const override ; // Override from from GSmtp::Filter.
-	std::string reason() const override ; // Override from from GSmtp::Filter.
-	bool special() const override ; // Override from from GSmtp::Filter.
-	void onTaskDone( int , const std::string & ) override ; // Override from GNet::TaskCallback.
+	std::string id() const override ; // GSmtp::Filter
+	bool simple() const override ; // GSmtp::Filter
+	G::Slot::Signal<int> & doneSignal() noexcept override ; // GSmtp::Filter
+	void start( const GStore::MessageId & ) override ; // GSmtp::Filter
+	void cancel() override ; // GSmtp::Filter
+	Result result() const override ; // GSmtp::Filter
+	std::string response() const override ; // GSmtp::Filter
+	std::string reason() const override ; // GSmtp::Filter
+	bool special() const override ; // GSmtp::Filter
+	void onTaskDone( int , const std::string & ) override ; // GNet::TaskCallback
 
 public:
 	ExecutableFilter( const ExecutableFilter & ) = delete ;

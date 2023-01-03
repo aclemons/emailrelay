@@ -62,7 +62,7 @@ public:
 		///< Locks the file by renaming the envelope file.
 		///< Used by FileStore and FileIterator.
 
-	bool readEnvelope( std::string & reason , bool check_for_no_remote_recipients ) ;
+	bool readEnvelope( std::string & reason ) ;
 		///< Reads the envelope. Returns false on error.
 		///< Used by FileStore and FileIterator.
 
@@ -113,7 +113,7 @@ private:
 	enum class State { Normal , Locked , Bad } ;
 	G::Path cpath() const ;
 	G::Path epath( State ) const ;
-	void readEnvelopeCore( bool check_recipients ) ;
+	void readEnvelopeCore() ;
 	const std::string & eol() const ;
 	void addReason( const G::Path & path , const std::string & , int ) const ;
 

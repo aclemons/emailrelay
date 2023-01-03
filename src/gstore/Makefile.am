@@ -37,8 +37,12 @@ libgstore_a_SOURCES = \
 	$(OS_SOURCES) \
 	genvelope.cpp \
 	genvelope.h \
+	gfiledelivery.cpp \
+	gfiledelivery.h \
 	gfilestore.cpp \
 	gfilestore.h \
+	gmessagedelivery.cpp \
+	gmessagedelivery.h \
 	gmessagestore.cpp \
 	gmessagestore.h \
 	gnewfile.cpp \

@@ -35,20 +35,20 @@
 
 namespace GSmtp
 {
-	namespace ClientProtocolImp
+	namespace ClientProtocolImp /// An implementation namespace for GSmtp::ClientProtocol.
 	{
 		class EhloReply ;
 		struct AuthError ;
 	}
 }
 
-struct GSmtp::ClientProtocolImp::AuthError : public ClientProtocol::SmtpError
+struct GSmtp::ClientProtocolImp::AuthError : public ClientProtocol::SmtpError /// An exception class.
 {
 	AuthError( const GAuth::SaslClient & , const ClientReply & ) ;
 	std::string str() const ;
 } ;
 
-class GSmtp::ClientProtocolImp::EhloReply
+class GSmtp::ClientProtocolImp::EhloReply /// Holds the parameters of an EHLO reply.
 {
 public:
 	explicit EhloReply( const ClientReply & ) ;

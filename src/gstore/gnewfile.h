@@ -65,14 +65,14 @@ public:
 	NewFile & operator=( NewFile && ) = delete ;
 
 private: // overrides
-	void commit( bool strict ) override ; // Override from GStore::NewMessage.
-	MessageId id() const override ; // Override from GStore::NewMessage.
-	std::string location() const override ; // Override from GStore::NewMessage.
-	void addTo( const std::string & to , bool local , bool utf8address ) override ; // Override from GStore::NewMessage.
-	NewMessage::Status addContent( const char * , std::size_t ) override ; // Override from GStore::NewMessage.
-	std::size_t contentSize() const override ; // Override from GStore::NewMessage.
+	void commit( bool strict ) override ; // GStore::NewMessage
+	MessageId id() const override ; // GStore::NewMessage
+	std::string location() const override ; // GStore::NewMessage
+	void addTo( const std::string & to , bool local , bool utf8address ) override ; // GStore::NewMessage
+	NewMessage::Status addContent( const char * , std::size_t ) override ; // GStore::NewMessage
+	std::size_t contentSize() const override ; // GStore::NewMessage
 	bool prepare( const std::string & auth_id , const std::string & peer_socket_address ,
-		const std::string & peer_certificate ) override ; // Override from GStore::NewMessage.
+		const std::string & peer_certificate ) override ; // GStore::NewMessage
 
 private:
 	enum class State { New , Normal } ;
@@ -83,9 +83,10 @@ private:
 	bool commitEnvelope() ;
 	void deleteContent() ;
 	void deleteEnvelope() ;
-	bool saveEnvelope() ;
-	void moveToLocal( const G::Path & , const G::Path & , const G::Path & ) ;
-	void copyToLocal( const G::Path & , const G::Path & , const G::Path & ) ;
+	void saveEnvelope( Envelope & , const G::Path & ) ;
+	static void moveContent( const G::Path & , const G::Path & ) ;
+	static void copyContent( const G::Path & , const G::Path & ) ;
+	static G::Path localPath( const G::Path & ) ;
 
 private:
 	FileStore & m_store ;

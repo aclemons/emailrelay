@@ -33,6 +33,8 @@ libgverifiers_a_SOURCES = \
 	gnetworkverifier.h \
 	ginternalverifier.cpp \
 	ginternalverifier.h \
+	guserverifier.cpp \
+	guserverifier.h \
 	gverifierfactory.cpp \
 	gverifierfactory.h
 

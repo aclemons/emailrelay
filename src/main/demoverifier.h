@@ -40,15 +40,15 @@ namespace Main
 class Main::DemoVerifier : public GSmtp::Verifier
 {
 public:
-	DemoVerifier( GNet::ExceptionSink es , Main::Run & , Main::Unit & , const std::string & spec ) ;
-		///< Constructor.
+	DemoVerifier( GNet::ExceptionSink es , Main::Run & , Main::Unit & ,
+		const GSmtp::Verifier::Config & , const std::string & spec ) ;
+			///< Constructor.
 
 	~DemoVerifier() override ;
 		///< Destructor.
 
 private: // overrides
-	void verify( Command command , const std::string & , const std::string & , const G::BasicAddress &  ,
-		const std::string & , const std::string & ) override ;
+	void verify( Command command , const std::string & , const GSmtp::Verifier::Info & ) override ;
 	G::Slot::Signal<GSmtp::Verifier::Command,const GSmtp::VerifierStatus&> & doneSignal() override ;
 	void cancel() override ;
 

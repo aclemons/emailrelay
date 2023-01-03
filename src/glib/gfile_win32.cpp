@@ -222,6 +222,11 @@ bool G::File::chgrp( const Path & , const std::string & , std::nothrow_t )
 	return true ; // no-op
 }
 
+bool G::File::hardlink( const Path & , const Path & , std::nothrow_t )
+{
+	return false ;
+}
+
 G::Path G::File::readlink( const Path & )
 {
 	return Path() ;

@@ -4,12 +4,14 @@ E-MailRelay Change Log
 2.4 -> 2.5
 ----------
 
+* Message delivery support (`--local-delivery-dir`).
+* Multiple configurations in one process (see NEWS file).
 * [SMTP][] PIPELINING ([RFC-2920][]).
 * SMTP CHUNKING/8BITMIME 'BDAT' ([RFC-3030][]) (`--server-smtp-config`).
 * SMTP SMTPUTF8 ([RFC-6531][]) (`--server-smtp-config`, `--client-smtp-config`).
 * No 7-bit/8-bit check on received message content (see NEWS file).
-* Multiple configurations in one process (see NEWS file).
-* New built-in `copy:` filter replaces the `emailrelay-filter-copy` utility.
+* New built-in `deliver:` filter.
+* New built-in `allow:` and `local:` address verifiers.
 * Main binary acts as a submission tool if named `emailrelay-submit`.
 
 2.3 -> 2.4

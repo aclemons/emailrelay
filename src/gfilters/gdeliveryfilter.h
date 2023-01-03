@@ -15,44 +15,46 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
-/// \file gcopyfilter.h
+/// \file gdeliveryfilter.h
 ///
 
-#ifndef G_COPY_FILTER_H
-#define G_COPY_FILTER_H
+#ifndef G_DELIVERY_FILTER_H
+#define G_DELIVERY_FILTER_H
 
 #include "gdef.h"
 #include "gfilter.h"
 #include "gfilestore.h"
 #include "gexceptionsink.h"
-#include "gstringarray.h"
 #include "gtimer.h"
 
 namespace GFilters
 {
-	class CopyFilter ;
+	class DeliveryFilter ;
 }
 
-//| \class GFilters::CopyFilter
-/// A concrete GSmtp::Filter class that copies the envelope file into
-/// all sub-directories of the spool directory and then deletes the
-/// original. (This is useful for distributing to multiple POP clients.)
+//| \class GFilters::DeliveryFilter
+/// A concrete GSmtp::Filter class that copies the message to multiple
+/// spool sub-directories according to the envelope recipient list. A
+/// recipient has to match an entry in the password database, otherwise
+/// it is copied into to the catch-all "postmaster" sub-directory.
+/// Sub-directories are created on-the-fly and content files are
+/// hard linked where possible.
 ///
-class GFilters::CopyFilter : public GSmtp::Filter
+class GFilters::DeliveryFilter : public GSmtp::Filter
 {
 public:
-	CopyFilter( GNet::ExceptionSink es , GStore::FileStore & ,
-		Filter::Type , const std::string & spec ) ;
+	DeliveryFilter( GNet::ExceptionSink es , GStore::FileStore & ,
+		Filter::Type , const Filter::Config & , const std::string & spec ) ;
 			///< Constructor.
 
-	~CopyFilter() override ;
+	~DeliveryFilter() override ;
 		///< Destructor.
 
 private: // overrided
 	std::string id() const override ;
 	bool simple() const override ;
 	void start( const GStore::MessageId & ) override ;
-	G::Slot::Signal<int> & doneSignal() override ;
+	G::Slot::Signal<int> & doneSignal() noexcept override ;
 	void cancel() override ;
 	Result result() const override ;
 	std::string response() const override ;
@@ -65,11 +67,10 @@ private:
 private:
 	GStore::FileStore & m_store ;
 	Filter::Type m_filter_type ;
+	Filter::Config m_filter_config ;
 	std::string m_spec ;
-	GNet::Timer<CopyFilter> m_timer ;
+	GNet::Timer<DeliveryFilter> m_timer ;
 	G::Slot::Signal<int> m_done_signal ;
-	std::size_t m_copies ;
-	G::StringArray m_failures ;
 	Result m_result ;
 } ;
 

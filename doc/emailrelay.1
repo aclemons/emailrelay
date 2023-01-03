@@ -136,6 +136,9 @@ Specifies a timeout (in seconds) for running a \fI--filter\fR program. The defau
 .B \-I, --interface \fI<ip-address-list>\fR
 Specifies the IP network addresses or interface names used to bind listening ports. By default listening ports for incoming SMTP, POP and administration connections will bind the 'any' address for IPv4 and for IPv6, ie. \fI0.0.0.0\fR and \fI::\fR. Multiple addresses can be specified by using the option more than once or by using a comma-separated list. Use a prefix of \fIsmtp=\fR, \fIpop=\fR or \fIadmin=\fR on addresses that should apply only to those types of listening port. Any link-local IPv6 addresses must include a zone name or scope id.  Interface names can be used instead of addresses, in which case all the addresses associated with that interface at startup will used for listening. When an interface name is decorated with a \fI-ipv4\fR or \fI-ipv6\fR suffix only their IPv4 or IPv6 addresses will be used (eg. \fIppp0-ipv4\fR).  To inherit listening file descriptors from the parent process on unix use a syntax like this: \fI--interface\fR=smtp=fd#3,smtp=fd#4,pop=fd#5.
 .TP
+.B \-s, --local-delivery-dir \fI<dir>\fR
+Enables local delivery of mail messages that have local recipients, as determined by an address verifier.
+.TP
 .B \-w, --prompt-timeout \fI<time>\fR
 Specifies a timeout (in seconds) for getting the initial prompt from a remote SMTP server. If no prompt is received after this time then the SMTP dialog goes ahead without it.
 .TP

@@ -199,6 +199,11 @@
        To inherit listening file descriptors from the parent process on unix use a
        syntax like this: <em>--interface</em>=smtp=fd#3,smtp=fd#4,pop=fd#5.
       </dd>
+     <dt>--local-delivery-dir &lt;dir&gt; (-s)</dt>
+      <dd>
+       Enables local delivery of mail messages that have local recipients, as
+       determined by an address verifier.
+      </dd>
      <dt>--prompt-timeout &lt;time&gt; (-w)</dt>
       <dd>
        Specifies a timeout (in seconds) for getting the initial prompt from a remote
@@ -508,8 +513,8 @@
     <p>
      Additional configuration files can be used to effectively run multiple
      E-MailRelay processes in one. Alternatively, the same effect can be obtained by
-     extending the long options with arbitrary names, for example <em>--spool-dir-in</em>
-     and <em>--spool-dir-out</em>, and then <em>--port-in</em> and <em>--port-out</em> etc.
+     prefixing the long options with arbitrary names, for example <em>--in-spool-dir</em>
+     and <em>--out-spool-dir</em>, and then <em>--in-port</em> and <em>--out-port</em> etc.
     </p>
 
     <p>

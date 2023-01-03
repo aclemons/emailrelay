@@ -55,13 +55,13 @@ GFilters::FilterFactory::Spec Main::FilterFactory::parse( const std::string & sp
 }
 
 std::unique_ptr<GSmtp::Filter> Main::FilterFactory::newFilter( GNet::ExceptionSink es ,
-	GSmtp::Filter::Type filter_type , const Spec & spec , unsigned int timeout ,
-	const std::string & log_prefix )
+	GSmtp::Filter::Type filter_type , const GSmtp::Filter::Config & filter_config ,
+	const Spec & spec , const std::string & log_prefix )
 {
 	#ifdef FILTER_DEMO
 		if( spec.first == "demo" )
-			return std::make_unique<DemoFilter>( es , m_run , m_unit.id() , m_store , spec.second , filter_type ) ;
+			return std::make_unique<DemoFilter>( es , m_run , m_unit.id() , m_store , filter_type , filter_config , spec.second ) ;
 	#endif
-	return GFilters::FilterFactory::newFilter( es , filter_type , spec , timeout , log_prefix ) ;
+	return GFilters::FilterFactory::newFilter( es , filter_type , filter_config , spec , log_prefix ) ;
 }
 

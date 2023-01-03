@@ -103,17 +103,17 @@ void GStore::StoredFile::close()
 std::string GStore::StoredFile::reopen()
 {
 	std::string reason = "error" ;
-	if( !readEnvelope(reason,true) || !openContent(reason) )
+	if( !readEnvelope(reason) || !openContent(reason) )
 		return reason ;
 	else
 		return std::string() ;
 }
 
-bool GStore::StoredFile::readEnvelope( std::string & reason , bool check_recipients )
+bool GStore::StoredFile::readEnvelope( std::string & reason )
 {
 	try
 	{
-		readEnvelopeCore( check_recipients ) ;
+		readEnvelopeCore() ;
 		return true ;
 	}
 	catch( std::exception & e ) // invalid file in store
@@ -123,22 +123,18 @@ bool GStore::StoredFile::readEnvelope( std::string & reason , bool check_recipie
 	}
 }
 
-void GStore::StoredFile::readEnvelopeCore( bool check_recipients )
+void GStore::StoredFile::readEnvelopeCore()
 {
 	std::ifstream stream ;
 	{
 		FileReader claim_reader ;
 		G::File::open( stream , epath(m_state) ) ;
 	}
-	if( ! stream.good() )
+	if( !stream.good() )
 		throw ReadError( epath(m_state).str() ) ;
 
 	GStore::Envelope::read( stream , m_env ) ;
-
-	if( check_recipients && m_env.to_remote.empty() )
-		throw FormatError( "no recipients" ) ;
-
-	if( ! stream.good() )
+	if( !stream.good() )
 		throw ReadError( epath(m_state).str() ) ;
 }
 
@@ -187,7 +183,7 @@ bool GStore::StoredFile::lock()
 	}
 	if( ok )
 	{
-		G_LOG( "GStore::StoredFile::lock: locking file \"" << src.basename() << "\"" ) ;
+		G_DEBUG( "GStore::StoredFile::lock: locking file \"" << src.basename() << "\"" ) ;
 		m_state = State::Locked ;
 	}
 	static_cast<MessageStore&>(m_store).updated() ;

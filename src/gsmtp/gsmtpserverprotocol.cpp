@@ -23,6 +23,7 @@
 #include "gsaslserverfactory.h"
 #include "gsocketprotocol.h"
 #include "gxtext.h"
+#include "glocal.h"
 #include "gbase64.h"
 #include "gdate.h"
 #include "gtime.h"
@@ -625,11 +626,12 @@ void GSmtp::ServerProtocol::doVrfy( EventData event_data , bool & predicate )
 
 void GSmtp::ServerProtocol::verify( Verifier::Command command , const std::string & to , const std::string & from )
 {
-	std::string mechanism = m_sasl->authenticated() ? m_sasl->mechanism() : std::string() ;
-	std::string id = m_sasl->id() ;
-	if( mechanism.empty() )
-		mechanism = "NONE" ;
-	m_verifier.verify( command , to , from , m_peer_address , mechanism , id ) ;
+	Verifier::Info info ;
+	info.client_ip = m_peer_address ;
+	info.mail_from_parameter = from ;
+	info.auth_mechanism = m_sasl->authenticated() ? m_sasl->mechanism() : std::string("NONE") ;
+	info.auth_extra = m_sasl->id() ;
+	m_verifier.verify( command , to , info ) ;
 }
 
 void GSmtp::ServerProtocol::verifyDone( Verifier::Command command , const VerifierStatus & status )

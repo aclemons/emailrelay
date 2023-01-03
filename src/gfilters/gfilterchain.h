@@ -43,7 +43,7 @@ class GFilters::FilterChain : public GSmtp::Filter
 {
 public:
 	FilterChain( GNet::ExceptionSink , GSmtp::FilterFactoryBase & , Filter::Type ,
-		const GSmtp::FilterFactoryBase::Spec & spec , unsigned int timeout ,
+		const Filter::Config & , const GSmtp::FilterFactoryBase::Spec & spec ,
 		const std::string & log_prefix ) ;
 			///< Constructor.
 
@@ -59,7 +59,7 @@ public:
 private: // overrides
 	std::string id() const override ; // GSmtp::Filter
 	bool simple() const override ; // GSmtp::Filter
-	G::Slot::Signal<int> & doneSignal() override ; // GSmtp::Filter
+	G::Slot::Signal<int> & doneSignal() noexcept override ; // GSmtp::Filter
 	void start( const GStore::MessageId & ) override ; // GSmtp::Filter
 	void cancel() override ; // GSmtp::Filter
 	Result result() const override ; // GSmtp::Filter
@@ -69,7 +69,8 @@ private: // overrides
 
 private:
 	void add( GNet::ExceptionSink , GSmtp::FilterFactoryBase & , Filter::Type ,
-		const GSmtp::FilterFactoryBase::Spec & , unsigned int , const std::string & ) ;
+		const Filter::Config & , const GSmtp::FilterFactoryBase::Spec & ,
+		const std::string & ) ;
 	void onFilterDone( int ) ;
 
 private:

@@ -24,6 +24,7 @@
 #include "gdef.h"
 #include "gtimer.h"
 #include "gfilter.h"
+#include "gfilestore.h"
 
 namespace GFilters
 {
@@ -36,18 +37,20 @@ namespace GFilters
 class GFilters::NullFilter : public GSmtp::Filter
 {
 public:
-	NullFilter( GNet::ExceptionSink , Filter::Type ) ;
-		///< Constructor.
+	NullFilter( GNet::ExceptionSink , GStore::FileStore & ,
+		Filter::Type , const Filter::Config & ) ;
+			///< Constructor.
 
-	NullFilter( GNet::ExceptionSink , Filter::Type , unsigned int exit_code ) ;
-		///< Constructor for a processor that behaves like an
-		///< executable that always exits with the given
-		///< exit code.
+	NullFilter( GNet::ExceptionSink , GStore::FileStore & ,
+		Filter::Type , const Filter::Config & , unsigned int exit_code ) ;
+			///< Constructor for a processor that behaves like an
+			///< executable that always exits with the given
+			///< exit code.
 
 private: // overrides
 	std::string id() const override ; // GSmtp::Filter
 	bool simple() const override ; // GSmtp::Filter
-	G::Slot::Signal<int> & doneSignal() override ; // GSmtp::Filter
+	G::Slot::Signal<int> & doneSignal() noexcept override ; // GSmtp::Filter
 	void start( const GStore::MessageId & ) override ; // GSmtp::Filter
 	void cancel() override ; // GSmtp::Filter
 	Result result() const override ; // GSmtp::Filter

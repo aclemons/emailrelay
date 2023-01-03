@@ -231,8 +231,9 @@ public:
 		///< Returns true if the show() string contains the given
 		///< sub-string.
 
-	GSmtp::Client::Config smtpClientConfig( const std::string & client_tls_profile ) const ;
-		///< Returns the smtp client configuration structure.
+	GSmtp::Client::Config smtpClientConfig( const std::string & client_tls_profile ,
+		const std::string & domain ) const ;
+			///< Returns the smtp client configuration structure.
 
 	GSmtp::Server::Config smtpServerConfig( const std::string & smtp_ident ,
 		bool server_secrets_valid , const std::string & server_tls_profile ,
@@ -250,11 +251,21 @@ public:
 		///< Returns the file-store configuration structure.
 
 	GSmtp::AdminServer::Config adminServerConfig( const G::StringMap & info_map ,
-		const G::StringMap & config_map , const std::string & client_tls_profile_for_flush ) const ;
+		const G::StringMap & config_map , const std::string & client_tls_profile_for_flush ,
+		const std::string & domain ) const ;
 			///< Returns the admin server configuration structure.
 
 	G::StringArray listeningNames( G::string_view protocol = {} ) const ;
 		///< Returns the listening addresses, interfaces and file descriptors.
+
+	GSmtp::FilterFactoryBase::Spec filter() const ;
+		///< Returns the filter spec.
+
+	unsigned int filterTimeout() const ;
+		///< Returns the filter timeout.
+
+	G::Path localDeliveryDir() const ;
+		///< Returns a local-delivery base directory.
 
 private:
 	bool contains( const char * ) const ;
@@ -291,14 +302,12 @@ private:
 	GSmtp::FilterFactoryBase::Spec _clientFilter() const ;
 	std::pair<int,int> _clientSocketLinger() const ;
 	unsigned int _connectionTimeout() const ;
-	GSmtp::FilterFactoryBase::Spec _filter() const ;
-	unsigned int _filterTimeout() const ;
 	unsigned int _idleTimeout() const ;
 	unsigned int _maxSize() const ;
+	bool _nodaemon() const ;
 	unsigned int _popPort() const ;
 	std::string _popSaslServerConfig() const ;
 	std::pair<int,int> _popServerSocketLinger() const ;
-	bool _nodaemon() const ;
 	unsigned int _port() const ;
 	unsigned int _promptTimeout() const ;
 	unsigned int _responseTimeout() const ;

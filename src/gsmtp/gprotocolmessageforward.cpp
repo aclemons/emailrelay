@@ -123,8 +123,8 @@ void GSmtp::ProtocolMessageForward::process( const std::string & auth_id , const
 	m_pm->process( auth_id , peer_socket_address , peer_certificate ) ;
 }
 
-void GSmtp::ProtocolMessageForward::processDone( bool success , const GStore::MessageId & id , const std::string & response ,
-	const std::string & reason )
+void GSmtp::ProtocolMessageForward::processDone( bool success , const GStore::MessageId & id ,
+	const std::string & response , const std::string & reason )
 {
 	G_DEBUG( "ProtocolMessageForward::processDone: " << (success?1:0) << " "
 		<< id.str() << " [" << response << "] [" << reason << "]" ) ;

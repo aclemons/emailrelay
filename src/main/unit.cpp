@@ -35,7 +35,8 @@ Main::Unit::Unit( Run & run , unsigned int unit_id , const std::string & version
 	m_run(run) ,
 	m_configuration(run.configuration(unit_id)) ,
 	m_version_number(version_number) ,
-	m_unit_id(unit_id)
+	m_unit_id(unit_id) ,
+	m_es(GNet::ExceptionSink::logOnly())
 {
 	G_ASSERT( GSsl::Library::instance() != nullptr ) ;
 	using G::format ;
@@ -95,12 +96,12 @@ Main::Unit::Unit( Run & run , unsigned int unit_id , const std::string & version
 	// do forwarding via a timer
 	//
 	m_forwarding_timer = std::make_unique<GNet::Timer<Unit>>( *this ,
-		&Unit::onRequestForwardingTimeout , GNet::ExceptionSink::logOnly() ) ;
+		&Unit::onRequestForwardingTimeout , m_es ) ;
 
 	// create the polling timer
 	//
 	m_poll_timer = std::make_unique<GNet::Timer<Unit>>( *this ,
-		&Unit::onPollTimeout , GNet::ExceptionSink::logOnly() ) ;
+		&Unit::onPollTimeout , m_es ) ;
 
 	// figure out what we're doing
 	//
@@ -119,6 +120,7 @@ Main::Unit::Unit( Run & run , unsigned int unit_id , const std::string & version
 	// create message store stuff
 	//
 	m_file_store = std::make_unique<GStore::FileStore>( m_configuration.spoolDir() , m_configuration.fileStoreConfig() ) ;
+	m_file_delivery = std::make_unique<GStore::FileDelivery>( *m_file_store , domain() , m_configuration.localDeliveryDir() ) ;
 	m_filter_factory = std::make_unique<Main::FilterFactory>( m_run , *this , *m_file_store ) ;
 	m_verifier_factory = std::make_unique<Main::VerifierFactory>( m_run , *this ) ;
 	store().messageStoreRescanSignal().connect( G::Slot::slot(*this,&Unit::onStoreRescanEvent) ) ;
@@ -137,10 +139,6 @@ Main::Unit::Unit( Run & run , unsigned int unit_id , const std::string & version
 	if( do_pop )
 		m_pop_secrets = GPop::newSecrets( m_configuration.popSecretsFile().str() ) ;
 
-	// prepare the domain (lazy wrt Run::defaultDomain())
-	//
-	if( do_smtp || do_pop )
-		m_domain = m_configuration.domain( std::bind(&Run::defaultDomain,&m_run) ) ;
 
 	// create the smtp server
 	//
@@ -156,14 +154,15 @@ Main::Unit::Unit( Run & run , unsigned int unit_id , const std::string & version
 		m_smtp_server = std::make_unique<GSmtp::Server>(
 			GNet::ExceptionSink() ,
 			*m_file_store ,
+			*m_file_delivery ,
 			*m_filter_factory ,
 			*m_verifier_factory ,
 			*m_client_secrets ,
 			*m_server_secrets ,
-			m_configuration.smtpServerConfig( ident() , m_server_secrets->valid() , serverTlsProfile() , m_domain ) ,
+			m_configuration.smtpServerConfig( ident() , m_server_secrets->valid() , serverTlsProfile() , domain() ) ,
 			m_configuration.immediate() ? m_configuration.serverAddress() : std::string() ,
 			m_resolver_family ,
-			m_configuration.smtpClientConfig( clientTlsProfile() ) ) ;
+			m_configuration.smtpClientConfig( clientTlsProfile() , domain() ) ) ;
 
 		m_smtp_server->eventSignal().connect( G::Slot::slot(*this,&Main::Unit::onServerEvent) ) ;
 	}
@@ -178,7 +177,7 @@ Main::Unit::Unit( Run & run , unsigned int unit_id , const std::string & version
 			GNet::ExceptionSink() ,
 			*m_pop_store ,
 			*m_pop_secrets ,
-			m_configuration.popServerConfig( serverTlsProfile() , m_domain ) ) ;
+			m_configuration.popServerConfig( serverTlsProfile() , domain() ) ) ;
 	}
 
 	// create the admin server
@@ -205,7 +204,7 @@ Main::Unit::Unit( Run & run , unsigned int unit_id , const std::string & version
 			m_forward_request_signal ,
 			*m_client_secrets ,
 			m_configuration.listeningNames("admin") ,
-			m_configuration.adminServerConfig( info_map , config_map , clientTlsProfile() ) ) ;
+			m_configuration.adminServerConfig( info_map , config_map , clientTlsProfile() , domain() ) ) ;
 	}
 }
 
@@ -222,7 +221,7 @@ std::string Main::Unit::name( const std::string & default_ ) const
 void Main::Unit::onClientEvent( const std::string & p1 , const std::string & p2 , const std::string & p3 )
 {
 	// p1: connecting, resolving, connected, sending, sent
-	m_client_event_signal.emit( m_unit_id , p1 , p2 , p3 ) ;
+	m_event_signal.emit( m_unit_id , p1 , p2 , p3 ) ;
 }
 
 void Main::Unit::onClientDone( const std::string & reason )
@@ -237,7 +236,7 @@ void Main::Unit::onClientDone( const std::string & reason )
 		requestForwarding() ;
 	}
 
-	m_client_event_signal.emit( m_unit_id , "forward" , "end" , reason ) ;
+	m_event_signal.emit( m_unit_id , "forward" , "end" , reason ) ;
 	m_client_done_signal.emit( m_unit_id , reason , m_quit_when_sent ) ;
 }
 
@@ -250,6 +249,7 @@ void Main::Unit::onPollTimeout()
 
 void Main::Unit::onForwardRequest( const std::string & reason )
 {
+	// request from admin server
 	requestForwarding( reason ) ;
 }
 
@@ -263,28 +263,32 @@ void Main::Unit::requestForwarding( const std::string & reason )
 
 void Main::Unit::onRequestForwardingTimeout()
 {
+	G_ASSERT( m_file_store.get() != nullptr ) ;
+	G_ASSERT( m_filter_factory.get() != nullptr ) ;
 	using G::format ;
 	using G::txt ;
+
 	if( m_client_ptr.busy() )
 	{
-		G_LOG( "Main::Unit::onRequestForwardingTimeout: "
-			<< format(txt("forwarding: [%1%]: still busy from last time")) % m_forwarding_reason ) ;
+		G_LOG( "Main::Unit::onRequestForwardingTimeout: " << format(txt("forwarding: [%1%]: still busy from last time")) % m_forwarding_reason ) ;
 		m_forwarding_pending = true ;
 	}
 	else
 	{
-		if( logForwarding() )
+		G_LOG_IF( logForwarding() , "Main::Unit::onRequestForwardingTimeout: " << format(txt("forwarding: [%1%]")) % m_forwarding_reason ) ;
+		if( store().empty() )
 		{
-			G_LOG( "Main::Unit::onRequestForwardingTimeout: "
-				<< format(txt("forwarding: [%1%]")) % m_forwarding_reason ) ;
+			G_LOG_IF( logForwarding() , "Main::Unit::startForwarding: " << txt("forwarding: no messages to send") ) ;
+			m_event_signal.emit( m_unit_id , "forward" , "end" , "no messages" ) ;
 		}
-
-		std::string error = startForwarding() ;
-
-		if( error.empty() )
-			m_client_event_signal.emit( m_unit_id , "forward" , "start" , m_forwarding_reason ) ;
 		else
-			m_client_event_signal.emit( m_unit_id , "forward" , "end" , error ) ;
+		{
+			std::string error = startForwarding() ;
+			if( error.empty() )
+				m_event_signal.emit( m_unit_id , "forward" , "start" , m_forwarding_reason ) ;
+			else
+				m_event_signal.emit( m_unit_id , "forward" , "end" , error ) ;
+		}
 	}
 }
 
@@ -299,25 +303,15 @@ std::string Main::Unit::startForwarding()
 	using G::txt ;
 	try
 	{
-		G_ASSERT( m_file_store != nullptr ) ;
-		if( m_file_store && store().empty() )
-		{
-			if( logForwarding() )
-				G_LOG( "Main::Unit::startForwarding: " << txt("forwarding: no messages to send") ) ;
-			return "no messages" ;
-		}
-		else
-		{
-			G_ASSERT( m_client_secrets != nullptr ) ;
-			m_client_ptr.reset( std::make_unique<GSmtp::Client>(
-				GNet::ExceptionSink(m_client_ptr,nullptr) ,
-				*m_file_store ,
-				*m_filter_factory ,
-				GNet::Location(m_configuration.serverAddress(),m_resolver_family) ,
-				*m_client_secrets ,
-				m_configuration.smtpClientConfig( clientTlsProfile() ) ) ) ;
-			return std::string() ;
-		}
+		G_ASSERT( m_client_secrets != nullptr ) ;
+		m_client_ptr.reset( std::make_unique<GSmtp::Client>(
+			GNet::ExceptionSink(m_client_ptr,nullptr) ,
+			*m_file_store ,
+			*m_filter_factory ,
+			GNet::Location(m_configuration.serverAddress(),m_resolver_family) ,
+			*m_client_secrets ,
+			m_configuration.smtpClientConfig( clientTlsProfile() , domain() ) ) ) ;
+		return std::string() ;
 	}
 	catch( std::exception & e )
 	{
@@ -379,6 +373,7 @@ void Main::Unit::onServerEvent( const std::string & s1 , const std::string & )
 
 void Main::Unit::onStoreRescanEvent()
 {
+	// this unit's filter has requested a rescan
 	requestForwarding( "rescan" ) ;
 }
 
@@ -430,9 +425,9 @@ G::Slot::Signal<unsigned,std::string,bool> & Main::Unit::clientDoneSignal()
 	return m_client_done_signal ;
 }
 
-G::Slot::Signal<unsigned,std::string,std::string,std::string> & Main::Unit::clientEventSignal()
+G::Slot::Signal<unsigned,std::string,std::string,std::string> & Main::Unit::eventSignal()
 {
-	return m_client_event_signal ;
+	return m_event_signal ;
 }
 
 std::string Main::Unit::serverTlsProfile() const
@@ -452,6 +447,14 @@ std::string Main::Unit::ident() const
 
 std::string Main::Unit::domain() const
 {
+	// lasy wrt Run::defaultDomain()
+	if( m_domain.empty() )
+		m_domain = m_configuration.domain( std::bind(&Run::defaultDomain,&m_run) ) ;
 	return m_domain ;
+}
+
+G::Path Main::Unit::spoolDir() const
+{
+	return m_configuration.spoolDir() ;
 }
 

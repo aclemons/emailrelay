@@ -40,7 +40,8 @@ class Main::DemoFilter : public GSmtp::Filter
 {
 public:
 	DemoFilter( GNet::ExceptionSink es , Main::Run & , unsigned int unit_id ,
-		GStore::FileStore & , const std::string & spec , Filter::Type ) ;
+		GStore::FileStore & , Filter::Type , const Filter::Config & ,
+		const std::string & spec ) ;
 			///< Constructor.
 
 	~DemoFilter() override ;
@@ -50,7 +51,7 @@ private: // overrided
 	std::string id() const override ;
 	bool simple() const override ;
 	void start( const GStore::MessageId & ) override ;
-	G::Slot::Signal<int> & doneSignal() override ;
+	G::Slot::Signal<int> & doneSignal() noexcept override ;
 	void cancel() override ;
 	Result result() const override ;
 	std::string response() const override ;
@@ -64,8 +65,9 @@ private:
 	Main::Run & m_run ;
 	unsigned int m_unit_id ;
 	GStore::FileStore & m_store ;
-	std::string m_spec ;
 	GSmtp::Filter::Type m_filter_type ;
+	GSmtp::Filter::Config m_filter_config ;
+	std::string m_spec ;
 	GNet::Timer<DemoFilter> m_timer ;
 	G::Slot::Signal<int> m_done_signal ;
 	Result m_result ;

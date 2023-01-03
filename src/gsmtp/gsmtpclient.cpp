@@ -42,8 +42,8 @@ GSmtp::Client::Client( GNet::ExceptionSink es , GStore::MessageStore & store ,
 		m_config(config) ,
 		m_secrets(secrets) ,
 		m_store(&store) ,
-		m_filter(ff.newFilter(es,Filter::Type::client,config.filter_spec,config.filter_timeout,{})) ,
-		m_routing_filter(ff.newFilter(es,Filter::Type::routing,config.filter_spec,config.filter_timeout,"routing filter")) ,
+		m_filter(ff.newFilter(es,Filter::Type::client,config.filter_config,config.filter_spec,{})) ,
+		m_routing_filter(ff.newFilter(es,Filter::Type::routing,config.filter_config,config.filter_spec,"routing filter")) ,
 		m_protocol(es,*this,secrets,config.sasl_client_config,config.client_protocol_config,config.secure_tunnel) ,
 		m_message_count(0U)
 {
@@ -64,8 +64,8 @@ GSmtp::Client::Client( GNet::ExceptionSink es ,
 		m_config(config) ,
 		m_secrets(secrets) ,
 		m_store(nullptr) ,
-		m_filter(ff.newFilter(es,Filter::Type::client,config.filter_spec,config.filter_timeout,{})) ,
-		m_routing_filter(ff.newFilter(es,Filter::Type::routing,config.filter_spec,config.filter_timeout,"routing filter")) ,
+		m_filter(ff.newFilter(es,Filter::Type::client,config.filter_config,config.filter_spec,{})) ,
+		m_routing_filter(ff.newFilter(es,Filter::Type::routing,config.filter_config,config.filter_spec,"routing filter")) ,
 		m_protocol(es,*this,secrets,config.sasl_client_config,config.client_protocol_config,config.secure_tunnel) ,
 		m_message_count(0U)
 {
@@ -190,7 +190,6 @@ void GSmtp::Client::start()
 		m_routing_filter->start( message()->id() ) ;
 		return ;
 	}
-
 
 	G::CallFrame this_( m_stack ) ;
 	eventSignal().emit( "sending" , message()->location() , std::string() ) ;

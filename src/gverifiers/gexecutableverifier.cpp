@@ -29,83 +29,101 @@
 #include "glocal.h"
 #include "glog.h"
 
-GVerifiers::ExecutableVerifier::ExecutableVerifier( GNet::ExceptionSink es , const G::Path & path ) :
+GVerifiers::ExecutableVerifier::ExecutableVerifier( GNet::ExceptionSink es , const G::Path & path , unsigned int timeout ) :
+	m_timer(*this,&ExecutableVerifier::onTimeout,es) ,
 	m_command(GSmtp::Verifier::Command::VRFY) ,
 	m_path(path) ,
+	m_timeout(timeout) ,
 	m_task(*this,es,"<<verifier exec error: __strerror__>>",G::Root::nobody())
 {
 }
 
 void GVerifiers::ExecutableVerifier::verify( GSmtp::Verifier::Command command , const std::string & to_address ,
-	const std::string & from_address , const G::BasicAddress & ip ,
-	const std::string & auth_mechanism , const std::string & auth_extra )
+	const GSmtp::Verifier::Info & info )
 {
 	m_command = command ;
-	G_DEBUG( "GVerifiers::ExecutableVerifier::verify: to \"" << to_address << "\": from \"" << from_address << "\": "
-		<< "ip \"" << ip.displayString() << "\": auth-mechanism \"" << auth_mechanism << "\": "
-		<< "auth-extra \"" << auth_extra << "\"" ) ;
+	G_DEBUG( "GVerifiers::ExecutableVerifier::verify: to=[" << to_address << "]" ) ;
 
 	G::ExecutableCommand commandline( m_path.str() , G::StringArray() ) ;
 	commandline.add( to_address ) ;
-	commandline.add( from_address ) ;
-	commandline.add( ip.displayString() ) ;
-	commandline.add( GNet::Local::canonicalName() ) ;
-	commandline.add( G::Str::lower(auth_mechanism) ) ;
-	commandline.add( auth_extra ) ;
+	commandline.add( info.mail_from_parameter ) ;
+	commandline.add( info.client_ip.displayString() ) ;
+	commandline.add( info.domain ) ;
+	commandline.add( G::Str::lower(info.auth_mechanism) ) ;
+	commandline.add( info.auth_extra ) ;
 
 	G_LOG( "GVerifiers::ExecutableVerifier: address verifier: executing " << commandline.displayString() ) ;
 	m_to_address = to_address ;
 	m_task.start( commandline ) ;
+	if( m_timeout )
+		m_timer.startTimer( m_timeout ) ;
+}
+
+void GVerifiers::ExecutableVerifier::onTimeout()
+{
+	m_task.stop() ;
+
+	auto result = GSmtp::VerifierStatus::invalid( m_to_address , true , "timeout" , "timeout" ) ;
+
+	m_done_signal.emit( m_command , result ) ;
 }
 
 void GVerifiers::ExecutableVerifier::onTaskDone( int exit_code , const std::string & result_in )
 {
-	std::string result( result_in ) ;
-	G::Str::trimRight( result , {" \n\t",3U} ) ;
-	G::Str::replaceAll( result , "\r\n" , "\n" ) ;
-	G::Str::replaceAll( result , "\r" , "" ) ;
-
-	G::StringArray result_parts ;
-	result_parts.reserve( 2U ) ;
-	G::Str::splitIntoFields( result , result_parts , '\n' ) ;
-	std::size_t parts = result_parts.size() ;
-	result_parts.resize( 2U ) ;
-
-	G_LOG( "GVerifiers::ExecutableVerifier: address verifier: exit code " << exit_code << ": "
-		<< "[" << G::Str::printable(result_parts[0]) << "] [" << G::Str::printable(result_parts[1]) << "]" ) ;
-
+	m_timer.cancelTimer() ;
 	auto status = GSmtp::VerifierStatus::invalid( m_to_address ) ;
-	if( exit_code == 0 && parts >= 2 )
+	if( exit_code == 127 && G::Str::headMatch(result_in,"<<verifier exec error") )
 	{
-		std::string full_name = G::Str::printable( result_parts.at(0U) ) ;
-		std::string mbox = G::Str::printable( result_parts.at(1U) ) ;
-		status = GSmtp::VerifierStatus::local( m_to_address , full_name , mbox ) ;
-	}
-	else if( exit_code == 1 && parts >= 2 )
-	{
-		std::string address = G::Str::printable( result_parts.at(1U) ) ;
-		status = GSmtp::VerifierStatus::remote( m_to_address , address ) ;
-	}
-	else if( exit_code == 100 )
-	{
-		status.abort = true ;
+		G_WARNING( "GVerifiers::ExecutableVerifier: address verifier: exec error" ) ;
+		status = GSmtp::VerifierStatus::invalid( m_to_address , false , "error" , "exec error" ) ;
 	}
 	else
 	{
-		bool temporary = exit_code == 3 ;
+		std::string result( result_in ) ;
+		G::Str::trimRight( result , {" \n\t",3U} ) ;
+		G::Str::replaceAll( result , "\r\n" , "\n" ) ;
+		G::Str::replaceAll( result , "\r" , "" ) ;
 
-		std::string response = parts > 0U ?
-			G::Str::printable(result_parts.at(0U)) :
-			std::string("mailbox unavailable") ;
+		G::StringArray result_parts ;
+		result_parts.reserve( 2U ) ;
+		G::Str::splitIntoFields( result , result_parts , '\n' ) ;
+		std::size_t parts = result_parts.size() ;
+		result_parts.resize( 2U ) ;
 
-		std::string reason = parts > 1U ?
-			G::Str::printable(result_parts.at(1U)) :
-			( "exit code " + G::Str::fromInt(exit_code) ) ;
+		G_LOG( "GVerifiers::ExecutableVerifier: address verifier: exit code " << exit_code << ": "
+			<< "[" << G::Str::printable(result_parts[0]) << "] [" << G::Str::printable(result_parts[1]) << "]" ) ;
 
-		status = GSmtp::VerifierStatus::invalid( m_to_address ,
-			temporary , response , reason ) ;
+		if( exit_code == 0 && parts >= 2 )
+		{
+			std::string full_name = G::Str::printable( result_parts.at(0U) ) ;
+			std::string mbox = G::Str::printable( result_parts.at(1U) ) ;
+			status = GSmtp::VerifierStatus::local( m_to_address , full_name , mbox ) ;
+		}
+		else if( exit_code == 1 && parts >= 2 )
+		{
+			std::string address = G::Str::printable( result_parts.at(1U) ) ;
+			status = GSmtp::VerifierStatus::remote( m_to_address , address ) ;
+		}
+		else if( exit_code == 100 )
+		{
+			status.abort = true ;
+		}
+		else
+		{
+			bool temporary = exit_code == 3 ;
+
+			std::string response = parts > 0U ?
+				G::Str::printable(result_parts.at(0U)) :
+				std::string("mailbox unavailable") ;
+
+			std::string reason = parts > 1U ?
+				G::Str::printable(result_parts.at(1U)) :
+				( "exit code " + G::Str::fromInt(exit_code) ) ;
+
+			status = GSmtp::VerifierStatus::invalid( m_to_address ,
+				temporary , response , reason ) ;
+		}
 	}
-
 	doneSignal().emit( m_command , status ) ;
 }
 

@@ -24,16 +24,15 @@
 #include "glog.h"
 
 GFilters::SpamFilter::SpamFilter( GNet::ExceptionSink es , GStore::FileStore & file_store ,
-	const std::string & server ,
-	bool read_only , bool always_pass , unsigned int connection_timeout ,
-	unsigned int response_timeout ) :
+	Filter::Type , const Filter::Config & config , const std::string & server ,
+	bool read_only , bool always_pass ) :
 		m_es(es) ,
 		m_file_store(file_store) ,
 		m_location(server) ,
 		m_read_only(read_only) ,
 		m_always_pass(always_pass) ,
-		m_connection_timeout(connection_timeout) ,
-		m_response_timeout(response_timeout) ,
+		m_connection_timeout(config.timeout) ,
+		m_response_timeout(config.timeout) ,
 		m_result(Result::fail)
 {
 	m_client_ptr.eventSignal().connect( G::Slot::slot(*this,&GFilters::SpamFilter::clientEvent) ) ;
@@ -117,7 +116,7 @@ std::string GFilters::SpamFilter::reason() const
 	return m_text ;
 }
 
-G::Slot::Signal<int> & GFilters::SpamFilter::doneSignal()
+G::Slot::Signal<int> & GFilters::SpamFilter::doneSignal() noexcept
 {
 	return m_done_signal ;
 }

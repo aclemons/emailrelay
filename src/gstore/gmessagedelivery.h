@@ -15,48 +15,35 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
-/// \file gbasicaddress.h
+/// \file gmessagedelivery.h
 ///
 
-#ifndef G_BASIC_ADDRESS_H
-#define G_BASIC_ADDRESS_H
+#ifndef G_MESSAGE_DELIVERY_H
+#define G_MESSAGE_DELIVERY_H
 
 #include "gdef.h"
+#include "gmessagestore.h"
+#include <string>
 
-namespace G
+namespace GStore
 {
-	class BasicAddress ;
+	class MessageDelivery ;
 }
 
-//| \class G::BasicAddress
-/// A structure that holds a network address as a string with no
-/// dependency on any low-level network library.
-/// \see GNet::Address
+//| \class GStore::MessageDelivery
+/// Provides a static function to deliver a message to local recipients'
+/// mailboxes.
 ///
-class G::BasicAddress
+class GStore::MessageDelivery
 {
 public:
-	explicit BasicAddress( const std::string & s = {} ) ;
-		///< Constructor.
+	virtual void deliver( const MessageId & ) = 0 ;
+		///< Delivers the given message to its local recipients' mailboxes.
+		///< The original message is removed from the store. (In practice
+		///< mailboxes are sub-directories of the main spool directory.)
 
-	std::string displayString() const ;
-		///< Returns a printable string that represents the transport
-		///< address.
-
-private:
-	std::string m_display_string ;
+	virtual ~MessageDelivery() ;
+		///< Destructor.
 } ;
-
-inline
-G::BasicAddress::BasicAddress( const std::string & s ) :
-	m_display_string(s)
-{
-}
-
-inline
-std::string G::BasicAddress::displayString() const
-{
-	return m_display_string ;
-}
 
 #endif

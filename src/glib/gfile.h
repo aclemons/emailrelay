@@ -200,6 +200,10 @@ public:
 	static bool link( const Path & target , const Path & new_link , std::nothrow_t ) ;
 		///< Creates a symlink. Returns false on error.
 
+	static bool hardlink( const Path & src , const Path & dst , std::nothrow_t ) ;
+		///< Creates a hard link. Returns false on error or if
+		///< not implemented.
+
 	static void create( const Path & ) ;
 		///< Creates the file if it does not exist. Leaves it
 		///< alone if it does. Throws on error.

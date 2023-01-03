@@ -24,16 +24,16 @@
 #include "gassert.h"
 #include "glog.h"
 
-GFilters::NetworkFilter::NetworkFilter( GNet::ExceptionSink es , GStore::FileStore & file_store ,
-	const std::string & server ,
-	unsigned int connection_timeout , unsigned int response_timeout ) :
+GFilters::NetworkFilter::NetworkFilter( GNet::ExceptionSink es ,
+	GStore::FileStore & file_store , Filter::Type , const Filter::Config & config ,
+	const std::string & server ) :
 		m_es(es) ,
 		m_file_store(file_store) ,
 		m_timer(*this,&NetworkFilter::onTimeout,m_es) ,
 		m_done_signal(true) ,
 		m_location(server) ,
-		m_connection_timeout(connection_timeout) ,
-		m_response_timeout(response_timeout) ,
+		m_connection_timeout(config.timeout) ,
+		m_response_timeout(config.timeout) ,
 		m_result(Result::fail)
 {
 	m_client_ptr.eventSignal().connect( G::Slot::slot(*this,&GFilters::NetworkFilter::clientEvent) ) ;
@@ -123,7 +123,7 @@ std::string GFilters::NetworkFilter::reason() const
 	return G::Str::printable( G::Str::tail( m_text.value_or({}) , "\t" , false ) ) ;
 }
 
-G::Slot::Signal<int> & GFilters::NetworkFilter::doneSignal()
+G::Slot::Signal<int> & GFilters::NetworkFilter::doneSignal() noexcept
 {
 	return m_done_signal ;
 }

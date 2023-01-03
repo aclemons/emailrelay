@@ -24,6 +24,7 @@
 #include "gdef.h"
 #include "gverifier.h"
 #include "gtask.h"
+#include "gtimer.h"
 #include <string>
 
 namespace GVerifiers
@@ -37,7 +38,7 @@ namespace GVerifiers
 class GVerifiers::ExecutableVerifier : public GSmtp::Verifier, private GNet::TaskCallback
 {
 public:
-	ExecutableVerifier( GNet::ExceptionSink , const G::Path & ) ;
+	ExecutableVerifier( GNet::ExceptionSink , const G::Path & , unsigned int timeout ) ;
 		///< Constructor.
 
 private: // overrides
@@ -45,8 +46,7 @@ private: // overrides
 	void cancel() override ; // GSmtp::Verifier
 	void onTaskDone( int , const std::string & ) override ; // GNet::TaskCallback
 	void verify( GSmtp::Verifier::Command , const std::string & rcpt_to_parameter ,
-		const std::string & mail_from_parameter , const G::BasicAddress & client_ip ,
-		const std::string & auth_mechanism , const std::string & auth_extra ) override ; // GSmtp::Verifier
+		const GSmtp::Verifier::Info & ) override ; // GSmtp::Verifier
 
 public:
 	~ExecutableVerifier() override = default ;
@@ -56,8 +56,13 @@ public:
 	ExecutableVerifier & operator=( ExecutableVerifier && ) = delete ;
 
 private:
+	void onTimeout() ;
+
+private:
+	GNet::Timer<ExecutableVerifier> m_timer ;
 	GSmtp::Verifier::Command m_command ;
 	G::Path m_path ;
+	unsigned int m_timeout ;
 	G::Slot::Signal<GSmtp::Verifier::Command,const GSmtp::VerifierStatus&> m_done_signal ;
 	std::string m_to_address ;
 	GNet::Task m_task ;

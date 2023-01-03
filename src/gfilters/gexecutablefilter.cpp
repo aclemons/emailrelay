@@ -30,14 +30,15 @@
 #include <tuple>
 
 GFilters::ExecutableFilter::ExecutableFilter( GNet::ExceptionSink es ,
-	GStore::FileStore & file_store , Filter::Type filter_type , const std::string & path ,
-	unsigned int timeout , const std::string & log_prefix ) :
+	GStore::FileStore & file_store , Filter::Type filter_type ,
+	const Filter::Config & filter_config ,
+	const std::string & path , const std::string & log_prefix ) :
 		m_file_store(file_store) ,
 		m_filter_type(filter_type) ,
 		m_prefix(log_prefix.empty()?G::sv_to_string(Filter::strtype(filter_type)):log_prefix) ,
 		m_exit(0,filter_type) ,
 		m_path(path) ,
-		m_timeout(timeout) ,
+		m_timeout(filter_config.timeout) ,
 		m_timer(*this,&ExecutableFilter::onTimeout,es) ,
 		m_task(*this,es,"<<filter exec error: __strerror__>>",G::Root::nobody())
 {
@@ -178,7 +179,7 @@ std::pair<std::string,std::string> GFilters::ExecutableFilter::parseOutput( std:
 	return { response , reason } ;
 }
 
-G::Slot::Signal<int> & GFilters::ExecutableFilter::doneSignal()
+G::Slot::Signal<int> & GFilters::ExecutableFilter::doneSignal() noexcept
 {
 	return m_done_signal ;
 }

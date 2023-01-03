@@ -15,48 +15,12 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
-/// \file gbasicaddress.h
+/// \file gmessagedelivery.cpp
 ///
-
-#ifndef G_BASIC_ADDRESS_H
-#define G_BASIC_ADDRESS_H
 
 #include "gdef.h"
+#include "gmessagedelivery.h"
 
-namespace G
-{
-	class BasicAddress ;
-}
+GStore::MessageDelivery::~MessageDelivery()
+= default ;
 
-//| \class G::BasicAddress
-/// A structure that holds a network address as a string with no
-/// dependency on any low-level network library.
-/// \see GNet::Address
-///
-class G::BasicAddress
-{
-public:
-	explicit BasicAddress( const std::string & s = {} ) ;
-		///< Constructor.
-
-	std::string displayString() const ;
-		///< Returns a printable string that represents the transport
-		///< address.
-
-private:
-	std::string m_display_string ;
-} ;
-
-inline
-G::BasicAddress::BasicAddress( const std::string & s ) :
-	m_display_string(s)
-{
-}
-
-inline
-std::string G::BasicAddress::displayString() const
-{
-	return m_display_string ;
-}
-
-#endif
