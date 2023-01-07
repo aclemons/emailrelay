@@ -57,6 +57,9 @@ void GStore::FileDelivery::deliver( const MessageId & message_id )
 		if( m_local_files )
 		{
 			envelope_path = envelope_path.withoutExtension().str().append(".local") ;
+			if( !G::File::exists(envelope_path) )
+				return ; // no-op if no ".local" envelope file, ie. no local recipients
+
 			content_path = content_path.str().append(".local") ;
 			G_LOG( "GStore::FileDelivery::deliver: delivery: delivering " << short_(envelope_path) << " to [" << m_dst.basename() << "]" ) ;
 		}
@@ -65,16 +68,18 @@ void GStore::FileDelivery::deliver( const MessageId & message_id )
 			G_LOG( "GStore::FileDelivery::deliver: delivery: delivering " << short_(envelope_path) ) ;
 		}
 
-		deliverImp( envelope_path , content_path , base_dir ) ;
-		G_LOG( "GStore::FileDelivery::deliver: delivery: delivered " << short_(envelope_path) ) ;
+		if( deliverImp( envelope_path , content_path , base_dir ) )
+		{
+			G_LOG( "GStore::FileDelivery::deliver: delivery: delivered " << short_(envelope_path) ) ;
 
-		// delete once fully delivered
-		G::File::remove( content_path , std::nothrow ) ;
-		G::File::remove( envelope_path , std::nothrow ) ;
+			// delete once fully delivered
+			G::File::remove( content_path , std::nothrow ) ;
+			G::File::remove( envelope_path , std::nothrow ) ;
+		}
 	}
 }
 
-void GStore::FileDelivery::deliverImp( const G::Path & envelope_path , const G::Path & content_path ,
+bool GStore::FileDelivery::deliverImp( const G::Path & envelope_path , const G::Path & content_path ,
 	const G::Path & base_dir )
 {
 	GStore::Envelope envelope = readEnvelope( envelope_path ) ;
@@ -135,6 +140,7 @@ void GStore::FileDelivery::deliverImp( const G::Path & envelope_path , const G::
 		clean_up_content.release() ;
 		clean_up_envelope.release() ;
 	}
+	return !mailbox_list.empty() ;
 }
 
 G::StringArray GStore::FileDelivery::mailboxes( const GStore::Envelope & envelope , const std::string & this_domain )

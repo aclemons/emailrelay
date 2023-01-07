@@ -62,7 +62,7 @@ private: // overrides
 	void deliver( const MessageId & ) override ; // GStore::MessageDelivery
 
 private:
-	void deliverImp( const G::Path & , const G::Path & , const G::Path & ) ;
+	bool deliverImp( const G::Path & , const G::Path & , const G::Path & ) ;
 	static bool lookup( const std::string & ) ;
 	static int mkdir( const G::Path & ) ;
 	static bool openIn( std::ifstream & , const G::Path & ) ;
