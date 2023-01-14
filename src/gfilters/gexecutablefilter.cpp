@@ -47,7 +47,7 @@ GFilters::ExecutableFilter::ExecutableFilter( GNet::ExceptionSink es ,
 GFilters::ExecutableFilter::~ExecutableFilter()
 = default;
 
-bool GFilters::ExecutableFilter::simple() const
+bool GFilters::ExecutableFilter::quiet() const
 {
 	return false ;
 }
@@ -105,7 +105,7 @@ void GFilters::ExecutableFilter::start( const GStore::MessageId & message_id )
 
 void GFilters::ExecutableFilter::onTimeout()
 {
-	G_WARNING( "GFilters::ExecutableFilter::onTimeout: " << m_prefix << " timed out after " << m_timeout << "s" ) ;
+	G_WARNING( "GFilters::ExecutableFilter::onTimeout: " << m_prefix << " [" << m_path.basename() << "] timed out after " << m_timeout << "s" ) ;
 	m_task.stop() ;
 	m_exit = Exit( 1 , m_filter_type ) ;
 	G_ASSERT( m_exit.fail() ) ;

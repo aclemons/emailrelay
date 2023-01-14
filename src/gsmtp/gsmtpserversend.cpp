@@ -175,9 +175,10 @@ void GSmtp::ServerSend::sendFailed()
 	send( "554 transaction failed" ) ;
 }
 
-void GSmtp::ServerSend::sendRcptReply( const std::string & to )
+void GSmtp::ServerSend::sendRcptReply( const std::string & to , bool is_local )
 {
-	sendOk( "recipient <" + to + "> OK" ) ; // RFC-2920 3.2 (10)
+	// RFC-2920 3.2 (10)
+	sendOk( std::string("recipient <").append(to).append(is_local?">  ":"> ").append("OK") ) ;
 }
 
 void GSmtp::ServerSend::sendBadFrom( const std::string & response_extra )

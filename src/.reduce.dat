@@ -576,7 +576,7 @@ gdnsmessage.cpp	371	remove	unsigned int GNet::DnsMessageRR::type() const
 gdnsmessage.cpp	376	keep	bool GNet::DnsMessageRR::isa( G::string_view type_name ) const noexcept
 gdnsmessage.cpp	381	keep	unsigned int GNet::DnsMessageRR::size() const
 gdnsmessage.cpp	386	remove	std::string GNet::DnsMessageRR::name() const
-gdnsmessage.cpp	391	remove	std::string GNet::DnsMessageRR::rdataDname( unsigned int rdata_offset ) const
+gdnsmessage.cpp	391	keep	std::string GNet::DnsMessageRR::rdataDname( unsigned int rdata_offset ) const
 gdnsmessage.cpp	396	remove	std::string GNet::DnsMessageRR::rdataDname( unsigned int * rdata_offset_p ) const
 gdnsmessage.cpp	403	remove	std::string GNet::DnsMessageRR::rdataSpan( unsigned int rdata_begin ) const
 gdnsmessage.cpp	408	keep	std::string GNet::DnsMessageRR::rdataSpan( unsigned int rdata_begin , unsigned int rdata_end ) const

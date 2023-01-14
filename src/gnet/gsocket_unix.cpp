@@ -236,18 +236,16 @@ GNet::SocketBase::ssize_type GNet::RawSocket::write( const char * buffer , size_
 
 // ==
 
-#ifndef G_LIB_SMALL
-std::size_t GNet::DatagramSocket::limit() const
+std::size_t GNet::DatagramSocket::limit( std::size_t default_in ) const
 {
 	int value = 0 ;
 	socklen_t size = sizeof(int) ;
 	int rc = ::getsockopt( fd() , SOL_SOCKET , SO_SNDBUF , &value , &size ) ;
-	if( rc == 0 && size == sizeof(int) && value > 1024 )
+	if( rc == 0 && size == sizeof(int) && value >= 0 && static_cast<std::size_t>(value) > default_in )
 		return static_cast<std::size_t>(value) ;
 	else
-		return 1024U ;
+		return default_in ;
 }
-#endif
 
 #ifndef G_LIB_SMALL
 GNet::Socket::ssize_type GNet::DatagramSocket::writeto( const std::vector<G::string_view> & data , const Address & dst )

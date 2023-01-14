@@ -50,7 +50,7 @@ std::string GFilters::SpamFilter::id() const
 	return m_location.displayString() ;
 }
 
-bool GFilters::SpamFilter::simple() const
+bool GFilters::SpamFilter::quiet() const
 {
 	return false ;
 }

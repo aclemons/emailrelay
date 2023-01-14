@@ -70,10 +70,10 @@ GStore::NewFile::~NewFile()
 void GStore::NewFile::cleanup()
 {
 	discardContent() ;
-	if( ! m_committed )
+	if( !m_committed )
 	{
-		deleteEnvelope() ;
-		deleteContent() ;
+		FileOp::remove( epath(State::New) ) ;
+		FileOp::remove( cpath() ) ;
 	}
 }
 
@@ -91,14 +91,14 @@ bool GStore::NewFile::prepare( const std::string & session_auth_id ,
 	m_env.client_socket_address = peer_socket_address ;
 	m_env.client_certificate = peer_certificate ;
 
-	// copy or move aside for local mailboxes
+	// save envelope -- also copy or move aside for local mailboxes
 	bool rc = false ;
 	if( !m_env.to_local.empty() && m_env.to_remote.empty() )
 	{
 		G_LOG( "GStore::NewFile: moving " << m_id.str() << " to .local" ) ;
 		G::Path new_content_path = localPath( cpath() ) ;
 		G::Path new_envelope_path = localPath( epath(State::Normal) ) ;
-		moveContent( cpath() , new_content_path ) ;
+		FileOp::rename( cpath() , new_content_path ) ;
 		saveEnvelope( m_env , new_envelope_path ) ;
 		rc = true ; // no commit() needed
 	}
@@ -107,7 +107,7 @@ bool GStore::NewFile::prepare( const std::string & session_auth_id ,
 		G_DEBUG( "GStore::NewFile: copying " << m_id.str() << " to .local" ) ;
 		G::Path new_content_path = localPath( cpath() ) ;
 		G::Path new_envelope_path = localPath( epath(State::Normal) ) ;
-		copyContent( cpath() , new_content_path ) ;
+		FileOp::hardlink( cpath() , new_content_path ) ;
 		Envelope new_envelope = m_env ;
 		new_envelope.to_remote.clear() ; // local file has only local recipients
 		saveEnvelope( new_envelope , new_envelope_path ) ;
@@ -124,10 +124,10 @@ bool GStore::NewFile::prepare( const std::string & session_auth_id ,
 void GStore::NewFile::commit( bool throw_on_error )
 {
 	m_committed = true ;
-	bool ok = commitEnvelope() ;
-	if( !ok && throw_on_error )
+	m_saved = FileOp::rename( epath(State::New) , epath(State::Normal) ) ;
+	if( !m_saved && throw_on_error )
 		throw FileError( "cannot rename envelope file to " + epath(State::Normal).str() ) ;
-	if( ok )
+	if( m_saved )
 		static_cast<MessageStore&>(m_store).updated() ;
 }
 
@@ -183,31 +183,6 @@ void GStore::NewFile::discardContent()
 	m_content.reset() ;
 }
 
-void GStore::NewFile::deleteContent()
-{
-	FileWriter claim_writer ;
-	G::File::remove( cpath() , std::nothrow ) ;
-}
-
-void GStore::NewFile::moveContent( const G::Path & src , const G::Path & dst )
-{
-	FileWriter claim_writer ;
-	G::File::rename( src , dst ) ;
-}
-
-void GStore::NewFile::copyContent( const G::Path & src , const G::Path & dst )
-{
-	FileWriter claim_writer ;
-	if( !G::File::hardlink( src , dst , std::nothrow ) )
-		G::File::copy( src , dst ) ;
-}
-
-void GStore::NewFile::deleteEnvelope()
-{
-	FileWriter claim_writer ;
-	G::File::remove( epath(State::New) , std::nothrow ) ;
-}
-
 void GStore::NewFile::saveEnvelope( Envelope & env , const G::Path & path )
 {
 	G_LOG( "GStore::NewFile: envelope file: " << G::Str::join("/",path.dirname().basename(),path.basename()) ) ;
@@ -217,13 +192,6 @@ void GStore::NewFile::saveEnvelope( Envelope & env , const G::Path & path )
 	envelope_stream->close() ;
 	if( envelope_stream->fail() )
 		throw FileError( "cannot write envelope file" , path.str() ) ;
-}
-
-bool GStore::NewFile::commitEnvelope()
-{
-	FileWriter claim_writer ;
-	m_saved = G::File::rename( epath(State::New) , epath(State::Normal) , std::nothrow ) ;
-	return m_saved ;
 }
 
 G::Path GStore::NewFile::localPath( const G::Path & path )

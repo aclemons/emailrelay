@@ -83,14 +83,14 @@ public:
 		///< Delivers the given event notification to remote clients of
 		///< the admin server.
 
-	G::Slot::Signal<unsigned,std::string,bool> & clientDoneSignal() ;
+	G::Slot::Signal<unsigned,std::string,bool> & clientDoneSignal() noexcept ;
 		///< Returns a signal that indicates that a forwarding client
 		///< has done its work. The string parameter is a failure reason
 		///< or the empty string on success. The boolean parameter indicates
 		///< that unit's configuration is such that that program should
 		///< now terminate.
 
-	G::Slot::Signal<unsigned,std::string,std::string,std::string> & eventSignal() ;
+	G::Slot::Signal<unsigned,std::string,std::string,std::string> & eventSignal() noexcept ;
 		///< Returns a signal that emits messages like "connecting",
 		///< "resolving" "connected", "sending", "sent", "forward start"
 		///< "forward end" and "local". (The Main::Run object distributes
@@ -126,6 +126,7 @@ private:
 	std::string serverTlsProfile() const ;
 	std::string clientTlsProfile() const ;
 	std::string ident() const ;
+	void report() ;
 
 private:
 	Run & m_run ;

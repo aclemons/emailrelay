@@ -94,13 +94,16 @@ GNet::DnsMessage::DnsMessage()
 GNet::DnsMessage::DnsMessage( const std::vector<char> & buffer ) :
 	m_buffer(buffer)
 {
-	if( TC() )
-		throw Error( "truncated response" ) ;
 }
 
 GNet::DnsMessage::DnsMessage( const char * p , std::size_t n ) :
 	m_buffer(p,p+n)
 {
+}
+
+bool GNet::DnsMessage::valid() const
+{
+	return m_buffer.size() >= 12U && !TC() ;
 }
 
 const char * GNet::DnsMessage::p() const noexcept
@@ -414,12 +417,10 @@ std::string GNet::DnsMessageRR::name() const
 }
 #endif
 
-#ifndef G_LIB_SMALL
 std::string GNet::DnsMessageRR::rdataDname( unsigned int rdata_offset ) const
 {
 	return DnsMessageNameParser::read( m_msg , m_rdata_offset + rdata_offset ) ;
 }
-#endif
 
 #ifndef G_LIB_SMALL
 std::string GNet::DnsMessageRR::rdataDname( unsigned int * rdata_offset_p ) const
@@ -464,25 +465,37 @@ unsigned int GNet::DnsMessageRR::rdataWord( unsigned int i ) const
 	return m_msg.word( m_rdata_offset + i ) ;
 }
 
-GNet::Address GNet::DnsMessageRR::address() const
+GNet::Address GNet::DnsMessageRR::address( unsigned int port , std::nothrow_t ) const
+{
+	bool ok = false ;
+	return addressImp( port , ok ) ;
+}
+
+GNet::Address GNet::DnsMessageRR::address( unsigned int port ) const
+{
+	bool ok = false ;
+	auto a = addressImp( port , ok ) ;
+	if( !ok )
+		throw DnsMessage::Error( "not an address" ) ;
+	return a ;
+}
+
+GNet::Address GNet::DnsMessageRR::addressImp( unsigned int port , bool & ok ) const
 {
 	std::ostringstream ss ;
 	if( isa("A") && rdataSize() == 4U )
 	{
-		ss << rdataByte(0U) << "." << rdataByte(1U) << "." << rdataByte(2U) << "." << rdataByte(3U) << ":0" ;
+		ss << rdataByte(0U) << "." << rdataByte(1U) << "." << rdataByte(2U) << "." << rdataByte(3U) << ":" << port ;
 	}
 	else if( isa("AAAA") && rdataSize() == 16U )
 	{
 		const char * sep = "" ;
 		for( unsigned int i = 0 ; i < 8U ; i++ , sep = ":" )
 			ss << sep << std::hex << rdataWord(i*2U) ;
-		ss << ".0" ;
+		ss << "." << port ;
 	}
-	else
-	{
-		throw DnsMessage::Error( "not an address" ) ;
-	}
-	return Address::parse( ss.str() , Address::NotLocal() ) ;
+	ok = Address::validString( ss.str() , Address::NotLocal() ) ;
+	return ok ? Address::parse( ss.str() , Address::NotLocal() ) : Address::defaultAddress() ;
 }
 
 // ==

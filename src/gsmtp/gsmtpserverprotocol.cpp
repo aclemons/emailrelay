@@ -885,7 +885,7 @@ void GSmtp::ServerProtocol::doRcptToReply( EventData event_data , bool & predica
 		// it to be a copy of the input -- in the future we could allow
 		// 'status.address' to be used for an editied or normalised version
 		// of the input address)
-		sendRcptReply( status.recipient ) ;
+		sendRcptReply( status.recipient , status.is_local ) ;
 	}
 	else
 	{

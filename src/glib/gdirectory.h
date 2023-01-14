@@ -158,7 +158,7 @@ public:
 
 	DirectoryList() ;
 		///< Default constructor for an empty list. Initialise with one
-		///< of the two read methods to do all the file i/o in one go.
+		///< of the three read methods to do all the file i/o in one go.
 
 	void readAll( const Path & dir ) ;
 		///< An initialiser that is to be used after default construction.

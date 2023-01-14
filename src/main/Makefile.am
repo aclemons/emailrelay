@@ -60,8 +60,6 @@ OTHER_SOURCES = \
  commandline.cpp \
  configuration.h \
  configuration.cpp \
- filterfactory.h \
- filterfactory.cpp \
  legal.cpp \
  legal.h \
  output.cpp \
@@ -69,28 +67,10 @@ OTHER_SOURCES = \
  run.cpp \
  run.h \
  unit.cpp \
- unit.h \
- verifierfactory.h \
- verifierfactory.cpp
+ unit.h
 
 WINDOWS_SERVICEWRAPPER_SOURCES = \
  servicewrapper.cpp
-
-if GCONFIG_EXTRA_FILTERS
- FILTER_SOURCES = demofilter.cpp demofilter.h
- FILTER_EXTRA_DIST =
-else
- FILTER_SOURCES =
- FILTER_EXTRA_DIST = demofilter.cpp demofilter.h
-endif
-
-if GCONFIG_EXTRA_VERIFIERS
- VERIFIER_SOURCES = demoverifier.cpp demoverifier.h
- VERIFIER_EXTRA_DIST =
-else
- VERIFIER_SOURCES =
- VERIFIER_EXTRA_DIST = demoverifier.cpp demoverifier.h
-endif
 
 WINDOWS_LIBMAIN_SOURCES = \
  serviceimp_win32.cpp \
@@ -101,8 +81,6 @@ UNIX_LIBMAIN_SOURCES = \
  servicecontrol_unix.cpp
 
 LIBMAIN_SOURCES = \
- $(FILTER_SOURCES) \
- $(VERIFIER_SOURCES) \
  options.cpp \
  options.h \
  serviceimp.h \
@@ -139,15 +117,11 @@ if GCONFIG_WINDOWS
  EXTRA_DIST=\
   $(MAC_EXTRA_DIST) \
   $(MISC_EXTRA_DIST) \
-  $(FILTER_EXTRA_DIST) \
-  $(VERIFIER_EXTRA_DIST) \
   $(UNIX_LIBMAIN_SOURCES)
 else
  EXTRA_DIST=\
   $(MAC_EXTRA_DIST) \
   $(MISC_EXTRA_DIST) \
-  $(FILTER_EXTRA_DIST) \
-  $(VERIFIER_EXTRA_DIST) \
   $(WINDOWS_MAIN_SOURCES) \
   $(WINDOWS_SERVICEWRAPPER_SOURCES) \
   $(WINDOWS_LIBMAIN_SOURCES)

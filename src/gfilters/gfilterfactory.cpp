@@ -19,7 +19,6 @@
 ///
 
 #include "gdef.h"
-#include "gstr.h"
 #include "gfilterfactory.h"
 #include "gstringtoken.h"
 #include "gfilterchain.h"
@@ -30,6 +29,11 @@
 #include "gexecutablefilter.h"
 #include "gspamfilter.h"
 #include "gdeliveryfilter.h"
+#include "gcopyfilter.h"
+#include "gmxfilter.h"
+#include "gsplitfilter.h"
+#include "gstr.h"
+#include "grange.h"
 #include "gexception.h"
 
 GFilters::FilterFactory::FilterFactory( GStore::FileStore & file_store ) :
@@ -87,6 +91,19 @@ GFilters::FilterFactory::Spec GFilters::FilterFactory::parse( const std::string 
 	else if( spec_in.find("deliver:") == 0U )
 	{
 		result = Spec( "deliver" , tail ) ;
+		checkRange( result ) ;
+	}
+	else if( spec_in.find("copy:") == 0U )
+	{
+		result = Spec( "copy" , tail ) ;
+	}
+	else if( spec_in.find("split:") == 0U )
+	{
+		result = Spec( "split" , tail ) ;
+	}
+	else if( spec_in.find("mx:") == 0U )
+	{
+		result = Spec( "mx" , tail ) ;
 	}
 
 	if( result.first.empty() )
@@ -130,6 +147,18 @@ std::unique_ptr<GSmtp::Filter> GFilters::FilterFactory::newFilter( GNet::Excepti
 	{
 		return std::make_unique<DeliveryFilter>( es , m_file_store , filter_type , filter_config , spec.second ) ;
 	}
+	else if( spec.first == "copy" )
+	{
+		return std::make_unique<CopyFilter>( es , m_file_store , filter_type , filter_config , spec.second ) ;
+	}
+	else if( spec.first == "split" )
+	{
+		return std::make_unique<SplitFilter>( es , m_file_store , filter_type , filter_config , spec.second ) ;
+	}
+	else if( spec.first == "mx" )
+	{
+		return std::make_unique<MxFilter>( es , m_file_store , filter_type , filter_config , spec.second ) ;
+	}
 
 	throw G::Exception( "invalid filter" , spec.second ) ;
 	return {} ;
@@ -149,6 +178,19 @@ void GFilters::FilterFactory::checkNet( Spec & result )
 	try
 	{
 		GNet::Location::nosocks( result.second ) ;
+	}
+	catch( std::exception & e )
+	{
+		result.first.clear() ;
+		result.second = e.what() ;
+	}
+}
+
+void GFilters::FilterFactory::checkRange( Spec & result )
+{
+	try
+	{
+		G::Range::check( result.second ) ;
 	}
 	catch( std::exception & e )
 	{

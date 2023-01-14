@@ -94,34 +94,7 @@ std::size_t GStore::Envelope::write( std::ostream & stream , const GStore::Envel
 	return stream.fail() ? std::size_t(0U) : static_cast<std::size_t>( stream.tellp() - pos ) ;
 }
 
-void GStore::Envelope::copy( Envelope & new_envelope , const G::Path & path ,
-	const Envelope & old_envelope )
-{
-	std::ofstream new_envelope_stream ;
-	{
-    	FileWriter claim_root ;
-		G::File::open( new_envelope_stream , path ) ;
-	}
-	if( !new_envelope_stream )
-		throw WriteError( path.str() ) ;
-
-	new_envelope.endpos = GStore::Envelope::write( new_envelope_stream , new_envelope ) ;
-	new_envelope.crlf = true ;
-
-	// add in some helpful extra headers
-	new_envelope_stream << GStore::FileStore::x() << "ToCount-Original: "
-		<< (old_envelope.to_local.size()+old_envelope.to_remote.size()) << "\r\n" ;
-	for( const auto & to_remote : old_envelope.to_remote )
-		new_envelope_stream << GStore::FileStore::x() << "To-Remote-Original: " << to_remote << "\r\n" ;
-	for( const auto & to_local : old_envelope.to_local )
-		new_envelope_stream << GStore::FileStore::x() << "To-Local-Original: " << to_local << "\r\n" ;
-
-	new_envelope_stream.close() ;
-	if( !new_envelope_stream )
-		throw WriteError( path.str() ) ;
-}
-
-void GStore::Envelope::copy( std::istream & in , std::ostream & out )
+void GStore::Envelope::copyExtra( std::istream & in , std::ostream & out )
 {
 	std::string line ;
 	while( G::Str::readLine( in , line ) )

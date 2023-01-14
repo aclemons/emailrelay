@@ -24,7 +24,9 @@
 #include "gdef.h"
 #include "gstringarray.h"
 #include "gmessagestore.h"
+#include "genvelope.h"
 #include "gpath.h"
+#include <functional>
 #include <iostream>
 #include <fstream>
 
@@ -73,15 +75,8 @@ public:
 	virtual void destroy() = 0 ;
 		///< Deletes the message within the store.
 
-	virtual void edit( const G::StringArray & new_to_list ) = 0 ;
-		///< Edits the message by updating the list of
-		///< non-local recipients to the given non-empty list.
-
 	virtual void fail( const std::string & reason , int reason_code ) = 0 ;
 		///< Marks the message as failed within the store.
-
-	virtual void unfail() = 0 ;
-		///< Marks the message as unfailed within the store.
 
 	virtual MessageStore::BodyType bodyType() const = 0 ;
 		///< Returns the message body type.
@@ -106,6 +101,10 @@ public:
 	virtual bool utf8Mailboxes() const = 0 ;
 		///< Returns true if the mail-from command should
 		///< have SMTPUTF8 (RFC-6531).
+
+	virtual void editRecipients( const G::StringArray & ) = 0 ;
+		///< Updates the message's remote recipients, typically to
+		///< the sub-set that have not received it successfully.
 
 	virtual ~StoredMessage() = default ;
 		///< Destructor.
@@ -135,9 +134,7 @@ private: // overrides
 	void close() override ;
 	std::string reopen() override ;
 	void destroy() override ;
-	void edit( const G::StringArray & ) override ;
 	void fail( const std::string & reason , int reason_code ) override ;
-	void unfail() override ;
 	MessageStore::BodyType bodyType() const override ;
 	std::string authentication() const override ;
 	std::string fromAuthIn() const override ;
@@ -145,6 +142,7 @@ private: // overrides
 	std::string forwardTo() const override ;
 	std::string forwardToAddress() const override ;
 	bool utf8Mailboxes() const override ;
+	void editRecipients( const G::StringArray & ) override ;
 
 public:
 	StoredMessageStub( const StoredMessageStub & ) = delete ;
@@ -167,9 +165,7 @@ inline std::istream & GStore::StoredMessageStub::contentStream() { return m_cont
 inline void GStore::StoredMessageStub::close() {}
 inline std::string GStore::StoredMessageStub::reopen() { return {} ; }
 inline void GStore::StoredMessageStub::destroy() {}
-inline void GStore::StoredMessageStub::edit( const G::StringArray & ) {}
 inline void GStore::StoredMessageStub::fail( const std::string & , int ) {}
-inline void GStore::StoredMessageStub::unfail() {}
 inline GStore::MessageStore::BodyType GStore::StoredMessageStub::bodyType() const { return MessageStore::BodyType::Unknown ; }
 inline std::string GStore::StoredMessageStub::authentication() const { return {} ; }
 inline std::string GStore::StoredMessageStub::fromAuthIn() const { return {} ; }
@@ -177,5 +173,6 @@ inline std::string GStore::StoredMessageStub::fromAuthOut() const { return {} ; 
 inline std::string GStore::StoredMessageStub::forwardTo() const { return {} ; }
 inline std::string GStore::StoredMessageStub::forwardToAddress() const { return {} ; }
 inline bool GStore::StoredMessageStub::utf8Mailboxes() const { return false ; }
+inline void GStore::StoredMessageStub::editRecipients( const G::StringArray & ) {}
 
 #endif

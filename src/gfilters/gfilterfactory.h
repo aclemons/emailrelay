@@ -79,6 +79,7 @@ protected: // overrides
 private:
 	static void checkExit( Spec & ) ;
 	static void checkNet( Spec & ) ;
+	static void checkRange( Spec & ) ;
 	static void checkFile( Spec & , G::StringArray * ) ;
 	static void fixFile( Spec & , const G::Path & , const G::Path & ) ;
 

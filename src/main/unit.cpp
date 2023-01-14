@@ -22,8 +22,8 @@
 #include "unit.h"
 #include "run.h"
 #include "legal.h"
-#include "filterfactory.h"
-#include "verifierfactory.h"
+#include "gfilterfactory.h"
+#include "gverifierfactory.h"
 #include "gssl.h"
 #include "gpop.h"
 #include "glog.h"
@@ -64,8 +64,6 @@ Main::Unit::Unit( Run & run , unsigned int unit_id , const std::string & version
 		std::string error = GNet::Resolver::resolve( location ) ;
 		if( !error.empty() )
 			G_WARNING( "Main::Unit::ctor: " << format(txt("dns lookup of forward-to address failed: %1%")) % error ) ;
-		else
-			G_LOG( "Main::Unit::ctor: " << format(txt("forwarding address %1%")) % location.displayString() ) ;
 	}
 
 	// early check on the DNSBL configuration string
@@ -121,8 +119,8 @@ Main::Unit::Unit( Run & run , unsigned int unit_id , const std::string & version
 	//
 	m_file_store = std::make_unique<GStore::FileStore>( m_configuration.spoolDir() , m_configuration.fileStoreConfig() ) ;
 	m_file_delivery = std::make_unique<GStore::FileDelivery>( *m_file_store , domain() , m_configuration.localDeliveryDir() ) ;
-	m_filter_factory = std::make_unique<Main::FilterFactory>( m_run , *this , *m_file_store ) ;
-	m_verifier_factory = std::make_unique<Main::VerifierFactory>( m_run , *this ) ;
+	m_filter_factory = std::make_unique<GFilters::FilterFactory>( *m_file_store ) ;
+	m_verifier_factory = std::make_unique<GVerifiers::VerifierFactory>() ;
 	store().messageStoreRescanSignal().connect( G::Slot::slot(*this,&Unit::onStoreRescanEvent) ) ;
 	if( do_pop )
 	{
@@ -256,9 +254,12 @@ void Main::Unit::onForwardRequest( const std::string & reason )
 void Main::Unit::requestForwarding( const std::string & reason )
 {
 	G_ASSERT( m_forwarding_timer != nullptr ) ;
-	if( !reason.empty() )
-		m_forwarding_reason = reason ;
-	m_forwarding_timer->startTimer( 0U ) ;
+	if( !m_configuration.serverAddress().empty() )
+	{
+		if( !reason.empty() )
+			m_forwarding_reason = reason ;
+		m_forwarding_timer->startTimer( 0U ) ;
+	}
 }
 
 void Main::Unit::onRequestForwardingTimeout()
@@ -350,9 +351,7 @@ bool Main::Unit::nothingToSend() const
 void Main::Unit::start()
 {
 	// report stuff
-	if( m_smtp_server ) m_smtp_server->report( name() ) ;
-	if( m_admin_server ) m_admin_server->report( name() ) ;
-	if( m_pop_server ) GPop::report( m_pop_server.get() , name() ) ;
+	report() ;
 
 	// kick off some forwarding
 	//
@@ -363,6 +362,32 @@ void Main::Unit::start()
 	//
 	if( m_configuration.doPolling() )
 		m_poll_timer->startTimer( m_configuration.pollingTimeout() ) ;
+}
+
+void Main::Unit::report()
+{
+	if( !m_configuration.log() )
+		return ;
+
+	std::string name_ = name() ;
+
+	if( m_smtp_server )
+		m_smtp_server->report( name_ ) ;
+
+	if( m_admin_server )
+		m_admin_server->report( name_ ) ;
+
+	if( m_pop_server )
+		GPop::report( m_pop_server.get() , name_ ) ;
+
+	if( !m_configuration.serverAddress().empty() )
+	{
+		using G::txt ;
+		using G::format ;
+		G_LOG( "Main::Unit::ctor: "
+			<< (name_.empty()?"":"[") << name_ << (name_.empty()?"":"]: ")
+			<< format(txt("forwarding to %1%")) % m_configuration.serverAddress() ) ;
+	}
 }
 
 void Main::Unit::onServerEvent( const std::string & s1 , const std::string & )
@@ -420,12 +445,12 @@ const GStore::MessageStore & Main::Unit::store() const
 	return *(static_cast<const GStore::MessageStore*>(m_file_store.get())) ;
 }
 
-G::Slot::Signal<unsigned,std::string,bool> & Main::Unit::clientDoneSignal()
+G::Slot::Signal<unsigned,std::string,bool> & Main::Unit::clientDoneSignal() noexcept
 {
 	return m_client_done_signal ;
 }
 
-G::Slot::Signal<unsigned,std::string,std::string,std::string> & Main::Unit::eventSignal()
+G::Slot::Signal<unsigned,std::string,std::string,std::string> & Main::Unit::eventSignal() noexcept
 {
 	return m_event_signal ;
 }

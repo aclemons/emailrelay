@@ -23,9 +23,9 @@
 
 #include "gdef.h"
 #include "gfilter.h"
+#include "gsimplefilterbase.h"
 #include "gfilestore.h"
 #include "gexceptionsink.h"
-#include "gtimer.h"
 
 namespace GFilters
 {
@@ -40,7 +40,7 @@ namespace GFilters
 /// Sub-directories are created on-the-fly and content files are
 /// hard linked where possible.
 ///
-class GFilters::DeliveryFilter : public GSmtp::Filter
+class GFilters::DeliveryFilter : public SimpleFilterBase
 {
 public:
 	DeliveryFilter( GNet::ExceptionSink es , GStore::FileStore & ,
@@ -50,28 +50,14 @@ public:
 	~DeliveryFilter() override ;
 		///< Destructor.
 
-private: // overrided
-	std::string id() const override ;
-	bool simple() const override ;
-	void start( const GStore::MessageId & ) override ;
-	G::Slot::Signal<int> & doneSignal() noexcept override ;
-	void cancel() override ;
-	Result result() const override ;
-	std::string response() const override ;
-	std::string reason() const override ;
-	bool special() const override ;
-
-private:
-	void onTimeout() ;
+private: // overrides
+	Result run( const GStore::MessageId & , bool & , GStore::FileStore::State ) override ;
 
 private:
 	GStore::FileStore & m_store ;
 	Filter::Type m_filter_type ;
 	Filter::Config m_filter_config ;
 	std::string m_spec ;
-	GNet::Timer<DeliveryFilter> m_timer ;
-	G::Slot::Signal<int> m_done_signal ;
-	Result m_result ;
 } ;
 
 #endif

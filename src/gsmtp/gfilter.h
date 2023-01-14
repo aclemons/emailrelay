@@ -76,9 +76,8 @@ public:
 		///< Returns the id passed to the derived-class constructor.
 		///< Used in logging.
 
-	virtual bool simple() const = 0 ;
-		///< Returns true if the concrete filter class is one that can
-		///< never change the message (eg. a do-nothing filter class).
+	virtual bool quiet() const = 0 ;
+		///< Returns true if there is no need for logging.
 
 	virtual void start( const GStore::MessageId & ) = 0 ;
 		///< Starts the filter for the given message. Any previous,

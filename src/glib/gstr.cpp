@@ -889,7 +889,7 @@ std::size_t G::StrImp::outputPrintable( Tout out , Tchar c , Tchar escape_in , c
 	{
 		out( static_cast<char>(c) ) ;
 	}
-	else if( eight_bit && ( ( uc >= 0x20U && uc < 0x7fU ) || ( uc >= 0Xa0 && uc < 0xffU ) ) )
+	else if( eight_bit && ( uc >= 0x20U && uc != 0x7fU ) )
 	{
 		out( static_cast<char>(c) ) ;
 	}

@@ -8,8 +8,8 @@ E-MailRelay Change Log
 * Message delivery support (\ *--local-delivery-dir*\ ).
 * Multiple configurations in one process (see NEWS file).
 * SMTP_ PIPELINING (RFC-2920_).
-* SMTP CHUNKING/8BITMIME 'BDAT' (RFC-3030_) (\ *--server-smtp-config*\ ).
-* SMTP SMTPUTF8 (RFC-6531_) (\ *--server-smtp-config*\ , *--client-smtp-config*).
+* SMTP CHUNKING/8BITMIME 'BDAT' extension (RFC-3030_), disabled by default.
+* SMTP SMTPUTF8 extension (RFC-6531_), disabled by default.
 * No 7-bit/8-bit check on received message content (see NEWS file).
 * New built-in *deliver:* filter.
 * New built-in *allow:* and *local:* address verifiers.

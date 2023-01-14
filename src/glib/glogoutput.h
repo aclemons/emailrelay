@@ -75,19 +75,19 @@ public:
 
 	struct Config /// A configuration structure for G::LogOutput.
 	{
-		bool m_output_enabled{false} ;
-		bool m_summary_info{false} ;
-		bool m_verbose_info{false} ;
-		bool m_debug{false} ;
-		bool m_with_level{false} ;
-		bool m_with_timestamp{false} ;
-		bool m_with_context{false} ;
-		bool m_strip{false} ; // strip first word
-		bool m_quiet_stderr{false} ;
-		bool m_use_syslog{false} ;
-		bool m_allow_bad_syslog{false} ;
-		SyslogFacility m_facility{SyslogFacility::User} ;
-		Process::Umask::Mode m_umask{Process::Umask::Mode::NoChange} ;
+		bool m_output_enabled {false} ;
+		bool m_summary_info {false} ;
+		bool m_verbose_info {false} ;
+		bool m_debug {false} ;
+		bool m_with_level {false} ;
+		bool m_with_timestamp {false} ;
+		bool m_with_context {false} ;
+		bool m_strip {false} ; // strip first word
+		bool m_quiet_stderr {false} ;
+		bool m_use_syslog {false} ;
+		bool m_allow_bad_syslog {false} ;
+		SyslogFacility m_facility {SyslogFacility::User} ;
+		Process::Umask::Mode m_umask {Process::Umask::Mode::NoChange} ;
 		Config() ;
 		Config & set_output_enabled( bool value = true ) ;
 		Config & set_summary_info( bool value = true ) ;

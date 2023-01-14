@@ -36,7 +36,7 @@ std::string GSmtp::Filter::str( Filter::Type type ) const
 		ss << "ok " ;
 
 	if( special() )
-		ss << ( type == Filter::Type::server ? "rescan " : "break " ) ;
+		ss << ( type == Filter::Type::server ? "+rescan " : "+break " ) ;
 
 	ss << "response=[" << response() << "]" ;
 

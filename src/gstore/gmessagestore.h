@@ -123,11 +123,15 @@ public:
 		///< StoredMessage::destroy() once they have been fully
 		///< processed.
 
-	virtual std::unique_ptr<Iterator> failures() = 0 ;
-		///< Returns an iterator for failed messages.
+	virtual std::vector<MessageId> ids() = 0 ;
+		///< Returns a list of spooled message ids (excluding new or
+		///< locked messages).
+
+	virtual std::vector<MessageId> failures() = 0 ;
+		///< Returns a list of failed message ids.
 
 	virtual void unfailAll() = 0 ;
-		///< Causes messages marked as failed to be unmarked.
+		///< Unfails all failed messages.
 
 	virtual void rescan() = 0 ;
 		///< Requests that a messageStoreRescanSignal() is emitted.

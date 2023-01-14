@@ -110,9 +110,11 @@ am__v_AR_0 = @echo "  AR      " $@;
 am__v_AR_1 = 
 libgverifiers_a_AR = $(AR) $(ARFLAGS)
 libgverifiers_a_LIBADD =
-am_libgverifiers_a_OBJECTS = gexecutableverifier.$(OBJEXT) \
-	gnetworkverifier.$(OBJEXT) ginternalverifier.$(OBJEXT) \
-	guserverifier.$(OBJEXT) gverifierfactory.$(OBJEXT)
+am__objects_1 =
+am_libgverifiers_a_OBJECTS = $(am__objects_1) \
+	gexecutableverifier.$(OBJEXT) gnetworkverifier.$(OBJEXT) \
+	ginternalverifier.$(OBJEXT) guserverifier.$(OBJEXT) \
+	gverifierfactory.$(OBJEXT)
 libgverifiers_a_OBJECTS = $(am_libgverifiers_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -314,6 +316,10 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 noinst_LIBRARIES = libgverifiers.a
+@GCONFIG_EXTRA_VERIFIERS_FALSE@VERIFIER_SOURCES = 
+@GCONFIG_EXTRA_VERIFIERS_TRUE@VERIFIER_SOURCES = # gextraverifier.cpp gextraverifier.h
+@GCONFIG_EXTRA_VERIFIERS_FALSE@VERIFIER_EXTRA_DIST = # gextraverifier.cpp gextraverifier.h
+@GCONFIG_EXTRA_VERIFIERS_TRUE@VERIFIER_EXTRA_DIST = 
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/glib \
 	-I$(top_srcdir)/src/gssl \
@@ -324,6 +330,7 @@ AM_CPPFLAGS = \
 	-DG_LIB_SMALL
 
 libgverifiers_a_SOURCES = \
+	$(VERIFIER_SOURCES) \
 	gexecutableverifier.cpp \
 	gexecutableverifier.h \
 	gnetworkverifier.cpp \
@@ -334,6 +341,9 @@ libgverifiers_a_SOURCES = \
 	guserverifier.h \
 	gverifierfactory.cpp \
 	gverifierfactory.h
+
+EXTRA_DIST = \
+	$(VERIFIER_EXTRA_DIST)
 
 all: all-am
 

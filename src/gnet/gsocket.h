@@ -446,9 +446,12 @@ public:
 		///< Releases the association between two datagram endpoints
 		///< reversing the effect of the previous Socket::connect().
 
-	std::size_t limit() const ;
-		///< Returns the maximum datagram size or 1024, whichever is
-		///< larger.
+	std::size_t limit( std::size_t default_ = 1024U ) const ;
+		///< Returns the systems's maximum datagram size if the
+		///< value is known and greater than the given default
+		///< value. Returns the given default value if the system
+		///< limit is not known.
+		///<
 		/// \see SO_SNDBUF, /proc/sys/net/core/wmem_default
 
 public:

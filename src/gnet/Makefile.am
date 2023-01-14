@@ -62,6 +62,7 @@ COMMON_SOURCES = \
 	gmonitor.h \
 	gmultiserver.cpp \
 	gmultiserver.h \
+	gnameservers.h \
 	gnetdone.cpp \
 	gnetdone.h \
 	gresolver.cpp \
@@ -94,12 +95,14 @@ AM_CPPFLAGS = -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl -I$(top_srcdir)/
 OS_EXTRA_DIST = \
 	gdescriptor_unix.cpp \
 	gfutureevent_unix.cpp \
+	gnameservers_unix.cpp \
 	gsocket_unix.cpp
 
 OS_SOURCES = \
 	gdescriptor_win32.cpp \
 	geventloop_win32.cpp \
 	gfutureevent_win32.cpp \
+	gnameservers_win32.cpp \
 	gsocket_win32.cpp
 
 else
@@ -110,11 +113,13 @@ OS_EXTRA_DIST = \
 	gdescriptor_win32.cpp \
 	geventloop_win32.cpp \
 	gfutureevent_win32.cpp \
+	gnameservers_win32.cpp \
 	gsocket_win32.cpp
 
 OS_SOURCES = \
 	gdescriptor_unix.cpp \
 	gfutureevent_unix.cpp \
+	gnameservers_unix.cpp \
 	gsocket_unix.cpp
 
 endif

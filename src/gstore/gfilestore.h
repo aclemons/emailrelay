@@ -23,6 +23,7 @@
 
 #include "gdef.h"
 #include "gmessagestore.h"
+#include "genvelope.h"
 #include "gdatetime.h"
 #include "gexception.h"
 #include "gprocess.h"
@@ -55,12 +56,14 @@ class GStore::FileStore : public MessageStore
 {
 public:
 	G_EXCEPTION( InvalidDirectory , tx("invalid spool directory") ) ;
+	G_EXCEPTION( EnvelopeReadError , tx("cannot read envelope file") ) ;
 	G_EXCEPTION( GetError , tx("error reading specific message") ) ;
 	enum class State // see GStore::FileStore::envelopePath()
 	{
-		Normal ,
 		New ,
-		Locked
+		Normal ,
+		Locked ,
+		Bad
 	} ;
 	struct Config /// Configuration structure for GStore::FileStore.
 	{
@@ -68,6 +71,24 @@ public:
 		unsigned long seq {0UL} ; // sequence number start
 		Config & set_max_size( std::size_t ) noexcept ;
 		Config & set_seq( unsigned long ) noexcept ;
+	} ;
+	struct FileOp /// Low-level file-system operations for GStore::FileStore.
+	{
+		FileOp() = delete ;
+		static int & errno_() noexcept ;
+		static bool rename( const G::Path & , const G::Path & ) ;
+		static bool renameOver( const G::Path & , const G::Path & ) ;
+		static bool remove( const G::Path & ) ;
+		static bool exists( const G::Path & ) ;
+		static int fdopen( const G::Path & ) ;
+		static bool hardlink( const G::Path & , const G::Path & ) ;
+		static bool copy( const G::Path & , const G::Path & ) ;
+		static bool copy( const G::Path & , const G::Path & , bool hardlink ) ;
+		static bool mkdir( const G::Path & ) ;
+		static bool isdir( const G::Path & , const G::Path & = {} , const G::Path & = {} ) ;
+		static std::ifstream & openIn( std::ifstream & , const G::Path & ) ;
+		static std::ofstream & openOut( std::ofstream & , const G::Path & ) ;
+		static std::ofstream & openAppend( std::ofstream & , const G::Path & ) ;
 	} ;
 
 	FileStore( const G::Path & dir , const Config & config ) ;
@@ -102,18 +123,24 @@ public:
 		///< Returns true if the storage format string is
 		///< recognised and supported for reading.
 
+	static Envelope readEnvelope( const G::Path & , std::ifstream * = nullptr ) ;
+		///< Used by FileStore sibling classes to read an envelope file.
+		///< Optionally returns the newly-opened stream by reference so
+		///< that any trailing headers can be read. Throws on error.
+
 private: // overrides
 	bool empty() const override ;
 	std::string location( const MessageId & ) const override ;
 	std::unique_ptr<StoredMessage> get( const MessageId & ) override ;
 	std::unique_ptr<MessageStore::Iterator> iterator( bool lock ) override ;
-	std::unique_ptr<MessageStore::Iterator> failures() override ;
 	std::unique_ptr<NewMessage> newMessage( const std::string & , const MessageStore::SmtpInfo & , const std::string & ) override ;
 	void updated() override ;
 	G::Slot::Signal<> & messageStoreUpdateSignal() override ;
 	G::Slot::Signal<> & messageStoreRescanSignal() override ;
-	void rescan() override ;
+	std::vector<MessageId> ids() override ;
+	std::vector<MessageId> failures() override ;
 	void unfailAll() override ;
+	void rescan() override ;
 
 public:
 	~FileStore() override = default ;
@@ -127,7 +154,6 @@ private:
 	G::Path fullPath( const std::string & filename ) const ;
 	std::string getline( std::istream & ) const ;
 	std::string value( const std::string & ) const ;
-	void unfailAllImp() ;
 	static const std::string & crlf() ;
 	bool emptyCore() const ;
 	void clearAll() ;

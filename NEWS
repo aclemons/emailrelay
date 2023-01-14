@@ -41,21 +41,37 @@ options like "--filter=exit:99" and "--filter=spam:localhost:783", with a
 small number of special prefixes that include "exit:", "net:", "file:" and
 "spam:".
 
-In this release there is a new built-in "deliver:" filter (see below), and
-similarly new "allow:" and "local:" address verifiers.
+In this release there is a new built-in "deliver:", "split:", "mx:" and
+"copy:" filters, and new built-in "allow:" and "local:" address verifiers.
 
 A compile-time option can be used to enable any additional optional filters
 and address verifiers, as follows:
 
 	./configure.sh --enable-extra-filters --enable-extra-verifiers
 
+The "deliver:" filter is described below.
+
+The "split:" filter splits a message into multiple copies so that each copy
+has all its recipient addresses in the same domain. The domain is written
+into each copy's "forward-to" envelope field so that it can be used as the
+basis for routing.
+
+The "mx:" filter does a DNS MX lookup on any "forward-to" value in the message
+envelope and puts the result into the "forward-to-address" field. This is
+normally used as a client-side filter after using "split:" as a server-side
+filter and it results in message routing.
+
+The "copy:" filter copies the message into all sub-directories of the main spool
+directory. This is useful when using "--pop-by-name" to serve copies of email
+messages to separate email user agents.
+
 The "allow:" address verifier checks that the recipient address has a username
 that exists in the password database and a domain that matches the configured
-"--domain". If it does not match then the address is rejected and an SMTP error
+"--domain"; if it does not match then the address is rejected and an SMTP error
 is returned to the submitting client.
 
 The "local:" address verifier checks the recipient address against the password
-database and the configured "--domain" in the same way. If the address matches
+database and the configured "--domain" in the same way; if the address matches
 then it is treated as a local address (see below), and if it does not match
 then it is accepted as a remote address with no SMTP error.
 
@@ -73,12 +89,16 @@ option to distribute a ".local" message into a separate mailbox sub-directory
 for each message recipient. The new "--local-delivery-dir" command-line option
 enables this functionality and specifies the base directory for the mailboxes.
 
-There is also a new built-in filter that can do message delivery
+There is also a new built-in "deliver:" filter that can do message delivery
 ("--filter=deliver:"). It assumes all message recipients are local users, so
 there is no need to use an address verifier, but to avoid creating too many
-mailboxes the recipient address is strictly validated against the password
-database. Any message recipient that is not valid results in delivery to a
-default "postmaster" mailbox.
+mailboxes the recipient address is validated against the password database. Any
+message recipient that is not valid results in delivery to a default
+"postmaster" mailbox.
+
+If a mailbox directory itself contains "tmp", "new" and "cur" sub-directories
+then it is considered to be a "maildir" mailbox and the message content is
+delivered to the "new" directory and the envelope is discarded.
 
 7BIT/8BITMIME
 -------------

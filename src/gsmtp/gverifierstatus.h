@@ -78,10 +78,10 @@ public:
 		///< GSmtp::ServerParser::mailboxStyle().
 
 public:
-	bool is_valid{false} ;
-	bool is_local{false} ;
-	bool temporary{false} ;
-	bool abort{false} ;
+	bool is_valid {false} ;
+	bool is_local {false} ;
+	bool temporary {false} ;
+	bool abort {false} ;
 	std::string recipient ; // verifier input, even if not valid
 	std::string full_name ; // description iff local
 	std::string address ; // mailbox if local, output address if remote

@@ -186,7 +186,7 @@ void GSmtp::Client::start()
 	// basic routing if forward-to is defined in the envelope
 	if( m_config.with_routing && !message()->forwardTo().empty() )
 	{
-		if( !m_routing_filter->simple() ) message()->close() ;
+		message()->close() ;
 		m_routing_filter->start( message()->id() ) ;
 		return ;
 	}
@@ -216,11 +216,9 @@ bool GSmtp::Client::protocolSend( G::string_view line , std::size_t offset , boo
 
 void GSmtp::Client::filterStart()
 {
-	if( !m_filter->simple() )
-	{
-		G_LOG( "GSmtp::Client::filterStart: client filter: [" << m_filter->id() << "]" ) ;
-		message()->close() ; // allow external editing
-	}
+	if( !m_filter->quiet() )
+		G_LOG( "GSmtp::Client::filterStart: client filter for " << m_filter->id() ) ;
+	message()->close() ; // allow external editing
 	m_filter->start( message()->id() ) ;
 }
 
@@ -239,12 +237,10 @@ void GSmtp::Client::filterDone( int filter_result )
 	}
 
 	std::string reopen_error ;
-	if( !m_filter->simple() )
-	{
+	if( !m_filter->quiet() )
 		G_LOG( "GSmtp::Client::filterDone: client filter done: " << m_filter->str(Filter::Type::client) ) ;
-		if( ok && !abandon )
-			reopen_error = message()->reopen() ;
-	}
+	if( ok && !abandon )
+		reopen_error = message()->reopen() ;
 
 	// pass the event on to the client protocol
 	if( ok && reopen_error.empty() )
@@ -301,7 +297,7 @@ void GSmtp::Client::protocolDone( int response_code , const std::string & respon
 	{
 		// some recipients rejected by the server, so update the to-list and fail the message
 		m_filter->cancel() ;
-		message()->edit( rejectees ) ;
+		message()->editRecipients( rejectees ) ;
 		messageFail( response_code , reason ) ;
 	}
 
@@ -382,12 +378,11 @@ void GSmtp::Client::routingFilterDone( int filter_result )
 {
 	G_ASSERT( static_cast<int>(m_routing_filter->result()) == filter_result ) ;
 	G_ASSERT( m_config.with_routing ) ;
-	G_LOG( "GSmtp::Client::routingFilterDone: routing filter done: " << m_routing_filter->str(Filter::Type::client) ) ;
 
 	const bool ok = filter_result == 0 ;
 	const bool abandon = filter_result == 1 ;
 	const bool fail = filter_result == 2 ;
-	std::string reopen_error = ok && !m_routing_filter->simple() ? message()->reopen() : std::string() ;
+	std::string reopen_error = ok ? message()->reopen() : std::string() ;
 
 	bool move_on = false ;
 	if( abandon )
@@ -405,6 +400,11 @@ void GSmtp::Client::routingFilterDone( int filter_result )
 		move_on = true ;
 	}
 
+	G_LOG( "GSmtp::Client::routingFilterDone: routing: routing filter done: "
+		<< m_routing_filter->str(Filter::Type::client)
+		<< (reopen_error.empty()?std::string():(": "+reopen_error))
+		<< (move_on?": moving on":"") ) ;
+
 	if( move_on )
 	{
 		G_ASSERT( m_store != nullptr ) ;
@@ -417,6 +417,7 @@ void GSmtp::Client::routingFilterDone( int filter_result )
 	else // ok and reopened
 	{
 		std::string forward_to_address = message()->forwardToAddress() ;
+		G_LOG( "GSmtp::Client::routingFilterDone: routing: forward-to-address from envelope: [" << forward_to_address << "]" ) ;
 
 		G::CallFrame this_( m_stack ) ;
 		eventSignal().emit( "sending" , message()->location() , std::string() ) ;
@@ -429,7 +430,6 @@ void GSmtp::Client::routingFilterDone( int filter_result )
 		}
 		else
 		{
-			G_LOG( "GSmtp::Client::routingFilterDone: routing to " << forward_to_address ) ;
 			m_routing_client.reset( new Client( m_es , m_ff , GNet::Location(forward_to_address) ,
 				m_secrets , Config(m_config).set_with_routing(false) ) ) ;
 			m_routing_client->messageDoneSignal().connect( G::Slot::slot( *this , &GSmtp::Client::routedMessageDone ) ) ;

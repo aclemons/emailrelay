@@ -75,17 +75,13 @@ private: // overrides
 		const std::string & peer_certificate ) override ; // GStore::NewMessage
 
 private:
+	using FileOp = FileStore::FileOp ;
 	enum class State { New , Normal } ;
 	G::Path cpath() const ;
 	G::Path epath( State ) const ;
 	void cleanup() ;
 	void discardContent() ;
-	bool commitEnvelope() ;
-	void deleteContent() ;
-	void deleteEnvelope() ;
 	void saveEnvelope( Envelope & , const G::Path & ) ;
-	static void moveContent( const G::Path & , const G::Path & ) ;
-	static void copyContent( const G::Path & , const G::Path & ) ;
 	static G::Path localPath( const G::Path & ) ;
 
 private:

@@ -123,6 +123,7 @@ COMMON_SOURCES = \
 	gprocess.h \
 	grandom.h \
 	grandom.cpp \
+	grange.h \
 	greadwrite.h \
 	greadwrite.cpp \
 	groot.h \

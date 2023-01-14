@@ -17,6 +17,14 @@
 
 noinst_LIBRARIES = libgfilters.a
 
+if GCONFIG_EXTRA_FILTERS
+ FILTER_SOURCES = # gextrafilter.cpp gextrafilter.h
+ FILTER_EXTRA_DIST =
+else
+ FILTER_SOURCES =
+ FILTER_EXTRA_DIST = # gextrafilter.cpp gextrafilter.h
+endif
+
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/glib \
 	-I$(top_srcdir)/src/gssl \
@@ -27,6 +35,9 @@ AM_CPPFLAGS = \
 	-DG_LIB_SMALL
 
 libgfilters_a_SOURCES = \
+	$(FILTER_SOURCES) \
+	gcopyfilter.cpp \
+	gcopyfilter.h \
 	gdeliveryfilter.cpp \
 	gdeliveryfilter.h \
 	gexecutablefilter.cpp \
@@ -35,10 +46,21 @@ libgfilters_a_SOURCES = \
 	gfilterchain.h \
 	gfilterfactory.cpp \
 	gfilterfactory.h \
+	gmxfilter.cpp \
+	gmxfilter.h \
+	gmxlookup.cpp \
+	gmxlookup.h \
 	gnetworkfilter.cpp \
 	gnetworkfilter.h \
 	gnullfilter.cpp \
 	gnullfilter.h \
+	gsimplefilterbase.cpp \
+	gsimplefilterbase.h \
 	gspamfilter.cpp \
-	gspamfilter.h
+	gspamfilter.h \
+	gsplitfilter.cpp \
+	gsplitfilter.h
+
+EXTRA_DIST = \
+	$(FILTER_EXTRA_DIST)
 

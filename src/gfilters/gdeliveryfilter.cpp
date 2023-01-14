@@ -21,80 +21,35 @@
 #include "gdef.h"
 #include "gdeliveryfilter.h"
 #include "gfiledelivery.h"
+#include "grange.h"
 #include "glog.h"
 
 GFilters::DeliveryFilter::DeliveryFilter( GNet::ExceptionSink es , GStore::FileStore & store ,
 	Filter::Type filter_type , const Filter::Config & filter_config , const std::string & spec ) :
+		SimpleFilterBase(es,filter_type,"deliver:") ,
 		m_store(store) ,
 		m_filter_type(filter_type) ,
 		m_filter_config(filter_config) ,
-		m_spec(spec) ,
-		m_timer(*this,&DeliveryFilter::onTimeout,es) ,
-		m_result(Result::fail)
+		m_spec(spec)
 {
 }
 
 GFilters::DeliveryFilter::~DeliveryFilter()
 = default ;
 
-std::string GFilters::DeliveryFilter::id() const
-{
-	return "deliver" ;
-}
-
-bool GFilters::DeliveryFilter::simple() const
-{
-	return false ;
-}
-
-void GFilters::DeliveryFilter::start( const GStore::MessageId & message_id )
+GSmtp::Filter::Result GFilters::DeliveryFilter::run( const GStore::MessageId & message_id ,
+	bool & , GStore::FileStore::State )
 {
 	if( m_filter_type != Filter::Type::server )
 	{
 		G_WARNING( "GFilters::DeliveryFilter::start: invalid use of the delivery filter" ) ;
-		return ;
+		return Result::fail ;
 	}
 
-	GStore::FileDelivery delivery_imp( m_store , m_filter_config.domain ) ;
+	GStore::FileDelivery delivery_imp( m_store , m_filter_config.domain , G::Range::range(m_spec) ) ;
 	GStore::MessageDelivery & delivery = delivery_imp ;
 	delivery.deliver( message_id ) ;
 
-	m_result = Result::abandon ; // (original message deleted)
-	m_timer.startTimer( 0U ) ;
-}
-
-G::Slot::Signal<int> & GFilters::DeliveryFilter::doneSignal() noexcept
-{
-	return m_done_signal ;
-}
-
-void GFilters::DeliveryFilter::cancel()
-{
-	m_timer.cancelTimer() ;
-}
-
-GSmtp::Filter::Result GFilters::DeliveryFilter::result() const
-{
-	return m_result ;
-}
-
-std::string GFilters::DeliveryFilter::response() const
-{
-	return {} ;
-}
-
-std::string GFilters::DeliveryFilter::reason() const
-{
-	return {} ;
-}
-
-bool GFilters::DeliveryFilter::special() const
-{
-	return false ;
-}
-
-void GFilters::DeliveryFilter::onTimeout()
-{
-	m_done_signal.emit( static_cast<int>(m_result) ) ;
+	return Result::abandon ; // (original message deleted)
 }
 

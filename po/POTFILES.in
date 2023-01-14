@@ -30,7 +30,6 @@
 ./src/main/passwd.cpp
 ./src/main/news.cpp
 ./src/main/submission.cpp
-./src/main/demofilter.cpp
 ./src/main/start.cpp
 ./src/main/servicewrapper.cpp
 ./src/main/options.cpp
@@ -40,8 +39,6 @@
 ./src/main/run.cpp
 ./src/main/commandline.cpp
 ./src/main/licence.cpp
-./src/main/filterfactory.cpp
-./src/main/demoverifier.cpp
 ./src/main/filter.cpp
 ./src/main/winmain.cpp
 ./src/main/legal.cpp
@@ -147,6 +144,7 @@
 ./src/gnet/gresolverfuture.cpp
 ./src/gnet/gtask.cpp
 ./src/gnet/gaddress4.cpp
+./src/gnet/gnameservers_unix.cpp
 ./src/gnet/gresolver.cpp
 ./src/gnet/glinebuffer.cpp
 ./src/gnet/gaddresslocal_none.cpp
@@ -191,7 +189,12 @@
 ./src/gfilters/gnetworkfilter.cpp
 ./src/gfilters/gnullfilter.cpp
 ./src/gfilters/gexecutablefilter.cpp
+./src/gfilters/gsimplefilterbase.cpp
 ./src/gfilters/gdeliveryfilter.cpp
 ./src/gfilters/gspamfilter.cpp
 ./src/gfilters/gfilterchain.cpp
+./src/gfilters/gsplitfilter.cpp
+./src/gfilters/gmxlookup.cpp
+./src/gfilters/gmxfilter.cpp
+./src/gfilters/gcopyfilter.cpp
 ./src/gfilters/gfilterfactory.cpp

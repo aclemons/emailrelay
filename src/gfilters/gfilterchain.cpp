@@ -23,6 +23,7 @@
 #include "gslot.h"
 #include "gstringtoken.h"
 #include "gstr.h"
+#include "glog.h"
 #include <utility>
 #include <algorithm>
 
@@ -68,10 +69,10 @@ std::string GFilters::FilterChain::id() const
 	return m_filter_id ;
 }
 
-bool GFilters::FilterChain::simple() const
+bool GFilters::FilterChain::quiet() const
 {
-	return std::all_of( m_filters.begin() , m_filters.end() ,
-		[](const std::unique_ptr<Filter> & ptr){ return ptr->simple() ; } ) ;
+    return std::all_of( m_filters.begin() , m_filters.end() ,
+        [](const std::unique_ptr<Filter> & ptr){ return ptr->quiet() ; } ) ;
 }
 
 G::Slot::Signal<int> & GFilters::FilterChain::doneSignal() noexcept
@@ -115,6 +116,7 @@ void GFilters::FilterChain::onFilterDone( int ok_abandon_fail )
 	}
 	else // abandon/fail
 	{
+		G_DEBUG_IF( ((m_filter_index+1U)<m_filters.size()) , "GFilters::FilterChain::onFilterDone: some chained filters not run" ) ;
 		m_running = false ;
 		m_done_signal.emit( ok_abandon_fail ) ;
 	}

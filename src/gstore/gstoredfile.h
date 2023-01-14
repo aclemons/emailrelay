@@ -31,11 +31,13 @@
 #include "gstringarray.h"
 #include <iostream>
 #include <memory>
+#include <new>
 #include <cstdio>
 
 namespace GStore
 {
 	class StoredFile ;
+	class FileIterator ;
 }
 
 //| \class GStore::StoredFile
@@ -47,24 +49,25 @@ class GStore::StoredFile : public StoredMessage
 public:
 	G_EXCEPTION( FormatError , tx("invalid envelope file") ) ;
 	G_EXCEPTION( FilenameError , tx("invalid envelope filename") ) ;
-	G_EXCEPTION( ReadError , tx("cannot read envelope file") ) ;
 	G_EXCEPTION( EditError , tx("cannot update envelope file") ) ;
 	G_EXCEPTION( SizeError , tx("cannot get content file size") ) ;
+	using State = FileStore::State ;
 
-	StoredFile( FileStore & store , const G::Path & envelope_path ) ;
+	StoredFile( FileStore & store , const MessageId & , State = State::Normal ) ;
 		///< Constructor.
 
 	~StoredFile() override ;
 		///< Destructor. Unlocks the file if it has been lock()ed
-		///< but not destroy()ed or fail()ed.
+		///< but not destroy()ed or fail()ed or noUnlock()ed.
 
 	bool lock() ;
 		///< Locks the file by renaming the envelope file.
-		///< Used by FileStore and FileIterator.
 
 	bool readEnvelope( std::string & reason ) ;
-		///< Reads the envelope. Returns false on error.
-		///< Used by FileStore and FileIterator.
+		///< Reads the envelope. Returns false on error with a
+		///< reason; does not throw.
+		///<
+		/// \see FileIterator, FileStore::readEnvelope().
 
 	bool openContent( std::string & reason ) ;
 		///< Opens the content file. Returns false on error.
@@ -73,8 +76,13 @@ public:
 	MessageId id() const override ;
 		///< Override from GStore::StoredMessage.
 
+	void noUnlock() ;
+		///< Disable unlocking in the destructor.
+
+	void editEnvelope( std::function<void(Envelope&)> ) ;
+		///< Edits the envelope and updates it in the file store.
+
 private: // overrides
-	void edit( const G::StringArray & ) override ; // GStore::StoredMessage
 	void fail( const std::string & reason , int reason_code ) override ; // GStore::StoredMessage
 	std::string location() const override ; // GStore::StoredMessage
 	MessageStore::BodyType bodyType() const override ; // GStore::StoredMessage
@@ -90,9 +98,9 @@ private: // overrides
 	void close() override ; // GStore::StoredMessage
 	std::string reopen() override ; // GStore::StoredMessage
 	void destroy() override ; // GStore::StoredMessage
-	void unfail() override ; // GStore::StoredMessage
 	std::size_t contentSize() const override ; // GStore::StoredMessage
 	std::istream & contentStream() override ; // GStore::StoredMessage
+	void editRecipients( const G::StringArray & ) override ; // GStore::StoredMessage
 
 public:
 	StoredFile( const StoredFile & ) = delete ;
@@ -101,19 +109,21 @@ public:
 	StoredFile & operator=( StoredFile && ) = delete ;
 
 private:
+	using FileOp = FileStore::FileOp ;
 	using StreamBuf = G::fbuf<int,BUFSIZ> ;
 	struct Stream : StreamBuf , std::istream
 	{
 		Stream() ;
+		explicit Stream( const G::Path & ) ;
 		void open( const G::Path & ) ;
 		std::streamoff size() const ;
 	} ;
 
 private:
-	enum class State { Normal , Locked , Bad } ;
 	G::Path cpath() const ;
 	G::Path epath( State ) const ;
-	void readEnvelopeCore() ;
+	std::size_t writeEnvelopeImp( const Envelope & , const G::Path & , std::ofstream & ) ;
+	void replaceEnvelope( const G::Path & , const G::Path & ) ;
 	const std::string & eol() const ;
 	void addReason( const G::Path & path , const std::string & , int ) const ;
 
@@ -123,6 +133,7 @@ private:
 	MessageId m_id ;
 	Envelope m_env ;
 	State m_state ;
+	bool m_unlock ;
 } ;
 
 #endif

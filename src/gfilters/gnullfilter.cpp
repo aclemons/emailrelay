@@ -44,7 +44,7 @@ std::string GFilters::NullFilter::id() const
 	return m_id ;
 }
 
-bool GFilters::NullFilter::simple() const
+bool GFilters::NullFilter::quiet() const
 {
 	return true ;
 }

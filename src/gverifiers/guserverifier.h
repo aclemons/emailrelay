@@ -55,9 +55,6 @@ public:
 	~UserVerifier() override ;
 		///< Destructor.
 
-	static void check( const std::string & spec ) ;
-		///< Checks the format of the specification and throws on error.
-
 private: // overrides
 	void verify( Command command , const std::string & , const GSmtp::Verifier::Info & ) override ;
 	G::Slot::Signal<GSmtp::Verifier::Command,const GSmtp::VerifierStatus&> & doneSignal() override ;
@@ -66,12 +63,6 @@ private: // overrides
 private:
 	void onTimeout() ;
 	std::string explain( int uid , const std::string & , const std::string & ) const ;
-	static std::pair<int,int> range( const std::string & ) ;
-	static std::pair<int,int> from( int ) ;
-	static std::pair<int,int> none() ;
-	static std::pair<int,int> all() ;
-	static std::string str( std::pair<int,int> ) ;
-	static bool within( std::pair<int,int> , int ) ;
 	static int lookup( const std::string & ) ;
 	static std::string normalise( const std::string & ) ;
 
@@ -86,9 +77,5 @@ private:
 	std::pair<int,int> m_range ;
 	bool m_allow_postmaster ;
 } ;
-
-inline std::pair<int,int> GVerifiers::UserVerifier::from( int n ) { return { n , -1 } ; }
-inline std::pair<int,int> GVerifiers::UserVerifier::none() { return { -1 , -1 } ; }
-inline std::pair<int,int> GVerifiers::UserVerifier::all() { return { 0 , -1 } ; }
 
 #endif

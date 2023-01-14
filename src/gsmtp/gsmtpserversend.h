@@ -94,7 +94,7 @@ protected:
 	void sendEhloReply( const Advertise & ) ;
 	void sendRsetReply() ;
 	void sendMailReply( const std::string & from ) ;
-	void sendRcptReply( const std::string & to ) ;
+	void sendRcptReply( const std::string & to , bool local ) ;
 	void sendDataReply() ;
 	void sendCompletionReply( bool ok , const std::string & ) ;
 	void sendFailed() ;

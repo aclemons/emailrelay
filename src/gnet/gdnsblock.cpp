@@ -209,7 +209,7 @@ void GNet::DnsBlock::readEvent()
 	buffer.resize( static_cast<std::size_t>(rc) ) ;
 
 	DnsMessage message( buffer ) ;
-	if( !message.QR() || message.ID() < m_id_base ||
+	if( !message.valid() || !message.QR() || message.ID() < m_id_base ||
 		message.ID() >= (m_id_base+m_servers.size()) || message.RCODE() > 5 )
 	{
 		G_WARNING( "GNet::DnsBlock::readEvent: invalid dns response: qr=" << message.QR()

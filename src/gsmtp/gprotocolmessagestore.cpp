@@ -142,7 +142,7 @@ void GSmtp::ProtocolMessageStore::process( const std::string & session_auth_id ,
 			<< session_auth_id << "\", \"" << peer_socket_address << "\"" ) ;
 		G_ASSERT( m_new_msg != nullptr ) ;
 
-		// write ".new" envelope
+		// write ".new" envelope and close the content
 		bool local_only = m_new_msg->prepare( session_auth_id , peer_socket_address , peer_certificate ) ;
 
 		// do local delivery
@@ -156,7 +156,7 @@ void GSmtp::ProtocolMessageStore::process( const std::string & session_auth_id ,
 		else
 		{
 			// start the filter
-			if( !m_filter->simple() )
+			if( !m_filter->quiet() )
 				G_LOG( "GSmtp::ProtocolMessageStore::process: filter start: [" << m_filter->id() << "] "
 					<< "[" << m_new_msg->location() << "]" ) ;
 			m_filter->start( m_new_msg->id() ) ;
@@ -185,7 +185,7 @@ void GSmtp::ProtocolMessageStore::filterDone( int filter_result )
 		std::string filter_response = (ok||abandon) ? std::string() : m_filter->response() ;
 		std::string filter_reason = (ok||abandon) ? std::string() : m_filter->reason() ;
 
-		if( !m_filter->simple() )
+		if( !m_filter->quiet() )
 			G_LOG( "GSmtp::ProtocolMessageStore::filterDone: filter done: " << m_filter->str(Filter::Type::server) ) ;
 
 		GStore::MessageId message_id = GStore::MessageId::none() ;

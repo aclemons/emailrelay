@@ -113,8 +113,14 @@ void G::ScopeExit::release() noexcept
 inline
 G::ScopeExit::~ScopeExit()
 {
-	if( m_fn )
-		m_fn() ;
+	try
+	{
+		if( m_fn )
+			m_fn() ;
+	}
+	catch(...) // dtor
+	{
+	}
 }
 
 inline

@@ -20,6 +20,7 @@
 
 #include "gdef.h"
 #include "gidentity.h"
+#include "genvironment.h"
 #include <sstream>
 
 G::Identity::Identity() noexcept :
@@ -43,9 +44,25 @@ G::Identity::Identity( const std::string & , const std::string & ) :
 {
 }
 
-std::pair<uid_t,gid_t> G::Identity::lookupUser( const std::string & )
+std::pair<uid_t,gid_t> G::Identity::lookupUser( const std::string & name )
 {
-	return { 0 , 0 } ;
+	if( name != G::Environment::get( "USERNAME" , {} ) ) // TODO win32 usernames
+		throw G::Exception( "unknown user" , name ) ;
+	return { 1 , 1 } ;
+}
+
+bool G::Identity::lookupUser( const std::string & name , uid_t & uid , gid_t & gid )
+{
+	if( name == G::Environment::get( "USERNAME" , {} ) ) // TODO win32 usernames
+	{
+		uid = 1 ;
+		gid = 1 ;
+		return true ;
+	}
+	else
+	{
+		return false ;
+	}
 }
 
 gid_t G::Identity::lookupGroup( const std::string & )

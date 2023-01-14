@@ -31,16 +31,14 @@ namespace GStore
 }
 
 //| \class GStore::MessageDelivery
-/// Provides a static function to deliver a message to local recipients'
-/// mailboxes.
+/// An interface to deliver a message to its local recipients' mailboxes.
 ///
 class GStore::MessageDelivery
 {
 public:
 	virtual void deliver( const MessageId & ) = 0 ;
 		///< Delivers the given message to its local recipients' mailboxes.
-		///< The original message is removed from the store. (In practice
-		///< mailboxes are sub-directories of the main spool directory.)
+		///< The original message is removed from the store.
 
 	virtual ~MessageDelivery() ;
 		///< Destructor.

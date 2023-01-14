@@ -23,8 +23,8 @@
 #include "gstringfield.h"
 #include "configuration.h"
 #include "commandline.h"
-#include "filterfactory.h"
-#include "verifierfactory.h"
+#include "gfilterfactory.h"
+#include "gverifierfactory.h"
 #include "gmessagestore.h"
 #include "gtest.h"
 #include "gpop.h"
@@ -543,14 +543,14 @@ GSmtp::FilterFactoryBase::Spec Main::Configuration::filterValue( G::string_view 
 	G::StringArray * warnings_p ) const
 {
 	std::string value = stringValue( option_name ) ;
-	return Main::FilterFactory::parse( value , m_base_dir.str() , m_app_dir.str() , warnings_p ) ;
+	return GFilters::FilterFactory::parse( value , m_base_dir.str() , m_app_dir.str() , warnings_p ) ;
 }
 
 GSmtp::VerifierFactoryBase::Spec Main::Configuration::verifierValue( G::string_view option_name ,
 	G::StringArray * warnings_p ) const
 {
 	std::string value = stringValue( option_name ) ;
-	return Main::VerifierFactory::parse( value , m_base_dir.str() , m_app_dir.str() , warnings_p ) ;
+	return GVerifiers::VerifierFactory::parse( value , m_base_dir.str() , m_app_dir.str() , warnings_p ) ;
 }
 
 G::Path Main::Configuration::pathValue( G::string_view option_name ) const

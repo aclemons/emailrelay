@@ -21,6 +21,7 @@
 #include "gdef.h"
 #include "guserverifier.h"
 #include "gidentity.h"
+#include "grange.h"
 #include "gstr.h"
 #include "glog.h"
 
@@ -32,19 +33,20 @@ GVerifiers::UserVerifier::UserVerifier( GNet::ExceptionSink es , bool local ,
 		m_config(config) ,
 		m_timer(*this,&UserVerifier::onTimeout,es) ,
 		m_result(GSmtp::VerifierStatus::invalid({})) ,
-		m_range(none()) ,
+		m_range(G::Range::none()) ,
 		m_allow_postmaster(allow_postmaster)
 {
+	using namespace G::Range ;
 	if( local )
 	{
 		// outgoing messages -- always allow but local if a match
-		m_range = spec.empty() ? from(512) : range(spec) ;
+		m_range = spec.empty() ? range(512,32000) : range(spec) ;
 		G_DEBUG( "GVerifiers::UserVerifier: verifying uid " << str(m_range) << " as local" ) ;
 	}
 	else
 	{
 		// incoming messages -- allow only if a match
-		m_range = spec.empty() ? from(512) : range(spec) ;
+		m_range = spec.empty() ? range(512,32000) : range(spec) ;
 		G_DEBUG( "GVerifiers::UserVerifier: verifying uid " << str(m_range) << " as valid" ) ;
 	}
 }
@@ -52,19 +54,10 @@ GVerifiers::UserVerifier::UserVerifier( GNet::ExceptionSink es , bool local ,
 GVerifiers::UserVerifier::~UserVerifier()
 = default ;
 
-void GVerifiers::UserVerifier::check( const std::string & spec )
-{
-	if( !spec.empty() )
-	{
-		auto r = range( spec ) ; // throws on error
-		if( r.first != -1 && r.second < r.first ) // eg. "1000-900"
-			throw std::runtime_error( "not a valid uid range" ) ;
-	}
-}
-
 void GVerifiers::UserVerifier::verify( Command command , const std::string & rcpt_to_parameter ,
 	const GSmtp::Verifier::Info & )
 {
+	using namespace G::Range ;
 	m_command = command ;
 	std::string user = normalise( G::Str::head( rcpt_to_parameter , "@" , false ) ) ;
 	std::string domain = normalise( G::Str::tail( rcpt_to_parameter , "@" ) ) ;
@@ -94,6 +87,7 @@ void GVerifiers::UserVerifier::verify( Command command , const std::string & rcp
 
 std::string GVerifiers::UserVerifier::explain( int uid , const std::string & domain , const std::string & this_domain ) const
 {
+	using namespace G::Range ;
 	std::ostringstream ss ;
 	ss << "not a valid user" ;
 	if( domain != this_domain )
@@ -116,33 +110,6 @@ void GVerifiers::UserVerifier::cancel()
 void GVerifiers::UserVerifier::onTimeout()
 {
 	m_done_signal.emit( m_command , m_result ) ;
-}
-
-std::pair<int,int> GVerifiers::UserVerifier::range( const std::string & spec_part )
-{
-	G_ASSERT( !spec_part.empty() ) ;
-	if( spec_part.find('-') == std::string::npos )
-	{
-		int value = static_cast<int>( G::Str::toUInt( spec_part ) ) ;
-		return { value , value } ;
-	}
-	else
-	{
-		return {
-			static_cast<int>(G::Str::toUInt(G::Str::head(spec_part,"-",false))) ,
-			static_cast<int>(G::Str::toUInt(G::Str::tail(spec_part,"-",true)))
-		} ;
-	}
-}
-
-std::string GVerifiers::UserVerifier::str( std::pair<int,int> range )
-{
-	return G::Str::fromInt(range.first).append(1U,'-').append(G::Str::fromInt(range.second<0?9999:range.second)) ;
-}
-
-bool GVerifiers::UserVerifier::within( std::pair<int,int> range , int uid )
-{
-	return uid >= 0 && uid >= range.first && ( range.second < 0 || uid <= range.second ) ;
 }
 
 int GVerifiers::UserVerifier::lookup( const std::string & user )

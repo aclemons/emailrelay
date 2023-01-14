@@ -73,6 +73,7 @@ private:
 	static void checkFile( Spec & result , G::StringArray * warnings_p ) ;
 	static void fixFile( Spec & result , const G::Path & base_dir , const G::Path & app_dir ) ;
 	static void checkNet( Spec & result ) ;
+	static void checkRange( Spec & result ) ;
 	static void checkExit( Spec & result ) ;
 } ;
 

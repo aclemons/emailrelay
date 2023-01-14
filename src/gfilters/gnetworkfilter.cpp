@@ -49,7 +49,7 @@ std::string GFilters::NetworkFilter::id() const
 	return m_location.displayString() ;
 }
 
-bool GFilters::NetworkFilter::simple() const
+bool GFilters::NetworkFilter::quiet() const
 {
 	return false ;
 }

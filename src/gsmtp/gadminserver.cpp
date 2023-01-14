@@ -103,15 +103,15 @@ bool GSmtp::AdminServerPeer::onReceive( const char * line_data , std::size_t lin
 	}
 	else if( is(line,"list"_sv) )
 	{
-		sendList( spooled() ) ;
+		sendMessageIds( m_server.store().ids() ) ;
 	}
 	else if( is(line,"failures"_sv) )
 	{
-		sendList( failures() ) ;
+		sendMessageIds( m_server.store().failures() ) ;
 	}
 	else if( is(line,"unfail-all"_sv) )
 	{
-		unfailAll() ;
+		m_server.store().unfailAll() ;
 		sendLine( std::string() ) ;
 	}
 	else if( is(line,"pid"_sv) )
@@ -298,25 +298,15 @@ void GSmtp::AdminServerPeer::status()
 	}
 }
 
-std::shared_ptr<GStore::MessageStore::Iterator> GSmtp::AdminServerPeer::spooled()
-{
-	return m_server.store().iterator(false) ;
-}
-
-std::shared_ptr<GStore::MessageStore::Iterator> GSmtp::AdminServerPeer::failures()
-{
-	return m_server.store().failures() ;
-}
-
-void GSmtp::AdminServerPeer::sendList( std::shared_ptr<GStore::MessageStore::Iterator> iter )
+void GSmtp::AdminServerPeer::sendMessageIds( const std::vector<GStore::MessageId> & ids )
 {
 	std::ostringstream ss ;
-	for( bool first = true ;; first = false )
+	bool first = true ;
+	for( auto id : ids )
 	{
-		std::unique_ptr<GStore::StoredMessage> message( ++iter ) ;
-		if( message == nullptr ) break ;
 		if( !first ) ss << eol() ;
-		ss << message->id().str() ;
+		ss << id.str() ;
+		first = false ;
 	}
 
 	std::string result = ss.str() ;
@@ -324,11 +314,6 @@ void GSmtp::AdminServerPeer::sendList( std::shared_ptr<GStore::MessageStore::Ite
 		sendLine( "<none>" ) ;
 	else
 		sendLine( ss.str() ) ;
-}
-
-void GSmtp::AdminServerPeer::unfailAll()
-{
-	return m_server.store().unfailAll() ;
 }
 
 bool GSmtp::AdminServerPeer::notifying() const

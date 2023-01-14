@@ -92,9 +92,7 @@ private:
 	void forward() ;
 	void help() ;
 	void status() ;
-	std::shared_ptr<GStore::MessageStore::Iterator> spooled() ;
-	std::shared_ptr<GStore::MessageStore::Iterator> failures() ;
-	void sendList( std::shared_ptr<GStore::MessageStore::Iterator> ) ;
+	void sendMessageIds( const std::vector<GStore::MessageId> & ) ;
 	void sendLine( std::string && ) ;
 	void sendLineCopy( std::string ) ;
 	void warranty() ;

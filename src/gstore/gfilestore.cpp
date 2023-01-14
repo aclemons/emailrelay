@@ -43,7 +43,7 @@ namespace GStore
 class GStore::FileIterator : public MessageStore::Iterator /// A GStore::MessageStore::Iterator for GStore::FileStore.
 {
 public:
-	FileIterator( FileStore & store , const G::Path & dir , bool lock , bool failures ) ;
+	FileIterator( FileStore & store , const G::Path & dir , bool lock ) ;
 	~FileIterator() override ;
 
 private: // overrides
@@ -63,12 +63,12 @@ private:
 
 // ===
 
-GStore::FileIterator::FileIterator( FileStore & store , const G::Path & dir , bool lock , bool failures ) :
+GStore::FileIterator::FileIterator( FileStore & store , const G::Path & dir , bool lock ) :
 	m_store(store) ,
 	m_lock(lock)
 {
 	DirectoryReader claim_reader ;
-	m_iter.readType( dir , std::string(failures?".envelope.bad":".envelope") ) ;
+	m_iter.readType( dir , ".envelope" ) ;
 }
 
 GStore::FileIterator::~FileIterator()
@@ -78,10 +78,11 @@ std::unique_ptr<GStore::StoredMessage> GStore::FileIterator::next()
 {
 	while( m_iter.more() )
 	{
-		auto message_ptr = std::make_unique<StoredFile>( m_store , m_iter.filePath() ) ;
-
-		if( !message_ptr->id().valid() )
+		GStore::MessageId message_id( m_iter.filePath().withoutExtension().basename() ) ;
+		if( !message_id.valid() )
 			continue ;
+
+		auto message_ptr = std::make_unique<StoredFile>( m_store , message_id ) ;
 
 		if( m_lock && !message_ptr->lock() )
 		{
@@ -188,10 +189,7 @@ std::string GStore::FileStore::location( const MessageId & id ) const
 std::unique_ptr<std::ofstream> GStore::FileStore::stream( const G::Path & path )
 {
 	auto stream_ptr = std::make_unique<std::ofstream>() ;
-	{
-		FileWriter claim_writer ; // seteuid(), umask(Tighter)
-		G::File::open( *stream_ptr , path ) ;
-	}
+	FileOp::openOut( *stream_ptr , path ) ;
 	return stream_ptr ;
 }
 
@@ -206,6 +204,8 @@ G::Path GStore::FileStore::envelopePath( const MessageId & id , State state ) co
 		return m_dir + id.str().append(".envelope.new") ;
 	else if( state == State::Locked )
 		return m_dir + id.str().append(".envelope.busy") ;
+	else if( state == State::Bad )
+		return m_dir + id.str().append(".envelope.bad") ;
 	else
 		return m_dir + id.str().append(".envelope") ;
 }
@@ -235,32 +235,77 @@ bool GStore::FileStore::empty() const
 	return no_more ;
 }
 
-std::unique_ptr<GStore::MessageStore::Iterator> GStore::FileStore::iterator( bool lock )
+std::vector<GStore::MessageId> GStore::FileStore::ids()
 {
-	return std::make_unique<FileIterator>( *this , m_dir , lock , false ) ;
+	G::DirectoryList list ;
+	{
+		DirectoryReader claim_reader ;
+		list.readType( m_dir , ".envelope" ) ;
+	}
+	std::vector<GStore::MessageId> result ;
+	while( list.more() )
+		result.emplace_back( list.filePath().withoutExtension().basename() ) ;
+	return result ;
 }
 
-std::unique_ptr<GStore::MessageStore::Iterator> GStore::FileStore::failures()
+std::vector<GStore::MessageId> GStore::FileStore::failures()
 {
-	return std::make_unique<FileIterator>( *this , m_dir , false , true ) ;
+	G::DirectoryList list ;
+	{
+		DirectoryReader claim_reader ;
+		list.readType( m_dir , ".envelope.bad" ) ;
+	}
+	std::vector<GStore::MessageId> result ;
+	while( list.more() )
+		result.emplace_back( list.filePath().withoutExtension().withoutExtension().basename() ) ;
+	return result ;
+}
+
+void GStore::FileStore::unfailAll()
+{
+	G::DirectoryList list ;
+	{
+		DirectoryReader claim_reader ;
+		list.readType( m_dir , ".envelope.bad" ) ;
+	}
+	while( list.more() )
+	{
+		FileWriter claim_writer ;
+		FileOp::rename( list.filePath() , list.filePath().withoutExtension() ) ; // ignore errors
+	}
+}
+
+std::unique_ptr<GStore::MessageStore::Iterator> GStore::FileStore::iterator( bool lock )
+{
+	return std::make_unique<FileIterator>( *this , m_dir , lock ) ;
 }
 
 std::unique_ptr<GStore::StoredMessage> GStore::FileStore::get( const MessageId & id )
 {
-	G::Path path = envelopePath( id ) ;
-
-	auto message = std::make_unique<StoredFile>( *this , path ) ;
+	auto message = std::make_unique<StoredFile>( *this , id ) ;
 	if( !message->lock() )
-		throw GetError( path.str().append(": cannot lock the file") ) ;
+		throw GetError( id.str().append(": cannot lock the envelope file") ) ;
 
 	std::string reason ;
 	if( !message->readEnvelope( reason ) )
-		throw GetError( path.str().append(": cannot read the envelope: ").append(reason) ) ;
+		throw GetError( id.str().append(": cannot read the envelope: ").append(reason) ) ;
 
 	if( !message->openContent( reason ) )
-		throw GetError( path.str().append(": cannot read the content: ").append(reason) ) ;
+		throw GetError( id.str().append(": cannot read the content: ").append(reason) ) ;
 
 	return std::unique_ptr<StoredMessage>( message.release() ) ; // up-cast
+}
+
+GStore::Envelope GStore::FileStore::readEnvelope( const G::Path & envelope_path , std::ifstream * stream_p )
+{
+    std::ifstream strm ;
+    std::ifstream & envelope_stream = stream_p ? *stream_p : strm ;
+    if( !FileOp::openIn( envelope_stream , envelope_path ) )
+        throw EnvelopeReadError( envelope_path.str() , G::Process::strerror(FileOp::errno_()) ) ;
+
+    GStore::Envelope envelope ;
+    GStore::Envelope::read( envelope_stream , envelope ) ;
+    return envelope ;
 }
 
 std::unique_ptr<GStore::NewMessage> GStore::FileStore::newMessage( const std::string & from ,
@@ -290,24 +335,6 @@ void GStore::FileStore::rescan()
 	messageStoreRescanSignal().emit() ;
 }
 
-void GStore::FileStore::unfailAll()
-{
-	unfailAllImp() ;
-}
-
-void GStore::FileStore::unfailAllImp()
-{
-	std::shared_ptr<MessageStore::Iterator> iter( failures() ) ;
-	for(;;)
-	{
-		std::unique_ptr<StoredMessage> message = iter->next() ;
-		if( message == nullptr )
-			break ;
-		G_DEBUG( "GStore::FileStore::unfailAllImp: " << message->location() ) ;
-		message->unfail() ;
-	}
-}
-
 // ===
 
 GStore::FileReader::FileReader()
@@ -334,4 +361,131 @@ GStore::FileWriter::FileWriter() :
 
 GStore::FileWriter::~FileWriter()
 = default;
+
+// ===
+
+int & GStore::FileStore::FileOp::errno_() noexcept
+{
+	static int e {} ;
+	return e ;
+}
+
+bool GStore::FileStore::FileOp::rename( const G::Path & src , const G::Path & dst )
+{
+	FileWriter claim_writer ;
+	errno_() = 0 ;
+	bool ok = G::File::rename( src , dst , std::nothrow ) ;
+	errno_() = G::Process::errno_() ;
+	return ok ;
+}
+
+bool GStore::FileStore::FileOp::renameOver( const G::Path & src , const G::Path & dst )
+{
+	FileWriter claim_writer ;
+	G::File::remove( dst , std::nothrow ) ;
+	errno_() = 0 ;
+	bool ok = G::File::rename( src , dst , std::nothrow ) ;
+	errno_() = G::Process::errno_() ;
+	return ok ;
+}
+
+bool GStore::FileStore::FileOp::remove( const G::Path & path )
+{
+	FileWriter claim_writer ;
+	errno_() = 0 ;
+	bool ok = G::File::remove( path , std::nothrow ) ;
+	errno_() = G::Process::errno_() ;
+	return ok ;
+}
+
+bool GStore::FileStore::FileOp::exists( const G::Path & path )
+{
+	FileReader claim_reader ; // moot
+	errno_() = 0 ;
+	bool ok = G::File::exists( path , std::nothrow ) ;
+	errno_() = G::Process::errno_() ;
+	return ok ;
+}
+
+int GStore::FileStore::FileOp::fdopen( const G::Path & path )
+{
+	FileReader claim_reader ;
+	errno_() = 0 ;
+	int fd = G::File::open( path.cstr() , G::File::InOutAppend::In ) ;
+	errno_() = G::Process::errno_() ;
+	return fd ;
+}
+
+std::ifstream & GStore::FileStore::FileOp::openIn( std::ifstream & stream , const G::Path & path )
+{
+	FileReader claim_reader ;
+	errno_() = 0 ;
+	G::File::open( stream , path ) ;
+	errno_() = G::Process::errno_() ;
+	return stream ;
+}
+
+std::ofstream & GStore::FileStore::FileOp::openOut( std::ofstream & stream , const G::Path & path )
+{
+	FileWriter claim_writer ;
+	errno_() = 0 ;
+	G::File::open( stream , path ) ;
+	errno_() = G::Process::errno_() ;
+	return stream ;
+}
+
+std::ofstream & GStore::FileStore::FileOp::openAppend( std::ofstream & stream , const G::Path & path )
+{
+	FileWriter claim_writer ;
+	errno_() = 0 ;
+	G::File::open( stream , path , G::File::Append() ) ;
+	errno_() = G::Process::errno_() ;
+	return stream ;
+}
+
+bool GStore::FileStore::FileOp::hardlink( const G::Path & src , const G::Path & dst )
+{
+	FileWriter claim_writer ;
+	errno_() = 0 ;
+	bool ok =
+		G::File::hardlink( src , dst , std::nothrow ) ||
+		G::File::copy( src , dst , std::nothrow ) ;
+	errno_() = G::Process::errno_() ;
+	return ok ;
+}
+
+bool GStore::FileStore::FileOp::copy( const G::Path & src , const G::Path & dst , bool use_hardlink )
+{
+	if( use_hardlink )
+		return hardlink( src , dst ) ;
+	else
+		return copy( src , dst ) ;
+}
+
+bool GStore::FileStore::FileOp::copy( const G::Path & src , const G::Path & dst )
+{
+	FileWriter claim_writer ;
+	errno_() = 0 ;
+	bool ok = G::File::copy( src , dst , std::nothrow ) ;
+	errno_() = G::Process::errno_() ;
+	return ok ;
+}
+
+bool GStore::FileStore::FileOp::mkdir( const G::Path & dir )
+{
+	FileWriter claim_root ;
+	errno_() = 0 ;
+	bool ok = G::File::mkdir( dir , std::nothrow ) ;
+	errno_() = G::Process::errno_() ;
+	return ok ;
+}
+
+bool GStore::FileStore::FileOp::isdir( const G::Path & a , const G::Path & b , const G::Path & c )
+{
+	FileReader claim_reader ;
+	return
+		G::File::isDirectory(a,std::nothrow) &&
+		( b.empty() || G::File::isDirectory(b,std::nothrow) ) &&
+		( c.empty() || G::File::isDirectory(c,std::nothrow) ) ;
+}
 

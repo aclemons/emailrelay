@@ -56,17 +56,11 @@ public:
 		///< 'endpos' fields should normally be updated after
 		///< using write().
 
-	static void copy( Envelope & new_envelope , const G::Path & ,
-		const Envelope & old_envelope ) ;
-			///< A convenience function that writes a new envelope file
-			///< and adds extra diagnostic headers from the old envelope.
-			///< Throws on error.
-
-	static void copy( std::istream & , std::ostream & ) ;
-		///< A convenience function to copy lines from an input
-		///< stream to an output stream. Input lines can be newline
-		///< delimited, but output is always CR-LF. Throws on input
-		///< error; output errors are not checked.
+	static void copyExtra( std::istream & , std::ostream & ) ;
+		///< A convenience function to copy extra envelope lines from an
+		///< envelope input stream to an output stream. Input lines
+		///< can be newline delimited, but output is always CR-LF.
+		///< Throws on input error; output errors are not checked.
 
 	static MessageStore::BodyType parseSmtpBodyType( const std::string & ,
 		MessageStore::BodyType default_ = MessageStore::BodyType::Unknown ) ;

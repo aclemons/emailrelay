@@ -26,6 +26,7 @@
 #include "guserverifier.h"
 #include "gfile.h"
 #include "gstr.h"
+#include "grange.h"
 #include "gexception.h"
 
 GVerifiers::VerifierFactory::VerifierFactory()
@@ -60,12 +61,12 @@ GVerifiers::VerifierFactory::Spec GVerifiers::VerifierFactory::parse( const std:
 	else if( spec_in.find("allow:") == 0U )
 	{
 		result = Spec( "allow" , tail ) ;
-		UserVerifier::check( result.second ) ;
+		checkRange( result ) ;
 	}
 	else if( spec_in.find("local:") == 0U )
 	{
 		result = Spec( "local" , tail ) ;
-		UserVerifier::check( result.second ) ;
+		checkRange( result ) ;
 	}
 	else if( spec_in.find("file:") == 0U )
 	{
@@ -126,6 +127,19 @@ void GVerifiers::VerifierFactory::checkNet( Spec & result )
 	try
 	{
 		GNet::Location::nosocks( result.second ) ;
+	}
+	catch( std::exception & e )
+	{
+		result.first.clear() ;
+		result.second = e.what() ;
+	}
+}
+
+void GVerifiers::VerifierFactory::checkRange( Spec & result )
+{
+	try
+	{
+		G::Range::check( result.second ) ;
 	}
 	catch( std::exception & e )
 	{
