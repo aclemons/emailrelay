@@ -28,9 +28,49 @@
 #include <list>
 #include <algorithm>
 
+namespace GNet
+{
+	class Listeners ;
+}
+
+class GNet::Listeners
+{
+public:
+	Listeners( Interfaces & , const G::StringArray & , unsigned int port ) ;
+	bool defunct() const ;
+	bool idle() const ;
+	bool empty() const ;
+	bool hasBad() const ;
+	std::string badName() const ;
+	bool hasEmpties() const ;
+	std::string logEmpties() const ;
+	bool noUpdates() const ;
+	const std::vector<int> & fds() const ;
+	const std::vector<Address> & fixed() const ;
+	const std::vector<Address> & dynamic() const ;
+
+private:
+	void addWildcards( unsigned int ) ;
+	static int parseFd( const std::string & ) ;
+	static bool isAddress( const std::string & , unsigned int ) ;
+	static Address address( const std::string & , unsigned int ) ;
+	static int af( const std::string & ) ;
+	static std::string basename( const std::string & ) ;
+	static bool isBad( const std::string & ) ;
+
+private:
+	std::string m_bad ;
+	G::StringArray m_empties ;
+	G::StringArray m_used ;
+	std::vector<Address> m_fixed ;
+	std::vector<Address> m_dynamic ;
+	std::vector<int> m_fds ;
+} ;
+
 GNet::MultiServer::MultiServer( ExceptionSink es , const G::StringArray & listener_list , unsigned int port ,
 	const std::string & server_type , ServerPeer::Config server_peer_config , Server::Config server_config ) :
 		m_es(es) ,
+		m_listener_list(listener_list) ,
 		m_port(port) ,
 		m_server_type(server_type) ,
 		m_server_peer_config(server_peer_config) ,
@@ -38,90 +78,49 @@ GNet::MultiServer::MultiServer( ExceptionSink es , const G::StringArray & listen
 		m_if(es,*this) ,
 		m_interface_event_timer(*this,&MultiServer::onInterfaceEventTimeout,es)
 {
-	// parse the listener list
-	std::vector<int> fds ;
-	Interfaces::Addresses result ; // addresses, used_names, empty_names, bad_names, good_names
-	for( const auto & listener : listener_list )
-	{
-		if( listener.empty() ) continue ;
-		int fd = G::is_windows() ? -1 : parseFd( listener ) ;
-		if( fd >= 0 )
-			fds.push_back( fd ) ;
-		else
-			m_if.addresses( listener , port , result ) ;
-	}
-	AddressList & address_list = result.addresses ;
+	Listeners listeners( m_if , m_listener_list , m_port ) ;
 
-	// fail if any bad names
-	if( !result.bad_names.empty() )
-		throw InvalidName( result.bad_names.at(0) ) ;
-
-	// apply a default set of two wildcard addresses
-	if( fds.empty() && address_list.empty() && result.empty_names.empty() )
-	{
-		if( Address::supports(Address::Family::ipv4) )
-			address_list.push_back( Address(Address::Family::ipv4,port) ) ;
-		if( Address::supports(Address::Family::ipv6) && StreamSocket::supports(Address::Family::ipv6) )
-			address_list.push_back( Address(Address::Family::ipv6,port) ) ;
-		if( address_list.empty() )
-			throw NoListeningAddresses() ;
-	}
+	// fail if any bad names (eg. "/foo")
+	if( listeners.hasBad() )
+		throw InvalidName( listeners.badName() ) ;
 
 	// fail if no addresses and no prospect of getting any
-	if( fds.empty() && address_list.empty() && !Interfaces::active() )
+	if( listeners.defunct() )
 		throw NoListeningAddresses() ;
 
-	// save used and empty names to query G::Interfaces later on
-	m_if_names = result.good_names ;
-
 	// warn if no addresses from one or more interface names
-	if( !result.empty_names.empty() && !address_list.empty() )
+	if( listeners.hasEmpties() )
 	{
 		G_WARNING( "GNet::MultiServer::ctor: no addresses bound to named network interface"
-			<< (result.empty_names.size()==1U?"":"s")
-			<< " \"" << G::Str::join("\", \"",result.empty_names) << "\"" ) ;
+			<< listeners.logEmpties() ) ;
 	}
 
-	// warn if doing nothing until an interface come up
-	if( address_list.empty() && fds.empty() && !result.empty_names.empty() )
+	// warn if doing nothing until an interface comes up
+	if( listeners.idle() )
 	{
 		G_WARNING( "GNet::MultiServer::ctor: " << m_server_type << " server: nothing to do: "
-			<< "waiting for interface" << (result.empty_names.size()>1U?"s ":" ")
-			<< "[" << G::Str::join("] [",result.empty_names) << "]" ) ;
+			<< "waiting for interface" << listeners.logEmpties() ) ;
 	}
 
 	// warn if we got addresses from an interface name but won't get dynamic updates
-	if( !result.used_names.empty() && !Interfaces::active() )
+	if( listeners.noUpdates() )
 	{
 		G_WARNING_ONCE( "GNet::MultiServer::ctor: named network interfaces "
 			"are not being monitored for address updates" ) ;
 	}
 
 	// instantiate the servers
-	for( const auto & fd : fds )
-	{
+	for( const auto & fd : listeners.fds() )
 		createServer( Descriptor(fd) ) ;
-	}
-	for( const auto & address : address_list )
-	{
-		createServer( address ) ;
-	}
+	for( const auto & a : listeners.fixed() )
+		createServer( a , true ) ;
+	for( const auto & a : listeners.dynamic() )
+		createServer( a , false ) ;
 }
 
 GNet::MultiServer::~MultiServer()
 {
 	serverCleanup() ;
-}
-
-int GNet::MultiServer::parseFd( const std::string & listener )
-{
-	if( listener.size() > 3U && listener.find("fd#") == 0U && G::Str::isUInt(listener.substr(3U)) )
-	{
-		int fd = G::Str::toInt( listener.substr(3U) ) ;
-		if( fd < 0 ) throw InvalidFd( listener ) ;
-		return fd ;
-	}
-	return -1 ;
 }
 
 void GNet::MultiServer::createServer( Descriptor fd )
@@ -130,17 +129,17 @@ void GNet::MultiServer::createServer( Descriptor fd )
 		fd , m_server_peer_config , m_server_config ) ) ;
 }
 
-void GNet::MultiServer::createServer( const Address & address )
+void GNet::MultiServer::createServer( const Address & address , bool fixed )
 {
 	m_server_list.emplace_back( std::make_unique<MultiServerImp>( *this , m_es ,
-		address , m_server_peer_config , m_server_config ) ) ;
+		fixed , address , m_server_peer_config , m_server_config ) ) ;
 }
 
-void GNet::MultiServer::createServer( const Address & address , std::nothrow_t )
+void GNet::MultiServer::createServer( const Address & address , bool fixed , std::nothrow_t )
 {
 	try
 	{
-		createServer( address ) ;
+		createServer( address , fixed ) ;
 		G_LOG_S( "GNet::MultiServer::createServer: new " << m_server_type
 			<< " server on " << displayString(address) ) ;
 	}
@@ -172,24 +171,24 @@ void GNet::MultiServer::onInterfaceEvent( const std::string & /*description*/ )
 void GNet::MultiServer::onInterfaceEventTimeout()
 {
 	// get a fresh address list
-	AddressList address_list = m_if.addresses( m_if_names , m_port ).addresses ;
+	Listeners listeners( m_if , m_listener_list , m_port ) ;
 
 	// delete old
 	for( auto server_iter = m_server_list.begin() ; server_iter != m_server_list.end() ; )
 	{
-		if( !gotAddressFor( **server_iter , address_list ) )
+		if( (*server_iter)->dynamic() && !gotAddressFor( **server_iter , listeners.dynamic() ) )
 			server_iter = removeServer( server_iter ) ;
 		else
 			++server_iter ;
 	}
 
 	// create new
-	for( const auto & address : address_list )
+	for( const auto & address : listeners.dynamic() )
 	{
 		G_DEBUG( "GNet::MultiServer::onInterfaceEvent: address: " << displayString(address) ) ;
 		if( !gotServerFor(address) )
 		{
-			createServer( address , std::nothrow ) ;
+			createServer( address , true , std::nothrow ) ;
 		}
 	}
 }
@@ -272,22 +271,29 @@ std::vector<std::weak_ptr<GNet::ServerPeer>> GNet::MultiServer::peers()
 
 // ==
 
-GNet::MultiServerImp::MultiServerImp( MultiServer & ms , ExceptionSink es , const Address & address ,
+GNet::MultiServerImp::MultiServerImp( MultiServer & ms , ExceptionSink es , bool fixed , const Address & address ,
 	ServerPeer::Config server_peer_config , Server::Config server_config ) :
 		GNet::Server(es,address,server_peer_config,server_config) ,
-		m_ms(ms)
+		m_ms(ms) ,
+		m_fixed(fixed)
 {
 }
 
 GNet::MultiServerImp::MultiServerImp( MultiServer & ms , ExceptionSink es , Descriptor fd ,
 	ServerPeer::Config server_peer_config , Server::Config server_config ) :
 		GNet::Server(es,fd,server_peer_config,server_config) ,
-		m_ms(ms)
+		m_ms(ms) ,
+		m_fixed(true)
 {
 }
 
 GNet::MultiServerImp::~MultiServerImp()
 = default;
+
+bool GNet::MultiServerImp::dynamic() const
+{
+	return !m_fixed ;
+}
 
 void GNet::MultiServerImp::cleanup()
 {
@@ -307,3 +313,141 @@ GNet::MultiServer::ServerInfo::ServerInfo() :
 	m_address(Address::defaultAddress())
 {
 }
+
+// ==
+
+GNet::Listeners::Listeners( Interfaces & if_ , const G::StringArray & listener_list , unsigned int port )
+{
+	// listeners are file-descriptors, addresses or interface names (possibly decorated)
+	for( const auto & listener : listener_list )
+	{
+		int fd = G::is_windows() ? -1 : parseFd( listener ) ;
+		if( fd >= 0 )
+		{
+			m_fds.push_back( fd ) ;
+		}
+		else if( isAddress(listener,port) )
+		{
+			m_fixed.push_back( address(listener,port) ) ;
+		}
+		else
+		{
+			std::size_t n = if_.addresses( m_dynamic , basename(listener) , port , af(listener) ) ;
+			if( n == 0U && isBad(listener) )
+				m_bad = listener ;
+			(n?m_used:m_empties).push_back( listener ) ;
+		}
+	}
+	if( empty() )
+		addWildcards( port ) ;
+}
+
+int GNet::Listeners::af( const std::string & s )
+{
+	if( G::Str::tailMatch(s,"-ipv6") )
+		return AF_INET6 ;
+	else if( G::Str::tailMatch(s,"-ipv4") )
+		return AF_INET ;
+	else
+		return AF_UNSPEC ;
+}
+
+std::string GNet::Listeners::basename( const std::string & s )
+{
+	return
+		G::Str::tailMatch(s,"-ipv6") || G::Str::tailMatch(s,"-ipv4") ?
+			s.substr( 0U , s.length()-5U ) :
+			s ;
+}
+
+int GNet::Listeners::parseFd( const std::string & listener )
+{
+    if( listener.size() > 3U && listener.find("fd#") == 0U && G::Str::isUInt(listener.substr(3U)) )
+    {
+        int fd = G::Str::toInt( listener.substr(3U) ) ;
+        if( fd < 0 ) throw MultiServer::InvalidFd( listener ) ;
+        return fd ;
+    }
+    return -1 ;
+}
+
+void GNet::Listeners::addWildcards( unsigned int port )
+{
+	if( Address::supports(Address::Family::ipv4) )
+		m_fixed.push_back( Address(Address::Family::ipv4,port) ) ;
+
+	if( Address::supports(Address::Family::ipv6) )
+		m_fixed.push_back( Address(Address::Family::ipv6,port) ) ;
+}
+
+bool GNet::Listeners::isAddress( const std::string & s , unsigned int port )
+{
+	return Address::validStrings( s , G::Str::fromUInt(port) ) ;
+}
+
+GNet::Address GNet::Listeners::address( const std::string & s , unsigned int port )
+{
+	return Address::parse( s , port ) ;
+}
+
+bool GNet::Listeners::empty() const
+{
+	return m_fds.empty() && m_fixed.empty() && m_dynamic.empty() ;
+}
+
+bool GNet::Listeners::defunct() const
+{
+	return empty() && !Interfaces::active() ;
+}
+
+bool GNet::Listeners::idle() const
+{
+	return empty() && hasEmpties() && Interfaces::active() ;
+}
+
+bool GNet::Listeners::noUpdates() const
+{
+	return !m_used.empty() && !Interfaces::active() ;
+}
+
+bool GNet::Listeners::isBad( const std::string & s )
+{
+	// (a slash is normally invalid but allow "/dev/..." because bsd)
+	return s.empty() || ( s.find('/') != std::string::npos && s.find("/dev/") != 0U ) ;
+}
+
+bool GNet::Listeners::hasBad() const
+{
+	return !m_bad.empty() ;
+}
+
+std::string GNet::Listeners::badName() const
+{
+	return m_bad ;
+}
+
+bool GNet::Listeners::hasEmpties() const
+{
+	return !m_empties.empty() ;
+}
+
+std::string GNet::Listeners::logEmpties() const
+{
+	return std::string(m_empties.size()==1U?" \"":"s \"").append(G::Str::join("\", \"",m_empties)).append(1U,'"') ;
+}
+
+const std::vector<int> & GNet::Listeners::fds() const
+{
+	return m_fds ;
+}
+
+const std::vector<GNet::Address> & GNet::Listeners::fixed() const
+{
+	return m_fixed ;
+}
+
+const std::vector<GNet::Address> & GNet::Listeners::dynamic() const
+{
+	return m_dynamic ;
+}
+

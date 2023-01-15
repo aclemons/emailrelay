@@ -43,12 +43,19 @@ namespace GFilters
 class GFilters::MxLookup : private GNet::EventHandler
 {
 public:
+	struct Config
+	{
+		Config() ;
+		G::TimeInterval ns_timeout {2U,0} ; // ask next nameserver
+		G::TimeInterval restart_timeout {30U,0} ; // give up and go back to the first nameserver
+		bool log {false} ; // use verbose-level logging
+	} ;
+
 	static bool enabled() ;
 		///< Returns true if implemented.
 
-	MxLookup( GNet::ExceptionSink , G::TimeInterval ns_interval = G::TimeInterval(2U) ,
-		bool log = false ) ;
-			///< Constructor.
+	explicit MxLookup( GNet::ExceptionSink , Config = {} ) ;
+		///< Constructor.
 
 	void start( const GStore::MessageId & , const std::string & forward_to ) ;
 		///< Starts the lookup.
@@ -66,6 +73,7 @@ private: // overrides
 	void readEvent() override ;
 
 private:
+	void startTimer() ;
 	void onTimeout() ;
 	void sendMxQuestion( unsigned int , const std::string & ) ;
 	void sendHostQuestion( unsigned int , const std::string & ) ;
@@ -77,8 +85,7 @@ private:
 
 private:
 	GNet::ExceptionSink m_es ;
-	G::TimeInterval m_ns_interval ;
-	bool m_log ;
+	Config m_config ;
 	GStore::MessageId m_message_id ;
 	std::string m_question ;
 	std::string m_error ;

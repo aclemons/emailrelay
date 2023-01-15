@@ -52,41 +52,6 @@ bool GNet::Interfaces::loaded() const
 	return true ;
 }
 
-std::vector<GNet::Address> GNet::Interfaces::find( const std::string & , unsigned int , bool ) const
-{
-	return AddressList() ;
-}
-
-GNet::Interfaces::Addresses GNet::Interfaces::addresses( const G::StringArray & names , unsigned int port ) const
-{
-	Addresses result ;
-	for( const auto & name : names )
-	{
-		addressesImp( name , port , result ) ;
-	}
-	result.finish() ;
-	return result ;
-}
-
-void GNet::Interfaces::addresses( const std::string & name , unsigned int port , Addresses & result ) const
-{
-	addressesImp( name , port , result ) ;
-	result.finish() ;
-}
-
-void GNet::Interfaces::addressesImp( const std::string & name , unsigned int port , Addresses & result ) const
-{
-	if( !Address::validStrings( name , G::Str::fromUInt(port) ) )
-	{
-		result.bad_names.push_back( name ) ;
-	}
-	else
-	{
-		result.used_names.push_back( name ) ;
-		result.addresses.push_back( Address::parse(name,port) ) ;
-	}
-}
-
 G::StringArray GNet::Interfaces::names( bool ) const
 {
 	return G::StringArray() ;
@@ -102,6 +67,16 @@ GNet::Interfaces::const_iterator GNet::Interfaces::end() const
 	return m_list.end() ;
 }
 
+std::size_t GNet::Interfaces::addresses( std::vector<GNet::Address> & , const std::string & , unsigned int , int ) const
+{
+	return 0U ;
+}
+
+std::vector<GNet::Address> GNet::Interfaces::addresses( const std::string & , unsigned int , int ) const
+{
+	return {} ;
+}
+
 void GNet::Interfaces::readEvent()
 {
 }
@@ -115,13 +90,5 @@ void GNet::Interfaces::onFutureEvent()
 GNet::Interfaces::Item::Item() :
 	address(Address::defaultAddress())
 {
-}
-
-// ==
-
-void GNet::Interfaces::Addresses::finish()
-{
-	G_ASSERT( empty_names.empty() ) ;
-	good_names = used_names ; // good:=used+empty
 }
 

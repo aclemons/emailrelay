@@ -23,7 +23,7 @@
 //   ip address add fe80::dead:beef/64 dev eth0
 //   ip address del fe80::dead:beef/64 dev eth0
 //
-// BSD...
+// BSD:
 //   ifconfig lo0 inet 127.0.0.2 alias netmask 255.0.0.0
 //   ifconfig lo0 inet 127.0.0.2 -alias
 //   ifconfig em0 inet6 fe80::dead:beef/64 alias

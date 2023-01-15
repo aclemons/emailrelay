@@ -159,9 +159,9 @@ void GSmtp::Client::startSending()
 
 bool GSmtp::Client::sendNext()
 {
-	m_message.reset() ;
-
 	// fetch the next message from the store, or return false if none
+	m_message.reset() ;
+	for(;;)
 	{
 		std::unique_ptr<GStore::StoredMessage> message( ++m_iter ) ;
 		if( message == nullptr )
@@ -171,9 +171,16 @@ bool GSmtp::Client::sendNext()
 			m_message_count = 0U ;
 			return false ;
 		}
-		m_message = std::move( message ) ;
+		else if( message->toCount() == 0U )
+		{
+			message->fail( "no recipients" , 501 ) ;
+		}
+		else
+		{
+			m_message = std::move( message ) ;
+			break ;
+		}
 	}
-
 	start() ;
 	return true ;
 }

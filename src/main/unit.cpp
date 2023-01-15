@@ -366,9 +366,6 @@ void Main::Unit::start()
 
 void Main::Unit::report()
 {
-	if( !m_configuration.log() )
-		return ;
-
 	std::string name_ = name() ;
 
 	if( m_smtp_server )

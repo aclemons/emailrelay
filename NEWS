@@ -199,3 +199,60 @@ necessary by running:
 
 	libexec/reduce.sh --undo
 
+MTA operation
+-------------
+In this release E-MailRelay can be run as an MTA, including message routing and
+delivery, with no need for a "smarthost", something like this:
+
+	emailrelay
+	--log --verbose --syslog
+	--close-stderr --pid-file /run/emailrelay.pid
+	--user root
+
+	--in-spool-dir /var/spool/in
+	--in-port 25
+	--in-domain example.com
+	--in-address-verifier allow:1000-1001
+	--in-filter deliver:
+
+	--in-pop
+	--in-pop-port 110
+	--in-pop-auth /pam
+	--in-pop-by-name
+
+	--out-spool-dir /var/spool/out
+	--out-port 587
+	--out-domain example.com
+	--out-address-verifier local:1000-1001
+	--out-local-delivery-dir /var/spool/in
+	--out-filter split:
+	--out-client-filter mx:
+	--out-poll 60
+	--out-forward-on-disconnect
+
+	--out-forward-to /run/emailrelay.s
+	--out-interface admin=/run/emailrelay.s
+	--out-admin 0
+
+Assuming "alice" has a login account with uid 1000 and "bob" with uid 1001 then
+incoming messages for "alice@example.com" or "bob@example.com" are delivered
+to the /var/spool/in/alice and /var/spool/in/bob directories respectively.
+Messages to any other addresses are rejected. Alice and Bob can access these
+messages by setting their mail program to use POP with their normal login name
+and password.
+
+Outgoing messages are spooled up in /var/spool/in, but any messages addressed to
+"alice@example.com" or "bob@example.com" are short-circuited and delivered
+straight to /var/spool/in/alice and /var/spool/bin/bob.
+
+Outgoing messages with multiple recipients are split up so that there is one
+copy in the spool directory for each distinct recipient domain, and the target
+domain is stored in the envelope file 'forward-to' field. Just before the
+message is forwarded a DNS MX query is performed on the 'forward-to' domain and
+the resulting IP address (with port 25) is stored as the 'forward-to-address'.
+
+Forwarding first requires an unused connection to the default "smarthost" and in
+this example it a unix-domain socket that happens to be also providing the
+'admin' interface. Each message is then forwarded to its own target address,
+as stored in the 'forward-to-address' envelope field.
+

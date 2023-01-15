@@ -45,10 +45,9 @@ bool GFilters::MxLookup::enabled()
 	return true ;
 }
 
-GFilters::MxLookup::MxLookup( GNet::ExceptionSink es , G::TimeInterval ns_interval , bool log ) :
+GFilters::MxLookup::MxLookup( GNet::ExceptionSink es , Config config ) :
 	m_es(es) ,
-	m_ns_interval(ns_interval) ,
-	m_log(log) ,
+	m_config(config) ,
 	m_message_id(GStore::MessageId::none()) ,
 	m_ns_index(0U) ,
 	m_nameservers(GNet::nameservers(53U)) ,
@@ -61,10 +60,10 @@ GFilters::MxLookup::MxLookup( GNet::ExceptionSink es , G::TimeInterval ns_interv
 	}
 
 	for( const auto & ns : m_nameservers )
-		G_LOG_IF( m_log , "GFilters::MxLookup::ctor: mx: nameserver [" << ns.hostPartString() << "]" ) ;
+		G_LOG_IF( m_config.log , "GFilters::MxLookup::ctor: mx: nameserver [" << ns.hostPartString() << "]" ) ;
 
 	bool ipv4 = std::find_if( m_nameservers.begin() , m_nameservers.end() ,
-		[](const GNet::Address &a_){return a_.family()==GNet::Address::Family::ipv4;} ) != m_nameservers.end() ;
+		[](const GNet::Address &a_){return a_.is4();} ) != m_nameservers.end() ;
 	if( ipv4 )
 	{
 		m_socket4 = std::make_unique<GNet::DatagramSocket>( GNet::Address::Family::ipv4 , 0 , GNet::DatagramSocket::Config() ) ;
@@ -72,7 +71,7 @@ GFilters::MxLookup::MxLookup( GNet::ExceptionSink es , G::TimeInterval ns_interv
 	}
 
 	bool ipv6 = std::find_if( m_nameservers.begin() , m_nameservers.end() ,
-		[](const GNet::Address &a_){return a_.family()==GNet::Address::Family::ipv6;} ) != m_nameservers.end() ;
+		[](const GNet::Address &a_){return a_.is6();} ) != m_nameservers.end() ;
 	if( ipv6 )
 	{
 		m_socket6 = std::make_unique<GNet::DatagramSocket>( GNet::Address::Family::ipv4 , 0 , GNet::DatagramSocket::Config() ) ;
@@ -96,7 +95,7 @@ void GFilters::MxLookup::start( const GStore::MessageId & message_id , const std
 		m_ns_index = 0U ;
 		m_question = forward_to ;
 		sendMxQuestion( m_ns_index , m_question ) ;
-		m_timer.startTimer( m_ns_interval ) ;
+		startTimer() ;
 	}
 }
 
@@ -119,7 +118,7 @@ void GFilters::MxLookup::process( const char * p , std::size_t n )
 	if( response.valid() && response.QR() && response.ID() && response.ID() < (m_nameservers.size()+1U) )
 	{
 		unsigned ns_index = response.ID() - 1U ;
-		auto pair = parse( response , m_nameservers.at(ns_index) , m_log ) ;
+		auto pair = parse( response , m_nameservers.at(ns_index) , m_config.log ) ;
 		if( pair.first == Result::mx )
 			sendHostQuestion( ns_index , pair.second ) ;
 		else if( pair.first == Result::error )
@@ -197,7 +196,7 @@ std::pair<GFilters::MxLookupImp::Result,std::string> GFilters::MxLookupImp::pars
 
 void GFilters::MxLookup::sendMxQuestion( unsigned ns_index , const std::string & mx_question )
 {
-	G_LOG_IF( m_log , "GFilters::MxLookup::sendMxQuestion: mx: question: mx [" << mx_question << "] "
+	G_LOG_IF( m_config.log , "GFilters::MxLookup::sendMxQuestion: mx: question: mx [" << mx_question << "] "
 		<< "to " << m_nameservers[ns_index].hostPartString() ) ;
 	GNet::DnsMessageRequest request( "MX" , mx_question , ns_index+1U ) ;
 	socket(ns_index).writeto( request.p() , request.n() , m_nameservers[ns_index] ) ;
@@ -205,7 +204,7 @@ void GFilters::MxLookup::sendMxQuestion( unsigned ns_index , const std::string &
 
 void GFilters::MxLookup::sendHostQuestion( unsigned ns_index , const std::string & host_question )
 {
-	G_LOG_IF( m_log , "GFilters::MxLookup::sendHostQuestion: mx: question: host-ip [" << host_question << "] "
+	G_LOG_IF( m_config.log , "GFilters::MxLookup::sendHostQuestion: mx: question: host-ip [" << host_question << "] "
 		<< "to " << m_nameservers[ns_index].hostPartString() ) ;
 	GNet::DnsMessageRequest request( "A" , host_question , ns_index+1U ) ;
 	socket(ns_index).writeto( request.p() , request.n() , m_nameservers[ns_index] ) ;
@@ -237,12 +236,22 @@ void GFilters::MxLookup::onTimeout()
 		cancel() ;
 		m_done_signal.emit( m_message_id , "" , m_error ) ;
 	}
-	else if( (m_ns_index+1U) < m_nameservers.size() )
+	else
 	{
 		m_ns_index++ ;
+		if( m_ns_index == m_nameservers.size() )
+			m_ns_index = 0U ;
+
 		sendMxQuestion( m_ns_index , m_question ) ;
-		m_timer.startTimer( m_ns_interval ) ;
+		startTimer() ;
 	}
+}
+
+void GFilters::MxLookup::startTimer()
+{
+	bool last = (m_ns_index+1U) == m_nameservers.size() ;
+	G::TimeInterval timeout = last ? m_config.restart_timeout : m_config.ns_timeout ;
+	m_timer.startTimer( timeout ) ;
 }
 
 void GFilters::MxLookup::succeed( const std::string & result )
@@ -253,11 +262,14 @@ void GFilters::MxLookup::succeed( const std::string & result )
 
 GNet::DatagramSocket & GFilters::MxLookup::socket( unsigned int ns_index )
 {
-	return m_nameservers.at(ns_index).family() == GNet::Address::Family::ipv4 ? *m_socket4 : *m_socket6 ;
+	return m_nameservers.at(ns_index).is4() ? *m_socket4 : *m_socket6 ;
 }
 
 G::Slot::Signal<GStore::MessageId,std::string,std::string> & GFilters::MxLookup::doneSignal() noexcept
 {
 	return m_done_signal ;
 }
+
+GFilters::MxLookup::Config::Config()
+= default ;
 
