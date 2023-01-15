@@ -117,7 +117,8 @@ G::Slot::Signal<int> & GFilters::MxFilter::doneSignal() noexcept
 
 void GFilters::MxFilter::cancel()
 {
-	m_lookup->cancel() ;
+	if( m_lookup )
+		m_lookup->cancel() ;
 }
 
 void GFilters::MxFilter::onTimeout()

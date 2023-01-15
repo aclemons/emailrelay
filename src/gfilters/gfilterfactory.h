@@ -77,7 +77,7 @@ protected: // overrides
 		const Spec & , const std::string & log_prefix ) override ;
 
 private:
-	static void checkExit( Spec & ) ;
+	static void checkNumber( Spec & ) ;
 	static void checkNet( Spec & ) ;
 	static void checkRange( Spec & ) ;
 	static void checkFile( Spec & , G::StringArray * ) ;

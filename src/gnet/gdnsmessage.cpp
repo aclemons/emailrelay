@@ -174,12 +174,10 @@ unsigned int GNet::DnsMessage::OPCODE() const
 }
 #endif
 
-#ifndef G_LIB_SMALL
 bool GNet::DnsMessage::AA() const
 {
 	return !!( byte(2U) & 0x04 ) ;
 }
-#endif
 
 bool GNet::DnsMessage::TC() const
 {

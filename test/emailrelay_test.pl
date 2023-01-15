@@ -1116,7 +1116,7 @@ sub testFilterTimeout
 	$smtp_client->submit( 1 ) ;
 	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.content" , 0 ) ;
 	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.envelope*" , 0 ) ;
-	Check::fileContains( $server->log() , "filter done:.*response=.error. reason=.*timeout" ) ;
+	Check::fileContains( $server->log() , "filter: done:.*response=.error. reason=.*timeout" ) ;
 
 	# tear down
 	$server->kill() ;
@@ -1377,7 +1377,7 @@ sub testScannerTimeout
 	$smtp_client->submit_line( "send foobar" ) ;
 	$smtp_client->submit_end( 1 ) ;
 	Check::fileDoesNotContain( $server->log() , "452 foobar" ) ;
-	Check::fileContains( $server->log() , "filter done:.*response=.failed. reason=.*timeout" ) ;
+	Check::fileContains( $server->log() , "filter: done:.*response=.failed. reason=.*timeout" ) ;
 	Check::fileContains( $server->log() , "452 failed" ) ;
 
 	# tear down

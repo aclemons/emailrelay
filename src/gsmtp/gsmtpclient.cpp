@@ -43,7 +43,7 @@ GSmtp::Client::Client( GNet::ExceptionSink es , GStore::MessageStore & store ,
 		m_secrets(secrets) ,
 		m_store(&store) ,
 		m_filter(ff.newFilter(es,Filter::Type::client,config.filter_config,config.filter_spec,{})) ,
-		m_routing_filter(ff.newFilter(es,Filter::Type::routing,config.filter_config,config.filter_spec,"routing filter")) ,
+		m_routing_filter(ff.newFilter(es,Filter::Type::routing,config.filter_config,config.filter_spec,"routing-filter")) ,
 		m_protocol(es,*this,secrets,config.sasl_client_config,config.client_protocol_config,config.secure_tunnel) ,
 		m_message_count(0U)
 {
@@ -65,7 +65,7 @@ GSmtp::Client::Client( GNet::ExceptionSink es ,
 		m_secrets(secrets) ,
 		m_store(nullptr) ,
 		m_filter(ff.newFilter(es,Filter::Type::client,config.filter_config,config.filter_spec,{})) ,
-		m_routing_filter(ff.newFilter(es,Filter::Type::routing,config.filter_config,config.filter_spec,"routing filter")) ,
+		m_routing_filter(ff.newFilter(es,Filter::Type::routing,config.filter_config,config.filter_spec,"routing-filter")) ,
 		m_protocol(es,*this,secrets,config.sasl_client_config,config.client_protocol_config,config.secure_tunnel) ,
 		m_message_count(0U)
 {
@@ -224,7 +224,7 @@ bool GSmtp::Client::protocolSend( G::string_view line , std::size_t offset , boo
 void GSmtp::Client::filterStart()
 {
 	if( !m_filter->quiet() )
-		G_LOG( "GSmtp::Client::filterStart: client filter for " << m_filter->id() ) ;
+		G_LOG( "GSmtp::Client::filterStart: client-filter: start [" << m_filter->id() << "]" ) ;
 	message()->close() ; // allow external editing
 	m_filter->start( message()->id() ) ;
 }
@@ -245,7 +245,7 @@ void GSmtp::Client::filterDone( int filter_result )
 
 	std::string reopen_error ;
 	if( !m_filter->quiet() )
-		G_LOG( "GSmtp::Client::filterDone: client filter done: " << m_filter->str(Filter::Type::client) ) ;
+		G_LOG( "GSmtp::Client::filterDone: client-filter: done: " << m_filter->str(Filter::Type::client) ) ;
 	if( ok && !abandon )
 		reopen_error = message()->reopen() ;
 
@@ -407,7 +407,7 @@ void GSmtp::Client::routingFilterDone( int filter_result )
 		move_on = true ;
 	}
 
-	G_LOG( "GSmtp::Client::routingFilterDone: routing: routing filter done: "
+	G_LOG( "GSmtp::Client::routingFilterDone: routing: routing-filter: done: "
 		<< m_routing_filter->str(Filter::Type::client)
 		<< (reopen_error.empty()?std::string():(": "+reopen_error))
 		<< (move_on?": moving on":"") ) ;

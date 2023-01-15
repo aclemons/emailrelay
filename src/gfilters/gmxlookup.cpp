@@ -35,7 +35,7 @@ namespace GFilters
 {
 	namespace MxLookupImp
 	{
-		enum class Result { mx , error , cname , ip } ;
+		enum class Result { error , fatal , mx , cname , ip } ;
 		std::pair<Result,std::string> parse( const GNet::DnsMessage & , const GNet::Address & , bool ) ;
 	}
 }
@@ -46,12 +46,18 @@ bool GFilters::MxLookup::enabled()
 }
 
 GFilters::MxLookup::MxLookup( GNet::ExceptionSink es , Config config ) :
-	m_es(es) ,
-	m_config(config) ,
-	m_message_id(GStore::MessageId::none()) ,
-	m_ns_index(0U) ,
-	m_nameservers(GNet::nameservers(53U)) ,
-	m_timer(*this,&MxLookup::onTimeout,es)
+	MxLookup(es,config,GNet::nameservers(53U))
+{
+}
+
+GFilters::MxLookup::MxLookup( GNet::ExceptionSink es , Config config ,
+	const std::vector<GNet::Address> & nameservers ) :
+		m_es(es) ,
+		m_config(config) ,
+		m_message_id(GStore::MessageId::none()) ,
+		m_ns_index(0U) ,
+		m_nameservers(nameservers) ,
+		m_timer(*this,&MxLookup::onTimeout,es)
 {
 	if( m_nameservers.empty() )
 	{
@@ -93,6 +99,7 @@ void GFilters::MxLookup::start( const GStore::MessageId & message_id , const std
 	{
 		m_message_id = message_id ;
 		m_ns_index = 0U ;
+		m_ns_failures = 0U ;
 		m_question = forward_to ;
 		sendMxQuestion( m_ns_index , m_question ) ;
 		startTimer() ;
@@ -117,12 +124,14 @@ void GFilters::MxLookup::process( const char * p , std::size_t n )
 	GNet::DnsMessage response( p , n ) ;
 	if( response.valid() && response.QR() && response.ID() && response.ID() < (m_nameservers.size()+1U) )
 	{
-		unsigned ns_index = response.ID() - 1U ;
+		std::size_t ns_index = static_cast<std::size_t>(response.ID()) - 1U ;
 		auto pair = parse( response , m_nameservers.at(ns_index) , m_config.log ) ;
-		if( pair.first == Result::mx )
-			sendHostQuestion( ns_index , pair.second ) ;
-		else if( pair.first == Result::error )
+		if( pair.first == Result::error && (m_ns_failures+1U) < m_nameservers.size() )
+			disable( ns_index , pair.second ) ;
+		else if( pair.first == Result::error || pair.first == Result::fatal )
 			fail( pair.second ) ;
+		else if( pair.first == Result::mx )
+			sendHostQuestion( ns_index , pair.second ) ;
 		else if( pair.first == Result::cname )
 			sendMxQuestion( ns_index , pair.second ) ;
 		else if( pair.first == Result::ip )
@@ -130,10 +139,22 @@ void GFilters::MxLookup::process( const char * p , std::size_t n )
 	}
 }
 
-std::pair<GFilters::MxLookupImp::Result,std::string> GFilters::MxLookupImp::parse( const GNet::DnsMessage & response ,
-	const GNet::Address & from_address , bool log )
+void GFilters::MxLookup::disable( std::size_t ns_index , const std::string & reason )
 {
-	std::string from = " from " + from_address.hostPartString() ;
+	G_LOG_IF( m_config.log , "GFilters::MxLookup::disable: mx: nameserver "
+		<< "[" << m_nameservers.at(ns_index).displayString() << "] disabled (" << reason << ")" ) ;
+	m_nameservers.at(ns_index) = GNet::Address::defaultAddress() ;
+	m_ns_failures++ ;
+}
+
+std::pair<GFilters::MxLookupImp::Result,std::string> GFilters::MxLookupImp::parse( const GNet::DnsMessage & response ,
+	const GNet::Address & ns_address , bool log )
+{
+	std::string from = " from " + ns_address.hostPartString() ;
+	if( response.RCODE() == 3 && response.AA() )
+	{
+		return { Result::fatal , "rcode nxdomain" + from } ;
+	}
 	if( response.RCODE() != 0 )
 	{
 		return { Result::error , "rcode " + G::Str::fromUInt(response.RCODE()) + from } ;
@@ -190,23 +211,27 @@ std::pair<GFilters::MxLookupImp::Result,std::string> GFilters::MxLookupImp::pars
 		else if( !mx_result.empty() )
 			return { Result::mx , mx_result } ;
 		else
-			return { Result::error , "no answer" + from } ;
+			return { Result::error , "invalid response" + from } ;
 	}
 }
 
-void GFilters::MxLookup::sendMxQuestion( unsigned ns_index , const std::string & mx_question )
+void GFilters::MxLookup::sendMxQuestion( std::size_t ns_index , const std::string & mx_question )
 {
+	if( m_nameservers[ns_index] == GNet::Address::defaultAddress() ) return ;
 	G_LOG_IF( m_config.log , "GFilters::MxLookup::sendMxQuestion: mx: question: mx [" << mx_question << "] "
 		<< "to " << m_nameservers[ns_index].hostPartString() ) ;
-	GNet::DnsMessageRequest request( "MX" , mx_question , ns_index+1U ) ;
+	unsigned int id = static_cast<unsigned int>(ns_index) + 1U ;
+	GNet::DnsMessageRequest request( "MX" , mx_question , id ) ;
 	socket(ns_index).writeto( request.p() , request.n() , m_nameservers[ns_index] ) ;
 }
 
-void GFilters::MxLookup::sendHostQuestion( unsigned ns_index , const std::string & host_question )
+void GFilters::MxLookup::sendHostQuestion( std::size_t ns_index , const std::string & host_question )
 {
+	if( m_nameservers[ns_index] == GNet::Address::defaultAddress() ) return ;
 	G_LOG_IF( m_config.log , "GFilters::MxLookup::sendHostQuestion: mx: question: host-ip [" << host_question << "] "
 		<< "to " << m_nameservers[ns_index].hostPartString() ) ;
-	GNet::DnsMessageRequest request( "A" , host_question , ns_index+1U ) ;
+	unsigned int id = static_cast<unsigned int>(ns_index) + 1U ;
+	GNet::DnsMessageRequest request( "A" , host_question , id ) ;
 	socket(ns_index).writeto( request.p() , request.n() , m_nameservers[ns_index] ) ;
 }
 
@@ -260,7 +285,7 @@ void GFilters::MxLookup::succeed( const std::string & result )
 	m_done_signal.emit( m_message_id , result , "" ) ;
 }
 
-GNet::DatagramSocket & GFilters::MxLookup::socket( unsigned int ns_index )
+GNet::DatagramSocket & GFilters::MxLookup::socket( std::size_t ns_index )
 {
 	return m_nameservers.at(ns_index).is4() ? *m_socket4 : *m_socket6 ;
 }

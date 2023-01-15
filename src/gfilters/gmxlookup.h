@@ -40,15 +40,20 @@ namespace GFilters
 //| \class GFilters::MxLookup
 /// A DNS MX lookup client.
 ///
+/// Each nameserver is queried in turn with a 'ns_timeout' interval.
+/// After the final nameserver has been queried there is a
+/// 'restart_timeout' before the sequence starts again. There is no
+/// overall timeout.
+///
 class GFilters::MxLookup : private GNet::EventHandler
 {
 public:
 	struct Config
 	{
 		Config() ;
-		G::TimeInterval ns_timeout {2U,0} ; // ask next nameserver
-		G::TimeInterval restart_timeout {30U,0} ; // give up and go back to the first nameserver
-		bool log {false} ; // use verbose-level logging
+		G::TimeInterval ns_timeout {1U,0} ;
+		G::TimeInterval restart_timeout {15U,0} ;
+		bool log {false} ;
 	} ;
 
 	static bool enabled() ;
@@ -57,14 +62,17 @@ public:
 	explicit MxLookup( GNet::ExceptionSink , Config = {} ) ;
 		///< Constructor.
 
-	void start( const GStore::MessageId & , const std::string & forward_to ) ;
+	explicit MxLookup( GNet::ExceptionSink , Config , const std::vector<GNet::Address> & ns ) ;
+		///< Constructor taking a list of nameservers.
+
+	void start( const GStore::MessageId & , const std::string & question_domain ) ;
 		///< Starts the lookup.
 
 	G::Slot::Signal<GStore::MessageId,std::string,std::string> & doneSignal() noexcept ;
-		///< Returns a reference to the completion signal.
-		///< The signal parameters are the original message id,
-		///< the MX domain name (if successful), and the error
-		///< reason (if not).
+		///< Returns a reference to the completion signal. The signal
+		///< parameters are (1) the original message id, (2) the answer
+		///< port-25 transport address (if successful), and (3) the
+		///< error reason (if not).
 
 	void cancel() ;
 		///< Cancels the lookup so the doneSignal() is not emitted.
@@ -75,13 +83,14 @@ private: // overrides
 private:
 	void startTimer() ;
 	void onTimeout() ;
-	void sendMxQuestion( unsigned int , const std::string & ) ;
-	void sendHostQuestion( unsigned int , const std::string & ) ;
+	void sendMxQuestion( std::size_t , const std::string & ) ;
+	void sendHostQuestion( std::size_t , const std::string & ) ;
 	void fail( const std::string & ) ;
 	void succeed( const std::string & ) ;
 	void dropReadHandlers() ;
-	GNet::DatagramSocket & socket( unsigned int ) ;
+	GNet::DatagramSocket & socket( std::size_t ) ;
 	void process( const char * , std::size_t ) ;
+	void disable( std::size_t , const std::string & ) ;
 
 private:
 	GNet::ExceptionSink m_es ;
@@ -90,6 +99,7 @@ private:
 	std::string m_question ;
 	std::string m_error ;
 	std::size_t m_ns_index ;
+	std::size_t m_ns_failures ;
 	std::vector<GNet::Address> m_nameservers ;
 	GNet::Timer<MxLookup> m_timer ;
 	std::unique_ptr<GNet::DatagramSocket> m_socket4 ;

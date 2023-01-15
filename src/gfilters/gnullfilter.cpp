@@ -20,12 +20,14 @@
 
 #include "gdef.h"
 #include "gnullfilter.h"
+#include "gassert.h"
 #include "gstr.h"
 
 GFilters::NullFilter::NullFilter( GNet::ExceptionSink es , GStore::FileStore & ,
 	Filter::Type filter_type , const Filter::Config & ) :
+		m_id("exit") ,
 		m_exit(0,filter_type) ,
-		m_id("none") ,
+		m_timeout(0) ,
 		m_timer(*this,&NullFilter::onTimeout,es)
 {
 }
@@ -33,10 +35,21 @@ GFilters::NullFilter::NullFilter( GNet::ExceptionSink es , GStore::FileStore & ,
 GFilters::NullFilter::NullFilter( GNet::ExceptionSink es , GStore::FileStore & ,
 	Filter::Type filter_type , const Filter::Config & ,
 	unsigned int exit_code ) :
-		m_exit(static_cast<int>(exit_code),filter_type) ,
 		m_id("exit:"+G::Str::fromUInt(exit_code)) ,
+		m_exit(static_cast<int>(exit_code),filter_type) ,
+		m_timeout(0) ,
 		m_timer(*this,&NullFilter::onTimeout,es)
 {
+}
+
+GFilters::NullFilter::NullFilter( GNet::ExceptionSink es , GStore::FileStore & ,
+	Filter::Type filter_type , const Filter::Config & , G::TimeInterval sleep_time ) :
+		m_id("sleep") ,
+		m_exit(0,filter_type) ,
+		m_timeout(sleep_time) ,
+		m_timer(*this,&NullFilter::onTimeout,es)
+{
+	G_ASSERT( m_exit.ok() ) ;
 }
 
 std::string GFilters::NullFilter::id() const
@@ -80,7 +93,7 @@ void GFilters::NullFilter::cancel()
 
 void GFilters::NullFilter::start( const GStore::MessageId & )
 {
-	m_timer.startTimer( 0U ) ;
+	m_timer.startTimer( m_timeout ) ;
 }
 
 void GFilters::NullFilter::onTimeout()

@@ -157,7 +157,7 @@ void GSmtp::ProtocolMessageStore::process( const std::string & session_auth_id ,
 		{
 			// start the filter
 			if( !m_filter->quiet() )
-				G_LOG( "GSmtp::ProtocolMessageStore::process: filter start: [" << m_filter->id() << "] "
+				G_LOG( "GSmtp::ProtocolMessageStore::process: filter: start [" << m_filter->id() << "] "
 					<< "[" << m_new_msg->location() << "]" ) ;
 			m_filter->start( m_new_msg->id() ) ;
 		}
@@ -186,7 +186,7 @@ void GSmtp::ProtocolMessageStore::filterDone( int filter_result )
 		std::string filter_reason = (ok||abandon) ? std::string() : m_filter->reason() ;
 
 		if( !m_filter->quiet() )
-			G_LOG( "GSmtp::ProtocolMessageStore::filterDone: filter done: " << m_filter->str(Filter::Type::server) ) ;
+			G_LOG( "GSmtp::ProtocolMessageStore::filterDone: filter: done: " << m_filter->str(Filter::Type::server) ) ;
 
 		GStore::MessageId message_id = GStore::MessageId::none() ;
 		if( ok )

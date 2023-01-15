@@ -201,12 +201,14 @@ necessary by running:
 
 MTA operation
 -------------
-In this release E-MailRelay can be run as an MTA, including message routing and
-delivery, with no need for a "smarthost", something like this:
+E-MailRelay can now be run as a complete MTA performing message routing and
+delivery, with no need for an external "smarthost" to do the routing.
+
+For example:
 
 	emailrelay
-	--log --verbose --syslog
-	--close-stderr --pid-file /run/emailrelay.pid
+	--log --verbose --syslog --close-stderr
+	--pid-file /run/emailrelay.pid
 	--user root
 
 	--in-spool-dir /var/spool/in
@@ -214,6 +216,9 @@ delivery, with no need for a "smarthost", something like this:
 	--in-domain example.com
 	--in-address-verifier allow:1000-1001
 	--in-filter deliver:
+
+	--in-server-smtp-config +chunking,+smtputf8
+	--in-size 100000000
 
 	--in-pop
 	--in-pop-port 110
@@ -229,10 +234,12 @@ delivery, with no need for a "smarthost", something like this:
 	--out-client-filter mx:
 	--out-poll 60
 	--out-forward-on-disconnect
+	--out-forward-to 127.0.0.1:20002
+	--out-forward-to-some
 
-	--out-forward-to /run/emailrelay.s
-	--out-interface admin=/run/emailrelay.s
-	--out-admin 0
+	--other-spool-dir /var/spool/other
+	--other-port 20002
+	--other-interface 127.0.0.1
 
 Assuming "alice" has a login account with uid 1000 and "bob" with uid 1001 then
 incoming messages for "alice@example.com" or "bob@example.com" are delivered
@@ -241,18 +248,17 @@ Messages to any other addresses are rejected. Alice and Bob can access these
 messages by setting their mail program to use POP with their normal login name
 and password.
 
-Outgoing messages are spooled up in /var/spool/in, but any messages addressed to
+Outgoing messages are spooled up in /var/spool/out, but any messages addressed to
 "alice@example.com" or "bob@example.com" are short-circuited and delivered
-straight to /var/spool/in/alice and /var/spool/bin/bob.
+straight to /var/spool/in/alice and /var/spool/in/bob.
 
 Outgoing messages with multiple recipients are split up so that there is one
 copy in the spool directory for each distinct recipient domain, and the target
-domain is stored in the envelope file 'forward-to' field. Just before the
+domain is stored in the envelope file's 'forward-to' field. Just before the
 message is forwarded a DNS MX query is performed on the 'forward-to' domain and
 the resulting IP address (with port 25) is stored as the 'forward-to-address'.
 
-Forwarding first requires an unused connection to the default "smarthost" and in
-this example it a unix-domain socket that happens to be also providing the
-'admin' interface. Each message is then forwarded to its own target address,
-as stored in the 'forward-to-address' envelope field.
+Forwarding always requires a connection to a default "smarthost", although in
+this setup it should never carry any traffic so it can be provided locally on
+port 20002.
 

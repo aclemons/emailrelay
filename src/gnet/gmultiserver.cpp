@@ -33,21 +33,21 @@ namespace GNet
 	class Listeners ;
 }
 
-class GNet::Listeners
+class GNet::Listeners /// Used by GNet::MultiServer to represent a set of listening inputs (fd, interface or address).
 {
 public:
 	Listeners( Interfaces & , const G::StringArray & , unsigned int port ) ;
-	bool defunct() const ;
-	bool idle() const ;
-	bool empty() const ;
-	bool hasBad() const ;
-	std::string badName() const ;
-	bool hasEmpties() const ;
-	std::string logEmpties() const ;
-	bool noUpdates() const ;
-	const std::vector<int> & fds() const ;
-	const std::vector<Address> & fixed() const ;
-	const std::vector<Address> & dynamic() const ;
+	bool empty() const ; // no inputs
+	bool defunct() const ; // no inputs and static
+	bool idle() const ; // no inputs but some interfaces might come up
+	bool hasBad() const ; // one or more invalid inputs
+	std::string badName() const ; // first invalid input
+	bool hasEmpties() const ; // some interfaces have no addresses
+	std::string logEmpties() const ; // log line snippet for hasEmpties()
+	bool noUpdates() const ; // some inputs are interfaces but static
+	const std::vector<int> & fds() const ; // fd inputs
+	const std::vector<Address> & fixed() const ; // address inputs
+	const std::vector<Address> & dynamic() const ; // interface addresses
 
 private:
 	void addWildcards( unsigned int ) ;
@@ -80,7 +80,7 @@ GNet::MultiServer::MultiServer( ExceptionSink es , const G::StringArray & listen
 {
 	Listeners listeners( m_if , m_listener_list , m_port ) ;
 
-	// fail if any bad names (eg. "/foo")
+	// fail if any bad names (eg. "foo/bar")
 	if( listeners.hasBad() )
 		throw InvalidName( listeners.badName() ) ;
 
@@ -412,7 +412,10 @@ bool GNet::Listeners::noUpdates() const
 
 bool GNet::Listeners::isBad( const std::string & s )
 {
-	// (a slash is normally invalid but allow "/dev/..." because bsd)
+	// the input is not an address and not an interface-with-addresses so
+	// report it as bad if clearly not an interface-with-no-addresses --
+	// a slash is not normally allowed in an interface name, but allow "/dev/..."
+	// because of bsd
 	return s.empty() || ( s.find('/') != std::string::npos && s.find("/dev/") != 0U ) ;
 }
 

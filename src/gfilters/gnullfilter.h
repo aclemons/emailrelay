@@ -25,6 +25,7 @@
 #include "gtimer.h"
 #include "gfilter.h"
 #include "gfilestore.h"
+#include "gdatetime.h"
 
 namespace GFilters
 {
@@ -39,13 +40,18 @@ class GFilters::NullFilter : public GSmtp::Filter
 public:
 	NullFilter( GNet::ExceptionSink , GStore::FileStore & ,
 		Filter::Type , const Filter::Config & ) ;
-			///< Constructor.
+			///< Constructor for a do-nothing filter.
 
 	NullFilter( GNet::ExceptionSink , GStore::FileStore & ,
 		Filter::Type , const Filter::Config & , unsigned int exit_code ) ;
-			///< Constructor for a processor that behaves like an
+			///< Constructor for a filter that behaves like an
 			///< executable that always exits with the given
 			///< exit code.
+
+	NullFilter( GNet::ExceptionSink , GStore::FileStore & ,
+		Filter::Type , const Filter::Config & , G::TimeInterval ) ;
+			///< Constructor for a do-nothing filter that takes
+			///< its time.
 
 private: // overrides
 	std::string id() const override ; // GSmtp::Filter
@@ -69,10 +75,11 @@ private:
 	void onTimeout() ;
 
 private:
-	G::Slot::Signal<int> m_done_signal ;
-	Filter::Exit m_exit ;
 	std::string m_id ;
+	Filter::Exit m_exit ;
+	G::TimeInterval m_timeout ;
 	GNet::Timer<NullFilter> m_timer ;
+	G::Slot::Signal<int> m_done_signal ;
 } ;
 
 #endif

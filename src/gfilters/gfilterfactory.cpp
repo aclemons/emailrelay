@@ -35,6 +35,7 @@
 #include "gstr.h"
 #include "grange.h"
 #include "gexception.h"
+#include <limits>
 
 GFilters::FilterFactory::FilterFactory( GStore::FileStore & file_store ) :
 	m_file_store(file_store)
@@ -71,7 +72,12 @@ GFilters::FilterFactory::Spec GFilters::FilterFactory::parse( const std::string 
 	else if( spec_in.find("exit:") == 0U )
 	{
 		result = Spec( "exit" , tail ) ;
-		checkExit( result ) ;
+		checkNumber( result ) ;
+	}
+	else if( spec_in.find("sleepms:") == 0U )
+	{
+		result = Spec( "sleep" , tail ) ;
+		checkNumber( result ) ;
 	}
 	else if( spec_in.find("net:") == 0U )
 	{
@@ -106,7 +112,7 @@ GFilters::FilterFactory::Spec GFilters::FilterFactory::parse( const std::string 
 		result = Spec( "mx" , tail ) ;
 	}
 
-	if( result.first.empty() )
+	if( result.first.empty() && result.second.empty() )
 		result.second = "[" + spec_in + "]" ;
 
 	return result ;
@@ -139,6 +145,10 @@ std::unique_ptr<GSmtp::Filter> GFilters::FilterFactory::newFilter( GNet::Excepti
 	{
 		return std::make_unique<NullFilter>( es , m_file_store , filter_type , filter_config , G::Str::toUInt(spec.second) ) ;
 	}
+	else if( spec.first == "sleep" )
+	{
+		return std::make_unique<NullFilter>( es , m_file_store , filter_type , filter_config , G::TimeInterval(0U,G::Str::toUInt(spec.second)) ) ;
+	}
 	else if( spec.first == "file" )
 	{
 		return std::make_unique<ExecutableFilter>( es , m_file_store , filter_type , filter_config , spec.second , log_prefix ) ;
@@ -164,12 +174,22 @@ std::unique_ptr<GSmtp::Filter> GFilters::FilterFactory::newFilter( GNet::Excepti
 	return {} ;
 }
 
-void GFilters::FilterFactory::checkExit( Spec & result )
+void GFilters::FilterFactory::checkNumber( Spec & result )
 {
-	if( !G::Str::isUInt(result.second) )
+	if( result.second.empty() )
 	{
 		result.first.clear() ;
-		result.second = "not a numeric exit code: " + G::Str::printable(result.second) ;
+		result.second = "numeric value missing" ;
+	}
+	else if( !G::Str::isUInt(result.second) )
+	{
+		result.first.clear() ;
+		result.second = "invalid numeric value: " + G::Str::printable(result.second) ;
+	}
+	else if( G::Str::toUInt(result.second) >= (std::numeric_limits<unsigned>::max()/1000U) )
+	{
+		result.first.clear() ;
+		result.second = "numeric value too big: " + G::Str::printable(result.second) ;
 	}
 }
 

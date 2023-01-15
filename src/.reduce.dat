@@ -551,7 +551,7 @@ gdnsmessage.cpp	148	keep	std::string GNet::DnsMessage::span( unsigned int begin 
 gdnsmessage.cpp	155	keep	unsigned int GNet::DnsMessage::ID() const
 gdnsmessage.cpp	160	keep	bool GNet::DnsMessage::QR() const
 gdnsmessage.cpp	165	remove	unsigned int GNet::DnsMessage::OPCODE() const
-gdnsmessage.cpp	170	remove	bool GNet::DnsMessage::AA() const
+gdnsmessage.cpp	170	keep	bool GNet::DnsMessage::AA() const
 gdnsmessage.cpp	175	keep	bool GNet::DnsMessage::TC() const
 gdnsmessage.cpp	180	remove	bool GNet::DnsMessage::RD() const
 gdnsmessage.cpp	185	remove	bool GNet::DnsMessage::RA() const
