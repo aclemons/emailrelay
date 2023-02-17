@@ -22,7 +22,6 @@
 #define GAUTH_SASL_SERVER_SECRETS_H
 
 #include "gdef.h"
-#include "gvalid.h"
 #include "gsecret.h"
 #include "gstringview.h"
 #include <string>
@@ -37,9 +36,15 @@ namespace GAuth
 /// An interface used by GAuth::SaslServer to obtain authentication secrets.
 /// \see GAuth::Secret
 ///
-class GAuth::SaslServerSecrets : public virtual Valid
+class GAuth::SaslServerSecrets
 {
 public:
+	virtual ~SaslServerSecrets() ;
+		///< Destructor.
+
+	virtual bool valid() const = 0 ;
+		///< Returns true if the secrets are valid.
+
 	virtual Secret serverSecret( G::string_view type , G::string_view id ) const = 0 ;
 		///< Returns the server secret for the given client id.
 		///< The type is "plain" or the CRAM hash algorithm.

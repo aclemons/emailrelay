@@ -1,34 +1,23 @@
 Summary: Simple e-mail message transfer agent and proxy using SMTP
 Name: emailrelay
-Version: 2.4.1
+Version: 2.5rc1
 Release: 1
 License: GPL3
 Group: System Environment/Daemons
 URL: http://emailrelay.sourceforge.net
-Source: http://sourceforge.net/projects/emailrelay/files/emailrelay/2.4.1/emailrelay-2.4.1-src.tar.gz
+Source: http://sourceforge.net/projects/emailrelay/files/emailrelay/2.5rc1/emailrelay-2.5rc1-src.tar.gz
 BuildRoot: /tmp/emailrelay-install
 ##BuildRequires: systemd-rpm-macros
 
 %description
-E-MailRelay is an e-mail store-and-forward message transfer agent and proxy
-server. It runs on Unix-like operating systems (including Linux and Mac OS X),
-and on Windows.
+E-MailRelay is a lightweight SMTP store-and-forward mail server with POP access
+to spooled messages. It can be used as a personal internet mail server with
+SpamAssassin spam filtering and DNSBL connection blocking. Forwarding can be
+to a fixed smarthost or using DNS MX routing. External scripts can be used for
+address validation and e-mail message processing.
 
-E-MailRelay does three things: it stores any incoming e-mail messages that
-it receives, it forwards e-mail messages on to another remote e-mail server,
-and it serves up stored e-mail messages to local e-mail reader programs. More
-technically, it acts as a SMTP storage daemon, a SMTP forwarding agent, and
-a POP3 server.
-
-Whenever an e-mail message is received it can be passed through a user-defined
-program, such as a spam filter, which can drop, re-address or edit messages as
-they pass through.
-
-E-MailRelay uses the same non-blocking i/o model as Squid and nginx giving
-excellent scalability and resource usage.
-
-C++ source code is available and distribution is permitted under the GNU
-General Public License V3.
+E-MailRelay runs as a single process using the same non-blocking i/o model as
+Squid and nginx giving excellent scalability and resource usage.
 
 %global debug_package %{nil}
 %prep
@@ -83,6 +72,7 @@ test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
 /usr/lib/emailrelay/examples/emailrelay-sendmail.pl
 /usr/lib/emailrelay/examples/emailrelay-set-from.js
 /usr/lib/emailrelay/examples/emailrelay-set-from.pl
+/usr/lib/emailrelay/examples/emailrelay-set-message-id.js
 /usr/lib/emailrelay/examples/emailrelay-submit.sh
 /usr/lib/emailrelay/init/emailrelay
 /usr/lib/systemd/system/emailrelay.service
@@ -117,6 +107,8 @@ test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
 %doc /usr/share/doc/emailrelay/forwardto.png
 %doc /usr/share/doc/emailrelay/index.html
 %doc /usr/share/doc/emailrelay/index.rst
+%doc /usr/share/doc/emailrelay/mailserver.png
+%doc /usr/share/doc/emailrelay/popbyname.png
 %doc /usr/share/doc/emailrelay/readme.html
 %doc /usr/share/doc/emailrelay/readme.md
 %doc /usr/share/doc/emailrelay/readme.rst

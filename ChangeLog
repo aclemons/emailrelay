@@ -1,6 +1,18 @@
 E-MailRelay Change Log
 ======================
 
+2.4 -> 2.5
+----------
+* Multiple configurations in one process.
+* SMTP PIPELINING (RFC-2920).
+* SMTP CHUNKING/8BITMIME 'BDAT' extension (RFC-3030), disabled by default.
+* SMTP SMTPUTF8 extension (RFC-6531), disabled by default.
+* No 7-bit/8-bit check on received message content (see NEWS file).
+* Mailbox delivery for local addressees ("--local-delivery-dir").
+* New built-in filters: "deliver:", "split:", "copy:", "mx:"
+* New built-in address verifiers: "allow:", "local:"
+* Main binary acts as a submission tool if named "emailrelay-submit".
+
 2.3 -> 2.4
 ----------
 * Multiple "--filter" and "--client-filter" options allowed.

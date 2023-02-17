@@ -32,7 +32,10 @@
 #define SERVICE_STOP_PENDING 3
 #define SERVICE_RUNNING 4
 
-static std::string name_ ;
+namespace ServiceImp
+{
+	std::string name_ ;
+}
 
 std::string ServiceImp::install( const std::string & , const std::string & name , const std::string & ,
 	const std::string & )
@@ -51,7 +54,7 @@ std::string ServiceImp::remove( const std::string & name )
 std::pair<ServiceImp::StatusHandle,DWORD> ServiceImp::statusHandle( const std::string & , HandlerFn )
 {
 	StatusHandle h = 1 ;
-	return std::make_pair( h , 0 ) ;
+	return { h , 0 } ;
 }
 
 DWORD ServiceImp::dispatch( ServiceMainFn fn )

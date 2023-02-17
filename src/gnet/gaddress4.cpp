@@ -124,7 +124,7 @@ const char * GNet::Address4::setHostAddress( sockaddr_type & inet , G::string_vi
 	if( !Address4::format(host_part) )
 		return "invalid network address" ;
 
-	int rc = inet_pton( af() , sv_to_string(host_part).c_str() , &inet.sin_addr ) ;
+	int rc = inet_pton( af() , G::sv_to_string(host_part).c_str() , &inet.sin_addr ) ;
 	return rc == 1 ? nullptr : "invalid network address" ;
 }
 
@@ -250,10 +250,12 @@ unsigned long GNet::Address4::scopeId( unsigned long default_ ) const
 	return default_ ;
 }
 
+#ifndef G_LIB_SMALL
 const sockaddr * GNet::Address4::address() const
 {
 	return reinterpret_cast<const sockaddr*>(&m_inet) ;
 }
+#endif
 
 sockaddr * GNet::Address4::address()
 {

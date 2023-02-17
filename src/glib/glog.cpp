@@ -53,9 +53,11 @@ G::LogStream & G::Log::operator<<( const char * s ) noexcept
 	return m_logstream << s ;
 }
 
+#ifndef G_LIB_SMALL
 G::LogStream & G::Log::operator<<( const std::string & s ) noexcept
 {
 	static_assert( noexcept(m_logstream <<s) , "" ) ;
 	return m_logstream << s ;
 }
+#endif
 

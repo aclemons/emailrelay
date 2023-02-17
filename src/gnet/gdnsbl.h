@@ -62,7 +62,7 @@ public:
 	Dnsbl & operator=( Dnsbl && ) = delete ;
 
 private:
-	std::function<void(bool)> m_callback ; // see gdnsbl_disabled.cpp
+	std::function<void(bool)> m_callback ;
 	std::unique_ptr<DnsblImp> m_imp ;
 } ;
 

@@ -30,8 +30,10 @@
 #include <functional>
 #include <sstream>
 
+#ifndef G_LIB_SMALL
 GNet::TimerList::Value::Value()
 = default;
+#endif
 
 GNet::TimerList::Value::Value( TimerBase * t , ExceptionSink es ) :
 	m_timer(t) ,
@@ -173,10 +175,12 @@ GNet::TimerList * GNet::TimerList::ptr() noexcept
 	return m_this ;
 }
 
+#ifndef G_LIB_SMALL
 bool GNet::TimerList::exists()
 {
 	return m_this != nullptr ;
 }
+#endif
 
 GNet::TimerList & GNet::TimerList::instance()
 {

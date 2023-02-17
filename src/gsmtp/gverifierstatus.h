@@ -38,8 +38,8 @@ namespace GSmtp
 /// and a 'response' is supplied. The response is typically reported back
 /// to the submitter, so it should not contain too much detail.
 ///
-/// The 'reason' string can be added by the user of the verifier to give
-/// more context in the log in addition to 'response'.
+/// The 'reason' string can be added to give more context in the log
+/// in addition to 'response'.
 ///
 /// If a valid local recipient then 'is_local' is set true, 'full_name'
 /// is set to the full description of the mailbox and 'address' is set
@@ -57,7 +57,7 @@ public:
 		bool temporary = false ,
 		const std::string & response = {} ,
 		const std::string & reason = {} ) ;
-			///< Factory for an invalid address.
+			///< Factory function for an invalid address.
 
 	static VerifierStatus remote( const std::string & recipient ,
 		const std::string & address = {} ) ;
@@ -73,11 +73,15 @@ public:
 	std::string str() const ;
 		///< Returns a string representation of the structure.
 
+	bool utf8address() const ;
+		///< Returns true if 'address' is utf8 according to
+		///< GSmtp::ServerParser::mailboxStyle().
+
 public:
-	bool is_valid{false} ;
-	bool is_local{false} ;
-	bool temporary{false} ;
-	bool abort{false} ;
+	bool is_valid {false} ;
+	bool is_local {false} ;
+	bool temporary {false} ;
+	bool abort {false} ;
 	std::string recipient ; // verifier input, even if not valid
 	std::string full_name ; // description iff local
 	std::string address ; // mailbox if local, output address if remote

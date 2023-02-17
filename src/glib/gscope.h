@@ -85,6 +85,9 @@ public:
 	~ScopeExitSetFalse() noexcept ;
 		///< Destructor, sets the bound value to false.
 
+	void release() noexcept ;
+		///< Deactivates the exit function.
+
 public:
 	ScopeExitSetFalse( const ScopeExitSetFalse & ) = delete ;
 	ScopeExitSetFalse( ScopeExitSetFalse && ) = delete ;
@@ -92,7 +95,7 @@ public:
 	ScopeExitSetFalse & operator=( ScopeExitSetFalse && ) = delete ;
 
 private:
-	bool & m_bref ;
+	bool * m_ptr ;
 } ;
 
 inline
@@ -110,20 +113,33 @@ void G::ScopeExit::release() noexcept
 inline
 G::ScopeExit::~ScopeExit()
 {
-	if( m_fn )
-		m_fn() ;
+	try
+	{
+		if( m_fn )
+			m_fn() ;
+	}
+	catch(...) // dtor
+	{
+	}
 }
 
 inline
 G::ScopeExitSetFalse::ScopeExitSetFalse( bool & bref ) noexcept :
-	m_bref(bref)
+	m_ptr(&bref)
 {
+}
+
+inline
+void G::ScopeExitSetFalse::release() noexcept
+{
+	m_ptr = nullptr ;
 }
 
 inline
 G::ScopeExitSetFalse::~ScopeExitSetFalse() noexcept
 {
-	m_bref = false ;
+	if( m_ptr )
+		*m_ptr = false ;
 }
 
 #endif

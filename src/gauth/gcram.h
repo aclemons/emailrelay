@@ -82,7 +82,7 @@ public:
 		///< list to those hash functions that support initialisation
 		///< with intermediate state.
 
-	static std::string challenge( unsigned int random ) ;
+	static std::string challenge( unsigned int random , const std::string & challenge_domain ) ;
 		///< Returns a challenge string that incorporates the given
 		///< random number and the current time.
 

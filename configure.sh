@@ -79,7 +79,7 @@ if test "0$opt_git" -eq 1
 then
 	git clone https://salsa.debian.org/debian/mbedtls.git
 	e="$?"
-	sed -i 's/defined._TRUNCATE./0/' mbedtls/library/platform.c
+	patch -d mbedtls/library -p1 < src/gssl/mbedtls-vsnprintf-fix.p1
 	if test "$e" -eq 0 -a "0$opt_mingw" -eq 0
 	then
 		echo build with...

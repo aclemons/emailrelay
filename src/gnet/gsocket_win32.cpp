@@ -221,3 +221,10 @@ bool GNet::Socket::setOptionImp( int level , int op , const void * arg , socklen
 	return ok ;
 }
 
+// ==
+
+std::size_t GNet::DatagramSocket::limit( std::size_t default_in ) const
+{
+	return default_in ;
+}
+

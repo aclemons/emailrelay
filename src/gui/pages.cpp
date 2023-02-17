@@ -133,7 +133,7 @@ std::string LicensePage::helpUrl( const std::string & language ) const
 
 DirectoryPage::DirectoryPage( Gui::Dialog & dialog , const G::MapFile & config , const std::string & name ,
 	const std::string & next_1 , const std::string & next_2 ,
-	bool installing , bool /*is_windows*/ , bool is_mac ) :
+	bool installing , bool is_windows , bool is_mac ) :
 		Gui::Page(dialog,name,next_1,next_2) ,
 		m_installing(installing) ,
 		m_is_mac(is_mac) ,
@@ -257,8 +257,16 @@ DirectoryPage::DirectoryPage( Gui::Dialog & dialog , const G::MapFile & config ,
 		connect( m_spool_dir_edit_box , SIGNAL(textChanged(QString)), this, SLOT(onOtherDirChange()) );
 		connect( m_config_dir_edit_box , SIGNAL(textChanged(QString)), this, SLOT(onOtherDirChange()) );
 		connect( m_runtime_dir_edit_box , SIGNAL(textChanged(QString)), this, SLOT(onOtherDirChange()) );
-		if( testMode() ) // todo not if windows
-			m_install_dir_edit_box->setText( qstr("/tmp/") + qstr(G::Process::Id().str()) + m_install_dir_edit_box->text() ) ;
+		if( testMode() )
+		{
+			QString old_value = m_install_dir_edit_box->text() ;
+			G::Path tmp_base = is_windows ? G::Path(G::Environment::get("TEMP","c:/temp")) : G::Path("/tmp" ) ;
+			G::Path tmp_dir = tmp_base + G::Process::Id().str() ;
+			G::Path old_path = GQt::stdstr( old_value , GQt::Path ) ;
+			G::Path new_path = G::Path::join( tmp_dir , old_path.withoutRoot() ) ;
+			QString new_value = GQt::qstr( new_path ) ;
+			m_install_dir_edit_box->setText( new_value ) ;
+		}
 	}
 
 	connect( m_install_dir_edit_box , SIGNAL(textChanged(QString)), this, SIGNAL(pageUpdateSignal()));
@@ -384,7 +392,6 @@ void DirectoryPage::dump( std::ostream & stream , bool for_install ) const
 	dumpItem( stream , for_install , "dir-config" , configDir() ) ;
 	dumpItem( stream , for_install , "dir-run" , runtimeDir() ) ;
 
-	dumpItem( stream , for_install , "dir-boot" , Gui::Dir::boot() ) ;
 	dumpItem( stream , for_install , "dir-desktop" , Gui::Dir::desktop() ) ;
 	dumpItem( stream , for_install , "dir-menu" , Gui::Dir::menu() ) ;
 	dumpItem( stream , for_install , "dir-login" , Gui::Dir::autostart() ) ;
@@ -580,7 +587,7 @@ PopPage::PopPage( Gui::Dialog & dialog , const G::MapFile & config , const std::
 	tip( m_no_delete_checkbox , tr("--pop-no-delete") ) ;
 	//: copy incoming email messages to all pop clients
 	m_pop_filter_copy_checkbox = new QCheckBox( tr("Copy SMTP messages to all") ) ;
-	tip( m_pop_filter_copy_checkbox , tr("--filter=emailrelay-filter-copy") ) ;
+	tip( m_pop_filter_copy_checkbox , tr("--filter=copy:") ) ;
 
 	auto * type_layout = new QGridLayout ;
 	type_layout->addWidget( m_one , 0 , 0 ) ;
@@ -591,7 +598,9 @@ PopPage::PopPage( Gui::Dialog & dialog , const G::MapFile & config , const std::
 
 	bool pop_by_name = config.booleanValue("pop-by-name",false) ;
 	bool pop_no_delete = config.booleanValue("pop-no-delete",false) ;
-	bool pop_filter_copy = config.value("filter").find("emailrelay-filter-copy") != std::string::npos ;
+	bool pop_filter_copy =
+		config.value("filter").find("emailrelay-filter-copy") != std::string::npos ||
+		config.value("filter").find("copy:") != std::string::npos ;
 	if( pop_by_name ) // "many clients with separate spool directories"
 	{
 		m_pop_by_name->setChecked( true ) ;
@@ -1084,7 +1093,7 @@ void FilterPage::onShow( bool )
 	G::Path exe_dir = m_is_windows ? dir_page.installDir() : ( dir_page.installDir() + "lib" + "emailrelay" ) ;
 
 	m_server_filter_script_path_default = script_dir + ("emailrelay-filter"+m_dot_script) ;
-	m_server_filter_copy_path_default = exe_dir + ("emailrelay-filter-copy"+m_dot_exe) ;
+	m_server_filter_copy_default = "copy:" ;
 	m_client_filter_script_path_default = script_dir + ("emailrelay-client-filter"+m_dot_script) ;
 	m_pop_page_with_filter_copy = do_what_page.pop() && pop_page.withFilterCopy() ;
 
@@ -1107,9 +1116,9 @@ void FilterPage::onShow( bool )
 		m_server_filter_choice_script->setEnabled( true ) ;
 		m_server_filter_choice_spamd->setEnabled( true ) ;
 		m_server_filter_choice_copy->setEnabled( true ) ;
-		tip( m_server_filter_choice_script , tr("--filter") ) ;
-		tip( m_server_filter_choice_spamd , tr("--filter") ) ;
-		tip( m_server_filter_choice_copy , tr("--filter") ) ;
+		tip( m_server_filter_choice_script , tr("--filter:file") ) ;
+		tip( m_server_filter_choice_spamd , tr("--filter:spam-edit") ) ;
+		tip( m_server_filter_choice_copy , tr("--filter:copy") ) ;
 	}
 
 	if( m_installing )
@@ -1117,7 +1126,7 @@ void FilterPage::onShow( bool )
 		// if installing the the directories can change on each show
 		// and there is no existing config to preserve
 		m_server_filter_script_path = m_server_filter_script_path_default ;
-		m_server_filter_copy_path = m_server_filter_copy_path_default ;
+		m_server_filter_copy = m_server_filter_copy_default ;
 		m_server_filter_spam = m_server_filter_spam_default ;
 		m_client_filter_script_path = m_client_filter_script_path_default ;
 	}
@@ -1126,7 +1135,7 @@ void FilterPage::onShow( bool )
 		// if reconfiguring then set the initial checkboxes from the configuration
 		// value, unless overridden by the pop page (below)
 		m_server_filter_script_path = m_server_filter_script_path_default ;
-		m_server_filter_copy_path = m_server_filter_copy_path_default ;
+		m_server_filter_copy = m_server_filter_copy_default ;
 		m_server_filter_spam = m_server_filter_spam_default ;
 		if( m_server_filter.empty() )
 		{
@@ -1137,10 +1146,11 @@ void FilterPage::onShow( bool )
 			m_server_filter_choice_spamd->setChecked( true ) ;
 			m_server_filter_spam = m_server_filter ;
 		}
-		else if( m_server_filter.find("emailrelay-filter-copy") != std::string::npos )
+		else if( m_server_filter.find("emailrelay-filter-copy") != std::string::npos ||
+			m_server_filter.find("copy:") != std::string::npos )
 		{
 			m_server_filter_choice_copy->setChecked( true ) ;
-			m_server_filter_copy_path = m_server_filter ;
+			m_server_filter_copy = m_server_filter ;
 		}
 		else
 		{
@@ -1185,7 +1195,7 @@ void FilterPage::onToggle()
 	}
 	else if( m_server_filter_choice_copy->isChecked() )
 	{
-		m_server_filter_edit_box->setText( qstr(m_server_filter_copy_path.str()) ) ;
+		m_server_filter_edit_box->setText( qstr(m_server_filter_copy.str()) ) ;
 	}
 
 	if( m_client_filter_choice_none->isChecked() )

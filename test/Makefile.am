@@ -37,9 +37,6 @@
 # re-run individual tests with "emailrelay_test.sh -q -v -t <test-name>".
 #
 
-utility_programs = \
-	emailrelay_test_keygen
-
 helper_programs = \
 	emailrelay_test_scanner \
 	emailrelay_test_client \
@@ -59,8 +56,6 @@ other_scripts = \
 
 test_scripts = \
 	emailrelay_chain_test.sh
-
-test_programs =
 
 test_names = \
 	testServerShowsHelp.test \
@@ -101,6 +96,10 @@ test_names = \
 	testNetworkVerifierPass.test \
 	testNetworkVerifierFail.test \
 	testProxyConnectsOnce.test \
+	testDelivery.test \
+	testDeliveryWithVerifier.test \
+	testLocalDelivery.test \
+	testLocalDeliveryOnly.test \
 	testClientFilterPass.test \
 	testClientFilterBlock.test \
 	testClientNetworkFilter.test \
@@ -148,7 +147,7 @@ modules = \
 if GCONFIG_TESTING
 TESTING_EXTRA_DIST = $(test_scripts)
 TESTING_TESTS = $(test_names) $(test_scripts)
-TESTING_HELPERS = $(helper_programs) $(test_programs)
+TESTING_HELPERS = $(helper_programs)
 else
 TESTING_EXTRA_DIST = $(test_scripts) $(helper_sources)
 TESTING_TESTS =
@@ -162,7 +161,6 @@ EXTRA_DIST = \
 
 SUBDIRS = certificates
 
-noinst_PROGRAMS = $(utility_programs)
 check_PROGRAMS = $(TESTING_HELPERS)
 check_SCRIPTS = $(TESTING_TESTS)
 CLEANFILES = $(test_names) .tmp.port
@@ -181,8 +179,6 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/glib \
 	-I$(top_srcdir)/src/gssl \
 	-I$(top_srcdir)/src/gnet \
-	-I$(top_srcdir)/src/gauth \
-	-I$(top_srcdir)/src/gsmtp \
 	-D "G_SPOOLDIR=$(e_spooldir)"
 
 COMMON_LDADD = \
@@ -193,16 +189,6 @@ if GCONFIG_WINDOWS
 else
  SYS_LIBS=
 endif
-
-emailrelay_test_keygen_SOURCES = emailrelay_test_keygen.cpp
-if GCONFIG_WINDOWS
-emailrelay_test_keygen_LDFLAGS = -static
-endif
-emailrelay_test_keygen_LDADD = \
-	$(top_builddir)/src/gssl/libgssl.a \
-	$(COMMON_LDADD) \
-	$(GCONFIG_TLS_LIBS) \
-	$(SYS_LIBS)
 
 emailrelay_test_scanner_SOURCES = emailrelay_test_scanner.cpp
 if GCONFIG_WINDOWS
@@ -251,7 +237,7 @@ emailrelay_test_verifier_LDADD = \
 if GCONFIG_WINDOWS
 programs: emailrelay_test_keygen.exe emailrelay_test_scanner.exe emailrelay_test_client.exe emailrelay_test_server.exe emailrelay_test_verifier.exe
 else
-programs: $(utility_programs) $(helper_programs) $(test_programs)
+programs: $(utility_programs) $(helper_programs)
 endif
 
 # the .test files are empty files passed to emailrelay_test.sh

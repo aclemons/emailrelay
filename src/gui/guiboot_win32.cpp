@@ -44,7 +44,7 @@ namespace Gui
 	}
 }
 
-bool Gui::Boot::installable( const G::Path & )
+bool Gui::Boot::installable()
 {
 	SC_HANDLE hmanager = OpenSCManager( nullptr , nullptr , SC_MANAGER_ALL_ACCESS ) ;
 	bool ok = hmanager != HNULL ;
@@ -52,7 +52,7 @@ bool Gui::Boot::installable( const G::Path & )
 	return ok ;
 }
 
-void Gui::Boot::install( const G::Path & , const std::string & name , const G::Path & bat , const G::Path & wrapper_exe )
+void Gui::Boot::install( const std::string & name , const G::Path & bat , const G::Path & wrapper_exe )
 {
 	// the 'bat' path is the batch file containing the full command-line
 	// for the server process -- the service wrapper knows how to read it
@@ -76,7 +76,7 @@ void Gui::Boot::install( const G::Path & , const std::string & name , const G::P
 	BootImp::createConfigurationFile( bat , wrapper_exe , do_throw ) ;
 }
 
-bool Gui::Boot::uninstall( const G::Path & , const std::string & name , const G::Path & bat , const G::Path & wrapper_exe )
+bool Gui::Boot::uninstall( const std::string & name , const G::Path & bat , const G::Path & wrapper_exe )
 {
 	// create an unused config file -- the user can edit it for a manual service install
 	bool do_throw = false ;
@@ -85,17 +85,17 @@ bool Gui::Boot::uninstall( const G::Path & , const std::string & name , const G:
 	return ::service_remove(name).empty() ;
 }
 
-bool Gui::Boot::installed( const G::Path & , const std::string & name )
+bool Gui::Boot::installed( const std::string & name )
 {
 	return ::service_installed( name ) ;
 }
 
-bool Gui::Boot::launchable( const G::Path & dir , const std::string & )
+bool Gui::Boot::launchable( const std::string & )
 {
-	return installable( dir ) ;
+	return installable() ;
 }
 
-void Gui::Boot::launch( const G::Path & , const std::string & name )
+void Gui::Boot::launch( const std::string & name )
 {
 	std::string e = ::service_start( name ) ;
 	if( !e.empty() )

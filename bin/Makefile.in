@@ -94,7 +94,6 @@ subdir = bin
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acinclude.m4 \
 	$(top_srcdir)/m4/m4_ax_cxx_compile_stdcxx.m4 \
-	$(top_srcdir)/m4/m4_ax_cxx_compile_stdcxx_11.m4 \
 	$(top_srcdir)/m4/pkg.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -291,6 +290,7 @@ example_scripts_static = \
 	emailrelay-multicast.sh \
 	emailrelay-rot13.pl \
 	emailrelay-sendmail.pl \
+	emailrelay-set-message-id.js \
 	emailrelay-set-from.js \
 	emailrelay-set-from.pl
 
@@ -313,19 +313,6 @@ init_script_in = \
 init_script_out = \
 	emailrelay
 
-work_scripts = \
-	doxygen.sh \
-	make-manifest.sh \
-	make-setup.sh \
-	make-format \
-	make2cmake \
-	make2cdb \
-	make2unity \
-	AutoMakeParser.pm \
-	CompilationDatabase.pm \
-	ConfigStatus.pm \
-	winbuild.pm
-
 js_scripts = \
 	emailrelay-edit-content.js \
 	emailrelay-edit-envelope.js \
@@ -336,11 +323,9 @@ EXTRA_DIST = \
 	$(example_scripts_static) \
 	$(example_scripts_in) \
 	$(init_script_in) \
-	$(work_scripts) \
 	$(js_scripts)
 
 noinst_SCRIPTS = \
-	$(work_scripts) \
 	$(js_scripts)
 
 e_examples_DATA = \

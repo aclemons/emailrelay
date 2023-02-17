@@ -28,68 +28,48 @@
 #include "gassert.h"
 #include <sstream>
 
-GAuth::Secret::Secret()
-{
-	G_ASSERT( !valid() ) ;
-}
-
-GAuth::Secret::Secret( G::string_view id ) :
-	m_id(G::sv_to_string(id))
-{
-	G_ASSERT( !valid() ) ;
-}
-
-GAuth::Secret::Secret( G::string_view secret , G::string_view secret_encoding ,
-	G::string_view id , bool id_encoding_xtext , G::string_view context ) :
-		m_id(G::sv_to_string(id)) ,
+GAuth::Secret::Secret( Value id , Value secret , G::string_view hash_function ,
+	G::string_view context ) :
+		m_hash_function(G::Str::lower(hash_function)) ,
 		m_context(G::sv_to_string(context))
 {
-	G_ASSERT( secret_encoding == G::Str::lower(secret_encoding) ) ;
-	std::string reason = check( secret , secret_encoding , id , id_encoding_xtext ) ;
+	std::string reason = check( id , secret , m_hash_function ) ;
 	if( !reason.empty() )
 		throw context.empty() ? Error(reason) : Error(m_context,reason) ;
 
-	if( secret_encoding == "plain"_sv )
-	{
-		G_ASSERT( G::Xtext::valid(secret) ) ;
-		m_key = G::Xtext::decode( secret ) ;
-	}
-	else if( secret_encoding == "md5"_sv && isDotted(secret) )
-	{
-		m_key = undotted( secret ) ;
-		m_mask_type = G::sv_to_string( secret_encoding ) ;
-	}
-	else
-	{
-		G_ASSERT( G::Base64::valid(secret) ) ; // check()ed
-		m_key = G::Base64::decode( secret ) ;
-		m_mask_type = G::sv_to_string( secret_encoding ) ;
-	}
+	m_id = decode( id ) ;
+	m_secret = decode( secret ) ;
 }
 
-std::string GAuth::Secret::check( G::string_view secret , G::string_view secret_encoding ,
-	G::string_view id , bool id_encoding_xtext )
+GAuth::Secret::Secret() // private -- see Secret::none()
 {
-	if( secret.empty() )
-		return "empty secret" ;
-	if( secret_encoding.empty() || secret_encoding != G::Str::lower(secret_encoding) || !G::Str::isPrintableAscii(secret_encoding) )
-		return "invalid encoding type" ;
-	if( id.empty() )
+	G_ASSERT( !valid() ) ;
+}
+
+std::string GAuth::Secret::check( Value id , Value secret , G::string_view hash_function )
+{
+	if( id.first.empty() )
 		return "empty id" ;
-	if( id_encoding_xtext && !G::Xtext::valid(id) )
-		return "invalid xtext encoding of id" ;
-	if( secret_encoding == "plain"_sv && !G::Xtext::valid(secret) )
-		return "invalid xtext encoding of secret" ;
-	if( secret_encoding == "md5"_sv && !( isDotted(secret) || G::Base64::valid(secret) ) )
-		return "invalid encoding of md5 secret" ;
-	if( secret_encoding != "md5"_sv && secret_encoding != "plain"_sv && !G::Base64::valid(secret) )
-		return "invalid base64 encoding of secret" ;
-	return std::string() ;
-}
 
-GAuth::Secret GAuth::Secret::none( G::string_view id )
-{
-	return Secret( id ) ;
+	if( secret.first.empty() )
+		return "empty secret" ;
+
+	if( !validEncodingType(id) )
+		return "invalid encoding type for id" ;
+
+	if( !validEncodingType(secret) )
+		return "invalid encoding type for secret" ;
+
+	if( !validEncoding(id) )
+		return "invalid " + G::sv_to_string(id.second) + " encoding of id" ;
+
+	if( !validEncoding(secret) )
+		return "invalid " + G::sv_to_string(id.second) + " encoding of secret" ;
+
+	if( encoding(secret) == Encoding::dotted && !G::Str::imatch(hash_function,"md5"_sv) )
+		return "invalid use of dotted format" ;
+
+	return std::string() ;
 }
 
 GAuth::Secret GAuth::Secret::none()
@@ -99,18 +79,18 @@ GAuth::Secret GAuth::Secret::none()
 
 bool GAuth::Secret::valid() const
 {
-	return !m_key.empty() ;
+	return !m_secret.empty() ;
 }
 
-std::string GAuth::Secret::key() const
+std::string GAuth::Secret::secret() const
 {
 	if( !valid() ) throw Error() ;
-	return m_key ;
+	return m_secret ;
 }
 
 bool GAuth::Secret::masked() const
 {
-	return !m_mask_type.empty() ;
+	return !m_hash_function.empty() ;
 }
 
 std::string GAuth::Secret::id() const
@@ -119,16 +99,16 @@ std::string GAuth::Secret::id() const
 	return m_id ;
 }
 
-std::string GAuth::Secret::maskType() const
+std::string GAuth::Secret::maskHashFunction() const
 {
 	if( !valid() ) throw Error() ;
-	return m_mask_type ;
+	return m_hash_function ;
 }
 
 std::string GAuth::Secret::info( const std::string & id_in ) const
 {
 	std::ostringstream ss ;
-	ss << (valid()?(masked()?maskType():std::string("plaintext")):std::string("missing")) << " secret" ;
+	ss << (valid()?(masked()?maskHashFunction():std::string("plaintext")):std::string("missing")) << " secret" ;
 	std::string id_ = ( id_in.empty() && valid() ) ? m_id : id_in ;
 	if( !id_.empty() )
 	{
@@ -169,5 +149,50 @@ std::string GAuth::Secret::undotted( G::string_view s )
 		}
 	}
 	return result ;
+}
+
+bool GAuth::Secret::validEncodingType( Value value )
+{
+	return
+		value.second.empty() ||
+		G::Str::imatch( value.second , "xtext"_sv ) ||
+		G::Str::imatch( value.second , "base64"_sv ) ||
+		G::Str::imatch( value.second , "dotted"_sv ) ;
+}
+
+GAuth::Secret::Encoding GAuth::Secret::encoding( Value value )
+{
+	if( value.second.empty() )
+		return Encoding::raw ;
+	else if( G::Str::imatch( value.second , "xtext"_sv ) )
+		return Encoding::xtext ;
+	else if( G::Str::imatch( value.second , "dotted"_sv ) )
+		return Encoding::dotted ;
+	else
+		return Encoding::base64 ;
+}
+
+bool GAuth::Secret::validEncoding( Value value )
+{
+	if( encoding(value) == Encoding::raw )
+		return true ;
+	else if( encoding(value) == Encoding::xtext )
+		return G::Xtext::valid( value.first ) ;
+	else if( encoding(value) == Encoding::dotted )
+		return isDotted( value.first ) ;
+	else
+		return G::Base64::valid( value.first ) ;
+}
+
+std::string GAuth::Secret::decode( Value value )
+{
+	if( encoding(value) == Encoding::raw )
+		return G::sv_to_string( value.first ) ;
+	else if( encoding(value) == Encoding::xtext )
+		return G::Xtext::decode( value.first ) ;
+	else if( encoding(value) == Encoding::dotted )
+		return undotted( value.first ) ;
+	else
+		return G::Base64::decode( value.first ) ;
 }
 

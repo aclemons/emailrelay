@@ -23,84 +23,76 @@
 #include "gpath.h"
 #include "gfile.h"
 #include "gdirectory.h"
+#include "genvironment.h"
 #include "gstrmacros.h"
 
-#ifndef G_SBINDIR
-	#define G_SBINDIR
-#endif
-#ifndef G_LIBEXECDIR
-	#define G_LIBEXECDIR
-#endif
-#ifndef G_EXAMPLESDIR
-	#define G_EXAMPLESDIR
-#endif
 #ifndef G_SYSCONFDIR
 	#define G_SYSCONFDIR
-#endif
-#ifndef G_MANDIR
-	#define G_MANDIR
-#endif
-#ifndef G_DOCDIR
-	#define G_DOCDIR
 #endif
 #ifndef G_SPOOLDIR
 	#define G_SPOOLDIR
 #endif
-#ifndef G_INITDIR
-	#define G_INITDIR
-#endif
 
-std::string Gui::Dir::rebase( const std::string & dir )
+namespace Gui
 {
-	static bool use_root = ok( "/Applications" ) ;
-	return (use_root?"":"~") + dir ;
+	namespace DirImp
+	{
+		bool ok( const std::string & s ) ;
+		std::string rebase( const std::string & dir ) ;
+		G::Path envPath( const std::string & key , const G::Path & default_ ) ;
+	}
 }
 
-G::Path Gui::Dir::os_install()
+G::Path Gui::Dir::install()
 {
 	// user expects to say "/Applications" or "~/Applications"
-	return rebase( "/Applications" ) ;
+	return DirImp::rebase( "/Applications" ) ;
 }
 
-G::Path Gui::Dir::os_config()
+G::Path Gui::Dir::config()
 {
 	std::string sysconfdir( G_STR(G_SYSCONFDIR) ) ;
 	if( sysconfdir.empty() )
-		sysconfdir = rebase( "/Applications/E-MailRelay" ) ;
+		sysconfdir = DirImp::rebase( "/Applications/E-MailRelay" ) ;
 	return sysconfdir ;
 }
 
-G::Path Gui::Dir::os_spool()
+G::Path Gui::Dir::spool()
 {
 	std::string spooldir( G_STR(G_SPOOLDIR) ) ;
 	if( spooldir.empty() )
-		spooldir = rebase( "/Applications/E-MailRelay/Spool" ) ;
+		spooldir = DirImp::rebase( "/Applications/E-MailRelay/Spool" ) ;
 	return spooldir ;
 }
 
-G::Path Gui::Dir::os_pid( const G::Path & )
+G::Path Gui::Dir::pid( const G::Path & )
 {
-	return ok("/var/run") ? "/var/run" : "/tmp" ;
+	return DirImp::ok("/var/run") ? "/var/run" : "/tmp" ;
 }
 
-G::Path Gui::Dir::special( const std::string & type )
+G::Path Gui::Dir::desktop()
 {
-	if( type == "desktop" ) return home()+"Desktop" ;
-	if( type == "menu" ) return G::Path() ;
-	if( type == "autostart" ) return G::Path() ;
-	if( type == "programs" ) return G::Path() ;
+	return home() + "Desktop" ;
+}
+
+G::Path Gui::Dir::menu()
+{
 	return G::Path() ;
 }
 
-G::Path Gui::Dir::os_boot()
+G::Path Gui::Dir::autostart()
 {
-	std::string s( G_STR(G_INITDIR) ) ;
-	if( !s.empty() )
-		return s ;
-	return "/Library/StartupItems" ;
+	return G::Path() ;
 }
 
-bool Gui::Dir::ok( const std::string & s )
+G::Path Gui::Dir::home()
+{
+	return DirImp::envPath( "HOME" , "~" ) ;
+}
+
+// ==
+
+bool Gui::DirImp::ok( const std::string & s )
 {
 	return
 		!s.empty() &&
@@ -109,8 +101,14 @@ bool Gui::Dir::ok( const std::string & s )
 		G::Directory(G::Path(s)).writeable() ;
 }
 
-G::Path Gui::Dir::home()
+std::string Gui::DirImp::rebase( const std::string & dir )
 {
-	return envPath( "HOME" , "~" ) ;
+	static bool use_root = DirImp::ok( "/Applications" ) ;
+	return (use_root?"":"~") + dir ;
+}
+
+G::Path Gui::DirImp::envPath( const std::string & key , const G::Path & default_ )
+{
+	return G::Path( G::Environment::get( key , default_.str() ) ) ;
 }
 

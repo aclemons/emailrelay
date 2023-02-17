@@ -34,16 +34,21 @@
 #include "resource.h"
 #include <cstring>
 
-Main::WinForm::WinForm( HINSTANCE hinstance , const Main::Configuration & cfg ,
+Main::WinForm::WinForm( HINSTANCE hinstance , const G::StringArray & cfg_data ,
 	HWND parent , HWND hnotify , std::pair<DWORD,DWORD> style ,
 	bool allow_apply , bool with_icon , bool with_system_menu_quit ) :
 		GGui::Stack(*this,hinstance,style) ,
 		m_hnotify(hnotify) ,
 		m_allow_apply(allow_apply) ,
 		m_closed(false) ,
-		m_cfg(cfg)
+		m_cfg_data(cfg_data)
 {
 	using G::txt ;
+
+	m_cfg_data.insert( m_cfg_data.begin() , "Value" ) ;
+	m_cfg_data.insert( m_cfg_data.begin() , "Key" ) ;
+	m_cfg_data.push_back( "tls library" ) ;
+	m_cfg_data.push_back( GSsl::Library::ids() ) ;
 
   	addPage( txt("Configuration") , IDD_PROPPAGE_1 ) ;
   	addPage( txt("Licence") , IDD_PROPPAGE_1 ) ;
@@ -112,7 +117,7 @@ void Main::WinForm::onInit( HWND hdialog , int index )
 	if( index == 0 ) // "Configuration"
 	{
 		m_cfg_view = std::make_unique<GGui::ListView>( hdialog , IDC_LIST1 ) ;
-  		m_cfg_view->set( cfgData() , 2U , 150U ) ;
+  		m_cfg_view->set( m_cfg_data , 2U , 150U ) ;
 	}
 	else if( index == 1 ) // "Licence"
 	{
@@ -146,15 +151,15 @@ void Main::WinForm::setStatus( const std::string & category , const std::string 
 	G_DEBUG( "Main::WinForm::setStatus: [" << category << "] [" << s1 << "] [" << s2 << "]" ) ;
 	G_DEBUG( "Main::WinForm::setStatus: time=[" << G::Time(G::Time::LocalTime()).hhmmss(":") << "]" ) ;
 
-	// forward,{start|end,<error>}
-	// client,{sending,<message>|sent,<message>,<error>|resolving,<location>|connecting,<address>|connected,<address>}
-	// network,{in|out},{start|end}
+	// forward {start|end <error>}
+	// client {connecting|resolving|connected|sending|sent <msg> <error>}
+	// network {in|out} {start|end}
 	//
-	if( ( category == "poll" || category == "forward" ) && s1 == "start" )
+	if( category == "forward" && s1 == "start" )
 	{
 		m_status_map["Forwarding"] = std::make_pair( timestamp() , "started" ) ;
 	}
-	else if( ( category == "poll" || category == "forward" ) && s1 == "end" )
+	else if( category == "forward" && s1 == "end" )
 	{
 		std::string reason = G::Str::printable( s2 ) ;
 		m_status_map["Forwarding"] = std::make_pair( timestamp() ,
@@ -215,16 +220,6 @@ G::StringArray Main::WinForm::licenceData() const
 	add( s , "GPLv3" ) ;
 	for( const char **p = licence ; *p ; p++ )
 		add( s , *p ) ;
-	return s ;
-}
-
-G::StringArray Main::WinForm::cfgData() const
-{
-	G::StringArray s = m_cfg.display() ;
-	s.insert( s.begin() , "Value" ) ;
-	s.insert( s.begin() , "Key" ) ;
-	s.push_back( "tls library" ) ;
-	s.push_back( GSsl::Library::ids() ) ;
 	return s ;
 }
 

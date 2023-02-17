@@ -72,13 +72,13 @@ namespace GAuth
 			{
 				GSsl::Digester d( CramImp::lib().digester(m_name,std::string(),true) ) ;
 				if( d.statesize() == 0U )
-					throw GAuth::Cram::NoState( m_name ) ;
+					throw Cram::NoState( m_name ) ;
 				m_valuesize = d.valuesize() ;
 				m_blocksize = d.blocksize() ;
 			}
 			std::string operator()( const std::string & state_pair , const std::string & data ) const
 			{
-				if( state_pair.size() != (2U*m_valuesize) ) throw GAuth::Cram::InvalidState( m_name ) ;
+				if( state_pair.size() != (2U*m_valuesize) ) throw Cram::InvalidState( m_name ) ;
 				std::string state_i = state_pair.substr( 0U , state_pair.size()/2U ) + G::HashStateImp::extension(m_blocksize) ;
 				std::string state_o = state_pair.substr( state_pair.size()/2U ) + G::HashStateImp::extension(m_blocksize) ;
 				GSsl::Digester xi( CramImp::lib().digester( m_name , state_i ) ) ;
@@ -101,8 +101,8 @@ std::string GAuth::Cram::response( G::string_view hash_type , bool as_hmac ,
 	{
 		G_DEBUG( "GAuth::Cram::response: [" << hash_type << "]"
 			<< "[" << as_hmac << "]"
-			<< "[" << G::Str::printable(secret.key()) << "]"
-			<< "[" << secret.maskType() << "][" << challenge << "]"
+			<< "[" << G::Str::printable(secret.secret()) << "]"
+			<< "[" << secret.maskHashFunction() << "][" << challenge << "]"
 			<< "[" << G::Str::printable(id_prefix) << "]"
 			<< "[" << responseImp(hash_type,as_hmac,secret,challenge) << "]" ) ;
 
@@ -123,8 +123,8 @@ bool GAuth::Cram::validate( G::string_view hash_type , bool as_hmac ,
 	{
 		G_DEBUG( "GAuth::Cram::validate: [" << hash_type << "]"
 			<< "[" << as_hmac << "]"
-			<< "[" << G::Str::printable(secret.key()) << "]"
-			<< "[" << secret.maskType() << "]"
+			<< "[" << G::Str::printable(secret.secret()) << "]"
+			<< "[" << secret.maskHashFunction() << "]"
 			<< "[" << challenge << "]"
 			<< "[" << response_in << "]"
 			<< "[" << responseImp(hash_type,as_hmac,secret,challenge) << "]" ) ;
@@ -150,49 +150,49 @@ std::string GAuth::Cram::responseImp( G::string_view mechanism_hash_type , bool 
 	const Secret & secret , G::string_view challenge )
 {
 	G_DEBUG( "GAuth::Cram::responseImp: mechanism-hash=[" << mechanism_hash_type << "] "
-		<< "secret-hash=[" << secret.maskType() << "] "
+		<< "secret-hash=[" << secret.maskHashFunction() << "] "
 		<< "as-hmac=" << as_hmac ) ;
 
 	if( !as_hmac )
 	{
 		if( secret.masked() )
-			throw BadType( secret.maskType() ) ;
+			throw BadType( secret.maskHashFunction() ) ;
 
-		if( mechanism_hash_type == "MD5"_sv )
+		if( G::Str::imatch( mechanism_hash_type , "MD5"_sv ) )
 		{
-			return G::Hash::printable( G::Md5::digest(challenge,secret.key()) ) ;
+			return G::Hash::printable( G::Md5::digest(challenge,secret.secret()) ) ;
 		}
 		else
 		{
 			CramImp::DigesterAdaptor digest( mechanism_hash_type ) ;
-			return G::Hash::printable( digest(challenge,secret.key()) ) ;
+			return G::Hash::printable( digest(challenge,secret.secret()) ) ;
 		}
 	}
 	else if( secret.masked() )
 	{
-		if( ! G::Str::imatch(secret.maskType(),mechanism_hash_type) )
-			throw Mismatch( secret.maskType() , G::sv_to_string(mechanism_hash_type) ) ;
+		if( ! G::Str::imatch(secret.maskHashFunction(),mechanism_hash_type) )
+			throw Mismatch( secret.maskHashFunction() , G::sv_to_string(mechanism_hash_type) ) ;
 
-		if( mechanism_hash_type == "MD5"_sv )
+		if( G::Str::imatch( mechanism_hash_type , "MD5"_sv ) )
 		{
-			return G::Hash::printable( G::Hash::hmac(G::Md5::postdigest,secret.key(),G::sv_to_string(challenge),G::Hash::Masked()) ) ;
+			return G::Hash::printable( G::Hash::hmac(G::Md5::postdigest,secret.secret(),G::sv_to_string(challenge),G::Hash::Masked()) ) ;
 		}
 		else
 		{
 			CramImp::PostDigesterAdaptor postdigest( mechanism_hash_type ) ;
-			return G::Hash::printable( G::Hash::hmac(postdigest,secret.key(),G::sv_to_string(challenge),G::Hash::Masked()) ) ;
+			return G::Hash::printable( G::Hash::hmac(postdigest,secret.secret(),G::sv_to_string(challenge),G::Hash::Masked()) ) ;
 		}
 	}
 	else
 	{
-		if( mechanism_hash_type == "MD5"_sv )
+		if( G::Str::imatch( mechanism_hash_type , "MD5"_sv ) )
 		{
-			return G::Hash::printable( G::Hash::hmac(G::Md5::digest2,G::Md5::blocksize(),secret.key(),G::sv_to_string(challenge)) ) ;
+			return G::Hash::printable( G::Hash::hmac(G::Md5::digest2,G::Md5::blocksize(),secret.secret(),G::sv_to_string(challenge)) ) ;
 		}
 		else
 		{
 			CramImp::DigesterAdaptor digest( mechanism_hash_type ) ;
-			return G::Hash::printable( G::Hash::hmac(digest,digest.blocksize(),secret.key(),G::sv_to_string(challenge)) ) ;
+			return G::Hash::printable( G::Hash::hmac(digest,digest.blocksize(),secret.secret(),G::sv_to_string(challenge)) ) ;
 		}
 	}
 }
@@ -223,11 +223,12 @@ G::StringArray GAuth::Cram::hashTypes( G::string_view prefix , bool require_stat
 	return result ;
 }
 
-std::string GAuth::Cram::challenge( unsigned int random )
+std::string GAuth::Cram::challenge( unsigned int random , const std::string & challenge_domain_in )
 {
+	std::string challenge_domain = challenge_domain_in.empty() ? GNet::Local::canonicalName() : challenge_domain_in ;
 	return std::string(1U,'<')
 		.append(std::to_string(random)).append(1U,'.')
 		.append(std::to_string(G::SystemTime::now().s())).append(1U,'@')
-		.append(GNet::Local::canonicalName()).append(1U,'>') ;
+		.append(challenge_domain).append(1U,'>') ;
 }
 

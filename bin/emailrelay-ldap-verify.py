@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (C) 2020-2022 <richardwvm@users.sourceforge.net>
+# Copyright (C) 2020-2023 <richardwvm@users.sourceforge.net>
 # 
 # Copying and distribution of this file, with or without modification,
 # are permitted in any medium without royalty provided the copyright
@@ -11,6 +11,8 @@
 # emailrelay-ldap-verify.py
 #
 # Example address verifier script using LDAP.
+#
+# See also: https://www.python-ldap.org/en/python-ldap-3.3.0
 #
 
 import sys

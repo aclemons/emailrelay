@@ -36,6 +36,16 @@ pre.fragment
 {
 }
 
+pre.fragment a
+{
+	color: black ;
+}
+
+pre.fragment a:visited
+{
+	color: black ;
+}
+
 code
 {
 	/* font-weight: bold ; */

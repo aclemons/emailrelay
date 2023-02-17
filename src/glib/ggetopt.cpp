@@ -20,23 +20,27 @@
 
 #include "gdef.h"
 #include "ggetopt.h"
-#include "gmapfile.h"
 #include "goptions.h"
 #include "goptionvalue.h"
 #include "goptionparser.h"
+#include "goptionreader.h"
 #include "gstr.h"
 #include "gstringmap.h"
+#include "gstringtoken.h"
+#include "gfile.h"
 #include "gassert.h"
 #include "glog.h"
 #include <fstream>
 #include <algorithm>
 
+#ifndef G_LIB_SMALL
 G::GetOpt::GetOpt( const Arg & args_in , const std::string & spec , std::size_t ignore_non_options ) :
 	m_spec(spec) ,
 	m_args(args_in)
 {
 	parseArgs( ignore_non_options ) ;
 }
+#endif
 
 G::GetOpt::GetOpt( const Arg & args_in , const Options & spec , std::size_t ignore_non_options ) :
 	m_spec(spec) ,
@@ -45,27 +49,33 @@ G::GetOpt::GetOpt( const Arg & args_in , const Options & spec , std::size_t igno
 	parseArgs( ignore_non_options ) ;
 }
 
-G::GetOpt::GetOpt( const G::StringArray & args_in , const std::string & spec , std::size_t ignore_non_options ) :
+#ifndef G_LIB_SMALL
+G::GetOpt::GetOpt( const StringArray & args_in , const std::string & spec , std::size_t ignore_non_options ) :
 	m_spec(spec) ,
 	m_args(args_in)
 {
 	parseArgs( ignore_non_options ) ;
 }
+#endif
 
-G::GetOpt::GetOpt( const G::StringArray & args_in , const Options & spec , std::size_t ignore_non_options ) :
+#ifndef G_LIB_SMALL
+G::GetOpt::GetOpt( const StringArray & args_in , const Options & spec , std::size_t ignore_non_options ) :
 	m_spec(spec) ,
 	m_args(args_in)
 {
 	parseArgs( ignore_non_options ) ;
 }
+#endif
 
-void G::GetOpt::reload( const G::StringArray & args_in , std::size_t ignore_non_options )
+#ifndef G_LIB_SMALL
+void G::GetOpt::reload( const StringArray & args_in , std::size_t ignore_non_options )
 {
 	m_map.clear() ;
 	m_errors.clear() ;
 	m_args = Arg( args_in ) ;
 	parseArgs( ignore_non_options ) ;
 }
+#endif
 
 void G::GetOpt::parseArgs( std::size_t ignore_non_options )
 {
@@ -74,19 +84,22 @@ void G::GetOpt::parseArgs( std::size_t ignore_non_options )
 	m_args = Arg( new_args ) ;
 }
 
-bool G::GetOpt::addOptionsFromFile( std::size_t n , const StringArray & block )
+#ifndef G_LIB_SMALL
+bool G::GetOpt::addOptionsFromFile( std::size_t n , const StringArray & blocklist )
 {
 	if( n < m_args.c() )
 	{
 		G::Path path = m_args.v( n ) ;
-		if( std::find( block.begin() , block.end() , path.extension() ) != block.end() )
+		if( std::find( blocklist.begin() , blocklist.end() , path.extension() ) != blocklist.end() )
 			return false ;
 		m_args.removeAt( n ) ;
 		addOptionsFromFile( path ) ;
 	}
 	return true ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 void G::GetOpt::addOptionsFromFile( std::size_t n , const std::string & varkey , const std::string & varvalue )
 {
 	if( n < m_args.c() )
@@ -102,26 +115,16 @@ void G::GetOpt::addOptionsFromFile( std::size_t n , const std::string & varkey ,
 		}
 	}
 }
+#endif
 
-G::StringArray G::GetOpt::optionsFromFile( const Options & spec , const Path & filename )
+G::StringArray G::GetOpt::readOptionsFromFile( const Path & filename )
 {
-	StringArray result ;
-	StringMap map = MapFile(filename,"config").map() ;
-	for( const auto & map_item : map )
-	{
-		const std::string & key = map_item.first ;
-		const std::string & value = map_item.second ;
-		if( spec.valued(key) )
-			result.push_back( std::string("--").append(key).append(1U,'=').append(value) ) ;
-		else
-			result.push_back( std::string("--").append(key) ) ;
-	}
-	return result ;
+	return OptionReader::read( filename ) ;
 }
 
-void G::GetOpt::addOptionsFromFile( const G::Path & filename )
+void G::GetOpt::addOptionsFromFile( const Path & filename )
 {
-	OptionParser::parse( optionsFromFile(m_spec,filename) , m_spec , m_map , &m_errors , 0U ) ;
+	OptionParser::parse( readOptionsFromFile(filename) , m_spec , m_map , &m_errors , 0U ) ;
 }
 
 const std::vector<G::Option> & G::GetOpt::options() const
@@ -129,15 +132,19 @@ const std::vector<G::Option> & G::GetOpt::options() const
 	return m_spec.list() ;
 }
 
+#ifndef G_LIB_SMALL
 const G::OptionMap & G::GetOpt::map() const
 {
 	return m_map ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 G::StringArray G::GetOpt::errorList() const
 {
 	return m_errors ;
 }
+#endif
 
 bool G::GetOpt::contains( char c ) const
 {
@@ -149,20 +156,29 @@ bool G::GetOpt::contains( string_view name ) const
 	return m_map.contains( name ) ;
 }
 
+#ifndef G_LIB_SMALL
 std::size_t G::GetOpt::count( string_view name ) const
 {
 	return m_map.count( name ) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 std::string G::GetOpt::value( char c , string_view default_ ) const
 {
 	G_ASSERT( contains(c) ) ;
 	return value( m_spec.lookup(c) , default_ ) ;
 }
+#endif
 
 std::string G::GetOpt::value( string_view name , string_view default_ ) const
 {
 	return m_map.value( name , default_ ) ;
+}
+
+G::optional<std::string> G::GetOpt::optional( string_view name ) const
+{
+	return G::optional<std::string>( m_map.contains(name) , value(name) ) ;
 }
 
 G::Arg G::GetOpt::args() const

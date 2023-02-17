@@ -41,6 +41,8 @@ namespace GNet
 
 //| \class GNet::Interfaces
 /// A class for getting a list of network interfaces and their addresses.
+/// An InterfacesHandler interface can be supplied to the constructor
+/// in order to get dynamic updates.
 ///
 class GNet::Interfaces : public EventHandler , public FutureEventHandler
 {
@@ -49,14 +51,14 @@ public:
 	{
 		std::string name ; // interface name
 		std::string altname ; // windows friendly name, utf8
-		int ifindex{0} ; // interface 1-based index, 0 on error, family-specific on windows
-		unsigned int address_family{0} ;
-		bool valid_address{false} ;
+		int ifindex {0} ; // interface 1-based index, 0 on error, family-specific on windows
+		unsigned int address_family {0} ;
+		bool valid_address {false} ;
 		Address address ;
-		bool has_netmask{false} ;
-		unsigned int netmask_bits{0U} ;
-		bool up{false} ;
-		bool loopback{false} ;
+		bool has_netmask {false} ;
+		unsigned int netmask_bits {0U} ;
+		bool up {false} ;
+		bool loopback {false} ;
 		Item() ;
 	} ;
 	using const_iterator = std::vector<Item>::const_iterator ;
@@ -67,7 +69,7 @@ public:
 
 	Interfaces( ExceptionSink , InterfacesHandler & ) ;
 		///< Constructor resulting in an empty list with an
-		///< attached event handler. Use load() or find() to
+		///< attached event handler. Use load() or addresses() to
 		///< initialise the list and activate the event
 		///< listener.
 
@@ -97,32 +99,13 @@ public:
 	const_iterator end() const ;
 		///< Returns a one-off-the-end iterator.
 
-	std::vector<Address> find( const std::string & name , unsigned int port ,
-		bool allow_decoration = true ) const ;
-			///< Finds the named interface and returns its addresses
-			///< if it is up. If the decoration flag is used and the name
-			///< is decorated with "-ipv4" or "-ipv6" then only those
-			///< addresses are returned. The returned addresses all have
-			///< the given port number. Returns the empty list if not
-			///< found or if found but not up. Does lazy load()ing.
+	std::vector<Address> addresses( const std::string & name , unsigned int port , int af = AF_UNSPEC ) const ;
+		///< Returns addresses bound to the given interface.
+		///< Does a lazy load().
 
-	std::vector<Address> addresses( const G::StringArray & names , unsigned int port ,
-		G::StringArray * used_names_out = nullptr ,
-		G::StringArray * empty_names_out = nullptr ,
-		G::StringArray * bad_names_out = nullptr ) const ;
-			///< Treats each name given as an address or interface name and
-			///< returns the total set of addresses. Returns by reference
-			///< (1) names that are, or have, addresses, (2) names that might
-			///< be interfaces with no bound addresses, and (3) the remainder,
-			///< ie. names that are not addresses and cannot be a valid
-			///< interface name.
-
-	void addresses( const std::string & name , unsigned int port ,
-		std::vector<GNet::Address> & address_out ,
-		G::StringArray * used_names_out = nullptr ,
-		G::StringArray * empty_names_out = nullptr ,
-		G::StringArray * bad_names_out = nullptr ) const ;
-			///< An overload for a single name.
+	std::size_t addresses( std::vector<Address> & out , const std::string & name , unsigned int port , int af = AF_UNSPEC ) const ;
+		///< An overload that appends to the given list and returns
+		///< the number added.
 
 private: // overrides
 	void readEvent() override ; // GNet::EventHandler

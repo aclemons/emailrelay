@@ -158,7 +158,7 @@ public:
 
 	DirectoryList() ;
 		///< Default constructor for an empty list. Initialise with one
-		///< of the two read methods to do all the file i/o in one go.
+		///< of the three read methods to do all the file i/o in one go.
 
 	void readAll( const Path & dir ) ;
 		///< An initialiser that is to be used after default construction.
@@ -168,6 +168,9 @@ public:
 		///< An initialiser that is to be used after default
 		///< construction. Reads all files that have the given
 		///< suffix (unsorted).
+
+	void readDirectories( const Path & dir , unsigned int limit = 0U ) ;
+		///< An initialiser that reads all sub-directories.
 
 	bool more() ;
 		///< Returns true if more and advances by one.
@@ -189,6 +192,9 @@ public:
 	static void readAll( const Path & dir , std::vector<Item> & out ) ;
 		///< A static overload returning by reference a collection
 		///< of Items, sorted by name.
+
+private:
+	void readImp( const Path & , bool , string_view , unsigned int ) ;
 
 private:
 	bool m_first{true} ;

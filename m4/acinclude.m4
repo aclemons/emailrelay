@@ -21,6 +21,7 @@ AC_DEFUN([GCONFIG_FN_CHECK_CXX],[
 	AC_REQUIRE([GCONFIG_FN_CXX_ALIGNMENT])
 	AC_REQUIRE([GCONFIG_FN_CXX_MAKE_UNIQUE])
 	AC_REQUIRE([GCONFIG_FN_CXX_STD_THREAD])
+	AC_REQUIRE([GCONFIG_FN_CXX_STRING_VIEW])
 ])
 
 dnl GCONFIG_FN_CHECK_FUNCTIONS
@@ -316,6 +317,62 @@ AC_DEFUN([GCONFIG_FN_CXX_STD_THREAD],
 	GCONFIG_FN_CXX_STD_THREAD_IMP([std::thread_asynchronous_script_execution])
 ])
 
+dnl GCONFIG_FN_CXX_STRING_VIEW
+dnl --------------------------
+dnl Tests for std::string_view.
+dnl
+AC_DEFUN([GCONFIG_FN_CXX_STRING_VIEW],
+[AC_CACHE_CHECK([for c++ std::string_view],[gconfig_cv_cxx_string_view],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#include <string_view>]
+			[std::string_view sv("sv") ;]
+		],
+		[
+		])],
+		gconfig_cv_cxx_string_view=yes ,
+		gconfig_cv_cxx_string_view=no )
+])
+	if test "$gconfig_cv_cxx_string_view" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_CXX_STRING_VIEW,1,[Define true if compiler supports c++ string_view])
+	else
+		AC_DEFINE(GCONFIG_HAVE_CXX_STRING_VIEW,0,[Define true if compiler supports c++ string_view])
+	fi
+])
+
+dnl GCONFIG_FN_ENABLE_EXTRA_FILTERS
+dnl -------------------------------
+dnl Enables extra built-in filters.
+dnl
+AC_DEFUN([GCONFIG_FN_ENABLE_EXTRA_FILTERS],
+[
+	if test "$enable_all_filters" = "yes"
+	then
+		AC_DEFINE(GCONFIG_FILTER_MASK,65535,[Bitmask of built-in filters])
+		AM_CONDITIONAL([GCONFIG_EXTRA_FILTERS],[true])
+	else
+		AC_DEFINE(GCONFIG_FILTER_MASK,0,[Bitmask of built-in filters])
+		AM_CONDITIONAL([GCONFIG_EXTRA_FILTERS],[false])
+	fi
+])
+
+dnl GCONFIG_FN_ENABLE_EXTRA_VERIFIERS
+dnl ---------------------------------
+dnl Enables extra built-in address verifiers.
+dnl
+AC_DEFUN([GCONFIG_FN_ENABLE_EXTRA_VERIFIERS],
+[
+	if test "$enable_all_verifiers" = "yes"
+	then
+		AC_DEFINE(GCONFIG_VERIFIER_MASK,65535,[Bitmask of built-in address-verifiers])
+		AM_CONDITIONAL([GCONFIG_EXTRA_VERIFIERS],[true])
+	else
+		AC_DEFINE(GCONFIG_VERIFIER_MASK,0,[Bitmask of built-in address-verifiers])
+		AM_CONDITIONAL([GCONFIG_EXTRA_VERIFIERS],[false])
+	fi
+])
+
 dnl GCONFIG_FN_ENABLE_BSD
 dnl ---------------------
 dnl Enables bsd tweaks if "--enable-bsd" is used. Typically used after
@@ -465,6 +522,23 @@ dnl
 AC_DEFUN([GCONFIG_FN_ENABLE_MAC],
 [
 	AM_CONDITIONAL([GCONFIG_MAC],test "$enable_mac" = "yes" -o "`uname`" = "Darwin")
+])
+
+dnl GCONFIG_FN_ENABLE_POP
+dnl ---------------------
+dnl Disables POP if "--disable-pop" is used.
+dnl Typically used after AC_ARG_ENABLE(pop).
+dnl
+AC_DEFUN([GCONFIG_FN_ENABLE_POP],
+[
+	if test "$enable_pop" = "no"
+	then
+		gconfig_use_pop="no"
+	else
+		gconfig_use_pop="yes"
+	fi
+
+	AM_CONDITIONAL([GCONFIG_POP],test "$gconfig_use_pop" = "yes")
 ])
 
 dnl GCONFIG_FN_ENABLE_STD_THREAD

@@ -59,10 +59,14 @@ public:
 	using RR = DnsMessageRR ;
 
 	explicit DnsMessage( const std::vector<char> & buffer ) ;
-		///< Constructor.
+		///< Constructor. Check with valid().
 
 	DnsMessage( const char * , std::size_t ) ;
-		///< Constructor.
+		///< Constructor. Check with valid().
+
+	bool valid() const ;
+		///< Returns true if the message data is big enough
+		///< for a header and its TC() flag is false.
 
 	std::vector<Address> addresses() const ;
 		///< Returns the Answer addresses.
@@ -110,6 +114,9 @@ public:
 		///< Returns the header ARCOUNT field, ie. the number of
 		///< RR records in the Additional section.
 
+	unsigned int recordCount() const ;
+		///< Returns QDCOUNT()+ANCOUNT()+NSCOUNT()+ARCOUNT().
+
 	Question question( unsigned int n ) const ;
 		///< Returns the n'th record as a Question record.
 		///< Precondition: n < QDCOUNT()
@@ -118,10 +125,12 @@ public:
 		///< Returns the n'th record as a RR record. The returned
 		///< object retains a reference to this DnsMessage, so
 		///< prefer rrAddress().
-		///< Precondition: n >= QDCOUNT() && n < (QDCOUNT()+ANCOUNT()+NSCOUNT()+ARCOUNT())
+		///< Precondition: n >= QDCOUNT() && n < recordCount()
 
 	Address rrAddress( unsigned int n ) const ;
-		///< Returns the address in the n'th record treated as a RR record.
+		///< Returns the address in the n'th record.
+		///< Throws if not A or AAAA.
+		///< Precondition: n >= QDCOUNT()
 
 	const char * p() const noexcept ;
 		///< Returns the raw data.
@@ -234,8 +243,14 @@ public:
 	std::string name() const ;
 		///< Returns the RR NAME.
 
-	Address address() const ;
+	Address address( unsigned int port = 0U ) const ;
 		///< Returns the Address if isa(A) or isa(AAAA).
+		///< Throws if not A or AAAA.
+
+	Address address( unsigned int port , std::nothrow_t ) const ;
+		///< Returns the Address if isa(A) or isa(AAAA).
+		///< Returns Address::defaultAddress() (with a zero
+		///< port number) if not valid.
 
 	const DnsMessageRRData & rdata() const ;
 		///< Provides access to the message RDATA.
@@ -250,6 +265,7 @@ private:
 	unsigned int rdataSize() const ;
 	unsigned int rdataByte( unsigned int offset ) const ;
 	unsigned int rdataWord( unsigned int offset ) const ;
+	GNet::Address addressImp( unsigned int port , bool & ok ) const ;
 
 private:
 	const DnsMessage & m_msg ;
@@ -373,6 +389,12 @@ inline
 unsigned int GNet::DnsMessageRRData::word( unsigned int offset ) const
 {
 	return static_cast<const DnsMessageRR *>(this)->rdataWord( offset ) ;
+}
+
+inline
+unsigned int GNet::DnsMessage::recordCount() const
+{
+	return QDCOUNT() + ANCOUNT() + NSCOUNT() + ARCOUNT() ;
 }
 
 #endif

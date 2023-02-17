@@ -127,7 +127,7 @@ public:
 
 private:
 	using ResultList = std::vector<DnsBlockServerResult> ;
-	Type m_type{Type::Inactive} ;
+	Type m_type {Type::Inactive} ;
 	std::size_t m_threshold{0U} ;
 	Address m_address ;
 	ResultList m_list ;
@@ -137,10 +137,9 @@ private:
 /// Implements DNS blocklisting, as per RFC-5782. The implementation
 /// sends DNS requests for each configured block-list server
 /// incorporating the IP address to be tested, for example
-/// "1.0.0.127.nospam.com" and "1.0.0.127.blockme.org". All requests
-/// go to the same DNS server and are cached or routed in the
-/// normal way, so the block-list servers are not contacted
-/// directly.
+/// "1.0.168.192.nospam.com". All requests go to the same DNS
+/// server and are cached or routed in the normal way, so the
+/// block-list servers are not contacted directly.
 ///
 class GNet::DnsBlock : private EventHandler
 {
@@ -191,6 +190,7 @@ private:
 	static std::string queryString( const Address & ) ;
 	static std::size_t countResponders( const ResultList & ) ;
 	static std::size_t countDeniers( const ResultList & ) ;
+	static Address nameServerAddress( const std::string & ) ;
 
 private:
 	DnsBlockCallback & m_callback ;

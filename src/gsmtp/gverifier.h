@@ -23,7 +23,7 @@
 
 #include "gdef.h"
 #include "gverifierstatus.h"
-#include "gaddress.h"
+#include "gbasicaddress.h"
 #include "gslot.h"
 #include "gexception.h"
 #include <string>
@@ -42,17 +42,30 @@ namespace GSmtp
 class GSmtp::Verifier
 {
 public:
-	virtual void verify( const std::string & rcpt_to_parameter ,
-		const std::string & mail_from_parameter , const GNet::Address & client_ip ,
-		const std::string & auth_mechanism , const std::string & auth_extra ) = 0 ;
+	enum class Command { VRFY , RCPT } ;
+	struct Info /// Extra information passed to GSmtp::Verifier::verify().
+	{
+		std::string mail_from_parameter ; // if RCPT, not VRFY
+		G::BasicAddress client_ip ;
+		std::string domain ;
+		std::string auth_mechanism ;
+		std::string auth_extra ;
+	} ;
+	struct Config /// Configuration passed to address verifier constructors.
+	{
+		unsigned int timeout {60U} ;
+		std::string domain ;
+		Config & set_timeout( unsigned int ) noexcept ;
+		Config & set_domain( const std::string & ) ;
+	} ;
+
+	virtual void verify( Command , const std::string & rcpt_to_parameter ,
+		const Info & ) = 0 ;
 			///< Checks a recipient address and asynchronously returns a
 			///< structure to indicate whether the address is a local
 			///< mailbox, what the full name is, and the canonical address.
-			///<
-			///< The 'mail-from' address is passed in for RCPT commands, but
-			///< not VRFY.
 
-	virtual G::Slot::Signal<const VerifierStatus&> & doneSignal() = 0 ;
+	virtual G::Slot::Signal<Command,const VerifierStatus&> & doneSignal() = 0 ;
 		///< Returns a signal that is emit()ed when the verify() request
 		///< is complete.
 
@@ -62,5 +75,8 @@ public:
 	virtual ~Verifier() = default ;
 		///< Destructor.
 } ;
+
+inline GSmtp::Verifier::Config & GSmtp::Verifier::Config::set_timeout( unsigned int n ) noexcept { timeout = n ; return *this ; }
+inline GSmtp::Verifier::Config & GSmtp::Verifier::Config::set_domain( const std::string & s ) { domain = s ; return *this ; }
 
 #endif

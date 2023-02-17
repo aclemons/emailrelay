@@ -29,8 +29,8 @@
 G::Root * G::Root::m_this = nullptr ;
 bool G::Root::m_initialised = false ;
 bool G::Root::m_fixed_group = false ;
-G::Identity G::Root::m_nobody( G::Identity::invalid() ) ; // noexcept
-G::Identity G::Root::m_startup( G::Identity::invalid() ) ; // noexcept
+G::Identity G::Root::m_nobody( G::Identity::invalid() ) ;
+G::Identity G::Root::m_startup( G::Identity::invalid() ) ;
 
 G::Root::Root() :
 	m_change_group(!m_fixed_group)
@@ -79,8 +79,9 @@ void G::Root::atExit( SignalSafe safe ) noexcept
 
 void G::Root::init( const std::string & nobody , bool fixed_group )
 {
-	m_nobody = Identity( nobody ) ;
-	m_startup = Process::beOrdinaryAtStartup( m_nobody , !fixed_group ) ;
+	auto pair = Process::beOrdinaryAtStartup( nobody , !fixed_group ) ;
+	m_nobody = pair.first ;
+	m_startup = pair.second ;
 	m_fixed_group = fixed_group ;
 	m_initialised = true ;
 }

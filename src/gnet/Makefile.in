@@ -93,7 +93,6 @@ subdir = src/gnet
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acinclude.m4 \
 	$(top_srcdir)/m4/m4_ax_cxx_compile_stdcxx.m4 \
-	$(top_srcdir)/m4/m4_ax_cxx_compile_stdcxx_11.m4 \
 	$(top_srcdir)/m4/pkg.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -110,59 +109,37 @@ am__v_AR_0 = @echo "  AR      " $@;
 am__v_AR_1 = 
 libgnet_a_AR = $(AR) $(ARFLAGS)
 libgnet_a_LIBADD =
-am__libgnet_a_SOURCES_DIST = gdnsbl.h gdnsbl_disabled.cpp \
-	gdnsbl_enabled.cpp gdnsblock.h gdnsblock.cpp gdnsmessage.h \
-	gdnsmessage.cpp geventloop_select.cpp geventloop_epoll.cpp \
-	geventloop_win32.cpp geventloophandles.h geventloophandles.cpp \
-	ginterfaces_none.cpp ginterfaces_unix.cpp \
-	ginterfaces_common.cpp ginterfaces_win32.cpp \
-	gdescriptor_unix.cpp gfutureevent_unix.cpp gsocket_unix.cpp \
-	gdescriptor_win32.cpp gfutureevent_win32.cpp gsocket_win32.cpp \
-	gaddresslocal_none.cpp gaddresslocal_unix.cpp gaddress.cpp \
-	gaddress.h gaddress4.h gaddress4.cpp gaddress6.h gaddress6.cpp \
-	gaddresslocal.h gclient.cpp gclient.h gclientptr.cpp \
-	gclientptr.h gconnection.cpp gconnection.h gdescriptor.h \
-	gevent.h geventemitter.cpp geventemitter.h geventhandler.cpp \
-	geventhandler.h geventloggingcontext.cpp \
+am__libgnet_a_SOURCES_DIST = gaddress.cpp gaddress.h gaddress4.h \
+	gaddress4.cpp gaddress6.h gaddress6.cpp gaddresslocal.h \
+	gclient.cpp gclient.h gclientptr.cpp gclientptr.h \
+	gconnection.cpp gconnection.h gdescriptor.h gdnsmessage.h \
+	gdnsmessage.cpp gevent.h geventemitter.cpp geventemitter.h \
+	geventhandler.cpp geventhandler.h geventloggingcontext.cpp \
 	geventloggingcontext.h geventloop.cpp geventloop.h \
 	gexceptionhandler.cpp gexceptionhandler.h gexceptionsink.cpp \
 	gexceptionsink.h gexceptionsource.cpp gexceptionsource.h \
 	gfutureevent.h ginterfaces.h glinebuffer.cpp glinebuffer.h \
 	glinestore.cpp glinestore.h glistener.h glocal.cpp glocal.h \
 	glocation.cpp glocation.h gmonitor.cpp gmonitor.h \
-	gmultiserver.cpp gmultiserver.h gnetdone.cpp gnetdone.h \
-	gresolver.cpp gresolver.h gresolverfuture.cpp \
+	gmultiserver.cpp gmultiserver.h gnameservers.h gnetdone.cpp \
+	gnetdone.h gresolver.cpp gresolver.h gresolverfuture.cpp \
 	gresolverfuture.h gserver.cpp gserver.h gserverpeer.cpp \
 	gserverpeer.h gsocket.h gsocket.cpp gsocketprotocol.cpp \
 	gsocketprotocol.h gsocks.cpp gsocks.h gtask.cpp gtask.h \
-	gtimer.cpp gtimer.h gtimerlist.cpp gtimerlist.h
-@GCONFIG_DNSBL_FALSE@am__objects_1 = gdnsbl_disabled.$(OBJEXT)
-@GCONFIG_DNSBL_TRUE@am__objects_1 = gdnsbl_enabled.$(OBJEXT) \
-@GCONFIG_DNSBL_TRUE@	gdnsblock.$(OBJEXT) gdnsmessage.$(OBJEXT)
-@GCONFIG_EPOLL_FALSE@@GCONFIG_WINDOWS_FALSE@am__objects_2 = geventloop_select.$(OBJEXT)
-@GCONFIG_EPOLL_TRUE@@GCONFIG_WINDOWS_FALSE@am__objects_2 = geventloop_epoll.$(OBJEXT)
-@GCONFIG_WINDOWS_TRUE@am__objects_2 = geventloop_win32.$(OBJEXT) \
-@GCONFIG_WINDOWS_TRUE@	geventloophandles.$(OBJEXT)
-@GCONFIG_INTERFACE_NAMES_FALSE@am__objects_3 =  \
-@GCONFIG_INTERFACE_NAMES_FALSE@	ginterfaces_none.$(OBJEXT)
-@GCONFIG_INTERFACE_NAMES_TRUE@@GCONFIG_WINDOWS_FALSE@am__objects_3 = ginterfaces_unix.$(OBJEXT) \
-@GCONFIG_INTERFACE_NAMES_TRUE@@GCONFIG_WINDOWS_FALSE@	ginterfaces_common.$(OBJEXT)
-@GCONFIG_INTERFACE_NAMES_TRUE@@GCONFIG_WINDOWS_TRUE@am__objects_3 = ginterfaces_common.$(OBJEXT) \
-@GCONFIG_INTERFACE_NAMES_TRUE@@GCONFIG_WINDOWS_TRUE@	ginterfaces_win32.$(OBJEXT)
-@GCONFIG_WINDOWS_FALSE@am__objects_4 = gdescriptor_unix.$(OBJEXT) \
-@GCONFIG_WINDOWS_FALSE@	gfutureevent_unix.$(OBJEXT) \
-@GCONFIG_WINDOWS_FALSE@	gsocket_unix.$(OBJEXT)
-@GCONFIG_WINDOWS_TRUE@am__objects_4 = gdescriptor_win32.$(OBJEXT) \
-@GCONFIG_WINDOWS_TRUE@	geventloop_win32.$(OBJEXT) \
-@GCONFIG_WINDOWS_TRUE@	gfutureevent_win32.$(OBJEXT) \
-@GCONFIG_WINDOWS_TRUE@	gsocket_win32.$(OBJEXT)
-@GCONFIG_UDS_FALSE@am__objects_5 = gaddresslocal_none.$(OBJEXT)
-@GCONFIG_UDS_TRUE@@GCONFIG_WINDOWS_FALSE@am__objects_5 = gaddresslocal_unix.$(OBJEXT)
-@GCONFIG_UDS_TRUE@@GCONFIG_WINDOWS_TRUE@am__objects_5 = gaddresslocal_none.$(OBJEXT)
-am_libgnet_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
-	$(am__objects_3) $(am__objects_4) $(am__objects_5) \
-	gaddress.$(OBJEXT) gaddress4.$(OBJEXT) gaddress6.$(OBJEXT) \
-	gclient.$(OBJEXT) gclientptr.$(OBJEXT) gconnection.$(OBJEXT) \
+	gtimer.cpp gtimer.h gtimerlist.cpp gtimerlist.h gdnsbl.h \
+	gdnsbl_disabled.cpp gdnsbl_enabled.cpp gdnsblock.h \
+	gdnsblock.cpp geventloop_select.cpp geventloop_epoll.cpp \
+	geventloop_win32.cpp geventloophandles.h \
+	geventloophandles_st.cpp ginterfaces_none.cpp \
+	ginterfaces_unix.cpp ginterfaces_common.cpp \
+	ginterfaces_win32.cpp gdescriptor_unix.cpp \
+	gfutureevent_unix.cpp gnameservers_unix.cpp gsocket_unix.cpp \
+	gdescriptor_win32.cpp gfutureevent_win32.cpp \
+	gnameservers_win32.cpp gsocket_win32.cpp \
+	gaddresslocal_none.cpp gaddresslocal_unix.cpp
+am__objects_1 = gaddress.$(OBJEXT) gaddress4.$(OBJEXT) \
+	gaddress6.$(OBJEXT) gclient.$(OBJEXT) gclientptr.$(OBJEXT) \
+	gconnection.$(OBJEXT) gdnsmessage.$(OBJEXT) \
 	geventemitter.$(OBJEXT) geventhandler.$(OBJEXT) \
 	geventloggingcontext.$(OBJEXT) geventloop.$(OBJEXT) \
 	gexceptionhandler.$(OBJEXT) gexceptionsink.$(OBJEXT) \
@@ -173,6 +150,34 @@ am_libgnet_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	gserver.$(OBJEXT) gserverpeer.$(OBJEXT) gsocket.$(OBJEXT) \
 	gsocketprotocol.$(OBJEXT) gsocks.$(OBJEXT) gtask.$(OBJEXT) \
 	gtimer.$(OBJEXT) gtimerlist.$(OBJEXT)
+@GCONFIG_DNSBL_FALSE@am__objects_2 = gdnsbl_disabled.$(OBJEXT)
+@GCONFIG_DNSBL_TRUE@am__objects_2 = gdnsbl_enabled.$(OBJEXT) \
+@GCONFIG_DNSBL_TRUE@	gdnsblock.$(OBJEXT)
+@GCONFIG_EPOLL_FALSE@@GCONFIG_WINDOWS_FALSE@am__objects_3 = geventloop_select.$(OBJEXT)
+@GCONFIG_EPOLL_TRUE@@GCONFIG_WINDOWS_FALSE@am__objects_3 = geventloop_epoll.$(OBJEXT)
+@GCONFIG_WINDOWS_TRUE@am__objects_3 = geventloop_win32.$(OBJEXT) \
+@GCONFIG_WINDOWS_TRUE@	geventloophandles_st.$(OBJEXT)
+@GCONFIG_INTERFACE_NAMES_FALSE@am__objects_4 =  \
+@GCONFIG_INTERFACE_NAMES_FALSE@	ginterfaces_none.$(OBJEXT)
+@GCONFIG_INTERFACE_NAMES_TRUE@@GCONFIG_WINDOWS_FALSE@am__objects_4 = ginterfaces_unix.$(OBJEXT) \
+@GCONFIG_INTERFACE_NAMES_TRUE@@GCONFIG_WINDOWS_FALSE@	ginterfaces_common.$(OBJEXT)
+@GCONFIG_INTERFACE_NAMES_TRUE@@GCONFIG_WINDOWS_TRUE@am__objects_4 = ginterfaces_common.$(OBJEXT) \
+@GCONFIG_INTERFACE_NAMES_TRUE@@GCONFIG_WINDOWS_TRUE@	ginterfaces_win32.$(OBJEXT)
+@GCONFIG_WINDOWS_FALSE@am__objects_5 = gdescriptor_unix.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	gfutureevent_unix.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	gnameservers_unix.$(OBJEXT) \
+@GCONFIG_WINDOWS_FALSE@	gsocket_unix.$(OBJEXT)
+@GCONFIG_WINDOWS_TRUE@am__objects_5 = gdescriptor_win32.$(OBJEXT) \
+@GCONFIG_WINDOWS_TRUE@	geventloop_win32.$(OBJEXT) \
+@GCONFIG_WINDOWS_TRUE@	gfutureevent_win32.$(OBJEXT) \
+@GCONFIG_WINDOWS_TRUE@	gnameservers_win32.$(OBJEXT) \
+@GCONFIG_WINDOWS_TRUE@	gsocket_win32.$(OBJEXT)
+@GCONFIG_UDS_FALSE@am__objects_6 = gaddresslocal_none.$(OBJEXT)
+@GCONFIG_UDS_TRUE@@GCONFIG_WINDOWS_FALSE@am__objects_6 = gaddresslocal_unix.$(OBJEXT)
+@GCONFIG_UDS_TRUE@@GCONFIG_WINDOWS_TRUE@am__objects_6 = gaddresslocal_none.$(OBJEXT)
+am_libgnet_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
+	$(am__objects_3) $(am__objects_4) $(am__objects_5) \
+	$(am__objects_6)
 libgnet_a_OBJECTS = $(am_libgnet_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -202,7 +207,7 @@ am__depfiles_remade = ./$(DEPDIR)/gaddress.Po ./$(DEPDIR)/gaddress4.Po \
 	./$(DEPDIR)/geventloop_epoll.Po \
 	./$(DEPDIR)/geventloop_select.Po \
 	./$(DEPDIR)/geventloop_win32.Po \
-	./$(DEPDIR)/geventloophandles.Po \
+	./$(DEPDIR)/geventloophandles_st.Po \
 	./$(DEPDIR)/gexceptionhandler.Po ./$(DEPDIR)/gexceptionsink.Po \
 	./$(DEPDIR)/gexceptionsource.Po \
 	./$(DEPDIR)/gfutureevent_unix.Po \
@@ -213,7 +218,8 @@ am__depfiles_remade = ./$(DEPDIR)/gaddress.Po ./$(DEPDIR)/gaddress4.Po \
 	./$(DEPDIR)/ginterfaces_win32.Po ./$(DEPDIR)/glinebuffer.Po \
 	./$(DEPDIR)/glinestore.Po ./$(DEPDIR)/glocal.Po \
 	./$(DEPDIR)/glocation.Po ./$(DEPDIR)/gmonitor.Po \
-	./$(DEPDIR)/gmultiserver.Po ./$(DEPDIR)/gnetdone.Po \
+	./$(DEPDIR)/gmultiserver.Po ./$(DEPDIR)/gnameservers_unix.Po \
+	./$(DEPDIR)/gnameservers_win32.Po ./$(DEPDIR)/gnetdone.Po \
 	./$(DEPDIR)/gresolver.Po ./$(DEPDIR)/gresolverfuture.Po \
 	./$(DEPDIR)/gserver.Po ./$(DEPDIR)/gserverpeer.Po \
 	./$(DEPDIR)/gsocket.Po ./$(DEPDIR)/gsocket_unix.Po \
@@ -401,7 +407,78 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 noinst_LIBRARIES = libgnet.a
-@GCONFIG_WINDOWS_FALSE@AM_CPPFLAGS = -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl
+COMMON_SOURCES = \
+	gaddress.cpp \
+	gaddress.h \
+	gaddress4.h \
+	gaddress4.cpp \
+	gaddress6.h \
+	gaddress6.cpp \
+	gaddresslocal.h \
+	gclient.cpp \
+	gclient.h \
+	gclientptr.cpp \
+	gclientptr.h \
+	gconnection.cpp \
+	gconnection.h \
+	gdescriptor.h \
+	gdnsmessage.h \
+	gdnsmessage.cpp \
+	gevent.h \
+	geventemitter.cpp \
+	geventemitter.h \
+	geventhandler.cpp \
+	geventhandler.h \
+	geventloggingcontext.cpp \
+	geventloggingcontext.h \
+	geventloop.cpp \
+	geventloop.h \
+	gexceptionhandler.cpp \
+	gexceptionhandler.h \
+	gexceptionsink.cpp \
+	gexceptionsink.h \
+	gexceptionsource.cpp \
+	gexceptionsource.h \
+	gfutureevent.h \
+	ginterfaces.h \
+	glinebuffer.cpp \
+	glinebuffer.h \
+	glinestore.cpp \
+	glinestore.h \
+	glistener.h \
+	glocal.cpp \
+	glocal.h \
+	glocation.cpp \
+	glocation.h \
+	gmonitor.cpp \
+	gmonitor.h \
+	gmultiserver.cpp \
+	gmultiserver.h \
+	gnameservers.h \
+	gnetdone.cpp \
+	gnetdone.h \
+	gresolver.cpp \
+	gresolver.h \
+	gresolverfuture.cpp \
+	gresolverfuture.h \
+	gserver.cpp \
+	gserver.h \
+	gserverpeer.cpp \
+	gserverpeer.h \
+	gsocket.h \
+	gsocket.cpp \
+	gsocketprotocol.cpp \
+	gsocketprotocol.h \
+	gsocks.cpp \
+	gsocks.h \
+	gtask.cpp \
+	gtask.h \
+	gtimer.cpp \
+	gtimer.h \
+	gtimerlist.cpp \
+	gtimerlist.h
+
+@GCONFIG_WINDOWS_FALSE@AM_CPPFLAGS = -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl -DG_LIB_SMALL
 
 # -- OS
 @GCONFIG_WINDOWS_TRUE@AM_CPPFLAGS = -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl -I$(top_srcdir)/src/win32
@@ -409,22 +486,26 @@ noinst_LIBRARIES = libgnet.a
 @GCONFIG_WINDOWS_FALSE@	gdescriptor_win32.cpp \
 @GCONFIG_WINDOWS_FALSE@	geventloop_win32.cpp \
 @GCONFIG_WINDOWS_FALSE@	gfutureevent_win32.cpp \
+@GCONFIG_WINDOWS_FALSE@	gnameservers_win32.cpp \
 @GCONFIG_WINDOWS_FALSE@	gsocket_win32.cpp
 
 @GCONFIG_WINDOWS_TRUE@OS_EXTRA_DIST = \
 @GCONFIG_WINDOWS_TRUE@	gdescriptor_unix.cpp \
 @GCONFIG_WINDOWS_TRUE@	gfutureevent_unix.cpp \
+@GCONFIG_WINDOWS_TRUE@	gnameservers_unix.cpp \
 @GCONFIG_WINDOWS_TRUE@	gsocket_unix.cpp
 
 @GCONFIG_WINDOWS_FALSE@OS_SOURCES = \
 @GCONFIG_WINDOWS_FALSE@	gdescriptor_unix.cpp \
 @GCONFIG_WINDOWS_FALSE@	gfutureevent_unix.cpp \
+@GCONFIG_WINDOWS_FALSE@	gnameservers_unix.cpp \
 @GCONFIG_WINDOWS_FALSE@	gsocket_unix.cpp
 
 @GCONFIG_WINDOWS_TRUE@OS_SOURCES = \
 @GCONFIG_WINDOWS_TRUE@	gdescriptor_win32.cpp \
 @GCONFIG_WINDOWS_TRUE@	geventloop_win32.cpp \
 @GCONFIG_WINDOWS_TRUE@	gfutureevent_win32.cpp \
+@GCONFIG_WINDOWS_TRUE@	gnameservers_win32.cpp \
 @GCONFIG_WINDOWS_TRUE@	gsocket_win32.cpp
 
 @GCONFIG_INTERFACE_NAMES_FALSE@INTERFACES_EXTRA_DIST = \
@@ -456,9 +537,7 @@ noinst_LIBRARIES = libgnet.a
 @GCONFIG_DNSBL_FALSE@DNSBL_EXTRA_DIST = \
 @GCONFIG_DNSBL_FALSE@	gdnsbl_enabled.cpp \
 @GCONFIG_DNSBL_FALSE@	gdnsblock.h \
-@GCONFIG_DNSBL_FALSE@	gdnsblock.cpp \
-@GCONFIG_DNSBL_FALSE@	gdnsmessage.h \
-@GCONFIG_DNSBL_FALSE@	gdnsmessage.cpp
+@GCONFIG_DNSBL_FALSE@	gdnsblock.cpp
 
 
 # -- DNSBL
@@ -473,9 +552,7 @@ noinst_LIBRARIES = libgnet.a
 @GCONFIG_DNSBL_TRUE@	gdnsbl.h \
 @GCONFIG_DNSBL_TRUE@	gdnsbl_enabled.cpp \
 @GCONFIG_DNSBL_TRUE@	gdnsblock.h \
-@GCONFIG_DNSBL_TRUE@	gdnsblock.cpp \
-@GCONFIG_DNSBL_TRUE@	gdnsmessage.h \
-@GCONFIG_DNSBL_TRUE@	gdnsmessage.cpp
+@GCONFIG_DNSBL_TRUE@	gdnsblock.cpp
 
 @GCONFIG_UDS_FALSE@UDS_SOURCES = \
 @GCONFIG_UDS_FALSE@	gaddresslocal_none.cpp
@@ -493,14 +570,14 @@ noinst_LIBRARIES = libgnet.a
 @GCONFIG_UDS_TRUE@@GCONFIG_WINDOWS_TRUE@UDS_EXTRA_DIST = 
 @GCONFIG_EPOLL_FALSE@@GCONFIG_WINDOWS_FALSE@EVENTLOOP_EXTRA_DIST = \
 @GCONFIG_EPOLL_FALSE@@GCONFIG_WINDOWS_FALSE@	geventloop_win32.cpp \
-@GCONFIG_EPOLL_FALSE@@GCONFIG_WINDOWS_FALSE@	geventloophandles.cpp \
 @GCONFIG_EPOLL_FALSE@@GCONFIG_WINDOWS_FALSE@	geventloophandles.h \
+@GCONFIG_EPOLL_FALSE@@GCONFIG_WINDOWS_FALSE@	geventloophandles_st.cpp \
 @GCONFIG_EPOLL_FALSE@@GCONFIG_WINDOWS_FALSE@	geventloop_select.cpp
 
 @GCONFIG_EPOLL_TRUE@@GCONFIG_WINDOWS_FALSE@EVENTLOOP_EXTRA_DIST = \
 @GCONFIG_EPOLL_TRUE@@GCONFIG_WINDOWS_FALSE@	geventloop_win32.cpp \
 @GCONFIG_EPOLL_TRUE@@GCONFIG_WINDOWS_FALSE@	geventloophandles.h \
-@GCONFIG_EPOLL_TRUE@@GCONFIG_WINDOWS_FALSE@	geventloophandles.cpp \
+@GCONFIG_EPOLL_TRUE@@GCONFIG_WINDOWS_FALSE@	geventloophandles_st.cpp \
 @GCONFIG_EPOLL_TRUE@@GCONFIG_WINDOWS_FALSE@	geventloop_select.cpp
 
 
@@ -518,7 +595,7 @@ noinst_LIBRARIES = libgnet.a
 @GCONFIG_WINDOWS_TRUE@EVENTLOOP_SOURCES = \
 @GCONFIG_WINDOWS_TRUE@	geventloop_win32.cpp \
 @GCONFIG_WINDOWS_TRUE@	geventloophandles.h \
-@GCONFIG_WINDOWS_TRUE@	geventloophandles.cpp
+@GCONFIG_WINDOWS_TRUE@	geventloophandles_st.cpp
 
 
 # ===
@@ -530,77 +607,12 @@ EXTRA_DIST = \
 	$(UDS_EXTRA_DIST)
 
 libgnet_a_SOURCES = \
+	$(COMMON_SOURCES) \
 	$(DNSBL_SOURCES) \
 	$(EVENTLOOP_SOURCES) \
 	$(INTERFACES_SOURCES) \
 	$(OS_SOURCES) \
-	$(UDS_SOURCES) \
-	gaddress.cpp \
-	gaddress.h \
-	gaddress4.h \
-	gaddress4.cpp \
-	gaddress6.h \
-	gaddress6.cpp \
-	gaddresslocal.h \
-	gclient.cpp \
-	gclient.h \
-	gclientptr.cpp \
-	gclientptr.h \
-	gconnection.cpp \
-	gconnection.h \
-	gdescriptor.h \
-	gevent.h \
-	geventemitter.cpp \
-	geventemitter.h \
-	geventhandler.cpp \
-	geventhandler.h \
-	geventloggingcontext.cpp \
-	geventloggingcontext.h \
-	geventloop.cpp \
-	geventloop.h \
-	gexceptionhandler.cpp \
-	gexceptionhandler.h \
-	gexceptionsink.cpp \
-	gexceptionsink.h \
-	gexceptionsource.cpp \
-	gexceptionsource.h \
-	gfutureevent.h \
-	ginterfaces.h \
-	glinebuffer.cpp \
-	glinebuffer.h \
-	glinestore.cpp \
-	glinestore.h \
-	glistener.h \
-	glocal.cpp \
-	glocal.h \
-	glocation.cpp \
-	glocation.h \
-	gmonitor.cpp \
-	gmonitor.h \
-	gmultiserver.cpp \
-	gmultiserver.h \
-	gnetdone.cpp \
-	gnetdone.h \
-	gresolver.cpp \
-	gresolver.h \
-	gresolverfuture.cpp \
-	gresolverfuture.h \
-	gserver.cpp \
-	gserver.h \
-	gserverpeer.cpp \
-	gserverpeer.h \
-	gsocket.h \
-	gsocket.cpp \
-	gsocketprotocol.cpp \
-	gsocketprotocol.h \
-	gsocks.cpp \
-	gsocks.h \
-	gtask.cpp \
-	gtask.h \
-	gtimer.cpp \
-	gtimer.h \
-	gtimerlist.cpp \
-	gtimerlist.h
+	$(UDS_SOURCES)
 
 all: all-am
 
@@ -671,7 +683,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geventloop_epoll.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geventloop_select.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geventloop_win32.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geventloophandles.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geventloophandles_st.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gexceptionhandler.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gexceptionsink.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gexceptionsource.Po@am__quote@ # am--include-marker
@@ -687,6 +699,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glocation.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmonitor.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmultiserver.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnameservers_unix.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnameservers_win32.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnetdone.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gresolver.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gresolverfuture.Po@am__quote@ # am--include-marker
@@ -866,7 +880,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/geventloop_epoll.Po
 	-rm -f ./$(DEPDIR)/geventloop_select.Po
 	-rm -f ./$(DEPDIR)/geventloop_win32.Po
-	-rm -f ./$(DEPDIR)/geventloophandles.Po
+	-rm -f ./$(DEPDIR)/geventloophandles_st.Po
 	-rm -f ./$(DEPDIR)/gexceptionhandler.Po
 	-rm -f ./$(DEPDIR)/gexceptionsink.Po
 	-rm -f ./$(DEPDIR)/gexceptionsource.Po
@@ -882,6 +896,8 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/glocation.Po
 	-rm -f ./$(DEPDIR)/gmonitor.Po
 	-rm -f ./$(DEPDIR)/gmultiserver.Po
+	-rm -f ./$(DEPDIR)/gnameservers_unix.Po
+	-rm -f ./$(DEPDIR)/gnameservers_win32.Po
 	-rm -f ./$(DEPDIR)/gnetdone.Po
 	-rm -f ./$(DEPDIR)/gresolver.Po
 	-rm -f ./$(DEPDIR)/gresolverfuture.Po
@@ -961,7 +977,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/geventloop_epoll.Po
 	-rm -f ./$(DEPDIR)/geventloop_select.Po
 	-rm -f ./$(DEPDIR)/geventloop_win32.Po
-	-rm -f ./$(DEPDIR)/geventloophandles.Po
+	-rm -f ./$(DEPDIR)/geventloophandles_st.Po
 	-rm -f ./$(DEPDIR)/gexceptionhandler.Po
 	-rm -f ./$(DEPDIR)/gexceptionsink.Po
 	-rm -f ./$(DEPDIR)/gexceptionsource.Po
@@ -977,6 +993,8 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/glocation.Po
 	-rm -f ./$(DEPDIR)/gmonitor.Po
 	-rm -f ./$(DEPDIR)/gmultiserver.Po
+	-rm -f ./$(DEPDIR)/gnameservers_unix.Po
+	-rm -f ./$(DEPDIR)/gnameservers_win32.Po
 	-rm -f ./$(DEPDIR)/gnetdone.Po
 	-rm -f ./$(DEPDIR)/gresolver.Po
 	-rm -f ./$(DEPDIR)/gresolverfuture.Po

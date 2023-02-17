@@ -26,6 +26,7 @@
 #include "goptions.h"
 #include "goptionvalue.h"
 #include "goptionparser.h"
+#include "goptional.h"
 #include "garg.h"
 #include "gpath.h"
 #include "gstringview.h"
@@ -61,8 +62,6 @@ namespace G
 class G::GetOpt
 {
 public:
-	using size_type = std::string::size_type ;
-
 	GetOpt( const Arg & arg , const std::string & spec , std::size_t ignore_non_options = 0U ) ;
 		///< Constructor taking a Arg object and a G::Options specification string.
 		///< Parsing errors are reported via errorList().
@@ -82,7 +81,7 @@ public:
 		///< Reinitialises the object with the given command-line arguments.
 		///< The program name in the first position is expected but ignored.
 
-	void addOptionsFromFile( size_type n = 1U ,
+	void addOptionsFromFile( std::size_t n = 1U ,
 		const std::string & varkey = {} , const std::string & varvalue = {} ) ;
 			///< Adds options from the config file named by the n'th non-option
 			///< command-line argument (zero-based and allowing for the program
@@ -93,7 +92,7 @@ public:
 			///< are used to perform leading sub-string substitution on the
 			///< filename.
 
-	bool addOptionsFromFile( size_t n , const G::StringArray & extension_block_list ) ;
+	bool addOptionsFromFile( size_t n , const StringArray & extension_blocklist ) ;
 		///< Adds options from the config file named by the n'th non-option
 		///< argument, but not if the file extension matches any in the block
 		///< list. Returns false if blocked.
@@ -149,16 +148,15 @@ public:
 		///< by its short-form letter.
 		///< Precondition: contains(option_letter)
 
-public:
-	~GetOpt() = default ;
-	GetOpt( const GetOpt & ) = delete ;
-	GetOpt( GetOpt && ) = delete ;
-	GetOpt & operator=( const GetOpt & ) = delete ;
-	GetOpt & operator=( GetOpt && ) = delete ;
+	G::optional<std::string> optional( string_view option_name ) const ;
+		///< Returns an optional value identified by its long-form name.
+
+	static StringArray readOptionsFromFile( const Path & ) ;
+		///< Reads options from file as a list of strings like "--foo=bar".
+		///< Throws on error.
 
 private:
 	void parseArgs( std::size_t ) ;
-	static StringArray optionsFromFile( const Options & , const Path & ) ;
 
 private:
 	Options m_spec ;

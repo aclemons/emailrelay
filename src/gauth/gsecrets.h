@@ -22,65 +22,113 @@
 #define G_AUTH_SECRETS_H
 
 #include "gdef.h"
-#include "gpath.h"
-#include "gexception.h"
 #include "gsaslserversecrets.h"
 #include "gsaslclientsecrets.h"
+#include "gsecretsfile.h"
+#include "gexception.h"
+#include "gpath.h"
+#include "gstringview.h"
 #include <memory>
+#include <utility>
 #include <string>
 
 namespace GAuth
 {
 	class Secrets ;
-	class SecretsFile ;
+	class SecretsFileClient ;
+	class SecretsFileServer ;
 }
 
 //| \class GAuth::Secrets
-/// A simple interface for a store of secrets used in authentication.
-/// The default implementation uses a flat file.
+/// Provides factory functions for client and server secrets objects.
+/// The implementation is based on GAuth::SecretsFile.
 ///
-class GAuth::Secrets : public SaslClientSecrets , public SaslServerSecrets
+class GAuth::Secrets
 {
 public:
-	G_EXCEPTION( OpenError , tx("cannot read secrets file") ) ;
+	G_EXCEPTION( ClientAccountError , tx("invalid client account details") ) ;
 
-	static void check( const std::string & , const std::string & , const std::string & ) ;
+	static void check( const std::string & client , const std::string & server , const std::string & pop ) ;
 		///< Checks the given secret sources. Logs warnings and throws
 		///< an exception if there are any fatal errors.
 
-	Secrets( const std::string & source_storage_path , const std::string & log_name ) ;
-		///< Constructor. The path is a secrets file path or "/pam".
-		///< The 'log-name' is used in log and error messages.
-		///< Throws on error, although an empty path is not
-		///< considered an error: see valid().
+	static std::unique_ptr<SaslServerSecrets> newServerSecrets( const std::string & spec ,
+		const std::string & log_name ) ;
+			///< Factory function for server secrets. The spec is empty or
+			///< a secrets file path or "/pam" or "pam:". The 'log-name' is
+			///< used in log and error messages. Returns an in-valid() object
+			///< if the spec is empty. Throws on error.
 
-	Secrets() ;
-		///< Default constructor for an in-valid(), empty-path object.
-
-	bool valid() const override ;
-		///< Override from GAuth::Valid virtual base.
-
-	Secret serverSecret( G::string_view type , G::string_view id ) const override ;
-		///< Override from GAuth::SaslServerSecrets.
-
-	bool contains( G::string_view type , G::string_view id ) const override ;
-		///< Override from GAuth::SaslServerSecrets.
+	static std::unique_ptr<SaslClientSecrets> newClientSecrets( const std::string & spec ,
+		const std::string & log_name ) ;
+			///< Factory function for client secrets. The spec is empty or a
+			///< secrets file path or "plain:<base64-user-id>:<base64-pwd>".
+			///< The 'log-name' is used in log and error messages. Returns
+			///< an in-valid() object if the spec is empty. Throws on error.
 
 public:
-	~Secrets() override ;
-	Secrets( const Secrets & ) = delete ;
-	Secrets( Secrets && ) = delete ;
-	Secrets & operator=( const Secrets & ) = delete ;
-	Secrets & operator=( Secrets && ) = delete ;
+	Secrets() = delete ;
+} ;
+
+//| \class GAuth::SecretsFileClient
+/// A thin adapter between GAuth::SecretsFile and GAuth::SaslClientSecrets
+/// returned by GAuth::Secrets::newClientSecrets().
+///
+class GAuth::SecretsFileClient : public GAuth::SaslClientSecrets
+{
+public:
+	SecretsFileClient( const std::string & path_spec , const std::string & log_name ) ;
+		///< Constructor. See GAuth::Secrets::newClientSecrets().
+
+	~SecretsFileClient() override ;
+		///< Destructor.
+
+public:
+	SecretsFileClient( const SecretsFileClient & ) = delete ;
+	SecretsFileClient( SecretsFileClient && ) = delete ;
+	SecretsFileClient & operator=( const SecretsFileClient & ) = delete ;
+	SecretsFileClient & operator=( SecretsFileClient && ) = delete ;
 
 private: // overrides
-	std::string source() const override ; // Override from GAuth::SaslServerSecrets.
-	Secret clientSecret( G::string_view ) const override ; // Override from GAuth::SaslClientSecrets.
-	std::pair<std::string,std::string> serverTrust( const std::string & address_range ) const override ; // Override from GAuth::SaslServerSecrets.
+	bool valid() const override ;
+	Secret clientSecret( G::string_view type ) const override ;
 
 private:
-	std::string m_source ;
-	std::unique_ptr<SecretsFile> m_imp ;
+	bool m_id_pwd ; // first
+	std::string m_id ;
+	std::string m_pwd ;
+	SecretsFile m_file ;
+} ;
+
+//| \class GAuth::SecretsFileServer
+/// A thin adapter between GAuth::SecretsFile and GAuth::SaslServerSecrets
+/// returned by GAuth::Secrets::newServerSecrets().
+///
+class GAuth::SecretsFileServer : public GAuth::SaslServerSecrets
+{
+public:
+	SecretsFileServer( const std::string & path , const std::string & log_name ) ;
+		///< Constructor. See GAuth::Secrets::newServerSecrets().
+
+	~SecretsFileServer() override ;
+		///< Destructor.
+
+public:
+	SecretsFileServer( const SecretsFileServer & ) = delete ;
+	SecretsFileServer( SecretsFileServer && ) = delete ;
+	SecretsFileServer & operator=( const SecretsFileServer & ) = delete ;
+	SecretsFileServer & operator=( SecretsFileServer && ) = delete ;
+
+private: // overrides
+	bool valid() const override ;
+	Secret serverSecret( G::string_view type , G::string_view id ) const override ;
+	std::pair<std::string,std::string> serverTrust( const std::string & address_range ) const override ;
+	std::string source() const override ;
+	bool contains( G::string_view type , G::string_view id ) const override ;
+
+private:
+	bool m_pam ; // first
+	SecretsFile m_file ;
 } ;
 
 #endif

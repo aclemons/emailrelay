@@ -24,7 +24,6 @@
 #include "glocal.h"
 #include "glog.h"
 #include <string>
-#include <utility>
 
 GPop::ServerPeer::ServerPeer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo && peer_info , Store & store ,
 	const GAuth::SaslServerSecrets & server_secrets , const std::string & sasl_server_config ,
@@ -54,11 +53,10 @@ void GPop::ServerPeer::processLine( const std::string & line )
 	m_protocol.apply( line ) ;
 }
 
-bool GPop::ServerPeer::protocolSend( const std::string & line , std::size_t offset )
+bool GPop::ServerPeer::protocolSend( G::string_view line , std::size_t offset )
 {
-    offset = std::min( offset , line.size() ) ;
-    G::string_view data( line.data()+offset , line.size()-offset ) ;
-    return data.empty() ? true : send( data ) ; // GNet::ServerPeer::send()
+	G::string_view output = line.substr( std::min(offset,line.size()) ) ;
+	return output.empty() ? true : send( output ) ; // GNet::ServerPeer::send()
 }
 
 void GPop::ServerPeer::onSendComplete()
@@ -87,7 +85,7 @@ void GPop::ServerPeer::onSecure( const std::string & , const std::string & , con
 // ===
 
 GPop::Server::Server( GNet::ExceptionSink es , Store & store , const GAuth::SaslServerSecrets & secrets , const Config & config ) :
-	GNet::MultiServer(es,config.addresses,config.port,"pop",config.server_peer_config,config.server_config) ,
+	GNet::MultiServer(es,config.addresses,config.port,"pop",config.net_server_peer_config,config.net_server_config) ,
 	m_config(config) ,
 	m_store(store) ,
 	m_secrets(secrets)
@@ -99,10 +97,11 @@ GPop::Server::~Server()
 	serverCleanup() ; // base class early cleanup
 }
 
-void GPop::Server::report() const
+void GPop::Server::report( const std::string & group ) const
 {
-	serverReport() ; // base class implementation
-	G_LOG_S( "GPop::Server: pop authentication secrets from \"" << m_secrets.source() << "\"" ) ;
+	serverReport( group ) ; // base class implementation
+	G_LOG_S( "GPop::Server: " << (group.empty()?"":"[") << group << (group.empty()?"":"] ")
+		<< "pop server authentication secrets from \"" << m_secrets.source() << "\"" ) ;
 }
 
 std::unique_ptr<GNet::ServerPeer> GPop::Server::newPeer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo && peer_info , GNet::MultiServer::ServerInfo )
@@ -111,7 +110,7 @@ std::unique_ptr<GNet::ServerPeer> GPop::Server::newPeer( GNet::ExceptionSinkUnbo
 	try
 	{
 		std::string reason ;
-		if( !m_config.allow_remote && !GNet::Local::isLocal(peer_info.m_address,reason) )
+		if( !m_config.allow_remote && !peer_info.m_address.isLocal(reason) )
 		{
 			G_WARNING( "GPop::Server: configured to reject non-local pop connection: " << reason ) ;
 		}
@@ -133,4 +132,3 @@ std::unique_ptr<GPop::ServerProtocol::Text> GPop::Server::newProtocolText( const
 {
 	return std::make_unique<ServerProtocolText>(peer_address) ; // up-cast
 }
-

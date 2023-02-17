@@ -3,36 +3,31 @@ E-MailRelay Readme
 
 Abstract
 --------
-E-MailRelay is an e-mail store-and-forward message transfer agent and proxy
-server. It runs on Unix-like operating systems (including Linux and Mac OS X),
-and on Windows.
+E-MailRelay is a lightweight SMTP store-and-forward mail server with POP access
+to spooled messages. It can be used as a personal internet mail server with
+SpamAssassin spam filtering and DNSBL connection blocking. Forwarding can be
+to a fixed smarthost or using DNS MX routing. External scripts can be used for
+address validation and e-mail message processing.
 
-E-MailRelay does three things: it stores any incoming e-mail messages that
-it receives, it forwards e-mail messages on to another remote e-mail server,
-and it serves up stored e-mail messages to local e-mail reader programs. More
-technically, it acts as a SMTP storage daemon, a SMTP forwarding agent, and
-a POP3 server.
-
-Whenever an e-mail message is received it can be passed through a user-defined
-program, such as a spam filter, which can drop, re-address or edit messages as
-they pass through.
-
-E-MailRelay uses the same non-blocking i/o model as Squid and nginx giving
-excellent scalability and resource usage.
-
-C++ source code is available and distribution is permitted under the GNU
-General Public License V3.
+E-MailRelay runs as a single process using the same non-blocking i/o model as
+Squid and nginx giving excellent scalability and resource usage.
 
 Quick start
 -----------
+E-MailRelay can be run straight from the command-line.
+
 To use E-MailRelay in store-and-forward mode use the "--as-server" option to
 start the storage daemon in the background, and then do delivery of spooled
-messages by running with the "--as-client" option.
+messages by running with "--as-client".
 
-For example, to start a storage daemon listening on port 587 use a command
-like this:
+For example, to start a storage daemon in the background listening on port 587
+use a command like this:
 
-	emailrelay --as-server --port 587 --spool-dir /tmp
+	emailrelay --as-server --syslog --port 587 --spool-dir /tmp
+
+Or to run it in the foreground:
+
+	emailrelay --log --verbose --no-daemon --port 587 --spool-dir /tmp
 
 And then to forward the spooled mail to "smtp.example.com" run something
 like this:
@@ -55,47 +50,62 @@ received, you can use "--as-proxy" or add "--forward-on-disconnect":
 To edit or filter e-mail as it passes through the proxy specify your filter
 program with the "--filter" option, something like this:
 
-	emailrelay --as-proxy smtp.example.com:25 --filter addsig.js
+	emailrelay --as-proxy smtp.example.com:25 --filter=addsig.js
 
-To run E-MailRelay as a POP server without SMTP use "--pop" and "--no-smtp":
+E-MailRelay can be used as a personal internet mail server:
 
-	emailrelay --pop --no-smtp --log --close-stderr
+Use "--remote-clients" ("-r") to allow connections from outside the local
+network, define your domain name with "--domain" and use an address verifier as
+a first line of defense against spammers:
 
-The "emailrelay-submit" utility can be used to put messages straight into the
-spool directory so that the POP clients can fetch them.
+	emailrelay --as-server -v -r --domain=example.com --address-verifier=allow:
 
-By default E-MailRelay will always reject connections from remote networks. To
-allow connections from anywhere use the "--remote-clients" option, but please
-check your firewall settings to make sure this cannot be exploited by spammers.
+Then enable POP access to the incoming e-mails with "--pop", "--pop-port" and
+"--pop-auth":
+
+	emailrelay ... --pop --pop-port 10110 --pop-auth /etc/emailrelay.auth
+
+Set up the POP account with a user-id and password in the "--pop-auth" secrets
+file. The secrets file should contain a single line of text like this:
+
+	server plain <userid> <password>
 
 For more information on the command-line options refer to the reference guide
 or run:
 
 	emailrelay --help --verbose
 
-Packages
---------
-To install on Linux from a RPM or DEB package:
+Autostart
+---------
+To install E-MailRelay on Windows run the "emailrelay-setup" program and choose
+the automatic startup option so that E-MailRelay runs as a Windows service.
 
-	sudo $SHELL # or 'su'
-	rpm -i emailrelay*.rpm  # if RPM
-	dpkg -i emailrelay*.deb  # if DEB
+To install E-MailRelay on Linux from a RPM package:
 
-If your Linux system uses "systemd" then you should check the E-MailRelay
-configuration file "/etc/emailrelay.conf" is as you want it and then run:
+	sudo rpm -i emailrelay*.rpm
+
+Or from a DEB package:
+
+	sudo dpkg -i emailrelay*.deb
+
+To get the E-MailRelay server to start automatically you should check the
+configuration file "/etc/emailrelay.conf" is as you want it and then run the
+following commands to activate the "systemd" service:
 
 	systemctl enable emailrelay
 	systemctl start emailrelay
 	systemctl status emailrelay
 
-On other systems try these commands:
+On other systems try some combination of these commands to set up and activate
+the E-MailRelay service:
 
 	cp /usr/lib/emailrelay/init/emailrelay /etc/init.d/
-	update-rc.d emailrelay enable || rc-update add emailrelay
-	invoke-rc.d emailrelay start || service emailrelay start
-	tail /var/log/messages /var/log/syslog 2>/dev/null
-
-On Windows run the setup program.
+	update-rc.d emailrelay enable
+	rc-update add emailrelay
+	invoke-rc.d emailrelay start
+	service emailrelay start
+	tail /var/log/messages
+	tail /var/log/syslog
 
 Documentation
 -------------

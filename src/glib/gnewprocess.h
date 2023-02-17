@@ -49,7 +49,7 @@ namespace G
 /// Eg:
 /// \code
 /// {
-///   NewProcess task( "foo" , args ) ;
+///   NewProcess task( "exe" , args , {} ) ;
 ///   auto& waitable = task.waitable() ;
 ///   waitable.wait() ;
 ///   int rc = waitable.get() ;
@@ -86,47 +86,72 @@ public:
 		bool operator!=( const Fd & other ) const { return !(*this == other) ; }
 	} ;
 
-	NewProcess( const Path & exe , const StringArray & args , const Environment & env = Environment::minimal() ,
-		Fd fd_stdin = Fd::devnull() , Fd fd_stdout = Fd::pipe() , Fd fd_stderr = Fd::devnull() ,
-		const G::Path & cd = G::Path() , bool strict_path = true ,
-		Identity run_as_id = Identity::invalid() , bool strict_id = true ,
-		int exec_error_exit = 127 ,
-		const std::string & exec_error_format = {} ,
-		std::string (*exec_error_format_fn)(std::string,int) = nullptr ) ;
-			///< Constructor. Spawns the given program to run independently in a
-			///< child process.
-			///<
-			///< The child process's stdin, stdout and stderr are connected
-			///< as directed, but exactly one of stdout and stderr must be the
-			///< internal pipe since it is used to detect process termination.
-			///< To inherit the existing file descriptors use Fd(STDIN_FILENO)
-			///< etc. Using Fd::fd(-1) is equivalent to Fd::devnull().
-			///<
-			///< The child process is given the new environment, unless the
-			///< environment given is empty() in which case the environment is
-			///< inherited from the calling process (see G::Environment::inherit()).
-			///<
-			///< If 'strict_path' then the program must be given as an absolute path.
-			///< Otherwise it can be relative and the calling process's PATH is used
-			///< to find it.
-			///<
-			///< If a valid identity is supplied then the child process runs as
-			///< that identity. If 'strict_id' is also true then the id is not
-			///< allowed to be root. See G::Process::beOrdinaryForExec().
-			///<
-			///< If the exec() fails then the 'exec_error_exit' argument is used as
-			///< the child process exit code.
-			///<
-			///< The internal pipe can be used for error messages in the situation
-			///< where the exec() in the forked child process fails. This requires
-			///< that one of the 'exec_error_format' parameters is given; by default
-			///< nothing is sent over the pipe when the exec() fails.
-			///<
-			///< The exec error message is assembled by the given callback function,
-			///< with the 'exec_error_format' argument passed as its first parameter.
-			///< The second parameter is the exec() errno. The default callback
-			///< function does text substitution for "__errno__" and "__strerror__"
-			///< substrings that appear within the error format string.
+	struct Config /// Configuration structure for G::NewProcess.
+	{
+		using Fd = NewProcess::Fd ;
+		using FormatFn = std::string (*)(std::string,int) ;
+		Environment env {Environment::minimal()} ; // execve() envp parameter
+		NewProcess::Fd stdin {Fd::devnull()} ;
+		NewProcess::Fd stdout {Fd::pipe()} ;
+		NewProcess::Fd stderr {Fd::devnull()} ;
+		Path cd ; // cd in child process before exec
+		bool strict_exe {true} ; // require 'exe' is absolute
+		std::string exec_search_path ; // PATH in child process before execvpe()
+		Identity run_as {Identity::invalid()} ; // see Process::beOrdinaryForExec()
+		bool strict_id {true} ; // dont allow run_as root
+		int exec_error_exit {127} ; // exec failure error code
+		std::string exec_error_format ; // exec failure error message with substitution of strerror and errno
+		FormatFn exec_error_format_fn {nullptr} ; // exec failure error message function passed exec_error_format and errno
+
+		Config & set_env( const Environment & ) ;
+		Config & set_stdin( Fd ) ;
+		Config & set_stdout( Fd ) ;
+		Config & set_stderr( Fd ) ;
+		Config & set_cd( const Path & ) ;
+		Config & set_strict_exe( bool = true ) ;
+		Config & set_exec_search_path( const std::string & ) ;
+		Config & set_run_as( Identity ) ;
+		Config & set_strict_id( bool = true ) ;
+		Config & set_exec_error_exit( int ) ;
+		Config & set_exec_error_format( const std::string & ) ;
+		Config & set_exec_error_format_fn( FormatFn ) ;
+	} ;
+
+	NewProcess( const Path & exe , const G::StringArray & args , const Config & ) ;
+		///< Constructor. Spawns the given program to run independently in a
+		///< child process.
+		///<
+		///< The child process's stdin, stdout and stderr are connected
+		///< as directed, but exactly one of stdout and stderr must be the
+		///< internal pipe since it is used to detect process termination.
+		///< To inherit the existing file descriptors use Fd(STDIN_FILENO)
+		///< etc. Using Fd::fd(-1) is equivalent to Fd::devnull().
+		///<
+		///< The child process is given the new environment, unless the
+		///< environment given is empty() in which case the environment is
+		///< inherited from the calling process (see G::Environment::inherit()).
+		///<
+		///< If 'strict_exe' then the program must be given as an absolute path.
+		///< Otherwise it can be a relative path and the calling process's PATH
+		///< variable or the 'exec_search_path' is used to find it.
+		///<
+		///< If a valid identity is supplied then the child process runs as
+		///< that identity. If 'strict_id' is also true then the id is not
+		///< allowed to be root. See G::Process::beOrdinaryForExec().
+		///<
+		///< If the exec() fails then the 'exec_error_exit' argument is used as
+		///< the child process exit code.
+		///<
+		///< The internal pipe can be used for error messages in the situation
+		///< where the exec() in the forked child process fails. This requires
+		///< that one of the 'exec_error_format' parameters is given; by default
+		///< nothing is sent over the pipe when the exec() fails.
+		///<
+		///< The exec error message is assembled by the given callback function,
+		///< with the 'exec_error_format' argument passed as its first parameter.
+		///< The second parameter is the exec() errno. The default callback
+		///< function does text substitution for "__errno__" and "__strerror__"
+		///< substrings that appear within the error format string.
 
 	explicit NewProcess( const NewProcessConfig & ) ;
 		///< Constructor overload with parameters packaged into a structure.
@@ -167,7 +192,7 @@ private:
 
 //| \class G::NewProcessWaitable
 /// Holds the parameters and future results of a waitpid() system call,
-/// as performed by the wait() method.
+/// as performed by the NewProcess wait() method.
 ///
 /// The wait() method can be called from a worker thread and the results
 /// collected by the main thread using get() once the worker thread has
@@ -212,7 +237,7 @@ public:
 		///< std::thread t( std::bind(&NewProcessWaitable::waitp,waitable,_1) , std::move(p) ) ;
 		///< f.wait() ;
 		///< t.join() ;
-		///< int e = f.get() ;
+		///< int e = f.get().first ;
 		///< \endcode
 
 	int get() const ;
@@ -222,7 +247,7 @@ public:
 		///< signalled its completion. Returns zero if there is no
 		///< process to wait for.
 
-	int get( std::nothrow_t , int exit_code_on_error = 127 ) const ;
+	int get( std::nothrow_t , int exit_code_on_error = 127 ) const noexcept ;
 		///< Non-throwing overload.
 
 	std::string output() const ;
@@ -238,155 +263,29 @@ public:
 
 private:
 	std::vector<char> m_buffer ;
-	std::size_t m_data_size{0U} ;
-	HANDLE m_hprocess{0} ;
-	HANDLE m_hpipe{0} ;
-	pid_t m_pid{0} ;
-	int m_fd{-1} ;
-	int m_rc{0} ;
-	int m_status{0} ;
-	int m_error{0} ;
-	int m_read_error{0} ;
-	bool m_test_mode{false} ;
+	std::size_t m_data_size {0U} ;
+	HANDLE m_hprocess {0} ;
+	HANDLE m_hpipe {0} ;
+	pid_t m_pid {0} ;
+	int m_fd {-1} ;
+	int m_rc {0} ;
+	int m_status {0} ;
+	int m_error {0} ;
+	int m_read_error {0} ;
+	bool m_test_mode {false} ;
 } ;
 
-//| \class G::NewProcessConfig
-/// Packages up the parameters of the multi-parameter G::NewProcess
-/// constructor for its one-parameter overload.
-///
-struct G::NewProcessConfig
-{
-	explicit NewProcessConfig( const Path & exe ) ;
-		///< Constructor.
-
-	explicit NewProcessConfig( const ExecutableCommand & cmd ) ;
-		///< Constructor.
-
-	NewProcessConfig( const Path & exe , const std::string & argv1 ) ;
-		///< Constructor.
-
-	NewProcessConfig( const Path & exe , const std::string & argv1 , const std::string & argv2 ) ;
-		///< Constructor.
-
-	NewProcessConfig( const Path & exe , const StringArray & args ) ;
-		///< Constructor.
-
-	NewProcessConfig & set_args( const StringArray & args ) ;
-		///< Sets the command-line arguments.
-
-	NewProcessConfig & set_env( const Environment & env ) ;
-		///< Sets the environment.
-
-	NewProcessConfig & set_fd_stdin( NewProcess::Fd ) ;
-		///< Sets the standard-input file descriptor.
-
-	NewProcessConfig & set_fd_stdout( NewProcess::Fd ) ;
-		///< Sets the standard-output file descriptor.
-
-	NewProcessConfig & set_fd_stderr( NewProcess::Fd ) ;
-		///< Sets the standard-error file descriptor.
-
-	NewProcessConfig & set_cd( const G::Path & ) ;
-		///< Sets the working directory.
-
-	NewProcessConfig & set_strict_path( bool = true ) ;
-		///< Sets the 'strict_path' value.
-
-	NewProcessConfig & set_run_as_id( const G::Identity & ) ;
-		///< Sets the run-as id.
-
-	NewProcessConfig & set_strict_id( bool = true ) ;
-		///< Sets the 'strict_id' value.
-
-	NewProcessConfig & set_exec_error_exit( int ) ;
-		///< Sets the 'exec_error_exit' value.
-
-	NewProcessConfig & set_exec_error_format( const std::string & ) ;
-		///< Sets the 'exec_error_format' value.
-
-	NewProcessConfig & set_exec_error_format_fn( std::string (*)(std::string,int) ) ;
-		///< Sets the 'exec_error_format_fn' value.
-
-	Path m_path ;
-	StringArray m_args ;
-	Environment m_env{Environment::minimal()} ;
-	NewProcess::Fd m_stdin{NewProcess::Fd::devnull()} ;
-	NewProcess::Fd m_stdout{NewProcess::Fd::pipe()} ;
-	NewProcess::Fd m_stderr{NewProcess::Fd::devnull()} ;
-	Path m_cd ;
-	bool m_strict_path{true} ;
-	Identity m_run_as{Identity::invalid()} ;
-	bool m_strict_id{true} ;
-	int m_exec_error_exit{127} ;
-	std::string m_exec_error_format ;
-	std::string (*m_exec_error_format_fn)( std::string , int ){nullptr} ;
-} ;
-
-inline
-G::NewProcessConfig::NewProcessConfig( const Path & exe ) :
-	m_path(exe)
-{
-}
-
-inline
-G::NewProcessConfig::NewProcessConfig( const Path & exe , const G::StringArray & args ) :
-	m_path(exe) ,
-	m_args(args)
-{
-}
-
-inline
-G::NewProcessConfig::NewProcessConfig( const ExecutableCommand & cmd ) :
-	m_path(cmd.exe()) ,
-	m_args(cmd.args())
-{
-}
-
-inline
-G::NewProcessConfig::NewProcessConfig( const Path & exe , const std::string & argv1 ) :
-	m_path(exe)
-{
-	m_args.push_back( argv1 ) ;
-}
-
-inline
-G::NewProcessConfig::NewProcessConfig( const Path & exe , const std::string & argv1 , const std::string & argv2 ) :
-	m_path(exe)
-{
-	m_args.push_back( argv1 ) ;
-	m_args.push_back( argv2 ) ;
-}
-
-inline G::NewProcessConfig & G::NewProcessConfig::set_args( const StringArray & args ) { m_args = args ; return *this ; }
-inline G::NewProcessConfig & G::NewProcessConfig::set_env( const Environment & env ) { m_env = env ; return *this ; }
-inline G::NewProcessConfig & G::NewProcessConfig::set_fd_stdin( NewProcess::Fd fd ) { m_stdin = fd ; return *this ; }
-inline G::NewProcessConfig & G::NewProcessConfig::set_fd_stdout( NewProcess::Fd fd ) { m_stdout = fd ; return *this ; }
-inline G::NewProcessConfig & G::NewProcessConfig::set_fd_stderr( NewProcess::Fd fd ) { m_stderr = fd ; return *this ; }
-inline G::NewProcessConfig & G::NewProcessConfig::set_cd( const G::Path & cd ) { m_cd = cd ; return *this ; }
-inline G::NewProcessConfig & G::NewProcessConfig::set_strict_path( bool strict_path ) { m_strict_path = strict_path ; return *this ; }
-inline G::NewProcessConfig & G::NewProcessConfig::set_run_as_id( const G::Identity & run_as ) { m_run_as = run_as ; return *this ; }
-inline G::NewProcessConfig & G::NewProcessConfig::set_strict_id( bool strict_id ) { m_strict_id = strict_id ; return *this ; }
-inline G::NewProcessConfig & G::NewProcessConfig::set_exec_error_exit( int exec_error_exit ) { m_exec_error_exit = exec_error_exit ; return *this ; }
-inline G::NewProcessConfig & G::NewProcessConfig::set_exec_error_format( const std::string & exec_error_format ) { m_exec_error_format = exec_error_format ; return *this ; }
-inline G::NewProcessConfig & G::NewProcessConfig::set_exec_error_format_fn( std::string (*exec_error_format_fn)(std::string,int) ) { m_exec_error_format_fn = exec_error_format_fn ; return *this ; }
-
-inline
-G::NewProcess::NewProcess( const NewProcessConfig & config ) :
-	NewProcess(
-		config.m_path ,
-		config.m_args ,
-		config.m_env ,
-		config.m_stdin ,
-		config.m_stdout ,
-		config.m_stderr ,
-		config.m_cd ,
-		config.m_strict_path ,
-		config.m_run_as ,
-		config.m_strict_id ,
-		config.m_exec_error_exit ,
-		config.m_exec_error_format ,
-		config.m_exec_error_format_fn )
-{
-}
+inline G::NewProcess::Config & G::NewProcess::Config::set_env( const Environment & e ) { env = e ; return *this ; }
+inline G::NewProcess::Config & G::NewProcess::Config::set_stdin( Fd fd ) { stdin = fd ; return *this ; }
+inline G::NewProcess::Config & G::NewProcess::Config::set_stdout( Fd fd ) { stdout = fd ; return *this ; }
+inline G::NewProcess::Config & G::NewProcess::Config::set_stderr( Fd fd ) { stderr = fd ; return *this ; }
+inline G::NewProcess::Config & G::NewProcess::Config::set_cd( const Path & p ) { cd = p ; return *this ; }
+inline G::NewProcess::Config & G::NewProcess::Config::set_strict_exe( bool b ) { strict_exe = b ; return *this ; }
+inline G::NewProcess::Config & G::NewProcess::Config::set_exec_search_path( const std::string & s ) { exec_search_path = s ; return *this ; }
+inline G::NewProcess::Config & G::NewProcess::Config::set_run_as( Identity i ) { run_as = i ; return *this ; }
+inline G::NewProcess::Config & G::NewProcess::Config::set_strict_id( bool b ) { strict_id = b ; return *this ; }
+inline G::NewProcess::Config & G::NewProcess::Config::set_exec_error_exit( int n ) { exec_error_exit = n ; return *this ; }
+inline G::NewProcess::Config & G::NewProcess::Config::set_exec_error_format( const std::string & s ) { exec_error_format = s ; return *this ; }
+inline G::NewProcess::Config & G::NewProcess::Config::set_exec_error_format_fn( FormatFn f ) { exec_error_format_fn = f ; return *this ; }
 
 #endif

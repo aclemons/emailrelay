@@ -38,21 +38,7 @@ namespace G
 {
 	namespace StrImp /// An implementation namespace for G::Str.
 	{
-		#ifndef G_LIB_SMALL
-			static constexpr string_view chars_meta = "~<>[]*$|?\\(){}\"`'&;="_sv ; // bash meta-chars plus "~"
-		#endif
-
-		static constexpr string_view chars_alnum_ = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz_"_sv ;
-		static_assert( chars_alnum_.size() == 26U+10U+26U+1U , "" ) ;
-
-		static constexpr string_view chars_alnum( chars_alnum_.data() , chars_alnum_.size()-1U ) ;
-
-		static constexpr string_view chars_hexmap = "0123456789abcdef"_sv ;
-		static_assert( chars_hexmap.size() == 16U , "" ) ;
-
-		static constexpr string_view chars_ws = " \t\n\r"_sv ;
-		static_assert( chars_ws.size() == 4U , "" ) ;
-
+		string_view hexmap() noexcept ;
 		bool isDigit( char c ) noexcept ;
 		bool isHex( char c ) noexcept ;
 		bool isPrintableAscii( char c ) noexcept ;
@@ -69,40 +55,28 @@ namespace G
 		int toInt( string_view , bool & overflow , bool & invalid ) noexcept ;
 		template <typename U> string_view fromUnsignedToHex( U u , char * out_p ) noexcept ;
 		void strncpy( char * , const char * , std::size_t ) noexcept ;
-		void readLineFrom( std::istream & stream , string_view eol , std::string & line ) ;
+		template <typename Tstr, typename Fn> bool readLine( std::istream & , Tstr & , char * , std::size_t , Fn ) ;
 		template <typename S, typename T, typename SV> void splitIntoTokens( const S & in , T & out , const SV & ws ) ;
 		template <typename S, typename T> void splitIntoTokens( const S & in , T & out , const S & ws , typename S::value_type esc ) ;
 		template <typename T> void splitIntoFields( string_view in , T & out , string_view ws ) ;
-		template <typename T> void splitIntoFields( string_view in_in , T & out , string_view ws ,
-			char escape , bool remove_escapes ) ;
+		template <typename T> void splitIntoFields( string_view in_in , T & out , string_view ws , char escape , bool remove_escapes ) ;
 		bool ilessc( char c1 , char c2 ) noexcept ;
 		bool imatchc( char c1 , char c2 ) noexcept ;
 		bool imatch( const std::string & a , const std::string & b ) ;
 		template <typename T, typename V> T unique( T in , T end , V repeat , V replacement ) ;
-		bool inList( StringArray::const_iterator begin , StringArray::const_iterator end ,
-			const std::string & s , bool i ) ;
-		bool notInList( StringArray::const_iterator begin , StringArray::const_iterator end ,
-			const std::string & s , bool i ) ;
-		template <typename T> struct Joiner ;
+		bool inList( StringArray::const_iterator begin , StringArray::const_iterator end , const std::string & s , bool i ) ;
+		bool notInList( StringArray::const_iterator begin , StringArray::const_iterator end , const std::string & s , bool i ) ;
 		void join( string_view , std::string & , string_view ) ;
 		template <typename Tout> std::size_t outputHex( Tout out , char c ) ;
 		template <typename Tout> std::size_t outputHex( Tout out , wchar_t c ) ;
 		template <typename Tout, typename Tchar> std::size_t outputPrintable( Tout , Tchar , Tchar , char , bool ) ;
-		struct InPlaceBackInserter ;
-		template <typename Tchar = char> struct PrintableAppender ;
-		bool allOf( string_view , bool (*)(char) ) noexcept ;
+		bool allOf( string_view s , bool (*fn)(char) ) noexcept ;
 	}
 }
 
 bool G::StrImp::allOf( string_view s , bool (*fn)(char) ) noexcept
 {
-	if( s.empty() ) return true ;
-	for( auto c : s )
-	{
-		if( !fn(c) )
-			return false ;
-	}
-	return true ;
+	return std::all_of( s.begin() , s.end() , fn ) ; // (true if empty)
 }
 
 #ifndef G_LIB_SMALL
@@ -198,14 +172,11 @@ std::string G::Str::dequote( const std::string & s , char qq , char esc , string
 	return result ;
 }
 
-#ifndef G_LIB_SMALL
 void G::Str::unescape( std::string & s )
 {
 	unescape( s , '\\' , "0rnt"_sv , "\0\r\n\t"_sv ) ;
 }
-#endif
 
-#ifndef G_LIB_SMALL
 void G::Str::unescape( std::string & s , char c_escape , string_view specials_in , string_view specials_out )
 {
 	G_ASSERT( specials_in.size() == specials_out.size() ) ;
@@ -227,7 +198,6 @@ void G::Str::unescape( std::string & s , char c_escape , string_view specials_in
 	}
 	if( out != s.end() ) s.erase( out , s.end() ) ;
 }
-#endif
 
 #ifndef G_LIB_SMALL
 std::string G::Str::unescaped( const std::string & s_in )
@@ -331,9 +301,9 @@ G::string_view G::Str::trimLeftView( string_view sv , string_view ws , std::size
 	if( limit != 0U && ( n == std::string::npos || n > limit ) )
 		n = limit >= sv.size() ? std::string::npos : limit ;
 	if( n == std::string::npos )
-		return sv.substr( std::nothrow , 0U , 0U ) ;
+		return sv_substr( sv , 0U , 0U ) ;
 	else if( n != 0U )
-		return sv.substr( std::nothrow , n ) ;
+		return sv_substr( sv , n ) ;
 	else
 		return sv ;
 }
@@ -356,9 +326,9 @@ G::string_view G::Str::trimRightView( string_view sv , string_view ws , std::siz
 	if( limit != 0U && ( n == std::string::npos || sv.size() > (limit+n+1U) ) )
 		n = limit >= sv.size() ? std::string::npos : (sv.size()-limit-1U) ;
 	if( n == std::string::npos )
-		return sv.substr( std::nothrow , 0U , 0U ) ;
+		return sv_substr( sv , 0U , 0U ) ;
 	else if( (n+1U) != sv.size() )
-		return sv.substr( std::nothrow , 0U , n+1U ) ;
+		return sv_substr( sv , 0U , n+1U ) ;
 	else
 		return sv ;
 }
@@ -431,13 +401,15 @@ char G::StrImp::toUpper( char c ) noexcept
 bool G::Str::isNumeric( string_view s , bool allow_minus_sign ) noexcept
 {
 	bool bump = allow_minus_sign && s.size() > 1U && s[0] == '-' ;
-	return StrImp::allOf( bump?s.substr(std::nothrow,1U):s , StrImp::isDigit ) ; // (true if empty)
+	return StrImp::allOf( bump?sv_substr(s,1U):s , StrImp::isDigit ) ; // (true if empty)
 }
 
+#ifndef G_LIB_SMALL
 bool G::Str::isHex( string_view s ) noexcept
 {
 	return StrImp::allOf( s , StrImp::isHex ) ;
 }
+#endif
 
 bool G::Str::isPrintableAscii( string_view s ) noexcept
 {
@@ -449,10 +421,12 @@ bool G::Str::isPrintable( string_view s ) noexcept
 	return StrImp::allOf( s , StrImp::isPrintable ) ;
 }
 
+#ifndef G_LIB_SMALL
 bool G::Str::isSimple( string_view s ) noexcept
 {
 	return StrImp::allOf( s , StrImp::isSimple ) ;
 }
+#endif
 
 bool G::Str::isInt( string_view s ) noexcept
 {
@@ -613,7 +587,7 @@ long G::StrImp::toLong( string_view s , bool & overflow , bool & invalid ) noexc
 		invalid = true ;
 		return 0L ;
 	}
-	unsigned long ul = toULong( s.substr(std::nothrow,(negative||positive)?1U:0U) , overflow , invalid ) ;
+	unsigned long ul = toULong( sv_substr(s,(negative||positive)?1U:0U) , overflow , invalid ) ;
 	static constexpr long long_max = std::numeric_limits<long>::max() ;
 	if( ul > long_max || (negative && (ul==long_max)) )
 	{
@@ -637,7 +611,6 @@ short G::Str::toShort( string_view s )
 }
 #endif
 
-#ifndef G_LIB_SMALL
 short G::StrImp::toShort( string_view s , bool & overflow , bool & invalid ) noexcept
 {
 	long long_val = toLong( s , overflow , invalid ) ;
@@ -646,7 +619,6 @@ short G::StrImp::toShort( string_view s , bool & overflow , bool & invalid ) noe
 		overflow = true ;
 	return result ;
 }
-#endif
 
 unsigned int G::Str::toUInt( string_view s1 , string_view s2 )
 {
@@ -719,7 +691,6 @@ unsigned long G::Str::toULong( string_view s , Hex )
 }
 #endif
 
-#ifndef G_LIB_SMALL
 unsigned long G::StrImp::toULongHex( string_view s , bool limited )
 {
 	unsigned long n = 0U ;
@@ -743,7 +714,6 @@ unsigned long G::StrImp::toULongHex( string_view s , bool limited )
 	}
 	return n ;
 }
-#endif
 
 unsigned long G::Str::toULong( string_view s )
 {
@@ -803,7 +773,6 @@ unsigned short G::Str::toUShort( string_view s )
 }
 #endif
 
-#ifndef G_LIB_SMALL
 unsigned short G::StrImp::toUShort( string_view s , bool & overflow , bool & invalid ) noexcept
 {
 	unsigned long ulong_val = toULong( s , overflow , invalid ) ;
@@ -812,7 +781,6 @@ unsigned short G::StrImp::toUShort( string_view s , bool & overflow , bool & inv
 		overflow = true ;
 	return result ;
 }
-#endif
 
 #ifndef G_LIB_SMALL
 G::string_view G::Str::fromULongToHex( unsigned long u , char * out_p ) noexcept
@@ -828,7 +796,6 @@ G::string_view G::Str::fromULongLongToHex( unsigned long long u , char * out_p )
 }
 #endif
 
-#ifndef G_LIB_SMALL
 template <typename U>
 G::string_view G::StrImp::fromUnsignedToHex( U u , char * out_p ) noexcept
 {
@@ -845,9 +812,8 @@ G::string_view G::StrImp::fromUnsignedToHex( U u , char * out_p ) noexcept
 		shift -= 4U ;
 	}
 	string_view sv( out_p , buffer_size ) ;
-	return sv.substr( std::nothrow , std::min( sv.find_first_not_of('0') , static_cast<std::size_t>(buffer_size-1U) ) ) ;
+	return sv_substr( sv , std::min( sv.find_first_not_of('0') , static_cast<std::size_t>(buffer_size-1U) ) ) ;
 }
-#endif
 
 void G::Str::toLower( std::string & s )
 {
@@ -873,13 +839,20 @@ std::string G::Str::upper( G::string_view in )
 	return out ;
 }
 
+G::string_view G::StrImp::hexmap() noexcept
+{
+	static constexpr string_view chars_hexmap = "0123456789abcdef"_sv ;
+	static_assert( chars_hexmap.size() == 16U , "" ) ;
+	return chars_hexmap ;
+}
+
 template <typename Tout>
 std::size_t G::StrImp::outputHex( Tout out , char c )
 {
 	std::size_t n = static_cast<unsigned char>( c ) ;
 	n &= 0xffU ;
-	*out++ = StrImp::chars_hexmap[(n>>4U)%16U] ;
-	*out++ = StrImp::chars_hexmap[(n>>0U)%16U] ;
+	out( hexmap()[(n>>4U)%16U] ) ;
+	out( hexmap()[(n>>0U)%16U] ) ;
 	return 2U ;
 }
 
@@ -889,10 +862,10 @@ std::size_t G::StrImp::outputHex( Tout out , wchar_t c )
 	using uwchar_t = typename std::make_unsigned<wchar_t>::type ;
 	std::size_t n = static_cast<uwchar_t>( c ) ;
 	n &= 0xffffU ;
-	*out++ = StrImp::chars_hexmap[(n>>12U)%16U] ;
-	*out++ = StrImp::chars_hexmap[(n>>8U)%16U] ;
-	*out++ = StrImp::chars_hexmap[(n>>4U)%16U] ;
-	*out++ = StrImp::chars_hexmap[(n>>0U)%16U] ;
+	out( hexmap()[(n>>12U)%16U] ) ;
+	out( hexmap()[(n>>8U)%16U] ) ;
+	out( hexmap()[(n>>4U)%16U] ) ;
+	out( hexmap()[(n>>0U)%16U] ) ;
 	return 4U ;
 }
 
@@ -904,20 +877,22 @@ std::size_t G::StrImp::outputPrintable( Tout out , Tchar c , Tchar escape_in , c
 	std::size_t n = 1U ;
 	if( c == escape_in )
 	{
-		*out++ = escape_out , n++ ;
-		*out++ = escape_out ;
+		out( escape_out ) ;
+		n++ ;
+		out( escape_out ) ;
 	}
 	else if( !eight_bit && uc >= 0x20U && uc < 0x7fU )
 	{
-		*out++ = static_cast<char>(c) ;
+		out( static_cast<char>(c) ) ;
 	}
-	else if( eight_bit && ( ( uc >= 0x20U && uc < 0x7fU ) || ( uc >= 0Xa0 && uc < 0xffU ) ) )
+	else if( eight_bit && ( uc >= 0x20U && uc != 0x7fU ) )
 	{
-		*out++ = static_cast<char>(c) ;
+		out( static_cast<char>(c) ) ;
 	}
 	else
 	{
-		*out++ = escape_out , n++ ;
+		out( escape_out ) ;
+		n++ ;
 		char c_out = 'x' ;
 		if( uc == 10U )
 			c_out = 'n' ;
@@ -927,217 +902,153 @@ std::size_t G::StrImp::outputPrintable( Tout out , Tchar c , Tchar escape_in , c
 			c_out = 't' ;
 		else if( uc == 0U )
 			c_out = '0' ;
-		*out++ = c_out ;
+		out( c_out ) ;
 		if( c_out == 'x' )
 			n += outputHex( out , c ) ;
 	}
 	return n ;
 }
 
-template <typename Tchar>
-struct G::StrImp::PrintableAppender /// An implementation class template for G::Str.
-{
-	PrintableAppender( std::string & s_ , Tchar escape_in_ , char escape_out_ , bool eight_bit_ ) :
-		s(s_) ,
-		escape_in(escape_in_) ,
-		escape_out(escape_out_) ,
-		eight_bit(eight_bit_)
-	{
-	}
-	void operator()( Tchar c )
-	{
-		outputPrintable( std::back_inserter(s) , c , escape_in , escape_out , eight_bit ) ;
-	}
-private:
-	std::string & s ;
-	const Tchar escape_in ;
-	const char escape_out ;
-	const bool eight_bit ;
-} ;
-
-struct G::StrImp::InPlaceBackInserter /// An implementation class for G::Str.
-{
-	InPlaceBackInserter( std::string & s , std::size_t pos ) :
-		m_s(s) ,
-		m_pos(pos)
-	{
-	}
-	InPlaceBackInserter & operator=( char c )
-	{
-		if( m_i == 0U )
-			m_s.at(m_pos) = c ;
-		else
-			m_s.insert( m_pos , 1U , c ) ;
-		return *this ;
-	}
-	InPlaceBackInserter & operator*()
-	{
-		return *this ;
-	}
-	InPlaceBackInserter operator++(int) // NOLINT cert-dcl21-cpp
-	{
-		InPlaceBackInserter old( *this ) ;
-		m_pos++ ;
-		m_i++ ;
-		return old ;
-	}
-	void operator++() = delete ;
-private:
-	std::string & m_s ;
-	std::size_t m_pos ;
-	std::size_t m_i{0U} ;
-} ;
-
 std::string G::Str::printable( const std::string & in , char escape )
 {
 	std::string result ;
-	result.reserve( in.length() + (in.length()/8U) + 1U ) ;
-	std::for_each( in.begin() , in.end() , StrImp::PrintableAppender<>(result,escape,escape,true) ) ;
+	result.reserve( in.length()*2U + 1U ) ;
+	for( auto c : in )
+		StrImp::outputPrintable( [&result](char cc){result.append(1U,cc);} , c , escape , escape , true ) ;
 	return result ;
-}
-
-std::string G::Str::printable( std::string && s , char escape )
-{
-	for( std::size_t pos = 0U ; pos < s.size() ; )
-	{
-		StrImp::InPlaceBackInserter out( s , pos ) ;
-		pos += StrImp::outputPrintable( out , s.at(pos) , escape , escape , true ) ;
-	}
-	return std::move( s ) ;
 }
 
 std::string G::Str::printable( G::string_view in , char escape )
 {
 	std::string result ;
-	result.reserve( in.length() + (in.length()/8U) + 1U ) ;
-	std::for_each( in.begin() , in.end() , StrImp::PrintableAppender<>(result,escape,escape,true) ) ;
+	result.reserve( in.length()*2U + 1U ) ;
+	for( auto c : in )
+		StrImp::outputPrintable( [&result](char cc){result.append(1U,cc);} , c , escape , escape , true ) ;
 	return result ;
 }
 
 std::string G::Str::toPrintableAscii( const std::string & in , char escape )
 {
 	std::string result ;
-	result.reserve( in.length() + (in.length()/8U) + 1U ) ;
-	std::for_each( in.begin() , in.end() ,
-		StrImp::PrintableAppender<>(result,escape,escape,false) ) ;
+	result.reserve( in.length()*2U + 1U ) ;
+	for( auto c : in )
+		StrImp::outputPrintable( [&result](char cc){result.append(1U,cc);} , c , escape , escape , false ) ;
 	return result ;
 }
 
 std::string G::Str::toPrintableAscii( const std::wstring & in , wchar_t escape )
 {
-    std::string result ;
-    result.reserve( in.length() + (in.length()/8U) + 1U ) ;
-    std::for_each( in.begin() , in.end() ,
-        StrImp::PrintableAppender<wchar_t>(result,escape,static_cast<char>(escape),false) ) ;
-    return result ;
-}
-
-std::string G::Str::readLineFrom( std::istream & stream , const std::string & eol )
-{
 	std::string result ;
-	readLineFrom( stream , eol.empty() ? string_view("\n",1U) : string_view(eol.data(),eol.size()) , result , true ) ;
+	result.reserve( in.length()*2U + 1U ) ;
+	for( auto c : in )
+		StrImp::outputPrintable( [&result](wchar_t cc){result.append(1U,static_cast<char>(cc));} , c , escape , static_cast<char>(escape) , false ) ;
 	return result ;
 }
 
-void G::Str::readLineFrom( std::istream & stream , const std::string & eol , std::string & line , bool pre_erase )
+std::string G::Str::readLineFrom( std::istream & stream , string_view eol )
 {
-	if( eol.empty() ) throw InvalidEol() ;
-	readLineFrom( stream , string_view(eol.data(),eol.size()) , line , pre_erase ) ;
+	std::string result ;
+	readLine( stream , result , eol , false , 0U ) ;
+	return result ;
 }
 
-void G::Str::readLineFrom( std::istream & stream , const char * eol , std::string & line , bool pre_erase )
+std::istream & G::Str::readLine( std::istream & stream , std::string & line , string_view eol ,
+	bool pre_erase , std::size_t limit )
 {
-	if( eol == nullptr || eol[0] == '\0' ) throw InvalidEol() ;
-	readLineFrom( stream , string_view(eol) , line , pre_erase ) ;
-}
+	if( pre_erase && stream.good() ) // cf. std::getline()
+		line.clear() ;
 
-void G::Str::readLineFrom( std::istream & stream , string_view eol , std::string & line , bool pre_erase )
-{
-	if( eol.empty() )
-		throw InvalidEol() ;
-
-	if( pre_erase )
-		line.erase() ;
-
-	// this is a special speed optimisation for a two-character terminator with a one-character initial string ;-)
-	if( eol.size() == 2U && eol[0] != eol[1] && line.length() == 1U )
+	if( line.empty() && ( eol.empty() || eol.size() == 1U ) )
 	{
-		// save the initial character, use std::getline() for speed (terminating
-		// on the second character of the two-character terminator), check that the
-		// one-character terminator was actually part of the required two-character
-		// terminator, remove the first character of the two-character terminator,
-		// and finally re-insert the initial character
-		//
-		const char c = line[0] ;
-		line.erase() ; // since getline() doesnt erase it if already at eof
-		std::getline( stream , line , eol[1] ) ; // fast
-		const std::size_t line_length = line.length() ;
-		bool complete = line_length > 0U && line[line_length-1U] == eol[0] ;
-		if( complete )
-		{
-			line.resize( line_length - 1U ) ;
-			line.insert( 0U , &c , 1U ) ;
-		}
-		else
-		{
-			line.insert( 0U , &c , 1U ) ;
-			if( stream.good() )
-			{
-				line.append( 1U , eol[1] ) ;
-				StrImp::readLineFrom( stream , eol , line ) ;
-			}
-		}
+		std::getline( stream , line , eol.empty() ? '\n' : eol[0] ) ;
 	}
 	else
 	{
-		StrImp::readLineFrom( stream , eol , line ) ;
+		const std::size_t eol_size = eol.size() ;
+		const char eol_last = eol.at( eol_size - 1U ) ;
+		bool got_eol = StrImp::readLine( stream , line , nullptr , limit ? limit : line.max_size() ,
+			[eol,eol_size,eol_last](std::string &s,char c)
+			{
+				return
+					( c == eol_last && s.size() >= eol_size ) ?
+						s.find(eol.data(),s.size()-eol_size,eol_size) == (s.size()-eol_size) :
+						false ;
+			} ) ;
+		if( got_eol )
+			line.erase( line.size() - eol.size() ) ;
+	}
+	return stream ;
+}
+
+std::istream & G::Str::readLine( std::istream & stream , std::string & line , Eol eol ,
+	bool pre_erase , std::size_t limit )
+{
+	if( eol == Eol::CrLf )
+	{
+		return readLine( stream , line , "\r\n"_sv , pre_erase , limit ) ;
+	}
+	else // Cr_Lf_CrLf
+	{
+		if( pre_erase && stream.good() ) // cf. std::getline()
+			line.clear() ;
+
+		char next = '\0' ;
+		bool got_eol = StrImp::readLine( stream , line , &next , limit ? limit : line.max_size() ,
+			[](std::string &,char c)
+			{
+				return c == '\n' || c == '\r' ;
+			} ) ;
+		if( got_eol )
+		{
+			if( line.at(line.size()-1U) == '\r' && next == '\n' )
+				stream.get() ; // advance over the peeked '\n'
+			line.erase( line.size()-1U ) ;
+		}
+		return stream ;
 	}
 }
 
-void G::StrImp::readLineFrom( std::istream & stream , string_view eol , std::string & line )
+template <typename Tstring, typename Fn>
+bool G::StrImp::readLine( std::istream & stream , Tstring & line , char * next_p , std::size_t limit , Fn eol_fn )
 {
-	G_ASSERT( !eol.empty() ) ;
-	const std::size_t limit = line.max_size() ;
-	const std::size_t eol_length = eol.size() ;
-	const char eol_final = eol.at( eol_length - 1U ) ;
-	std::size_t line_length = line.length() ;
-
-	bool changed = false ;
-	char c = '\0' ;
-	for(;;)
+	bool got_eol = false ;
+	bool got_some = false ;
+	std::istream::sentry sentry( stream , true ) ;
+	if( sentry )
 	{
-		// (maybe optimise by hoisting the sentry and calling rdbuf() methods)
-		stream.get( c ) ;
-
-		if( stream.fail() ) // get(char) always sets the failbit at eof, not necessarily eofbit
+		using traits = std::istream::traits_type ;
+		std::size_t count = 0U ;
+		int c = stream.rdbuf()->sgetc() ; // c = *p
+		while( count < limit && c != traits::eof() )
 		{
-			// set eofbit, reset failbit -- cf. std::getline() in <string>
-			stream.clear( ( stream.rdstate() & ~std::ios_base::failbit ) | std::ios_base::eofbit ) ;
-			break ;
-		}
-
-		if( line_length == limit ) // pathological case -- see also std::getline()
-		{
-			stream.setstate( std::ios_base::failbit ) ;
-			break ;
-		}
-
-		line.append( 1U , c ) ;
-		changed = true ;
-		++line_length ;
-
-		if( line_length >= eol_length && c == eol_final )
-		{
-			const std::size_t offset = line_length - eol_length ;
-			if( line.find(eol.data(),offset,eol.size()) == offset )
-			{
-				line.erase(offset) ;
+			line.append( 1U , traits::to_char_type(c) ) ;
+			got_eol = eol_fn( line , traits::to_char_type(c) ) ;
+			if( got_eol )
 				break ;
-			}
+
+			count++ ;
+			c = stream.rdbuf()->snextc() ; // c = *(++p)
+		}
+		got_some = count > 0U ;
+		if( count == limit )
+		{
+			stream.clear( stream.rdstate() | std::ios_base::failbit ) ;
+		}
+		else if( c == traits::eof() )
+		{
+			stream.clear( stream.rdstate() | std::ios_base::eofbit ) ;
+		}
+		else
+		{
+			got_some = true ;
+			stream.rdbuf()->sbumpc() ; // ++p
+			if( next_p )
+				*next_p = traits::to_char_type( stream.rdbuf()->sgetc() ) ; // next = *p
 		}
 	}
-	if( !changed )
+	if( !got_some )
 		stream.setstate( std::ios_base::failbit ) ;
+	return got_eol ;
 }
 
 template <typename S, typename T, typename SV>
@@ -1279,44 +1190,29 @@ G::StringArray G::Str::splitIntoFields( string_view in , char sep )
 	return out ;
 }
 
-template <typename T>
-struct G::StrImp::Joiner /// An implementation class template for G::Str.
-{
-	Joiner( T & result_ , string_view sep_ , bool & first_ ) :
-		result(result_) ,
-		sep(sep_) ,
-		first(first_)
-	{
-		first_ = true ;
-	}
-	void operator()( const T & s )
-	{
-		if( !first ) result.append( sep.data() , sep.size() ) ;
-		result.append( s ) ;
-		first = false ;
-	}
-private:
-	T & result ;
-	string_view sep ;
-	bool & first ;
-} ;
-
 std::string G::Str::join( string_view sep , const StringMap & map , string_view pre ,
 	string_view post )
 {
 	std::string result ;
-	bool first = true ;
-	StrImp::Joiner<std::string> joiner( result , sep , first ) ;
+	int n = 0 ;
 	for( const auto & map_item : map )
-		joiner( std::string(map_item.first).append(pre.data(),pre.size()).append(map_item.second).append(post.data(),post.size()) ) ;
+		result
+			.append(sep.data(),(n++)?sep.size():0U)
+			.append(map_item.first)
+			.append(pre.data(),pre.size())
+			.append(map_item.second)
+			.append(post.data(),post.size()) ;
 	return result ;
 }
 
 std::string G::Str::join( string_view sep , const StringArray & strings )
 {
 	std::string result ;
-	bool first = true ;
-	std::for_each( strings.begin() , strings.end() , StrImp::Joiner<std::string>(result,sep,first) ) ;
+	int n = 0 ;
+	for( const auto & item : strings )
+		result
+			.append(sep.data(),(n++)?sep.size():0U)
+			.append(item) ;
 	return result ;
 }
 
@@ -1355,23 +1251,30 @@ G::StringArray G::Str::keys( const StringMap & map )
 
 G::string_view G::Str::ws() noexcept
 {
-	return StrImp::chars_ws ;
+	static constexpr string_view chars_ws = " \t\n\r"_sv ;
+	static_assert( chars_ws.size() == 4U , "" ) ;
+	return chars_ws ;
 }
 
+#ifndef G_LIB_SMALL
 G::string_view G::Str::alnum() noexcept
 {
-	return StrImp::chars_alnum ;
+	return sv_substr( alnum_() , 0U , alnum_().size()-1U ) ;
 }
+#endif
 
 G::string_view G::Str::alnum_() noexcept
 {
-	return StrImp::chars_alnum_ ;
+	static constexpr string_view chars_alnum_ = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz_"_sv ;
+	static_assert( chars_alnum_.size() == 26U+10U+26U+1U , "" ) ;
+	return chars_alnum_ ;
 }
 
 #ifndef G_LIB_SMALL
 G::string_view G::Str::meta() noexcept
 {
-	return StrImp::chars_meta ;
+	static constexpr string_view chars_meta = "~<>[]*$|?\\(){}\"`'&;="_sv ; // bash meta-chars plus "~"
+	return chars_meta ;
 }
 #endif
 
@@ -1394,16 +1297,14 @@ G::string_view G::Str::headView( string_view in , std::size_t pos , string_view 
 	return
 		pos == std::string::npos ?
 			default_ :
-			( pos == 0U ? string_view(in.data(),std::size_t(0U)) : ( pos >= in.size() ? in : in.substr(std::nothrow,0U,pos) ) ) ;
+			( pos == 0U ? string_view(in.data(),std::size_t(0U)) : ( pos >= in.size() ? in : sv_substr(in,0U,pos) ) ) ;
 }
 
-#ifndef G_LIB_SMALL
 G::string_view G::Str::headView( string_view in , string_view sep , bool default_empty ) noexcept
 {
 	std::size_t pos = sep.empty() ? std::string::npos : in.find( sep ) ;
 	return headView( in , pos , default_empty ? string_view(in.data(),std::size_t(0U)) : in ) ;
 }
-#endif
 
 std::string G::Str::tail( string_view in , std::size_t pos , string_view default_ )
 {
@@ -1425,7 +1326,7 @@ G::string_view G::Str::tailView( string_view in , std::size_t pos , string_view 
 	return
 		pos == std::string::npos ?
 			default_ :
-			( (pos+1U) >= in.size() ? string_view() : in.substr(std::nothrow,pos+1U) ) ;
+			( (pos+1U) >= in.size() ? string_view() : sv_substr(in,pos+1U) ) ;
 }
 
 G::string_view G::Str::tailView( string_view in , string_view sep , bool default_empty ) noexcept
@@ -1463,16 +1364,16 @@ bool G::Str::isPositive( string_view s_in ) noexcept
 {
 	string_view s = trimmedView( s_in , ws() ) ;
 	return !s.empty() && (
-		s.imatch("y"_sv) || s.imatch("yes"_sv) || s.imatch("t"_sv) ||
-		s.imatch("true"_sv) || s.imatch("1"_sv) || s.imatch("on"_sv) ) ;
+		sv_imatch(s,"y"_sv) || sv_imatch(s,"yes"_sv) || sv_imatch(s,"t"_sv) ||
+		sv_imatch(s,"true"_sv) || sv_imatch(s,"1"_sv) || sv_imatch(s,"on"_sv) ) ;
 }
 
 bool G::Str::isNegative( string_view s_in ) noexcept
 {
 	string_view s = trimmedView( s_in , ws() ) ;
 	return !s.empty() && (
-		s.imatch("n"_sv) || s.imatch("no"_sv) || s.imatch("f"_sv) ||
-		s.imatch("false"_sv) || s.imatch("0"_sv) || s.imatch("off"_sv) ) ;
+		sv_imatch(s,"n"_sv) || sv_imatch(s,"no"_sv) || sv_imatch(s,"f"_sv) ||
+		sv_imatch(s,"false"_sv) || sv_imatch(s,"0"_sv) || sv_imatch(s,"off"_sv) ) ;
 }
 
 bool G::Str::match( string_view a , string_view b ) noexcept
@@ -1494,7 +1395,7 @@ bool G::Str::iless( string_view a , string_view b ) noexcept
 
 bool G::StrImp::imatchc( char c1 , char c2 ) noexcept
 {
-	return string_view(&c1,1U).imatch({&c2,1U}) ;
+	return sv_imatch( string_view(&c1,1U) , string_view(&c2,1U) ) ;
 }
 
 #ifndef G_LIB_SMALL
@@ -1506,13 +1407,15 @@ bool G::Str::imatch( char c1 , char c2 ) noexcept
 
 bool G::Str::imatch( string_view a , string_view b ) noexcept
 {
-	return a.imatch( b ) ;
+	return sv_imatch( a , b ) ;
 }
 
+#ifndef G_LIB_SMALL
 bool G::StrImp::imatch( const std::string & a , const std::string & b )
 {
-	return string_view(a).imatch( b ) ;
+	return sv_imatch( string_view(a) , string_view(b) ) ;
 }
+#endif
 
 std::size_t G::Str::ifind( string_view s , string_view key )
 {

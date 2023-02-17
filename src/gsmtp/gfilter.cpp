@@ -20,58 +20,74 @@
 
 #include "gdef.h"
 #include "gfilter.h"
+#include "gstringview.h"
 #include "gstr.h"
 
-std::string GSmtp::Filter::str( bool server_side ) const
+std::string GSmtp::Filter::str( Filter::Type type ) const
 {
-	std::string part1 = response().empty() ? "ok=1" : "ok=0" ;
-	std::string part2( abandoned() ? "abandon" : "" ) ;
-	std::string part3( special() ? (server_side?"rescan":"break") : "" ) ;
-
 	std::ostringstream ss ;
-	ss
-		<< G::Str::join( " " , part1 , part2 , part3 ) << " "
-		<< "response=[" << response() << "]" ;
+
+	auto r = result() ;
+	if( r == Result::fail )
+		ss << "failed " ;
+	else if( r == Result::abandon )
+		ss << "ok(abandon) " ;
+	else
+		ss << "ok " ;
+
+	if( special() )
+		ss << ( type == Filter::Type::server ? "+rescan " : "+break " ) ;
+
+	ss << "response=[" << response() << "]" ;
+
 	if( reason() != response() )
 		ss << " reason=[" << reason() << "]" ;
 
 	return ss.str() ;
 }
 
-GSmtp::Filter::Exit::Exit( int exit_code , bool server_side ) :
-	result(Result::f_fail) ,
+G::string_view GSmtp::Filter::strtype( Filter::Type type ) noexcept
+{
+	return type == Type::server ? "filter"_sv :
+		( type == Type::client ? "client filter"_sv : "routing filter"_sv ) ;
+}
+
+GSmtp::Filter::Exit::Exit( int exit_code , Filter::Type type ) :
+	result(Result::fail) ,
 	special(false)
 {
 	if( exit_code == 0 )
 	{
-		result = Result::f_ok ;
+		result = Result::ok ;
 	}
 	else if( exit_code >= 1 && exit_code < 100 )
 	{
-		result = Result::f_fail ;
+		result = Result::fail ;
 	}
 	else if( exit_code == 100 )
 	{
-		result = Result::f_abandon ;
+		result = Result::abandon ;
 	}
 	else if( exit_code == 101 )
 	{
-		result = Result::f_ok ;
+		result = Result::ok ;
 	}
+
+	bool server_side = type == Filter::Type::server ;
 	if( server_side )
 	{
 		const bool rescan = true ;
 		if( exit_code == 102 )
 		{
-			result = Result::f_abandon ; special = rescan ;
+			result = Result::abandon ; special = rescan ;
 		}
 		else if( exit_code == 103 )
 		{
-			result = Result::f_ok ; special = rescan ;
+			result = Result::ok ; special = rescan ;
 		}
 		else if( exit_code == 104 )
 		{
-			result = Result::f_fail ; special = rescan ;
+			result = Result::fail ; special = rescan ;
 		}
 	}
 	else // client-side
@@ -79,35 +95,35 @@ GSmtp::Filter::Exit::Exit( int exit_code , bool server_side ) :
 		const bool stop_scanning = true ;
 		if( exit_code == 102 )
 		{
-			result = Result::f_ok ; special = stop_scanning ;
+			result = Result::ok ; special = stop_scanning ;
 		}
 		else if( exit_code == 103 )
 		{
-			result = Result::f_ok ;
+			result = Result::ok ;
 		}
 		else if( exit_code == 104 )
 		{
-			result = Result::f_abandon ; special = stop_scanning ;
+			result = Result::abandon ; special = stop_scanning ;
 		}
 		else if( exit_code == 105 )
 		{
-			result = Result::f_fail ; special = stop_scanning ;
+			result = Result::fail ; special = stop_scanning ;
 		}
 	}
 }
 
 bool GSmtp::Filter::Exit::ok() const
 {
-	return result == Result::f_ok ;
+	return result == Result::ok ;
 }
 
 bool GSmtp::Filter::Exit::abandon() const
 {
-	return result == Result::f_abandon ;
+	return result == Result::abandon ;
 }
 
 bool GSmtp::Filter::Exit::fail() const
 {
-	return result == Result::f_fail ;
+	return result == Result::fail ;
 }
 

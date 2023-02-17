@@ -24,6 +24,7 @@
 #include "gdef.h"
 #include "gappbase.h"
 #include "gexception.h"
+#include "goptions.h"
 #include "goptionsusage.h"
 #include "gtray.h"
 #include "winform.h"
@@ -31,6 +32,7 @@
 #include "configuration.h"
 #include "output.h"
 #include <memory>
+#include <vector>
 #include <utility>
 
 namespace Main
@@ -70,7 +72,7 @@ public:
 	virtual ~WinApp() ;
 		///< Destructor.
 
-	void init( const Main::Configuration & cfg ) ;
+	void init( const Main::Configuration & cfg , const G::Options & options_spec ) ;
 		///< Initialises the object after construction.
 
 	int exitCode() const ;
@@ -108,19 +110,18 @@ private: // overrides
 private:
 	struct Config
 	{
-		bool with_tray ;
-		bool with_sysmenu_quit ;
-		bool never_open ;
-		bool open_on_create ;
-		bool allow_apply ;
-		bool quit_on_form_ok ;
-		bool close_on_form_ok ;
-		bool close_on_close ;
-		bool form_minimisable ;
-		bool form_parentless ;
-		bool minimise_on_close ;
-		bool restore_on_open ;
-		Config() ;
+		bool with_tray {false} ;
+		bool with_sysmenu_quit {false} ;
+		bool never_open {false} ;
+		bool open_on_create {true} ;
+		bool allow_apply {false} ;
+		bool quit_on_form_ok {false} ;
+		bool close_on_form_ok {false} ;
+		bool close_on_close {false} ;
+		bool form_minimisable {false} ;
+		bool form_parentless {false} ;
+		bool minimise_on_close {false} ;
+		bool restore_on_open {false} ;
 		static Config create( const Main::Configuration & ) ;
 		static Config hidden() ;
 		static Config nodaemon() ;
@@ -140,9 +141,9 @@ private:
 	void doQuit() ;
 
 private:
+	G::StringArray m_configuration_data ;
 	std::unique_ptr<GGui::Tray> m_tray ;
 	std::unique_ptr<Main::WinForm> m_form ;
-	std::unique_ptr<Main::Configuration> m_form_cfg ;
 	std::unique_ptr<Main::WinMenu> m_menu ;
 	bool m_disable_output ;
 	Config m_cfg ;

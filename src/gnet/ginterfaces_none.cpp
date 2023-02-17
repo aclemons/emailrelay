@@ -21,6 +21,7 @@
 #include "gdef.h"
 #include "ginterfaces.h"
 #include "gstr.h"
+#include "gassert.h"
 
 GNet::Interfaces::Interfaces()
 = default;
@@ -51,37 +52,6 @@ bool GNet::Interfaces::loaded() const
 	return true ;
 }
 
-std::vector<GNet::Address> GNet::Interfaces::find( const std::string & , unsigned int , bool ) const
-{
-	return AddressList() ;
-}
-
-std::vector<GNet::Address> GNet::Interfaces::addresses( const G::StringArray & names , unsigned int port ,
-	G::StringArray * used_names , G::StringArray * empty_names , G::StringArray * bad_names ) const
-{
-	AddressList result ;
-	for( const auto & name : names )
-	{
-		addresses( name , port , result , used_names , empty_names , bad_names ) ;
-	}
-	return result ;
-}
-
-void GNet::Interfaces::addresses( const std::string & name , unsigned int port ,
-	std::vector<GNet::Address> & result ,
-	G::StringArray * used_names , G::StringArray * /*empty_names*/ , G::StringArray * bad_names ) const
-{
-	if( !Address::validStrings( name , G::Str::fromUInt(port) ) )
-	{
-		if( bad_names ) bad_names->push_back( name ) ;
-	}
-	else
-	{
-		if( used_names ) used_names->push_back( name ) ;
-		result.push_back( Address::parse(name,port) ) ;
-	}
-}
-
 G::StringArray GNet::Interfaces::names( bool ) const
 {
 	return G::StringArray() ;
@@ -95,6 +65,16 @@ GNet::Interfaces::const_iterator GNet::Interfaces::begin() const
 GNet::Interfaces::const_iterator GNet::Interfaces::end() const
 {
 	return m_list.end() ;
+}
+
+std::size_t GNet::Interfaces::addresses( std::vector<GNet::Address> & , const std::string & , unsigned int , int ) const
+{
+	return 0U ;
+}
+
+std::vector<GNet::Address> GNet::Interfaces::addresses( const std::string & , unsigned int , int ) const
+{
+	return {} ;
 }
 
 void GNet::Interfaces::readEvent()

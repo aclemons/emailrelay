@@ -31,10 +31,12 @@ bool GNet::Descriptor::valid() const noexcept
 	return m_fd >= 0 ;
 }
 
+#ifndef G_LIB_SMALL
 HANDLE GNet::Descriptor::h() const noexcept
 {
 	return 0 ;
 }
+#endif
 
 void GNet::Descriptor::streamOut( std::ostream & stream ) const
 {

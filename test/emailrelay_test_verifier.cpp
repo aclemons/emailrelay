@@ -23,8 +23,9 @@
 //
 // The action of the verifier is dictated by special sub-strings in the
 // recipient:
-// * OK -- valid
-// * L -- local
+// * OK -- verify as remote ("1|<rcpt-to>")
+// * L -- verify as local ("0|<user>|<user>")
+// * B -- verify as 'bob' ("1|bob@<domain>" or "0|bob|bob")
 // * X -- no response (to test response timeouts)
 // * x -- disconnect
 // * ! -- abort
@@ -70,7 +71,7 @@ private:
 } ;
 
 Main::VerifierPeer::VerifierPeer( GNet::ExceptionSinkUnbound ebu , GNet::ServerPeerInfo && peer_info ) :
-	GNet::ServerPeer( ebu.bind(this) , std::move(peer_info) , GNet::LineBufferConfig::newline() )
+	GNet::ServerPeer( ebu.bind(this) , std::move(peer_info) , GNet::LineBufferConfig::autodetect() )
 {
 	G_LOG_S( "VerifierPeer::ctor: new connection from " << peerAddress().displayString() ) ;
 }
@@ -98,41 +99,56 @@ bool Main::VerifierPeer::processLine( std::string line )
 
 	G::StringArray part ;
 	G::Str::splitIntoFields( line , part , '|' ) ;
-	std::string to = part.at(0U) ;
+	std::string rcpt_to = part.at(0U) ;
+	std::string user = G::Str::head( rcpt_to , "@" , false ) ;
+	std::string domain = G::Str::tail( rcpt_to , "@" , true ) ;
+	std::string at_domain = domain.empty() ? std::string() : ("@"+domain) ;
 
-	bool local = to.find("L") != std::string::npos ;
-	bool valid = to.find("OK") != std::string::npos ;
-	bool blackhole = to.find("X") != std::string::npos ;
-	bool disconnect = to.find("x") != std::string::npos ;
-	bool abort = to.find("!") != std::string::npos ;
+	bool valid_remote = rcpt_to.find("OK") != std::string::npos ;
+	bool valid_local = rcpt_to.find("L") != std::string::npos ;
+	bool bob = rcpt_to.find("B") != std::string::npos ;
+	bool blackhole = rcpt_to.find("X") != std::string::npos ;
+	bool disconnect = rcpt_to.find("x") != std::string::npos ;
+	bool abort = rcpt_to.find("!") != std::string::npos ;
 
 	if( abort )
 	{
-		G_LOG_S( "VerifierPeer::processLine: sending 100" ) ;
-		send( "100\n"_sv ) ; // GNet::ServerPeer::send()
+		G_LOG_S( "VerifierPeer::processLine: got '!': sending 100" ) ;
+		send( std::string("100\n") ) ; // GNet::ServerPeer::send()
 	}
 	else if( blackhole )
 	{
-		G_LOG_S( "VerifierPeer::processLine: sending nothing" ) ;
+		G_LOG_S( "VerifierPeer::processLine: got 'X': sending nothing" ) ;
 	}
 	else if( disconnect )
 	{
+		G_LOG_S( "VerifierPeer::processLine: got 'x': disconnecting" ) ;
 		throw std::runtime_error( "disconnection" ) ;
 	}
-	else if( valid && local )
+	else if( valid_local && bob )
 	{
-		G_LOG_S( "VerifierPeer::processLine: sending postmaster" ) ;
-		send( "0|postmaster|Postmaster <postmaster@localhost>\n"_sv ) ; // GNet::ServerPeer::send()
+		G_LOG_S( "VerifierPeer::processLine: got 'B' and 'L': sending valid local [bob]" ) ;
+		send( std::string("0|bob|bob\n") ) ; // GNet::ServerPeer::send()
 	}
-	else if( valid )
+	else if( valid_local )
 	{
-		G_LOG_S( "VerifierPeer::processLine: sending valid" ) ;
-		send( "1|" + to + "\n" ) ; // GNet::ServerPeer::send()
+		G_LOG_S( "VerifierPeer::processLine: got 'L': sending valid local [" << user << "]" ) ;
+		send( "0|"+user+"|"+user+"\n" ) ; // GNet::ServerPeer::send()
+	}
+	else if( valid_remote && bob )
+	{
+		G_LOG_S( "VerifierPeer::processLine: got 'B' and 'OK': sending valid remote [bob" << at_domain << "]" ) ;
+		send( "1|bob"+at_domain+"\n" ) ; // GNet::ServerPeer::send()
+	}
+	else if( valid_remote )
+	{
+		G_LOG_S( "VerifierPeer::processLine: got 'OK': sending valid remote [" << rcpt_to << "]" ) ;
+		send( "1|"+rcpt_to+"\n" ) ; // GNet::ServerPeer::send()
 	}
 	else
 	{
 		G_LOG_S( "VerifierPeer::processLine: sending error" ) ;
-		send( "2|VerifierError\n"_sv ) ; // GNet::ServerPeer::send()
+		send( std::string("2|VerifierError\n") ) ; // GNet::ServerPeer::send()
 	}
 	return true ;
 }
@@ -191,15 +207,16 @@ int main( int argc , char * argv [] )
 	try
 	{
 		G::Arg arg( argc , argv ) ;
-		G::GetOpt opt( arg ,
-			"h!help!show help!!0!!1" "|"
-			"l!log!logging!!0!!1" "|"
-			"f!log-file!log file!!1!file!1" "|"
-			"d!debug!more logging!!0!!1" "|"
-			"6!ipv6!use ipv6!!0!!1" "|"
-			"P!port!port number!!1!port!1" "|"
-			"f!pid-file!pid file!!1!path!1" "|"
-		) ;
+		G::Options options ;
+		using M = G::Option::Multiplicity ;
+		G::Options::add( options , 'h' , "help" , "show help" , "" , M::zero , "" , 1 , 0 ) ;
+		G::Options::add( options , 'l' , "log" , "logging" , "" , M::zero , "" , 1 , 0 ) ;
+		G::Options::add( options , 'f' , "log-file" , "log file" , "" , M::one , "file" , 1 , 0 ) ;
+		G::Options::add( options , 'd' , "debug" , "more logging" , "" , M::zero , "" , 1 , 0 ) ;
+		G::Options::add( options , '6' , "ipv6" , "use ipv6" , "" , M::zero , "" , 1 , 0 ) ;
+		G::Options::add( options , 'P' , "port" , "port number" , "" , M::one , "port" , 1 , 0 ) ;
+		G::Options::add( options , 'f' , "pid-file" , "pid file" , "" , M::one , "path" , 1 , 0 ) ;
+		G::GetOpt opt( arg , options ) ;
 		if( opt.hasErrors() )
 		{
 			opt.showErrors(std::cerr) ;
@@ -225,7 +242,14 @@ int main( int argc , char * argv [] )
 			file << G::Process::Id().str() << std::endl ;
 		}
 
-		G::LogOutput log_output( log , debug , log_file ) ;
+		G::LogOutput log_output( arg.prefix() ,
+			G::LogOutput::Config()
+				.set_output_enabled(log)
+				.set_summary_info(log)
+				.set_verbose_info(debug)
+				.set_debug(debug) ,
+			log_file ) ;
+
 		int rc = run( ipv6 , port , idle_timeout ) ;
 		std::cout << "done" << std::endl ;
 		return rc ;

@@ -118,10 +118,12 @@ void G::Cleanup::add( bool (*fn)(SignalSafe,const char*) , const char * arg )
 	CleanupImp::add( fn , arg ) ;
 }
 
+#ifndef G_LIB_SMALL
 void G::Cleanup::atexit( bool active )
 {
 	CleanupImp::atexit( active ) ;
 }
+#endif
 
 void G::Cleanup::block() noexcept
 {
@@ -133,10 +135,12 @@ void G::Cleanup::release() noexcept
 	CleanupImp::release() ;
 }
 
+#ifndef G_LIB_SMALL
 const char * G::Cleanup::strdup( const char * p )
 {
 	return CleanupImp::strdup_ignore_leaks( p ) ;
 }
+#endif
 
 const char * G::Cleanup::strdup( const std::string & s )
 {
@@ -191,15 +195,19 @@ bool G::CleanupImp::ignored( int signum )
 	return action.sa_handler == SIG_IGN ; // NOLINT
 }
 
+#ifndef G_LIB_SMALL
 void G::CleanupImp::installDefault( int signum )
 {
 	install( signum , SIG_DFL , true ) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 void G::CleanupImp::installDefault( const G::SignalSafe & , int signum )
 {
 	install( signum , SIG_DFL , false ) ;
 }
+#endif
 
 void G::CleanupImp::installIgnore( int signum )
 {

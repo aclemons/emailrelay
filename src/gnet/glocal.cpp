@@ -22,11 +22,6 @@
 #include "glocal.h"
 #include "ghostname.h"
 #include "gresolver.h"
-#include "glog.h"
-#include <sstream>
-
-std::string GNet::Local::m_name_override ;
-bool GNet::Local::m_name_override_set = false ;
 
 std::string GNet::Local::hostname()
 {
@@ -36,7 +31,7 @@ std::string GNet::Local::hostname()
 	return name ;
 }
 
-std::string GNet::Local::resolvedHostname()
+std::string GNet::Local::canonicalName()
 {
 	static std::string result ;
 	static bool first = true ;
@@ -48,28 +43,5 @@ std::string GNet::Local::resolvedHostname()
 		result = ok ? location.name() : (hostname()+".localnet") ;
 	}
 	return result ;
-}
-
-std::string GNet::Local::canonicalName()
-{
-	return m_name_override_set ? m_name_override : resolvedHostname() ;
-}
-
-void GNet::Local::canonicalName( const std::string & name_override )
-{
-	m_name_override = name_override ;
-	m_name_override_set = true ;
-}
-
-bool GNet::Local::isLocal( const Address & address , std::string & reason )
-{
-	// by inspection wrt RFC-1918, RFC-6890 etc
-	return address.isLocal( reason ) ;
-}
-
-bool GNet::Local::isLocal( const Address & address )
-{
-	std::string reason ;
-	return isLocal( address , reason ) ;
 }
 

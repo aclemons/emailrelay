@@ -28,14 +28,17 @@
 #include "glocal.h"
 #include "gmonitor.h"
 #include "gslot.h"
+#include "gstringtoken.h"
 #include "gstr.h"
+#include "gstringarray.h"
 #include <utility>
+#include <limits>
 
 GSmtp::AdminServerPeer::AdminServerPeer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo && peer_info ,
 	AdminServer & server , const std::string & remote_address ,
-	const G::StringMap & info_commands , const G::StringMap & config_commands ,
+	const G::StringMap & info_commands ,
 	bool with_terminate ) :
-		GNet::ServerPeer(esu.bind(this),std::move(peer_info),GNet::LineBufferConfig::autodetect()) ,
+		GNet::ServerPeer(esu.bind(this),std::move(peer_info),GNet::LineBufferConfig::autodetect()),
 		m_es(esu.bind(this)) ,
 		m_server(server) ,
 		m_prompt("E-MailRelay> ") ,
@@ -43,8 +46,9 @@ GSmtp::AdminServerPeer::AdminServerPeer( GNet::ExceptionSinkUnbound esu , GNet::
 		m_remote_address(remote_address) ,
 		m_notifying(false) ,
 		m_info_commands(info_commands) ,
-		m_config_commands(config_commands) ,
-		m_with_terminate(with_terminate)
+		m_with_terminate(with_terminate) ,
+		m_error_limit(30U) ,
+		m_error_count(0U)
 {
 	G_LOG_S( "GSmtp::AdminServerPeer: admin connection from " << peerAddress().displayString() ) ;
 	m_client_ptr.deletedSignal().connect( G::Slot::slot(*this,&AdminServerPeer::clientDone) ) ;
@@ -53,7 +57,7 @@ GSmtp::AdminServerPeer::AdminServerPeer( GNet::ExceptionSinkUnbound esu , GNet::
 
 GSmtp::AdminServerPeer::~AdminServerPeer()
 {
-	m_client_ptr.deletedSignal().disconnect() ; // fwiw
+	m_client_ptr.deletedSignal().disconnect() ;
 }
 
 void GSmtp::AdminServerPeer::clientDone( const std::string & s )
@@ -61,7 +65,7 @@ void GSmtp::AdminServerPeer::clientDone( const std::string & s )
 	if( s.empty() )
 		sendLine( "OK" ) ;
 	else
-		sendLine( "error: " + s ) ;
+		sendLine( std::move(std::string("error: ").append(s)) ) ;
 }
 
 void GSmtp::AdminServerPeer::onDelete( const std::string & reason )
@@ -77,80 +81,91 @@ void GSmtp::AdminServerPeer::onSecure( const std::string & , const std::string &
 bool GSmtp::AdminServerPeer::onReceive( const char * line_data , std::size_t line_size , std::size_t ,
 	std::size_t , char )
 {
-	std::string line( line_data , line_size ) ;
-	if( is(line,"flush") )
+	G::string_view line( line_data , line_size ) ;
+	G::StringTokenView t( line , G::Str::ws() ) ;
+	if( is(t(),"flush") )
 	{
 		flush() ;
 	}
-	else if( is(line,"forward") )
+	else if( is(t(),"forward") )
 	{
 		forward() ;
 	}
-	else if( is(line,"help") )
+	else if( is(t(),"help") )
 	{
 		help() ;
 	}
-	else if( is(line,"status") )
+	else if( is(t(),"status") )
 	{
 		status() ;
 	}
-	else if( is(line,"notify") )
+	else if( is(t(),"notify") )
 	{
 		m_notifying = true ;
+		setIdleTimeout( 0U ) ; // GNet::ServerPeer
 	}
-	else if( is(line,"list") )
+	else if( is(t(),"list") )
 	{
-		sendList( spooled() ) ;
+		sendMessageIds( m_server.store().ids() ) ;
 	}
-	else if( is(line,"failures") )
+	else if( is(t(),"failures") )
 	{
-		sendList( failures() ) ;
+		sendMessageIds( m_server.store().failures() ) ;
 	}
-	else if( is(line,"unfail-all") )
+	else if( is(t(),"unfail-all") )
 	{
-		unfailAll() ;
-		sendLine( "" ) ;
+		m_server.store().unfailAll() ;
+		sendLine( std::string() ) ;
 	}
-	else if( is(line,"pid") )
+	else if( is(t(),"pid") )
 	{
 		sendLine( G::Process::Id().str() ) ;
 	}
-	else if( is(line,"quit") )
+	else if( is(t(),"quit") )
 	{
 		throw GNet::Done() ;
 	}
-	else if( is(line,"terminate") && m_with_terminate )
+	else if( is(t(),"terminate") && m_with_terminate )
 	{
 		G_LOG_S( "GSmtp::AdminServerPeer::onReceive: received a terminate command from "
 			<< peerAddress().displayString() ) ;
 		if( GNet::EventLoop::exists() )
 			GNet::EventLoop::instance().quit("") ;
 	}
-	else if( is(line,"info") && !m_info_commands.empty() )
+	else if( is(t(),"info") && !m_info_commands.empty() )
 	{
-		std::string arg = argument( line ) ;
+		G::string_view arg = (++t)() ;
 		if( arg.empty() || !find(arg,m_info_commands).first )
-			sendLine( "usage: info {" + G::Str::join("|",G::Str::keys(m_info_commands)) + "}" ) ;
+			sendLine( std::move(std::string("usage: info {").append(G::Str::join("|",G::Str::keys(m_info_commands))).append(1U,'}')) ) ;
 		else
 			sendLine( find(arg,m_info_commands).second ) ;
 	}
-	else if( is(line,"config") && !m_config_commands.empty() )
+	else if( is(t(),"dnsbl") )
 	{
-		std::string arg = argument( line ) ;
-		if( arg.empty() )
-			sendLine( G::Str::join( eol() , m_config_commands , "=[" , "]" ) ) ;
-		else if( !find(arg,m_config_commands).first )
-			sendLine( "usage: config [{" + G::Str::join("|",G::Str::keys(m_config_commands)) + "}]" ) ;
+		G::string_view action = (++t)() ;
+		G::string_view arg = (++t)() ;
+		bool start = G::Str::imatch( action , "start" ) ;
+		if( ( start && arg.empty() ) || ( G::Str::imatch(action,"stop") && ( arg.empty() || G::Str::isUInt(arg) ) ) )
+		{
+			sendLine( "OK" ) ;
+			m_server.emitCommand( AdminServer::Command::dnsbl , start ? 0U :
+				( arg.empty() ? std::numeric_limits<unsigned int>::max() : G::Str::toUInt(arg,"0") ) ) ;
+		}
 		else
-			sendLine( find(arg,m_config_commands).second ) ;
+		{
+			sendLine( "usage: dnsbl {start|stop <timeout>}" ) ;
+		}
 	}
 	else if( line.find_first_not_of(" \r\n\t") != std::string::npos )
 	{
 		sendLine( "error: unrecognised command" ) ;
+		m_error_count++ ;
+		if( m_error_limit && m_error_count >= m_error_limit )
+			throw G::Exception( "too many errors" ) ;
 	}
 	else
 	{
-		sendLine( "" ) ;
+		sendLine( std::string() ) ;
 	}
 	return true ;
 }
@@ -161,47 +176,37 @@ std::string GSmtp::AdminServerPeer::eol() const
 	return eol.empty() ? std::string("\r\n") : eol ;
 }
 
-bool GSmtp::AdminServerPeer::is( const std::string & line_in , const std::string & key )
+bool GSmtp::AdminServerPeer::is( G::string_view token , G::string_view key )
 {
-	G::StringArray parts ;
-	G::Str::splitIntoTokens( line_in , parts , G::Str::ws() ) ;
-	return !parts.empty() && G::Str::imatch( parts.at(0) , key ) ;
+	return G::Str::imatch( token , key ) ;
 }
 
-std::string GSmtp::AdminServerPeer::argument( const std::string & line_in )
-{
-	G::StringArray parts ;
-	G::Str::splitIntoTokens( line_in , parts , G::Str::ws() ) ;
-	return parts.size() > 1U ? parts.at(1U) : std::string() ;
-}
-
-std::pair<bool,std::string> GSmtp::AdminServerPeer::find( const std::string & line , const G::StringMap & map )
+std::pair<bool,std::string> GSmtp::AdminServerPeer::find( G::string_view line , const G::StringMap & map )
 {
 	for( const auto & item : map )
 	{
 		if( is(line,item.first) )
-			return std::make_pair(true,item.second) ;
+			return { true , item.second } ;
 	}
-	return std::make_pair(false,std::string()) ;
+	return { false , {} } ;
 }
 
 void GSmtp::AdminServerPeer::help()
 {
-	G::StringArray commands ;
-	commands.push_back( "flush" ) ;
-	commands.push_back( "forward" ) ;
-	commands.push_back( "help" ) ;
-	commands.push_back( "status" ) ;
-	commands.push_back( "list" ) ;
-	commands.push_back( "failures" ) ;
-	commands.push_back( "unfail-all" ) ;
-	commands.push_back( "notify" ) ;
-	commands.push_back( "pid" ) ;
-	commands.push_back( "quit" ) ;
-	if( !m_info_commands.empty() ) commands.push_back( "info" ) ;
-	if( !m_config_commands.empty() ) commands.push_back( "config" ) ;
-	if( m_with_terminate ) commands.push_back( "terminate" ) ;
-	sendLine( std::string("commands: ") + G::Str::join(", ",commands) ) ;
+	sendLine( std::move(std::string("commands: ")
+		.append( "dnsbl, " )
+		.append( "failures, " )
+		.append( "flush, " )
+		.append( "forward, " )
+		.append( "help, " )
+		.append( "info, " , m_info_commands.empty() ? 0U : 6U )
+		.append( "list, " )
+		.append( "notify, " )
+		.append( "pid, " )
+		.append( "quit, " )
+		.append( "status, " )
+		.append( "terminate, " , m_with_terminate ? 11U : 0U )
+		.append( "unfail-all" )) ) ;
 }
 
 void GSmtp::AdminServerPeer::flush()
@@ -222,9 +227,8 @@ void GSmtp::AdminServerPeer::flush()
 	else
 	{
 		m_client_ptr.reset( std::make_unique<GSmtp::Client>( GNet::ExceptionSink(m_client_ptr,m_es.esrc()) ,
-			m_server.ff() , GNet::Location(m_remote_address) , m_server.clientSecrets() , m_server.clientConfig() ) ) ;
-
-		m_client_ptr->sendMessagesFrom( m_server.store() ) ; // once connected
+			m_server.store() , m_server.ff() , GNet::Location(m_remote_address) ,
+			m_server.clientSecrets() , m_server.clientConfig() ) ) ;
 		// no sendLine() -- sends "OK" or "error:" when complete -- see AdminServerPeer::clientDone()
 	}
 }
@@ -237,19 +241,18 @@ void GSmtp::AdminServerPeer::forward()
 	}
 	else
 	{
-		m_server.forward() ;
 		sendLine( "OK" ) ;
+		m_server.emitCommand( AdminServer::Command::forward , 0U ) ;
 	}
 }
 
-void GSmtp::AdminServerPeer::sendLine( std::string line , bool with_prompt )
+void GSmtp::AdminServerPeer::sendLine( std::string && line )
 {
 	if( !line.empty() )
 		line.append( "\n" ) ;
 	G::Str::replaceAll( line , "\n" , eol() ) ;
-	if( with_prompt )
-		line.append( m_prompt ) ;
-	send_( line ) ;
+	line.append( m_prompt ) ;
+	sendImp( line ) ;
 }
 
 void GSmtp::AdminServerPeer::notify( const std::string & s0 , const std::string & s1 ,
@@ -257,14 +260,14 @@ void GSmtp::AdminServerPeer::notify( const std::string & s0 , const std::string 
 {
 	if( m_notifying )
 	{
-		std::string s = eol() + "EVENT: " + G::Str::printable(G::Str::join(": ",s0,s1,s2,s3)) ;
+		std::string s = eol().append("EVENT: ").append(G::Str::printable(G::Str::join(": ",s0,s1,s2,s3))) ;
 		G::Str::unique( s , ' ' , ' ' ) ;
 		s.append( 2U , ' ' ) ;
-		send_( s ) ;
+		sendImp( s ) ;
 	}
 }
 
-void GSmtp::AdminServerPeer::send_( const std::string & s )
+void GSmtp::AdminServerPeer::sendImp( const std::string & s )
 {
 	if( m_blocked )
 	{
@@ -273,7 +276,7 @@ void GSmtp::AdminServerPeer::send_( const std::string & s )
 	}
 	else
 	{
-		m_blocked = ! send( s ) ; // GNet::SocketProtocol
+		m_blocked = !send( s ) ; // GNet::ServerPeer::send()
 	}
 }
 
@@ -287,11 +290,11 @@ void GSmtp::AdminServerPeer::status()
 	std::ostringstream ss ;
 	if( GNet::Monitor::instance() )
 	{
-		std::string eolstr = eol() ;
+		const std::string eolstr = eol() ;
 		GNet::Monitor::instance()->report( ss , "" , eolstr ) ;
 		std::string report = ss.str() ;
-		G::Str::trimRight( report , {eolstr.data(),eolstr.size()} ) ;
-		sendLine( report ) ;
+		G::Str::trimRight( report , eolstr ) ;
+		sendLine( std::move(report) ) ;
 	}
 	else
 	{
@@ -299,25 +302,15 @@ void GSmtp::AdminServerPeer::status()
 	}
 }
 
-std::shared_ptr<GSmtp::MessageStore::Iterator> GSmtp::AdminServerPeer::spooled()
-{
-	return m_server.store().iterator(false) ;
-}
-
-std::shared_ptr<GSmtp::MessageStore::Iterator> GSmtp::AdminServerPeer::failures()
-{
-	return m_server.store().failures() ;
-}
-
-void GSmtp::AdminServerPeer::sendList( std::shared_ptr<MessageStore::Iterator> iter )
+void GSmtp::AdminServerPeer::sendMessageIds( const std::vector<GStore::MessageId> & ids )
 {
 	std::ostringstream ss ;
-	for( bool first = true ;; first = false )
+	bool first = true ;
+	for( auto id : ids )
 	{
-		std::unique_ptr<StoredMessage> message( ++iter ) ;
-		if( message == nullptr ) break ;
 		if( !first ) ss << eol() ;
-		ss << message->id().str() ;
+		ss << id.str() ;
+		first = false ;
 	}
 
 	std::string result = ss.str() ;
@@ -327,11 +320,6 @@ void GSmtp::AdminServerPeer::sendList( std::shared_ptr<MessageStore::Iterator> i
 		sendLine( ss.str() ) ;
 }
 
-void GSmtp::AdminServerPeer::unfailAll()
-{
-	return m_server.store().unfailAll() ;
-}
-
 bool GSmtp::AdminServerPeer::notifying() const
 {
 	return m_notifying ;
@@ -339,27 +327,17 @@ bool GSmtp::AdminServerPeer::notifying() const
 
 // ===
 
-GSmtp::AdminServer::AdminServer( GNet::ExceptionSink es , MessageStore & store ,
-	FilterFactory & ff , G::Slot::Signal<const std::string&> & forward_request ,
-	const GNet::ServerPeer::Config & server_peer_config , const GNet::Server::Config & server_config ,
-	const GSmtp::Client::Config & client_config , const GAuth::SaslClientSecrets & client_secrets ,
-	const G::StringArray & interfaces , unsigned int port , bool allow_remote ,
-	const std::string & remote_address , unsigned int connection_timeout ,
-	const G::StringMap & info_commands , const G::StringMap & config_commands ,
-	bool with_terminate ) :
-		GNet::MultiServer(es,interfaces,port,"admin",server_peer_config,server_config) ,
-		m_forward_timer(*this,&AdminServer::onForwardTimeout,es) ,
+GSmtp::AdminServer::AdminServer( GNet::ExceptionSink es , GStore::MessageStore & store ,
+	FilterFactoryBase & ff , const GAuth::SaslClientSecrets & client_secrets ,
+	const G::StringArray & interfaces , const Config & config ) :
+		GNet::MultiServer(es,interfaces,config.port,"admin",config.net_server_peer_config,config.net_server_config) ,
 		m_store(store) ,
 		m_ff(ff) ,
-		m_forward_request(forward_request) ,
-		m_client_config(client_config) ,
 		m_client_secrets(client_secrets) ,
-		m_allow_remote(allow_remote) ,
-		m_remote_address(remote_address) ,
-		m_connection_timeout(connection_timeout) ,
-		m_info_commands(info_commands) ,
-		m_config_commands(config_commands) ,
-		m_with_terminate(with_terminate)
+		m_config(config) ,
+		m_command_timer(*this,&AdminServer::onCommandTimeout,es) ,
+		m_command(Command::forward) ,
+		m_command_arg(0U)
 {
 }
 
@@ -375,14 +353,15 @@ std::unique_ptr<GNet::ServerPeer> GSmtp::AdminServer::newPeer( GNet::ExceptionSi
 	try
 	{
 		std::string reason ;
-		if( !m_allow_remote && !GNet::Local::isLocal(peer_info.m_address,reason) )
+		if( !m_config.allow_remote && !peer_info.m_address.isLocal(reason) )
 		{
 			G_WARNING( "GSmtp::Server: configured to reject non-local admin connection: " << reason ) ;
 		}
 		else
 		{
-			ptr = std::make_unique<AdminServerPeer>( esu , std::move(peer_info) , *this , m_remote_address ,
-				m_info_commands , m_config_commands , m_with_terminate ) ; // up-cast
+			ptr = std::make_unique<AdminServerPeer>( esu , std::move(peer_info) , *this ,
+				m_config.remote_address , m_config.info_commands ,
+				m_config.with_terminate ) ;
 		}
 	}
 	catch( std::exception & e ) // newPeer()
@@ -391,17 +370,19 @@ std::unique_ptr<GNet::ServerPeer> GSmtp::AdminServer::newPeer( GNet::ExceptionSi
 	}
 	return ptr ;
 }
-void GSmtp::AdminServer::forward()
+
+void GSmtp::AdminServer::emitCommand( Command command , unsigned int arg )
 {
-	// asychronous emit() for safety
-	m_forward_timer.startTimer( 0 ) ;
+	m_command = command ;
+	m_command_arg = arg ;
+	m_command_timer.startTimer( 0 ) ;
 }
 
-void GSmtp::AdminServer::onForwardTimeout()
+void GSmtp::AdminServer::onCommandTimeout()
 {
 	try
 	{
-		m_forward_request.emit( std::string("admin") ) ;
+		m_command_signal.emit( m_command , m_command_arg ) ;
 	}
 	catch( std::exception & e )
 	{
@@ -409,9 +390,14 @@ void GSmtp::AdminServer::onForwardTimeout()
 	}
 }
 
-void GSmtp::AdminServer::report() const
+G::Slot::Signal<GSmtp::AdminServer::Command,unsigned int> & GSmtp::AdminServer::commandSignal() noexcept
 {
-	serverReport() ;
+	return m_command_signal ;
+}
+
+void GSmtp::AdminServer::report( const std::string & group ) const
+{
+	serverReport( group ) ;
 }
 
 void GSmtp::AdminServer::notify( const std::string & s0 , const std::string & s1 ,
@@ -419,7 +405,7 @@ void GSmtp::AdminServer::notify( const std::string & s0 , const std::string & s1
 {
 	if( hasPeers() )
 	{
-		using List = std::vector<std::weak_ptr<GNet::ServerPeer> > ;
+		using List = std::vector<std::weak_ptr<GNet::ServerPeer>> ;
 		List list = peers() ;
 		for( auto & wptr : list )
 		{
@@ -432,12 +418,12 @@ void GSmtp::AdminServer::notify( const std::string & s0 , const std::string & s1
 	}
 }
 
-GSmtp::MessageStore & GSmtp::AdminServer::store()
+GStore::MessageStore & GSmtp::AdminServer::store()
 {
 	return m_store ;
 }
 
-GSmtp::FilterFactory & GSmtp::AdminServer::ff()
+GSmtp::FilterFactoryBase & GSmtp::AdminServer::ff()
 {
 	return m_ff ;
 }
@@ -447,14 +433,9 @@ const GAuth::SaslClientSecrets & GSmtp::AdminServer::clientSecrets() const
 	return m_client_secrets ;
 }
 
-unsigned int GSmtp::AdminServer::connectionTimeout() const
-{
-	return m_connection_timeout ;
-}
-
 GSmtp::Client::Config GSmtp::AdminServer::clientConfig() const
 {
-	return m_client_config ;
+	return m_config.smtp_client_config ;
 }
 
 bool GSmtp::AdminServer::notifying() const
@@ -462,7 +443,7 @@ bool GSmtp::AdminServer::notifying() const
 	bool result = false ;
 	if( hasPeers() )
 	{
-		using List = std::vector<std::weak_ptr<GNet::ServerPeer> > ;
+		using List = std::vector<std::weak_ptr<GNet::ServerPeer>> ;
 		List list = const_cast<AdminServer*>(this)->peers() ;
 		for( auto & wptr : list )
 		{

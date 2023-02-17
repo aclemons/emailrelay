@@ -28,17 +28,19 @@ run the *emailrelay-start.bat* batch file to start the E-MailRelay server, and
 you should then see an icon appear in the Windows system tray under the "Show
 hidden icons" button.
 
-Note that the *emailrelay-start.bat* file lives under *ProgramData*, and
-although this might be a hidden directory you can still navigate there by
-right-clicking on the *E-MailRelay* link under *Program Files* and selecting
-\ *Open file location*\ .
+Note that the *emailrelay-start.bat* file lives under *ProgramData*, and although
+this might be a hidden directory you can still navigate there by right-clicking
+on the E-MailRelay link under *Program Files* and selecting *Open file location*.
 
 Configuration
 =============
 E-MailRelay is configured though command-line options like *--verbose* or
 *--spool-dir=c:/temp* in the *emailrelay-startup.bat* batch file.
 
-You can edit the batch file directly using Notepad, or run *emailrelay-gui.exe*.
+You can edit the batch file using Notepad: right-click on the E-MailRelay link
+or on the *emailrelay-start.bat* file, then *show more options* and *edit*.
+
+Alternatively, use the *emailrelay-gui* program to make the changes.
 
 All command-line options are documented in the E-MailRelay reference document.
 
@@ -66,12 +68,14 @@ Copy the shortcuts to *Start Menu* and *Startup* folders as necessary.
 Running as a service
 ====================
 E-MailRelay can be set up as a service so that it starts up automatically at
-boot-time. Do do this manually you must first have a one-line batch file
-called *emailrelay-start.bat* that contains all the command-line options for
-running the E-MailRelay server, and you must have a simple service-wrapper
-configuration file called *emailrelay-service.cfg* that points to it, and this
-must be in the same directory as the service wrapper executable
-(\ *emailrelay-service.exe*\ ).
+boot-time. This can be set up using the *Server startup* page in the installation
+program or later using the *emailrelay-gui* configuration program.
+
+To set up the service manually you must first have a one-line batch file called
+*emailrelay-start.bat* that contains all the command-line options for running
+the E-MailRelay server, and you must have a simple service-wrapper configuration
+file called *emailrelay-service.cfg* that points to it, and this must be in the
+same directory as the service wrapper executable (\ *emailrelay-service.exe*\ ).
 
 The startup batch file should contain a single line, something like this:
 

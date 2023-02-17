@@ -24,8 +24,10 @@
 #include "gtest.h"
 #include <algorithm>
 
+#ifndef G_LIB_SMALL
 GNet::Interfaces::Interfaces()
 = default;
+#endif
 
 GNet::Interfaces::Interfaces( ExceptionSink es , InterfacesHandler & handler ) :
 	m_es(es) ,
@@ -45,99 +47,51 @@ void GNet::Interfaces::load()
 	swap( m_list , new_list ) ;
 }
 
+#ifndef G_LIB_SMALL
 bool GNet::Interfaces::supported()
 {
 	return true ;
 }
+#endif
 
 bool GNet::Interfaces::loaded() const
 {
 	return m_loaded ;
 }
 
-std::vector<GNet::Address> GNet::Interfaces::find( const std::string & name_in , unsigned int port ,
-	bool decoration ) const
+#ifndef G_LIB_SMALL
+std::vector<GNet::Address> GNet::Interfaces::addresses( const std::string & name , unsigned int port , int af ) const
 {
-	std::string name = name_in ;
-	int type = 0 ;
-	if( decoration )
-	{
-		if( G::Str::tailMatch(name_in,"-ipv6") )
-		{
-			name = name_in.substr( 0U , name_in.length()-5U ) ;
-			type = 6 ;
-		}
-		else if( G::Str::tailMatch(name_in,"-ipv4") )
-		{
-			name = name_in.substr( 0U , name_in.length()-5U ) ;
-			type = 4 ;
-		}
-	}
+	std::vector<GNet::Address> result ;
+	addresses( result , name , port , af ) ;
+	return result ;
+}
+#endif
 
-	if( name.empty() )
-		return AddressList() ;
-
+std::size_t GNet::Interfaces::addresses( std::vector<Address> & out , const std::string & name , unsigned int port , int af ) const
+{
 	if( !loaded() )
 		const_cast<Interfaces*>(this)->load() ;
 
-	AddressList result ;
+	std::size_t count = 0U ;
 	for( const auto & item : m_list )
 	{
-		if( ( item.name == name || item.altname == name ) && item.up && item.valid_address )
+		if( !name.empty() && ( item.name == name || item.altname == name ) && item.up && item.valid_address )
 		{
-			if( type == 0 ||
-				( type == 6 && item.address.is6() ) ||
-				( type == 4 && item.address.is4() ) )
+			if( af == AF_UNSPEC ||
+				( af == AF_INET6 && item.address.is6() ) ||
+				( af == AF_INET && item.address.is4() ) )
 			{
-				result.push_back( item.address ) ;
-				result.back().setPort( port ) ;
+				count++ ;
+				out.push_back( item.address ) ;
+				out.back().setPort( port ) ;
 			}
 		}
 	}
-	return result ;
+	return count ;
 }
 
-std::vector<GNet::Address> GNet::Interfaces::addresses( const G::StringArray & names , unsigned int port ,
-	G::StringArray * used_names , G::StringArray * empty_names , G::StringArray * bad_names ) const
-{
-	AddressList result ;
-	for( const auto & name : names )
-	{
-		addresses( name , port , result , used_names , empty_names , bad_names ) ;
-	}
-	return result ;
-}
-
-void GNet::Interfaces::addresses( const std::string & name , unsigned int port ,
-	std::vector<GNet::Address> & result ,
-	G::StringArray * used_names , G::StringArray * empty_names , G::StringArray * bad_names ) const
-{
-	if( Address::validStrings( name , G::Str::fromUInt(port) ) )
-	{
-		result.push_back( Address::parse(name,port) ) ;
-	}
-	else
-	{
-		// 'name' is not an address so treat it as an interface name having
-		// bound addresses -- reject file system paths as 'bad' unless
-		// they are under "/dev" (bsd)
-		AddressList list = find( name , port , true ) ;
-		if( list.empty() && ( name.empty() || ( name.find('/') != std::string::npos && name.find("/dev/") != 0U ) ) )
-		{
-			if( bad_names ) bad_names->push_back( name ) ;
-		}
-		else if( list.empty() )
-		{
-			if( empty_names ) empty_names->push_back( name ) ;
-		}
-		else
-		{
-			if( used_names ) used_names->push_back( name ) ;
-		}
-		result.insert( result.end() , list.begin() , list.end() ) ;
-	}
-}
-
+#ifndef G_LIB_SMALL
 G::StringArray GNet::Interfaces::names( bool all ) const
 {
 	G::StringArray list ;
@@ -150,6 +104,7 @@ G::StringArray GNet::Interfaces::names( bool all ) const
 	list.erase( std::unique(list.begin(),list.end()) , list.end() ) ;
 	return list ;
 }
+#endif
 
 GNet::Interfaces::const_iterator GNet::Interfaces::begin() const
 {

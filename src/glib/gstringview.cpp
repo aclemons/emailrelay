@@ -21,24 +21,13 @@
 #include "gdef.h"
 #include "gstringview.h"
 
-std::string G::string_view::sv_to_string_imp() const
+bool G::sv_imatch( string_view a , string_view b ) noexcept
 {
-	return empty() ? std::string() : std::string( m_p , m_n ) ;
-}
-
-int G::string_view::compare( const string_view & other ) const noexcept
-{
-	int rc = ( empty() || other.empty() ) ? 0 : std::char_traits<char>::compare( m_p , other.m_p , std::min(m_n,other.m_n) ) ;
-	return rc == 0 ? ( m_n < other.m_n ? -1 : (m_n==other.m_n?0:1) ) : rc ;
-}
-
-bool G::string_view::imatch( const string_view & other ) const noexcept
-{
-	if( empty() || other.empty() ) return empty() && other.empty() ;
-	if( size() != other.size() ) return false ;
-	const char * const end = m_p + m_n ;
-	const char * q = other.m_p ;
-	for( const char * p = m_p ; p != end ; ++p , ++q )
+	if( a.empty() || b.empty() ) return a.empty() && b.empty() ;
+	if( a.size() != b.size() ) return false ;
+	const char * const end = a.data() + a.size() ;
+	const char * q = b.data() ;
+	for( const char * p = a.data() ; p != end ; ++p , ++q )
 	{
 		char c1 = *p ;
 		char c2 = *q ;
@@ -49,16 +38,24 @@ bool G::string_view::imatch( const string_view & other ) const noexcept
 	return true ;
 }
 
+G::string_view G::sv_substr( string_view sv , std::size_t pos , std::size_t count ) noexcept
+{
+	if( pos >= sv.size() ) return string_view( sv.data() , std::size_t(0U) ) ;
+	return string_view( sv.data() + pos , std::min(sv.size()-pos,count) ) ;
+}
+
+// ==
+
+int G::string_view::compare( const string_view & other ) const noexcept
+{
+	int rc = ( empty() || other.empty() ) ? 0 : std::char_traits<char>::compare( m_p , other.m_p , std::min(m_n,other.m_n) ) ;
+	return rc == 0 ? ( m_n < other.m_n ? -1 : (m_n==other.m_n?0:1) ) : rc ;
+}
+
 G::string_view G::string_view::substr( std::size_t pos , std::size_t count ) const
 {
 	if( (empty() && pos!=0U) || pos > m_n ) throw std::out_of_range( "string_view::substr" ) ;
 	if( pos == m_n ) return string_view( m_p , std::size_t(0U) ) ; // (more than the standard requires)
-	return string_view( m_p + pos , std::min(m_n-pos,count) ) ;
-}
-
-G::string_view G::string_view::substr( std::nothrow_t , std::size_t pos , std::size_t count ) const noexcept
-{
-	if( pos >= m_n ) return string_view( m_p , std::size_t(0U) ) ;
 	return string_view( m_p + pos , std::min(m_n-pos,count) ) ;
 }
 
@@ -149,10 +146,12 @@ std::size_t G::string_view::find_first_not_of( string_view chars , std::size_t p
 	return std::string::npos ;
 }
 
+#ifndef G_LIB_SMALL
 std::size_t G::string_view::find_last_of( const char * chars , std::size_t pos , std::size_t chars_size ) const noexcept
 {
 	return find_last_of( string_view(chars,chars_size) , pos ) ;
 }
+#endif
 
 std::size_t G::string_view::find_last_of( string_view chars , std::size_t pos ) const noexcept
 {
@@ -175,10 +174,12 @@ std::size_t G::string_view::find_last_of( string_view chars , std::size_t pos ) 
 	return std::string::npos ;
 }
 
+#ifndef G_LIB_SMALL
 std::size_t G::string_view::find_last_not_of( const char * chars , std::size_t pos , std::size_t chars_size ) const noexcept
 {
 	return find_last_not_of( string_view(chars,chars_size) , pos ) ;
 }
+#endif
 
 std::size_t G::string_view::find_last_not_of( string_view chars , std::size_t pos ) const noexcept
 {

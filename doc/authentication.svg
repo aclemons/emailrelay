@@ -12,7 +12,7 @@
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    id="svg3036"
    version="1.1"
-   inkscape:version="0.48.4 r9939"
+   inkscape:version="0.92.4 (5da689c313, 2019-01-14)"
    width="1650"
    height="1023"
    sodipodi:docname="authentication.svg"
@@ -27,7 +27,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -42,14 +42,14 @@
      guidetolerance="10"
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
-     inkscape:window-width="1536"
-     inkscape:window-height="943"
+     inkscape:window-width="2108"
+     inkscape:window-height="1169"
      id="namedview3038"
      showgrid="false"
-     inkscape:zoom="0.41425821"
-     inkscape:cx="699.63064"
+     inkscape:zoom="0.7584233"
+     inkscape:cx="701.35349"
      inkscape:cy="362.80329"
-     inkscape:window-x="-12"
+     inkscape:window-x="0"
      inkscape:window-y="150"
      inkscape:window-maximized="0"
      inkscape:current-layer="layer4" />
@@ -90,26 +90,26 @@
        style="fill:#161616" />
     <text
        xml:space="preserve"
-       style="font-size:48px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans;-inkscape-font-specification:DejaVu Sans Bold"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:0%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans Bold';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none"
        x="1066.4489"
        y="380.74576"
-       id="text3324"
-       sodipodi:linespacing="125%"><tspan
+       id="text3324"><tspan
          sodipodi:role="line"
          id="tspan3326"
          x="1066.4489"
-         y="380.74576">--client-auth</tspan></text>
+         y="380.74576"
+         style="font-size:48px;line-height:1.25">--client-auth</tspan></text>
     <text
        xml:space="preserve"
-       style="font-size:48px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:DejaVu Sans;-inkscape-font-specification:DejaVu Sans Bold"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:0%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans Bold';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;display:inline;fill:#000000;fill-opacity:1;stroke:none"
        x="176.8667"
        y="385.01154"
-       id="text3324-9"
-       sodipodi:linespacing="125%"><tspan
+       id="text3324-9"><tspan
          sodipodi:role="line"
          id="tspan3326-1"
          x="176.8667"
-         y="385.01154">--server-auth</tspan></text>
+         y="385.01154"
+         style="font-size:48px;line-height:1.25">--server-auth</tspan></text>
     <g
        id="g3384"
        transform="translate(-155.02689,-30.664659)">
@@ -130,16 +130,16 @@
          d="m 1680.1083,124.22703 c 7.0818,-0.2751 10.2071,-1.0243 14.2901,-2.5674 l 0,-2e-4 c 7.0507,-2.6646 11.1812,-6.0188 13.8472,-11.2445 1.9056,-3.7354 1.9254,-4.0795 0.3352,-5.8366 -3.0633,-3.3849 -8.2846,-4.43 -20.9479,-4.1932 -6.8882,0.1288 -13.6023,-0.2658 -15.7613,-0.926202 -3.4318,-1.0499 -3.9877,-0.9393 -6.3473,1.263102 -3.0038,2.8037 -5.8546,8.0568 -6.8328,12.5908 -0.9266,4.2944 1.6041,9.1015 5.2095,9.896 1.5025,0.3311 3.1819,0.783 3.7319,1.0042 0.55,0.2212 5.5,0.2275 11,0.014 m -0.3448,10.1672 c -0.39,-0.075 -0.7802,-0.1993 -2.1552,-0.4052 -12.019,-1.8001 -14.4349,-2.7238 -18.7581,-7.1721 -2.3812,-2.45 -4.9847,-6.023 -5.7857,-7.94 -4.7123,-11.2783 1.6556,-23.835002 15.8795,-31.312402 9.2319,-4.8531 12.0541,-4.7682 20.1517,0.6068 3.5494,2.3559 6.6277,3.5194 10.2516,3.8745 6.4828,0.6353 11.9926,3.4083 17.7688,8.942902 3.6122,3.4611 4.4922,4.9758 4.4922,7.7323 0,13.5694 -10.6345,21.7402 -32.2909,24.8103 -4.285,0.6075 -8.11,1.0432 -8.5,0.9683"
          style="fill:#161616" />
       <text
-         sodipodi:linespacing="125%"
          id="text3379"
          y="288.75177"
          x="1633.7449"
-         style="font-size:48px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans;-inkscape-font-specification:DejaVu Sans Bold"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:0%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans Bold';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none"
          xml:space="preserve"><tspan
            y="288.75177"
            x="1633.7449"
            id="tspan3381"
-           sodipodi:role="line">bob</tspan></text>
+           sodipodi:role="line"
+           style="font-size:48px;line-height:1.25">bob</tspan></text>
     </g>
     <path
        style="fill:#161616;display:inline"
@@ -177,34 +177,36 @@
        inkscape:connector-curvature="0" />
     <text
        xml:space="preserve"
-       style="font-size:28px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans Mono;-inkscape-font-specification:DejaVu Sans Mono Bold"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:0%;font-family:'DejaVu Sans Mono';-inkscape-font-specification:'DejaVu Sans Mono Bold';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none"
        x="218.47667"
        y="514.90009"
-       id="text3405"
-       sodipodi:linespacing="125%"><tspan
+       id="text3405"><tspan
          sodipodi:role="line"
          id="tspan3407"
          x="218.47667"
-         y="514.90009">server plain alice ...</tspan><tspan
+         y="514.90009"
+         style="font-size:28px;line-height:1.25">server plain alice ...</tspan><tspan
          sodipodi:role="line"
          x="218.47667"
          y="549.90009"
-         id="tspan3409">server plain carol ...</tspan><tspan
+         id="tspan3409"
+         style="font-size:28px;line-height:1.25">server plain carol ...</tspan><tspan
          sodipodi:role="line"
          x="218.47667"
          y="584.90009"
-         id="tspan3411">server plain dave ...</tspan></text>
+         id="tspan3411"
+         style="font-size:28px;line-height:1.25">server plain dave ...</tspan></text>
     <text
        xml:space="preserve"
-       style="font-size:28px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans Mono;-inkscape-font-specification:DejaVu Sans Mono Bold"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:0%;font-family:'DejaVu Sans Mono';-inkscape-font-specification:'DejaVu Sans Mono Bold';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none"
        x="928.94977"
        y="521.77808"
-       id="text3413"
-       sodipodi:linespacing="125%"><tspan
+       id="text3413"><tspan
          sodipodi:role="line"
          id="tspan3415"
          x="928.94977"
-         y="521.77808">client plain bob ...</tspan></text>
+         y="521.77808"
+         style="font-size:28px;line-height:1.25">client plain bob ...</tspan></text>
   </g>
   <g
      inkscape:groupmode="layer"
@@ -215,16 +217,16 @@
        id="g3393"
        transform="translate(-52.811358,-27.257475)">
       <text
-         sodipodi:linespacing="125%"
          id="text3375"
          y="283.64099"
          x="95.401161"
-         style="font-size:48px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:DejaVu Sans;-inkscape-font-specification:DejaVu Sans Bold"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:0%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans Bold';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;display:inline;fill:#000000;fill-opacity:1;stroke:none"
          xml:space="preserve"><tspan
            y="283.64099"
            x="95.401161"
            id="tspan3377"
-           sodipodi:role="line">alice</tspan></text>
+           sodipodi:role="line"
+           style="font-size:48px;line-height:1.25">alice</tspan></text>
       <path
          inkscape:connector-curvature="0"
          id="path8377-5"

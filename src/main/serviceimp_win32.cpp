@@ -40,7 +40,7 @@ std::pair<ServiceImp::StatusHandle,DWORD> ServiceImp::statusHandle( const std::s
 	StatusHandle h = RegisterServiceCtrlHandlerA( service_name.c_str() , fn ) ;
 	if( h == 0 )
 		e = GetLastError() ;
-	return std::make_pair( h , e ) ;
+	return { h , e } ;
 }
 
 DWORD ServiceImp::dispatch( ServiceMainFn fn )

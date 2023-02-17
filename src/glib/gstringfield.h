@@ -26,10 +26,13 @@
 #include "gassert.h"
 #include <string>
 #include <algorithm>
+#include <iterator>
+#include <cstddef> // std::nullptr_t
 
 namespace G
 {
 	template <typename T> class StringFieldT ;
+	template <typename T> class StringFieldIteratorT ;
 	using StringField = StringFieldT<std::string> ;
 	using StringFieldView = StringFieldT<string_view> ;
 }
@@ -71,7 +74,9 @@ public:
 	bool valid() const noexcept ;
 		///< Returns true if a valid field.
 
-	T operator()() const noexcept(std::is_same<T,string_view>::value) ;
+	static constexpr bool deref_operator_noexcept = std::is_same<T,string_view>::value ;
+
+	T operator()() const noexcept(deref_operator_noexcept) ;
 		///< Returns the current field substring. Prefer data()
 		///< and size() to avoid copying.
 
@@ -111,6 +116,33 @@ private:
 	std::size_t m_fendpos ;
 } ;
 
+//| \class G::StringFieldIteratorT
+/// A standard forward iterator for G::StringFieldT:
+/// \code
+/// StringFieldView f( "foo,bar"_sv , "," , 1U ) ;
+/// std::copy( begin(f) , end(f) , std::back_inserter(list) ) ; // or...
+/// for( string_view sv : f ) list.push_back( sv ) ;
+/// \endcode
+///
+template <typename T>
+class G::StringFieldIteratorT
+{
+public:
+	using iterator_category = std::forward_iterator_tag ;
+	using value_type = T ;
+	using difference_type = int ;
+	using pointer = T* ;
+	using reference = T& ;
+	explicit StringFieldIteratorT( StringFieldT<T> & ) noexcept ;
+	explicit StringFieldIteratorT( std::nullptr_t ) noexcept ;
+	StringFieldIteratorT & operator++() noexcept ;
+	T operator*() const noexcept(StringFieldT<T>::deref_operator_noexcept) ;
+	bool operator==( StringFieldIteratorT other ) const noexcept ;
+	bool operator!=( StringFieldIteratorT other ) const noexcept ;
+private:
+	StringFieldT<T> * f ;
+} ;
+
 namespace G
 {
 	namespace StringFieldImp
@@ -123,10 +155,10 @@ namespace G
 		template <> string_view inline substr<string_view>( const string_view & s ,
 			std::size_t pos , std::size_t len ) noexcept
 		{
-			return s.substr( std::nothrow , pos , len ) ;
+			return sv_substr( s , pos , len ) ;
 		}
 		static_assert( !noexcept(std::string().substr(0,0)) , "" ) ;
-		static_assert( noexcept(string_view().substr(std::nothrow,0,0)) , "" ) ;
+		static_assert( noexcept(sv_substr(string_view(),0,0)) , "" ) ;
 	}
 }
 
@@ -179,7 +211,7 @@ bool G::StringFieldT<T>::valid() const noexcept
 }
 
 template <typename T>
-T G::StringFieldT<T>::operator()() const noexcept(std::is_same<T,string_view>::value)
+T G::StringFieldT<T>::operator()() const noexcept(deref_operator_noexcept)
 {
 	if( m_fpos == std::string::npos ) return {} ;
 	return StringFieldImp::substr<T>( m_s , m_fpos , size() ) ;
@@ -216,6 +248,61 @@ std::size_t G::StringFieldT<T>::count() const noexcept
 	for( StringFieldT<T> f( m_s , m_sep , m_sepn ) ; f ; ++f )
 		n++ ;
 	return n ;
+}
+
+// --
+
+template <typename T>
+G::StringFieldIteratorT<T>::StringFieldIteratorT( StringFieldT<T> & f_in ) noexcept :
+	f(&f_in)
+{
+}
+
+template <typename T>
+G::StringFieldIteratorT<T>::StringFieldIteratorT( std::nullptr_t ) noexcept :
+	f(nullptr)
+{
+}
+
+template <typename T>
+G::StringFieldIteratorT<T> & G::StringFieldIteratorT<T>::operator++() noexcept
+{
+	if( f ) ++(*f) ;
+	return *this ;
+}
+
+template <typename T>
+T G::StringFieldIteratorT<T>::operator*() const noexcept(StringFieldT<T>::deref_operator_noexcept)
+{
+	return (*f)() ;
+}
+
+template <typename T>
+bool G::StringFieldIteratorT<T>::operator==( StringFieldIteratorT other ) const noexcept
+{
+	return (f&&f->valid()?f->data():nullptr) == (other.f&&other.f->valid()?other.f->data():nullptr) ;
+}
+
+template <typename T>
+bool G::StringFieldIteratorT<T>::operator!=( StringFieldIteratorT other ) const noexcept
+{
+	return !(*this == other) ;
+}
+
+namespace G
+{
+	template <typename T> StringFieldIteratorT<T> begin( StringFieldT<T> & f ) noexcept
+	{
+		return StringFieldIteratorT<T>( f ) ;
+	}
+}
+
+namespace G
+{
+	template <typename T> StringFieldIteratorT<T> end( StringFieldT<T> & ) noexcept
+	{
+		return StringFieldIteratorT<T>( nullptr ) ;
+	}
 }
 
 #endif

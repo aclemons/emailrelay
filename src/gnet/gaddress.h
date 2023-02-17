@@ -23,6 +23,7 @@
 
 #include "gdef.h"
 #include "gstringarray.h"
+#include "gbasicaddress.h"
 #include "gexception.h"
 #include <string>
 #include <memory>
@@ -116,6 +117,9 @@ public:
 
 	Address & operator=( Address && ) noexcept ;
 		///< Move assignment operator.
+
+	operator G::BasicAddress() const ;
+		///< Returns a G::BasicAddress.
 
 	struct NotLocal /// Overload discriminator for Address::parse()
 		{} ;

@@ -40,7 +40,8 @@ class GAuth::SaslServerFactory
 {
 public:
 	static std::unique_ptr<SaslServer> newSaslServer( const SaslServerSecrets & ,
-		bool allow_pop , const std::string & config , bool no_insecure_mechanisms ) ;
+		bool allow_pop , const std::string & config ,
+		const std::string & challenge_domain ) ;
 			///< A factory function for a SaslServer.
 
 public:

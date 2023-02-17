@@ -78,10 +78,12 @@ GNet::Location GNet::Location::nosocks( const std::string & spec , int family )
 	return { spec , family , 1 } ;
 }
 
+#ifndef G_LIB_SMALL
 GNet::Location GNet::Location::socks( const std::string & socks_server , const std::string & far_server )
 {
 	return { socks_server , far_server , AF_UNSPEC } ;
 }
+#endif
 
 std::string GNet::Location::sockless( const std::string & s )
 {
@@ -200,10 +202,12 @@ std::string GNet::Location::displayString() const
 	}
 }
 
+#ifndef G_LIB_SMALL
 G::SystemTime GNet::Location::updateTime() const
 {
 	return m_update_time ;
 }
+#endif
 
 bool GNet::Location::socks() const
 {

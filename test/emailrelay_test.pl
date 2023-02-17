@@ -852,7 +852,7 @@ sub testServerSizeLimit
 	Check::that( $rsp =~ m/^552 / , "large message submission did not fail as it should have" ) ;
 	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.content" , 0 ) ;
 	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.envelope*" , 0 ) ;
-	Check::fileContains( $server->log() , "552 message exceeds fixed maximum message size" ) ;
+	Check::fileContains( $server->log() , "552 message size exceeds fixed maximum message size" ) ;
 
 	# tear down
 	$server->kill() ;
@@ -1116,7 +1116,7 @@ sub testFilterTimeout
 	$smtp_client->submit( 1 ) ;
 	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.content" , 0 ) ;
 	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.envelope*" , 0 ) ;
-	Check::fileContains( $server->log() , "filter done: ok=0 response=.error. reason=.*timeout" ) ;
+	Check::fileContains( $server->log() , "filter: done:.*response=.error. reason=.*timeout" ) ;
 
 	# tear down
 	$server->kill() ;
@@ -1377,7 +1377,7 @@ sub testScannerTimeout
 	$smtp_client->submit_line( "send foobar" ) ;
 	$smtp_client->submit_end( 1 ) ;
 	Check::fileDoesNotContain( $server->log() , "452 foobar" ) ;
-	Check::fileContains( $server->log() , "filter done: ok=0 response=.failed. reason=.*timeout" ) ;
+	Check::fileContains( $server->log() , "filter: done:.*response=.failed. reason=.*timeout" ) ;
 	Check::fileContains( $server->log() , "452 failed" ) ;
 
 	# tear down
@@ -1448,7 +1448,7 @@ sub testNetworkVerifierPass
 	Check::ok( $smtp_client->open() ) ;
 
 	# test that the verifier is used
-	$smtp_client->submit_start( "OK\@here" ) ; # (the test verifier interprets the recipient string)
+	$smtp_client->submit_start( 'OK@here' ) ; # (the test verifier interprets the recipient string)
 	$smtp_client->submit_line( "just testing" ) ;
 	$smtp_client->submit_end() ;
 	Check::fileContains( $verifier->logfile() , "sending valid" ) ;
@@ -1550,6 +1550,163 @@ sub testProxyConnectsOnce
 	$server_2->cleanup() ;
 	System::deleteSpoolDir( $spool_dir_1 ) ;
 	System::deleteSpoolDir( $spool_dir_2 ) ;
+}
+
+sub testDelivery
+{
+	# setup
+	my %args = (
+		Log => 1 ,
+		LogFile => 1 ,
+		Verbose => 1 ,
+		Domain => 1 ,
+		Port => 1 ,
+		SpoolDir => 1 ,
+		PidFile => 1 ,
+		Filter => 1 ,
+	) ;
+	my $server = new Server() ;
+	$server->set_filter( "deliver:" ) ;
+	Check::ok( $server->run(\%args) , "failed to run" , $server->message() ) ;
+	Check::running( $server->pid() , $server->message() ) ;
+	my $smtp_client = new SmtpClient( $server->smtpPort() , $System::localhost ) ;
+	Check::ok( $smtp_client->open() ) ;
+
+	# test that messages are delivered to a mailbox
+	$smtp_client->submit_start( ['Alice@local.com','Bob@local.com'] ) ;
+	$smtp_client->submit_line( "just testing" ) ;
+	$smtp_client->submit_end() ;
+	Check::fileMatchCount( $server->spoolDir()."/Alice/emailrelay.*.envelope" , 1 ) ;
+	Check::fileMatchCount( $server->spoolDir()."/Alice/emailrelay.*.content" , 1 ) ;
+	Check::fileMatchCount( $server->spoolDir()."/Bob/emailrelay.*.envelope" , 1 ) ;
+	Check::fileMatchCount( $server->spoolDir()."/Bob/emailrelay.*.content" , 1 ) ;
+
+	# tear down
+	$server->kill() ;
+	$server->cleanup() ;
+}
+
+sub testDeliveryWithVerifier
+{
+	# setup
+	my %args = (
+		Log => 1 ,
+		LogFile => 1 ,
+		Verbose => 1 ,
+		Domain => 1 ,
+		Port => 1 ,
+		SpoolDir => 1 ,
+		PidFile => 1 ,
+		Filter => 1 ,
+		Verifier => 1 ,
+	) ;
+	my $server = new Server() ;
+	$server->set_filter( "deliver:" ) ;
+	my $verifier = new Verifier( $server->verifierPort() ) ;
+	Check::ok( $server->run(\%args) , "failed to run" , $server->message() ) ;
+	Check::running( $server->pid() , $server->message() ) ;
+	$verifier->run() ;
+	my $smtp_client = new SmtpClient( $server->smtpPort() , $System::localhost ) ;
+	Check::ok( $smtp_client->open() ) ;
+
+	# test that the message is delivered once to each derived mailbox
+	$smtp_client->submit_start( ['OK@remote.com','OK.B@remote.com','L.B@local.com'] ) ; # B for bob, L for local
+	$smtp_client->submit_line( "just testing" ) ;
+	$smtp_client->submit_end() ;
+	Check::fileMatchCount( $server->spoolDir()."/bob/emailrelay.*.envelope" , 1 ) ;
+	Check::fileMatchCount( $server->spoolDir()."/bob/emailrelay.*.content" , 1 ) ;
+	Check::fileMatchCount( $server->spoolDir()."/OK/emailrelay.*.envelope" , 1 ) ;
+	Check::fileMatchCount( $server->spoolDir()."/OK/emailrelay.*.content" , 1 ) ;
+
+	# tear down
+	$server->kill() ;
+	$verifier->kill() ;
+	$verifier->cleanup() ;
+	$server->cleanup() ;
+}
+
+sub testLocalDelivery
+{
+	# setup
+	my %args = (
+		Log => 1 ,
+		LogFile => 1 ,
+		Verbose => 1 ,
+		Domain => 1 ,
+		Port => 1 ,
+		SpoolDir => 1 ,
+		PidFile => 1 ,
+		Verifier => 1 ,
+		LocalDelivery => 1 ,
+	) ;
+	my $server = new Server() ;
+	my $verifier = new Verifier( $server->verifierPort() ) ;
+	Check::ok( $server->run(\%args) , "failed to run" , $server->message() ) ;
+	Check::running( $server->pid() , $server->message() ) ;
+	$verifier->run() ;
+	my $smtp_client = new SmtpClient( $server->smtpPort() , $System::localhost ) ;
+	Check::ok( $smtp_client->open() ) ;
+	mkdir $server->spoolDir()."/in" , 0777 ;
+
+	# test that the message is delivered for the local recipient
+	$smtp_client->submit_start( ['LocalBob@local.com','OK@remote.com'] ) ; # L for local, B for bob
+	$smtp_client->submit_line( "just testing" ) ;
+	$smtp_client->submit_end() ;
+	Check::fileMatchCount( $server->spoolDir()."/in/bob/emailrelay.*.envelope" , 1 ) ;
+	Check::fileMatchCount( $server->spoolDir()."/in/bob/emailrelay.*.content" , 1 ) ;
+	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.envelope" , 1 ) ;
+	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.content" , 1 ) ;
+	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.local" , 0 ) ;
+
+	# tear down
+	$server->kill() ;
+	$verifier->kill() ;
+	$verifier->cleanup() ;
+	System::deleteSpoolDir( $server->spoolDir()."/in/bob" ) ;
+	System::rmdir_( $server->spoolDir()."/in" ) ;
+	$server->cleanup() ;
+}
+
+sub testLocalDeliveryOnly
+{
+	# setup
+	my %args = (
+		Log => 1 ,
+		LogFile => 1 ,
+		Verbose => 1 ,
+		Domain => 1 ,
+		Port => 1 ,
+		SpoolDir => 1 ,
+		PidFile => 1 ,
+		Verifier => 1 ,
+		LocalDelivery => 1 ,
+	) ;
+	my $server = new Server() ;
+	my $verifier = new Verifier( $server->verifierPort() ) ;
+	Check::ok( $server->run(\%args) , "failed to run" , $server->message() ) ;
+	Check::running( $server->pid() , $server->message() ) ;
+	$verifier->run() ;
+	my $smtp_client = new SmtpClient( $server->smtpPort() , $System::localhost ) ;
+	Check::ok( $smtp_client->open() ) ;
+	mkdir $server->spoolDir()."/in" , 0777 ;
+
+	# test that the message is delivered for the local recipient and nothing spooled
+	$smtp_client->submit_start( 'LocalBob@local.com' ) ; # L for local, B for bob
+	$smtp_client->submit_line( "just testing" ) ;
+	$smtp_client->submit_end() ;
+	Check::fileMatchCount( $server->spoolDir()."/in/bob/emailrelay.*.envelope" , 1 ) ;
+	Check::fileMatchCount( $server->spoolDir()."/in/bob/emailrelay.*.content" , 1 ) ;
+	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.envelope" , 0 ) ;
+	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.content" , 0 ) ;
+	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.local" , 0 ) ;
+
+	# tear down
+	$server->kill() ;
+	$verifier->kill() ;
+	$verifier->cleanup() ;
+	System::deleteSpoolDir( $server->spoolDir()."/in/bob" ) ;
+	System::rmdir_( $server->spoolDir()."/in" ) ;
+	$server->cleanup() ;
 }
 
 sub testClientFilterPass
@@ -1733,7 +1890,6 @@ sub testClientNetworkFilter
 
 	# test that the messages are fowarded or not according to the filter
 	System::waitForFiles( $spool_dir_2."/emailrelay.*.envelope", 2 ) ;
-	System::waitForFiles( $spool_dir_1."/emailrelay.*.envelope.bad", 1 ) ;
 	Check::allFilesContain( $spool_dir_1."/emailrelay.*.envelope.bad" , "_failed_" ) ;
 	Check::fileContains( $scanner->logfile() , "info:.*new connection" , undef , 1 ) ;
 	Check::fileContains( $scanner->logfile() , "info:.*file: " , undef , 3 ) ;

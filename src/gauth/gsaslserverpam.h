@@ -48,7 +48,7 @@ namespace GAuth
 class GAuth::SaslServerPam : public SaslServer
 {
 public:
-	SaslServerPam( const SaslServerSecrets & , bool with_apop ) ;
+	explicit SaslServerPam( bool with_apop ) ;
 		///< Constructor.
 
 public:
@@ -69,7 +69,7 @@ private: // overrides
 	std::string apply( const std::string & response , bool & done ) override ; // Override from GAuth::SaslServer.
 	bool authenticated() const override ; // Override from GAuth::SaslServer.
 	std::string id() const override ; // Override from GAuth::SaslServer.
-	bool trusted( const GNet::Address & ) const override ; // Override from GAuth::SaslServer.
+	bool trusted( const G::StringArray & , const std::string & ) const override ; // Override from GAuth::SaslServer.
 
 private:
 	std::unique_ptr<SaslServerPamImp> m_imp ;

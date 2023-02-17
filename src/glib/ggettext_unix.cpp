@@ -37,6 +37,6 @@ void G::gettext_init( const std::string & localedir , const std::string & appnam
 
 const char * G::gettext( const char * p ) noexcept
 {
-	return ::gettext( p ) ;
+		return ::gettext( p ) ;
 }
 

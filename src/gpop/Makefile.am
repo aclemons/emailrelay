@@ -15,7 +15,14 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-POP_SOURCES= \
+if GCONFIG_POP
+
+EXTRA_DIST = \
+	gpop_disabled.cpp
+
+POP_SOURCES = \
+	gpop_enabled.cpp \
+	gpop.h \
 	gpopserver.cpp \
 	gpopserver.h \
 	gpopstore.cpp \
@@ -23,13 +30,31 @@ POP_SOURCES= \
 	gpopserverprotocol.cpp \
 	gpopserverprotocol.h
 
+else
+
+EXTRA_DIST = \
+	gpop_enabled.cpp \
+	gpopserver.cpp \
+	gpopserver.h \
+	gpopstore.cpp \
+	gpopstore.h \
+	gpopserverprotocol.cpp \
+	gpopserverprotocol.h
+
+POP_SOURCES = \
+	gpop_disabled.cpp \
+	gpop.h
+
+endif
+
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/glib \
 	-I$(top_srcdir)/src/gssl \
 	-I$(top_srcdir)/src/gnet \
 	-I$(top_srcdir)/src/gauth \
 	-D "G_SPOOLDIR=$(e_spooldir)" \
-	-D "G_SYSCONFDIR=$(e_sysconfdir)"
+	-D "G_SYSCONFDIR=$(e_sysconfdir)" \
+	-D G_LIB_SMALL
 
 noinst_LIBRARIES = libgpop.a
 

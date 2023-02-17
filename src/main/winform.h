@@ -26,6 +26,7 @@
 #include "gdialog.h"
 #include "gstack.h"
 #include "gcontrol.h"
+#include "goption.h"
 #include "gslot.h"
 #include "configuration.h"
 #include <string>
@@ -46,10 +47,11 @@ namespace Main
 class Main::WinForm : public GGui::Stack , private GGui::StackPageCallback
 {
 public:
-	WinForm( HINSTANCE , const Configuration & cfg , HWND parent ,
-		HWND notify , std::pair<DWORD,DWORD> style , bool allow_apply ,
+	WinForm( HINSTANCE , const G::StringArray & cfg_data ,
+		HWND parent , HWND notify , std::pair<DWORD,DWORD> style , bool allow_apply ,
 		bool with_icon , bool with_system_menu_quit ) ;
-			///< Constructor.
+			///< Constructor. The 'cfg_data' parameter should normally
+			///< come from Main::Configuration::display().
 
 	void minimise() ;
 		///< Minimises the form, but dependent on the ctor window style.
@@ -88,7 +90,6 @@ private:
 	static void add( G::StringArray & list , std::string s ) ;
 	static G::StringArray split( const std::string & s ) ;
 	G::StringArray versionData() const ;
-	G::StringArray cfgData() const ;
 	G::StringArray statusData() const ;
 	void getStatusData( G::StringArray & out ) const ;
 	G::StringArray licenceData() const ;
@@ -104,7 +105,7 @@ private:
 	std::unique_ptr<GGui::ListView> m_status_view ;
 	std::unique_ptr<GGui::ListView> m_version_view ;
 	std::unique_ptr<GGui::ListView> m_licence_view ;
-	Configuration m_cfg ;
+	G::StringArray m_cfg_data ; // key,value,key,value...
 	StatusMap m_status_map ;
 } ;
 

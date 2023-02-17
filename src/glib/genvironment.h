@@ -47,7 +47,7 @@ public:
 	static void put( const std::string & name , const std::string & value ) ;
 		///< Sets the environment variable value.
 
-	static Environment minimal() ;
+	static Environment minimal( bool sbin = false ) ;
 		///< Returns a minimal, safe set of environment variables.
 
 	static Environment inherit() ;

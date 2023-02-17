@@ -20,6 +20,8 @@
 // A utility that can be installed as a "--filter" program to copy the message
 // envelope into all spool sub-directories for use by "--pop-by-name".
 //
+// The built-in "copy:" filter can also be used for the same purpose.
+//
 // If the envelope in the parent directory is successfully copied to at least
 // once sub-directory then it is removed from the parent directory and the
 // program exits with a value of 100.
@@ -90,12 +92,12 @@ private:
 void Filter::process_envelope()
 {
 	// the umask inherited from the emailrelay server does not give
-	// group access, so loosen it up to "-rw-rw----" and note that
+	// group access, so loosen it up to "-???rw-???" and note that
 	// the spool directory should have sticky group ownership
 	// which gets inherited by sub-directories and all message
 	// files
 	//
-	G::Process::Umask::set( G::Process::Umask::Mode::Tighter ) ; // 0117
+	G::Process::Umask::loosenGroup() ;
 
 	// copy the envelope into all sub-directories
 	//

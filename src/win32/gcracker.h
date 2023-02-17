@@ -23,7 +23,7 @@
 
 #include "gdef.h"
 #include "gwinbase.h"
-#include "gstrings.h"
+#include "gstringarray.h"
 #include <string>
 #include <list>
 

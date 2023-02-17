@@ -71,9 +71,8 @@ class G::NewProcessImp
 public:
 	using Fd = NewProcess::Fd ;
 
-	NewProcessImp( const Path & exe , const StringArray & args , const Environment & ,
-		Fd fd_stdin , Fd fd_stdout , Fd fd_stderr , const G::Path & cd ) ;
-			// Constructor. Spawns the new process.
+	NewProcessImp( const Path & , const StringArray & , const NewProcess::Config & ) ;
+		// Constructor. Spawns the new process.
 
 	~NewProcessImp() ;
 		// Destructor. Kills the process if it is still running.
@@ -112,12 +111,8 @@ private:
 
 // ===
 
-G::NewProcess::NewProcess( const Path & exe , const StringArray & args , const Environment & env ,
-	Fd fd_stdin , Fd fd_stdout , Fd fd_stderr , const G::Path & cd ,
-	bool /*strict_path*/ , Identity /*run_as_id*/ , bool /*strict_id*/ ,
-	int /*exec_error_exit*/ , const std::string & /*exec_error_format*/ ,
-	std::string (*)(std::string,int) ) :
-		m_imp(std::make_unique<NewProcessImp>(exe,args,env,fd_stdin,fd_stdout,fd_stderr,cd))
+G::NewProcess::NewProcess( const Path & exe , const StringArray & args , const Config & config ) :
+	m_imp(std::make_unique<NewProcessImp>(exe,args,config))
 {
 }
 
@@ -152,27 +147,26 @@ void G::NewProcess::kill( bool yield ) noexcept
 
 // ===
 
-G::NewProcessImp::NewProcessImp( const Path & exe_path , const StringArray & args , const Environment & env ,
-	Fd fd_stdin , Fd fd_stdout , Fd fd_stderr , const G::Path & cd ) :
-		m_hprocess(0) ,
-		m_killed(false) ,
-		m_waitable(HNULL,HNULL,0)
+G::NewProcessImp::NewProcessImp( const Path & exe , const StringArray & args , const NewProcess::Config & config ) :
+	m_hprocess(0) ,
+	m_killed(false) ,
+	m_waitable(HNULL,HNULL,0)
 {
-	G_DEBUG( "G::NewProcess::spawn: running [" << exe_path << "]: [" << Str::join("],[",args) << "]" ) ;
+	G_DEBUG( "G::NewProcess::spawn: running [" << exe << "]: [" << Str::join("],[",args) << "]" ) ;
 
 	// only support Fd::devnull() and Fd::pipe() here
-	if( fd_stdin != Fd::devnull() ||
-		( fd_stdout != Fd::devnull() && fd_stdout != Fd::pipe() ) ||
-		( fd_stderr != Fd::devnull() && fd_stderr != Fd::pipe() ) ||
-		( fd_stdout == Fd::pipe() && fd_stderr == Fd::pipe() ) )
+	if( config.stdin != Fd::devnull() ||
+		( config.stdout != Fd::devnull() && config.stdout != Fd::pipe() ) ||
+		( config.stderr != Fd::devnull() && config.stderr != Fd::pipe() ) ||
+		( config.stdout == Fd::pipe() && config.stderr == Fd::pipe() ) )
 	{
 		throw NewProcess::Error( "invalid parameters" ) ;
 	}
 
-	std::string command_line = commandLine( exe_path.str() , args ) ;
-	std::pair<HANDLE,DWORD> pair = createProcess( exe_path.str() , command_line , env ,
-		m_pipe.hwrite() , fd_stdout , fd_stderr ,
-		cd.empty() ? nullptr : cd.cstr() ) ;
+	std::string command_line = commandLine( exe.str() , args ) ;
+	std::pair<HANDLE,DWORD> pair = createProcess( exe.str() , command_line , config.env ,
+		m_pipe.hwrite() , config.stdout , config.stderr ,
+		config.cd.empty() ? nullptr : config.cd.cstr() ) ;
 
 	m_hprocess = pair.first ;
 	m_pid = pair.second ;
@@ -455,7 +449,7 @@ int G::NewProcessWaitable::get() const
 	return m_status ;
 }
 
-int G::NewProcessWaitable::get( std::nothrow_t , int ec ) const
+int G::NewProcessWaitable::get( std::nothrow_t , int ec ) const noexcept
 {
 	return m_error ? ec : m_status ;
 }

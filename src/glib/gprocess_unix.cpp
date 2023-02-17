@@ -151,8 +151,11 @@ void G::Process::beSpecialForExit( SignalSafe , Identity special_identity ) noex
 	ProcessImp::beSpecialForExit( SignalSafe() , special_identity ) ;
 }
 
-G::Identity G::Process::beOrdinaryAtStartup( Identity ordinary_id , bool change_group )
+std::pair<G::Identity,G::Identity> G::Process::beOrdinaryAtStartup( const std::string & ordinary_name ,
+	bool change_group )
 {
+	Identity ordinary_id( ordinary_name ) ;
+
 	// revoke extra groups, but not if we are leaving groups alone
 	// or we have been given root as the non-root user or we
 	// are running vanilla
@@ -163,7 +166,8 @@ G::Identity G::Process::beOrdinaryAtStartup( Identity ordinary_id , bool change_
 			ProcessImp::revokeExtraGroups() ;
 	}
 
-	return ProcessImp::beOrdinary( ordinary_id , change_group ) ;
+	Identity startup_id = ProcessImp::beOrdinary( ordinary_id , change_group ) ;
+	return { ordinary_id , startup_id } ;
 }
 
 void G::Process::beOrdinary( Identity ordinary_id , bool change_group )
@@ -176,20 +180,24 @@ void G::Process::beOrdinaryForExec( Identity run_as_id ) noexcept
 	ProcessImp::beOrdinaryForExec( run_as_id ) ;
 }
 
+#ifndef G_LIB_SMALL
 void G::Process::setEffectiveUser( Identity id )
 {
 	G::ProcessImp::setEffectiveUser( id ) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 void G::Process::setEffectiveGroup( Identity id )
 {
 	G::ProcessImp::setEffectiveGroup( id ) ;
 }
+#endif
 
 std::string G::Process::cwd( bool no_throw )
 {
 	std::string result ;
-	std::array<std::size_t,2U> sizes = {{ G::limits::path_buffer , PATH_MAX+1U }} ;
+	std::array<std::size_t,2U> sizes = {{ G::Limits<>::path_buffer , PATH_MAX+1U }} ;
 	for( std::size_t n : sizes )
 	{
 		std::vector<char> buffer( n ) ;
@@ -256,10 +264,12 @@ std::string G::Process::Id::str() const
 	return ss.str() ;
 }
 
+#ifndef G_LIB_SMALL
 bool G::Process::Id::operator==( const Id & other ) const noexcept
 {
 	return m_pid == other.m_pid ;
 }
+#endif
 
 bool G::Process::Id::operator!=( const Id & other ) const noexcept
 {
@@ -311,10 +321,12 @@ void G::Process::Umask::set( Mode mode )
 	UmaskImp::set( mode ) ;
 }
 
+#ifndef G_LIB_SMALL
 void G::Process::Umask::tightenOther()
 {
 	set( Mode::TightenOther ) ;
 }
+#endif
 
 void G::Process::Umask::loosenGroup()
 {
@@ -336,6 +348,7 @@ void G::ProcessImp::reopen( int fd , int mode )
 	::close( fd_null ) ;
 }
 
+#ifndef G_LIB_SMALL
 mode_t G::ProcessImp::umaskValue( Process::Umask::Mode mode )
 {
 	mode_t m = 0 ;
@@ -345,6 +358,7 @@ mode_t G::ProcessImp::umaskValue( Process::Umask::Mode mode )
 	if( mode == Process::Umask::Mode::GroupOpen ) m = 0113 ;// -rw-rw-r--
 	return m ;
 }
+#endif
 
 bool G::ProcessImp::readlink_( string_view path , std::string & value )
 {

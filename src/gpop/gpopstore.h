@@ -25,6 +25,7 @@
 #include "gpath.h"
 #include "gexception.h"
 #include <string>
+#include <memory>
 #include <iostream>
 #include <set>
 #include <list>

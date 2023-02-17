@@ -202,7 +202,7 @@ void GNet::EventLoopImp::runOnce()
 	if( handles.overflow( m_list.size() ) )
 		throw Overflow( handles.help(m_list,false) ) ;
 
-	auto rc = handles.waitForMultipleObjects( ms() ) ;
+	auto rc = handles.wait( ms() ) ;
 
 	if( rc == RcType::timeout )
 	{
@@ -234,6 +234,10 @@ void GNet::EventLoopImp::runOnce()
 		DWORD e = GetLastError() ;
 		throw Error( "wait-for-multiple-objects failed" ,
 			G::Str::fromUInt(static_cast<unsigned int>(e)) ) ;
+	}
+	else // rc == RcType::other
+	{
+		; // no-op
 	}
 
 	// garbage collection

@@ -62,7 +62,7 @@ public:
 		// Precondition: ctor 'sync'
 
 	bool zombify() ;
-		// Kills the process and makes this object a zombie that lives
+		// Kills the task process and makes this object a zombie that lives
 		// only on the timer-list, or returns false.
 
 private: // overrides
@@ -101,17 +101,18 @@ GNet::TaskImp::TaskImp( Task & task , ExceptionSink es , bool sync ,
 		m_future_event(*this,es) ,
 		m_timer(*this,&TaskImp::onTimeout,es) ,
 		m_logged(false) ,
-		m_process(commandline.exe(),commandline.args(),
-			env,
-			fd_stdin ,
-			fd_stdout ,
-			fd_stderr ,
-			cd ,
-			true , // strict path
-			id ,
-			true, // strict id
-			127 , // exec error exit
-			exec_error_format )
+		m_process( commandline.exe() , commandline.args() ,
+			G::NewProcess::Config()
+				.set_env(env)
+				.set_stdin(fd_stdin)
+				.set_stdout(fd_stdout)
+				.set_stderr(fd_stderr)
+				.set_cd(cd)
+				.set_strict_exe(true)
+				.set_run_as(id)
+				.set_strict_id(true)
+				.set_exec_error_exit(127)
+				.set_exec_error_format(exec_error_format) )
 {
 	if( sync )
 	{
@@ -256,6 +257,7 @@ void GNet::Task::stop()
 	m_busy = false ;
 }
 
+#ifndef G_LIB_SMALL
 std::pair<int,std::string> GNet::Task::run( const G::ExecutableCommand & commandline ,
 	const G::Environment & env ,
 	G::NewProcess::Fd fd_stdin ,
@@ -269,6 +271,7 @@ std::pair<int,std::string> GNet::Task::run( const G::ExecutableCommand & command
 		m_exec_error_format , m_id ) ;
 	return m_imp->wait() ;
 }
+#endif
 
 void GNet::Task::start( const G::ExecutableCommand & commandline )
 {

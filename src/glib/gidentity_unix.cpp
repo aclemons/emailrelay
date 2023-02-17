@@ -21,6 +21,7 @@
 #include "gdef.h"
 #include "gidentity.h"
 #include "gprocess.h"
+#include "grange.h"
 #include "gassert.h"
 #include <array>
 #include <climits>
@@ -32,128 +33,47 @@ namespace G
 {
 	namespace IdentityImp
 	{
-		int sysconf_value( int key )
-		{
-			long n = ::sysconf( key ) ;
-			return ( n < 0 || n > INT_MAX ) ? -1 : static_cast<int>(n) ;
-		}
+		bool lookupUser( const std::string & name , uid_t & uid , gid_t & gid ) ;
+		bool lookupGroup( const std::string & group , gid_t & gid ) ;
+		int sysconf_( int key ) ;
 	}
 }
 
-G::Identity::Identity() noexcept :
+G::Identity::Identity( uid_t uid , gid_t gid ) :
+	m_uid(uid) ,
+	m_gid(gid)
+{
+}
+
+G::Identity::Identity() noexcept : // invalid()
 	m_uid(static_cast<uid_t>(-1)) ,
 	m_gid(static_cast<gid_t>(-1))
 {
 }
 
-G::Identity::Identity( SignalSafe ) noexcept :
-	m_uid(static_cast<uid_t>(-1)) ,
-	m_gid(static_cast<gid_t>(-1))
+G::Identity::Identity( SignalSafe ) noexcept : // invalid()
+	Identity()
 {
 }
 
 G::Identity::Identity( const std::string & name , const std::string & group ) :
-	m_uid(static_cast<uid_t>(-1)) ,
-	m_gid(static_cast<gid_t>(-1))
+	Identity()
 {
-	auto pair = lookupUser( name ) ;
-	m_uid = pair.first ;
-	m_gid = pair.second ;
+	if( !IdentityImp::lookupUser( name , m_uid , m_gid ) )
+		throw NoSuchUser( name ) ;
 
-	if( !group.empty() )
-		m_gid = lookupGroup( group ) ;
-}
-
-std::pair<uid_t,gid_t> G::Identity::lookupUser( const std::string & name )
-{
-	using passwd_t = struct passwd ;
-	std::pair<uid_t,gid_t> result( 0 , 0 ) ;
-	std::array<int,3U> sizes {{ 120 , 0 , 16000 }} ;
-	sizes[1] = IdentityImp::sysconf_value( _SC_GETPW_R_SIZE_MAX ) ;
-	for( auto size : sizes )
-	{
-		if( size <= 0 ) continue ;
-		auto buffer_size = static_cast<std::size_t>(size) ;
-		std::vector<char> buffer( buffer_size ) ;
-		passwd_t pwd {} ;
-		passwd_t * result_p = nullptr ;
-		int rc = ::getpwnam_r( name.c_str() , &pwd , &buffer[0] , buffer_size , &result_p ) ;
-		int e = Process::errno_() ;
-		if( rc == 0 && result_p )
-		{
-			result.first = result_p->pw_uid ;
-			result.second = result_p->pw_gid ;
-			break ;
-		}
-		else if( rc == 0 && name == "root" ) // in case of no /etc/passwd file
-		{
-			result.first = 0 ;
-			result.second = 0 ;
-			break ;
-		}
-		else if( rc == 0 )
-		{
-			throw NoSuchUser( name ) ;
-		}
-		else if( e != ERANGE )
-		{
-			throw Error( Process::strerror(e) ) ;
-		}
-	}
-	return result ;
-}
-
-gid_t G::Identity::lookupGroup( const std::string & group )
-{
-	using group_t = struct group ;
-	gid_t result = 0 ;
-	std::array<int,3U> sizes {{ 120 , 0 , 16000 }} ;
-	sizes[1] = IdentityImp::sysconf_value( _SC_GETGR_R_SIZE_MAX ) ;
-	for( auto size : sizes )
-	{
-		if( size <= 0 ) continue ;
-		auto buffer_size = static_cast<std::size_t>(size) ;
-		std::vector<char> buffer( buffer_size ) ;
-		group_t grp {} ;
-		group_t * result_p = nullptr ;
-		int rc = ::getgrnam_r( group.c_str() , &grp , &buffer[0] , buffer_size , &result_p ) ;
-		if( rc == 0 && result_p )
-		{
-			result = result_p->gr_gid ;
-			break ;
-		}
-		else if( rc == 0 )
-		{
-			throw NoSuchGroup( group ) ;
-		}
-	}
-	return result ;
+	if( !group.empty() && !IdentityImp::lookupGroup( group , m_gid ) )
+		throw NoSuchGroup( group ) ;
 }
 
 G::Identity G::Identity::effective() noexcept
 {
-	Identity id ;
-	id.m_uid = ::geteuid() ;
-	id.m_gid = ::getegid() ;
-	id.m_h = 0 ; // pacifies -Wunused-private-field
-	return id ;
+	return { ::geteuid() , ::getegid() } ;
 }
 
-G::Identity G::Identity::real( bool with_cache ) noexcept
+G::Identity G::Identity::real() noexcept
 {
-	static bool first = true ;
-	static uid_t u = 0 ;
-	static gid_t g = 0 ;
-	if( first )
-	{
-		first = false ;
-		u = ::getuid() ;
-		g = ::getgid() ;
-	}
-	Identity id ;
-	id.m_uid = (first||with_cache) ? u : ::getuid() ;
-	id.m_gid = (first||with_cache) ? g : ::getgid() ;
-	return id ;
+	return { ::getuid() , ::getgid() } ;
 }
 
 G::Identity G::Identity::invalid() noexcept
@@ -161,25 +81,26 @@ G::Identity G::Identity::invalid() noexcept
 	return {} ;
 }
 
+#ifndef G_LIB_SMALL
 G::Identity G::Identity::invalid( SignalSafe safe ) noexcept
 {
-	return Identity(safe) ;
+	return Identity( safe ) ;
 }
+#endif
 
 G::Identity G::Identity::root() noexcept
 {
-	Identity id ;
-	id.m_uid = 0 ;
-	id.m_gid = 0 ;
-	return id ;
+	return { 0 , 0 } ;
 }
 
+#ifndef G_LIB_SMALL
 std::string G::Identity::str() const
 {
 	std::ostringstream ss ;
-	ss << m_uid << "/" << m_gid ;
+	ss << static_cast<int>(m_uid) << "/" << static_cast<int>(m_gid) ;
 	return ss.str() ;
 }
+#endif
 
 uid_t G::Identity::userid() const noexcept
 {
@@ -204,5 +125,111 @@ bool G::Identity::operator==( const Identity & other ) const noexcept
 bool G::Identity::operator!=( const Identity & other ) const noexcept
 {
 	return !operator==( other ) ;
+}
+
+#ifndef G_LIB_SMALL
+G::Identity G::Identity::lookup( const std::string & name )
+{
+	Identity result ;
+	if( !IdentityImp::lookupUser( name , result.m_uid , result.m_gid ) )
+		throw NoSuchUser( name ) ;
+	return result ;
+}
+#endif
+
+G::Identity G::Identity::lookup( const std::string & name , std::nothrow_t )
+{
+	Identity result ;
+	IdentityImp::lookupUser( name , result.m_uid , result.m_gid ) ;
+	return result ;
+}
+
+gid_t G::Identity::lookupGroup( const std::string & group )
+{
+	gid_t result = static_cast<gid_t>(-1) ;
+	IdentityImp::lookupGroup( group , result ) ;
+	return result ;
+}
+
+bool G::Identity::match( std::pair<int,int> uid_range ) const
+{
+	return G::Range::within( uid_range , m_uid ) ;
+}
+
+// ==
+
+bool G::IdentityImp::lookupUser( const std::string & name , uid_t & uid , gid_t & gid )
+{
+	using passwd_t = struct passwd ;
+	std::array<int,3U> sizes {{ 120 , 0 , 16000 }} ;
+	sizes[1] = IdentityImp::sysconf_( _SC_GETPW_R_SIZE_MAX ) ;
+	for( std::size_t i = 0U ; i < sizes.size() ; i++ )
+	{
+		int size = sizes[i] ;
+		if( size <= 0 ) continue ;
+		auto buffer_size = static_cast<std::size_t>(size) ;
+		std::vector<char> buffer( buffer_size ) ;
+		passwd_t pwd {} ;
+		passwd_t * result_p = nullptr ;
+		int rc = ::getpwnam_r( name.c_str() , &pwd , &buffer[0] , buffer_size , &result_p ) ;
+		int e = Process::errno_() ;
+		if( rc != 0 && e == ERANGE && (i+1U) < sizes.size() )
+		{
+			continue ; // try again with with bigger buffer
+		}
+		else if( rc == 0 && result_p )
+		{
+			uid = result_p->pw_uid ;
+			gid = result_p->pw_gid ;
+			return true ;
+		}
+		else if( rc == 0 && name == "root" ) // in case of no /etc/passwd file
+		{
+			uid = 0 ;
+			gid = 0 ;
+			return true ;
+		}
+		else if( rc == 0 )
+		{
+			break ; // no such user
+		}
+		else
+		{
+			throw Identity::Error( Process::strerror(e) ) ;
+		}
+	}
+	return false ;
+}
+
+bool G::IdentityImp::lookupGroup( const std::string & group , gid_t & gid )
+{
+	using group_t = struct group ;
+	std::array<int,3U> sizes {{ 120 , 0 , 16000 }} ;
+	sizes[1] = IdentityImp::sysconf_( _SC_GETGR_R_SIZE_MAX ) ;
+	for( auto size : sizes )
+	{
+		if( size <= 0 ) continue ;
+		auto buffer_size = static_cast<std::size_t>(size) ;
+		std::vector<char> buffer( buffer_size ) ;
+		group_t grp {} ;
+		group_t * result_p = nullptr ;
+		int rc = ::getgrnam_r( group.c_str() , &grp , &buffer[0] , buffer_size , &result_p ) ;
+		if( rc == 0 && result_p )
+		{
+			gid = result_p->gr_gid ;
+			return true ;
+		}
+		else if( rc == 0 )
+		{
+			return false ;
+		}
+	}
+	return false ;
+}
+
+int G::IdentityImp::sysconf_( int key )
+{
+	long n = ::sysconf( key ) ;
+	return ( n < 0 || n > INT_MAX ) ? -1 : static_cast<int>(n) ;
 }
 

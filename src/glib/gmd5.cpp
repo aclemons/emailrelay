@@ -31,9 +31,9 @@ namespace G
 {
 	namespace Md5Imp /// An implementation namespace for G::Md5.
 	{
-		using digest_state = G::Md5::digest_state ;
-		using small_t = G::Md5::small_t ;
-		using big_t = G::Md5::big_t ;
+		using digest_state = Md5::digest_state ;
+		using small_t = Md5::small_t ;
+		using big_t = Md5::big_t ;
 		class digest ;
 		class format ;
 		class block ;
@@ -418,13 +418,13 @@ G::Md5Imp::big_t G::Md5Imp::digest::T( small_t i )
 std::string G::Md5Imp::format::encode( const digest_state & state )
 {
 	const std::array<big_t,4U> state_array {{ state.a , state.b , state.c , state.d }} ;
-	return G::HashState<16,big_t,small_t>::encode( &state_array[0] ) ;
+	return HashState<16,big_t,small_t>::encode( &state_array[0] ) ;
 }
 
 std::string G::Md5Imp::format::encode( const digest_state & state , big_t n )
 {
 	const std::array<big_t,4U> state_array {{ state.a , state.b , state.c , state.d }} ;
-	return G::HashState<16,big_t,small_t>::encode( &state_array[0] , n ) ;
+	return HashState<16,big_t,small_t>::encode( &state_array[0] , n ) ;
 }
 
 G::Md5Imp::digest_state G::Md5Imp::format::decode( const std::string & str , small_t & n )
@@ -562,17 +562,21 @@ std::string G::Md5::value()
 	return Md5Imp::format::encode( m_d ) ;
 }
 
+#ifndef G_LIB_SMALL
 std::string G::Md5::digest( const std::string & input )
 {
 	Md5Imp::digest dd( input ) ;
 	return Md5Imp::format::encode( dd.state() ) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 std::string G::Md5::digest( string_view input )
 {
 	Md5Imp::digest dd( input ) ;
 	return Md5Imp::format::encode( dd.state() ) ;
 }
+#endif
 
 std::string G::Md5::digest( const std::string & input_1 , const std::string & input_2 )
 {
@@ -597,7 +601,7 @@ std::string G::Md5::digest2( const std::string & input_1 , const std::string & i
 
 std::string G::Md5::predigest( const std::string & input )
 {
-	G::Md5 x ;
+	Md5 x ;
 	x.add( input ) ;
 	G_ASSERT( input.size() == blocksize() ) ;
 	return x.state().substr(0U,valuesize()) ; // strip off the size; added back in postdigest()
@@ -608,14 +612,14 @@ std::string G::Md5::postdigest( const std::string & state_pair , const std::stri
 	if( state_pair.size() != 32U ) // valuesize()*2
 		throw InvalidState() ;
 
-	std::string _64( "\x40\0\0\0" , 4U ) ; // state size suffix
-	std::string state_i = state_pair.substr( 0U , state_pair.size()/2 ) + _64 ;
-	std::string state_o = state_pair.substr( state_pair.size()/2 ) + _64 ;
+	const char * _64 = "\x40\0\0\0" ; // state size suffix
+	std::string state_i = state_pair.substr( 0U , state_pair.size()/2 ).append(_64,4U) ;
+	std::string state_o = state_pair.substr( state_pair.size()/2 ).append(_64,4U) ;
 
-	G::Md5 xi( state_i ) ;
+	Md5 xi( state_i ) ;
 	xi.add( message ) ;
 
-	G::Md5 xo( state_o ) ;
+	Md5 xo( state_o ) ;
 	xo.add( xi.value() ) ;
 
 	return xo.value() ;
@@ -631,8 +635,10 @@ std::size_t G::Md5::valuesize()
 	return 16U ;
 }
 
+#ifndef G_LIB_SMALL
 std::size_t G::Md5::statesize()
 {
 	return 20U ;
 }
+#endif
 

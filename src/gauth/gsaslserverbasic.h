@@ -47,7 +47,7 @@ class GAuth::SaslServerBasic : public SaslServer
 {
 public:
 	explicit SaslServerBasic( const SaslServerSecrets & , bool allow_pop ,
-		const std::string & config , bool force_no_insecure_mechanisms ) ;
+		const std::string & config , const std::string & challenge_domain ) ;
 			///< Constructor. The 'config' parameters can be used to reduce the
 			///< set of available authentication mechanisms.
 
@@ -69,7 +69,7 @@ private: // overrides
 	std::string apply( const std::string & response , bool & done ) override ; // Override from GAuth::SaslServer.
 	bool authenticated() const override ; // Override from GAuth::SaslServer.
 	std::string id() const override ; // Override from GAuth::SaslServer.
-	bool trusted( const GNet::Address & ) const override ; // Override from GAuth::SaslServer.
+	bool trusted( const G::StringArray & , const std::string & ) const override ; // Override from GAuth::SaslServer.
 
 private:
 	std::unique_ptr<SaslServerBasicImp> m_imp ;

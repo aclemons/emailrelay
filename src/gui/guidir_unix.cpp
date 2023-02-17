@@ -29,87 +29,39 @@
 #include <stdexcept>
 #include <unistd.h>
 
-// these directories from the makefile could be used in preference
-// to the installer's runtime base directory on the assumption that
-// on unix we always install using "make install" and only ever
-// run the installer to reconfigure
-//
-#ifndef G_SBINDIR
-	#define G_SBINDIR
-#endif
-#ifndef G_ICONDIR
-	#define G_ICONDIR
-#endif
-#ifndef G_EXAMPLESDIR
-	#define G_EXAMPLESDIR
-#endif
 #ifndef G_SYSCONFDIR
 	#define G_SYSCONFDIR
 #endif
-#ifndef G_MANDIR
-	#define G_MANDIR
-#endif
-#ifndef G_DOCDIR
-	#define G_DOCDIR
-#endif
 #ifndef G_SPOOLDIR
 	#define G_SPOOLDIR
-#endif
-#ifndef G_INITDIR
-	#define G_INITDIR
 #endif
 
 namespace Gui
 {
 	namespace DirImp
 	{
-		std::string run( const std::string & exe , const std::string & arg_1 = std::string() ,
-			const std::string & arg_2 = std::string() ,
-			const std::string & arg_3 = std::string() ,
-			const std::string & arg_4 = std::string() )
-		{
-			G::StringArray args ;
-			if( !arg_1.empty() ) args.push_back( arg_1 ) ;
-			if( !arg_2.empty() ) args.push_back( arg_2 ) ;
-			if( !arg_3.empty() ) args.push_back( arg_3 ) ;
-			if( !arg_4.empty() ) args.push_back( arg_4 ) ;
-			G::NewProcess child( exe , args ) ;
-			return child.waitable().wait().output() ;
-		}
-
-		G::Path kde( const std::string & key , const G::Path & default_ )
-		{
-			G::Path result = run( "/usr/bin/kde4-config" , "kde4-config" , "--userpath" , key ) ;
-			return result.empty() ? default_ : result ;
-		}
-
-		G::Path xdg( const std::string & key , const G::Path & default_ )
-		{
-			G::Path result = run( "/usr/dir/xdg-user-dir" , "xdg-user-dir" , key ) ;
-			return result.empty() ? default_ : result ;
-		}
-
-		G::Path queryDesktop( const G::Path & default_ = G::Path() )
-		{
-			return kde( "desktop" , xdg("DESKTOP",default_) ) ;
-		}
-
-		G::Path queryAutostart( const G::Path & default_ = G::Path() )
-		{
-			return kde( "autostart" , default_ ) ;
-		}
+		std::string run( const std::string & exe , const std::string & arg_1 = {} ,
+			const std::string & arg_2 = {} ,
+			const std::string & arg_3 = {} ,
+			const std::string & arg_4 = {} ) ;
+		G::Path kde( const std::string & key , const G::Path & default_ ) ;
+		G::Path xdg( const std::string & key , const G::Path & default_ ) ;
+		G::Path desktop( const G::Path & default_ = G::Path() ) ;
+		G::Path autostart( const G::Path & default_ = G::Path() ) ;
+		G::Path oneOf( std::string , std::string = {} , std::string = {} , std::string = {} , std::string = {} ) ;
+		G::Path envPath( const std::string & , const G::Path & = G::Path() ) ;
+		G::Path home() ;
+		bool ok( const std::string & ) ;
 	}
 }
 
-G::Path Gui::Dir::os_install()
+G::Path Gui::Dir::install()
 {
-	// this is what to present to the user as the
-	// default base of the install
-
+	// presented to the user as the default base of the install
 	return "/usr" ;
 }
 
-G::Path Gui::Dir::os_config()
+G::Path Gui::Dir::config()
 {
 	std::string sysconfdir( G_STR(G_SYSCONFDIR) ) ;
 	if( sysconfdir.empty() )
@@ -117,7 +69,7 @@ G::Path Gui::Dir::os_config()
 	return sysconfdir ;
 }
 
-G::Path Gui::Dir::os_spool()
+G::Path Gui::Dir::spool()
 {
 	std::string spooldir( G_STR(G_SPOOLDIR) ) ;
 	if( spooldir.empty() )
@@ -125,45 +77,80 @@ G::Path Gui::Dir::os_spool()
 	return spooldir ;
 }
 
-G::Path Gui::Dir::os_pid( const G::Path & )
+G::Path Gui::Dir::pid( const G::Path & )
 {
-	return oneOf( "/run" , "/var/run" , "/tmp" ) ;
+	return DirImp::oneOf( "/run" , "/var/run" , "/tmp" ) ;
 }
 
-G::Path Gui::Dir::special( const std::string & type )
+G::Path Gui::Dir::desktop()
 {
-	// see "http://standards.freedesktop.org"
-
-	G::Path desktop = DirImp::queryDesktop( home()+"Desktop" ) ; // see also "xdg-desktop-icon install"
-	G::Path menu = envPath("XDG_DATA_HOME",home()+".local"+"share") + "applications" ; // see also "xdg-desktop-menu install"
-	G::Path autostart = DirImp::queryAutostart() ; // default was envPath("XDG_CONFIG_HOME",home()+".config")+"autostart"
-	G::Path programs = "/usr/bin" ;
-
-	if( type == "desktop" ) return desktop ;
-	if( type == "menu" ) return menu ;
-	if( type == "autostart" ) return autostart ;
-	if( type == "programs" ) return programs ;
-	return G::Path() ;
+	return DirImp::desktop( DirImp::home()+"Desktop" ) ;
 }
 
-G::Path Gui::Dir::os_boot()
+G::Path Gui::Dir::menu()
 {
-	std::string s( G_STR(G_INITDIR) ) ;
-	if( !s.empty() )
-		return s ;
-	return "/etc/init.d" ;
+	// see also "xdg-desktop-menu install"
+	return DirImp::envPath("XDG_DATA_HOME",DirImp::home()+".local"+"share") + "applications" ;
 }
 
-bool Gui::Dir::ok( const std::string & s )
+G::Path Gui::Dir::autostart()
 {
-	return
-		!s.empty() &&
-		G::File::exists(G::Path(s)) &&
-		G::Directory(G::Path(s)).valid() &&
-		G::Directory(G::Path(s)).writeable() ;
+	return DirImp::autostart() ;
 }
 
-G::Path Gui::Dir::oneOf( std::string d1 , std::string d2 , std::string d3 , std::string d4 , std::string d5 )
+G::Path Gui::Dir::home()
+{
+	return DirImp::home() ;
+}
+
+// ==
+
+G::Path Gui::DirImp::desktop( const G::Path & default_ )
+{
+	return kde( "desktop" , xdg("DESKTOP",default_) ) ;
+}
+
+G::Path Gui::DirImp::autostart( const G::Path & default_ )
+{
+	return kde( "autostart" , default_ ) ;
+}
+
+std::string Gui::DirImp::run( const std::string & exe , const std::string & arg_1 ,
+	const std::string & arg_2 , const std::string & arg_3 , const std::string & arg_4 )
+{
+	G::StringArray args ;
+	if( !arg_1.empty() ) args.push_back( arg_1 ) ;
+	if( !arg_2.empty() ) args.push_back( arg_2 ) ;
+	if( !arg_3.empty() ) args.push_back( arg_3 ) ;
+	if( !arg_4.empty() ) args.push_back( arg_4 ) ;
+
+	G::NewProcess child( exe , args , G::NewProcess::Config() .set_env(G::Environment::inherit()) ) ;
+	return G::Str::head( child.waitable().wait().output() , "\n" , false ) ;
+}
+
+G::Path Gui::DirImp::kde( const std::string & key , const G::Path & default_ )
+{
+	G::Path result = run( "/usr/bin/kde4-config" , "--userpath" , key ) ;
+	return result.empty() ? default_ : result ;
+}
+
+G::Path Gui::DirImp::xdg( const std::string & key , const G::Path & default_ )
+{
+	G::Path result = run( "/usr/bin/xdg-user-dir" , key ) ;
+	return result.empty() ? default_ : result ;
+}
+
+G::Path Gui::DirImp::home()
+{
+	return envPath( "HOME" , "~" ) ;
+}
+
+G::Path Gui::DirImp::envPath( const std::string & key , const G::Path & default_ )
+{
+	return G::Path( G::Environment::get( key , default_.str() ) ) ;
+}
+
+G::Path Gui::DirImp::oneOf( std::string d1 , std::string d2 , std::string d3 , std::string d4 , std::string d5 )
 {
 	if( ok(d1) ) return G::Path(d1) ;
 	if( ok(d2) ) return G::Path(d2) ;
@@ -173,7 +160,12 @@ G::Path Gui::Dir::oneOf( std::string d1 , std::string d2 , std::string d3 , std:
 	return G::Path() ;
 }
 
-G::Path Gui::Dir::home()
+bool Gui::DirImp::ok( const std::string & s )
 {
-	return envPath( "HOME" , "~" ) ;
+	return
+		!s.empty() &&
+		G::File::exists(G::Path(s)) &&
+		G::Directory(G::Path(s)).valid() &&
+		G::Directory(G::Path(s)).writeable() ;
 }
+

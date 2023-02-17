@@ -494,8 +494,10 @@ sub submitMessage
 	my ( $spool_dir , $n , @to ) = @_ ;
 	push @to , "me\@there.localnet" if( scalar(@to) == 0 ) ;
 	my $path = _createMessageFile( tempfile("message") , $n ) ;
-	my $rc = system( sanepath(exe($bin_dir,"emailrelay-submit")) . " --from me\@here.localnet " .
-		"--spool-dir $spool_dir " . join(" ",@to) . " < $path" ) ;
+	my $cmd = sanepath(exe($bin_dir,"emailrelay-submit")) . " --from me\@here.localnet " .
+		"--spool-dir $spool_dir " . join(" ",@to) ;
+	log_( "submit: [$cmd]" ) ;
+	my $rc = system( "$cmd < $path" ) ;
 	Check::that( $rc == 0 , "failed to submit" ) ;
 	System::unlink( $path ) ;
 }

@@ -65,9 +65,9 @@ public:
 		unsigned int idle_timeout {0U} ;
 		bool no_throw_on_peer_disconnect {false} ; // see SocketProtocolSink::onPeerDisconnect()
 		Config & set_socket_protocol_config( const SocketProtocol::Config & ) ;
-		Config & set_idle_timeout( unsigned int ) ;
-		Config & set_no_throw_on_peer_disconnect( bool = true ) ;
-		Config & set_all_timeouts( unsigned int ) ;
+		Config & set_idle_timeout( unsigned int ) noexcept ;
+		Config & set_no_throw_on_peer_disconnect( bool = true ) noexcept ;
+		Config & set_all_timeouts( unsigned int ) noexcept ;
 	} ;
 
 	ServerPeer( ExceptionSink , ServerPeerInfo && , const LineBufferConfig & ) ;
@@ -171,8 +171,9 @@ private: // overrides
 protected:
 	void onData( const char * , std::size_t ) override ;
 		///< Override from GNet::SocketProtocolSink.
-		///< Protected to allow derived classes to ignore
-		///< incoming data for DoS prevention.
+		///<
+		///< Protected and non-final to allow derived classes
+		///< to ignore incoming data for DoS prevention.
 
 public:
 	ServerPeer( const ServerPeer & ) = delete ;
@@ -198,9 +199,9 @@ private:
 	mutable std::string m_exception_source_id ;
 } ;
 
-inline GNet::ServerPeer::Config & GNet::ServerPeer::Config::set_idle_timeout( unsigned int t ) { idle_timeout = t ; return *this ; }
-inline GNet::ServerPeer::Config & GNet::ServerPeer::Config::set_all_timeouts( unsigned int t ) { idle_timeout = t ; socket_protocol_config.secure_connection_timeout = t ; return *this ; }
+inline GNet::ServerPeer::Config & GNet::ServerPeer::Config::set_idle_timeout( unsigned int t ) noexcept { idle_timeout = t ; return *this ; }
+inline GNet::ServerPeer::Config & GNet::ServerPeer::Config::set_all_timeouts( unsigned int t ) noexcept { idle_timeout = t ; socket_protocol_config.secure_connection_timeout = t ; return *this ; }
 inline GNet::ServerPeer::Config & GNet::ServerPeer::Config::set_socket_protocol_config( const SocketProtocol::Config & config ) { socket_protocol_config = config ; return *this ; }
-inline GNet::ServerPeer::Config & GNet::ServerPeer::Config::set_no_throw_on_peer_disconnect( bool b ) { no_throw_on_peer_disconnect = b ; return *this ; }
+inline GNet::ServerPeer::Config & GNet::ServerPeer::Config::set_no_throw_on_peer_disconnect( bool b ) noexcept { no_throw_on_peer_disconnect = b ; return *this ; }
 
 #endif

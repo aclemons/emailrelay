@@ -19,7 +19,8 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/glib \
 	-I$(top_srcdir)/src/gssl \
 	-I$(top_srcdir)/src/gnet \
-	-D "G_SPOOLDIR=$(e_spooldir)"
+	-D "G_SPOOLDIR=$(e_spooldir)" \
+	-D G_LIB_SMALL
 
 noinst_LIBRARIES = libgauth.a
 

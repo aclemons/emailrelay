@@ -23,6 +23,7 @@
 #include "gcracker.h"
 #include "gdialog.h"
 #include "gstack.h"
+#include "gscope.h"
 #include "glog.h"
 #include "gassert.h"
 
@@ -36,7 +37,7 @@ std::string GGui::Pump::run()
 
 std::string GGui::Pump::run( HWND idle_window , unsigned int idle_message )
 {
-	::PostMessage( idle_window , idle_message , 0 , 0 ) ; // pump priming
+	PostMessage( idle_window , idle_message , 0 , 0 ) ; // pump priming
 	return runImp( true , idle_window , idle_message , false ).second ;
 }
 
@@ -47,15 +48,15 @@ std::pair<bool,std::string> GGui::Pump::runToEmpty()
 
 std::pair<bool,std::string> GGui::Pump::runToEmpty( HWND idle_window , unsigned int idle_message )
 {
-	::PostMessage( idle_window , idle_message , 0 , 0 ) ; // pump priming
+	PostMessage( idle_window , idle_message , 0 , 0 ) ; // pump priming
 	return runImp( true , idle_window , idle_message , true ) ;
 }
 
-void GGui::Pump::quit( std::string reason )
+void GGui::Pump::quit( const std::string & reason )
 {
 	G_DEBUG( "GGui::Pump::quit: quit-reason=[" << reason << "] run-id=" << m_run_id ) ;
 	m_quit_reason = reason ;
-	::PostMessage( 0 , Cracker::wm_quit() , m_run_id , 0 ) ; // not PostQuitMessage()
+	PostMessage( 0 , Cracker::wm_quit() , m_run_id , 0 ) ; // not PostQuitMessage()
 }
 
 bool GGui::Pump::getMessage( MSG * msg_p , bool block )
@@ -67,20 +68,10 @@ bool GGui::Pump::getMessage( MSG * msg_p , bool block )
 	return rc != -1 && rc != 0 ; // sic
 }
 
-namespace GGui
-{
-	struct ScopeEndIncrement
-	{
-		WPARAM & m_n ;
-		explicit ScopeEndIncrement( WPARAM & n ) : m_n(n) {}
-		~ScopeEndIncrement() { m_n++ ; }
-	} ;
-}
-
 std::pair<bool,std::string> GGui::Pump::runImp( bool send_idle_messages , HWND hwnd_idle ,
 	unsigned int wm_idle , bool run_to_empty )
 {
-	ScopeEndIncrement inc( m_run_id ) ; // enable quit() for this run or the next
+	G::ScopeExit _([&](){ m_run_id++ ; }) ; // enable quit() for this run or the next
 	MSG msg ;
 	bool block = false ;
 	bool done_idling = false ;
@@ -107,8 +98,8 @@ std::pair<bool,std::string> GGui::Pump::runImp( bool send_idle_messages , HWND h
 			}
 			else
 			{
-				::TranslateMessage( &msg ) ;
-				::DispatchMessage( &msg ) ;
+				TranslateMessage( &msg ) ;
+				DispatchMessage( &msg ) ;
 			}
 		}
 		else if( run_to_empty && send_idle_messages )
@@ -136,7 +127,7 @@ std::pair<bool,std::string> GGui::Pump::runImp( bool send_idle_messages , HWND h
 	}
 	std::string reason = m_quit_reason ;
 	m_quit_reason.clear() ;
-	return std::make_pair( seen_quit , reason ) ;
+	return { seen_quit , reason } ;
 }
 
 bool GGui::Pump::sendIdle( HWND hwnd_idle , unsigned int wm_idle )

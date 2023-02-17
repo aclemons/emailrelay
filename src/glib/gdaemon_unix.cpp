@@ -45,10 +45,12 @@ namespace G
 	}
 }
 
+#ifndef G_LIB_SMALL
 void G::Daemon::detach()
 {
 	detach( G::Path() ) ;
 }
+#endif
 
 void G::Daemon::detach( const G::Path & pid_file )
 {

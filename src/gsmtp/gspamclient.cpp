@@ -20,6 +20,7 @@
 
 #include "gdef.h"
 #include "gstr.h"
+#include "gstringtoken.h"
 #include "gfile.h"
 #include "gtest.h"
 #include "gspamclient.h"
@@ -50,10 +51,12 @@ GNet::Client::Config GSmtp::SpamClient::netConfig( unsigned int connect_timeout 
 	return net_config ;
 }
 
+#ifndef G_LIB_SMALL
 void GSmtp::SpamClient::username( const std::string & username )
 {
 	m_username = username ;
 }
+#endif
 
 bool GSmtp::SpamClient::busy() const
 {
@@ -158,7 +161,7 @@ bool GSmtp::SpamClient::Request::sendMore()
 	else
 	{
 		G_DEBUG( "GSmtp::SpamClient::Request::sendMore: spam request sending " << n << " bytes" ) ;
-		return m_client->send( std::string(&m_buffer[0],static_cast<std::size_t>(n)) ) ;
+		return m_client->send( G::string_view(&m_buffer[0],static_cast<std::size_t>(n)) ) ;
 	}
 }
 
@@ -252,9 +255,10 @@ bool GSmtp::SpamClient::Response::ok( const std::string & line ) const
 	// eg. "SPAMD/1.0 99 Timeout", "SPAMD/1.1 0 OK"
 	if( line.empty() ) return false ;
 	if( line.find("SPAMD/") != 0U ) return false ;
-	G::StringArray parts = G::Str::splitIntoTokens( line , G::Str::ws() ) ;
-	if( parts.size() < 2U ) return false ;
-	return parts.at(1U) == "0" ;
+	G::string_view line_sv( line ) ;
+	G::StringTokenView t( line_sv , G::Str::ws() ) ;
+	++t ;
+	return t.valid() ? ( t() == "0"_sv ) : false ;
 }
 
 std::string GSmtp::SpamClient::Response::result() const

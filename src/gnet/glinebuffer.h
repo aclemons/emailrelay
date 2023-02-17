@@ -52,7 +52,7 @@ namespace GNet
 ///   buffer.add("F\n") ;
 ///
 ///   while( buffer.more() )
-///     cout << std::string_view(buffer.data(),buffer.size()) << endl ;
+///     cout << std::string(buffer.data(),buffer.size()) << endl ;
 /// }
 /// \endcode
 ///
@@ -98,7 +98,8 @@ public:
 		///< Adds a data segment.
 
 	void add( const char * data , std::size_t size ) ;
-		///< Adds a data segment by copying.
+		///< Adds a data segment by copying. Does nothing if data is
+		///< null or size is zero.
 		///< See also apply().
 
 	void expect( std::size_t n ) ;

@@ -19,7 +19,7 @@ dnl
 dnl Process this file with autoconf to produce a configure script.
 dnl
 
-AC_INIT([E-MailRelay],[2.4.1],[],[emailrelay])
+AC_INIT([E-MailRelay],[2.5rc1],[],[emailrelay])
 AC_CONFIG_SRCDIR([src/glib/gdef.h])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([no-define])
@@ -31,7 +31,7 @@ dnl check for programs
 dnl
 AC_PROG_CC([cc gcc clang])
 AC_PROG_CXX([c++ g++ clang++])
-AX_CXX_COMPILE_STDCXX_11([],[mandatory])
+AX_CXX_COMPILE_STDCXX([11],[noext],[mandatory])
 AC_PROG_INSTALL
 AC_PROG_RANLIB
 AC_PROG_SED
@@ -71,8 +71,10 @@ GCONFIG_FN_QT_BUILD
 GCONFIG_FN_TLS_OPENSSL
 GCONFIG_FN_TLS_MBEDTLS
 
-dnl "--enable-whatever"
+dnl "--enable-whatever" for internal features
 dnl
+GCONFIG_FN_ENABLE_EXTRA_FILTERS
+GCONFIG_FN_ENABLE_EXTRA_VERIFIERS
 AC_ARG_ENABLE([bsd],AS_HELP_STRING([--enable-bsd],[enable building for bsd (default auto)]))
 GCONFIG_FN_ENABLE_BSD
 AC_ARG_ENABLE([debug],AS_HELP_STRING([--enable-debug],[enable extra debug messages at compile-time (default no)]))
@@ -85,6 +87,8 @@ AC_ARG_ENABLE([install-hook],AS_HELP_STRING([--enable-install-hook],[enable fixi
 GCONFIG_FN_ENABLE_INSTALL_HOOK
 AC_ARG_ENABLE([interface-names],AS_HELP_STRING([--enable-interface-names],[allow network interface names for defining listening addresses (default yes)]))
 GCONFIG_FN_ENABLE_INTERFACE_NAMES
+AC_ARG_ENABLE([pop],AS_HELP_STRING([--enable-pop],[enable pop (default yes)]))
+GCONFIG_FN_ENABLE_POP
 AC_ARG_ENABLE([mac],AS_HELP_STRING([--enable-mac],[enable building for mac os x (default auto)]))
 GCONFIG_FN_ENABLE_MAC
 AC_ARG_ENABLE([std-thread],AS_HELP_STRING([--enable-std-thread],[use std::thread or not (default auto)]))
@@ -100,11 +104,11 @@ GCONFIG_FN_ENABLE_UDS
 AC_ARG_ENABLE([dnsbl],AS_HELP_STRING([--enable-dnsbl],[enable DNSBL (default yes)]))
 GCONFIG_FN_ENABLE_DNSBL
 
-dnl "--with-whatever"
+dnl "--with-whatever" for external dependencies
 dnl
 AC_ARG_WITH([doxygen],AS_HELP_STRING([--with-doxygen],[generate source code documentation with doxygen (default auto)]))
 GCONFIG_FN_WITH_DOXYGEN
-AC_ARG_WITH([gettext],AS_HELP_STRING([--with-gettext],[use GNU gettext (default no)]))
+AC_ARG_WITH([gettext],AS_HELP_STRING([--with-gettext],[use gettext (default auto)]))
 GCONFIG_FN_WITH_GETTEXT
 AC_ARG_WITH([man2html],AS_HELP_STRING([--with-man2html],[convert man pages to html using man2html (default auto)]))
 GCONFIG_FN_WITH_MAN2HTML
@@ -121,7 +125,7 @@ GCONFIG_FN_SET_DIRECTORIES_E
 
 dnl generate files
 dnl
-AC_CONFIG_FILES([Makefile src/Makefile src/glib/Makefile src/gssl/Makefile src/gnet/Makefile src/gauth/Makefile src/gsmtp/Makefile src/gpop/Makefile src/main/Makefile src/main/icon/Makefile src/win32/Makefile src/gui/Makefile bin/Makefile doc/Makefile etc/Makefile test/Makefile test/certificates/Makefile m4/Makefile bsd/Makefile debian/Makefile po/Makefile unity/Makefile])
+AC_CONFIG_FILES([Makefile libexec/Makefile src/Makefile src/glib/Makefile src/gssl/Makefile src/gnet/Makefile src/gauth/Makefile src/gstore/Makefile src/gsmtp/Makefile src/gpop/Makefile src/gfilters/Makefile src/gverifiers/Makefile src/main/Makefile src/main/icon/Makefile src/win32/Makefile src/gui/Makefile bin/Makefile doc/Makefile etc/Makefile test/Makefile test/certificates/Makefile m4/Makefile bsd/Makefile debian/Makefile po/Makefile unity/Makefile])
 AC_OUTPUT
 
 dnl final warnings

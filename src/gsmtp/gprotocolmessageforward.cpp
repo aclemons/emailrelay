@@ -21,15 +21,14 @@
 #include "gdef.h"
 #include "gprotocolmessageforward.h"
 #include "gprotocolmessagestore.h"
-#include "gnullfilter.h"
-#include "gexecutablefilter.h"
 #include "gmessagestore.h"
 #include "gstr.h"
 #include "glog.h"
 
 GSmtp::ProtocolMessageForward::ProtocolMessageForward( GNet::ExceptionSink es ,
-	MessageStore & store , FilterFactory & ff , std::unique_ptr<ProtocolMessage> pm ,
-	const GSmtp::Client::Config & client_config , const GAuth::SaslClientSecrets & client_secrets ,
+	GStore::MessageStore & store , FilterFactoryBase & ff , std::unique_ptr<ProtocolMessage> pm ,
+	const GSmtp::Client::Config & client_config ,
+	const GAuth::SaslClientSecrets & client_secrets ,
 	const std::string & forward_to , int forward_to_family ) :
 		m_es(es) ,
 		m_store(store) ,
@@ -38,8 +37,8 @@ GSmtp::ProtocolMessageForward::ProtocolMessageForward( GNet::ExceptionSink es ,
 		m_client_config(client_config) ,
 		m_client_secrets(client_secrets) ,
 		m_pm(pm.release()) ,
-		m_id(MessageId::none()) ,
-		m_done_signal(true) // one-shot, but reset()able
+		m_id(GStore::MessageId::none()) ,
+		m_done_signal(true)
 {
 	// signal plumbing to receive 'done' events
 	m_pm->doneSignal().connect( G::Slot::slot(*this,&ProtocolMessageForward::processDone) ) ;
@@ -54,10 +53,12 @@ GSmtp::ProtocolMessageForward::~ProtocolMessageForward()
 		m_client_ptr->messageDoneSignal().disconnect() ;
 }
 
+#ifndef G_LIB_SMALL
 GSmtp::ProtocolMessage::DoneSignal & GSmtp::ProtocolMessageForward::storageDoneSignal()
 {
 	return m_pm->doneSignal() ;
 }
+#endif
 
 GSmtp::ProtocolMessage::DoneSignal & GSmtp::ProtocolMessageForward::doneSignal()
 {
@@ -75,14 +76,24 @@ void GSmtp::ProtocolMessageForward::clear()
 	m_pm->clear() ;
 }
 
-GSmtp::MessageId GSmtp::ProtocolMessageForward::setFrom( const std::string & from , const std::string & from_auth )
+GStore::MessageId GSmtp::ProtocolMessageForward::setFrom( const std::string & from , const FromInfo & from_info )
 {
-	return m_pm->setFrom( from , from_auth ) ;
+	return m_pm->setFrom( from , from_info ) ;
 }
 
-bool GSmtp::ProtocolMessageForward::addTo( VerifierStatus to_status )
+GSmtp::ProtocolMessage::FromInfo GSmtp::ProtocolMessageForward::fromInfo() const
 {
-	return m_pm->addTo( to_status ) ;
+	return m_pm->fromInfo() ;
+}
+
+std::string GSmtp::ProtocolMessageForward::bodyType() const
+{
+	return m_pm->bodyType() ;
+}
+
+bool GSmtp::ProtocolMessageForward::addTo( const ToInfo & to_info )
+{
+	return m_pm->addTo( to_info ) ;
 }
 
 void GSmtp::ProtocolMessageForward::addReceived( const std::string & line )
@@ -90,9 +101,14 @@ void GSmtp::ProtocolMessageForward::addReceived( const std::string & line )
 	m_pm->addReceived( line ) ;
 }
 
-bool GSmtp::ProtocolMessageForward::addText( const char * line_data , std::size_t line_size )
+GStore::NewMessage::Status GSmtp::ProtocolMessageForward::addContent( const char * line_data , std::size_t line_size )
 {
-	return m_pm->addText( line_data , line_size ) ;
+	return m_pm->addContent( line_data , line_size ) ;
+}
+
+std::size_t GSmtp::ProtocolMessageForward::contentSize() const
+{
+	return m_pm->contentSize() ;
 }
 
 std::string GSmtp::ProtocolMessageForward::from() const
@@ -107,8 +123,8 @@ void GSmtp::ProtocolMessageForward::process( const std::string & auth_id , const
 	m_pm->process( auth_id , peer_socket_address , peer_certificate ) ;
 }
 
-void GSmtp::ProtocolMessageForward::processDone( bool success , const MessageId & id , const std::string & response ,
-	const std::string & reason )
+void GSmtp::ProtocolMessageForward::processDone( bool success , const GStore::MessageId & id ,
+	const std::string & response , const std::string & reason )
 {
 	G_DEBUG( "ProtocolMessageForward::processDone: " << (success?1:0) << " "
 		<< id.str() << " [" << response << "] [" << reason << "]" ) ;
@@ -134,14 +150,14 @@ void GSmtp::ProtocolMessageForward::processDone( bool success , const MessageId 
 	}
 }
 
-std::string GSmtp::ProtocolMessageForward::forward( const MessageId & id , bool & nothing_to_do )
+std::string GSmtp::ProtocolMessageForward::forward( const GStore::MessageId & id , bool & nothing_to_do )
 {
 	try
 	{
 		nothing_to_do = false ;
 		G_DEBUG( "GSmtp::ProtocolMessageForward::forward: forwarding message " << id.str() ) ;
 
-		std::unique_ptr<StoredMessage> message = m_store.get( id ) ;
+		std::unique_ptr<GStore::StoredMessage> message = m_store.get( id ) ;
 		G_LOG( "GSmtp::ProtocolMessageForward::forward: processing message \"" << message->location() << "\"" ) ;
 
 		if( message->toCount() == 0U )
@@ -159,7 +175,7 @@ std::string GSmtp::ProtocolMessageForward::forward( const MessageId & id , bool 
 				m_client_ptr->messageDoneSignal().connect( G::Slot::slot( *this ,
 					&GSmtp::ProtocolMessageForward::messageDone ) ) ;
 			}
-			m_client_ptr->sendMessage( std::unique_ptr<StoredMessage>(message.release()) ) ;
+			m_client_ptr->sendMessage( std::unique_ptr<GStore::StoredMessage>(message.release()) ) ;
 		}
 		return std::string() ;
 	}

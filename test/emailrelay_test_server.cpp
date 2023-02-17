@@ -130,7 +130,7 @@ Server::Server( GNet::ExceptionSink es , TestServerConfig config ) :
 	GNet::Server(es,
 		GNet::Address(config.m_ipv6?GNet::Address::Family::ipv6:GNet::Address::Family::ipv4,config.m_port),
 		GNet::ServerPeer::Config()
-			.set_socket_protocol_config( GNet::SocketProtocol::Config().set_read_buffer_size(config.m_slow?3U:G::limits::net_buffer) )
+			.set_socket_protocol_config( GNet::SocketProtocol::Config().set_read_buffer_size(config.m_slow?3U:G::Limits<>::net_buffer) )
 			.set_idle_timeout(config.m_idle_timeout),
 		GNet::Server::Config()) ,
 	m_config(config)
@@ -328,23 +328,25 @@ int main( int argc , char * argv [] )
 	try
 	{
 		G::Arg arg( argc , argv ) ;
-		G::GetOpt opt( arg ,
-			"h!help!show help!!0!!1" "|"
-			"b!auth-foo-bar!enable mechanisms foo and bar!!0!!1" "|"
-			"c!auth-cram!enable mechanism cram-md5!!0!!1" "|"
-			"l!auth-login!enable mechanism login!!0!!1" "|"
-			"p!auth-plain!enable mechanism plain!!0!!1" "|"
-			"o!auth-ok!successful authentication!!0!!1" "|"
-			"s!slow!slow responses!!0!!1" "|"
-			"t!tls!enable tls!!0!!1" "|"
-			"q!quiet!less logging!!0!!1" "|"
-			"f!fail-at!fail from the n'th message! of the session (zero-based index)!1!n!1" "|"
-			"d!drop!drop the connection when content has DROP or when failing!!0!!1" "|"
-			"i!idle-timeout!idle timeout!!1!seconds!1" "|"
-			"P!port!port number!!1!port!1" "|"
-			"f!pid-file!pid file!!1!path!1" "|"
-			"6!ipv6!use ipv6!!0!!1" "|"
-		) ;
+		G::Options options ;
+		using M = G::Option::Multiplicity ;
+		G::Options::add( options , 'h' , "help" , "show help" , "" , M::zero , "" , 1 , 0 ) ;
+		G::Options::add( options , 'b' , "auth-foo-bar" , "enable mechanisms foo and bar" , "" , M::zero , "" , 1 , 0 ) ;
+		G::Options::add( options , 'c' , "auth-cram" , "enable mechanism cram-md5" , "" , M::zero , "" , 1 , 0 ) ;
+		G::Options::add( options , 'l' , "auth-login" , "enable mechanism login" , "" , M::zero , "" , 1 , 0 ) ;
+		G::Options::add( options , 'p' , "auth-plain" , "enable mechanism plain" , "" , M::zero , "" , 1 , 0 ) ;
+		G::Options::add( options , 'o' , "auth-ok" , "successful authentication" , "" , M::zero , "" , 1 , 0 ) ;
+		G::Options::add( options , 's' , "slow" , "slow responses" , "" , M::zero , "" , 1 , 0 ) ;
+		G::Options::add( options , 't' , "tls" , "enable tls" , "" , M::zero , "" , 1 , 0 ) ;
+		G::Options::add( options , 'q' , "quiet" , "less logging" , "" , M::zero , "" , 1 , 0 ) ;
+		G::Options::add( options , '\0', "debug" , "debug logging" , "" , M::zero , "" , 1 , 0 ) ;
+		G::Options::add( options , 'f' , "fail-at" , "fail from the n'th message" , "of the session (zero-based index)" , M::one , "n" , 1 , 0 ) ;
+		G::Options::add( options , 'd' , "drop" , "drop the connection when content has DROP or when failing" , "" , M::zero , "" , 1 , 0 ) ;
+		G::Options::add( options , 'i' , "idle-timeout" , "idle timeout" , "" , M::one , "s" , 1 , 0 ) ;
+		G::Options::add( options , 'P' , "port" , "port number" , "" , M::one , "port" , 1 , 0 ) ;
+		G::Options::add( options , 'f' , "pid-file" , "pid file" , "" , M::one , "path" , 1 , 0 ) ;
+		G::Options::add( options , '6' , "ipv6" , "use ipv6" , "" , M::zero , "" , 1 , 0 ) ;
+		G::GetOpt opt( arg , options ) ;
 		if( opt.hasErrors() )
 		{
 			opt.showErrors(std::cerr) ;
@@ -364,6 +366,7 @@ int main( int argc , char * argv [] )
 		bool slow = opt.contains( "slow" ) ;
 		bool tls = opt.contains( "tls" ) ;
 		bool quiet = opt.contains( "quiet" ) ;
+		bool debug = opt.contains( "debug" ) ;
 		int fail_at = opt.contains("fail-at") ? G::Str::toInt(opt.value("fail-at")) : -1 ;
 		bool drop = opt.contains( "drop" ) ;
 		bool ipv6 = opt.contains( "ipv6" ) ;
@@ -377,6 +380,7 @@ int main( int argc , char * argv [] )
 			G::LogOutput::Config()
 				.set_output_enabled(!quiet)
 				.set_summary_info(!quiet)
+				.set_debug(debug)
 				.set_with_level(true)
 				.set_strip(true) ) ;
 

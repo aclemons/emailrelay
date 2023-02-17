@@ -113,39 +113,34 @@ std::string G::Process::strerror( int errno_ )
 	return Str::isPrintableAscii(s) ? Str::lower(s) : s ;
 }
 
-void G::Process::beOrdinary( Identity , bool )
+std::pair<G::Identity,G::Identity> G::Process::beOrdinaryAtStartup( const std::string & , bool )
 {
-	// not implemented -- see also ImpersonateLoggedOnUser()
+	// identity switching not implemented for windows
+	return { Identity::invalid() , Identity::invalid() } ;
 }
 
-G::Identity G::Process::beOrdinaryAtStartup( Identity identity , bool )
+void G::Process::beOrdinary( Identity , bool )
 {
-	return identity ;
 }
 
 void G::Process::beOrdinaryForExec( Identity ) noexcept
 {
-	// not implemented
 }
 
 void G::Process::beSpecial( Identity , bool )
 {
-	// not implemented -- see also RevertToSelf()
 }
 
 void G::Process::beSpecialForExit( SignalSafe , Identity ) noexcept
 {
-	// not implemented
 }
 
 void G::Process::setEffectiveUser( Identity )
 {
-	// not implemented
 }
 
 void G::Process::setEffectiveGroup( Identity )
 {
-	// not implemented
 }
 
 std::string G::Process::exe()

@@ -12,7 +12,7 @@
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    id="svg3036"
    version="1.1"
-   inkscape:version="0.48.4 r9939"
+   inkscape:version="0.92.4 (5da689c313, 2019-01-14)"
    width="1650"
    height="1023"
    sodipodi:docname="forwardto.svg"
@@ -27,7 +27,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -42,13 +42,13 @@
      guidetolerance="10"
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
-     inkscape:window-width="1323"
-     inkscape:window-height="916"
+     inkscape:window-width="1717"
+     inkscape:window-height="1148"
      id="namedview3038"
      showgrid="false"
-     inkscape:zoom="0.3103688"
-     inkscape:cx="964.09848"
-     inkscape:cy="499.69607"
+     inkscape:zoom="0.78606456"
+     inkscape:cx="725.0482"
+     inkscape:cy="595.63404"
      inkscape:window-x="253"
      inkscape:window-y="171"
      inkscape:window-maximized="0"
@@ -138,59 +138,59 @@
      style="display:inline">
     <text
        xml:space="preserve"
-       style="font-size:48px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:DejaVu Sans;-inkscape-font-specification:DejaVu Sans Bold"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:0%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans Bold';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;display:inline;fill:#000000;fill-opacity:1;stroke:none"
        x="335.11108"
        y="545.05994"
-       id="text3298"
-       sodipodi:linespacing="125%"><tspan
+       id="text3298"><tspan
          sodipodi:role="line"
          id="tspan3300"
          x="335.11108"
-         y="545.05994">--filter</tspan></text>
+         y="545.05994"
+         style="font-size:48px;line-height:1.25">--filter</tspan></text>
     <text
        xml:space="preserve"
-       style="font-size:48px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:DejaVu Sans;-inkscape-font-specification:DejaVu Sans Bold"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:0%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans Bold';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;display:inline;fill:#000000;fill-opacity:1;stroke:none"
        x="729.98431"
        y="672.42761"
-       id="text3302"
-       sodipodi:linespacing="125%"><tspan
+       id="text3302"><tspan
          sodipodi:role="line"
          id="tspan3304"
          x="729.98431"
-         y="672.42761">--spool-dir</tspan></text>
+         y="672.42761"
+         style="font-size:48px;line-height:1.25">--spool-dir</tspan></text>
     <text
        xml:space="preserve"
-       style="font-size:48px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:DejaVu Sans;-inkscape-font-specification:DejaVu Sans Bold"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:0%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans Bold';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none"
        x="928.52094"
        y="283.65533"
-       id="text3053"
-       sodipodi:linespacing="125%"><tspan
+       id="text3053"><tspan
          sodipodi:role="line"
          id="tspan3055"
          x="928.52094"
-         y="283.65533">--forward-to=smtp.com:25</tspan></text>
+         y="283.65533"
+         style="font-size:48px;line-height:1.25">--forward-to=smtp.com:25</tspan></text>
     <text
        xml:space="preserve"
-       style="font-size:48px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:DejaVu Sans;-inkscape-font-specification:DejaVu Sans Bold"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:0%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans Bold';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;display:inline;fill:#000000;fill-opacity:1;stroke:none"
        x="834.14893"
        y="462.69864"
-       id="text3053-6"
-       sodipodi:linespacing="125%"><tspan
+       id="text3053-6"><tspan
          sodipodi:role="line"
          id="tspan3055-7"
          x="834.14893"
-         y="462.69864">--poll=60</tspan></text>
+         y="462.69864"
+         style="font-size:48px;line-height:1.25">--poll=60</tspan></text>
     <text
        xml:space="preserve"
-       style="font-size:48px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:DejaVu Sans;-inkscape-font-specification:DejaVu Sans Bold"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:0%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans Bold';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;display:inline;fill:#000000;fill-opacity:1;stroke:none"
        x="47.497009"
        y="303.86072"
-       id="text3053-6-5"
-       sodipodi:linespacing="125%"><tspan
+       id="text3053-6-5"><tspan
          sodipodi:role="line"
          id="tspan3055-7-3"
          x="47.497009"
-         y="303.86072">--port=587</tspan></text>
+         y="303.86072"
+         style="font-size:48px;line-height:1.25">--port=587</tspan></text>
   </g>
 </svg>
 

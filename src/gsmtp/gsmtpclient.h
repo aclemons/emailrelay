@@ -23,15 +23,15 @@
 
 #include "gdef.h"
 #include "glocation.h"
-#include "gsecrets.h"
+#include "gsaslclientsecrets.h"
 #include "glinebuffer.h"
 #include "gclient.h"
 #include "gclientptr.h"
 #include "gsmtpclientprotocol.h"
 #include "gmessagestore.h"
 #include "gstoredmessage.h"
+#include "gfilterfactorybase.h"
 #include "gfilter.h"
-#include "gfilterfactory.h"
 #include "gcall.h"
 #include "gsocket.h"
 #include "gslot.h"
@@ -58,55 +58,58 @@ public:
 	{
 		GNet::StreamSocket::Config stream_socket_config ;
 		ClientProtocol::Config client_protocol_config ;
-		FactoryParser::Result filter_spec ;
-		unsigned int filter_timeout{0U} ;
-		bool bind_local_address{false} ;
+		Filter::Config filter_config ;
+		FilterFactoryBase::Spec filter_spec ;
+		bool bind_local_address {false} ;
 		GNet::Address local_address ;
-		unsigned int connection_timeout{0U} ;
-		unsigned int secure_connection_timeout{0U} ;
-		bool secure_tunnel{false} ;
+		unsigned int connection_timeout {0U} ;
+		unsigned int secure_connection_timeout {0U} ;
+		bool secure_tunnel {false} ;
 		std::string sasl_client_config ;
 		std::string client_tls_profile ;
-		bool with_routing{true} ;
+		bool with_routing {true} ;
 
 		Config() ;
 		Config & set_stream_socket_config( const GNet::StreamSocket::Config & ) ;
 		Config & set_client_protocol_config( const ClientProtocol::Config & ) ;
-		Config & set_filter_spec( const FactoryParser::Result & ) ;
-		Config & set_filter_timeout( unsigned int ) ;
-		Config & set_bind_local_address( bool = true ) ;
+		Config & set_filter_config( const Filter::Config & ) ;
+		Config & set_filter_spec( const FilterFactoryBase::Spec & ) ;
+		Config & set_bind_local_address( bool = true ) noexcept ;
 		Config & set_local_address( const GNet::Address & ) ;
-		Config & set_connection_timeout( unsigned int ) ;
-		Config & set_secure_connection_timeout( unsigned int ) ;
-		Config & set_secure_tunnel( bool = true ) ;
+		Config & set_connection_timeout( unsigned int ) noexcept ;
+		Config & set_secure_connection_timeout( unsigned int ) noexcept ;
+		Config & set_secure_tunnel( bool = true ) noexcept ;
 		Config & set_sasl_client_config( const std::string & ) ;
 		Config & set_client_tls_profile( const std::string & ) ;
-		Config & set_with_routing( bool = true ) ;
+		Config & set_with_routing( bool = true ) noexcept ;
 	} ;
 
-	Client( GNet::ExceptionSink , FilterFactory & , const GNet::Location & remote ,
-		const GAuth::SaslClientSecrets & secrets , const Config & config ) ;
-			///< Constructor. Starts connecting immediately.
+	Client( GNet::ExceptionSink , GStore::MessageStore & ,
+		FilterFactoryBase & , const GNet::Location & remote ,
+		const GAuth::SaslClientSecrets & , const Config & config ) ;
+			///< Constructor. Starts connecting immediately and
+			///< sends messages from the store once connected.
 			///<
-			///< Use sendMessagesFrom() once, or use sendMessage()
-			///< repeatedly. Wait for a messageDoneSignal() between
-			///< each sendMessage().
+			///< Once all messages have been sent the client will
+			///< throw GNet::Done. See GNet::ClientPtr.
+			///<
+			///< Do not use sendMessage(). The messageDoneSignal()
+			///< is not emitted.
+
+	Client( GNet::ExceptionSink ,
+		FilterFactoryBase & , const GNet::Location & remote ,
+		const GAuth::SaslClientSecrets & , const Config & config ) ;
+			///< Constructor. Starts connecting immediately and
+			///< expects sendMessage() immediately after construction.
+			///<
+			///< A messageDoneSignal() is emitted when the message
+			///< has been sent, allowing the next sendMessage().
+			///< Use quitAndFinish() at the end.
 
 	~Client() override ;
 		///< Destructor.
 
-	void sendMessagesFrom( MessageStore & store ) ;
-		///< Sends all messages from the given message store once
-		///< connected. This must be used immediately after
-		///< construction with a non-empty message store.
-		///<
-		///< Once all messages have been sent the client will throw
-		///< GNet::Done. See GNet::ClientPtr.
-		///<
-		///< The messageDoneSignal() is not used when sending
-		///< messages using this method.
-
-	void sendMessage( std::unique_ptr<StoredMessage> message ) ;
+	void sendMessage( std::unique_ptr<GStore::StoredMessage> message ) ;
 		///< Starts sending the given message. Cannot be called
 		///< if there is a message already in the pipeline.
 		///<
@@ -119,6 +122,9 @@ public:
 		///<
 		///< Does nothing if there are no message recipients.
 
+	void quitAndFinish() ;
+		///< Finishes a sendMessage() sequence.
+
 	G::Slot::Signal<const std::string&> & messageDoneSignal() ;
 		///< Returns a signal that indicates that sendMessage()
 		///< has completed or failed.
@@ -129,7 +135,7 @@ private: // overrides
 	void onDelete( const std::string & ) override ; // Override from GNet::HeapClient.
 	void onSendComplete() override ; // Override from GNet::BufferedClient.
 	void onSecure( const std::string & , const std::string & , const std::string & ) override ; // Override from GNet::SocketProtocol.
-	bool protocolSend( const std::string & , std::size_t , bool ) override ; // Override from ClientProtocol::Sender.
+	bool protocolSend( G::string_view , std::size_t , bool ) override ; // Override from ClientProtocol::Sender.
 
 public:
 	Client( const Client & ) = delete ;
@@ -138,49 +144,48 @@ public:
 	Client & operator=( Client && ) = delete ;
 
 private:
-	std::shared_ptr<StoredMessage> message() ;
+	std::shared_ptr<GStore::StoredMessage> message() ;
 	void protocolDone( int , const std::string & , const std::string & , const G::StringArray & ) ; // see ClientProtocol::doneSignal()
 	void filterStart() ;
 	void filterDone( int ) ;
 	bool sendNext() ;
 	void start() ;
-	void messageFail( int = 0 , const std::string & = std::string() ) ;
+	void messageFail( int = 0 , const std::string & = {} ) ;
 	void messageDestroy() ;
 	void startSending() ;
-	void quitAndFinish() ;
-	static GNet::Client::Config netConfig( const Config & smtp_config ) ;
-	void sendMessage( std::shared_ptr<StoredMessage> message ) ;
 	void routingFilterDone( int ) ;
 	void routedMessageDone( const std::string & ) ;
+	void sendMessage( std::shared_ptr<GStore::StoredMessage> message ) ;
+	static GNet::Client::Config netConfig( const Config & smtp_config ) ;
 
 private:
 	GNet::ExceptionSink m_es ;
-	FilterFactory & m_ff ;
-	G::CallStack m_stack ;
+	FilterFactoryBase & m_ff ;
 	Config m_config ;
 	const GAuth::SaslClientSecrets & m_secrets ;
-	MessageStore * m_store ;
+	GStore::MessageStore * m_store ;
+	std::shared_ptr<GStore::StoredMessage> m_message ;
 	std::unique_ptr<Filter> m_filter ;
 	std::unique_ptr<Filter> m_routing_filter ;
-	GNet::ClientPtr<Client> m_routing_client ;
-	std::shared_ptr<StoredMessage> m_message ;
-	std::shared_ptr<MessageStore::Iterator> m_iter ;
+	std::shared_ptr<GStore::MessageStore::Iterator> m_iter ;
 	ClientProtocol m_protocol ;
+	GNet::ClientPtr<Client> m_routing_client ;
 	G::Slot::Signal<const std::string&> m_message_done_signal ;
 	unsigned int m_message_count ;
+	G::CallStack m_stack ;
 } ;
 
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_stream_socket_config( const GNet::StreamSocket::Config & c ) { stream_socket_config = c ; return *this ; }
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_client_protocol_config( const ClientProtocol::Config & c ) { client_protocol_config = c ; return *this ; }
-inline GSmtp::Client::Config & GSmtp::Client::Config::set_filter_spec( const FactoryParser::Result & r ) { filter_spec = r ; return *this ; }
-inline GSmtp::Client::Config & GSmtp::Client::Config::set_filter_timeout( unsigned int t ) { filter_timeout = t ; return *this ; }
-inline GSmtp::Client::Config & GSmtp::Client::Config::set_bind_local_address( bool b ) { bind_local_address = b ; return *this ; }
+inline GSmtp::Client::Config & GSmtp::Client::Config::set_filter_spec( const FilterFactoryBase::Spec & r ) { filter_spec = r ; return *this ; }
+inline GSmtp::Client::Config & GSmtp::Client::Config::set_filter_config( const Filter::Config & c ) { filter_config = c ; return *this ; }
+inline GSmtp::Client::Config & GSmtp::Client::Config::set_bind_local_address( bool b ) noexcept { bind_local_address = b ; return *this ; }
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_local_address( const GNet::Address & a ) { local_address = a ; return *this ; }
-inline GSmtp::Client::Config & GSmtp::Client::Config::set_connection_timeout( unsigned int t ) { connection_timeout = t ; return *this ; }
-inline GSmtp::Client::Config & GSmtp::Client::Config::set_secure_connection_timeout( unsigned int t ) { secure_connection_timeout = t ; return *this ; }
-inline GSmtp::Client::Config & GSmtp::Client::Config::set_secure_tunnel( bool b ) { secure_tunnel = b ; return *this ; }
+inline GSmtp::Client::Config & GSmtp::Client::Config::set_connection_timeout( unsigned int t ) noexcept { connection_timeout = t ; return *this ; }
+inline GSmtp::Client::Config & GSmtp::Client::Config::set_secure_connection_timeout( unsigned int t ) noexcept { secure_connection_timeout = t ; return *this ; }
+inline GSmtp::Client::Config & GSmtp::Client::Config::set_secure_tunnel( bool b ) noexcept { secure_tunnel = b ; return *this ; }
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_sasl_client_config( const std::string & s ) { sasl_client_config = s ; return *this ; }
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_client_tls_profile( const std::string & s ) { client_tls_profile = s ; return *this ; }
-inline GSmtp::Client::Config & GSmtp::Client::Config::set_with_routing( bool b ) { with_routing = b ; return *this ; }
+inline GSmtp::Client::Config & GSmtp::Client::Config::set_with_routing( bool b ) noexcept { with_routing = b ; return *this ; }
 
 #endif

@@ -137,6 +137,7 @@ G::BrokenDownTime::BrokenDownTime() :
 	m_tm.tm_isdst = -1 ;
 }
 
+#ifndef G_LIB_SMALL
 G::BrokenDownTime::BrokenDownTime( const struct std::tm & tm_in ) :
 	m_tm(tm_in)
 {
@@ -144,11 +145,14 @@ G::BrokenDownTime::BrokenDownTime( const struct std::tm & tm_in ) :
 	// to do the extra work (strftime() does anyway)
 	m_tm.tm_isdst = -1 ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 std::time_t G::BrokenDownTime::epochTimeFromLocal() const
 {
 	return DateTimeImp::mktimelocal( m_tm ) ;
 }
+#endif
 
 std::time_t G::BrokenDownTime::epochTimeFromUtc() const
 {
@@ -174,10 +178,12 @@ std::time_t G::BrokenDownTime::epochTimeFromUtc() const
 	return t ;
 }
 
+#ifndef G_LIB_SMALL
 G::BrokenDownTime G::BrokenDownTime::null()
 {
 	return {} ;
 }
+#endif
 
 G::BrokenDownTime G::BrokenDownTime::local( SystemTime t )
 {
@@ -212,10 +218,12 @@ G::BrokenDownTime G::BrokenDownTime::midday( int year , int month , int day )
 	return { year , month , day , 12 , 0 , 0 } ;
 }
 
+#ifndef G_LIB_SMALL
 G::BrokenDownTime G::BrokenDownTime::midnight( int year , int month , int day )
 {
 	return { year , month , day , 0 , 0 , 0 } ;
 }
+#endif
 
 bool G::BrokenDownTime::format( char * out , std::size_t out_size , const char * fmt ) const
 {
@@ -238,10 +246,12 @@ void G::BrokenDownTime::format( std::vector<char> & out , const char * fmt ) con
 		throw DateTime::Error() ;
 }
 
+#ifndef G_LIB_SMALL
 std::string G::BrokenDownTime::str() const
 {
 	return str( "%F %T" ) ;
 }
+#endif
 
 std::string G::BrokenDownTime::str( const char * fmt ) const
 {
@@ -290,10 +300,12 @@ int G::BrokenDownTime::wday() const
 	return m_tm.tm_wday ;
 }
 
+#ifndef G_LIB_SMALL
 bool G::BrokenDownTime::sameMinute( const BrokenDownTime & other ) const noexcept
 {
 	return DateTimeImp::sameMinute( m_tm , other.m_tm ) ;
 }
+#endif
 
 // ==
 
@@ -323,11 +335,13 @@ G::TimeInterval G::SystemTime::interval( const SystemTime & end ) const
 	return DateTimeImp::interval( m_tp , end.m_tp ) ;
 }
 
+#ifndef G_LIB_SMALL
 G::SystemTime & G::SystemTime::add( unsigned long us )
 {
 	m_tp += std::chrono::microseconds( us ) ;
 	return *this ;
 }
+#endif
 
 bool G::SystemTime::sameSecond( const SystemTime & t ) const noexcept
 {
@@ -344,11 +358,13 @@ G::BrokenDownTime G::SystemTime::utc() const
 	return BrokenDownTime::utc( *this ) ;
 }
 
+#ifndef G_LIB_SMALL
 unsigned int G::SystemTime::ms() const
 {
 	using namespace std::chrono ;
 	return static_cast<unsigned int>((duration_cast<milliseconds>(m_tp.time_since_epoch()) % seconds(1)).count()) ;
 }
+#endif
 
 unsigned int G::SystemTime::us() const
 {
@@ -370,20 +386,24 @@ G::SystemTime G::SystemTime::zero()
 	return SystemTime( time_point_type(zero) ) ;
 }
 
+#ifndef G_LIB_SMALL
 bool G::SystemTime::isZero() const
 {
 	return m_tp == time_point_type( duration_type(0) ) ;
 }
+#endif
 
 bool G::SystemTime::operator<( const SystemTime & other ) const
 {
 	return m_tp < other.m_tp ;
 }
 
+#ifndef G_LIB_SMALL
 bool G::SystemTime::operator<=( const SystemTime & other ) const
 {
 	return m_tp <= other.m_tp ;
 }
+#endif
 
 bool G::SystemTime::operator==( const SystemTime & other ) const
 {
@@ -395,22 +415,28 @@ bool G::SystemTime::operator!=( const SystemTime & other ) const
 	return !( *this == other ) ;
 }
 
+#ifndef G_LIB_SMALL
 bool G::SystemTime::operator>( const SystemTime & other ) const
 {
 	return m_tp > other.m_tp ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 bool G::SystemTime::operator>=( const SystemTime & other ) const
 {
 	return m_tp >= other.m_tp ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 G::SystemTime G::SystemTime::operator+( TimeInterval interval ) const
 {
 	SystemTime t( *this ) ;
 	t += interval ;
 	return t ;
 }
+#endif
 
 void G::SystemTime::operator+=( TimeInterval i )
 {
@@ -460,11 +486,13 @@ bool G::TimerTime::isZero() const noexcept
 	return m_tp == time_point_type( duration_type(0) ) ;
 }
 
+#ifndef G_LIB_SMALL
 G::TimerTime G::TimerTime::test( int s , int us )
 {
 	using namespace std::chrono ;
 	return TimerTime( time_point_type( seconds(s) + microseconds(us) ) ) ;
 }
+#endif
 
 unsigned long G::TimerTime::s() const
 {
@@ -478,12 +506,14 @@ unsigned long G::TimerTime::us() const
 	return static_cast<unsigned long>( (duration_cast<microseconds>(m_tp.time_since_epoch()) % seconds(1)).count() ) ;
 }
 
+#ifndef G_LIB_SMALL
 std::string G::TimerTime::str() const
 {
 	std::ostringstream ss ;
 	ss << s() << '.' << std::setw(6) << std::setfill('0') << us() ;
 	return ss.str() ;
 }
+#endif
 
 G::TimerTime G::TimerTime::operator+( const TimeInterval & interval ) const
 {
@@ -499,16 +529,19 @@ void G::TimerTime::operator+=( TimeInterval i )
 	m_tp += microseconds(i.us()) ;
 }
 
+#ifndef G_LIB_SMALL
 G::TimeInterval G::TimerTime::operator-( const TimerTime & start ) const
 {
 	return start.interval( *this ) ;
 }
+#endif
 
 G::TimeInterval G::TimerTime::interval( const TimerTime & end ) const
 {
 	return DateTimeImp::interval( m_tp , end.m_tp ) ;
 }
 
+#ifndef G_LIB_SMALL
 bool G::TimerTime::sameSecond( const TimerTime & t ) const
 {
 	using namespace std::chrono ;
@@ -516,6 +549,7 @@ bool G::TimerTime::sameSecond( const TimerTime & t ) const
 		duration_cast<seconds>(m_tp.time_since_epoch()) ==
 		duration_cast<seconds>(t.m_tp.time_since_epoch()) ;
 }
+#endif
 
 bool G::TimerTime::operator<=( const TimerTime & other ) const
 {
@@ -527,20 +561,26 @@ bool G::TimerTime::operator==( const TimerTime & other ) const
 	return m_tp == other.m_tp ;
 }
 
+#ifndef G_LIB_SMALL
 bool G::TimerTime::operator!=( const TimerTime & other ) const
 {
 	return m_tp != other.m_tp ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 bool G::TimerTime::operator>( const TimerTime & other ) const
 {
 	return m_tp > other.m_tp ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 bool G::TimerTime::operator>=( const TimerTime & other ) const
 {
 	return m_tp >= other.m_tp ;
 }
+#endif
 
 // ==
 
@@ -551,6 +591,7 @@ G::TimeInterval::TimeInterval( s_type s , us_type us ) :
 	normalise() ;
 }
 
+#ifndef G_LIB_SMALL
 G::TimeInterval::TimeInterval( const SystemTime & start , const SystemTime & end ) :
 	m_s(0) ,
 	m_us(0)
@@ -560,6 +601,7 @@ G::TimeInterval::TimeInterval( const SystemTime & start , const SystemTime & end
 	m_us = i.m_us ;
 	normalise() ;
 }
+#endif
 
 G::TimeInterval::TimeInterval( const TimerTime & start , const TimerTime & end ) :
 	m_s(0) ,
@@ -612,44 +654,54 @@ bool G::TimeInterval::operator==( const TimeInterval & other ) const
 	return m_s == other.m_s && m_us == other.m_us ;
 }
 
+#ifndef G_LIB_SMALL
 bool G::TimeInterval::operator!=( const TimeInterval & other ) const
 {
 	return !( *this == other ) ;
 }
+#endif
 
 bool G::TimeInterval::operator<( const TimeInterval & other ) const
 {
 	return m_s < other.m_s || ( m_s == other.m_s && m_us < other.m_us ) ;
 }
 
+#ifndef G_LIB_SMALL
 bool G::TimeInterval::operator<=( const TimeInterval & other ) const
 {
 	return *this == other || *this < other ;
 }
+#endif
 
 bool G::TimeInterval::operator>( const TimeInterval & other ) const
 {
 	return m_s > other.m_s || ( m_s == other.m_s && m_us > other.m_us ) ;
 }
 
+#ifndef G_LIB_SMALL
 bool G::TimeInterval::operator>=( const TimeInterval & other ) const
 {
 	return *this == other || *this > other ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 G::TimeInterval G::TimeInterval::operator+( const TimeInterval & other ) const
 {
 	TimeInterval t( *this ) ;
 	t += other ;
 	return t ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 G::TimeInterval G::TimeInterval::operator-( const TimeInterval & other ) const
 {
 	TimeInterval t( *this ) ;
 	t -= other ;
 	return t ;
 }
+#endif
 
 void G::TimeInterval::increase( unsigned int & s , unsigned int ds )
 {
@@ -719,6 +771,7 @@ G::DateTime::Offset G::DateTime::offset( SystemTime t_in )
 	return Offset{ ahead , i.s() } ;
 }
 
+#ifndef G_LIB_SMALL
 std::string G::DateTime::offsetString( int tz )
 {
 	std::ostringstream ss ;
@@ -727,6 +780,7 @@ std::string G::DateTime::offsetString( int tz )
 	ss << (tz/10) << (tz%10) << "00" ;
 	return ss.str() ;
 }
+#endif
 
 std::string G::DateTime::offsetString( Offset offset )
 {

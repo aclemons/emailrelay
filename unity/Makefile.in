@@ -110,7 +110,6 @@ subdir = unity
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acinclude.m4 \
 	$(top_srcdir)/m4/m4_ax_cxx_compile_stdcxx.m4 \
-	$(top_srcdir)/m4/m4_ax_cxx_compile_stdcxx_11.m4 \
 	$(top_srcdir)/m4/pkg.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -312,7 +311,10 @@ IFLAGS = \
 	-I$(top_srcdir)/src/gnet \
 	-I$(top_srcdir)/src/gauth \
 	-I$(top_srcdir)/src/gpop \
+	-I$(top_srcdir)/src/gstore \
 	-I$(top_srcdir)/src/gsmtp \
+	-I$(top_srcdir)/src/gfilters \
+	-I$(top_srcdir)/src/gverifiers \
 	-I$(top_srcdir)/src/win32 \
 	-I$(top_srcdir)/src/gui \
 	-I$(top_srcdir)/src/main
@@ -509,8 +511,8 @@ uninstall-am:
 
 
 $(SOURCES_) $(CDB): Makefile Makefile.in
-	-chmod +x $(top_srcdir)/bin/make2unity || true
-	$(top_srcdir)/bin/make2unity --cdb --cdb-cxx="$(CXX)" --cdb-top=$(top_srcdir) --base=$(top_srcdir)/src $(SOURCES_)
+	-chmod +x $(top_srcdir)/libexec/make2unity || true
+	$(top_srcdir)/libexec/make2unity --cdb --cdb-cxx="$(CXX)" --cdb-top=$(top_srcdir) --base=$(top_srcdir)/src $(SOURCES_)
 
 .PHONY: programs
 programs: $(PROGRAMS_)
@@ -525,15 +527,15 @@ cdb: $(CDB)
 moc: $(MOC)
 
 emailrelay: emailrelay.cpp
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(IFLAGS) -o $@ $< $(LIBS) $(GCONFIG_TLS_LIBS)
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(IFLAGS) -DG_LIB_SMALL -o $@ $< $(LIBS) $(GCONFIG_TLS_LIBS)
 	-strip $@
 
 emailrelay-submit: emailrelay-submit.cpp
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(IFLAGS) -o $@ $< $(LIBS) $(GCONFIG_TLS_LIBS)
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(IFLAGS) -DG_LIB_SMALL -o $@ $< $(LIBS) $(GCONFIG_TLS_LIBS)
 	-strip $@
 
 emailrelay-passwd: emailrelay-passwd.cpp
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(IFLAGS) -o $@ $< $(LIBS) $(GCONFIG_TLS_LIBS)
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(IFLAGS) -DG_LIB_SMALL -o $@ $< $(LIBS) $(GCONFIG_TLS_LIBS)
 	-strip $@
 
 emailrelay-gui: emailrelay-gui.cpp $(MOC)

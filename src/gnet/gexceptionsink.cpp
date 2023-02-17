@@ -91,10 +91,12 @@ bool GNet::ExceptionSink::set() const noexcept
 
 // ==
 
+#ifndef G_LIB_SMALL
 GNet::ExceptionSinkUnbound::ExceptionSinkUnbound( ExceptionHandler & eh ) :
 	m_eh(&eh)
 {
 }
+#endif
 
 GNet::ExceptionSinkUnbound::ExceptionSinkUnbound( ExceptionHandler * eh ) :
 	m_eh(eh)

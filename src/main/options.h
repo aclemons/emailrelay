@@ -39,7 +39,7 @@ namespace Main
 class Main::Options
 {
 public:
-	static G::Options spec( bool is_windows ) ;
+	static G::Options spec( bool is_windows = G::is_windows() ) ;
 		///< Returns an o/s-specific G::OptionParser specification.
 
 	using Tag = std::pair<unsigned,std::string> ;

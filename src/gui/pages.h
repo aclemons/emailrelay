@@ -251,8 +251,8 @@ private:
 	std::string m_server_filter ;
 	G::Path m_server_filter_script_path ;
 	G::Path m_server_filter_script_path_default ;
-	G::Path m_server_filter_copy_path ;
-	G::Path m_server_filter_copy_path_default ;
+	G::Path m_server_filter_copy ;
+	G::Path m_server_filter_copy_default ;
 	std::string m_server_filter_spam ;
 	std::string m_server_filter_spam_default ;
 	std::string m_client_filter ;

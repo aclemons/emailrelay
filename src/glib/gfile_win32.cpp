@@ -107,6 +107,12 @@ int G::File::open( const char * path , InOutAppend mode ) noexcept
 		return FileImp::open( path , _O_WRONLY|_O_CREAT|_O_APPEND|_O_BINARY , pmode ) ;
 }
 
+int G::File::open( const char * path , CreateExclusive ) noexcept
+{
+	int pmode = _S_IREAD | _S_IWRITE ;
+	return FileImp::open( path , _O_WRONLY|_O_CREAT|_O_EXCL|_O_BINARY , pmode ) ;
+}
+
 bool G::File::probe( const char * path ) noexcept
 {
 	int pmode = _S_IREAD | _S_IWRITE ;
@@ -216,6 +222,11 @@ bool G::File::chgrp( const Path & , const std::string & , std::nothrow_t )
 	return true ; // no-op
 }
 
+bool G::File::hardlink( const Path & , const Path & , std::nothrow_t )
+{
+	return false ;
+}
+
 G::Path G::File::readlink( const Path & )
 {
 	return Path() ;
@@ -229,5 +240,12 @@ void G::File::link( const Path & , const Path & new_link )
 bool G::File::link( const Path & , const Path & , std::nothrow_t )
 {
 	return false ; // not supported
+}
+
+std::streamoff G::File::seek( int fd , std::streamoff offset , Seek origin ) noexcept
+{
+	off_t rc = _lseek( fd , static_cast<off_t>(offset) ,
+		origin == Seek::Start ? SEEK_SET : ( origin == Seek::End ? SEEK_END : SEEK_CUR ) ) ;
+	return static_cast<std::streamoff>(rc) ;
 }
 

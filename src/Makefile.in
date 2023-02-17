@@ -92,7 +92,6 @@ subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acinclude.m4 \
 	$(top_srcdir)/m4/m4_ax_cxx_compile_stdcxx.m4 \
-	$(top_srcdir)/m4/m4_ax_cxx_compile_stdcxx_11.m4 \
 	$(top_srcdir)/m4/pkg.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -310,8 +309,8 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = glib gssl gnet gauth gsmtp gpop win32 main gui
-EXTRA_DIST = .clang-tidy .clang-format
+SUBDIRS = glib gssl gnet gauth gstore gsmtp gpop win32 gfilters gverifiers main gui
+EXTRA_DIST = .clang-tidy .clang-format .reduce.dat
 CLEANFILES = compile_commands.json
 all: gconfig_defs.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
@@ -645,19 +644,19 @@ TIDY ?= clang-tidy
 cdb: compile_commands.json
 
 compile_commands.json: Makefile
-	@chmod +x $(top_srcdir)/bin/make2cdb || true
-	$(top_srcdir)/bin/make2cdb > $@.tmp && mv $@.tmp $@
+	@chmod +x $(top_srcdir)/libexec/make2cdb || true
+	$(top_srcdir)/libexec/make2cdb > $@.tmp && mv $@.tmp $@
 
 .PHONY: tidy
 tidy: compile_commands.json
-	@chmod +x $(top_srcdir)/bin/make2cdb || true
+	@chmod +x $(top_srcdir)/libexec/make2cdb || true
 	@touch $(top_srcdir)/gconfig_defs.h
-	$(top_srcdir)/bin/make2cdb --list | xargs -- "$(TIDY)" -p . || true
+	$(top_srcdir)/libexec/make2cdb --list | xargs -- "$(TIDY)" -p . || true
 
 .PHONY: format
 format:
-	@chmod +x $(top_srcdir)/bin/make-format || true
-	$(top_srcdir)/bin/make-format -f "$(FORMAT)" -d $(top_srcdir)
+	@chmod +x $(top_srcdir)/libexec/make-format || true
+	$(top_srcdir)/libexec/make-format -f "$(FORMAT)" -d $(top_srcdir)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

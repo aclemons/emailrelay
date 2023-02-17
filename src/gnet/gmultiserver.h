@@ -30,6 +30,7 @@
 #include <memory>
 #include <utility> // std::pair<>
 #include <vector>
+#include <new> // std::nothrow_t
 
 namespace GNet
 {
@@ -84,7 +85,7 @@ public:
 
 protected:
 	virtual std::unique_ptr<ServerPeer> newPeer( ExceptionSinkUnbound , ServerPeerInfo && , ServerInfo ) = 0 ;
-		///< A factory method which new()s a ServerPeer-derived
+		///< A factory method which creates a ServerPeer-derived
 		///< object. See GNet::Server for the details.
 
 	void serverCleanup() ;
@@ -92,7 +93,7 @@ protected:
 		///< so that peer objects can use their Server objects
 		///< safely during their own destruction.
 
-	void serverReport() const ;
+	void serverReport( const std::string & group = {} ) const ;
 		///< Writes to the system log a summary of the underlying server
 		///< objects and their addresses.
 
@@ -106,26 +107,26 @@ public:
 	MultiServer & operator=( MultiServer && ) = delete ;
 
 private:
-	friend class GNet::MultiServerImp ;
-	void parse( const G::StringArray & , unsigned int port ,
-		AddressList & , std::vector<int> & ,
-		G::StringArray & , G::StringArray & , G::StringArray & ) ;
-	static int parseFd( const std::string & ) ;
-	bool gotServerFor( const Address & ) const ;
+	using ServerPtr = std::unique_ptr<MultiServerImp> ;
+	using ServerList = std::vector<ServerPtr> ;
+	bool gotServerFor( Address ) const ;
+	bool gotAddressFor( const Listener & , const AddressList & ) const ;
 	void onInterfaceEventTimeout() ;
 	static bool match( const Address & , const Address & ) ;
 	static std::string displayString( const Address & ) ;
+	void createServer( Descriptor ) ;
+	void createServer( const Address & , bool ) ;
+	void createServer( const Address & , bool , std::nothrow_t ) ;
+	ServerList::iterator removeServer( ServerList::iterator ) ;
 
 private:
-	using ServerPtr = std::unique_ptr<MultiServerImp> ;
-	using ServerList = std::vector<ServerPtr> ;
 	ExceptionSink m_es ;
+	G::StringArray m_listener_list ;
 	unsigned int m_port ;
 	std::string m_server_type ;
 	ServerPeer::Config m_server_peer_config ;
 	Server::Config m_server_config ;
 	Interfaces m_if ;
-	G::StringArray m_if_names ;
 	ServerList m_server_list ;
 	Timer<MultiServer> m_interface_event_timer ;
 } ;
@@ -136,7 +137,7 @@ private:
 class GNet::MultiServerImp : public GNet::Server
 {
 public:
-	MultiServerImp( MultiServer & , ExceptionSink , const Address & , ServerPeer::Config , Server::Config ) ;
+	MultiServerImp( MultiServer & , ExceptionSink , bool fixed , const Address & , ServerPeer::Config , Server::Config ) ;
 		///< Constructor.
 
 	MultiServerImp( MultiServer & , ExceptionSink , Descriptor , ServerPeer::Config , Server::Config ) ;
@@ -151,6 +152,9 @@ public:
 	void cleanup() ;
 		///< Calls GNet::Server::serverCleanup().
 
+	bool dynamic() const ;
+		///< Returns true if not a fixed address, as passed in to ctor.
+
 public:
 	MultiServerImp( const MultiServerImp & ) = delete ;
 	MultiServerImp( MultiServerImp && ) = delete ;
@@ -159,6 +163,7 @@ public:
 
 private:
 	MultiServer & m_ms ;
+	bool m_fixed ;
 } ;
 
 #endif

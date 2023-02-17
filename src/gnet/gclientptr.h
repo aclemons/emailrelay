@@ -59,6 +59,9 @@ public:
 		///< A signal that is triggered after deleteSignal() once
 		///< the client has been deleted and the ClientPtr is empty.
 
+	void swap( ClientPtrBase & other ) noexcept ;
+		///< Swaps this with other.
+
 protected:
 	ClientPtrBase() ;
 		///< Default constructor.
@@ -67,25 +70,38 @@ protected:
 		///< Connects the given client's signals to this object's
 		///< slots.
 
-	void disconnectSignals( Client & ) noexcept ;
-		///< Disconnects the given client's signals from this
-		///< object's slots.
+	void disconnectSignals() noexcept ;
+		///< Disconnects the connectSignals() client's signals from
+		///< this object's slots.
+
+	void rebind() noexcept ;
+		///< Rebinds the client event signal after a move of this
+		///< object. Does nothing of connectSignals() is not in effect.
 
 public:
 	~ClientPtrBase() override = default ;
 	ClientPtrBase( const ClientPtrBase & ) = delete ;
-	ClientPtrBase( ClientPtrBase && ) = delete ;
+	ClientPtrBase( ClientPtrBase && ) noexcept ;
 	ClientPtrBase & operator=( const ClientPtrBase & ) = delete ;
-	ClientPtrBase & operator=( ClientPtrBase && ) = delete ;
+	ClientPtrBase & operator=( ClientPtrBase && ) noexcept ;
 
 private:
 	void eventSlot( const std::string & , const std::string & , const std::string & ) ;
 
 private:
+	Client * m_client {nullptr} ;
 	G::Slot::Signal<const std::string&> m_deleted_signal ;
 	G::Slot::Signal<const std::string&,const std::string&,const std::string&> m_event_signal ;
 	G::Slot::Signal<const std::string&> m_delete_signal ;
 } ;
+
+namespace GNet
+{
+	inline void swap( ClientPtrBase & a , ClientPtrBase & b )
+	{
+		a.swap( b ) ;
+	}
+}
 
 //| \class GNet::ClientPtr
 /// A smart pointer class for GNet::Client.
@@ -177,9 +193,10 @@ private: // overrides
 
 public:
 	ClientPtr( const ClientPtr & ) = delete ;
-	ClientPtr( ClientPtr && ) = delete ;
+	ClientPtr( ClientPtr && ) noexcept ;
 	ClientPtr & operator=( const ClientPtr & ) = delete ;
-	ClientPtr & operator=( ClientPtr && ) = delete ;
+	ClientPtr & operator=( ClientPtr && ) noexcept ;
+	void swap( ClientPtr<T> & ) noexcept ;
 
 private:
 	T * set( T * ) ;
@@ -209,6 +226,34 @@ namespace GNet
 }
 
 template <typename T>
+GNet::ClientPtr<T>::ClientPtr( ClientPtr<T> && other ) noexcept :
+	m_p(nullptr) ,
+	m_has_connected(false)
+{
+	using std::swap ;
+	swap( *this , other ) ;
+	rebind() ;
+}
+
+template <typename T>
+GNet::ClientPtr<T> & GNet::ClientPtr<T>::operator=( ClientPtr<T> && other ) noexcept
+{
+	using std::swap ;
+	swap( *this , other ) ;
+	rebind() ;
+	return *this ;
+}
+
+template <typename T>
+void GNet::ClientPtr<T>::swap( ClientPtr<T> & other ) noexcept
+{
+	using std::swap ;
+	swap( static_cast<ClientPtrBase&>(*this) , other ) ;
+	swap( m_p , other.m_p ) ;
+	swap( m_has_connected , other.m_has_connected ) ;
+}
+
+template <typename T>
 void GNet::ClientPtr<T>::onException( ExceptionSource * , std::exception & e , bool done )
 {
 	if( m_p == nullptr )
@@ -235,7 +280,7 @@ T * GNet::ClientPtr<T>::set( T * p )
 	if( m_p != nullptr )
 	{
 		if( m_p->hasConnected() ) m_has_connected = true ;
-		disconnectSignals( *m_p ) ;
+		disconnectSignals() ;
 	}
 	if( p != nullptr )
 	{
@@ -251,7 +296,7 @@ T * GNet::ClientPtr<T>::set( std::nullptr_t ) noexcept
 	if( m_p != nullptr )
 	{
 		if( m_p->hasConnected() ) m_has_connected = true ;
-		disconnectSignals( *m_p ) ;
+		disconnectSignals() ;
 	}
 	T * old_p = m_p ;
 	m_p = nullptr ;
@@ -321,6 +366,14 @@ std::string GNet::ClientPtr<T>::exceptionSourceId() const
 {
 	const ExceptionSource * base_p = m_p ;
 	return base_p ? base_p->exceptionSourceId() : std::string() ;
+}
+
+namespace GNet
+{
+	template <typename T> void swap( ClientPtr<T> & a , ClientPtr<T> & b )
+	{
+		a.swap( b ) ;
+	}
 }
 
 #endif

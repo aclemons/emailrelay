@@ -20,8 +20,6 @@
 
 #include "gdef.h"
 #include "gmsg.h"
-#include "gprocess.h"
-#include "gstr.h"
 
 ssize_t G::Msg::send( SOCKET fd , const void * buffer , std::size_t size , int flags ) noexcept
 {

@@ -23,24 +23,7 @@
 
 #include "gdef.h"
 #include "gssl.h"
-#include <mbedtls/ssl.h>
-#include <mbedtls/ssl_ciphersuites.h>
-#include <mbedtls/entropy.h>
-#if GCONFIG_HAVE_MBEDTLS_NET_H
-#include <mbedtls/net.h>
-#else
-#include <mbedtls/net_sockets.h>
-#endif
-#include <mbedtls/ctr_drbg.h>
-#include <mbedtls/error.h>
-#include <mbedtls/version.h>
-#include <mbedtls/pem.h>
-#include <mbedtls/base64.h>
-#include <mbedtls/debug.h>
-#include <mbedtls/md5.h>
-#include <mbedtls/sha1.h>
-#include <mbedtls/sha256.h>
-#include <mbedtls/sha512.h>
+#include "gssl_mbedtls_headers.h"
 #include <memory>
 #include <stdexcept>
 #include <vector>
@@ -191,7 +174,7 @@ private:
 	static std::size_t fileSize( std::filebuf & ) ;
 	static bool fileRead( std::filebuf & , char * , std::size_t ) ;
 	static void scrub( char * , std::size_t ) noexcept ;
-	static void clear( std::vector<char> & ) ;
+	static void clear( std::vector<char> & ) noexcept ;
 
 private:
 	std::vector<char> m_buffer ;
@@ -204,11 +187,11 @@ class GSsl::MbedTls::Config
 {
 public:
 	explicit Config( G::StringArray & config ) ;
-	int min_() const ;
-	int max_() const ;
-	bool noverify() const ;
-	bool clientnoverify() const ;
-	bool servernoverify() const ;
+	int min_() const noexcept ;
+	int max_() const noexcept ;
+	bool noverify() const noexcept ;
+	bool clientnoverify() const noexcept ;
+	bool servernoverify() const noexcept ;
 
 private:
 	static bool consume( G::StringArray & , G::string_view ) ;
@@ -246,8 +229,6 @@ private: // overrides
 	bool hasProfile( const std::string & profile_name ) const override ;
 	const Profile & profile( const std::string & profile_name ) const override ;
 	std::string id() const override ;
-	bool generateKeyAvailable() const override ;
-	std::string generateKey( const std::string & ) const override ;
 	G::StringArray digesters( bool ) const override ;
 	Digester digester( const std::string & , const std::string & , bool ) const override ;
 
@@ -380,9 +361,9 @@ private: // overrides
 	void add( G::string_view ) override ;
 	std::string value() override ;
 	std::string state() override ;
-	std::size_t blocksize() const override ;
-	std::size_t valuesize() const override ;
-	std::size_t statesize() const override ;
+	std::size_t blocksize() const noexcept override ;
+	std::size_t valuesize() const noexcept override ;
+	std::size_t statesize() const noexcept override ;
 
 public:
 	DigesterImp( const DigesterImp & ) = delete ;

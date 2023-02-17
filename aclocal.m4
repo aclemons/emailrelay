@@ -1171,5 +1171,4 @@ AC_SUBST([am__untar])
 
 m4_include([m4/acinclude.m4])
 m4_include([m4/m4_ax_cxx_compile_stdcxx.m4])
-m4_include([m4/m4_ax_cxx_compile_stdcxx_11.m4])
 m4_include([m4/pkg.m4])

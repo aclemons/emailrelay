@@ -22,6 +22,7 @@
 #include "gappbase.h"
 #include "gappinst.h"
 #include "gwindow.h"
+#include "gconvert.h"
 #include "gpump.h"
 #include "glog.h"
 
@@ -178,7 +179,11 @@ void GGui::ApplicationBase::messageBox( const std::string & title , const std::s
 bool GGui::ApplicationBase::messageBoxCore( HWND parent , unsigned int type ,
 	const std::string & title , const std::string & message )
 {
-	int rc = MessageBoxA( parent , message.c_str() , title.c_str() , type ) ;
+	std::wstring wtitle ;
+	std::wstring wmessage ;
+	G::Convert::convert( wtitle , title ) ;
+	G::Convert::convert( wmessage , message ) ;
+	int rc = MessageBoxW( parent , wmessage.c_str() , wtitle.c_str() , type ) ;
 	return rc == IDOK || rc == IDYES ;
 }
 

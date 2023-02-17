@@ -61,7 +61,7 @@ EXTRA_DIST = \
 	winbuild.pl \
 	runperl.bat
 
-SUBDIRS = bin src etc doc debian test m4 bsd po unity
+SUBDIRS = libexec bin src etc doc debian test m4 bsd po unity
 
 # work-round PKG_CHECK_MODULES if no pkg-config
 ACLOCAL_AMFLAGS = -I m4
@@ -129,8 +129,8 @@ format:
 
 .PHONY: cmake
 cmake:
-	@chmod +x bin/make2cmake || true
-	bin/make2cmake
+	@chmod +x libexec/make2cmake || true
+	libexec/make2cmake
 	test -d build || mkdir build
 	cd build && cmake -DCMAKE_MAKE_PROGRAM:FILEPATH=/usr/bin/make -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ..
 	@echo now run make from the '"build"' directory
@@ -145,8 +145,10 @@ $(TAR):
 zip: $(ZIP)
 
 $(ZIP): $(TAR)
-	tar -xzf $(TAR)
-	sh -c "cd emailrelay-$(VERSION) && zip -r ../$(ZIP) ."
+	-mkdir zip.d 2>/dev/null
+	-@rm -rf zip.d/* 2>/dev/null
+	tar -C zip.d --strip-components=1 -xzf $(TAR)
+	sh -c "cd zip.d && zip -r ../$(ZIP) ."
 
 .PHONY: mbedtls
 mbedtls:
