@@ -121,6 +121,12 @@ public:
 	std::unique_ptr<ProtocolMessage> newProtocolMessage( GNet::ExceptionSink ) ;
 		///< Called by GSmtp::ServerPeer to construct a ProtocolMessage.
 
+	Config & config() ;
+		///< Exposes the configuration sub-object.
+
+	void nodnsbl( unsigned int seconds ) ;
+		///< Clears the DNSBL configuration string for a period of time.
+
 private: // overrides
 	std::unique_ptr<GNet::ServerPeer> newPeer( GNet::ExceptionSinkUnbound ,
 		GNet::ServerPeerInfo && , GNet::MultiServer::ServerInfo ) override ; // Override from GNet::MultiServer.
@@ -136,6 +142,7 @@ private:
 	std::unique_ptr<ProtocolMessage> newProtocolMessageStore( std::unique_ptr<Filter> ) ;
 	std::unique_ptr<ProtocolMessage> newProtocolMessageForward( GNet::ExceptionSink , std::unique_ptr<ProtocolMessage> ) ;
 	std::unique_ptr<ServerProtocol::Text> newProtocolText( bool , bool , const GNet::Address & , const std::string & domain ) const ;
+	Config serverConfig() const ;
 
 private:
 	GStore::MessageStore & m_store ;
@@ -151,6 +158,7 @@ private:
 	const GAuth::SaslClientSecrets & m_client_secrets ;
 	std::string m_sasl_client_config ;
 	G::Slot::Signal<const std::string&,const std::string&> m_event_signal ;
+	G::TimerTime m_dnsbl_suspend_time ;
 } ;
 
 //| \class GSmtp::ServerPeer

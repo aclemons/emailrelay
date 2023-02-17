@@ -142,8 +142,7 @@ bool GSmtp::ClientProtocol::apply( const std::string & rx )
 
 	if( !reply.valid() )
 	{
-		send( "550 syntax error\r\n"_sv ) ;
-		return false ;
+		throw SmtpError( "invalid response" ) ; // (new)
 	}
 	else if( reply.complete() )
 	{

@@ -556,8 +556,15 @@ GSmtp::VerifierFactoryBase::Spec Main::Configuration::verifierValue( G::string_v
 G::Path Main::Configuration::pathValue( G::string_view option_name ) const
 {
 	std::string value = stringValue( option_name ) ;
-	if( tlsVerifyType(option_name) && specialTlsVerifyString(value) ) // dont mess with eg. "--tls-client-verify=<none>"
+	if( tlsVerifyType(option_name) && specialTlsVerifyString(value) )
 	{
+		// dont mess with eg. "--tls-client-verify=<none>"
+		return value ;
+	}
+	else if( option_name.find("-auth") != std::string::npos && ( G::Str::headMatch(value,"pam:") ||
+		( G::Str::headMatch(value,"plain:") && option_name == "client-auth"_sv ) ) )
+	{
+		// dont mess with "--xxx-auth=pam:" or "--client-auth=plain:user:pwd"
 		return value ;
 	}
 	else
@@ -581,13 +588,13 @@ bool Main::Configuration::pathlike( G::string_view option_name )
 		option_name == "spool-dir"_sv ||
 		option_name == "local-delivery-dir"_sv ||
 		option_name == "pid-file"_sv ||
-		option_name == "client-auth"_sv ||
 		option_name == "server-tls-certificate"_sv ||
 		option_name == "server-tls-verify"_sv || // tlsVerifyType()
 		option_name == "client-tls-certificate"_sv ||
 		option_name == "client-tls-verify"_sv || // tlsVerifyType()
-		option_name == "pop-auth"_sv ||
+		option_name == "client-auth"_sv ||
 		option_name == "server-auth"_sv ||
+		option_name == "pop-auth"_sv ||
 		false ; // NOLINT readability-simplify-boolean-expr
 }
 
@@ -667,6 +674,7 @@ G::LogOutput::Config Main::Configuration::logOutputConfig( bool has_gui ) const
 			.set_output_enabled( log() )
 			.set_summary_info( log() )
 			.set_verbose_info( contains("verbose") )
+			.set_more_verbose_info( m_map.count("verbose") > 1U )
 			.set_debug( debug() )
 			.set_with_level( true)
 			.set_with_timestamp( contains("log-time") )
@@ -822,8 +830,7 @@ GSmtp::Client::Config Main::Configuration::smtpClientConfig( const std::string &
 }
 
 GSmtp::AdminServer::Config Main::Configuration::adminServerConfig( const G::StringMap & info_map ,
-	const G::StringMap & config_map , const std::string & client_tls_profile ,
-	const std::string & domain ) const
+	const std::string & client_tls_profile , const std::string & domain ) const
 {
 	return
 		GSmtp::AdminServer::Config()
@@ -832,7 +839,6 @@ GSmtp::AdminServer::Config Main::Configuration::adminServerConfig( const G::Stri
 			.set_allow_remote( _allowRemoteClients() )
 			.set_remote_address( serverAddress() )
 			.set_info_commands( info_map )
-			.set_config_commands( config_map )
 			.set_smtp_client_config( smtpClientConfig(client_tls_profile,domain) )
 			.set_net_server_config( _netServerConfig(_adminServerSocketLinger()) )
 			.set_net_server_peer_config(

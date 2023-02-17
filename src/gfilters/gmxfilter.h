@@ -66,6 +66,8 @@ private:
 	void onTimeout() ;
 	void lookupDone( GStore::MessageId , std::string , std::string ) ;
 	GStore::FileStore::State storestate() const ;
+	static MxLookup::Config mxconfig( const std::string & spec ) ;
+	static std::vector<GNet::Address> mxnameservers( const std::string & spec ) ;
 
 private:
 	using FileOp = GStore::FileStore::FileOp ;
@@ -79,7 +81,6 @@ private:
 	GNet::Timer<MxFilter> m_timer ;
 	G::Slot::Signal<int> m_done_signal ;
 	std::unique_ptr<MxLookup> m_lookup ;
-	GStore::StoredFile::State m_state ;
 } ;
 
 #endif

@@ -48,7 +48,7 @@ namespace GAuth
 class GAuth::SaslServerPam : public SaslServer
 {
 public:
-	SaslServerPam( const SaslServerSecrets & , bool with_apop ) ;
+	explicit SaslServerPam( bool with_apop ) ;
 		///< Constructor.
 
 public:

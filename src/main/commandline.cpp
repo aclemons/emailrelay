@@ -137,6 +137,8 @@ Main::CommandLine::CommandLine( Output & output , const G::Arg & args_in ,
 				parser.parse( G::OptionReader::read(config_file) , 0U ) ;
 			}
 		}
+		if( m_config_names.size() == 1U )
+			m_config_names[0].clear() ;
 	}
 }
 

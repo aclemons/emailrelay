@@ -22,8 +22,11 @@
 #include "gmxfilter.h"
 #include "gstoredfile.h"
 #include "gprocess.h"
+#include "gaddress.h"
+#include "gnameservers.h"
 #include "gexception.h"
 #include "gscope.h"
+#include "gstringtoken.h"
 #include "glog.h"
 
 GFilters::MxFilter::MxFilter( GNet::ExceptionSink es , GStore::FileStore & store ,
@@ -40,8 +43,8 @@ GFilters::MxFilter::MxFilter( GNet::ExceptionSink es , GStore::FileStore & store
 	if( filter_type != Filter::Type::client )
 	{
 		if( !MxLookup::enabled() )
-			throw G::Exception( "mx: client-side routing filter is not enabled" ) ;
-		m_lookup = std::make_unique<MxLookup>( es ) ;
+			throw G::Exception( "mx: dns mx routing not enabled at build time" ) ;
+		m_lookup = std::make_unique<MxLookup>( es , mxconfig(m_spec) , mxnameservers(m_spec) ) ;
 		m_lookup->doneSignal().connect( G::Slot::slot(*this,&MxFilter::lookupDone) ) ;
 	}
 }
@@ -126,16 +129,22 @@ void GFilters::MxFilter::onTimeout()
 	m_done_signal.emit( static_cast<int>(m_result) ) ;
 }
 
-void GFilters::MxFilter::lookupDone( GStore::MessageId message_id , std::string result , std::string error )
+void GFilters::MxFilter::lookupDone( GStore::MessageId message_id , std::string address , std::string error )
 {
+	G_ASSERT( address.empty() == !error.empty() ) ;
+
+	// allow a special IP address to mean no forward-to-address
+	if( G::Str::headMatch(address,"0.0.0.0:") && GNet::Address::validString(address) )
+		address.clear() ;
+
 	G_LOG( "GFilters::MxFilter::start: mx: " << message_id.str() << ": "
-		<< "setting forward-to-address [" << result << "]"
+		<< "setting forward-to-address [" << address << "]"
 		<< (error.empty()?"":": ") << error ) ;
 
-	// always update the forward-to-address
+	// update the envelope forward-to-address
 	GStore::StoredFile msg( m_store , message_id , storestate() ) ;
 	msg.noUnlock() ;
-	msg.editEnvelope( [result](GStore::Envelope &env_){env_.forward_to_address=result;} ) ;
+	msg.editEnvelope( [address](GStore::Envelope &env_){env_.forward_to_address=address;} ) ;
 
 	m_result = error.empty() ? Result::ok : Result::fail ;
 	m_timer.startTimer( 0U ) ;
@@ -146,5 +155,29 @@ GStore::FileStore::State GFilters::MxFilter::storestate() const
 	return m_filter_type == GSmtp::Filter::Type::server ?
 		GStore::FileStore::State::New :
 		GStore::FileStore::State::Locked ;
+}
+
+GFilters::MxLookup::Config GFilters::MxFilter::mxconfig( const std::string & spec )
+{
+	MxLookup::Config result ;
+	G::string_view spec_sv = spec ;
+	for( G::StringTokenView t(spec_sv,";",1U) ; t ; ++t )
+	{
+		if( G::Str::isUInt(t()) )
+			result.port = G::Str::toUInt( t() ) ;
+	}
+	return result ;
+}
+
+std::vector<GNet::Address> GFilters::MxFilter::mxnameservers( const std::string & spec )
+{
+	std::vector<GNet::Address> result ;
+	G::string_view spec_sv = spec ;
+	for( G::StringTokenView t(spec_sv,";",1U) ; t ; ++t )
+	{
+		if( GNet::Address::validString( G::sv_to_string(t()) ) )
+			result.push_back( GNet::Address::parse( G::sv_to_string(t()) ) ) ;
+	}
+	return result.empty() ? GNet::nameservers(53U) : result ;
 }
 

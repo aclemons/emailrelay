@@ -59,26 +59,34 @@ $AutoMakeParser::debug = 0 ;
 
 package winbuild ;
 
+sub find_msbuild
+{
+	return _fcache( "msbuild" ,
+		_find_bypass( "find-msbuild" , "msbuild" ) ||
+		_find_basic( "find-msbuild" , "msbuild.exe" , _path_dirs() ) ||
+		_find_match( "find-msbuild" , "Microsoft Visual Studio/2*/*/msbuild/current/bin/msbuild.exe" , undef ,
+			$ENV{'ProgramFiles(x86)'} ,
+			$ENV{'ProgramFiles'} ) ||
+		_find_under( "find-msbuild" , "msbuild.exe" ,
+			$ENV{'ProgramFiles(x86)'}."/msbuild" ,
+			$ENV{'ProgramFiles'}."/msbuild" ,
+			$ENV{'ProgramFiles(x86)'}."/Microsoft Visual Studio" ,
+			$ENV{'ProgramFiles'}."/Microsoft Visual Studio" ,
+			$ENV{'ProgramFiles(x86)'} ,
+			$ENV{ProgramFiles} ) ) ;
+}
+
 sub find_cmake
 {
+	my ( $msbuild ) = @_ ;
+	my $msbuild_root = _sanepath(File::Basename::dirname($msbuild))."/../../.." ;
 	return _fcache( "cmake" ,
-		_find_bypass( "cmake" ) ||
+		_find_bypass( "find-cmake" , "cmake" ) ||
+		_find_basic( "find-cmake" , "cmake.exe" , "$msbuild_root/common7/ide/commonextensions/microsoft/cmake/cmake/bin" ) ||
 		_find_basic( "find-cmake" , "cmake.exe" , _path_dirs() ) ||
 		_find_match( "find-cmake" , "cmake*/bin/cmake.exe" , undef ,
 			"$ENV{SystemDrive}" ,
 			"$ENV{ProgramFiles}" ) ) ;
-}
-
-sub find_msbuild
-{
-	return _fcache( "msbuild" ,
-		_find_bypass( "msbuild" ) ||
-		_find_basic( "find-msbuild" , "msbuild.exe" , _path_dirs() ) ||
-		_find_under( "find-msbuild" , "msbuild.exe" ,
-			$ENV{'ProgramFiles(x86)'}."/msbuild" ,
-			$ENV{'ProgramFiles(x86)'}."/Microsoft Visual Studio" ,
-			$ENV{'ProgramFiles(x86)'} ,
-			$ENV{ProgramFiles} ) ) ;
 }
 
 sub find_qt
@@ -90,22 +98,33 @@ sub find_qt
 	) ;
 
 	my $x86 =
-		_find_bypass( "qt" , "x86" ) ||
+		_find_bypass( "find-qt(x86)" , "qt" , "x86" ) ||
+		_find_match( "find-qt(x86)" , "6*/msvc*/lib/cmake/qt6" , qr;/msvc\d\d\d\d/; , @dirs ) ||
 		_find_match( "find-qt(x86)" , "5*/msvc*/lib/cmake/qt5" , qr;/msvc\d\d\d\d/; , @dirs ) ;
 
 	my $x64 =
-		_find_bypass( "qt" , "x64" ) ||
+		_find_bypass( "find-qt(x64)" , "qt" , "x64" ) ||
+		_find_match( "find-qt(x64)" , "6*/msvc*_64/lib/cmake/qt6" , undef , @dirs ) ||
 		_find_match( "find-qt(x64)" , "5*/msvc*_64/lib/cmake/qt5" , undef , @dirs ) ;
+
+	my $qtv = 5 ;
+	$qtv = 6 if( $x86 && ($x86 =~ m;qt6;i) ) ;
+	$qtv = 6 if( $x64 && ($x64 =~ m;qt6;i) ) ;
+
+	my $qt_libs =
+		$qtv == 5 ?
+			"Qt5::Widgets Qt5::Gui Qt5::Core" :
+			"Qt6::Widgets" ;
 
 	_fcache( "qt-x86" , $x86 ) ;
 	_fcache( "qt-x64" , $x64 ) ;
-	return { x86 => $x86 , x64 => $x64 } ;
+	return { v => $qtv , x86 => $x86 , x64 => $x64 , libs => $qt_libs } ;
 }
 
 sub find_mbedtls
 {
 	return _fcache( "mbedtls" ,
-		_find_bypass( "mbedtls" ) ||
+		_find_bypass( "find-mbedtls" , "mbedtls" ) ||
 		_find_match( "find-mbedtls" , "mbedtls*" , undef ,
 			File::Basename::dirname($0)."/.." ,
 			"$ENV{HOMEDRIVE}$ENV{HOMEPATH}" ,
@@ -224,7 +243,7 @@ sub fcache_write
 
 sub _find_bypass
 {
-	my ( $name , $arch ) = @_ ;
+	my ( $logname , $name , $arch ) = @_ ;
 
 	# winbuild.cfg
 	# eg.
@@ -241,7 +260,11 @@ sub _find_bypass
 	{
 		chomp( my $line = $_ ) ;
 		my ( $k , $v ) = ( $line =~ m/(\S+)\s+(.*)/ ) ;
-		return $v if( $k eq $key ) ;
+		if( $k eq $key )
+		{
+			print "$logname=[$v] (cached)\n" if $v ;
+			return $v ;
+		}
 	}
 	return undef ;
 }
@@ -317,13 +340,13 @@ sub deltree
 
 sub run_msbuild
 {
-	my ( $msbuild , $project , $arch , $confname , $target ) = @_ ;
-	$arch ||= "x64" ;
+	my ( $msbuild , $project , $build_dir , $confname , $arch , $target ) = @_ ;
+	$build_dir ||= "x64" ;
 	$confname ||= "Release" ;
-	my $build_dir = $arch ;
 	my @msbuild_args = ( "/fileLogger" , "$build_dir/$project.sln" ) ;
 	push @msbuild_args , "/t:$target" if $target ;
 	push @msbuild_args , "/p:Configuration=$confname" ;
+	push @msbuild_args , "/p:Platform=$arch" if $arch ; # (new)
 	if( $^O eq "linux" ) { $msbuild = ("make") ; @msbuild_args = ( $target ) }
 	my $rc = system( $msbuild , @msbuild_args ) ;
 	print "msbuild-exit=[$rc]\n" ;
@@ -332,8 +355,8 @@ sub run_msbuild
 
 sub translate
 {
-	my ( $arch , $qt_dirs , $xx_XX , $xx ) = @_ ;
-	my $dir = $qt_dirs->{$arch} ;
+	my ( $arch , $qt_info , $xx_XX , $xx ) = @_ ;
+	my $dir = $qt_info->{$arch} ;
 	$dir = File::Basename::dirname( $dir ) ;
 	$dir = File::Basename::dirname( $dir ) ;
 	$dir = File::Basename::dirname( $dir ) ;

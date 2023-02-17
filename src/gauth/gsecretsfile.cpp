@@ -39,7 +39,7 @@ GAuth::SecretsFile::SecretsFile( const G::Path & path , bool auto_reread , const
 	m_file_time(0) ,
 	m_check_time(G::SystemTime::now())
 {
-	m_valid = ! path.str().empty() ;
+	m_valid = !path.str().empty() ;
 	if( m_valid )
 		read( path ) ;
 }
@@ -107,7 +107,7 @@ GAuth::SecretsFile::Contents GAuth::SecretsFile::readContents( const G::Path & p
 	}
 	if( !file->good() )
 	{
-		throw Secrets::OpenError( path.str() ) ;
+		throw OpenError( path.str() ) ;
 	}
 
 	return readContents( *file ) ;
@@ -255,6 +255,9 @@ std::string GAuth::SecretsFile::clientKey( G::string_view type )
 
 GAuth::Secret GAuth::SecretsFile::clientSecret( G::string_view type ) const
 {
+	if( !m_valid )
+		return Secret::none() ;
+
 	reread() ;
 
 	auto p = m_contents.m_map.find( clientKey(type) ) ;
@@ -266,7 +269,7 @@ GAuth::Secret GAuth::SecretsFile::clientSecret( G::string_view type ) const
 
 GAuth::Secret GAuth::SecretsFile::serverSecret( G::string_view type , G::string_view id ) const
 {
-	if( id.empty() )
+	if( !m_valid || id.empty() )
 		return Secret::none() ;
 
 	reread() ;
@@ -280,9 +283,12 @@ GAuth::Secret GAuth::SecretsFile::serverSecret( G::string_view type , G::string_
 
 std::pair<std::string,std::string> GAuth::SecretsFile::serverTrust( const std::string & address_range ) const
 {
+	std::pair<std::string,std::string> result ;
+	if( !m_valid )
+		return result ;
+
 	reread() ;
 
-	std::pair<std::string,std::string> result ;
 	auto p = m_contents.m_trust_map.find( address_range ) ;
 	if( p != m_contents.m_trust_map.end() )
 	{
@@ -292,15 +298,14 @@ std::pair<std::string,std::string> GAuth::SecretsFile::serverTrust( const std::s
 	return result ;
 }
 
-#ifndef G_LIB_SMALL
 std::string GAuth::SecretsFile::path() const
 {
 	return m_path.str() ;
 }
-#endif
 
 bool GAuth::SecretsFile::contains( G::string_view type , G::string_view id_decoded ) const
 {
+	if( !m_valid ) return false ;
 	return id_decoded.empty() ?
 		m_contents.m_types.find( G::Str::lower(type) ) != m_contents.m_types.end() :
 		m_contents.m_map.find( serverKey(type,id_decoded) ) != m_contents.m_map.end() ;

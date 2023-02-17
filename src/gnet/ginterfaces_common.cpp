@@ -59,12 +59,14 @@ bool GNet::Interfaces::loaded() const
 	return m_loaded ;
 }
 
+#ifndef G_LIB_SMALL
 std::vector<GNet::Address> GNet::Interfaces::addresses( const std::string & name , unsigned int port , int af ) const
 {
 	std::vector<GNet::Address> result ;
 	addresses( result , name , port , af ) ;
 	return result ;
 }
+#endif
 
 std::size_t GNet::Interfaces::addresses( std::vector<Address> & out , const std::string & name , unsigned int port , int af ) const
 {

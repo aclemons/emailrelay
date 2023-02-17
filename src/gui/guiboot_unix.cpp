@@ -25,7 +25,7 @@
 #include "gfile.h"
 #include "gexecutablecommand.h"
 #include "gnewprocess.h"
-#include "gdirectory.h"
+#include "glog.h"
 #include <sstream>
 #include <stdexcept>
 
@@ -33,99 +33,83 @@ namespace Gui
 {
 	namespace BootImp
 	{
-		bool link( const G::Path & target , const G::Path & new_link , std::nothrow_t ) ;
-		bool remove( const G::Path & path , std::nothrow_t ) ;
+		int run( std::string exe , G::StringArray args , std::string & output )
+		{
+			using Fd = G::NewProcess::Fd ;
+			G::NewProcess task( exe , args ,
+				G::NewProcess::Config()
+					.set_stdout( Fd::devnull() )
+					.set_stderr( Fd::pipe() )
+					.set_env( G::Environment::minimal(true) ) // (no HOME)
+					.set_exec_error_format( "failed to execute ["+exe+"]: __""strerror""__" )
+					.set_exec_search_path( "/usr/bin:/usr/sbin:/bin:/sbin" )
+					.set_strict_exe( false ) ) ;
+			int rc = task.waitable().wait().get() ;
+			output = G::Str::printable( G::Str::trimmed(task.waitable().output(),G::Str::ws()) ) ;
+			G_LOG( "Gui::BootImp::run: exe=[" << exe << "] args=[" << G::Str::join(",",args) << "] "
+				<< "rc=" << rc << " output=[" << output << "]" ) ;
+			return rc ;
+		}
+		int run( std::string exe , G::StringArray args )
+		{
+			std::string output ;
+			return run( exe , args , output ) ;
+		}
+		G::Path dir_boot( bool alt = false )
+		{
+			if( G::is_bsd() )
+				return alt ? "/usr/local/etc/rc.d" : "/etc/rc.d" ;
+			else
+				return "/etc/init.d" ;
+		}
 	}
 }
 
-bool Gui::BootImp::link( const G::Path & target , const G::Path & new_link , std::nothrow_t )
+bool Gui::Boot::installable()
 {
-	return
-		G::File::isDirectory( new_link.dirname() , std::nothrow ) ?
-			G::File::link( target , new_link , std::nothrow ) :
-			true ; // do nothing successfully if no "/etc/rc?.d" directory
+	using namespace BootImp ;
+	return G::Identity::real().isRoot() && G::File::isDirectory( dir_boot() , std::nothrow ) ;
 }
 
-bool Gui::BootImp::remove( const G::Path & path , std::nothrow_t )
+void Gui::Boot::install( const std::string & name , const G::Path & startstop_src , const G::Path & )
 {
-	return
-		G::File::isDirectory( path.dirname() , std::nothrow ) ?
-			G::File::remove( path , std::nothrow ) :
-			true ; // do nothing successfully if no "/etc/rc?.d" directory
-}
-
-bool Gui::Boot::installable( const G::Path & dir_boot )
-{
-	// check /etc/init.d and /etc/rc2.d etc are writable
-	return
-		!dir_boot.empty() &&
-		G::Directory(dir_boot).valid(true) &&
-		G::Directory(dir_boot+".."+"rc2.d").valid(true) &&
-		G::Directory(dir_boot+".."+"rc3.d").valid(true) &&
-		G::Directory(dir_boot+".."+"rc4.d").valid(true) &&
-		G::Directory(dir_boot+".."+"rc5.d").valid(true) &&
-		G::Directory(dir_boot).writeable() &&
-		G::Directory(dir_boot+".."+"rc2.d").writeable() &&
-		G::Directory(dir_boot+".."+"rc3.d").writeable() &&
-		G::Directory(dir_boot+".."+"rc4.d").writeable() &&
-		G::Directory(dir_boot+".."+"rc5.d").writeable() ;
-}
-
-void Gui::Boot::install( const G::Path & dir_boot , const std::string & name , const G::Path & startstop_src , const G::Path & )
-{
-	G::Path startstop_dst = dir_boot + name ;
-	bool ok0 = G::File::copy( startstop_src , startstop_dst , std::nothrow ) ;
-
-	std::string symlink = "../" + dir_boot.basename() + "/" + name ; // point to eg "../init.d/<name>"
-	std::string linkname = "S50" + name ;
-	bool ok1 = BootImp::link( symlink , dir_boot+".."+"rc2.d"+linkname , std::nothrow ) ;
-	bool ok2 = BootImp::link( symlink , dir_boot+".."+"rc3.d"+linkname , std::nothrow ) ;
-	bool ok3 = BootImp::link( symlink , dir_boot+".."+"rc4.d"+linkname , std::nothrow ) ;
-	bool ok4 = BootImp::link( symlink , dir_boot+".."+"rc5.d"+linkname , std::nothrow ) ;
-	bool ok = ok0 && ok1 && ok2 && ok3 && ok4 ;
+	using namespace BootImp ;
+	G::File::copy( startstop_src , dir_boot()+name ) ;
+	G::File::chmodx( dir_boot()+name , std::nothrow ) ;
+	bool ok = run( "update-rc.d" , {name,"defaults"} ) == 0 || run( "rc-update" , {"add",name} ) == 0 ;
 	if( !ok )
-		throw std::runtime_error( "failed to create symlinks [" + (dir_boot+".."+"rc2.d"+linkname).str() + "] etc" ) ;
+		throw std::runtime_error( "failed to run update-rc" ) ;
 }
 
-bool Gui::Boot::uninstall( const G::Path & dir_boot , const std::string & name , const G::Path & , const G::Path & )
+bool Gui::Boot::uninstall( const std::string & name , const G::Path & , const G::Path & )
 {
-	std::string linkname = "S50" + name ;
-	bool ok0 = BootImp::remove( dir_boot+".."+"rc2.d"+linkname , std::nothrow ) ;
-	bool ok1 = BootImp::remove( dir_boot+".."+"rc3.d"+linkname , std::nothrow ) ;
-	bool ok2 = BootImp::remove( dir_boot+".."+"rc4.d"+linkname , std::nothrow ) ;
-	bool ok3 = BootImp::remove( dir_boot+".."+"rc5.d"+linkname , std::nothrow ) ;
-	return ok0 && ok1 && ok2 && ok3 ;
+	using namespace BootImp ;
+	G::File::remove( dir_boot()+name , std::nothrow ) ;
+	bool ok = run( "update-rc.d" , {"-f",name,"remove"} ) == 0 || run( "rc-update" , {"-a","delete",name} ) == 0 ;
+	return ok ;
 }
 
-bool Gui::Boot::installed( const G::Path & dir_boot , const std::string & name )
+bool Gui::Boot::installed( const std::string & name )
 {
-	return G::File::exists( dir_boot + ".." + "rc2.d" + ( "S50" + name ) , std::nothrow ) ;
+	using namespace BootImp ;
+	return
+		G::File::exists( dir_boot()+name , std::nothrow ) ||
+		G::File::exists( dir_boot(true)+name , std::nothrow ) ;
 }
 
-bool Gui::Boot::launchable( const G::Path & dir_boot , const std::string & )
+bool Gui::Boot::launchable( const std::string & name )
 {
-	return dir_boot == "/etc/init.d" && G::File::exists( "/usr/sbin/service" , std::nothrow ) ;
+	return installed( name ) ;
 }
 
-void Gui::Boot::launch( const G::Path & dir_boot , const std::string & name )
+void Gui::Boot::launch( const std::string & name )
 {
-	if( dir_boot != "/etc/init.d" )
-		throw std::runtime_error( "cannot launch from non-standard install directory ["+dir_boot.str()+"]" ) ;
-
-	G::ExecutableCommand cmd( "/usr/sbin/service" , {name,"start"} , false ) ;
-	G::NewProcess task(
-		G::NewProcessConfig( cmd.exe() )
-			.set_args( cmd.args() )
-			.set_fd_stdout( G::NewProcess::Fd::devnull() )
-			.set_fd_stderr( G::NewProcess::Fd::pipe() )
-			.set_exec_error_format( "failed to execute ["+cmd.exe().str()+"]: __strerror__" ) ) ;
-
-	int rc = task.waitable().wait().get() ;
-	std::string output = G::Str::printable( G::Str::trimmed(task.waitable().output(),G::Str::ws()) ) ;
-	if( rc != 0 && output.empty() )
+	using namespace BootImp ;
+	std::string output ;
+	bool ok = run( "service" , {name,"start"} , output ) == 0 ;
+	if( !ok && output.empty() )
 		output = "error" ;
-
-	if( rc != 0 )
-		throw std::runtime_error( "failed to run ["+cmd.displayString()+"]: " + output ) ;
+	if( !ok )
+		throw std::runtime_error( "failed to run [service "+name+" start]: " + output ) ;
 }
 

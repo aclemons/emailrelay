@@ -481,12 +481,10 @@ G::TimerTime G::TimerTime::zero()
 	return TimerTime( time_point_type( duration_type(0) ) ) ;
 }
 
-#ifndef G_LIB_SMALL
 bool G::TimerTime::isZero() const noexcept
 {
 	return m_tp == time_point_type( duration_type(0) ) ;
 }
-#endif
 
 #ifndef G_LIB_SMALL
 G::TimerTime G::TimerTime::test( int s , int us )

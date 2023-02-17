@@ -33,9 +33,9 @@ std::unique_ptr<GPop::Store> GPop::newStore( const G::Path & spool_dir ,
 	return std::make_unique<Store>( spool_dir , pop_by_name , allow_delete ) ;
 }
 
-std::unique_ptr<GAuth::Secrets> GPop::newSecrets( const std::string & path )
+std::unique_ptr<GAuth::SaslServerSecrets> GPop::newSecrets( const std::string & path )
 {
-	return std::make_unique<GAuth::Secrets>( path , "pop-server" ) ;
+	return GAuth::Secrets::newServerSecrets( path , "pop-server" ) ;
 }
 
 std::unique_ptr<GPop::Server> GPop::newServer( GNet::ExceptionSink es , Store & store ,

@@ -33,22 +33,20 @@
 #include <algorithm>
 #include <sstream>
 
-GStore::FileDelivery::FileDelivery( FileStore & store , const std::string & domain , std::pair<int,int> uid_range ) :
+GStore::FileDelivery::FileDelivery( FileStore & store , const Config & config ) :
 	m_active(true) ,
 	m_store(store) ,
-	m_domain(domain) ,
-	m_uid_range(uid_range) ,
+	m_config(config) ,
 	m_local_files(false)
 {
 }
 
-GStore::FileDelivery::FileDelivery( FileStore & store , const std::string & domain , const G::Path & base_dir ) :
-	m_active(!base_dir.empty()) ,
+GStore::FileDelivery::FileDelivery( FileStore & store , const G::Path & to_base_dir , const Config & config ) :
+	m_active(!to_base_dir.empty()) ,
 	m_store(store) ,
-	m_domain(domain) ,
-	m_uid_range(0,-1) ,
-	m_base_dir(base_dir) ,
-	m_local_files(!base_dir.empty())
+	m_to_base_dir(to_base_dir) ,
+	m_config(config) ,
+	m_local_files(true)
 {
 }
 
@@ -56,10 +54,9 @@ void GStore::FileDelivery::deliver( const MessageId & message_id )
 {
 	if( m_active )
 	{
-		G_ASSERT( !m_domain.empty() ) ;
 		G::Path envelope_path = m_store.envelopePath( message_id , GStore::FileStore::State::New ) ;
 		G::Path content_path = m_store.contentPath( message_id ) ;
-		G::Path base_dir = m_base_dir.empty() ? content_path.dirname() : m_base_dir ;
+		G::Path base_dir = m_to_base_dir.empty() ? content_path.dirname() : m_to_base_dir ;
 
 		if( m_local_files )
 		{
@@ -68,14 +65,14 @@ void GStore::FileDelivery::deliver( const MessageId & message_id )
 				return ; // no-op if no ".local" envelope file, ie. no local recipients
 
 			content_path = content_path.str().append(".local") ;
-			G_LOG( "GStore::FileDelivery::deliver: delivery: delivering " << short_(envelope_path) << " to [" << m_base_dir.basename() << "]" ) ;
+			G_LOG( "GStore::FileDelivery::deliver: delivery: delivering " << short_(envelope_path) << " to [" << m_to_base_dir.basename() << "]" ) ;
 		}
 		else
 		{
 			G_LOG( "GStore::FileDelivery::deliver: delivery: delivering " << short_(envelope_path) ) ;
 		}
 
-		if( deliverToMailboxes( base_dir , envelope_path , content_path , m_uid_range ) )
+		if( deliverToMailboxes( base_dir , envelope_path , content_path ) && !m_config.no_delete )
 		{
 			// delete once fully delivered
 			FileOp::remove( content_path ) ;
@@ -85,15 +82,12 @@ void GStore::FileDelivery::deliver( const MessageId & message_id )
 }
 
 bool GStore::FileDelivery::deliverToMailboxes( const G::Path & base_dir , const G::Path & envelope_path ,
-	const G::Path & content_path , std::pair<int,int> uid_range )
+	const G::Path & content_path )
 {
 	GStore::Envelope envelope = FileStore::readEnvelope( envelope_path ) ;
 
-	// normalise and validate the recipient addresses -- valid
-	// addresses become simple mailbox names and invalid addresses
-	// are mapped to "postmaster"
-	//
-	G::StringArray mailbox_list = mailboxes( envelope , m_domain , uid_range ) ;
+	// map recipient addresses to mailbox names
+	G::StringArray mailbox_list = mailboxes( m_config , envelope ) ;
 	G_ASSERT( !mailbox_list.empty() ) ;
 
 	// process each mailbox
@@ -109,7 +103,7 @@ bool GStore::FileDelivery::deliverToMailboxes( const G::Path & base_dir , const 
 		}
 
 		// copy files
-		deliverTo( m_store , mbox_dir , envelope_path , content_path ) ;
+		deliverTo( m_store , mbox_dir , envelope_path , content_path , m_config.hardlink ) ;
 	}
 	return !mailbox_list.empty() ;
 }
@@ -134,12 +128,14 @@ void GStore::FileDelivery::deliverTo( FileStore & /*store*/ , const G::Path & mb
 	else
 	{
 		//std::string new_filename = store.newId().str() ;
-		std::string new_filename = content_path.withoutExtension().basename() ;
+		std::string new_filename = content_path.extension() == "local" ?
+			content_path.withoutExtension().withoutExtension().basename() :
+			content_path.withoutExtension().basename() ;
 		G::Path new_content_path = mbox_dir + (new_filename+".content") ;
 		G::Path new_envelope_path = mbox_dir + (new_filename+".envelope") ;
 		G::ScopeExit clean_up_content( [new_content_path](){FileOp::remove(new_content_path);} ) ;
 
-		// link the content -- but maybe copy and edit to add "Delivered-To" etc?
+		// copy or link the content -- maybe edit to add "Delivered-To" etc?
 		bool ok = FileOp::copy( content_path , new_content_path , hardlink ) ;
 		if( !ok )
 				throw ContentWriteError( new_content_path.str() , G::Process::strerror(FileOp::errno_()) ) ;
@@ -153,59 +149,34 @@ void GStore::FileDelivery::deliverTo( FileStore & /*store*/ , const G::Path & mb
 	}
 }
 
-G::StringArray GStore::FileDelivery::mailboxes( const GStore::Envelope & envelope , const std::string & this_domain ,
-	std::pair<int,int> uid_range )
+G::StringArray GStore::FileDelivery::mailboxes( const Config & config , const GStore::Envelope & envelope )
 {
 	using namespace std::placeholders ;
 	G::StringArray list ;
 	std::transform( envelope.to_remote.begin() , envelope.to_remote.end() ,
-		std::back_inserter(list) , std::bind(&FileDelivery::mailbox,this_domain,uid_range,_1) ) ;
+		std::back_inserter(list) , std::bind(&FileDelivery::mailbox,config,_1) ) ;
 	std::transform( envelope.to_local.begin() , envelope.to_local.end() ,
-		std::back_inserter(list) , std::bind(&FileDelivery::mailbox,this_domain,uid_range,_1) ) ;
+		std::back_inserter(list) , std::bind(&FileDelivery::mailbox,config,_1) ) ;
 	std::sort( list.begin() , list.end() ) ;
 	list.erase( std::unique( list.begin() , list.end() ) , list.end() ) ;
 	return list ;
 }
 
-std::string GStore::FileDelivery::mailbox( const std::string & this_domain , std::pair<int,int> uid_range ,
-	const std::string & recipient )
+std::string GStore::FileDelivery::mailbox( const Config & config , const std::string & recipient )
 {
-	std::string user = normalise( G::Str::head( recipient , "@" , false ) ) ;
-	std::string domain = normalise( G::Str::tail( recipient , "@" ) ) ;
-	bool user_ok = user == "postmaster" || lookup( user , uid_range ) ;
-	if( domain != this_domain )
+	std::string user = G::Str::head( recipient , "@" , false ) ;
+
+	// normalise iff ascii
+	if( !user.empty() && G::Str::isPrintableAscii(user) )
 	{
-		G_LOG( "GStore::FileDelivery::mailbox: delivery: recipient [" << recipient << "]: "
-			<< "delivery to [postmaster] ("
-			<< "domain not [" << this_domain << "]"
-			<< (user_ok?"":" and invalid user")
-			<< ")" ) ;
-		user = "postmaster" ;
+		if( config.lowercase )
+			G::Str::lower( user ) ;
+		if( user.size() > 2U && user.at(0U) == '"' && user.at(user.size()-1U) == '"' )
+			user = user.substr( 1U , user.size()-2U ) ;
 	}
-	else if( !user_ok )
-	{
-		G_LOG( "GStore::FileDelivery::mailbox: delivery: recipient [" << recipient << "]: "
-			<< "delivery to [postmaster] (invalid user)" ) ;
-		user = "postmaster" ;
-	}
-	else
-	{
-		G_LOG( "GStore::FileDelivery::mailbox: delivery: recipient [" << recipient << "]: delivery to [" << user << "]" ) ;
-	}
+
+	G_LOG( "GStore::FileDelivery::mailbox: delivery: recipient [" << recipient << "]: delivery to [" << user << "]" ) ;
 	return user ;
-}
-
-bool GStore::FileDelivery::lookup( const std::string & user , std::pair<int,int> uid_range )
-{
-	using namespace G::Range ;
-	uid_t uid = 0 ;
-	gid_t gid = 0 ;
-	return G::Identity::lookupUser( user , uid , gid ) && within( uid_range , uid ) ;
-}
-
-std::string GStore::FileDelivery::normalise( const std::string & s )
-{
-	return G::Str::isPrintableAscii(s) ? G::Str::lower(s) : s ;
 }
 
 std::string GStore::FileDelivery::short_( const G::Path & path )

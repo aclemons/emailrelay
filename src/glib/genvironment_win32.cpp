@@ -70,7 +70,7 @@ std::string G::Environment::get( const std::string & name , const std::string & 
 	return std::string( &buffer[0] ) ;
 }
 
-G::Environment G::Environment::minimal()
+G::Environment G::Environment::minimal( bool )
 {
 	// could copy from _environ, but for now just act like inherit()
 	//char ** e = ::_environ ;

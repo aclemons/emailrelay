@@ -21,6 +21,9 @@
 /* Define true if compiler has std::thread */
 #undef GCONFIG_HAVE_CXX_STD_THREAD
 
+/* Define true if compiler supports c++ string_view */
+#undef GCONFIG_HAVE_CXX_STRING_VIEW
+
 /* Define true to enable use of epoll */
 #undef GCONFIG_HAVE_EPOLL
 

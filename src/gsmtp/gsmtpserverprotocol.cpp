@@ -259,7 +259,7 @@ bool GSmtp::ServerProtocol::apply( const ApplyArgsTuple & args )
 {
 	G_ASSERT( std::get<2>(args) == 2U || ( inDataState() && std::get<2>(args) == 0U ) ) ; // eolsize 0 or 2
 	G_DEBUG( "GSmtp::ServerProtocol::apply: apply "
-		"[" << G::Str::printable(G::string_view(std::get<0>(args),std::get<1>(args)).substr(std::nothrow,0U,10U))
+		"[" << G::Str::printable(G::sv_substr(G::string_view(std::get<0>(args),std::get<1>(args)),0U,10U))
 		<< (std::get<1>(args)>10U?"...":"") << "] "
 		"state=" << static_cast<int>(m_fsm.state()) << " "
 		"more=" << std::get<5>(args) << " "
@@ -875,16 +875,16 @@ void GSmtp::ServerProtocol::doRcpt( EventData event_data , bool & predicate )
 
 void GSmtp::ServerProtocol::doRcptToReply( EventData event_data , bool & predicate )
 {
+	// recover the VerifierStatus from the event-data string
 	VerifierStatus status = VerifierStatus::parse( str(event_data) ) ;
 
+	// store the status.address as the recipient address in the envelope
 	bool ok = m_message.addTo( ProtocolMessage::ToInfo(status) ) ;
 	G_ASSERT( status.is_valid || !ok ) ;
+
+	// respond with reference the original recipient address
 	if( ok )
 	{
-		// (we ignore 'status.address' here because the documentation requires
-		// it to be a copy of the input -- in the future we could allow
-		// 'status.address' to be used for an editied or normalised version
-		// of the input address)
 		sendRcptReply( status.recipient , status.is_local ) ;
 	}
 	else

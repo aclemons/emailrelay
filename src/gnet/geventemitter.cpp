@@ -28,13 +28,11 @@
 GNet::EventEmitter::EventEmitter() noexcept
 = default ;
 
-#ifndef G_LIB_SMALL
 GNet::EventEmitter::EventEmitter( EventHandler * handler , ExceptionSink es ) noexcept :
 	m_handler(handler) ,
 	m_es(es)
 {
 }
-#endif
 
 void GNet::EventEmitter::update( EventHandler * handler , ExceptionSink es ) noexcept
 {

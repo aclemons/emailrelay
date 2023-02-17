@@ -62,9 +62,8 @@ private: // overrides
 
 private:
 	void onTimeout() ;
-	std::string explain( int uid , const std::string & , const std::string & ) const ;
-	static int lookup( const std::string & ) ;
 	static std::string normalise( const std::string & ) ;
+	bool lookup( const std::string & , const std::string & , std::string * = nullptr ) const ;
 
 private:
 	using Signal = G::Slot::Signal<GSmtp::Verifier::Command,const GSmtp::VerifierStatus&> ;

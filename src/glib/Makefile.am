@@ -15,7 +15,11 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+if GCONFIG_WINDOWS
+AM_CPPFLAGS =
+else
 AM_CPPFLAGS = -DG_LIB_SMALL
+endif
 
 noinst_LIBRARIES = libglib.a
 
@@ -55,8 +59,8 @@ COMMON_SOURCES = \
 	gbase64.h \
 	gbase64.cpp \
 	gbasicaddress.h \
-	gbatchfile.h \
 	gbatchfile.cpp \
+	gbatchfile.h \
 	gbuffer.h \
 	gcall.h \
 	gcleanup.h \
@@ -95,8 +99,8 @@ COMMON_SOURCES = \
 	glogoutput.h \
 	glogoutput.cpp \
 	gstrmacros.h \
-	gmapfile.h \
 	gmapfile.cpp \
+	gmapfile.h \
 	gmd5.h \
 	gmd5.cpp \
 	gmsg.h \

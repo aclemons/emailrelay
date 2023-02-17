@@ -59,15 +59,18 @@ svg_files_noinstall=\
 	authentication.svg \
 	forwardto.svg \
 	serverclient.svg \
-	whatisit.svg
+	whatisit.svg \
+	mailserver.svg \
+	popbyname.svg
 
 png_files_install=\
 	authentication.png \
 	forwardto.png \
 	serverclient.png \
 	whatisit.png \
-	download-button.png
-
+	download-button.png \
+	mailserver.png \
+	popbyname.png
 
 EXTRA_DIST = \
 	$(man_files_install) \
@@ -76,8 +79,7 @@ EXTRA_DIST = \
 	$(png_files_install) \
 	$(svg_files_noinstall) \
 	$(html_files_install) \
-	$(html_files_noinstall) \
-	make-website
+	$(html_files_noinstall)
 
 noinst_SCRIPTS = .dox
 man1_MANS = $(man_files_install)
@@ -131,6 +133,6 @@ sphinx:
 
 .PHONY: website
 website:
-	@chmod +x $(top_srcdir)/doc/make-website || true
-	$(top_srcdir)/doc/make-website `cat $(top_srcdir)/VERSION`
+	@chmod +x $(top_srcdir)/libexec/make-website || true
+	$(top_srcdir)/libexec/make-website `cat $(top_srcdir)/VERSION`
 

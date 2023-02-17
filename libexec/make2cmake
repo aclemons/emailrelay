@@ -108,14 +108,16 @@ sub create_cmake_file
 	for my $library ( @libraries )
 	{
 		my $sources = join( " " , $m->sources( $library ) ) ;
-
-		( my $library_key = $library ) =~ s/\.a$// ; $library_key =~ s/^lib// ;
-		print $fh "\n" ;
-		print $fh "add_library($library_key $sources)\n" ;
-		print $fh "target_compile_options($library_key PUBLIC $compile_options)\n" ;
-		print $fh "target_include_directories($library_key PUBLIC $includes)\n" ;
-		print $fh "target_compile_definitions($library_key PUBLIC $definitions)\n" ;
-		print $fh "set_target_properties($library_key PROPERTIES AUTOMOC ON)\n" if exists $qt_config->{targets}->{$library_key} ;
+		if( $sources )
+		{
+			( my $library_key = $library ) =~ s/\.a$// ; $library_key =~ s/^lib// ;
+			print $fh "\n" ;
+			print $fh "add_library($library_key $sources)\n" ;
+			print $fh "target_compile_options($library_key PUBLIC $compile_options)\n" ;
+			print $fh "target_include_directories($library_key PUBLIC $includes)\n" ;
+			print $fh "target_compile_definitions($library_key PUBLIC $definitions)\n" ;
+			print $fh "set_target_properties($library_key PROPERTIES AUTOMOC ON)\n" if exists $qt_config->{targets}->{$library_key} ;
+		}
 	}
 
 	my @programs = $m->programs() ;

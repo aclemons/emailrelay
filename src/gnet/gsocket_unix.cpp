@@ -236,6 +236,7 @@ GNet::SocketBase::ssize_type GNet::RawSocket::write( const char * buffer , size_
 
 // ==
 
+#ifndef G_LIB_SMALL
 std::size_t GNet::DatagramSocket::limit( std::size_t default_in ) const
 {
 	int value = 0 ;
@@ -246,6 +247,7 @@ std::size_t GNet::DatagramSocket::limit( std::size_t default_in ) const
 	else
 		return default_in ;
 }
+#endif
 
 #ifndef G_LIB_SMALL
 GNet::Socket::ssize_type GNet::DatagramSocket::writeto( const std::vector<G::string_view> & data , const Address & dst )

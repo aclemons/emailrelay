@@ -36,7 +36,7 @@ namespace GFilters
 	namespace MxLookupImp
 	{
 		enum class Result { error , fatal , mx , cname , ip } ;
-		std::pair<Result,std::string> parse( const GNet::DnsMessage & , const GNet::Address & , bool ) ;
+		std::pair<Result,std::string> parse( const GNet::DnsMessage & , const GNet::Address & , unsigned int ) ;
 	}
 }
 
@@ -45,10 +45,12 @@ bool GFilters::MxLookup::enabled()
 	return true ;
 }
 
+#ifndef G_LIB_SMALL
 GFilters::MxLookup::MxLookup( GNet::ExceptionSink es , Config config ) :
 	MxLookup(es,config,GNet::nameservers(53U))
 {
 }
+#endif
 
 GFilters::MxLookup::MxLookup( GNet::ExceptionSink es , Config config ,
 	const std::vector<GNet::Address> & nameservers ) :
@@ -56,9 +58,14 @@ GFilters::MxLookup::MxLookup( GNet::ExceptionSink es , Config config ,
 		m_config(config) ,
 		m_message_id(GStore::MessageId::none()) ,
 		m_ns_index(0U) ,
+		m_ns_failures(0U) ,
 		m_nameservers(nameservers) ,
 		m_timer(*this,&MxLookup::onTimeout,es)
 {
+	G_ASSERT( m_config.port != 0U ) ;
+	if( m_config.port == 0U )
+		m_config.port = 25U ;
+
 	if( m_nameservers.empty() )
 	{
 		m_nameservers.push_back( GNet::Address::loopback( GNet::Address::Family::ipv4 , 53U ) ) ;
@@ -66,7 +73,7 @@ GFilters::MxLookup::MxLookup( GNet::ExceptionSink es , Config config ,
 	}
 
 	for( const auto & ns : m_nameservers )
-		G_LOG_IF( m_config.log , "GFilters::MxLookup::ctor: mx: nameserver [" << ns.hostPartString() << "]" ) ;
+		G_LOG_MORE( "GFilters::MxLookup::ctor: mx: nameserver [" << ns.hostPartString() << "]" ) ;
 
 	bool ipv4 = std::find_if( m_nameservers.begin() , m_nameservers.end() ,
 		[](const GNet::Address &a_){return a_.is4();} ) != m_nameservers.end() ;
@@ -125,7 +132,7 @@ void GFilters::MxLookup::process( const char * p , std::size_t n )
 	if( response.valid() && response.QR() && response.ID() && response.ID() < (m_nameservers.size()+1U) )
 	{
 		std::size_t ns_index = static_cast<std::size_t>(response.ID()) - 1U ;
-		auto pair = parse( response , m_nameservers.at(ns_index) , m_config.log ) ;
+		auto pair = parse( response , m_nameservers.at(ns_index) , m_config.port ) ;
 		if( pair.first == Result::error && (m_ns_failures+1U) < m_nameservers.size() )
 			disable( ns_index , pair.second ) ;
 		else if( pair.first == Result::error || pair.first == Result::fatal )
@@ -141,14 +148,14 @@ void GFilters::MxLookup::process( const char * p , std::size_t n )
 
 void GFilters::MxLookup::disable( std::size_t ns_index , const std::string & reason )
 {
-	G_LOG_IF( m_config.log , "GFilters::MxLookup::disable: mx: nameserver "
+	G_LOG_MORE( "GFilters::MxLookup::disable: mx: nameserver "
 		<< "[" << m_nameservers.at(ns_index).displayString() << "] disabled (" << reason << ")" ) ;
 	m_nameservers.at(ns_index) = GNet::Address::defaultAddress() ;
 	m_ns_failures++ ;
 }
 
 std::pair<GFilters::MxLookupImp::Result,std::string> GFilters::MxLookupImp::parse( const GNet::DnsMessage & response ,
-	const GNet::Address & ns_address , bool log )
+	const GNet::Address & ns_address , unsigned int port )
 {
 	std::string from = " from " + ns_address.hostPartString() ;
 	if( response.RCODE() == 3 && response.AA() )
@@ -179,7 +186,7 @@ std::pair<GFilters::MxLookupImp::Result,std::string> GFilters::MxLookupImp::pars
 			{
 				unsigned int pr = rr.rdata().word( 0U ) ;
 				std::string name = rr.rdata().dname( 2U ) ;
-				G_LOG_IF( log , "GFilters::MxLookupImp::parse: mx: answer: "
+				G_LOG_MORE( "GFilters::MxLookupImp::parse: mx: answer: "
 					<< "mx [" << name << "] (" << pr << ")" << from ) ;
 				if( !name.empty() && ( mx_result.empty() || pr < mx_pr ) )
 				{
@@ -190,14 +197,14 @@ std::pair<GFilters::MxLookupImp::Result,std::string> GFilters::MxLookupImp::pars
 			else if( rr.isa("CNAME") ) // RFC-974 p4
 			{
 				std::string cname = rr.rdata().dname( 0U ) ;
-				G_LOG_IF( log , "GFilters::MxLookupImp::parse: mx: answer: "
+				G_LOG_MORE( "GFilters::MxLookupImp::parse: mx: answer: "
 					<< "cname [" << cname << "]" << from ) ;
 				cname_result = cname ;
 			}
 			else
 			{
-				GNet::Address a = rr.address( 25U , std::nothrow ) ;
-				G_LOG_IF( a.port() && log , "GFilters::MxLookupImp::parse: mx: answer: "
+				GNet::Address a = rr.address( port , std::nothrow ) ;
+				G_LOG_MORE_IF( a.port() , "GFilters::MxLookupImp::parse: mx: answer: "
 					<< "host-ip [" << a.hostPartString() << "]" << from ) ;
 				if( address.port() == 0U && a.port() != 0U )
         			address = a ;
@@ -217,22 +224,27 @@ std::pair<GFilters::MxLookupImp::Result,std::string> GFilters::MxLookupImp::pars
 
 void GFilters::MxLookup::sendMxQuestion( std::size_t ns_index , const std::string & mx_question )
 {
-	if( m_nameservers[ns_index] == GNet::Address::defaultAddress() ) return ;
-	G_LOG_IF( m_config.log , "GFilters::MxLookup::sendMxQuestion: mx: question: mx [" << mx_question << "] "
-		<< "to " << m_nameservers[ns_index].hostPartString() ) ;
-	unsigned int id = static_cast<unsigned int>(ns_index) + 1U ;
-	GNet::DnsMessageRequest request( "MX" , mx_question , id ) ;
-	socket(ns_index).writeto( request.p() , request.n() , m_nameservers[ns_index] ) ;
+	if( m_nameservers[ns_index] != GNet::Address::defaultAddress() )
+	{
+		G_LOG_MORE( "GFilters::MxLookup::sendMxQuestion: mx: question: mx [" << mx_question << "] "
+			<< "to " << m_nameservers[ns_index].hostPartString()
+			<< (m_nameservers[ns_index].port()==53U?"":(" port "+G::Str::fromUInt(m_nameservers[ns_index].port()))) ) ;
+		unsigned int id = static_cast<unsigned int>(ns_index) + 1U ;
+		GNet::DnsMessageRequest request( "MX" , mx_question , id ) ;
+		socket(ns_index).writeto( request.p() , request.n() , m_nameservers[ns_index] ) ;
+	}
 }
 
 void GFilters::MxLookup::sendHostQuestion( std::size_t ns_index , const std::string & host_question )
 {
-	if( m_nameservers[ns_index] == GNet::Address::defaultAddress() ) return ;
-	G_LOG_IF( m_config.log , "GFilters::MxLookup::sendHostQuestion: mx: question: host-ip [" << host_question << "] "
-		<< "to " << m_nameservers[ns_index].hostPartString() ) ;
-	unsigned int id = static_cast<unsigned int>(ns_index) + 1U ;
-	GNet::DnsMessageRequest request( "A" , host_question , id ) ;
-	socket(ns_index).writeto( request.p() , request.n() , m_nameservers[ns_index] ) ;
+	if( m_nameservers[ns_index] != GNet::Address::defaultAddress() )
+	{
+		G_LOG_MORE( "GFilters::MxLookup::sendHostQuestion: mx: question: host-ip [" << host_question << "] "
+			<< "to " << m_nameservers[ns_index].hostPartString() ) ;
+		unsigned int id = static_cast<unsigned int>(ns_index) + 1U ;
+		GNet::DnsMessageRequest request( "A" , host_question , id ) ;
+		socket(ns_index).writeto( request.p() , request.n() , m_nameservers[ns_index] ) ;
+	}
 }
 
 void GFilters::MxLookup::cancel()
@@ -243,8 +255,10 @@ void GFilters::MxLookup::cancel()
 
 void GFilters::MxLookup::dropReadHandlers()
 {
-	if( m_socket4 ) m_socket4->dropReadHandler() ;
-	if( m_socket6 ) m_socket6->dropReadHandler() ;
+	if( m_socket4 )
+		m_socket4->dropReadHandler() ;
+	if( m_socket6 )
+		m_socket6->dropReadHandler() ;
 }
 
 void GFilters::MxLookup::fail( const std::string & error )

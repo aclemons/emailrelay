@@ -40,12 +40,15 @@ div.div-main
 
 div.div-footer
 {
+	margin-top: 60px ;
+	color: #888 ;
+	font-size: smaller ;
 }
 
 div.div-pre
 {
 	margin-left: 3% ;
-	background-color: #ddd ;
+	background-color: #eee ;
 	padding: 0.5em ;
 	border: none ;
 }

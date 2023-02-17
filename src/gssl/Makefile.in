@@ -93,7 +93,6 @@ subdir = src/gssl
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acinclude.m4 \
 	$(top_srcdir)/m4/m4_ax_cxx_compile_stdcxx.m4 \
-	$(top_srcdir)/m4/m4_ax_cxx_compile_stdcxx_11.m4 \
 	$(top_srcdir)/m4/pkg.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -127,6 +126,15 @@ am__libgssl_a_SOURCES_DIST = gssl.h gssl.cpp gssl_openssl.cpp \
 @GCONFIG_TLS_USE_BOTH_TRUE@	gssl_use_both.$(OBJEXT)
 am_libgssl_a_OBJECTS = $(am__objects_1)
 libgssl_a_OBJECTS = $(am_libgssl_a_OBJECTS)
+libgsslkeygen_a_AR = $(AR) $(ARFLAGS)
+libgsslkeygen_a_LIBADD =
+am__libgsslkeygen_a_SOURCES_DIST = gssl_mbedtls_keygen.h \
+	gssl_mbedtls_keygen.cpp
+@GCONFIG_TLS_USE_BOTH_FALSE@@GCONFIG_TLS_USE_MBEDTLS_TRUE@am__objects_2 = gssl_mbedtls_keygen.$(OBJEXT)
+@GCONFIG_TLS_USE_BOTH_TRUE@am__objects_2 =  \
+@GCONFIG_TLS_USE_BOTH_TRUE@	gssl_mbedtls_keygen.$(OBJEXT)
+am_libgsslkeygen_a_OBJECTS = $(am__objects_2)
+libgsslkeygen_a_OBJECTS = $(am_libgsslkeygen_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -143,8 +151,9 @@ DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/gssl.Po ./$(DEPDIR)/gssl_mbedtls.Po \
-	./$(DEPDIR)/gssl_none.Po ./$(DEPDIR)/gssl_openssl.Po \
-	./$(DEPDIR)/gssl_use_both.Po ./$(DEPDIR)/gssl_use_mbedtls.Po \
+	./$(DEPDIR)/gssl_mbedtls_keygen.Po ./$(DEPDIR)/gssl_none.Po \
+	./$(DEPDIR)/gssl_openssl.Po ./$(DEPDIR)/gssl_use_both.Po \
+	./$(DEPDIR)/gssl_use_mbedtls.Po \
 	./$(DEPDIR)/gssl_use_openssl.Po
 am__mv = mv -f
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
@@ -172,8 +181,9 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(libgssl_a_SOURCES)
-DIST_SOURCES = $(am__libgssl_a_SOURCES_DIST)
+SOURCES = $(libgssl_a_SOURCES) $(libgsslkeygen_a_SOURCES)
+DIST_SOURCES = $(am__libgssl_a_SOURCES_DIST) \
+	$(am__libgsslkeygen_a_SOURCES_DIST)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -347,6 +357,8 @@ AM_CPPFLAGS = -I$(top_srcdir)/src/glib -DG_LIB_SMALL
 @GCONFIG_TLS_USE_NONE_TRUE@	gssl_mbedtls.h \
 @GCONFIG_TLS_USE_NONE_TRUE@	gssl_mbedtls_headers.h \
 @GCONFIG_TLS_USE_NONE_TRUE@	gssl_mbedtls_utils.h \
+@GCONFIG_TLS_USE_NONE_TRUE@	gssl_mbedtls_keygen.h \
+@GCONFIG_TLS_USE_NONE_TRUE@	gssl_mbedtls_keygen.cpp \
 @GCONFIG_TLS_USE_NONE_TRUE@	gssl_use_both.cpp \
 @GCONFIG_TLS_USE_NONE_TRUE@	gssl_use_openssl.cpp \
 @GCONFIG_TLS_USE_NONE_TRUE@	gssl_use_mbedtls.cpp
@@ -357,6 +369,8 @@ AM_CPPFLAGS = -I$(top_srcdir)/src/glib -DG_LIB_SMALL
 @GCONFIG_TLS_USE_OPENSSL_TRUE@	gssl_mbedtls.h \
 @GCONFIG_TLS_USE_OPENSSL_TRUE@	gssl_mbedtls_headers.h \
 @GCONFIG_TLS_USE_OPENSSL_TRUE@	gssl_mbedtls_utils.h \
+@GCONFIG_TLS_USE_OPENSSL_TRUE@	gssl_mbedtls_keygen.h \
+@GCONFIG_TLS_USE_OPENSSL_TRUE@	gssl_mbedtls_keygen.cpp \
 @GCONFIG_TLS_USE_OPENSSL_TRUE@	gssl_use_mbedtls.cpp \
 @GCONFIG_TLS_USE_OPENSSL_TRUE@	gssl_use_both.cpp
 
@@ -391,12 +405,23 @@ AM_CPPFLAGS = -I$(top_srcdir)/src/glib -DG_LIB_SMALL
 @GCONFIG_TLS_USE_OPENSSL_TRUE@	gssl_openssl.h \
 @GCONFIG_TLS_USE_OPENSSL_TRUE@	gssl_use_openssl.cpp
 
+@GCONFIG_TLS_USE_BOTH_TRUE@SSL_KEYGEN_SOURCES = \
+@GCONFIG_TLS_USE_BOTH_TRUE@	gssl_mbedtls_keygen.h \
+@GCONFIG_TLS_USE_BOTH_TRUE@	gssl_mbedtls_keygen.cpp
+
+@GCONFIG_TLS_USE_MBEDTLS_TRUE@SSL_KEYGEN_SOURCES = \
+@GCONFIG_TLS_USE_MBEDTLS_TRUE@	gssl_mbedtls_keygen.h \
+@GCONFIG_TLS_USE_MBEDTLS_TRUE@	gssl_mbedtls_keygen.cpp
+
+@GCONFIG_TLS_USE_NONE_TRUE@SSL_KEYGEN_SOURCES = 
+@GCONFIG_TLS_USE_OPENSSL_TRUE@SSL_KEYGEN_SOURCES = 
 EXTRA_DIST = \
 	mbedtls-vsnprintf-fix.p1 \
 	$(SSL_EXTRA_DIST)
 
-noinst_LIBRARIES = libgssl.a
+noinst_LIBRARIES = libgssl.a libgsslkeygen.a
 libgssl_a_SOURCES = $(SSL_SOURCES)
+libgsslkeygen_a_SOURCES = $(SSL_KEYGEN_SOURCES)
 all: all-am
 
 .SUFFIXES:
@@ -439,6 +464,11 @@ libgssl.a: $(libgssl_a_OBJECTS) $(libgssl_a_DEPENDENCIES) $(EXTRA_libgssl_a_DEPE
 	$(AM_V_AR)$(libgssl_a_AR) libgssl.a $(libgssl_a_OBJECTS) $(libgssl_a_LIBADD)
 	$(AM_V_at)$(RANLIB) libgssl.a
 
+libgsslkeygen.a: $(libgsslkeygen_a_OBJECTS) $(libgsslkeygen_a_DEPENDENCIES) $(EXTRA_libgsslkeygen_a_DEPENDENCIES) 
+	$(AM_V_at)-rm -f libgsslkeygen.a
+	$(AM_V_AR)$(libgsslkeygen_a_AR) libgsslkeygen.a $(libgsslkeygen_a_OBJECTS) $(libgsslkeygen_a_LIBADD)
+	$(AM_V_at)$(RANLIB) libgsslkeygen.a
+
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 
@@ -447,6 +477,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gssl.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gssl_mbedtls.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gssl_mbedtls_keygen.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gssl_none.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gssl_openssl.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gssl_use_both.Po@am__quote@ # am--include-marker
@@ -599,6 +630,7 @@ clean-am: clean-generic clean-noinstLIBRARIES mostlyclean-am
 distclean: distclean-am
 		-rm -f ./$(DEPDIR)/gssl.Po
 	-rm -f ./$(DEPDIR)/gssl_mbedtls.Po
+	-rm -f ./$(DEPDIR)/gssl_mbedtls_keygen.Po
 	-rm -f ./$(DEPDIR)/gssl_none.Po
 	-rm -f ./$(DEPDIR)/gssl_openssl.Po
 	-rm -f ./$(DEPDIR)/gssl_use_both.Po
@@ -651,6 +683,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 		-rm -f ./$(DEPDIR)/gssl.Po
 	-rm -f ./$(DEPDIR)/gssl_mbedtls.Po
+	-rm -f ./$(DEPDIR)/gssl_mbedtls_keygen.Po
 	-rm -f ./$(DEPDIR)/gssl_none.Po
 	-rm -f ./$(DEPDIR)/gssl_openssl.Po
 	-rm -f ./$(DEPDIR)/gssl_use_both.Po

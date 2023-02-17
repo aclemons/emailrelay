@@ -73,7 +73,7 @@ Displays version information and then exits.
 .SS SMTP client options
 .TP
 .B \-c, --client-smtp-config \fI<config>\fR
-Configures the SMTP client protocol using a comma-separated list of optional features, includeing 'pipelining', 'smtputf8strict', 'eightbitstrict' and 'binarymimestrict'.
+Configures the SMTP client protocol using a comma-separated list of optional features, including 'pipelining', 'smtputf8strict', 'eightbitstrict' and 'binarymimestrict'.
 .TP
 .B \-f, --forward
 Causes spooled mail messages to be forwarded when the program first starts.
@@ -119,7 +119,7 @@ Allows incoming connections from addresses that are not local. The default behav
 Runs the specified external program to verify a message recipent's e-mail address. A network verifier can be specified as \fInet:<tcp-address>\fR.
 .TP
 .B \-A, --anonymous, --anonymous=\fI<scope>\fR
-Disables the server's SMTP VRFY command, sends less verbose SMTP greeting and responses, stops \fIReceived\fR lines being added to mail message content files, and stops the SMTP client protocol adding \fIAUTH=\fR to the \fIMAIL\fR command. For finer control use a comma-separated list of things to anonymise: \fIvrfy\fR, \fIserver\fR, \fIcontent\fR and/or \fIclient\fR, eg. \fI--anonymous\fR=server,content.
+Disables the server's SMTP VRFY command, sends less verbose SMTP greeting and responses, stops \fIReceived\fR lines being added to mail message content files, and stops the SMTP client protocol adding \fIAUTH=\fR to the \fIMAIL\fR command. For finer control use a comma-separated list of things to anonymise: \fIvrfy\fR, \fIserver\fR, \fIcontent\fR and/or \fIclient\fR, eg. \fI--anonymous\fR=server\fR,content.
 .TP
 .B --dnsbl \fI<config>\fR
 Specifies a list of DNSBL servers that are used to reject SMTP connections from blocked addresses. The configuration string is made up of comma-separated fields: the DNS server's transport address, a timeout in milliseconds, a rejection threshold, and then the list of DNSBL servers.
@@ -134,16 +134,16 @@ Runs the specified external filter program whenever a mail message is stored. Th
 Specifies a timeout (in seconds) for running a \fI--filter\fR program. The default is 60 seconds.
 .TP
 .B \-I, --interface \fI<ip-address-list>\fR
-Specifies the IP network addresses or interface names used to bind listening ports. By default listening ports for incoming SMTP, POP and administration connections will bind the 'any' address for IPv4 and for IPv6, ie. \fI0.0.0.0\fR and \fI::\fR. Multiple addresses can be specified by using the option more than once or by using a comma-separated list. Use a prefix of \fIsmtp=\fR, \fIpop=\fR or \fIadmin=\fR on addresses that should apply only to those types of listening port. Any link-local IPv6 addresses must include a zone name or scope id.  Interface names can be used instead of addresses, in which case all the addresses associated with that interface at startup will used for listening. When an interface name is decorated with a \fI-ipv4\fR or \fI-ipv6\fR suffix only their IPv4 or IPv6 addresses will be used (eg. \fIppp0-ipv4\fR).  To inherit listening file descriptors from the parent process on unix use a syntax like this: \fI--interface\fR=smtp=fd#3,smtp=fd#4,pop=fd#5.
+Specifies the IP network addresses or interface names used to bind listening ports. By default listening ports for incoming SMTP, POP and administration connections will bind the 'any' address for IPv4 and for IPv6, ie. \fI0.0.0.0\fR and \fI::\fR. Multiple addresses can be specified by using the option more than once or by using a comma-separated list. Use a prefix of \fIsmtp=\fR, \fIpop=\fR or \fIadmin=\fR on addresses that should apply only to those types of listening port. Any link-local IPv6 addresses must include a zone name or scope id.  Interface names can be used instead of addresses, in which case all the addresses associated with that interface at startup will used for listening. When an interface name is decorated with a \fI-ipv4\fR or \fI-ipv6\fR suffix only their IPv4 or IPv6 addresses will be used (eg. \fIppp0-ipv4\fR).  To inherit listening file descriptors from the parent process on unix use a syntax like this: \fI--interface\fR smtp=fd#3,smtp=fd#4,pop=fd#5.
 .TP
 .B \-s, --local-delivery-dir \fI<dir>\fR
-Enables local delivery of mail messages that have local recipients, as determined by an address verifier.
+Enables local delivery of mail messages that have local recipients, as determined by an address verifier, into mailbox sub-directories. The mailbox names come from the output of the address verifier.
 .TP
 .B \-w, --prompt-timeout \fI<time>\fR
 Specifies a timeout (in seconds) for getting the initial prompt from a remote SMTP server. If no prompt is received after this time then the SMTP dialog goes ahead without it.
 .TP
 .B \-Z, --server-smtp-config \fI<config>\fR
-Configures the SMTP server protocol using a comma-separated list of optional features, includeing 'pipelining', 'chunking', 'smtputf8', and 'smtputf8strict'.
+Configures the SMTP server protocol using a comma-separated list of optional features, including 'pipelining', 'chunking', 'smtputf8', and 'smtputf8strict'.
 .TP
 .B \-M, --size \fI<bytes>\fR
 Limits the size of mail messages that can be submitted over SMTP.
@@ -153,7 +153,7 @@ Limits the size of mail messages that can be submitted over SMTP.
 Enables the POP server, listening by default on port 110, providing access to spooled mail messages. Negotiated TLS using the POP \fISTLS\fR command will be enabled if the \fI--server-tls\fR option is also given.
 .TP
 .B \-J, --pop-by-name
-Modifies the spool directory used by the POP server to be a sub-directory with the same name as the POP authentication user-id. This allows multiple POP clients to read the spooled mail messages without interfering with each other, particularly when also using \fI--pop-no-delete\fR. Content files can stay in the main spool directory with only the envelope files copied into user-specific sub-directories. The \fIemailrelay-filter-copy\fR program is a convenient way of doing this when run via \fI--filter\fR.
+Modifies the POP server's spool directory to be the sub-directory named after the user-id used for POP authentication. This allows POP clients to see only their own messages after they have been delivered into separate mailboxes by the built-in \fIdeliver:\fR filter or by the \fI--local-delivery-dir\fR mechanism; or it allows multiple POP clients the operate independently on copies of spooled messages as created by the built-in \fIcopy:\fR filter or by the \fIemailrelay-filter-copy\fR utility.
 .TP
 .B \-G, --pop-no-delete
 Disables the POP DELE command so that the command appears to succeed but mail messages are not deleted from the spool directory.
@@ -170,7 +170,7 @@ Enables the \fIterminate\fR command in the administration interface.
 .SS Authentication options
 .TP
 .B \-C, --client-auth \fI<file>\fR
-Enables SMTP client authentication with the remote server, using the client account details taken from the specified secrets file. The secrets file should normally contain one line that starts with \fIclient\fR and that line should have between four and five space-separated fields; the second field is the password encoding (\fIplain\fR or \fImd5\fR), the third is the user-id and the fourth is the password. The user-id is RFC-1891 xtext encoded, and the password is either xtext encoded or generated by \fIemailrelay-passwd\fR. If the remote server does not support SMTP authentication then the SMTP connection will fail.
+Enables SMTP client authentication with the remote server, using the client account details taken from the specified secrets file, or if password security is not important then the user-id and password can  be given directly as \fIplain:<base64-user-id>:<base64-password>\fR. The secrets file should normally contain one line that starts with \fIclient\fR and that line should have between four and five space-separated fields; the second field is the password type (\fIplain\fR or \fImd5\fR), the third is the xtext-encoded user-id and the fourth is the xtext-encoded password. If the remote server does not support SMTP authentication  then the SMTP connection will fail.
 .TP
 .B --client-auth-config \fI<config>\fR
 Configures the SMTP client authentication module using a semicolon-separated list of configuration items. Each item is a single-character key, followed by a colon and then a comma-separated list. A 'm' character introduces an ordered list of preferred authentication mechanisms and an 'x' introduces a list of mechanisms to avoid. An 'a' list and a 'd' list can be used similarly to prefer and avoid certain mechanisms once the session is encrypted with TLS.
@@ -244,7 +244,7 @@ Disables listening for incoming SMTP connections.
 Causes the process-id to be written into the specified file when the program starts up, typically after it has become a background daemon. The immediate parent directory is created if necessary.
 .TP
 .B \-u, --user \fI<username>\fR
-When started as root the program switches to a non-privileged effective user-id when idle. This option can be used to define the idle user-id and also the group ownership of new files and sockets. Specify \fIroot\fR to disable all user-id switching. Ignored on Windows.
+When started as root the program switches to a non-privileged effective user-id when idle or when running external filter scripts and address verifiers. This option can be used to define the non-privileged user-id. It also determines the group ownership of new files and sockets if the directory owner is not 'sticky'. Specify \fIroot\fR to disable all user-id switching. Ignored on Windows.
 .SS Logging options
 .TP
 .B \-v, --verbose

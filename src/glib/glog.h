@@ -51,9 +51,10 @@ class G::Log
 public:
 	enum class Severity
 	{
+		Debug ,
+		InfoMoreVerbose ,
 		InfoVerbose ,
 		InfoSummary ,
-		Debug ,
 		Warning ,
 		Error ,
 		Assertion
@@ -122,6 +123,16 @@ private:
 #define G_LOG( expr )
 #define G_LOG_IF( cond , expr )
 #define G_LOG_ONCE( expr )
+#endif
+
+#if ! defined(G_NO_LOG_MORE)
+#define G_LOG_MORE( expr ) G_LOG_IMP( expr , G::Log::Severity::InfoMoreVerbose )
+#define G_LOG_MORE_IF( cond , expr ) G_LOG_IMP_IF( cond , expr , G::Log::Severity::InfoMoreVerbose )
+#define G_LOG_MORE_ONCE( expr ) G_LOG_IMP_ONCE( expr , G::Log::Severity::InfoMoreVerbose )
+#else
+#define G_LOG_MORE( expr )
+#define G_LOG_MORE_IF( cond , expr )
+#define G_LOG_MORE_ONCE( expr )
 #endif
 
 #if ! defined(G_NO_LOG_S)

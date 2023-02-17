@@ -191,7 +191,8 @@ GSmtp::Server::Server( GNet::ExceptionSink es , GStore::MessageStore & store ,
 		m_server_secrets(server_secrets) ,
 		m_forward_to(forward_to) ,
 		m_forward_to_family(forward_to_family) ,
-		m_client_secrets(client_secrets)
+		m_client_secrets(client_secrets) ,
+		m_dnsbl_suspend_time(G::TimerTime::zero())
 {
 }
 
@@ -199,6 +200,13 @@ GSmtp::Server::~Server()
 {
 	serverCleanup() ; // base class early cleanup
 }
+
+#ifndef G_LIB_SMALL
+GSmtp::Server::Config & GSmtp::Server::config()
+{
+	return m_server_config ;
+}
+#endif
 
 G::Slot::Signal<const std::string&,const std::string&> & GSmtp::Server::eventSignal()
 {
@@ -228,7 +236,7 @@ std::unique_ptr<GNet::ServerPeer> GSmtp::Server::newPeer( GNet::ExceptionSinkUnb
 		{
 			GNet::Address peer_address = peer_info.m_address ;
 			ptr = std::make_unique<ServerPeer>( esu , std::move(peer_info) , *this ,
-				m_vf , m_server_secrets , m_server_config ,
+				m_vf , m_server_secrets , serverConfig() ,
 				newProtocolText(m_server_config.anonymous_smtp,m_server_config.anonymous_content,peer_address,m_server_config.domain) ) ;
 		}
 	}
@@ -237,6 +245,19 @@ std::unique_ptr<GNet::ServerPeer> GSmtp::Server::newPeer( GNet::ExceptionSinkUnb
 		G_WARNING( "GSmtp::Server: new connection error: " << e.what() ) ;
 	}
 	return std::unique_ptr<GNet::ServerPeer>( ptr.release() ) ; // up-cast
+}
+
+GSmtp::Server::Config GSmtp::Server::serverConfig() const
+{
+	if( !m_dnsbl_suspend_time.isZero() && G::TimerTime::now() < m_dnsbl_suspend_time )
+		return Config(m_server_config).set_dnsbl_config({}) ;
+	return m_server_config ;
+}
+
+void GSmtp::Server::nodnsbl( unsigned int s )
+{
+	G_LOG( "GSmtp::Server::nodnsbl: dnsbl " << (s?"disabled":"enabled") << (s?(" for "+G::Str::fromUInt(s).append(1U,'s')):"") ) ;
+	m_dnsbl_suspend_time = G::TimerTime::now() + G::TimeInterval(s) ;
 }
 
 std::unique_ptr<GSmtp::ServerProtocol::Text> GSmtp::Server::newProtocolText( bool anonymous_smtp ,

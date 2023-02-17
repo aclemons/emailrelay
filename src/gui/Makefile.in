@@ -111,14 +111,10 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 @GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_FALSE@sbin_PROGRAMS = emailrelay-gui.real$(EXEEXT)
 @GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_TRUE@sbin_PROGRAMS = emailrelay-gui$(EXEEXT)
-@GCONFIG_TLS_USE_BOTH_FALSE@@GCONFIG_TLS_USE_MBEDTLS_TRUE@noinst_PROGRAMS = emailrelay-keygen$(EXEEXT)
-@GCONFIG_TLS_USE_BOTH_TRUE@noinst_PROGRAMS =  \
-@GCONFIG_TLS_USE_BOTH_TRUE@	emailrelay-keygen$(EXEEXT)
 subdir = src/gui
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acinclude.m4 \
 	$(top_srcdir)/m4/m4_ax_cxx_compile_stdcxx.m4 \
-	$(top_srcdir)/m4/m4_ax_cxx_compile_stdcxx_11.m4 \
 	$(top_srcdir)/m4/pkg.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -128,7 +124,7 @@ CONFIG_HEADER = $(top_builddir)/src/gconfig_defs.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(e_trdir)"
-PROGRAMS = $(noinst_PROGRAMS) $(sbin_PROGRAMS)
+PROGRAMS = $(sbin_PROGRAMS)
 LIBRARIES = $(noinst_LIBRARIES)
 ARFLAGS = cru
 AM_V_AR = $(am__v_AR_@AM_V@)
@@ -178,22 +174,6 @@ am__emailrelay_gui_real_SOURCES_DIST = guimain.cpp installer.cpp \
 @GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_FALSE@	guimain.$(OBJEXT) \
 @GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_FALSE@	$(am__objects_6)
 emailrelay_gui_real_OBJECTS = $(am_emailrelay_gui_real_OBJECTS)
-am__emailrelay_keygen_SOURCES_DIST = emailrelay_keygen.cpp \
-	gssl_mbedtls_keygen.cpp gssl_mbedtls_keygen.h
-@GCONFIG_TLS_USE_BOTH_TRUE@@GCONFIG_TLS_USE_MBEDTLS_FALSE@am__objects_7 = emailrelay_keygen.$(OBJEXT) \
-@GCONFIG_TLS_USE_BOTH_TRUE@@GCONFIG_TLS_USE_MBEDTLS_FALSE@	gssl_mbedtls_keygen.$(OBJEXT)
-@GCONFIG_TLS_USE_MBEDTLS_TRUE@am__objects_7 =  \
-@GCONFIG_TLS_USE_MBEDTLS_TRUE@	emailrelay_keygen.$(OBJEXT) \
-@GCONFIG_TLS_USE_MBEDTLS_TRUE@	gssl_mbedtls_keygen.$(OBJEXT)
-@GCONFIG_TLS_USE_BOTH_FALSE@@GCONFIG_TLS_USE_MBEDTLS_TRUE@am_emailrelay_keygen_OBJECTS = $(am__objects_7)
-@GCONFIG_TLS_USE_BOTH_TRUE@am_emailrelay_keygen_OBJECTS =  \
-@GCONFIG_TLS_USE_BOTH_TRUE@	$(am__objects_7)
-emailrelay_keygen_OBJECTS = $(am_emailrelay_keygen_OBJECTS)
-@GCONFIG_TLS_USE_BOTH_FALSE@@GCONFIG_TLS_USE_MBEDTLS_TRUE@emailrelay_keygen_DEPENDENCIES = $(am__DEPENDENCIES_1)
-@GCONFIG_TLS_USE_BOTH_TRUE@emailrelay_keygen_DEPENDENCIES =  \
-@GCONFIG_TLS_USE_BOTH_TRUE@	$(am__DEPENDENCIES_1)
-emailrelay_keygen_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
-	$(emailrelay_keygen_LDFLAGS) $(LDFLAGS) -o $@
 SCRIPTS = $(noinst_SCRIPTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -210,8 +190,7 @@ am__v_at_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = ./$(DEPDIR)/emailrelay_keygen.Po \
-	./$(DEPDIR)/glibsources.Po ./$(DEPDIR)/gssl_mbedtls_keygen.Po \
+am__depfiles_remade = ./$(DEPDIR)/glibsources.Po \
 	./$(DEPDIR)/guiaccess_mac.Po ./$(DEPDIR)/guiaccess_unix.Po \
 	./$(DEPDIR)/guiaccess_win32.Po ./$(DEPDIR)/guiboot_mac.Po \
 	./$(DEPDIR)/guiboot_unix.Po ./$(DEPDIR)/guiboot_win32.Po \
@@ -249,11 +228,10 @@ am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = $(libguimain_a_SOURCES) $(emailrelay_gui_SOURCES) \
-	$(emailrelay_gui_real_SOURCES) $(emailrelay_keygen_SOURCES)
+	$(emailrelay_gui_real_SOURCES)
 DIST_SOURCES = $(am__libguimain_a_SOURCES_DIST) \
 	$(am__emailrelay_gui_SOURCES_DIST) \
-	$(am__emailrelay_gui_real_SOURCES_DIST) \
-	$(am__emailrelay_keygen_SOURCES_DIST)
+	$(am__emailrelay_gui_real_SOURCES_DIST)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -474,20 +452,13 @@ QM_FILES = emailrelay.no.qm
 @GCONFIG_MAC_FALSE@@GCONFIG_WINDOWS_FALSE@OS_NOINST = 
 @GCONFIG_MAC_TRUE@@GCONFIG_WINDOWS_FALSE@OS_NOINST = 
 @GCONFIG_WINDOWS_TRUE@OS_NOINST = 
-@GCONFIG_TLS_USE_BOTH_FALSE@@GCONFIG_TLS_USE_MBEDTLS_FALSE@TLS_EXTRA_DIST = emailrelay_keygen.cpp gssl_mbedtls_keygen.cpp gssl_mbedtls_keygen.h
-@GCONFIG_TLS_USE_BOTH_TRUE@@GCONFIG_TLS_USE_MBEDTLS_FALSE@TLS_EXTRA_DIST = 
-@GCONFIG_TLS_USE_MBEDTLS_TRUE@TLS_EXTRA_DIST = 
-@GCONFIG_TLS_USE_BOTH_FALSE@@GCONFIG_TLS_USE_MBEDTLS_FALSE@TLS_KEYGEN_SOURCES = 
-@GCONFIG_TLS_USE_BOTH_TRUE@@GCONFIG_TLS_USE_MBEDTLS_FALSE@TLS_KEYGEN_SOURCES = emailrelay_keygen.cpp gssl_mbedtls_keygen.cpp gssl_mbedtls_keygen.h
-@GCONFIG_TLS_USE_MBEDTLS_TRUE@TLS_KEYGEN_SOURCES = emailrelay_keygen.cpp gssl_mbedtls_keygen.cpp gssl_mbedtls_keygen.h
 EXTRA_DIST = \
 	$(TS_FILES) \
 	$(QM_IN_FILES) \
 	emailrelay-gui.exe.manifest \
 	emailrelay-gui.pro \
 	messages.mc \
-	$(OS_EXTRA_DIST) \
-	$(TLS_EXTRA_DIST)
+	$(OS_EXTRA_DIST)
 
 
 # force symbol stripping on 'make install' -- see also make 'install-strip'
@@ -531,12 +502,6 @@ AM_CPPFLAGS = \
 @GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_FALSE@	libguimain.a \
 @GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_FALSE@	$(GCONFIG_QT_LIBS)
 
-@GCONFIG_TLS_USE_BOTH_FALSE@@GCONFIG_TLS_USE_MBEDTLS_TRUE@emailrelay_keygen_SOURCES = $(TLS_KEYGEN_SOURCES)
-@GCONFIG_TLS_USE_BOTH_TRUE@emailrelay_keygen_SOURCES = $(TLS_KEYGEN_SOURCES)
-@GCONFIG_TLS_USE_BOTH_FALSE@@GCONFIG_TLS_USE_MBEDTLS_TRUE@@GCONFIG_WINDOWS_TRUE@emailrelay_keygen_LDFLAGS = -static
-@GCONFIG_TLS_USE_BOTH_TRUE@@GCONFIG_WINDOWS_TRUE@emailrelay_keygen_LDFLAGS = -static
-@GCONFIG_TLS_USE_BOTH_FALSE@@GCONFIG_TLS_USE_MBEDTLS_TRUE@emailrelay_keygen_LDADD = $(GCONFIG_TLS_LIBS)
-@GCONFIG_TLS_USE_BOTH_TRUE@emailrelay_keygen_LDADD = $(GCONFIG_TLS_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -570,9 +535,6 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
-
-clean-noinstPROGRAMS:
-	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
 install-sbinPROGRAMS: $(sbin_PROGRAMS)
 	@$(NORMAL_INSTALL)
 	@list='$(sbin_PROGRAMS)'; test -n "$(sbindir)" || list=; \
@@ -632,19 +594,13 @@ emailrelay-gui.real$(EXEEXT): $(emailrelay_gui_real_OBJECTS) $(emailrelay_gui_re
 	@rm -f emailrelay-gui.real$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(emailrelay_gui_real_OBJECTS) $(emailrelay_gui_real_LDADD) $(LIBS)
 
-emailrelay-keygen$(EXEEXT): $(emailrelay_keygen_OBJECTS) $(emailrelay_keygen_DEPENDENCIES) $(EXTRA_emailrelay_keygen_DEPENDENCIES) 
-	@rm -f emailrelay-keygen$(EXEEXT)
-	$(AM_V_CXXLD)$(emailrelay_keygen_LINK) $(emailrelay_keygen_OBJECTS) $(emailrelay_keygen_LDADD) $(LIBS)
-
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emailrelay_keygen.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glibsources.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gssl_mbedtls_keygen.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/guiaccess_mac.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/guiaccess_unix.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/guiaccess_win32.Po@am__quote@ # am--include-marker
@@ -835,12 +791,10 @@ maintainer-clean-generic:
 clean: clean-am
 
 clean-am: clean-generic clean-local clean-noinstLIBRARIES \
-	clean-noinstPROGRAMS clean-sbinPROGRAMS mostlyclean-am
+	clean-sbinPROGRAMS mostlyclean-am
 
 distclean: distclean-am
-		-rm -f ./$(DEPDIR)/emailrelay_keygen.Po
-	-rm -f ./$(DEPDIR)/glibsources.Po
-	-rm -f ./$(DEPDIR)/gssl_mbedtls_keygen.Po
+		-rm -f ./$(DEPDIR)/glibsources.Po
 	-rm -f ./$(DEPDIR)/guiaccess_mac.Po
 	-rm -f ./$(DEPDIR)/guiaccess_unix.Po
 	-rm -f ./$(DEPDIR)/guiaccess_win32.Po
@@ -907,9 +861,7 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-		-rm -f ./$(DEPDIR)/emailrelay_keygen.Po
-	-rm -f ./$(DEPDIR)/glibsources.Po
-	-rm -f ./$(DEPDIR)/gssl_mbedtls_keygen.Po
+		-rm -f ./$(DEPDIR)/glibsources.Po
 	-rm -f ./$(DEPDIR)/guiaccess_mac.Po
 	-rm -f ./$(DEPDIR)/guiaccess_unix.Po
 	-rm -f ./$(DEPDIR)/guiaccess_win32.Po
@@ -952,11 +904,11 @@ uninstall-am: uninstall-e_trDATA uninstall-sbinPROGRAMS
 
 .PHONY: CTAGS GTAGS TAGS all all-am am--depfiles check check-am clean \
 	clean-generic clean-local clean-noinstLIBRARIES \
-	clean-noinstPROGRAMS clean-sbinPROGRAMS cscopelist-am ctags \
-	ctags-am distclean distclean-compile distclean-generic \
-	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-dvi \
-	install-dvi-am install-e_trDATA install-exec install-exec-am \
+	clean-sbinPROGRAMS cscopelist-am ctags ctags-am distclean \
+	distclean-compile distclean-generic distclean-tags distdir dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-dvi install-dvi-am \
+	install-e_trDATA install-exec install-exec-am \
 	install-exec-hook install-html install-html-am install-info \
 	install-info-am install-man install-pdf install-pdf-am \
 	install-ps install-ps-am install-sbinPROGRAMS install-strip \

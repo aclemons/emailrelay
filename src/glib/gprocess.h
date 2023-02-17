@@ -29,6 +29,7 @@
 #include "gstringarray.h"
 #include "gsignalsafe.h"
 #include <memory>
+#include <utility>
 #include <iostream>
 #include <limits>
 #include <type_traits>
@@ -90,19 +91,26 @@ public:
 		///< Translates an 'errno' value into a meaningful diagnostic string.
 		///< The returned string is non-empty, even for a zero errno.
 
-	static Identity beOrdinaryAtStartup( Identity ordinary_id , bool change_group ) ;
-		///< Revokes special privileges (root or suid), possibly including
-		///< extra group membership.
+	static std::pair<Identity,Identity> beOrdinaryAtStartup( const std::string & nobody , bool change_group ) ;
+		///< Revokes special privileges (root or suid) at startup, possibly
+		///< including extra group membership, making the named user the
+		///< effective identity. Returns the new effective identity and the
+		///< original effective identity as a pair.
+		///<
+		///< \code
+		///< auto pair = Process::beOrdinaryAtStartup( "daemon" , chgrp ) ;
+		///< Process::beSpecial( pair.second , chgrp ) ;
+		///< doPrivilegedStuff() ;
+		///< Process::beOrdinary( pair.first , chgrp ) ;
+		///< \endcode
 
 	static void beOrdinary( Identity ordinary_id , bool change_group ) ;
 		///< Releases special privileges.
 		///<
-		///< If the real-id is root then the effective id is changed to whatever
-		///< is passed in. Otherwise the effective id is changed to the real id
-		///< (optionally including the group), and the identity parameter is
-		///< ignored.
-		///<
-		///< Returns the old effective-id, which can be passed to beSpecial().
+		///< If the real-id is root then the effective user-id is changed to
+		///< whatever is passed in. Otherwise the effective user-id is changed
+		///< to the real user-id (optionally including the group), and the
+		///< identity parameter is ignored.
 		///<
 		///< Logs an error message and throws on failure, resulting in a call
 		///< to std::terminate() when called from a destructor (see G::Root).
@@ -115,8 +123,8 @@ public:
 
 	static void beSpecial( Identity special_id , bool change_group = true ) ;
 		///< Re-acquires special privileges (either root or suid). The
-		///< parameter must have come from a previous call to beOrdinary()
-		///< and use the same change_group value.
+		///< parameter must have come from a previous call to
+		///< beOrdinaryAtStartup() and use the same change_group value.
 		///<
 		///< See also class G::Root.
 
@@ -125,14 +133,14 @@ public:
 		///< just before process exit.
 
 	static void beOrdinaryForExec( Identity run_as_id ) noexcept ;
-		///< Sets the real and effective user and group ids to those
+		///< Sets the real and effective user-id and group-ids to those
 		///< given, on a best-effort basis. Errors are ignored.
 
 	static void setEffectiveUser( Identity ) ;
-		///< Sets the effective user. Throws on error.
+		///< Sets the effective user-id. Throws on error.
 
 	static void setEffectiveGroup( Identity ) ;
-		///< Sets the effective group. Throws on error.
+		///< Sets the effective group-id. Throws on error.
 
 	static std::string cwd( bool no_throw = false ) ;
 		///< Returns the current working directory. Throws on error

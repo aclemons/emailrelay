@@ -261,10 +261,10 @@ case "$1" in
 		if pidofproc -p "$PIDFILE" "$DAEMON" >/dev/null
 		then
 			log_success_msg "$NAME is running"
-			true
+			exit 0
 		else
 			log_failure_msg "$NAME is not running"
-			false
+			exit 32 # see guiboot_unix.cpp
 		fi
 		;;
 

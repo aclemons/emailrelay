@@ -29,7 +29,6 @@ GFilters::CopyFilter::CopyFilter( GNet::ExceptionSink es , GStore::FileStore & s
 	Filter::Type filter_type , const Filter::Config & filter_config , const std::string & spec ) :
 		SimpleFilterBase(es,filter_type,"copy:") ,
 		m_store(store) ,
-		m_filter_type(filter_type) ,
 		m_filter_config(filter_config) ,
 		m_spec(spec)
 {
@@ -70,9 +69,8 @@ GSmtp::Filter::Result GFilters::CopyFilter::run( const GStore::MessageId & messa
 
 	if( copy_names.empty() )
 		G_WARNING_ONCE( "GFilters::CopyFilter::start: copy filter: no sub-directories of [" << m_store.directory() << "] to copy in to" ) ;
-	G_LOG( "GFilters::CopyFilter::start: copy filter: " << message_id.str() << " copied to [" << G::Str::join(",",copy_names) << "]" ) ;
-	if( !ignore_names.empty() )
-		G_LOG( "GFilters::CopyFilter::start: copy filter: " << message_id.str() << " not copied to [" << G::Str::join(",",ignore_names) << "]" ) ;
+	G_LOG( "GFilters::CopyFilter::start: copy filter: " << message_id.str() << " copied to [" << G::Str::join(",",copy_names) << "]"
+		<< (ignore_names.empty()?"":" not [") << G::Str::join(",",ignore_names) << (ignore_names.empty()?"":"]") ) ;
 
 	return Result::ok ;
 }

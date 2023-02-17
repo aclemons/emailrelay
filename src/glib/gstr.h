@@ -58,7 +58,7 @@ public:
 	struct Hex /// Overload discrimiator for G::Str::toUWhatever() indicating hexadecimal strings.
 		{} ;
 
-	enum Eol // See G::Str::readLine().
+	enum class Eol // See G::Str::readLine().
 	{
 		CrLf ,
 		Cr_Lf_CrLf

@@ -445,6 +445,19 @@ GNet::Address GNet::Client::peerAddress() const
 	return pair.second ;
 }
 
+std::string GNet::Client::peerAddressString( bool with_port ) const
+{
+	if( m_state == State::Connected )
+	{
+		auto pair = socket().getPeerAddress() ;
+		if( pair.first && with_port )
+			return pair.second.displayString() ;
+		else if( pair.first )
+			return pair.second.hostPartString() ;
+	}
+	return {} ;
+}
+
 std::string GNet::Client::connectionState() const
 {
 	if( m_state == State::Connected )

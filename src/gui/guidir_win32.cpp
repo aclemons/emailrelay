@@ -23,6 +23,7 @@
 #include "guidir.h"
 #include "gfile.h"
 #include "gpath.h"
+#include "genvironment.h"
 #include "glog.h"
 #include <stdexcept>
 #include <vector>
@@ -39,50 +40,60 @@
 #define CSIDL_PROGRAM_FILESX86 42
 #endif
 
-G::Path Gui::Dir::os_install()
-{
-	return special("programs") + "E-MailRelay" ;
-}
-
-G::Path Gui::Dir::os_config()
-{
-	return special("data") + "E-MailRelay" ;
-}
-
-G::Path Gui::Dir::os_spool()
-{
-	return special("data") + "E-MailRelay" + "spool" ;
-}
-
-G::Path Gui::Dir::os_pid( const G::Path & /*config_dir*/ )
-{
-	return special("data") + "E-MailRelay" ;
-}
-
-G::Path Gui::Dir::os_boot()
-{
-	// the default has to be any non-empty string
-	return "services" ;
-}
-
 namespace Gui
 {
 	namespace DirImp
 	{
-		int special_id( const std::string & type )
-		{
-			if( type == "desktop" ) return CSIDL_DESKTOPDIRECTORY ; // "c:/users/<username>/desktop"
-			if( type == "menu" ) return CSIDL_PROGRAMS ; // "c:/users/<username>/appdata/roaming/microsoft/windows/start menu/programs"
-			if( type == "autostart" ) return CSIDL_STARTUP ; // "c:/users/<username>/appdata/roaming/microsoft/windows/start menu/startup/programs"
-			if( type == "programs" ) return sizeof(void*) == 4 ? CSIDL_PROGRAM_FILESX86 : CSIDL_PROGRAM_FILES ; // "c:/program files"
-			if( type == "data" ) return CSIDL_COMMON_APPDATA ; // "c:/programdata"
-			throw std::runtime_error("internal error") ;
-			return 0 ;
-		}
+		int special_id( const std::string & type ) ;
+		G::Path special( const std::string & type ) ;
+		G::Path envPath( const std::string & key , const G::Path & default_ ) ;
+		G::Path home() ;
 	}
 }
 
-G::Path Gui::Dir::special( const std::string & type )
+G::Path Gui::Dir::install()
+{
+	return DirImp::special("programs") + "E-MailRelay" ;
+}
+
+G::Path Gui::Dir::config()
+{
+	return DirImp::special("data") + "E-MailRelay" ;
+}
+
+G::Path Gui::Dir::spool()
+{
+	return DirImp::special("data") + "E-MailRelay" + "spool" ;
+}
+
+G::Path Gui::Dir::pid( const G::Path & )
+{
+	return DirImp::special("data") + "E-MailRelay" ;
+}
+
+G::Path Gui::Dir::home()
+{
+	return DirImp::envPath( "USERPROFILE" , DirImp::envPath( "HOME" , desktop() ) ) ;
+}
+
+G::Path Gui::Dir::desktop()
+{
+	return DirImp::special( "desktop" ) ;
+}
+
+G::Path Gui::Dir::autostart()
+{
+	return DirImp::special( "autostart" ) ;
+}
+
+G::Path Gui::Dir::menu()
+{
+	return DirImp::special( "menu" ) ;
+}
+
+// ==
+
+G::Path Gui::DirImp::special( const std::string & type )
 {
 	// this is not quite right when running with UAC administrator rights because
 	// it gets the administrator's user directories for the desktop etc links and not
@@ -90,13 +101,24 @@ G::Path Gui::Dir::special( const std::string & type )
 	std::vector<char> buffer( MAX_PATH+1U ) ;
 	buffer.at(0) = '\0' ;
 	HANDLE user_token = HNULL ; // TODO original user's paths when run-as administrator
-	bool ok = S_OK == SHGetFolderPathA( HNULL , DirImp::special_id(type) , user_token , SHGFP_TYPE_CURRENT , &buffer[0] ) ;
+	bool ok = S_OK == SHGetFolderPathA( HNULL , special_id(type) , user_token , SHGFP_TYPE_CURRENT , &buffer[0] ) ;
 	buffer.at(buffer.size()-1U) = '\0' ;
 	return ok ? G::Path(&buffer[0]) : G::Path("c:/") ;
 }
 
-G::Path Gui::Dir::home()
+int Gui::DirImp::special_id( const std::string & type )
 {
-	return envPath( "USERPROFILE" , envPath( "HOME" , desktop() ) ) ;
+	if( type == "desktop" ) return CSIDL_DESKTOPDIRECTORY ; // "c:/users/<username>/desktop"
+	if( type == "menu" ) return CSIDL_PROGRAMS ; // "c:/users/<username>/appdata/roaming/microsoft/windows/start menu/programs"
+	if( type == "autostart" ) return CSIDL_STARTUP ; // "c:/users/<username>/appdata/roaming/microsoft/windows/start menu/startup/programs"
+	if( type == "programs" ) return sizeof(void*) == 4 ? CSIDL_PROGRAM_FILESX86 : CSIDL_PROGRAM_FILES ; // "c:/program files"
+	if( type == "data" ) return CSIDL_COMMON_APPDATA ; // "c:/programdata"
+	throw std::runtime_error("internal error") ;
+	return 0 ;
+}
+
+G::Path Gui::DirImp::envPath( const std::string & key , const G::Path & default_ )
+{
+	return G::Path( G::Environment::get( key , default_.str() ) ) ;
 }
 

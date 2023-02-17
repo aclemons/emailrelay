@@ -53,7 +53,7 @@ bool G::StringListImp::notInList( StringArray::const_iterator begin , StringArra
 
 bool G::StringListImp::match( const std::string & a , const std::string & b , bool ignore_case )
 {
-	return ignore_case ? string_view(a).imatch( b ) : (a==b) ;
+	return ignore_case ? sv_imatch(string_view(a),string_view(b)) : (a==b) ;
 }
 
 void G::StringList::keepMatch( StringArray & list , const StringArray & match_list , Ignore ignore )

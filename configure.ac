@@ -19,7 +19,7 @@ dnl
 dnl Process this file with autoconf to produce a configure script.
 dnl
 
-AC_INIT([E-MailRelay],[2.5dev4],[],[emailrelay])
+AC_INIT([E-MailRelay],[2.5rc1],[],[emailrelay])
 AC_CONFIG_SRCDIR([src/glib/gdef.h])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([no-define])
@@ -31,7 +31,7 @@ dnl check for programs
 dnl
 AC_PROG_CC([cc gcc clang])
 AC_PROG_CXX([c++ g++ clang++])
-AX_CXX_COMPILE_STDCXX_11([],[mandatory])
+AX_CXX_COMPILE_STDCXX([11],[noext],[mandatory])
 AC_PROG_INSTALL
 AC_PROG_RANLIB
 AC_PROG_SED
@@ -73,9 +73,7 @@ GCONFIG_FN_TLS_MBEDTLS
 
 dnl "--enable-whatever" for internal features
 dnl
-AC_ARG_ENABLE([extra-filters],AS_HELP_STRING([--enable-extra-filters],[enable all built-in filters (default no)]))
 GCONFIG_FN_ENABLE_EXTRA_FILTERS
-AC_ARG_ENABLE([extra-verifiers],AS_HELP_STRING([--enable-extra-verifiers],[enable all built-in address verifiers (default no)]))
 GCONFIG_FN_ENABLE_EXTRA_VERIFIERS
 AC_ARG_ENABLE([bsd],AS_HELP_STRING([--enable-bsd],[enable building for bsd (default auto)]))
 GCONFIG_FN_ENABLE_BSD

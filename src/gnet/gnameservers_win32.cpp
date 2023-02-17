@@ -24,6 +24,7 @@
 #include "gstringview.h"
 #include "gstringtoken.h"
 #include "gscope.h"
+#include "gbuffer.h"
 #include "glog.h"
 #include <iphlpapi.h>
 #include <fstream>
@@ -33,30 +34,28 @@ std::vector<GNet::Address> GNet::nameservers( unsigned int port )
 {
 	std::vector<GNet::Address> result ;
 
-	void * info_buffer = std::malloc( sizeof(FIXED_INFO) ) ;
-	FIXED_INFO * info = static_cast<FIXED_INFO*>(info_buffer) ;
-	ULONG size = sizeof(FIXED_INFO) ;
-	G::ScopeExit _( [&info_buffer](){if(info_buffer) std::free(info_buffer);} ) ;
+	G::Buffer<char> info_buffer( sizeof(FIXED_INFO) ) ;
+	FIXED_INFO * info = G::buffer_cast<FIXED_INFO*>( info_buffer ) ;
 
-	auto rc = info_buffer ? GetNetworkParams( info , &size ) : ERROR_NO_DATA ;
+	ULONG size = sizeof(FIXED_INFO) ;
+	auto rc = GetNetworkParams( info , &size ) ;
 	if( rc == ERROR_BUFFER_OVERFLOW )
 	{
-		info_buffer = std::realloc( info_buffer , size == ULONG(0) ? ULONG(1) : size ) ;
-		info = static_cast<FIXED_INFO*>(info_buffer) ;
-		if( info_buffer != nullptr )
-			rc = GetNetworkParams( info , &size ) ;
+		info_buffer.resize( size == ULONG(0) ? std::size_t(1U) : static_cast<std::size_t>(size) ) ;
+		info = G::buffer_cast<FIXED_INFO*>( info_buffer ) ;
+		rc = GetNetworkParams( info , &size ) ;
 	}
 	if( rc == NO_ERROR )
 	{
 		const char * p = info->DnsServerList.IpAddress.String ;
 		if( GNet::Address::validStrings( p?p:"" , "0" ) )
-			result.push_back( GNet::Address::parse( p , port ) ) ;
+			result.push_back( GNet::Address::parse( p?p:"" , port ) ) ;
 
 		for( const IP_ADDR_STRING * addr = info->DnsServerList.Next ; addr ; addr = addr->Next )
 		{
 			p = addr->IpAddress.String ;
 			if( GNet::Address::validStrings( p?p:"" , "0" ) )
-				result.push_back( GNet::Address::parse( p , port ) ) ;
+				result.push_back( GNet::Address::parse( p?p:"" , port ) ) ;
 		}
 	}
 	return result ;

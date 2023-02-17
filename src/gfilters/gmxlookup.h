@@ -51,9 +51,9 @@ public:
 	struct Config
 	{
 		Config() ;
+		unsigned int port {25U} ;
 		G::TimeInterval ns_timeout {1U,0} ;
 		G::TimeInterval restart_timeout {15U,0} ;
-		bool log {false} ;
 	} ;
 
 	static bool enabled() ;
@@ -64,6 +64,7 @@ public:
 
 	explicit MxLookup( GNet::ExceptionSink , Config , const std::vector<GNet::Address> & ns ) ;
 		///< Constructor taking a list of nameservers.
+		/// \see GNet::nameservers()
 
 	void start( const GStore::MessageId & , const std::string & question_domain ) ;
 		///< Starts the lookup.

@@ -16,11 +16,30 @@
 #
 
 SUBDIRS = icon
+
 sbin_PROGRAMS = emailrelay emailrelay-submit emailrelay-passwd $(MAC_PROGS) $(WINDOWS_PROGS)
 e_libexec_PROGRAMS = emailrelay-filter-copy
 e_spool_DATA =
-noinst_SCRIPTS = $(MAC_NOINST)
 noinst_LIBRARIES = libmain.a
+if GCONFIG_TLS_USE_MBEDTLS
+ noinst_PROGRAMS = emailrelay-keygen
+else
+if GCONFIG_TLS_USE_BOTH
+ noinst_PROGRAMS = emailrelay-keygen
+else
+ noinst_PROGRAMS =
+endif
+endif
+if GCONFIG_MAC
+ MAC_PROGS = emailrelay-start
+else
+ MAC_PROGS =
+endif
+if GCONFIG_WINDOWS
+ WINDOWS_PROGS = emailrelay-service emailrelay-textmode
+else
+ WINDOWS_PROGS =
+endif
 
 # force symbol stripping on 'make install' -- see also make 'install-strip'
 AM_INSTALL_PROGRAM_FLAGS = -s
@@ -55,6 +74,19 @@ WINDOWS_MAIN_SOURCES = \
 TEXTMODE_MAIN_SOURCES = \
  main.cpp
 
+if GCONFIG_TLS_USE_MBEDTLS
+ KEYGEN_EXTRA_DIST =
+ KEYGEN_SOURCES = keygen.cpp
+else
+if GCONFIG_TLS_USE_BOTH
+ KEYGEN_EXTRA_DIST =
+ KEYGEN_SOURCES = keygen.cpp
+else
+ KEYGEN_SOURCES =
+ KEYGEN_EXTRA_DIST = keygen.cpp
+endif
+endif
+
 OTHER_SOURCES = \
  commandline.h \
  commandline.cpp \
@@ -88,6 +120,12 @@ LIBMAIN_SOURCES = \
  submission.cpp \
  submission.h
 
+if GCONFIG_MAC
+ MAC_EXTRA_DIST =
+else
+ MAC_EXTRA_DIST = start.cpp
+endif
+
 MISC_EXTRA_DIST = \
  doxygen.h \
  emailrelay.rc \
@@ -97,29 +135,15 @@ MISC_EXTRA_DIST = \
  messages.mc \
  resource.h
 
-if GCONFIG_MAC
- MAC_PROGS = emailrelay-start
- MAC_EXTRA_DIST =
- MAC_NOINST =
-else
- MAC_PROGS =
- MAC_EXTRA_DIST = start.cpp
- MAC_NOINST =
-endif
-
-if GCONFIG_WINDOWS
- WINDOWS_PROGS = emailrelay-service emailrelay-textmode
-else
- WINDOWS_PROGS =
-endif
-
 if GCONFIG_WINDOWS
  EXTRA_DIST=\
+  $(KEYGEN_EXTRA_DIST) \
   $(MAC_EXTRA_DIST) \
   $(MISC_EXTRA_DIST) \
   $(UNIX_LIBMAIN_SOURCES)
 else
  EXTRA_DIST=\
+  $(KEYGEN_EXTRA_DIST) \
   $(MAC_EXTRA_DIST) \
   $(MISC_EXTRA_DIST) \
   $(WINDOWS_MAIN_SOURCES) \
@@ -135,8 +159,6 @@ endif
 
 if GCONFIG_WINDOWS
  RESOURCES = emailrelay.o
- $(RESOURCES): emailrelay.rc MSG00001.bin messages.rc
- $(GCONFIG_WINDRES) --preprocessor "$(CC) -E -xc-header -DRC_INVOKED" -D_WIN32=1 --include-dir . --include-dir icon --include-dir $(top_srcdir)/src/main/icon -i $(top_srcdir)/src/main/emailrelay.rc -o $(RESOURCES)
  emailrelay_SOURCES = $(WINDOWS_MAIN_SOURCES) $(OTHER_SOURCES)
  emailrelay_LDFLAGS = -mwindows -static
  emailrelay_LDADD = \
@@ -221,6 +243,26 @@ else
  $(top_builddir)/src/glib/libglib.a
 endif
 
+if GCONFIG_TLS_USE_BOTH
+emailrelay_keygen_SOURCES = $(KEYGEN_SOURCES)
+if GCONFIG_WINDOWS
+ emailrelay_keygen_LDFLAGS = -static
+endif
+emailrelay_keygen_LDADD = \
+ $(top_builddir)/src/gssl/libgsslkeygen.a \
+ $(GCONFIG_TLS_LIBS)
+else
+if GCONFIG_TLS_USE_MBEDTLS
+emailrelay_keygen_SOURCES = $(KEYGEN_SOURCES)
+if GCONFIG_WINDOWS
+emailrelay_keygen_LDFLAGS = -static
+endif
+emailrelay_keygen_LDADD = \
+  $(top_builddir)/src/gssl/libgsslkeygen.a \
+  $(GCONFIG_TLS_LIBS)
+endif
+endif
+
 emailrelay_filter_copy_SOURCES = filter.cpp legal.cpp legal.h
 if GCONFIG_WINDOWS
  emailrelay_filter_copy_LDFLAGS = -static
@@ -251,6 +293,11 @@ if GCONFIG_WINDOWS
  libmain.a \
  $(top_builddir)/src/glib/libglib.a \
  -lws2_32 -liphlpapi -lcomctl32
+endif
+
+if GCONFIG_WINDOWS
+$(RESOURCES): emailrelay.rc MSG00001.bin messages.rc
+	$(GCONFIG_WINDRES) --preprocessor "$(CC) -E -xc-header -DRC_INVOKED" -D_WIN32=1 --include-dir . --include-dir icon --include-dir $(top_srcdir)/src/main/icon -i $(top_srcdir)/src/main/emailrelay.rc -o $(RESOURCES)
 endif
 
 install-data-local: install-sbinPROGRAMS install-e_spoolDATA install-e_libexecPROGRAMS

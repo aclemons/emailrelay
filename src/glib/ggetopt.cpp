@@ -20,7 +20,6 @@
 
 #include "gdef.h"
 #include "ggetopt.h"
-#include "gmapfile.h"
 #include "goptions.h"
 #include "goptionvalue.h"
 #include "goptionparser.h"
@@ -147,12 +146,10 @@ G::StringArray G::GetOpt::errorList() const
 }
 #endif
 
-#ifndef G_LIB_SMALL
 bool G::GetOpt::contains( char c ) const
 {
 	return m_map.contains( m_spec.lookup(c) ) ;
 }
-#endif
 
 bool G::GetOpt::contains( string_view name ) const
 {

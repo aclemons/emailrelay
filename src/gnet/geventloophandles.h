@@ -269,14 +269,14 @@ private:
 	std::vector<HANDLE> m_main_handles ; // hthread-s then hind-s
 	std::vector<std::size_t> m_shuffle_map ; // thread id at each hind position
 	bool m_a {true} ; // current/previous toggle
-	std::array<HANDLE,THREADS*LIMIT> m_thread_handles_a ;
-	std::array<HANDLE,THREADS*LIMIT> m_thread_handles_b ;
-	std::array<std::size_t,THREADS> m_rr ;
-	std::array<HANDLE,THREADS> m_rsp_handles ;
-	std::array<HANDLE,THREADS> m_con_handles ;
-	HANDLE m_semaphore ;
+	std::array<HANDLE,THREADS*LIMIT> m_thread_handles_a {} ;
+	std::array<HANDLE,THREADS*LIMIT> m_thread_handles_b {} ;
+	std::array<std::size_t,THREADS> m_rr {} ;
+	std::array<HANDLE,THREADS> m_rsp_handles {} ;
+	std::array<HANDLE,THREADS> m_con_handles {} ;
+	HANDLE m_semaphore {HNULL} ;
 	// shared..
-	std::array<HANDLE,THREADS*LIMIT> m_thread_handles ;
+	std::array<HANDLE,THREADS*LIMIT> m_thread_handles {} ;
 } ;
 
 // ===

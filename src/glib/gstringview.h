@@ -29,6 +29,11 @@
 #include <cstring>
 #include <new>
 
+#if GCONFIG_HAVE_CXX_STRING_VIEW
+#include <string_view>
+// etc
+#endif
+
 namespace G
 {
 	class string_view ;
@@ -37,12 +42,10 @@ namespace G
 //| \class G::string_view
 /// A class like c++17's std::string_view.
 ///
-/// Unlike std::string_view there is (1) an extra free function
-/// "sv_to_string()" for conversion to std::string, (2) an implicit
-/// conversion constructor from std::string since std::string has
-/// its convertion operator "operator sv()", (3) some nothrow_t
-/// noexept overloads, and (4) a case-insensitive match function
-/// "imatch()".
+/// There is an implicit conversion constructor from std::string
+/// since std::string has its convertion operator "operator sv()".
+/// Some sv_*() free functions and an operator""_sv are also
+/// provided.
 ///
 class G::string_view
 {
@@ -77,9 +80,7 @@ public:
 	bool operator>=( const string_view & other ) const noexcept { return compare(other) >= 0 ; }
 
 	int compare( const string_view & other ) const noexcept ;
-	bool imatch( const string_view & other ) const noexcept ;
 	string_view substr( std::size_t pos , std::size_t count = npos ) const ;
-	string_view substr( std::nothrow_t , std::size_t pos , std::size_t count = npos ) const noexcept ;
 	std::size_t find( char c , std::size_t pos = 0U ) const noexcept ;
 	std::size_t find( const char * substr_p , std::size_t pos , std::size_t substr_n ) const ;
 	std::size_t find( string_view substr , std::size_t pos = 0U ) const ;
@@ -93,7 +94,6 @@ public:
 	std::size_t find_last_not_of( const char * chars , std::size_t pos , std::size_t chars_size ) const noexcept ;
 	std::size_t find_last_not_of( string_view chars , std::size_t pos = std::string::npos ) const noexcept ;
 	std::size_t rfind( char c , std::size_t pos = std::string::npos ) const noexcept ;
-	std::string sv_to_string_imp() const ;
 
 private:
 	const char * m_p{nullptr} ;
@@ -102,11 +102,8 @@ private:
 
 namespace G
 {
-	inline std::string sv_to_string( string_view sv )
-	{
-		// (greppable name -- remove when using c++17 std::string_view)
-		return sv.sv_to_string_imp() ;
-	}
+	string_view sv_substr( string_view sv , std::size_t pos , std::size_t count = std::string::npos ) noexcept ;
+	bool sv_imatch( string_view , string_view ) noexcept ;
 	inline std::ostream & operator<<( std::ostream & stream , const string_view & sv )
 	{
 		if( !sv.empty() )
@@ -146,6 +143,14 @@ namespace std /// NOLINT
 constexpr G::string_view operator "" _sv( const char * p , std::size_t n ) noexcept
 {
 	return {p,n} ;
+}
+
+namespace G
+{
+	inline std::string sv_to_string( string_view sv )
+	{
+		return sv.empty() ? std::string() : std::string( sv.data() , sv.size() ) ;
+	}
 }
 
 #endif

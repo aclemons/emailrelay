@@ -78,6 +78,7 @@ public:
 		bool m_output_enabled {false} ;
 		bool m_summary_info {false} ;
 		bool m_verbose_info {false} ;
+		bool m_more_verbose_info {false} ;
 		bool m_debug {false} ;
 		bool m_with_level {false} ;
 		bool m_with_timestamp {false} ;
@@ -92,6 +93,7 @@ public:
 		Config & set_output_enabled( bool value = true ) ;
 		Config & set_summary_info( bool value = true ) ;
 		Config & set_verbose_info( bool value = true ) ;
+		Config & set_more_verbose_info( bool value = true ) ;
 		Config & set_debug( bool value = true ) ;
 		Config & set_with_level( bool value = true ) ;
 		Config & set_with_timestamp( bool value = true ) ;
@@ -188,11 +190,6 @@ public:
 		///< This is called from osinit(), but it might also need to be
 		///< done as a program installation step with the necessary
 		///< process permissions.
-
-	static void translate( const std::string & info , const std::string & warning ,
-		const std::string & error , const std::string & fatal ) ;
-			///< Sets the prefix string for the various log levels
-			///< (including trailing punctuation).
 
 public:
 	LogOutput( const LogOutput & ) = delete ;

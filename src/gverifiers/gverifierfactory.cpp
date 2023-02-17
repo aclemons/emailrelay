@@ -42,42 +42,40 @@ GVerifiers::VerifierFactory::Spec GVerifiers::VerifierFactory::parse( const std:
 		result = Spec( "exit" , "0" ) ;
 		checkExit( result ) ;
 	}
-	else if( spec_in.find(':') == std::string::npos )
-	{
-		result = Spec( "file" , spec_in ) ;
-		fixFile( result , base_dir , app_dir ) ;
-		checkFile( result , warnings_p ) ;
-	}
-	else if( spec_in.find("exit:") == 0U )
+	else if( G::Str::headMatch( spec_in , "exit:" ) )
 	{
 		result = Spec( "exit" , tail ) ;
 		checkExit( result ) ;
 	}
-	else if( spec_in.find("net:") == 0U )
+	else if( G::Str::headMatch( spec_in , "net:" ) )
 	{
 		result = Spec( "net" , tail ) ;
 		checkNet( result ) ;
 	}
-	else if( spec_in.find("allow:") == 0U )
+	else if( G::Str::headMatch( spec_in , "allow:" ) )
 	{
 		result = Spec( "allow" , tail ) ;
 		checkRange( result ) ;
 	}
-	else if( spec_in.find("local:") == 0U )
+	else if( G::Str::headMatch( spec_in , "local:" ) )
 	{
 		result = Spec( "local" , tail ) ;
 		checkRange( result ) ;
 	}
-	else if( spec_in.find("file:") == 0U )
+	else if( G::Str::headMatch( spec_in , "file:" ) )
 	{
 		result = Spec( "file" , tail ) ;
 		fixFile( result , base_dir , app_dir ) ;
 		checkFile( result , warnings_p ) ;
 	}
+	else
+	{
+		result = Spec( "file" , spec_in ) ;
+		fixFile( result , base_dir , app_dir ) ;
+		checkFile( result , warnings_p ) ;
+	}
 
-	if( result.first.empty() )
-		result.second = "[" + spec_in + "]" ;
-
+	G_ASSERT( !result.first.empty() ) ;
 	return result ;
 }
 

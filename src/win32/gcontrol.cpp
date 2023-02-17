@@ -427,14 +427,14 @@ void GGui::EditBox::scrollBack( int lines )
 void GGui::EditBox::scrollToEnd()
 {
 	// (add ten just to make sure)
-	sendMessage( EM_LINESCROLL , 0 , lines() + 10U ) ;
+	sendMessage( EM_LINESCROLL , 0 , LPARAM(lines()) + 10U ) ;
 }
 
 std::string GGui::EditBox::get() const
 {
 	int length = GetWindowTextLengthA( handle() ) ;
 	if( length <= 0 ) return std::string() ;
-	std::vector<char> buffer( static_cast<std::size_t>(length+2) ) ;
+	std::vector<char> buffer( static_cast<std::size_t>(length)+2U ) ;
 	GetWindowTextA( handle() , &buffer[0] , length+1 ) ;
 	buffer[buffer.size()-1U] = '\0' ;
 	return std::string( &buffer[0] ) ;
@@ -444,7 +444,7 @@ std::string GGui::EditBox::get( int /*utf8_overload*/ ) const
 {
 	int length = GetWindowTextLengthW( handle() ) ;
 	if( length <= 0 ) return std::string() ;
-	std::vector<wchar_t> buffer( static_cast<std::size_t>(length+2) ) ;
+	std::vector<wchar_t> buffer( static_cast<std::size_t>(length)+2U ) ;
 	GetWindowTextW( handle() , &buffer[0] , length+1 ) ;
 	buffer[buffer.size()-1U] = '\0' ;
 	G::Convert::utf8 result ;

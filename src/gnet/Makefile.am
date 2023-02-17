@@ -32,6 +32,8 @@ COMMON_SOURCES = \
 	gconnection.cpp \
 	gconnection.h \
 	gdescriptor.h \
+	gdnsmessage.h \
+	gdnsmessage.cpp \
 	gevent.h \
 	geventemitter.cpp \
 	geventemitter.h \
@@ -173,18 +175,14 @@ DNSBL_SOURCES = \
 	gdnsbl.h \
 	gdnsbl_enabled.cpp \
 	gdnsblock.h \
-	gdnsblock.cpp \
-	gdnsmessage.h \
-	gdnsmessage.cpp
+	gdnsblock.cpp
 
 else
 
 DNSBL_EXTRA_DIST = \
 	gdnsbl_enabled.cpp \
 	gdnsblock.h \
-	gdnsblock.cpp \
-	gdnsmessage.h \
-	gdnsmessage.cpp
+	gdnsblock.cpp
 
 DNSBL_SOURCES = \
 	gdnsbl.h \

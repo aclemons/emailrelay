@@ -10,8 +10,8 @@ Package: emailrelay
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: E-mail store-and-forward transfer agent and pop server.
- E-MailRelay does three things: it stores any incoming e-mail messages that
- it receives, it forwards e-mail messages on to another remote e-mail server,
- and it serves up stored e-mail messages to local e-mail reader programs. More
- technically, it acts as a SMTP storage daemon, a SMTP forwarding agent, and
- a POP3 server.
+ E-MailRelay is a lightweight SMTP store-and-forward mail server with POP access
+ to spooled messages. It can be used as a personal internet mail server with
+ SpamAssassin spam filtering and DNSBL connection blocking. Forwarding can be
+ to a fixed smarthost or using DNS MX routing. External scripts can be used for
+ address validation and e-mail message processing.

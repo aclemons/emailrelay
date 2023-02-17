@@ -116,7 +116,6 @@ void G::Date::check()
 		throw DateError( "out of range" ) ;
 }
 
-#ifndef G_LIB_SMALL
 std::string G::Date::str( Format format ) const
 {
 	std::ostringstream ss ;
@@ -138,7 +137,6 @@ std::string G::Date::str( Format format ) const
 	}
 	return ss.str() ;
 }
-#endif
 
 int G::Date::monthday() const
 {

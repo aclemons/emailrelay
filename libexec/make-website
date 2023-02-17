@@ -36,7 +36,7 @@ die "usage error" if scalar(@ARGV) == 0 ;
 my $cfg_upload_version = $ARGV[0] ;
 
 my $cfg_author = "Graeme Walker" ;
-my $cfg_copyright = "Copyright (C) 2021 $cfg_author" ;
+my $cfg_copyright = "Copyright (C) 2023 $cfg_author" ;
 my $cfg_output_dir = "website" ;
 my %colour = ( h => 195 , s => 255 , v => 100 ) ; # #0090c0
 my %cfg_meta = (
@@ -441,7 +441,7 @@ sub fixup_mainpage
 		print $fh_out $line , "\n" ;
 
 		# add a big green button
-		if( $line =~ m/^<p>/ && $p == 5 )
+		if( $line =~ m/^<p>/ && $p == 4 )
 		{
 			print $fh_out "<div class=\"button\" align=\"center\">\n" ;
 			print $fh_out $cfg_button_html ;
@@ -473,11 +473,11 @@ sub fixup
 
 sub copy_doxygen_tree
 {
-	my $this_dir = dirname($0) ;
-	die "make-website: error: no doxygen tree\n" if ( ! -d "$this_dir/doxygen" ) ;
-	#if( -d "$this_dir/doxygen" )
+	my $base_dir = "." ;
+	die "make-website: error: no doxygen tree\n" if ( ! -d "$base_dir/doxygen" ) ;
+	#if( -d "$base_dir/doxygen" )
 	{
-		system( "cp -r $this_dir/doxygen $cfg_output_dir" ) ;
+		system( "cp -r $base_dir/doxygen $cfg_output_dir" ) ;
 		if( -e "$cfg_output_dir/doxygen/index.html" )
 		{
 			unlink( "$cfg_output_dir/doxygen/index.html" ) or die ;

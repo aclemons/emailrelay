@@ -38,11 +38,12 @@ namespace GPop
 		bool pop_by_name , bool allow_delete ) ;
 			///< Creates a new Pop::Store.
 
-	std::unique_ptr<GAuth::Secrets> newSecrets( const std::string & path ) ;
+	std::unique_ptr<GAuth::SaslServerSecrets> newSecrets( const std::string & path ) ;
 		///< Creates a new SaslServerSecrets for newStore().
 
-	std::unique_ptr<Server> newServer( GNet::ExceptionSink , Store & , const GAuth::SaslServerSecrets & , const Server::Config & ) ;
-		///< Creates a new server.
+	std::unique_ptr<Server> newServer( GNet::ExceptionSink , Store & ,
+		const GAuth::SaslServerSecrets & , const Server::Config & ) ;
+			///< Creates a new server.
 
 	void report( const Server * , const std::string & group = {} ) ;
 		///< Calls GPop::Server::report().

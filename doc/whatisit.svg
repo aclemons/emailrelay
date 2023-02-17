@@ -12,7 +12,7 @@
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    id="svg3036"
    version="1.1"
-   inkscape:version="0.48.4 r9939"
+   inkscape:version="0.92.4 (5da689c313, 2019-01-14)"
    width="1650"
    height="1023"
    sodipodi:docname="whatisit.svg"
@@ -27,7 +27,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -42,13 +42,13 @@
      guidetolerance="10"
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
-     inkscape:window-width="1536"
-     inkscape:window-height="943"
+     inkscape:window-width="1922"
+     inkscape:window-height="1165"
      id="namedview3038"
      showgrid="false"
-     inkscape:zoom="0.41506811"
+     inkscape:zoom="0.54973453"
      inkscape:cx="523.60455"
-     inkscape:cy="499.69607"
+     inkscape:cy="396.79451"
      inkscape:window-x="7"
      inkscape:window-y="72"
      inkscape:window-maximized="0"
@@ -207,78 +207,80 @@
      style="display:inline">
     <text
        xml:space="preserve"
-       style="font-size:64px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:DejaVu Sans;-inkscape-font-specification:DejaVu Sans Bold"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:0%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans Bold';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;display:inline;fill:#000000;fill-opacity:1;stroke:none"
        x="709.20923"
        y="268.20572"
-       id="text3286"
-       sodipodi:linespacing="125%"><tspan
+       id="text3286"><tspan
          sodipodi:role="line"
          id="tspan3288"
          x="709.20923"
-         y="268.20572">E-MailRelay</tspan></text>
+         y="268.20572"
+         style="font-size:64px;line-height:1.25">E-MailRelay</tspan></text>
     <text
        xml:space="preserve"
-       style="font-size:48px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:DejaVu Sans;-inkscape-font-specification:DejaVu Sans Bold"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:0%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans Bold';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;display:inline;fill:#000000;fill-opacity:1;stroke:none"
        x="412.44125"
        y="74.294838"
-       id="text3290"
-       sodipodi:linespacing="125%"><tspan
+       id="text3290"><tspan
          sodipodi:role="line"
          id="tspan3292"
          x="412.44125"
-         y="74.294838">SMTP</tspan><tspan
+         y="74.294838"
+         style="font-size:48px;line-height:1.25">SMTP</tspan><tspan
          sodipodi:role="line"
          x="412.44125"
          y="134.29483"
-         id="tspan3306">store</tspan></text>
+         id="tspan3306"
+         style="font-size:48px;line-height:1.25">store</tspan></text>
     <text
        xml:space="preserve"
-       style="font-size:48px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:DejaVu Sans;-inkscape-font-specification:DejaVu Sans Bold"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:0%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans Bold';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;display:inline;fill:#000000;fill-opacity:1;stroke:none"
        x="1258.9043"
        y="69.236244"
-       id="text3294"
-       sodipodi:linespacing="125%"><tspan
+       id="text3294"><tspan
          sodipodi:role="line"
          id="tspan3296"
          x="1258.9043"
-         y="69.236244">SMTP</tspan><tspan
+         y="69.236244"
+         style="font-size:48px;line-height:1.25">SMTP</tspan><tspan
          sodipodi:role="line"
          x="1258.9043"
          y="129.23624"
-         id="tspan3308">forward</tspan></text>
+         id="tspan3308"
+         style="font-size:48px;line-height:1.25">forward</tspan></text>
     <text
        xml:space="preserve"
-       style="font-size:48px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:DejaVu Sans;-inkscape-font-specification:DejaVu Sans Bold"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:0%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans Bold';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;display:inline;fill:#000000;fill-opacity:1;stroke:none"
        x="587.80414"
        y="551.48431"
-       id="text3298"
-       sodipodi:linespacing="125%"><tspan
+       id="text3298"><tspan
          sodipodi:role="line"
          id="tspan3300"
          x="587.80414"
-         y="551.48431">filter</tspan></text>
+         y="551.48431"
+         style="font-size:48px;line-height:1.25">filter</tspan></text>
     <text
        xml:space="preserve"
-       style="font-size:48px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:DejaVu Sans;-inkscape-font-specification:DejaVu Sans Bold"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:0%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans Bold';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;display:inline;fill:#000000;fill-opacity:1;stroke:none"
        x="1244.9161"
        y="370.42093"
-       id="text3690"
-       sodipodi:linespacing="125%"><tspan
+       id="text3690"><tspan
          sodipodi:role="line"
          id="tspan3692"
          x="1244.9161"
-         y="370.42093">POP</tspan></text>
+         y="370.42093"
+         style="font-size:48px;line-height:1.25">POP</tspan></text>
     <text
        xml:space="preserve"
-       style="font-size:48px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:DejaVu Sans;-inkscape-font-specification:DejaVu Sans Bold"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:0%;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans Bold';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;display:inline;fill:#000000;fill-opacity:1;stroke:none"
        x="785.66241"
        y="873.72546"
-       id="text3302"
-       sodipodi:linespacing="125%"><tspan
+       id="text3302"><tspan
          sodipodi:role="line"
          id="tspan3304"
          x="785.66241"
-         y="873.72546">Spool</tspan></text>
+         y="873.72546"
+         style="font-size:48px;line-height:1.25">Spool</tspan></text>
   </g>
 </svg>
 

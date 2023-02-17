@@ -36,8 +36,8 @@ namespace GStore
 }
 
 //| \class GStore::FileDelivery
-/// An implementation of the MessageDelivery interface that delivers
-/// a message to its local recipients' mailboxes.
+/// An implementation of the MessageDelivery interface that delivers a message
+/// to mailboxes corresponding to its local and remote recipient addresses.
 ///
 class GStore::FileDelivery : public MessageDelivery
 {
@@ -47,26 +47,23 @@ public:
 	G_EXCEPTION( MkdirError , tx("delivery: cannot create delivery directory") ) ;
 	G_EXCEPTION( MaildirCopyError , tx("delivery: cannot write maildir tmp file") ) ;
 	G_EXCEPTION( MaildirMoveError , tx("delivery: cannot move maildir file") ) ;
+	struct Config /// A configuration structure for GStore::FileDelivery.
+	{
+		bool lowercase {true} ; // user-part to mailbox mapping: to lowercase if ascii
+		bool hardlink {false} ; // copy the content by hard-linking
+		bool no_delete {false} ; // don't delete the original message
+	} ;
 
-	FileDelivery( FileStore & , const std::string & domain , std::pair<int,int> uid_range = {0,-1} ) ;
-		///< Constructor. Messages for delivery with extension ".new"
-		///< are taken from the file store and delivered to mailbox
-		///< sub-directories.
-		///<
-		///< The recipient addresses are analysed with respect to
-		///< the given (non-empty) domain and uid range; for
-		///< recipients that do not match delivery is to "postmaster".
+	FileDelivery( FileStore & , const Config & ) ;
+		///< Constructor. The deliver() override will take a ".new" message from
+		///< the given file store and deliver it to mailbox sub-directories.
 
-	FileDelivery( FileStore & , const std::string & domain , const G::Path & base_dir ) ;
-		///< Constructor. Messages for delivery with extension ".local"
-		///< are taken from the file store and delivered to mailbox
-		///< sub-directories of the given base directory.
-		///<
-		///< Delivery is a no-op if the 'base_dir' path is empty or
-		///< if the ".local" envelope file does not exist.
-		///<
-		///< The recipient addresses are analysed with respect to the
-		///< given (non-empty) domain.
+	FileDelivery( FileStore & , const G::Path & to_base_dir , const Config & ) ;
+		///< Constructor. The deliver() override will take a ".local" message
+		///< from the file store and deliver it to mailboxes that are
+		///< sub-directories of the given base directory. If the deliver()
+		///< call is for a message that has no ".local" files then deliver()
+		///< does nothing.
 
 	static void deliverTo( FileStore & , const G::Path & mbox_dir ,
 		const G::Path & envelope_path , const G::Path & content_path ,
@@ -83,19 +80,16 @@ private: // overrides
 
 private:
 	using FileOp = FileStore::FileOp ;
-	bool deliverToMailboxes( const G::Path & , const G::Path & , const G::Path & , std::pair<int,int> ) ;
-	static bool lookup( const std::string & , std::pair<int,int> ) ;
-	static std::string normalise( const std::string & ) ;
-	static G::StringArray mailboxes( const GStore::Envelope & , const std::string & , std::pair<int,int> ) ;
-	static std::string mailbox( const std::string & , std::pair<int,int> , const std::string & ) ;
+	bool deliverToMailboxes( const G::Path & , const G::Path & , const G::Path & ) ;
+	static G::StringArray mailboxes( const Config & , const GStore::Envelope & ) ;
+	static std::string mailbox( const Config & , const std::string & ) ;
 	static std::string short_( const G::Path & ) ;
 
 private:
 	bool m_active ;
 	FileStore & m_store ;
-	std::string m_domain ;
-	std::pair<int,int> m_uid_range ;
-	G::Path m_base_dir ;
+	G::Path m_to_base_dir ;
+	Config m_config ;
 	bool m_local_files ;
 } ;
 

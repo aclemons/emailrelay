@@ -23,6 +23,7 @@
 #include "gassert.h"
 #include "gstr.h"
 
+#ifndef G_LIB_SMALL
 GFilters::NullFilter::NullFilter( GNet::ExceptionSink es , GStore::FileStore & ,
 	Filter::Type filter_type , const Filter::Config & ) :
 		m_id("exit") ,
@@ -31,6 +32,7 @@ GFilters::NullFilter::NullFilter( GNet::ExceptionSink es , GStore::FileStore & ,
 		m_timer(*this,&NullFilter::onTimeout,es)
 {
 }
+#endif
 
 GFilters::NullFilter::NullFilter( GNet::ExceptionSink es , GStore::FileStore & ,
 	Filter::Type filter_type , const Filter::Config & ,

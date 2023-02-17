@@ -38,67 +38,23 @@ More built-in filters and address verifiers
 -------------------------------------------
 E-MailRelay allows filters that are not simple scripts by using command-line
 options like "--filter=exit:99" and "--filter=spam:localhost:783", with a
-small number of special prefixes that include "exit:", "net:", "file:" and
-"spam:".
+small number of special prefixes like "exit:", "net:", "file:" and "spam:".
 
-In this release there is a new built-in "deliver:", "split:", "mx:" and
-"copy:" filters, and new built-in "allow:" and "local:" address verifiers.
+In this release there are more built-in filters and address verifiers, including
+"deliver:", "split:", "mx:", and "copy:" filters and "allow:" and "local:"
+address verifiers.
 
-A compile-time option can be used to enable any additional optional filters
-and address verifiers, as follows:
-
-	./configure.sh --enable-extra-filters --enable-extra-verifiers
-
-The "deliver:" filter is described below.
-
-The "split:" filter splits a message into multiple copies so that each copy
-has all its recipient addresses in the same domain. The domain is written
-into each copy's "forward-to" envelope field so that it can be used as the
-basis for routing.
-
-The "mx:" filter does a DNS MX lookup on any "forward-to" value in the message
-envelope and puts the result into the "forward-to-address" field. This is
-normally used as a client-side filter after using "split:" as a server-side
-filter and it results in message routing.
-
-The "copy:" filter copies the message into all sub-directories of the main spool
-directory. This is useful when using "--pop-by-name" to serve copies of email
-messages to separate email user agents.
-
-The "allow:" address verifier checks that the recipient address has a username
-that exists in the password database and a domain that matches the configured
-"--domain"; if it does not match then the address is rejected and an SMTP error
-is returned to the submitting client.
-
-The "local:" address verifier checks the recipient address against the password
-database and the configured "--domain" in the same way; if the address matches
-then it is treated as a local address (see below), and if it does not match
-then it is accepted as a remote address with no SMTP error.
+Refer to the reference document for more details.
 
 Delivery
 --------
-E-MailRelay does normally concern itself with the process of mail delivery; that
-is, copying mail messages into an individual user's mailbox from where they can
-read and ulitmatelty delete it. However, if a mail message has local recipients,
-as determined by an address verifier, then the envelope and content files are
-copied to files with a ".local" filename extension so that some external system
-can perform message delivery.
+E-MailRelay can now act as a Message Delivery Agent (MDA) so it can deliver
+e-mail messages to local mailboxes according to the e-mail addressees.
 
-This release adds more built-in support for message delivery by providing an
-option to distribute a ".local" message into a separate mailbox sub-directory
-for each message recipient. The new "--local-delivery-dir" command-line option
-enables this functionality and specifies the base directory for the mailboxes.
+A mailbox is a simple sub-directory of the main spool directory or a "maildir"
+directory.
 
-There is also a new built-in "deliver:" filter that can do message delivery
-("--filter=deliver:"). It assumes all message recipients are local users, so
-there is no need to use an address verifier, but to avoid creating too many
-mailboxes the recipient address is validated against the password database. Any
-message recipient that is not valid results in delivery to a default
-"postmaster" mailbox.
-
-If a mailbox directory itself contains "tmp", "new" and "cur" sub-directories
-then it is considered to be a "maildir" mailbox and the message content is
-delivered to the "new" directory and the envelope is discarded.
+Refer to the reference document for more details.
 
 7BIT/8BITMIME
 -------------
@@ -204,61 +160,4 @@ MTA operation
 E-MailRelay can now be run as a complete MTA performing message routing and
 delivery, with no need for an external "smarthost" to do the routing.
 
-For example:
-
-	emailrelay
-	--log --verbose --syslog --close-stderr
-	--pid-file /run/emailrelay.pid
-	--user root
-
-	--in-spool-dir /var/spool/in
-	--in-port 25
-	--in-domain example.com
-	--in-address-verifier allow:1000-1001
-	--in-filter deliver:
-
-	--in-server-smtp-config +chunking,+smtputf8
-	--in-size 100000000
-
-	--in-pop
-	--in-pop-port 110
-	--in-pop-auth /pam
-	--in-pop-by-name
-
-	--out-spool-dir /var/spool/out
-	--out-port 587
-	--out-domain example.com
-	--out-address-verifier local:1000-1001
-	--out-local-delivery-dir /var/spool/in
-	--out-filter split:
-	--out-client-filter mx:
-	--out-poll 60
-	--out-forward-on-disconnect
-	--out-forward-to 127.0.0.1:20002
-	--out-forward-to-some
-
-	--other-spool-dir /var/spool/other
-	--other-port 20002
-	--other-interface 127.0.0.1
-
-Assuming "alice" has a login account with uid 1000 and "bob" with uid 1001 then
-incoming messages for "alice@example.com" or "bob@example.com" are delivered
-to the /var/spool/in/alice and /var/spool/in/bob directories respectively.
-Messages to any other addresses are rejected. Alice and Bob can access these
-messages by setting their mail program to use POP with their normal login name
-and password.
-
-Outgoing messages are spooled up in /var/spool/out, but any messages addressed to
-"alice@example.com" or "bob@example.com" are short-circuited and delivered
-straight to /var/spool/in/alice and /var/spool/in/bob.
-
-Outgoing messages with multiple recipients are split up so that there is one
-copy in the spool directory for each distinct recipient domain, and the target
-domain is stored in the envelope file's 'forward-to' field. Just before the
-message is forwarded a DNS MX query is performed on the 'forward-to' domain and
-the resulting IP address (with port 25) is stored as the 'forward-to-address'.
-
-Forwarding always requires a connection to a default "smarthost", although in
-this setup it should never carry any traffic so it can be provided locally on
-port 20002.
-
+Refer to the user guile for a worked example.

@@ -17,7 +17,6 @@
 
 EXTRA_DIST = \
 	pkg.m4 \
-	m4_ax_cxx_compile_stdcxx_11.m4 \
 	m4_ax_cxx_compile_stdcxx.m4 \
 	m4_ax_require_defined.m4
 

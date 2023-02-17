@@ -36,12 +36,11 @@ namespace Gui
 class Gui::Boot
 {
 public:
-	static bool installable( const G::Path & dir_boot ) ;
-		///< Returns true if the operating-system is supported and the supplied
-		///< boot-system directory is valid and accessible. The parameter normally
-		///< comes from Dir::boot().
+	static bool installable() ;
+		///< Returns true if the operating-system is supported and the
+		///< boot-system directory is valid and accessible.
 
-	static void install( const G::Path & dir_boot , const std::string & name ,
+	static void install( const std::string & name ,
 		const G::Path & path_1 , const G::Path & path_2 ) ;
 			///< Installs the target as a boot-time service. Throws on error.
 			///<
@@ -49,18 +48,18 @@ public:
 			///< service wrapper. For Unix path_1 is the startstop script and
 			///< path_2 is the server executable.
 
-	static bool uninstall( const G::Path & dir_boot , const std::string & name ,
+	static bool uninstall( const std::string & name ,
 		const G::Path & path_1 , const G::Path & path_2 ) ;
 			///< Uninstalls the target as a boot-time service. Returns
 			///< false on error or nothing-to-do.
 
-	static bool installed( const G::Path & dir_boot , const std::string & name ) ;
+	static bool installed( const std::string & name ) ;
 		///< Returns true if currently installed.
 
-	static bool launchable( const G::Path & dir_boot , const std::string & name ) ;
+	static bool launchable( const std::string & name ) ;
 		///< Returns true if launch() is possible.
 
-	static void launch( const G::Path & dir_boot , const std::string & name ) ;
+	static void launch( const std::string & name ) ;
 		///< Starts the service.
 
 public:
@@ -68,4 +67,3 @@ public:
 } ;
 
 #endif
-

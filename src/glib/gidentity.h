@@ -26,6 +26,7 @@
 #include "gsignalsafe.h"
 #include <string>
 #include <iostream>
+#include <utility>
 #include <new>
 
 namespace G
@@ -54,7 +55,7 @@ public:
 	static Identity effective() noexcept ;
 		///< Returns the current effective identity.
 
-	static Identity real( bool with_cache = true ) noexcept ;
+	static Identity real() noexcept ;
 		///< Returns the calling process's real identity.
 
 	static Identity root() noexcept ;
@@ -74,10 +75,13 @@ public:
 		///< Returns a string representation.
 
 	uid_t userid() const noexcept ;
-		///< Returns the user part.
+		///< Returns the user part (Unix).
 
 	gid_t groupid() const noexcept ;
-		///< Returns the group part.
+		///< Returns the group part (Unix).
+
+	std::string sid() const ;
+		///< Returns the sid (Windows).
 
 	bool operator==( const Identity & ) const noexcept ;
 		///< Comparison operator.
@@ -85,25 +89,32 @@ public:
 	bool operator!=( const Identity & ) const noexcept ;
 		///< Comparison operator.
 
-	static std::pair<uid_t,gid_t> lookupUser( const std::string & user ) ;
+	static Identity lookup( const std::string & user ) ;
 		///< Does a username lookup. Throws if no such user
 		///< or on error.
 
-	static bool lookupUser( const std::string & user , uid_t & , gid_t & ) ;
-		///< Does a username lookup. Returns false if no such user.
-		///< Throws on error.
+	static Identity lookup( const std::string & user , std::nothrow_t ) ;
+		///< Does a username lookup. Returns invalid() if
+		///< no such user. Throws on error.
 
 	static gid_t lookupGroup( const std::string & group ) ;
-		///< Does a groupname lookup. Throws on error.
+		///< Does a groupname lookup. Returns -1 if no
+		///< such group. Throws on error.
+
+	bool match( std::pair<int,int> uid_range ) const ;
+		///< Returns true if the user-id is in the given range
+		///< or if not implemented.
 
 private:
 	Identity() noexcept ;
 	explicit Identity( SignalSafe ) noexcept ;
+	Identity( uid_t , gid_t ) ;
+	Identity( uid_t , gid_t , const std::string & ) ;
 
 private:
 	uid_t m_uid ;
 	gid_t m_gid ;
-	HANDLE m_h{0} ; // windows
+	std::string m_sid ; // windows
 } ;
 
 namespace G

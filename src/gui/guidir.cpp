@@ -17,57 +17,9 @@
 ///
 /// \file guidir.cpp
 ///
-// See also "dir_unix.cpp", "dir_mac.cpp" and "dir_win32.cpp".
-//
 
 #include "gdef.h"
 #include "guidir.h"
-#include "gstr.h"
-#include "gpath.h"
-#include "genvironment.h"
 
-G::Path Gui::Dir::install()
-{
-	return os_install() ;
-}
-
-G::Path Gui::Dir::desktop()
-{
-	return special( "desktop" ) ;
-}
-
-G::Path Gui::Dir::autostart()
-{
-	return special( "autostart" ) ;
-}
-
-G::Path Gui::Dir::menu()
-{
-	return special( "menu" ) ;
-}
-
-G::Path Gui::Dir::pid( const G::Path & config )
-{
-	return os_pid( config ) ;
-}
-
-G::Path Gui::Dir::config()
-{
-	return os_config() ;
-}
-
-G::Path Gui::Dir::spool()
-{
-	return os_spool() ;
-}
-
-G::Path Gui::Dir::boot()
-{
-	return os_boot() ;
-}
-
-G::Path Gui::Dir::envPath( const std::string & key , const G::Path & default_ )
-{
-	return G::Path( G::Environment::get( key , default_.str() ) ) ;
-}
+// empty
 

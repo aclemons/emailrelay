@@ -41,8 +41,11 @@ namespace GStore
 }
 
 //| \class GStore::StoredFile
-/// A concete derived class implementing the
-/// StoredMessage interface.
+/// A concete class implementing the GStore::StoredMessage interface
+/// for separate envelope and content files in a spool directory.
+/// The GStore::MessageStore::Iterator interface is normally used to
+/// retrieve StoredFile instances.
+/// \see GStore::FileStore, GStore::MessageStore::Iterator
 ///
 class GStore::StoredFile : public StoredMessage
 {
@@ -66,12 +69,9 @@ public:
 	bool readEnvelope( std::string & reason ) ;
 		///< Reads the envelope. Returns false on error with a
 		///< reason; does not throw.
-		///<
-		/// \see FileIterator, FileStore::readEnvelope().
 
 	bool openContent( std::string & reason ) ;
 		///< Opens the content file. Returns false on error.
-		///< Used by FileStore and FileIterator.
 
 	MessageId id() const override ;
 		///< Override from GStore::StoredMessage.
@@ -79,8 +79,9 @@ public:
 	void noUnlock() ;
 		///< Disable unlocking in the destructor.
 
-	void editEnvelope( std::function<void(Envelope&)> ) ;
+	void editEnvelope( std::function<void(Envelope&)> , std::istream * headers = nullptr ) ;
 		///< Edits the envelope and updates it in the file store.
+		///< Optionally adds more trailing headers.
 
 private: // overrides
 	void fail( const std::string & reason , int reason_code ) override ; // GStore::StoredMessage
@@ -137,4 +138,3 @@ private:
 } ;
 
 #endif
-

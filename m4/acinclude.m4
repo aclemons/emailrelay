@@ -21,6 +21,7 @@ AC_DEFUN([GCONFIG_FN_CHECK_CXX],[
 	AC_REQUIRE([GCONFIG_FN_CXX_ALIGNMENT])
 	AC_REQUIRE([GCONFIG_FN_CXX_MAKE_UNIQUE])
 	AC_REQUIRE([GCONFIG_FN_CXX_STD_THREAD])
+	AC_REQUIRE([GCONFIG_FN_CXX_STRING_VIEW])
 ])
 
 dnl GCONFIG_FN_CHECK_FUNCTIONS
@@ -314,6 +315,30 @@ dnl
 AC_DEFUN([GCONFIG_FN_CXX_STD_THREAD],
 [
 	GCONFIG_FN_CXX_STD_THREAD_IMP([std::thread_asynchronous_script_execution])
+])
+
+dnl GCONFIG_FN_CXX_STRING_VIEW
+dnl --------------------------
+dnl Tests for std::string_view.
+dnl
+AC_DEFUN([GCONFIG_FN_CXX_STRING_VIEW],
+[AC_CACHE_CHECK([for c++ std::string_view],[gconfig_cv_cxx_string_view],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#include <string_view>]
+			[std::string_view sv("sv") ;]
+		],
+		[
+		])],
+		gconfig_cv_cxx_string_view=yes ,
+		gconfig_cv_cxx_string_view=no )
+])
+	if test "$gconfig_cv_cxx_string_view" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_CXX_STRING_VIEW,1,[Define true if compiler supports c++ string_view])
+	else
+		AC_DEFINE(GCONFIG_HAVE_CXX_STRING_VIEW,0,[Define true if compiler supports c++ string_view])
+	fi
 ])
 
 dnl GCONFIG_FN_ENABLE_EXTRA_FILTERS

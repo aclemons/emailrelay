@@ -32,7 +32,7 @@ std::unique_ptr<GPop::Store> GPop::newStore( const G::Path & , bool , bool )
 	return {} ;
 }
 
-std::unique_ptr<GAuth::Secrets> GPop::newSecrets( const std::string & )
+std::unique_ptr<GAuth::SaslServerSecrets> GPop::newSecrets( const std::string & )
 {
 	return {} ;
 }

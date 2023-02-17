@@ -251,7 +251,7 @@ public:
 		///< Returns the file-store configuration structure.
 
 	GSmtp::AdminServer::Config adminServerConfig( const G::StringMap & info_map ,
-		const G::StringMap & config_map , const std::string & client_tls_profile_for_flush ,
+		const std::string & client_tls_profile_for_flush ,
 		const std::string & domain ) const ;
 			///< Returns the admin server configuration structure.
 

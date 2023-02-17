@@ -157,7 +157,7 @@ static void errorBox( const std::string & what )
 	QString qwhat = GQt::qstr( what ) ;
 	QMessageBox::critical( nullptr , title ,
 		QMessageBox::tr("Failed with the following exception: %1").arg(qwhat) ,
-		QMessageBox::Abort , QMessageBox::NoButton , QMessageBox::NoButton ) ;
+		QMessageBox::Abort ) ;
 }
 
 static QString tr( const char * text )
@@ -170,7 +170,7 @@ static void infoBox( const std::string & text )
 	QString title( GQt::qstr("E-MailRelay") ) ;
 	QString qtext = GQt::qstr( text ) ;
 	QMessageBox::information( nullptr , title , qtext ,
-		QMessageBox::Ok , QMessageBox::NoButton , QMessageBox::NoButton ) ;
+		QMessageBox::Ok ) ;
 }
 
 static bool isMac()
@@ -424,8 +424,7 @@ int main( int argc , char * argv [] )
 			pages_config.add( "=dir-config" , dir_config.str() ) ;
 			pages_config.add( "=dir-install" , dir_install.str() ) ;
 			pages_config.add( "=dir-run" , dir_run.str() ) ;
-			pages_config.add( "=dir-boot" , Gui::Dir::boot().str() ) ;
-			pages_config.add( "=dir-boot-enabled" , Gui::Boot::installable(Gui::Dir::boot()) ? "y" : "n" ) ;
+			pages_config.add( "=dir-boot-enabled" , Gui::Boot::installable() ? "y" : "n" ) ;
 			if( !pages_config.contains("spool-dir") )
 				pages_config.add( "spool-dir" , Gui::Dir::spool().str() ) ;
 
@@ -433,7 +432,7 @@ int main( int argc , char * argv [] )
 			if( configure_mode )
 			{
 				std::string fname = Gui::Link::filename( "E-MailRelay" ) ;
-				pages_config.add( "start-on-boot" , Gui::Boot::installed(Gui::Dir::boot(),"emailrelay") ? "y" : "n" ) ;
+				pages_config.add( "start-on-boot" , Gui::Boot::installed("emailrelay") ? "y" : "n" ) ;
 				pages_config.add( "start-link-desktop" , Gui::Link::exists(Gui::Dir::desktop()+fname) ? "y" : "n" ) ;
 				pages_config.add( "start-link-menu" , Gui::Link::exists(Gui::Dir::menu()+fname) ? "y" : "n" ) ;
 				pages_config.add( "start-at-login" , Gui::Link::exists(Gui::Dir::autostart()+fname) ? "y" : "n" ) ;

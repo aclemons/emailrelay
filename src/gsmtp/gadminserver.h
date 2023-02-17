@@ -57,7 +57,7 @@ class GSmtp::AdminServerPeer : public GNet::ServerPeer
 public:
 	AdminServerPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo && , AdminServer & ,
 		const std::string & remote , const G::StringMap & info_commands ,
-		const G::StringMap & config_commands , bool with_terminate ) ;
+		bool with_terminate ) ;
 			///< Constructor.
 
 	~AdminServerPeer() override ;
@@ -68,14 +68,14 @@ public:
 
 	void notify( const std::string & s0 , const std::string & s1 ,
 		const std::string & s2 , const std::string & s4 ) ;
-			///< Called when something happens which the admin
+			///< Called when something happens which the remote admin
 			///< user might be interested in.
 
 private: // overrides
-	void onSendComplete() override ; // Override from GNet::BufferedServerPeer.
-	bool onReceive( const char * , std::size_t , std::size_t , std::size_t , char ) override ; // Override from GNet::BufferedServerPeer.
-	void onDelete( const std::string & ) override ; // Override from GNet::ServerPeer.
-	void onSecure( const std::string & , const std::string & , const std::string & ) override ; // Override from GNet::SocketProtocolSink.
+	void onSendComplete() override ; // GNet::BufferedServerPeer
+	bool onReceive( const char * , std::size_t , std::size_t , std::size_t , char ) override ; // GNet::BufferedServerPeer
+	void onDelete( const std::string & ) override ; // GNet::ServerPeer
+	void onSecure( const std::string & , const std::string & , const std::string & ) override ; // GNet::SocketProtocolSink
 
 public:
 	AdminServerPeer( const AdminServerPeer & ) = delete ;
@@ -86,7 +86,6 @@ public:
 private:
 	void clientDone( const std::string & ) ;
 	static bool is( G::string_view , G::string_view ) ;
-	static G::string_view argument( G::string_view ) ;
 	static std::pair<bool,std::string> find( G::string_view , const G::StringMap & map ) ;
 	void flush() ;
 	void forward() ;
@@ -111,8 +110,9 @@ private:
 	GNet::ClientPtr<GSmtp::Client> m_client_ptr ;
 	bool m_notifying ;
 	G::StringMap m_info_commands ;
-	G::StringMap m_config_commands ;
 	bool m_with_terminate ;
+	unsigned int m_error_limit ;
+	unsigned int m_error_count ;
 } ;
 
 //| \class GSmtp::AdminServer
@@ -128,7 +128,6 @@ public:
 		bool allow_remote {false} ;
 		std::string remote_address ;
 		G::StringMap info_commands ;
-		G::StringMap config_commands ;
 		Client::Config smtp_client_config ;
 		GNet::Server::Config net_server_config ;
 		GNet::ServerPeer::Config net_server_peer_config ;
@@ -138,21 +137,27 @@ public:
 		Config & set_allow_remote( bool = true ) noexcept ;
 		Config & set_remote_address( const std::string & ) ;
 		Config & set_info_commands( const G::StringMap & ) ;
-		Config & set_config_commands( const G::StringMap & ) ;
 		Config & set_smtp_client_config( const Client::Config & ) ;
 		Config & set_net_server_config( const GNet::Server::Config & ) ;
 		Config & set_net_server_peer_config( const GNet::ServerPeer::Config & ) ;
 	} ;
+	enum class Command
+	{
+		forward ,
+		dnsbl
+	} ;
 
 	AdminServer( GNet::ExceptionSink , GStore::MessageStore & store , FilterFactoryBase & ,
-		G::Slot::Signal<const std::string&> & forward_request ,
-		const GAuth::SaslClientSecrets & client_secrets ,
-		const G::StringArray & interfaces ,
+		const GAuth::SaslClientSecrets & client_secrets , const G::StringArray & interfaces ,
 		const Config & config ) ;
 			///< Constructor.
 
 	~AdminServer() override ;
 		///< Destructor.
+
+	G::Slot::Signal<Command,unsigned int> & commandSignal() noexcept ;
+		///< Returns a reference to a signal that is emit()ted when the
+		///< remote user makes a request.
 
 	void report( const std::string & group = {} ) const ;
 		///< Generates helpful diagnostics.
@@ -173,8 +178,9 @@ public:
 	GSmtp::Client::Config clientConfig() const ;
 		///< Returns the client configuration.
 
-	void forward() ;
-		///< Called to trigger asynchronous forwarding.
+	void emitCommand( Command , unsigned int ) ;
+		///< Emits an asynchronous event on the commandSignal().
+		///< Used by AdminServerPeer.
 
 	bool notifying() const ;
 		///< Returns true if the remote user has asked for notifications.
@@ -195,15 +201,17 @@ public:
 	AdminServer & operator=( AdminServer && ) = delete ;
 
 private:
-	void onForwardTimeout() ;
+	void onCommandTimeout() ;
 
 private:
-	GNet::Timer<AdminServer> m_forward_timer ;
 	GStore::MessageStore & m_store ;
 	FilterFactoryBase & m_ff ;
-	G::Slot::Signal<const std::string&> & m_forward_request ;
 	const GAuth::SaslClientSecrets & m_client_secrets ;
 	Config m_config ;
+	GNet::Timer<AdminServer> m_command_timer ;
+	G::Slot::Signal<Command,unsigned int> m_command_signal ;
+	Command m_command ;
+	unsigned int m_command_arg ;
 } ;
 
 inline GSmtp::AdminServer::Config & GSmtp::AdminServer::Config::set_port( unsigned int n ) noexcept { port = n ; return *this ; }
@@ -211,7 +219,6 @@ inline GSmtp::AdminServer::Config & GSmtp::AdminServer::Config::set_with_termina
 inline GSmtp::AdminServer::Config & GSmtp::AdminServer::Config::set_allow_remote( bool b ) noexcept { allow_remote = b ; return *this ; }
 inline GSmtp::AdminServer::Config & GSmtp::AdminServer::Config::set_remote_address( const std::string & s ) { remote_address = s ; return *this ; }
 inline GSmtp::AdminServer::Config & GSmtp::AdminServer::Config::set_info_commands( const G::StringMap & m ) { info_commands = m ; return *this ; }
-inline GSmtp::AdminServer::Config & GSmtp::AdminServer::Config::set_config_commands( const G::StringMap & m ) { config_commands = m ; return *this ; }
 inline GSmtp::AdminServer::Config & GSmtp::AdminServer::Config::set_smtp_client_config( const Client::Config & c ) { smtp_client_config = c ; return *this ; }
 inline GSmtp::AdminServer::Config & GSmtp::AdminServer::Config::set_net_server_config( const GNet::Server::Config & c ) { net_server_config = c ; return *this ; }
 inline GSmtp::AdminServer::Config & GSmtp::AdminServer::Config::set_net_server_peer_config( const GNet::ServerPeer::Config & c ) { net_server_peer_config = c ; return *this ; }

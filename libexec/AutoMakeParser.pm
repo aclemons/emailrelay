@@ -276,9 +276,8 @@ sub includes
 	# work correctly if readall() was not based at top_srcdir
 	# or when targeting vpath builds. See above.
 	#
-	my ( $this , $base , $full_paths , $no_autoconf_dir ) = @_ ;
+	my ( $this , $base , $full_paths , $add_autoconf_dir ) = @_ ;
 	$base ||= "" ;
-	my $add_autoconf_dir = !$no_autoconf_dir ;
 	my $autoconf_dir = simplepath( join( "/" , $this->value("top_srcdir") , $base ) ) ;
 	my @a = $this->_includes_imp( $base , "AM_CPPFLAGS" , $this->{m_vars} , $full_paths ) ;
 	my @b = $this->_includes_imp( $base , "CXXFLAGS" , $this->{m_vars} , $full_paths ) ;

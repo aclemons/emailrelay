@@ -37,7 +37,7 @@ namespace GAuth
 class GAuth::SaslServerPamImp
 {
 public:
-	SaslServerPamImp( bool valid , bool with_apop ) ;
+	explicit SaslServerPamImp( bool with_apop ) ;
 	virtual ~SaslServerPamImp() ;
 	G::StringArray mechanisms() const ;
 	std::string mechanism() const ;
@@ -142,14 +142,11 @@ void GAuth::PamImp::delay( unsigned int )
 
 // ==
 
-GAuth::SaslServerPamImp::SaslServerPamImp( bool active , bool with_apop )
+GAuth::SaslServerPamImp::SaslServerPamImp( bool with_apop )
 {
-	if( active )
-	{
-		m_mechanisms.push_back( "PLAIN" ) ;
-		if( with_apop )
-			m_mechanisms.push_back( "APOP" ) ;
-	}
+	m_mechanisms.push_back( "PLAIN" ) ;
+	if( with_apop )
+		m_mechanisms.push_back( "APOP" ) ;
 }
 
 GAuth::SaslServerPamImp::~SaslServerPamImp()
@@ -213,8 +210,8 @@ std::string GAuth::SaslServerPamImp::apply( const std::string & response , bool 
 
 // ==
 
-GAuth::SaslServerPam::SaslServerPam( const SaslServerSecrets & secrets , bool with_apop ) :
-	m_imp(std::make_unique<SaslServerPamImp>(secrets.valid(),with_apop))
+GAuth::SaslServerPam::SaslServerPam( bool with_apop ) :
+	m_imp(std::make_unique<SaslServerPamImp>(with_apop))
 {
 }
 

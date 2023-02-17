@@ -68,20 +68,16 @@ bool G::Test::enabled( const char * name )
 	}
 	return result ;
 }
-#ifndef G_LIB_SMALL
 bool G::Test::enabled() noexcept
 {
 	return true ;
 }
-#endif
 #else
 void G::Test::set( const std::string & )
 {
 }
-#ifndef G_LIB_SMALL
 bool G::Test::enabled() noexcept
 {
 	return false ;
 }
-#endif
 #endif

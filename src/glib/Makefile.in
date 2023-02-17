@@ -93,7 +93,6 @@ subdir = src/glib
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acinclude.m4 \
 	$(top_srcdir)/m4/m4_ax_cxx_compile_stdcxx.m4 \
-	$(top_srcdir)/m4/m4_ax_cxx_compile_stdcxx_11.m4 \
 	$(top_srcdir)/m4/pkg.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -113,7 +112,7 @@ libglib_a_LIBADD =
 am__libglib_a_SOURCES_DIST = gmsg.h gmsg_unix.cpp gmsg_mac.cpp \
 	gmsg_win32.cpp ggettext_none.cpp ggettext.h ggettext_unix.cpp \
 	ggettext_win32.cpp garg.h garg.cpp gassert.h gbase64.h \
-	gbase64.cpp gbasicaddress.h gbatchfile.h gbatchfile.cpp \
+	gbase64.cpp gbasicaddress.h gbatchfile.cpp gbatchfile.h \
 	gbuffer.h gcall.h gcleanup.h gdaemon.h gdate.h gdate.cpp \
 	gdatetime.h gdatetime.cpp gdef.h gdirectory.h gdirectory.cpp \
 	genvironment.h genvironment.cpp gexception.h gexception.cpp \
@@ -121,8 +120,8 @@ am__libglib_a_SOURCES_DIST = gmsg.h gmsg_unix.cpp gmsg_mac.cpp \
 	gfile.cpp gformat.h gformat.cpp ggetopt.h ggetopt.cpp ghash.h \
 	ghash.cpp ghashstate.h ghostname.h gidentity.h gimembuf.h \
 	glimits.h glog.h glog.cpp glogstream.h glogstream.cpp \
-	glogoutput.h glogoutput.cpp gstrmacros.h gmapfile.h \
-	gmapfile.cpp gmd5.h gmd5.cpp gnewprocess.h gomembuf.h \
+	glogoutput.h glogoutput.cpp gstrmacros.h gmapfile.cpp \
+	gmapfile.h gmd5.h gmd5.cpp gnewprocess.h gomembuf.h \
 	goptional.h goption.h goption.cpp goptionmap.h goptionmap.cpp \
 	goptionparser.h goptionparser.cpp goptionreader.h \
 	goptionreader.cpp goptions.h goptions.cpp goptionsusage.h \
@@ -423,7 +422,8 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AM_CPPFLAGS = -DG_LIB_SMALL
+@GCONFIG_WINDOWS_FALSE@AM_CPPFLAGS = -DG_LIB_SMALL
+@GCONFIG_WINDOWS_TRUE@AM_CPPFLAGS = 
 noinst_LIBRARIES = libglib.a
 UNIX_SOURCES = \
 	gcleanup_unix.cpp \
@@ -461,8 +461,8 @@ COMMON_SOURCES = \
 	gbase64.h \
 	gbase64.cpp \
 	gbasicaddress.h \
-	gbatchfile.h \
 	gbatchfile.cpp \
+	gbatchfile.h \
 	gbuffer.h \
 	gcall.h \
 	gcleanup.h \
@@ -501,8 +501,8 @@ COMMON_SOURCES = \
 	glogoutput.h \
 	glogoutput.cpp \
 	gstrmacros.h \
-	gmapfile.h \
 	gmapfile.cpp \
+	gmapfile.h \
 	gmd5.h \
 	gmd5.cpp \
 	gmsg.h \

@@ -63,7 +63,7 @@ public:
 	} ;
 	struct Config /// Configuration passed to filter constructors.
 	{
-		unsigned int timeout ;
+		unsigned int timeout {60U} ;
 		std::string domain ; // postcondition: !domain.empty()
 		Config & set_timeout( unsigned int ) noexcept ;
 		Config & set_domain( const std::string & ) ;

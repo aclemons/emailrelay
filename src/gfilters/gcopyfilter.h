@@ -56,7 +56,6 @@ private: // overrides
 private:
 	using FileOp = GStore::FileStore::FileOp ;
 	GStore::FileStore & m_store ;
-	Filter::Type m_filter_type ;
 	Filter::Config m_filter_config ;
 	std::string m_spec ;
 } ;

@@ -93,7 +93,6 @@ subdir = src/gnet
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acinclude.m4 \
 	$(top_srcdir)/m4/m4_ax_cxx_compile_stdcxx.m4 \
-	$(top_srcdir)/m4/m4_ax_cxx_compile_stdcxx_11.m4 \
 	$(top_srcdir)/m4/pkg.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -113,9 +112,9 @@ libgnet_a_LIBADD =
 am__libgnet_a_SOURCES_DIST = gaddress.cpp gaddress.h gaddress4.h \
 	gaddress4.cpp gaddress6.h gaddress6.cpp gaddresslocal.h \
 	gclient.cpp gclient.h gclientptr.cpp gclientptr.h \
-	gconnection.cpp gconnection.h gdescriptor.h gevent.h \
-	geventemitter.cpp geventemitter.h geventhandler.cpp \
-	geventhandler.h geventloggingcontext.cpp \
+	gconnection.cpp gconnection.h gdescriptor.h gdnsmessage.h \
+	gdnsmessage.cpp gevent.h geventemitter.cpp geventemitter.h \
+	geventhandler.cpp geventhandler.h geventloggingcontext.cpp \
 	geventloggingcontext.h geventloop.cpp geventloop.h \
 	gexceptionhandler.cpp gexceptionhandler.h gexceptionsink.cpp \
 	gexceptionsink.h gexceptionsource.cpp gexceptionsource.h \
@@ -129,8 +128,7 @@ am__libgnet_a_SOURCES_DIST = gaddress.cpp gaddress.h gaddress4.h \
 	gsocketprotocol.h gsocks.cpp gsocks.h gtask.cpp gtask.h \
 	gtimer.cpp gtimer.h gtimerlist.cpp gtimerlist.h gdnsbl.h \
 	gdnsbl_disabled.cpp gdnsbl_enabled.cpp gdnsblock.h \
-	gdnsblock.cpp gdnsmessage.h gdnsmessage.cpp \
-	geventloop_select.cpp geventloop_epoll.cpp \
+	gdnsblock.cpp geventloop_select.cpp geventloop_epoll.cpp \
 	geventloop_win32.cpp geventloophandles.h \
 	geventloophandles_st.cpp ginterfaces_none.cpp \
 	ginterfaces_unix.cpp ginterfaces_common.cpp \
@@ -141,20 +139,20 @@ am__libgnet_a_SOURCES_DIST = gaddress.cpp gaddress.h gaddress4.h \
 	gaddresslocal_none.cpp gaddresslocal_unix.cpp
 am__objects_1 = gaddress.$(OBJEXT) gaddress4.$(OBJEXT) \
 	gaddress6.$(OBJEXT) gclient.$(OBJEXT) gclientptr.$(OBJEXT) \
-	gconnection.$(OBJEXT) geventemitter.$(OBJEXT) \
-	geventhandler.$(OBJEXT) geventloggingcontext.$(OBJEXT) \
-	geventloop.$(OBJEXT) gexceptionhandler.$(OBJEXT) \
-	gexceptionsink.$(OBJEXT) gexceptionsource.$(OBJEXT) \
-	glinebuffer.$(OBJEXT) glinestore.$(OBJEXT) glocal.$(OBJEXT) \
-	glocation.$(OBJEXT) gmonitor.$(OBJEXT) gmultiserver.$(OBJEXT) \
-	gnetdone.$(OBJEXT) gresolver.$(OBJEXT) \
-	gresolverfuture.$(OBJEXT) gserver.$(OBJEXT) \
-	gserverpeer.$(OBJEXT) gsocket.$(OBJEXT) \
+	gconnection.$(OBJEXT) gdnsmessage.$(OBJEXT) \
+	geventemitter.$(OBJEXT) geventhandler.$(OBJEXT) \
+	geventloggingcontext.$(OBJEXT) geventloop.$(OBJEXT) \
+	gexceptionhandler.$(OBJEXT) gexceptionsink.$(OBJEXT) \
+	gexceptionsource.$(OBJEXT) glinebuffer.$(OBJEXT) \
+	glinestore.$(OBJEXT) glocal.$(OBJEXT) glocation.$(OBJEXT) \
+	gmonitor.$(OBJEXT) gmultiserver.$(OBJEXT) gnetdone.$(OBJEXT) \
+	gresolver.$(OBJEXT) gresolverfuture.$(OBJEXT) \
+	gserver.$(OBJEXT) gserverpeer.$(OBJEXT) gsocket.$(OBJEXT) \
 	gsocketprotocol.$(OBJEXT) gsocks.$(OBJEXT) gtask.$(OBJEXT) \
 	gtimer.$(OBJEXT) gtimerlist.$(OBJEXT)
 @GCONFIG_DNSBL_FALSE@am__objects_2 = gdnsbl_disabled.$(OBJEXT)
 @GCONFIG_DNSBL_TRUE@am__objects_2 = gdnsbl_enabled.$(OBJEXT) \
-@GCONFIG_DNSBL_TRUE@	gdnsblock.$(OBJEXT) gdnsmessage.$(OBJEXT)
+@GCONFIG_DNSBL_TRUE@	gdnsblock.$(OBJEXT)
 @GCONFIG_EPOLL_FALSE@@GCONFIG_WINDOWS_FALSE@am__objects_3 = geventloop_select.$(OBJEXT)
 @GCONFIG_EPOLL_TRUE@@GCONFIG_WINDOWS_FALSE@am__objects_3 = geventloop_epoll.$(OBJEXT)
 @GCONFIG_WINDOWS_TRUE@am__objects_3 = geventloop_win32.$(OBJEXT) \
@@ -424,6 +422,8 @@ COMMON_SOURCES = \
 	gconnection.cpp \
 	gconnection.h \
 	gdescriptor.h \
+	gdnsmessage.h \
+	gdnsmessage.cpp \
 	gevent.h \
 	geventemitter.cpp \
 	geventemitter.h \
@@ -537,9 +537,7 @@ COMMON_SOURCES = \
 @GCONFIG_DNSBL_FALSE@DNSBL_EXTRA_DIST = \
 @GCONFIG_DNSBL_FALSE@	gdnsbl_enabled.cpp \
 @GCONFIG_DNSBL_FALSE@	gdnsblock.h \
-@GCONFIG_DNSBL_FALSE@	gdnsblock.cpp \
-@GCONFIG_DNSBL_FALSE@	gdnsmessage.h \
-@GCONFIG_DNSBL_FALSE@	gdnsmessage.cpp
+@GCONFIG_DNSBL_FALSE@	gdnsblock.cpp
 
 
 # -- DNSBL
@@ -554,9 +552,7 @@ COMMON_SOURCES = \
 @GCONFIG_DNSBL_TRUE@	gdnsbl.h \
 @GCONFIG_DNSBL_TRUE@	gdnsbl_enabled.cpp \
 @GCONFIG_DNSBL_TRUE@	gdnsblock.h \
-@GCONFIG_DNSBL_TRUE@	gdnsblock.cpp \
-@GCONFIG_DNSBL_TRUE@	gdnsmessage.h \
-@GCONFIG_DNSBL_TRUE@	gdnsmessage.cpp
+@GCONFIG_DNSBL_TRUE@	gdnsblock.cpp
 
 @GCONFIG_UDS_FALSE@UDS_SOURCES = \
 @GCONFIG_UDS_FALSE@	gaddresslocal_none.cpp

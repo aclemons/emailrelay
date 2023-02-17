@@ -76,7 +76,7 @@ public:
 	{
 		std::string auth ; // AUTH=
 		std::string body ; // BODY=
-		bool utf8address ; // beyond ascii
+		bool utf8address {false} ; // beyond ascii
 	} ;
 	enum class BodyType
 	{

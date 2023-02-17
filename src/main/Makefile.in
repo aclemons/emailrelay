@@ -19,7 +19,6 @@
 
 
 
-
 VPATH = @srcdir@
 am__is_gnu_make = { \
   if test -z '$(MAKELEVEL)'; then \
@@ -95,11 +94,13 @@ POST_UNINSTALL = :
 sbin_PROGRAMS = emailrelay$(EXEEXT) emailrelay-submit$(EXEEXT) \
 	emailrelay-passwd$(EXEEXT) $(am__EXEEXT_1) $(am__EXEEXT_2)
 e_libexec_PROGRAMS = emailrelay-filter-copy$(EXEEXT)
+@GCONFIG_TLS_USE_BOTH_TRUE@@GCONFIG_TLS_USE_MBEDTLS_FALSE@noinst_PROGRAMS = emailrelay-keygen$(EXEEXT)
+@GCONFIG_TLS_USE_MBEDTLS_TRUE@noinst_PROGRAMS =  \
+@GCONFIG_TLS_USE_MBEDTLS_TRUE@	emailrelay-keygen$(EXEEXT)
 subdir = src/main
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acinclude.m4 \
 	$(top_srcdir)/m4/m4_ax_cxx_compile_stdcxx.m4 \
-	$(top_srcdir)/m4/m4_ax_cxx_compile_stdcxx_11.m4 \
 	$(top_srcdir)/m4/pkg.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -113,7 +114,7 @@ am__installdirs = "$(DESTDIR)$(e_libexecdir)" "$(DESTDIR)$(sbindir)" \
 @GCONFIG_MAC_TRUE@am__EXEEXT_1 = emailrelay-start$(EXEEXT)
 @GCONFIG_WINDOWS_TRUE@am__EXEEXT_2 = emailrelay-service$(EXEEXT) \
 @GCONFIG_WINDOWS_TRUE@	emailrelay-textmode$(EXEEXT)
-PROGRAMS = $(e_libexec_PROGRAMS) $(sbin_PROGRAMS)
+PROGRAMS = $(e_libexec_PROGRAMS) $(noinst_PROGRAMS) $(sbin_PROGRAMS)
 LIBRARIES = $(noinst_LIBRARIES)
 ARFLAGS = cru
 AM_V_AR = $(am__v_AR_@AM_V@)
@@ -185,6 +186,19 @@ emailrelay_filter_copy_OBJECTS = $(am_emailrelay_filter_copy_OBJECTS)
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/glib/libglib.a
 emailrelay_filter_copy_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(emailrelay_filter_copy_LDFLAGS) $(LDFLAGS) -o $@
+am__emailrelay_keygen_SOURCES_DIST = keygen.cpp
+@GCONFIG_TLS_USE_BOTH_TRUE@@GCONFIG_TLS_USE_MBEDTLS_FALSE@am__objects_7 = keygen.$(OBJEXT)
+@GCONFIG_TLS_USE_MBEDTLS_TRUE@am__objects_7 = keygen.$(OBJEXT)
+@GCONFIG_TLS_USE_BOTH_FALSE@@GCONFIG_TLS_USE_MBEDTLS_TRUE@am_emailrelay_keygen_OBJECTS = $(am__objects_7)
+@GCONFIG_TLS_USE_BOTH_TRUE@am_emailrelay_keygen_OBJECTS =  \
+@GCONFIG_TLS_USE_BOTH_TRUE@	$(am__objects_7)
+emailrelay_keygen_OBJECTS = $(am_emailrelay_keygen_OBJECTS)
+@GCONFIG_TLS_USE_BOTH_FALSE@@GCONFIG_TLS_USE_MBEDTLS_TRUE@emailrelay_keygen_DEPENDENCIES = $(top_builddir)/src/gssl/libgsslkeygen.a \
+@GCONFIG_TLS_USE_BOTH_FALSE@@GCONFIG_TLS_USE_MBEDTLS_TRUE@	$(am__DEPENDENCIES_1)
+@GCONFIG_TLS_USE_BOTH_TRUE@emailrelay_keygen_DEPENDENCIES = $(top_builddir)/src/gssl/libgsslkeygen.a \
+@GCONFIG_TLS_USE_BOTH_TRUE@	$(am__DEPENDENCIES_1)
+emailrelay_keygen_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
+	$(emailrelay_keygen_LDFLAGS) $(LDFLAGS) -o $@
 am_emailrelay_passwd_OBJECTS = passwd.$(OBJEXT) legal.$(OBJEXT)
 emailrelay_passwd_OBJECTS = $(am_emailrelay_passwd_OBJECTS)
 @GCONFIG_WINDOWS_FALSE@emailrelay_passwd_DEPENDENCIES =  \
@@ -198,9 +212,9 @@ emailrelay_passwd_OBJECTS = $(am_emailrelay_passwd_OBJECTS)
 emailrelay_passwd_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(emailrelay_passwd_LDFLAGS) $(LDFLAGS) -o $@
 am__emailrelay_service_SOURCES_DIST = servicewrapper.cpp
-am__objects_7 = servicewrapper.$(OBJEXT)
+am__objects_8 = servicewrapper.$(OBJEXT)
 @GCONFIG_WINDOWS_TRUE@am_emailrelay_service_OBJECTS =  \
-@GCONFIG_WINDOWS_TRUE@	$(am__objects_7)
+@GCONFIG_WINDOWS_TRUE@	$(am__objects_8)
 emailrelay_service_OBJECTS = $(am_emailrelay_service_OBJECTS)
 @GCONFIG_WINDOWS_TRUE@emailrelay_service_DEPENDENCIES = libmain.a \
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/glib/libglib.a
@@ -242,7 +256,6 @@ emailrelay_textmode_OBJECTS = $(am_emailrelay_textmode_OBJECTS)
 @GCONFIG_WINDOWS_TRUE@	$(am__DEPENDENCIES_1)
 emailrelay_textmode_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(emailrelay_textmode_LDFLAGS) $(LDFLAGS) -o $@
-SCRIPTS = $(noinst_SCRIPTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -260,9 +273,10 @@ depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/commandline.Po \
 	./$(DEPDIR)/configuration.Po ./$(DEPDIR)/filter.Po \
-	./$(DEPDIR)/legal.Po ./$(DEPDIR)/licence.Po \
-	./$(DEPDIR)/main.Po ./$(DEPDIR)/news.Po ./$(DEPDIR)/options.Po \
-	./$(DEPDIR)/output.Po ./$(DEPDIR)/passwd.Po ./$(DEPDIR)/run.Po \
+	./$(DEPDIR)/keygen.Po ./$(DEPDIR)/legal.Po \
+	./$(DEPDIR)/licence.Po ./$(DEPDIR)/main.Po ./$(DEPDIR)/news.Po \
+	./$(DEPDIR)/options.Po ./$(DEPDIR)/output.Po \
+	./$(DEPDIR)/passwd.Po ./$(DEPDIR)/run.Po \
 	./$(DEPDIR)/servicecontrol_unix.Po \
 	./$(DEPDIR)/servicecontrol_win32.Po \
 	./$(DEPDIR)/serviceimp_none.Po ./$(DEPDIR)/serviceimp_win32.Po \
@@ -298,12 +312,15 @@ am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = $(libmain_a_SOURCES) $(emailrelay_SOURCES) \
-	$(emailrelay_filter_copy_SOURCES) $(emailrelay_passwd_SOURCES) \
-	$(emailrelay_service_SOURCES) $(emailrelay_start_SOURCES) \
-	$(emailrelay_submit_SOURCES) $(emailrelay_textmode_SOURCES)
+	$(emailrelay_filter_copy_SOURCES) $(emailrelay_keygen_SOURCES) \
+	$(emailrelay_passwd_SOURCES) $(emailrelay_service_SOURCES) \
+	$(emailrelay_start_SOURCES) $(emailrelay_submit_SOURCES) \
+	$(emailrelay_textmode_SOURCES)
 DIST_SOURCES = $(am__libmain_a_SOURCES_DIST) \
 	$(am__emailrelay_SOURCES_DIST) \
-	$(emailrelay_filter_copy_SOURCES) $(emailrelay_passwd_SOURCES) \
+	$(emailrelay_filter_copy_SOURCES) \
+	$(am__emailrelay_keygen_SOURCES_DIST) \
+	$(emailrelay_passwd_SOURCES) \
 	$(am__emailrelay_service_SOURCES_DIST) \
 	$(emailrelay_start_SOURCES) $(emailrelay_submit_SOURCES) \
 	$(am__emailrelay_textmode_SOURCES_DIST)
@@ -531,8 +548,11 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = icon
 e_spool_DATA = 
-noinst_SCRIPTS = $(MAC_NOINST)
 noinst_LIBRARIES = libmain.a
+@GCONFIG_MAC_FALSE@MAC_PROGS = 
+@GCONFIG_MAC_TRUE@MAC_PROGS = emailrelay-start
+@GCONFIG_WINDOWS_FALSE@WINDOWS_PROGS = 
+@GCONFIG_WINDOWS_TRUE@WINDOWS_PROGS = emailrelay-service emailrelay-textmode
 
 # force symbol stripping on 'make install' -- see also make 'install-strip'
 AM_INSTALL_PROGRAM_FLAGS = -s
@@ -566,6 +586,12 @@ WINDOWS_MAIN_SOURCES = \
 TEXTMODE_MAIN_SOURCES = \
  main.cpp
 
+@GCONFIG_TLS_USE_BOTH_FALSE@@GCONFIG_TLS_USE_MBEDTLS_FALSE@KEYGEN_EXTRA_DIST = keygen.cpp
+@GCONFIG_TLS_USE_BOTH_TRUE@@GCONFIG_TLS_USE_MBEDTLS_FALSE@KEYGEN_EXTRA_DIST = 
+@GCONFIG_TLS_USE_MBEDTLS_TRUE@KEYGEN_EXTRA_DIST = 
+@GCONFIG_TLS_USE_BOTH_FALSE@@GCONFIG_TLS_USE_MBEDTLS_FALSE@KEYGEN_SOURCES = 
+@GCONFIG_TLS_USE_BOTH_TRUE@@GCONFIG_TLS_USE_MBEDTLS_FALSE@KEYGEN_SOURCES = keygen.cpp
+@GCONFIG_TLS_USE_MBEDTLS_TRUE@KEYGEN_SOURCES = keygen.cpp
 OTHER_SOURCES = \
  commandline.h \
  commandline.cpp \
@@ -599,6 +625,8 @@ LIBMAIN_SOURCES = \
  submission.cpp \
  submission.h
 
+@GCONFIG_MAC_FALSE@MAC_EXTRA_DIST = start.cpp
+@GCONFIG_MAC_TRUE@MAC_EXTRA_DIST = 
 MISC_EXTRA_DIST = \
  doxygen.h \
  emailrelay.rc \
@@ -608,15 +636,8 @@ MISC_EXTRA_DIST = \
  messages.mc \
  resource.h
 
-@GCONFIG_MAC_FALSE@MAC_PROGS = 
-@GCONFIG_MAC_TRUE@MAC_PROGS = emailrelay-start
-@GCONFIG_MAC_FALSE@MAC_EXTRA_DIST = start.cpp
-@GCONFIG_MAC_TRUE@MAC_EXTRA_DIST = 
-@GCONFIG_MAC_FALSE@MAC_NOINST = 
-@GCONFIG_MAC_TRUE@MAC_NOINST = 
-@GCONFIG_WINDOWS_FALSE@WINDOWS_PROGS = 
-@GCONFIG_WINDOWS_TRUE@WINDOWS_PROGS = emailrelay-service emailrelay-textmode
 @GCONFIG_WINDOWS_FALSE@EXTRA_DIST = \
+@GCONFIG_WINDOWS_FALSE@  $(KEYGEN_EXTRA_DIST) \
 @GCONFIG_WINDOWS_FALSE@  $(MAC_EXTRA_DIST) \
 @GCONFIG_WINDOWS_FALSE@  $(MISC_EXTRA_DIST) \
 @GCONFIG_WINDOWS_FALSE@  $(WINDOWS_MAIN_SOURCES) \
@@ -624,6 +645,7 @@ MISC_EXTRA_DIST = \
 @GCONFIG_WINDOWS_FALSE@  $(WINDOWS_LIBMAIN_SOURCES)
 
 @GCONFIG_WINDOWS_TRUE@EXTRA_DIST = \
+@GCONFIG_WINDOWS_TRUE@  $(KEYGEN_EXTRA_DIST) \
 @GCONFIG_WINDOWS_TRUE@  $(MAC_EXTRA_DIST) \
 @GCONFIG_WINDOWS_TRUE@  $(MISC_EXTRA_DIST) \
 @GCONFIG_WINDOWS_TRUE@  $(UNIX_LIBMAIN_SOURCES)
@@ -707,6 +729,18 @@ emailrelay_submit_SOURCES = submit.cpp legal.cpp legal.h
 @GCONFIG_WINDOWS_TRUE@ $(top_builddir)/src/win32/libextra.a \
 @GCONFIG_WINDOWS_TRUE@ $(top_builddir)/src/glib/libglib.a \
 @GCONFIG_WINDOWS_TRUE@ -lws2_32 -liphlpapi -lcomctl32
+
+@GCONFIG_TLS_USE_BOTH_FALSE@@GCONFIG_TLS_USE_MBEDTLS_TRUE@emailrelay_keygen_SOURCES = $(KEYGEN_SOURCES)
+@GCONFIG_TLS_USE_BOTH_TRUE@emailrelay_keygen_SOURCES = $(KEYGEN_SOURCES)
+@GCONFIG_TLS_USE_BOTH_FALSE@@GCONFIG_TLS_USE_MBEDTLS_TRUE@@GCONFIG_WINDOWS_TRUE@emailrelay_keygen_LDFLAGS = -static
+@GCONFIG_TLS_USE_BOTH_TRUE@@GCONFIG_WINDOWS_TRUE@emailrelay_keygen_LDFLAGS = -static
+@GCONFIG_TLS_USE_BOTH_FALSE@@GCONFIG_TLS_USE_MBEDTLS_TRUE@emailrelay_keygen_LDADD = \
+@GCONFIG_TLS_USE_BOTH_FALSE@@GCONFIG_TLS_USE_MBEDTLS_TRUE@  $(top_builddir)/src/gssl/libgsslkeygen.a \
+@GCONFIG_TLS_USE_BOTH_FALSE@@GCONFIG_TLS_USE_MBEDTLS_TRUE@  $(GCONFIG_TLS_LIBS)
+
+@GCONFIG_TLS_USE_BOTH_TRUE@emailrelay_keygen_LDADD = \
+@GCONFIG_TLS_USE_BOTH_TRUE@ $(top_builddir)/src/gssl/libgsslkeygen.a \
+@GCONFIG_TLS_USE_BOTH_TRUE@ $(GCONFIG_TLS_LIBS)
 
 emailrelay_filter_copy_SOURCES = filter.cpp legal.cpp legal.h
 @GCONFIG_WINDOWS_FALSE@emailrelay_filter_copy_LDFLAGS = 
@@ -809,6 +843,9 @@ uninstall-e_libexecPROGRAMS:
 
 clean-e_libexecPROGRAMS:
 	-test -z "$(e_libexec_PROGRAMS)" || rm -f $(e_libexec_PROGRAMS)
+
+clean-noinstPROGRAMS:
+	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
 install-sbinPROGRAMS: $(sbin_PROGRAMS)
 	@$(NORMAL_INSTALL)
 	@list='$(sbin_PROGRAMS)'; test -n "$(sbindir)" || list=; \
@@ -868,6 +905,10 @@ emailrelay-filter-copy$(EXEEXT): $(emailrelay_filter_copy_OBJECTS) $(emailrelay_
 	@rm -f emailrelay-filter-copy$(EXEEXT)
 	$(AM_V_CXXLD)$(emailrelay_filter_copy_LINK) $(emailrelay_filter_copy_OBJECTS) $(emailrelay_filter_copy_LDADD) $(LIBS)
 
+emailrelay-keygen$(EXEEXT): $(emailrelay_keygen_OBJECTS) $(emailrelay_keygen_DEPENDENCIES) $(EXTRA_emailrelay_keygen_DEPENDENCIES) 
+	@rm -f emailrelay-keygen$(EXEEXT)
+	$(AM_V_CXXLD)$(emailrelay_keygen_LINK) $(emailrelay_keygen_OBJECTS) $(emailrelay_keygen_LDADD) $(LIBS)
+
 emailrelay-passwd$(EXEEXT): $(emailrelay_passwd_OBJECTS) $(emailrelay_passwd_DEPENDENCIES) $(EXTRA_emailrelay_passwd_DEPENDENCIES) 
 	@rm -f emailrelay-passwd$(EXEEXT)
 	$(AM_V_CXXLD)$(emailrelay_passwd_LINK) $(emailrelay_passwd_OBJECTS) $(emailrelay_passwd_LDADD) $(LIBS)
@@ -897,6 +938,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/commandline.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/configuration.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/filter.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/keygen.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/legal.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/licence.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@ # am--include-marker
@@ -1119,7 +1161,7 @@ distdir-am: $(DISTFILES)
 	done
 check-am: all-am
 check: check-recursive
-all-am: Makefile $(PROGRAMS) $(LIBRARIES) $(SCRIPTS) $(DATA)
+all-am: Makefile $(PROGRAMS) $(LIBRARIES) $(DATA)
 installdirs: installdirs-recursive
 installdirs-am:
 	for dir in "$(DESTDIR)$(e_libexecdir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(e_spooldir)"; do \
@@ -1158,12 +1200,13 @@ maintainer-clean-generic:
 clean: clean-recursive
 
 clean-am: clean-e_libexecPROGRAMS clean-generic clean-noinstLIBRARIES \
-	clean-sbinPROGRAMS mostlyclean-am
+	clean-noinstPROGRAMS clean-sbinPROGRAMS mostlyclean-am
 
 distclean: distclean-recursive
 		-rm -f ./$(DEPDIR)/commandline.Po
 	-rm -f ./$(DEPDIR)/configuration.Po
 	-rm -f ./$(DEPDIR)/filter.Po
+	-rm -f ./$(DEPDIR)/keygen.Po
 	-rm -f ./$(DEPDIR)/legal.Po
 	-rm -f ./$(DEPDIR)/licence.Po
 	-rm -f ./$(DEPDIR)/main.Po
@@ -1234,6 +1277,7 @@ maintainer-clean: maintainer-clean-recursive
 		-rm -f ./$(DEPDIR)/commandline.Po
 	-rm -f ./$(DEPDIR)/configuration.Po
 	-rm -f ./$(DEPDIR)/filter.Po
+	-rm -f ./$(DEPDIR)/keygen.Po
 	-rm -f ./$(DEPDIR)/legal.Po
 	-rm -f ./$(DEPDIR)/licence.Po
 	-rm -f ./$(DEPDIR)/main.Po
@@ -1277,13 +1321,13 @@ uninstall-am: uninstall-e_libexecPROGRAMS uninstall-e_spoolDATA \
 
 .PHONY: $(am__recursive_targets) CTAGS GTAGS TAGS all all-am \
 	am--depfiles check check-am clean clean-e_libexecPROGRAMS \
-	clean-generic clean-noinstLIBRARIES clean-sbinPROGRAMS \
-	cscopelist-am ctags ctags-am distclean distclean-compile \
-	distclean-generic distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-data-local install-dvi install-dvi-am \
-	install-e_libexecPROGRAMS install-e_spoolDATA install-exec \
-	install-exec-am install-exec-local install-html \
+	clean-generic clean-noinstLIBRARIES clean-noinstPROGRAMS \
+	clean-sbinPROGRAMS cscopelist-am ctags ctags-am distclean \
+	distclean-compile distclean-generic distclean-tags distdir dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-data-local install-dvi \
+	install-dvi-am install-e_libexecPROGRAMS install-e_spoolDATA \
+	install-exec install-exec-am install-exec-local install-html \
 	install-html-am install-info install-info-am install-man \
 	install-pdf install-pdf-am install-ps install-ps-am \
 	install-sbinPROGRAMS install-strip installcheck \
@@ -1295,8 +1339,9 @@ uninstall-am: uninstall-e_libexecPROGRAMS uninstall-e_spoolDATA \
 
 .PRECIOUS: Makefile
 
-@GCONFIG_WINDOWS_TRUE@ $(RESOURCES): emailrelay.rc MSG00001.bin messages.rc
-@GCONFIG_WINDOWS_TRUE@ $(GCONFIG_WINDRES) --preprocessor "$(CC) -E -xc-header -DRC_INVOKED" -D_WIN32=1 --include-dir . --include-dir icon --include-dir $(top_srcdir)/src/main/icon -i $(top_srcdir)/src/main/emailrelay.rc -o $(RESOURCES)
+
+@GCONFIG_WINDOWS_TRUE@$(RESOURCES): emailrelay.rc MSG00001.bin messages.rc
+@GCONFIG_WINDOWS_TRUE@	$(GCONFIG_WINDRES) --preprocessor "$(CC) -E -xc-header -DRC_INVOKED" -D_WIN32=1 --include-dir . --include-dir icon --include-dir $(top_srcdir)/src/main/icon -i $(top_srcdir)/src/main/emailrelay.rc -o $(RESOURCES)
 
 install-data-local: install-sbinPROGRAMS install-e_spoolDATA install-e_libexecPROGRAMS
 	-mkdir -p "$(DESTDIR)$(e_spooldir)"

@@ -392,7 +392,6 @@ void DirectoryPage::dump( std::ostream & stream , bool for_install ) const
 	dumpItem( stream , for_install , "dir-config" , configDir() ) ;
 	dumpItem( stream , for_install , "dir-run" , runtimeDir() ) ;
 
-	dumpItem( stream , for_install , "dir-boot" , Gui::Dir::boot() ) ;
 	dumpItem( stream , for_install , "dir-desktop" , Gui::Dir::desktop() ) ;
 	dumpItem( stream , for_install , "dir-menu" , Gui::Dir::menu() ) ;
 	dumpItem( stream , for_install , "dir-login" , Gui::Dir::autostart() ) ;

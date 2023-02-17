@@ -47,10 +47,6 @@ Main::Unit::Unit( Run & run , unsigned int unit_id , const std::string & version
 	m_client_ptr.deletedSignal().connect( G::Slot::slot(*this,&Unit::onClientDone) ) ;
 	m_client_ptr.eventSignal().connect( G::Slot::slot(*this,&Unit::onClientEvent) ) ;
 
-	// connect the signal that allows the AdminServer to trigger our forwarding
-	//
-	m_forward_request_signal.connect( G::Slot::slot(*this,&Unit::onForwardRequest) ) ;
-
 	// cache the forwarding address's address family
 	//
 	m_resolver_family = resolverFamily() ;
@@ -118,7 +114,7 @@ Main::Unit::Unit( Run & run , unsigned int unit_id , const std::string & version
 	// create message store stuff
 	//
 	m_file_store = std::make_unique<GStore::FileStore>( m_configuration.spoolDir() , m_configuration.fileStoreConfig() ) ;
-	m_file_delivery = std::make_unique<GStore::FileDelivery>( *m_file_store , domain() , m_configuration.localDeliveryDir() ) ;
+	m_file_delivery = std::make_unique<GStore::FileDelivery>( *m_file_store , m_configuration.localDeliveryDir() , GStore::FileDelivery::Config() ) ;
 	m_filter_factory = std::make_unique<GFilters::FilterFactory>( *m_file_store ) ;
 	m_verifier_factory = std::make_unique<GVerifiers::VerifierFactory>() ;
 	store().messageStoreRescanSignal().connect( G::Slot::slot(*this,&Unit::onStoreRescanEvent) ) ;
@@ -131,12 +127,10 @@ Main::Unit::Unit( Run & run , unsigned int unit_id , const std::string & version
 	// prepare authentication secrets
 	//
 	GAuth::Secrets::check( m_configuration.clientSecretsFile().str() , m_configuration.serverSecretsFile().str() ,
-		do_pop ? m_configuration.popSecretsFile().str() : std::string() ) ;
-	m_client_secrets = std::make_unique<GAuth::Secrets>( m_configuration.clientSecretsFile().str() , "client" ) ;
-	m_server_secrets = std::make_unique<GAuth::Secrets>( m_configuration.serverSecretsFile().str() , "server" ) ;
-	if( do_pop )
-		m_pop_secrets = GPop::newSecrets( m_configuration.popSecretsFile().str() ) ;
-
+		m_configuration.popSecretsFile().str() ) ;
+	m_client_secrets = GAuth::Secrets::newClientSecrets( m_configuration.clientSecretsFile().str() , "client" ) ;
+	m_server_secrets = GAuth::Secrets::newServerSecrets( m_configuration.serverSecretsFile().str() , "server" ) ;
+	m_pop_secrets = GPop::newSecrets( m_configuration.popSecretsFile().str() ) ;
 
 	// create the smtp server
 	//
@@ -191,19 +185,22 @@ Main::Unit::Unit( Run & run , unsigned int unit_id , const std::string & version
 		info_map["credit"] = GSsl::Library::credit("","\n","") ;
 		info_map["copyright"] = Legal::copyright() ;
 
-		G::StringMap config_map ;
-		//config_map["forward-to"] = cfg.serverAddress() ;
-		//config_map["spool-dir"] = cfg.spoolDir().str() ;
-
 		m_admin_server = std::make_unique<GSmtp::AdminServer>(
 			GNet::ExceptionSink() ,
 			*m_file_store ,
 			*m_filter_factory ,
-			m_forward_request_signal ,
 			*m_client_secrets ,
 			m_configuration.listeningNames("admin") ,
-			m_configuration.adminServerConfig( info_map , config_map , clientTlsProfile() , domain() ) ) ;
+			m_configuration.adminServerConfig( info_map , clientTlsProfile() , domain() ) ) ;
+
+		m_admin_server->commandSignal().connect( G::Slot::slot(*this,&Unit::onAdminCommand) ) ;
 	}
+}
+
+Main::Unit::~Unit()
+{
+	if( m_admin_server )
+		m_admin_server->commandSignal().disconnect() ;
 }
 
 unsigned int Main::Unit::id() const
@@ -245,10 +242,12 @@ void Main::Unit::onPollTimeout()
 	requestForwarding( "poll" ) ;
 }
 
-void Main::Unit::onForwardRequest( const std::string & reason )
+void Main::Unit::onAdminCommand( GSmtp::AdminServer::Command command , unsigned int arg )
 {
-	// request from admin server
-	requestForwarding( reason ) ;
+	if( command == GSmtp::AdminServer::Command::forward )
+		requestForwarding( "admin" ) ; // forward request from admin server's remote user
+	else if( m_smtp_server )
+		m_smtp_server->nodnsbl( arg ) ;
 }
 
 void Main::Unit::requestForwarding( const std::string & reason )
@@ -271,7 +270,10 @@ void Main::Unit::onRequestForwardingTimeout()
 
 	if( m_client_ptr.busy() )
 	{
-		G_LOG( "Main::Unit::onRequestForwardingTimeout: " << format(txt("forwarding: [%1%]: still busy from last time")) % m_forwarding_reason ) ;
+		G_LOG( "Main::Unit::onRequestForwardingTimeout: "
+			<< format(txt("forwarding: [%1%]: still busy from last time")) % m_forwarding_reason
+			<< (m_client_ptr->peerAddressString().empty() ? "" : ": connected to ")
+			<< m_client_ptr->peerAddressString() ) ;
 		m_forwarding_pending = true ;
 	}
 	else
@@ -382,7 +384,7 @@ void Main::Unit::report()
 		using G::txt ;
 		using G::format ;
 		G_LOG( "Main::Unit::ctor: "
-			<< (name_.empty()?"":"[") << name_ << (name_.empty()?"":"]: ")
+			<< (name_.empty()?"":"[") << name_ << (name_.empty()?"":"] ")
 			<< format(txt("forwarding to %1%")) % m_configuration.serverAddress() ) ;
 	}
 }

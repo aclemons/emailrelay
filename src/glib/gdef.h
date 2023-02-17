@@ -94,6 +94,9 @@
 			#endif
 		#endif
 	#endif
+	#if !defined(GCONFIG_HAVE_CXX_STRING_VIEW)
+		#define GCONFIG_HAVE_CXX_STRING_VIEW 0
+	#endif
 	#if !defined(GCONFIG_HAVE_SYS_UTSNAME_H)
 		#ifdef G_UNIX
 			#define GCONFIG_HAVE_SYS_UTSNAME_H 1
@@ -531,6 +534,13 @@
 	#endif
 	#if !defined(GCONFIG_HAVE_MBEDTLS_NET_H)
 		#define GCONFIG_HAVE_MBEDTLS_NET_H 0
+	#endif
+	#if !defined(GCONFIG_MBEDTLS_DISABLE_PSA_HEADER)
+		#ifdef G_UNIX
+			#define GCONFIG_MBEDTLS_DISABLE_PSA_HEADER 0
+		#else
+			#define GCONFIG_MBEDTLS_DISABLE_PSA_HEADER 1
+		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_OPENSSL)
 		#ifdef G_UNIX

@@ -106,20 +106,25 @@ sub mail
 
 sub submit_start
 {
-	# Starts message submission. See also
-	# submit_line() and submit_end().
+	# Starts message submission. See also submit_line()
+	# and submit_end().
 	my ( $this , $to , $expect_rcpt_to_to_fail ) = @_ ;
-	$to ||= "you\@there" ;
+	if( !defined($to) ) { $to = 'you@there' }
+	my @to_list = ref($to) ? @$to : ($to) ;
 	$expect_rcpt_to_to_fail ||= 0 ;
 	NetClient::cmd( $this , "ehlo here" ) ;
-	NetClient::cmd( $this , "mail from:<me\@here>" ) ;
+	NetClient::cmd( $this , 'mail from:<me@here>' ) ;
 	if( $expect_rcpt_to_to_fail )
 	{
-		NetClient::cmd( $this , "rcpt to:<$to>" , qr/550 [^\n]+\n/ ) ;
+		my $rcpt_to = $to_list[0] ;
+		NetClient::cmd( $this , "rcpt to:<$rcpt_to>" , qr/550 [^\n]+\n/ ) ;
 	}
 	else
 	{
-		NetClient::cmd( $this , "rcpt to:<$to>" ) ;
+		for my $rcpt_to ( @to_list )
+		{
+			NetClient::cmd( $this , "rcpt to:<$rcpt_to>" ) ;
+		}
 		NetClient::cmd( $this , "data" , qr/354 [^\n]+\n/ ) ;
 		NetClient::send( $this , "From: me\@here\r\n" ) ;
 		NetClient::send( $this , "To: you\@there\r\n" ) ;

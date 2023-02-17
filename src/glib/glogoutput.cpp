@@ -116,6 +116,7 @@ G::LogOutput::LogOutput( bool output_enabled_and_summary_info ,
 		.set_output_enabled(output_enabled_and_summary_info)
 		.set_summary_info(output_enabled_and_summary_info)
 		.set_verbose_info(verbose_info_and_debug)
+		.set_more_verbose_info(verbose_info_and_debug)
 		.set_debug(verbose_info_and_debug) ;
 
 	updateTime() ;
@@ -176,6 +177,8 @@ bool G::LogOutput::at( Log::Severity severity ) const noexcept
 		do_output = m_config.m_output_enabled && m_config.m_summary_info ;
 	else if( severity == Log::Severity::InfoVerbose )
 		do_output = m_config.m_output_enabled && m_config.m_verbose_info ;
+	else if( severity == Log::Severity::InfoMoreVerbose )
+		do_output = m_config.m_output_enabled && m_config.m_more_verbose_info ;
 	return do_output ;
 }
 
@@ -394,9 +397,10 @@ const char * G::LogOutput::basename( const char * file ) noexcept
 G::string_view G::LogOutput::levelString( Log::Severity s ) noexcept
 {
 	namespace imp = LogOutputImp ;
-	if( s == Log::Severity::Debug ) return "debug: "_sv ;
+	if( s == Log::Severity::Debug ) return "debug: " ;
 	else if( s == Log::Severity::InfoSummary ) return imp::info() ;
 	else if( s == Log::Severity::InfoVerbose ) return imp::info() ;
+	else if( s == Log::Severity::InfoMoreVerbose ) return imp::info() ;
 	else if( s == Log::Severity::Warning ) return imp::warning() ;
 	else if( s == Log::Severity::Error ) return imp::error() ;
 	else if( s == Log::Severity::Assertion ) return imp::fatal() ;
@@ -423,6 +427,12 @@ G::LogOutput::Config & G::LogOutput::Config::set_summary_info( bool value )
 G::LogOutput::Config & G::LogOutput::Config::set_verbose_info( bool value )
 {
 	m_verbose_info = value ;
+	return *this ;
+}
+
+G::LogOutput::Config & G::LogOutput::Config::set_more_verbose_info( bool value )
+{
+	m_more_verbose_info = value ;
 	return *this ;
 }
 

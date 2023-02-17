@@ -26,12 +26,15 @@ SSL_EXTRA_DIST = \
 	gssl_mbedtls.h \
 	gssl_mbedtls_headers.h \
 	gssl_mbedtls_utils.h \
+	gssl_mbedtls_keygen.h \
+	gssl_mbedtls_keygen.cpp \
 	gssl_use_both.cpp \
 	gssl_use_openssl.cpp \
 	gssl_use_mbedtls.cpp
 SSL_SOURCES = \
 	gssl.h \
 	gssl_none.cpp
+SSL_KEYGEN_SOURCES =
 endif
 
 if GCONFIG_TLS_USE_BOTH
@@ -49,6 +52,9 @@ SSL_SOURCES = \
 	gssl_mbedtls_headers.h \
 	gssl_mbedtls_utils.h \
 	gssl_use_both.cpp
+SSL_KEYGEN_SOURCES = \
+	gssl_mbedtls_keygen.h \
+	gssl_mbedtls_keygen.cpp
 endif
 
 if GCONFIG_TLS_USE_OPENSSL
@@ -58,6 +64,8 @@ SSL_EXTRA_DIST = \
 	gssl_mbedtls.h \
 	gssl_mbedtls_headers.h \
 	gssl_mbedtls_utils.h \
+	gssl_mbedtls_keygen.h \
+	gssl_mbedtls_keygen.cpp \
 	gssl_use_mbedtls.cpp \
 	gssl_use_both.cpp
 SSL_SOURCES = \
@@ -66,6 +74,7 @@ SSL_SOURCES = \
 	gssl_openssl.cpp \
 	gssl_openssl.h \
 	gssl_use_openssl.cpp
+SSL_KEYGEN_SOURCES =
 endif
 
 if GCONFIG_TLS_USE_MBEDTLS
@@ -83,13 +92,17 @@ SSL_SOURCES = \
 	gssl_mbedtls_headers.h \
 	gssl_mbedtls_utils.h \
 	gssl_use_mbedtls.cpp
+SSL_KEYGEN_SOURCES = \
+	gssl_mbedtls_keygen.h \
+	gssl_mbedtls_keygen.cpp
 endif
 
 EXTRA_DIST = \
 	mbedtls-vsnprintf-fix.p1 \
 	$(SSL_EXTRA_DIST)
 
-noinst_LIBRARIES = libgssl.a
+noinst_LIBRARIES = libgssl.a libgsslkeygen.a
 
 libgssl_a_SOURCES = $(SSL_SOURCES)
+libgsslkeygen_a_SOURCES = $(SSL_KEYGEN_SOURCES)
 

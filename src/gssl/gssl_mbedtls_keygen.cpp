@@ -27,8 +27,6 @@
 #include "gssl_mbedtls_headers.h"
 #include "gssl_mbedtls_keygen.h"
 #include "gssl_mbedtls_utils.h"
-#include "gfile.h"
-#include "gsleep.h"
 #include <vector>
 
 #ifdef G_WINDOWS

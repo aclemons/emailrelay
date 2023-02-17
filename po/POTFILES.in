@@ -22,6 +22,7 @@
 ./src/gstore/gmessagestore.cpp
 ./src/gstore/gfiledelivery.cpp
 ./src/gstore/gfilestore.cpp
+./src/main/keygen.cpp
 ./src/main/servicecontrol_unix.cpp
 ./src/main/serviceimp_none.cpp
 ./src/main/submit.cpp
@@ -174,6 +175,7 @@
 ./src/gssl/gssl_use_both.cpp
 ./src/gssl/gssl_openssl.cpp
 ./src/gssl/gssl_use_openssl.cpp
+./src/gssl/gssl_mbedtls_keygen.cpp
 ./src/gssl/gssl_mbedtls.cpp
 ./src/gssl/gssl_none.cpp
 ./src/gverifiers/gverifierfactory.cpp

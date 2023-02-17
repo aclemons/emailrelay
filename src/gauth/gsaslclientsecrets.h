@@ -22,7 +22,6 @@
 #define G_SASL_CLIENT_SECRETS_H
 
 #include "gdef.h"
-#include "gvalid.h"
 #include "gsecret.h"
 #include "gstringview.h"
 
@@ -36,9 +35,15 @@ namespace GAuth
 /// its authentication secret. Conceptually there is one client and
 /// they can have secrets encoded in multiple ways.
 ///
-class GAuth::SaslClientSecrets : public virtual Valid
+class GAuth::SaslClientSecrets
 {
 public:
+	virtual ~SaslClientSecrets() ;
+		///< Destructor.
+
+	virtual bool valid() const = 0 ;
+		///< Returns true if the secrets are valid.
+
 	virtual Secret clientSecret( G::string_view type ) const = 0 ;
 		///< Returns the client secret for the given type.
 		///< The type is "plain" or the CRAM hash algorithm or "oauth".

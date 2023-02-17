@@ -171,8 +171,9 @@ private: // overrides
 protected:
 	void onData( const char * , std::size_t ) override ;
 		///< Override from GNet::SocketProtocolSink.
-		///< Protected to allow derived classes to ignore
-		///< incoming data for DoS prevention.
+		///<
+		///< Protected and non-final to allow derived classes
+		///< to ignore incoming data for DoS prevention.
 
 public:
 	ServerPeer( const ServerPeer & ) = delete ;

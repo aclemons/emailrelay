@@ -20,6 +20,7 @@ work_scripts = \
 	make-manifest.sh \
 	make-setup.sh \
 	make-format \
+	make-website \
 	make2cmake \
 	make2cdb \
 	make2unity \

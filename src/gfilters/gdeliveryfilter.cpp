@@ -21,7 +21,7 @@
 #include "gdef.h"
 #include "gdeliveryfilter.h"
 #include "gfiledelivery.h"
-#include "grange.h"
+#include "gstringtoken.h"
 #include "glog.h"
 
 GFilters::DeliveryFilter::DeliveryFilter( GNet::ExceptionSink es , GStore::FileStore & store ,
@@ -46,10 +46,19 @@ GSmtp::Filter::Result GFilters::DeliveryFilter::run( const GStore::MessageId & m
 		return Result::fail ;
 	}
 
-	GStore::FileDelivery delivery_imp( m_store , m_filter_config.domain , G::Range::range(m_spec) ) ;
+	GStore::FileDelivery::Config config ;
+	G::string_view spec = m_spec ;
+	for( G::StringTokenView t( spec , ";" , 1U ) ; t ; ++t )
+	{
+		if( t() == "l"_sv || t() == "lowercase"_sv ) config.lowercase = true ;
+		if( t() == "h"_sv || t() == "hardlink"_sv ) config.hardlink = true ;
+		if( t() == "n"_sv || t() == "no_delete"_sv ) config.no_delete = true ;
+	}
+
+	GStore::FileDelivery delivery_imp( m_store , config ) ;
 	GStore::MessageDelivery & delivery = delivery_imp ;
 	delivery.deliver( message_id ) ;
 
-	return Result::abandon ; // (original message deleted)
+	return config.no_delete ? Result::ok : Result::abandon ;
 }
 

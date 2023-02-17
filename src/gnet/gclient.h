@@ -131,6 +131,10 @@ public:
 	bool hasConnected() const ;
 		///< Returns true if ever connected().
 
+	std::string peerAddressString( bool with_port = true ) const ;
+		///< Returns the peer address display string
+		///< or the empty string if not connected().
+
 	void disconnect() ;
 		///< Aborts the connection and destroys the object's internal
 		///< state, resulting in a zombie object. After disconnect()

@@ -264,14 +264,12 @@ void G::Str::removeAll( std::string & s , char c )
 	s.erase( std::remove_if( s.begin() , s.end() , [c](char x){return x==c;} ) , s.end() ) ;
 }
 
-#ifndef G_LIB_SMALL
 std::string G::Str::removedAll( const std::string & s_in , char c )
 {
 	std::string s( s_in ) ;
 	removeAll( s , c ) ;
 	return s ;
 }
-#endif
 
 std::string G::Str::only( string_view chars , string_view s )
 {
@@ -303,9 +301,9 @@ G::string_view G::Str::trimLeftView( string_view sv , string_view ws , std::size
 	if( limit != 0U && ( n == std::string::npos || n > limit ) )
 		n = limit >= sv.size() ? std::string::npos : limit ;
 	if( n == std::string::npos )
-		return sv.substr( std::nothrow , 0U , 0U ) ;
+		return sv_substr( sv , 0U , 0U ) ;
 	else if( n != 0U )
-		return sv.substr( std::nothrow , n ) ;
+		return sv_substr( sv , n ) ;
 	else
 		return sv ;
 }
@@ -328,9 +326,9 @@ G::string_view G::Str::trimRightView( string_view sv , string_view ws , std::siz
 	if( limit != 0U && ( n == std::string::npos || sv.size() > (limit+n+1U) ) )
 		n = limit >= sv.size() ? std::string::npos : (sv.size()-limit-1U) ;
 	if( n == std::string::npos )
-		return sv.substr( std::nothrow , 0U , 0U ) ;
+		return sv_substr( sv , 0U , 0U ) ;
 	else if( (n+1U) != sv.size() )
-		return sv.substr( std::nothrow , 0U , n+1U ) ;
+		return sv_substr( sv , 0U , n+1U ) ;
 	else
 		return sv ;
 }
@@ -403,7 +401,7 @@ char G::StrImp::toUpper( char c ) noexcept
 bool G::Str::isNumeric( string_view s , bool allow_minus_sign ) noexcept
 {
 	bool bump = allow_minus_sign && s.size() > 1U && s[0] == '-' ;
-	return StrImp::allOf( bump?s.substr(std::nothrow,1U):s , StrImp::isDigit ) ; // (true if empty)
+	return StrImp::allOf( bump?sv_substr(s,1U):s , StrImp::isDigit ) ; // (true if empty)
 }
 
 #ifndef G_LIB_SMALL
@@ -589,7 +587,7 @@ long G::StrImp::toLong( string_view s , bool & overflow , bool & invalid ) noexc
 		invalid = true ;
 		return 0L ;
 	}
-	unsigned long ul = toULong( s.substr(std::nothrow,(negative||positive)?1U:0U) , overflow , invalid ) ;
+	unsigned long ul = toULong( sv_substr(s,(negative||positive)?1U:0U) , overflow , invalid ) ;
 	static constexpr long long_max = std::numeric_limits<long>::max() ;
 	if( ul > long_max || (negative && (ul==long_max)) )
 	{
@@ -627,12 +625,10 @@ unsigned int G::Str::toUInt( string_view s1 , string_view s2 )
 	return !s1.empty() && isUInt(s1) ? toUInt(s1) : toUInt(s2) ;
 }
 
-#ifndef G_LIB_SMALL
 unsigned int G::Str::toUInt( string_view s , unsigned int default_ )
 {
 	return !s.empty() && isUInt(s) ? toUInt(s) : default_ ;
 }
-#endif
 
 #ifndef G_LIB_SMALL
 unsigned int G::Str::toUInt( string_view s , Limited )
@@ -816,7 +812,7 @@ G::string_view G::StrImp::fromUnsignedToHex( U u , char * out_p ) noexcept
 		shift -= 4U ;
 	}
 	string_view sv( out_p , buffer_size ) ;
-	return sv.substr( std::nothrow , std::min( sv.find_first_not_of('0') , static_cast<std::size_t>(buffer_size-1U) ) ) ;
+	return sv_substr( sv , std::min( sv.find_first_not_of('0') , static_cast<std::size_t>(buffer_size-1U) ) ) ;
 }
 
 void G::Str::toLower( std::string & s )
@@ -940,7 +936,6 @@ std::string G::Str::toPrintableAscii( const std::string & in , char escape )
 	return result ;
 }
 
-#ifndef G_LIB_SMALL
 std::string G::Str::toPrintableAscii( const std::wstring & in , wchar_t escape )
 {
 	std::string result ;
@@ -949,7 +944,6 @@ std::string G::Str::toPrintableAscii( const std::wstring & in , wchar_t escape )
 		StrImp::outputPrintable( [&result](wchar_t cc){result.append(1U,static_cast<char>(cc));} , c , escape , static_cast<char>(escape) , false ) ;
 	return result ;
 }
-#endif
 
 std::string G::Str::readLineFrom( std::istream & stream , string_view eol )
 {
@@ -1265,7 +1259,7 @@ G::string_view G::Str::ws() noexcept
 #ifndef G_LIB_SMALL
 G::string_view G::Str::alnum() noexcept
 {
-	return alnum_().substr( std::nothrow , 0U , alnum_().size()-1U ) ;
+	return sv_substr( alnum_() , 0U , alnum_().size()-1U ) ;
 }
 #endif
 
@@ -1303,7 +1297,7 @@ G::string_view G::Str::headView( string_view in , std::size_t pos , string_view 
 	return
 		pos == std::string::npos ?
 			default_ :
-			( pos == 0U ? string_view(in.data(),std::size_t(0U)) : ( pos >= in.size() ? in : in.substr(std::nothrow,0U,pos) ) ) ;
+			( pos == 0U ? string_view(in.data(),std::size_t(0U)) : ( pos >= in.size() ? in : sv_substr(in,0U,pos) ) ) ;
 }
 
 G::string_view G::Str::headView( string_view in , string_view sep , bool default_empty ) noexcept
@@ -1332,7 +1326,7 @@ G::string_view G::Str::tailView( string_view in , std::size_t pos , string_view 
 	return
 		pos == std::string::npos ?
 			default_ :
-			( (pos+1U) >= in.size() ? string_view() : in.substr(std::nothrow,pos+1U) ) ;
+			( (pos+1U) >= in.size() ? string_view() : sv_substr(in,pos+1U) ) ;
 }
 
 G::string_view G::Str::tailView( string_view in , string_view sep , bool default_empty ) noexcept
@@ -1370,16 +1364,16 @@ bool G::Str::isPositive( string_view s_in ) noexcept
 {
 	string_view s = trimmedView( s_in , ws() ) ;
 	return !s.empty() && (
-		s.imatch("y"_sv) || s.imatch("yes"_sv) || s.imatch("t"_sv) ||
-		s.imatch("true"_sv) || s.imatch("1"_sv) || s.imatch("on"_sv) ) ;
+		sv_imatch(s,"y"_sv) || sv_imatch(s,"yes"_sv) || sv_imatch(s,"t"_sv) ||
+		sv_imatch(s,"true"_sv) || sv_imatch(s,"1"_sv) || sv_imatch(s,"on"_sv) ) ;
 }
 
 bool G::Str::isNegative( string_view s_in ) noexcept
 {
 	string_view s = trimmedView( s_in , ws() ) ;
 	return !s.empty() && (
-		s.imatch("n"_sv) || s.imatch("no"_sv) || s.imatch("f"_sv) ||
-		s.imatch("false"_sv) || s.imatch("0"_sv) || s.imatch("off"_sv) ) ;
+		sv_imatch(s,"n"_sv) || sv_imatch(s,"no"_sv) || sv_imatch(s,"f"_sv) ||
+		sv_imatch(s,"false"_sv) || sv_imatch(s,"0"_sv) || sv_imatch(s,"off"_sv) ) ;
 }
 
 bool G::Str::match( string_view a , string_view b ) noexcept
@@ -1401,7 +1395,7 @@ bool G::Str::iless( string_view a , string_view b ) noexcept
 
 bool G::StrImp::imatchc( char c1 , char c2 ) noexcept
 {
-	return string_view(&c1,1U).imatch({&c2,1U}) ;
+	return sv_imatch( string_view(&c1,1U) , string_view(&c2,1U) ) ;
 }
 
 #ifndef G_LIB_SMALL
@@ -1413,13 +1407,13 @@ bool G::Str::imatch( char c1 , char c2 ) noexcept
 
 bool G::Str::imatch( string_view a , string_view b ) noexcept
 {
-	return a.imatch( b ) ;
+	return sv_imatch( a , b ) ;
 }
 
 #ifndef G_LIB_SMALL
 bool G::StrImp::imatch( const std::string & a , const std::string & b )
 {
-	return string_view(a).imatch( b ) ;
+	return sv_imatch( string_view(a) , string_view(b) ) ;
 }
 #endif
 

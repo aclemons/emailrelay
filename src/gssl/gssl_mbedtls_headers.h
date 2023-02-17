@@ -21,6 +21,11 @@
 #ifndef G_SSL_MBEDTLS_HEADERS_H
 #define G_SSL_MBEDTLS_HEADERS_H
 
+#if GCONFIG_MBEDTLS_DISABLE_PSA_HEADER
+// 3.3.0's psa/crypto_extra.h is broken for c++17
+#define PSA_CRYPTO_EXTRA_H
+#endif
+
 #include <mbedtls/ssl.h>
 #include <mbedtls/ssl_ciphersuites.h>
 #include <mbedtls/entropy.h>

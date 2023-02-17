@@ -56,55 +56,61 @@ GSmtp::Filter::Result GFilters::SplitFilter::run( const GStore::MessageId & mess
 	std::sort( domains.begin() , domains.end() ) ;
 	domains.erase( std::unique(domains.begin(),domains.end()) , domains.end() ) ;
 
-	if( domains.size() >= 2U )
+	// assign a message-id per domain
+	G::StringArray ids ;
+	ids.reserve( domains.size() ) ;
+	ids.push_back( message_id.str() ) ;
+	for( std::size_t i = 1U ; i < domains.size() ; i++ )
+		ids.push_back( m_store.newId().str() ) ;
+
+	// prepare extra headers giving the message ids of the split group
+	std::stringstream extra_headers ;
+	if( ids.size() > 1U )
 	{
-		// assign a message-id per domain
-		G::StringArray ids ;
-		ids.reserve( domains.size() ) ;
-		ids.push_back( message_id.str() ) ;
-		for( std::size_t i = 1U ; i < domains.size() ; i++ )
-			ids.push_back( m_store.newId().str() ) ;
+		extra_headers << m_store.x() << "SplitGroupCount: " << ids.size() << "\n" ;
+		for( const auto id : ids )
+			extra_headers << m_store.x() << "SplitGroup: " << id << "\n" ;
+	}
 
-		// create new messages for each domain
-		for( std::size_t i = 1U ; i < domains.size() ; i++ )
-		{
-			std::string domain = domains[i] ;
-			GStore::MessageId new_id( ids[i] ) ;
-			G::StringArray recipients = match( envelope.to_remote , domain ) ;
+	// create new messages for each domain
+	for( std::size_t i = 1U ; i < domains.size() ; i++ )
+	{
+		std::string domain = domains[i] ;
+		GStore::MessageId new_id( ids[i] ) ;
+		G::StringArray recipients = match( envelope.to_remote , domain ) ;
 
-			G::Path new_content_path = m_store.contentPath( new_id ) ;
-			G::Path new_envelope_path = m_store.envelopePath( new_id ) ;
+		G::Path new_content_path = m_store.contentPath( new_id ) ;
+		G::Path new_envelope_path = m_store.envelopePath( new_id ) ;
 
-			G_LOG( "GFilters::SplitFilter::start: split: creating message "
-				<< new_id.str() << ": setting forward-to [" << domain << "]" ) ;
+		G_LOG( "GFilters::SplitFilter::start: split: creating message "
+			<< new_id.str() << ": setting forward-to [" << domain << "]" ) ;
 
-			GStore::Envelope new_envelope = envelope ;
-			new_envelope.to_local.clear() ;
-			new_envelope.to_remote = recipients ;
-			new_envelope.forward_to = domain ;
+		GStore::Envelope new_envelope = envelope ;
+		new_envelope.to_local.clear() ;
+		new_envelope.to_remote = recipients ;
+		new_envelope.forward_to = domain ;
 
-			if( !FileOp::hardlink( content_path , new_content_path ) )
-				throw G::Exception( "split: cannot copy content file" ,
-					new_content_path.str() , G::Process::strerror(FileOp::errno_()) ) ;
-			G::ScopeExit clean_up_content( [new_content_path](){FileOp::remove(new_content_path);} ) ;
+		if( !FileOp::hardlink( content_path , new_content_path ) )
+			throw G::Exception( "split: cannot copy content file" ,
+				new_content_path.str() , G::Process::strerror(FileOp::errno_()) ) ;
+		G::ScopeExit clean_up_content( [new_content_path](){FileOp::remove(new_content_path);} ) ;
 
-			std::ofstream new_envelope_stream ;
-			FileOp::openOut( new_envelope_stream , new_envelope_path ) ;
+		std::ofstream new_envelope_stream ;
+		FileOp::openOut( new_envelope_stream , new_envelope_path ) ;
+		GStore::Envelope::write( new_envelope_stream , new_envelope ) ;
+		GStore::Envelope::copyExtra( extra_headers , new_envelope_stream ) ;
+		extra_headers.clear() ;
+		extra_headers.seekg( 0 ) ;
 
-			GStore::Envelope::write( new_envelope_stream , new_envelope ) ;
-			for( const auto group_id : ids )
-				new_envelope_stream << m_store.x() << "SplitGroup: " << group_id << "\r\n" ;
-			new_envelope_stream.close() ;
-			if( !new_envelope_stream )
-				throw G::Exception( "split: cannot create envelope file" ,
-					new_envelope_path.str() , G::Process::strerror(FileOp::errno_()) ) ;
+		new_envelope_stream.close() ;
+		if( !new_envelope_stream )
+			throw G::Exception( "split: cannot create envelope file" ,
+				new_envelope_path.str() , G::Process::strerror(FileOp::errno_()) ) ;
 
-			clean_up_content.release() ;
-		}
+		clean_up_content.release() ;
 	}
 
 	// update the original message
-	// TODO also add split-group info
 	G_LOG( "GFilters::SplitFilter::start: split: updating message "
 		<< message_id.str() << ": setting forward-to [" << domains[0] << "]" ) ;
 	std::string domain = domains[0] ;
@@ -113,7 +119,7 @@ GSmtp::Filter::Result GFilters::SplitFilter::run( const GStore::MessageId & mess
 	msg.editEnvelope( [domain,&recipients](GStore::Envelope &env_){
 			env_.to_remote = recipients ;
 			env_.forward_to = domain ;
-		} ) ;
+		} , &extra_headers ) ;
 
 	if( m_filter_type == Filter::Type::server && domains.size() >= 2U )
 		rescan_out = true ;

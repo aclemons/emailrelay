@@ -151,8 +151,11 @@ void G::Process::beSpecialForExit( SignalSafe , Identity special_identity ) noex
 	ProcessImp::beSpecialForExit( SignalSafe() , special_identity ) ;
 }
 
-G::Identity G::Process::beOrdinaryAtStartup( Identity ordinary_id , bool change_group )
+std::pair<G::Identity,G::Identity> G::Process::beOrdinaryAtStartup( const std::string & ordinary_name ,
+	bool change_group )
 {
+	Identity ordinary_id( ordinary_name ) ;
+
 	// revoke extra groups, but not if we are leaving groups alone
 	// or we have been given root as the non-root user or we
 	// are running vanilla
@@ -163,7 +166,8 @@ G::Identity G::Process::beOrdinaryAtStartup( Identity ordinary_id , bool change_
 			ProcessImp::revokeExtraGroups() ;
 	}
 
-	return ProcessImp::beOrdinary( ordinary_id , change_group ) ;
+	Identity startup_id = ProcessImp::beOrdinary( ordinary_id , change_group ) ;
+	return { ordinary_id , startup_id } ;
 }
 
 void G::Process::beOrdinary( Identity ordinary_id , bool change_group )

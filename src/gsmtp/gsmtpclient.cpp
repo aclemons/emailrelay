@@ -47,6 +47,7 @@ GSmtp::Client::Client( GNet::ExceptionSink es , GStore::MessageStore & store ,
 		m_protocol(es,*this,secrets,config.sasl_client_config,config.client_protocol_config,config.secure_tunnel) ,
 		m_message_count(0U)
 {
+	G_ASSERT( m_filter.get() != nullptr ) ;
 	m_iter = m_store->iterator( true ) ;
 	m_protocol.doneSignal().connect( G::Slot::slot(*this,&Client::protocolDone) ) ;
 	m_protocol.filterSignal().connect( G::Slot::slot(*this,&Client::filterStart) ) ;
@@ -69,6 +70,7 @@ GSmtp::Client::Client( GNet::ExceptionSink es ,
 		m_protocol(es,*this,secrets,config.sasl_client_config,config.client_protocol_config,config.secure_tunnel) ,
 		m_message_count(0U)
 {
+	G_ASSERT( m_filter.get() != nullptr ) ;
 	m_protocol.doneSignal().connect( G::Slot::slot(*this,&Client::protocolDone) ) ;
 	m_protocol.filterSignal().connect( G::Slot::slot(*this,&Client::filterStart) ) ;
 	m_filter->doneSignal().connect( G::Slot::slot(*this,&Client::filterDone) ) ;
@@ -407,7 +409,8 @@ void GSmtp::Client::routingFilterDone( int filter_result )
 		move_on = true ;
 	}
 
-	G_LOG( "GSmtp::Client::routingFilterDone: routing: routing-filter: done: "
+	G_LOG_IF( !m_routing_filter->quiet() , "GSmtp::Client::routingFilterDone: "
+		"routing: routing-filter: done: "
 		<< m_routing_filter->str(Filter::Type::client)
 		<< (reopen_error.empty()?std::string():(": "+reopen_error))
 		<< (move_on?": moving on":"") ) ;
@@ -424,7 +427,8 @@ void GSmtp::Client::routingFilterDone( int filter_result )
 	else // ok and reopened
 	{
 		std::string forward_to_address = message()->forwardToAddress() ;
-		G_LOG( "GSmtp::Client::routingFilterDone: routing: forward-to-address from envelope: [" << forward_to_address << "]" ) ;
+		G_LOG_IF( !m_routing_filter->quiet() , "GSmtp::Client::routingFilterDone: "
+			"routing: forward-to-address from envelope: [" << forward_to_address << "]" ) ;
 
 		G::CallFrame this_( m_stack ) ;
 		eventSignal().emit( "sending" , message()->location() , std::string() ) ;

@@ -67,12 +67,14 @@ bool G::File::rename( const char * from , const char * to , bool & enoent ) noex
 	return ok ;
 }
 
+#ifndef G_LIB_SMALL
 void G::File::copy( const Path & from , const Path & to )
 {
 	std::string reason = copy( from , to , 0 ) ;
 	if( !reason.empty() )
 		throw CannotCopy( std::string() + "[" + from.str() + "] to [" + to.str() + "]: " + reason ) ;
 }
+#endif
 
 bool G::File::copy( const Path & from , const Path & to , std::nothrow_t )
 {
@@ -117,6 +119,7 @@ std::string G::File::copy( const Path & from , const Path & to , int )
 	return {} ;
 }
 
+#ifndef G_LIB_SMALL
 void G::File::copy( std::istream & in , std::ostream & out , std::streamsize limit , std::string::size_type block )
 {
 	std::ios_base::iostate in_state = in.rdstate() ;
@@ -143,6 +146,7 @@ void G::File::copy( std::istream & in , std::ostream & out , std::streamsize lim
 	// restore the input failbit because it might have been set by us reading an incomplete block at eof
 	in.clear( (in.rdstate() & ~std::ios_base::failbit) | (in_state & std::ios_base::failbit) ) ;
 }
+#endif
 
 bool G::File::exists( const Path & path )
 {
@@ -271,7 +275,7 @@ bool G::File::mkdirsr( const Path & path , int & e , int & limit )
 		return false ;
 	}
 
-	return true ;
+	return e == 0 ;
 }
 
 #ifndef G_LIB_SMALL

@@ -21,65 +21,136 @@
 #include "gdef.h"
 #include "gsecrets.h"
 #include "gsecretsfile.h"
+#include "gbase64.h"
+#include "gassert.h"
 #include "glog.h"
-#include <algorithm>
 
-void GAuth::Secrets::check( const std::string & p1 , const std::string & p2 , const std::string & p3 )
+namespace GAuth
 {
-	G::StringArray list { p1 , p2 , p3 } ;
-	list.erase( std::remove(list.begin(),list.end(),std::string()) , list.end() ) ;
-	list.erase( std::remove(list.begin(),list.end(),"/pam") , list.end() ) ;
-	std::sort( list.begin() , list.end() ) ;
-	list.erase( std::unique(list.begin(),list.end()) , list.end() ) ;
-	std::for_each( list.begin() , list.end() , &SecretsFile::check ) ;
+	namespace SecretsImp
+	{
+		bool pam( const std::string & s )
+		{
+			return !G::is_windows() && ( s == "pam:" || s == "/pam" ) ;
+		}
+		bool plain( const std::string & s )
+		{
+			return G::Str::headMatch( s , "plain:" ) ;
+		}
+		bool parse( const std::string & s , std::string & id , std::string & pwd )
+		{
+			std::string spec = G::Str::tail( s , ":" ) ;
+			id = G::Str::head( spec , ":" , false ) ;
+			pwd = G::Str::tail( spec , ":" , true ) ;
+			return G::Base64::valid(id) && G::Base64::valid(pwd) ;
+		}
+		void check( const std::string & s )
+		{
+			if( plain(s) )
+			{
+				std::string id ;
+				std::string pwd ;
+				if( !parse( s , id , pwd ) )
+					throw Secrets::ClientAccountError() ;
+			}
+			else
+			{
+				SecretsFile::check( s ) ;
+			}
+		}
+	}
 }
 
-GAuth::Secrets::Secrets( const std::string & path , const std::string & log_name ) :
-	m_source(path)
+void GAuth::Secrets::check( const std::string & c , const std::string & s , const std::string & p )
 {
-	G_DEBUG( "GAuth::Secrets:ctor: [" << path << "]" ) ;
-	if( m_source != "/pam" )
-		m_imp = std::make_unique<SecretsFile>( path , true , log_name ) ;
+	namespace imp = SecretsImp ;
+	if( !c.empty() ) imp::check( c ) ;
+	if( !s.empty() && !imp::pam(s) && s != c ) SecretsFile::check( s ) ;
+	if( !p.empty() && !imp::pam(p) && p != s && p != c ) SecretsFile::check( p ) ;
 }
 
-#ifndef G_LIB_SMALL
-GAuth::Secrets::Secrets()
+std::unique_ptr<GAuth::SaslServerSecrets> GAuth::Secrets::newServerSecrets( const std::string & path ,
+	const std::string & log_name )
 {
-	if( m_source != "/pam" )
-		m_imp = std::make_unique<SecretsFile>( std::string() , false , std::string() ) ;
+	return std::make_unique<SecretsFileServer>( path , log_name ) ;
 }
-#endif
 
-GAuth::Secrets::~Secrets()
+std::unique_ptr<GAuth::SaslClientSecrets> GAuth::Secrets::newClientSecrets( const std::string & path ,
+	const std::string & log_name )
+{
+	return std::make_unique<SecretsFileClient>( path , log_name ) ;
+}
+
+// ==
+
+GAuth::SecretsFileClient::SecretsFileClient( const std::string & path , const std::string & log_name ) :
+	m_id_pwd(SecretsImp::plain(path)) ,
+	m_file(m_id_pwd?std::string():path,true,log_name)
+{
+	if( m_id_pwd )
+		SecretsImp::parse( path , m_id , m_pwd ) ;
+}
+
+GAuth::SecretsFileClient::~SecretsFileClient()
 = default ;
 
-std::string GAuth::Secrets::source() const
+bool GAuth::SecretsFileClient::valid() const
 {
-	return m_source ;
+	return m_id_pwd || m_file.valid() ;
 }
 
-bool GAuth::Secrets::valid() const
+GAuth::Secret GAuth::SecretsFileClient::clientSecret( G::string_view type ) const
 {
-	return m_source == "/pam" || m_imp->valid() ;
+	if( m_id_pwd && type == "plain"_sv )
+	{
+		return GAuth::Secret( {m_id,"base64"} , {m_pwd,"base64"} ) ;
+	}
+	else if( m_id_pwd )
+	{
+		return GAuth::Secret::none() ;
+	}
+	else
+	{
+		return m_file.clientSecret( type ) ;
+	}
 }
 
-GAuth::Secret GAuth::Secrets::clientSecret( G::string_view type ) const
+// ==
+
+GAuth::SecretsFileServer::SecretsFileServer( const std::string & spec , const std::string & log_name ) :
+	m_pam(SecretsImp::pam(spec)) ,
+	m_file(m_pam?std::string():spec,true,log_name)
 {
-	return valid() ? m_imp->clientSecret(type) : Secret::none() ;
 }
 
-GAuth::Secret GAuth::Secrets::serverSecret( G::string_view type , G::string_view id ) const
+GAuth::SecretsFileServer::~SecretsFileServer()
+= default ;
+
+std::string GAuth::SecretsFileServer::source() const
 {
-	return valid() ? m_imp->serverSecret(type,id) : Secret::none() ;
+	return m_pam ? std::string("pam:") : m_file.path() ;
 }
 
-std::pair<std::string,std::string> GAuth::Secrets::serverTrust( const std::string & address_range ) const
+bool GAuth::SecretsFileServer::valid() const
 {
-	return valid() ? m_imp->serverTrust( address_range ) : std::make_pair(std::string(),std::string()) ;
+	return m_pam || m_file.valid() ;
 }
 
-bool GAuth::Secrets::contains( G::string_view type , G::string_view id ) const
+GAuth::Secret GAuth::SecretsFileServer::serverSecret( G::string_view type , G::string_view id ) const
 {
-	return valid() ? m_imp->contains( type , id ) : false ;
+	G_ASSERT( !m_pam ) ;
+	return m_file.serverSecret( type , id ) ;
+}
+
+std::pair<std::string,std::string> GAuth::SecretsFileServer::serverTrust( const std::string & address_range ) const
+{
+	G_ASSERT( !m_pam ) ;
+	return m_file.serverTrust( address_range ) ;
+}
+
+bool GAuth::SecretsFileServer::contains( G::string_view type , G::string_view id ) const
+{
+	G_ASSERT( !m_pam ) ;
+	return m_file.contains( type , id ) ;
 }
 

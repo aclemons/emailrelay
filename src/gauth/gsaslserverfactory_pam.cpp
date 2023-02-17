@@ -27,8 +27,8 @@
 std::unique_ptr<GAuth::SaslServer> GAuth::SaslServerFactory::newSaslServer( const SaslServerSecrets & secrets ,
 	bool allow_pop , const std::string & config , const std::string & challenge_domain )
 {
-	if( secrets.source() == "/pam" )
-		return std::make_unique<SaslServerPam>( secrets , allow_pop ) ;
+	if( secrets.source() == "pam:" )
+		return std::make_unique<SaslServerPam>( allow_pop ) ;
 	else
 		return std::make_unique<SaslServerBasic>( secrets , allow_pop , config , challenge_domain ) ;
 }

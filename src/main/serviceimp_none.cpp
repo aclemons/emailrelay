@@ -32,7 +32,10 @@
 #define SERVICE_STOP_PENDING 3
 #define SERVICE_RUNNING 4
 
-static std::string name_ ;
+namespace ServiceImp
+{
+	std::string name_ ;
+}
 
 std::string ServiceImp::install( const std::string & , const std::string & name , const std::string & ,
 	const std::string & )

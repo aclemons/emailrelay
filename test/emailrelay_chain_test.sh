@@ -28,8 +28,8 @@
 #   server-4 as 'alice'. Server-4 authenticates alice and stores
 #   messages in store-4 which server-5 is continuously polling.
 #   Server-5 forwards messages that appear in store-4 to
-#   server-6 using a client filter. Server-6 stores messages
-#   in store-5 using a server filter.
+#   server-6 using a client filter. Server-6 delivers messages
+#   to a mailbox under store-5 using a delivery filter.
 #
 # The test succeeds if the message gets into the final spool directory.
 #
@@ -269,6 +269,18 @@ EOF
 	chmod +x "$cfg_base_dir/filter.sh"
 }
 
+CreateVerifier()
+{
+	cat <<EOF | sed 's/^ *_//' > ${cfg_base_dir}/verifier.sh
+            _#!/bin/sh
+            _# verifier.sh
+            _echo ""
+            _echo success
+            _exit 1
+EOF
+	chmod +x "$cfg_base_dir/verifier.sh"
+}
+
 Sleep()
 {
 	if test "$opt_use_valgrind" -eq 1
@@ -290,6 +302,7 @@ Main()
 	CreateBase
 	CreateAuth
 	CreateFilter
+	CreateVerifier
 	CreateSpool store-1
 	CreateSpool store-2
 	CreateSpool store-3
@@ -311,7 +324,8 @@ Main()
 		--5-port=${cfg_pp}05 --5-spool-dir=$cfg_base_dir/store-4 \
 			--5-poll=1 --5-forward-to=localhost:${cfg_pp}06 --5-client-filter=$cfg_base_dir/filter.sh \
 		--6-port=${cfg_pp}06 --6-spool-dir=$cfg_base_dir/store-5 \
-			--6-filter=$cfg_base_dir/filter.sh
+			--6-address-verifier=$cfg_base_dir/verifier.sh \
+			--6-filter=deliver:
 
 	Sleep 1
 
@@ -326,7 +340,7 @@ Main()
 	for i in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19
 	do
 		Sleep 1
-		if TestDone store-5
+		if TestDone store-5/success
 		then
 			success="1"
 			break

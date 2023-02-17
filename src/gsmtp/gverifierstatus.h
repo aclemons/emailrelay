@@ -38,8 +38,8 @@ namespace GSmtp
 /// and a 'response' is supplied. The response is typically reported back
 /// to the submitter, so it should not contain too much detail.
 ///
-/// The 'reason' string can be added by the user of the verifier to give
-/// more context in the log in addition to 'response'.
+/// The 'reason' string can be added to give more context in the log
+/// in addition to 'response'.
 ///
 /// If a valid local recipient then 'is_local' is set true, 'full_name'
 /// is set to the full description of the mailbox and 'address' is set

@@ -145,8 +145,10 @@ $(TAR):
 zip: $(ZIP)
 
 $(ZIP): $(TAR)
-	tar -xzf $(TAR)
-	sh -c "cd emailrelay-$(VERSION) && zip -r ../$(ZIP) ."
+	-mkdir zip.d 2>/dev/null
+	-@rm -rf zip.d/* 2>/dev/null
+	tar -C zip.d --strip-components=1 -xzf $(TAR)
+	sh -c "cd zip.d && zip -r ../$(ZIP) ."
 
 .PHONY: mbedtls
 mbedtls:

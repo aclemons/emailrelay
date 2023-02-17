@@ -51,11 +51,14 @@ public:
 	Unit( Run & , unsigned int unit_id , const std::string & version ) ;
 		///< Constructor.
 
+	~Unit() ;
+		///< Destructor.
+
 	unsigned int id() const ;
 		///< Returns the unit id.
 
 	std::string name( const std::string & default_ = {} ) const ;
-		///< Returns the unit name, or the empty string if the default unit.
+		///< Returns the unit name, or the supplied value if un-named.
 
 	void start() ;
 		///< Starts things off.
@@ -115,7 +118,7 @@ private:
 	bool logForwarding() const ;
 	std::string startForwarding() ;
 	void requestForwarding( const std::string & reason = {} ) ;
-	void onForwardRequest( const std::string & reason ) ;
+	void onAdminCommand( GSmtp::AdminServer::Command , unsigned int ) ;
 	void onServerEvent( const std::string & s1 , const std::string & ) ;
 	void onStoreRescanEvent() ;
 	void onClientEvent( const std::string & , const std::string & , const std::string & ) ;
@@ -143,16 +146,15 @@ private:
 	GNet::ExceptionSink m_es ;
 	G::Slot::Signal<unsigned,std::string,bool> m_client_done_signal ;
 	G::Slot::Signal<unsigned,std::string,std::string,std::string> m_event_signal ;
-	G::Slot::Signal<const std::string&> m_forward_request_signal ;
 	std::unique_ptr<GNet::Timer<Unit>> m_forwarding_timer ;
 	std::unique_ptr<GNet::Timer<Unit>> m_poll_timer ;
 	std::unique_ptr<GStore::FileStore> m_file_store ;
 	std::unique_ptr<GStore::FileDelivery> m_file_delivery ;
 	std::unique_ptr<GSmtp::FilterFactoryBase> m_filter_factory ;
 	std::unique_ptr<GSmtp::VerifierFactoryBase> m_verifier_factory ;
-	std::unique_ptr<GAuth::Secrets> m_client_secrets ;
-	std::unique_ptr<GAuth::Secrets> m_server_secrets ;
-	std::unique_ptr<GAuth::Secrets> m_pop_secrets ;
+	std::unique_ptr<GAuth::SaslClientSecrets> m_client_secrets ;
+	std::unique_ptr<GAuth::SaslServerSecrets> m_server_secrets ;
+	std::unique_ptr<GAuth::SaslServerSecrets> m_pop_secrets ;
 	std::unique_ptr<GSmtp::Server> m_smtp_server ;
 	std::unique_ptr<GPop::Store> m_pop_store ;
 	std::unique_ptr<GPop::Server> m_pop_server ;

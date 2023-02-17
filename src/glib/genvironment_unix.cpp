@@ -43,10 +43,10 @@ void G::Environment::put( const std::string & name , const std::string & value )
 	::putenv( deliberately_leaky_copy ) ;
 } // NOLINT
 
-G::Environment G::Environment::minimal()
+G::Environment G::Environment::minimal( bool sbin )
 {
 	Environment env ;
-	env.add( "PATH" , "/usr/bin:/bin" ) ; // no "."
+	env.add( "PATH" , sbin ? "/usr/bin:/bin:/usr/sbin:/sbin" : "/usr/bin:/bin" ) ; // no "."
 	env.add( "IFS" , " \t\n" ) ;
 	return env ;
 }

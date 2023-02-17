@@ -202,7 +202,7 @@ std::string GSmtp::ServerParser::parseMailStringValue( G::string_view line , G::
 	std::string result ;
 	if( out.error.empty() && out.tailpos != std::string::npos && out.tailpos < line.size() )
 	{
-		G::string_view tail = G::string_view(line).substr( std::nothrow , out.tailpos ) ;
+		G::string_view tail = G::sv_substr( G::string_view(line) , out.tailpos ) ;
 		G::StringTokenView word( tail , " \t"_sv ) ;
 		for( ; word ; ++word )
 		{
@@ -225,7 +225,7 @@ bool GSmtp::ServerParser::parseMailBoolean( G::string_view line , G::string_view
 	bool result = false ;
 	if( out.error.empty() && out.tailpos != std::string::npos && out.tailpos < line.size() )
 	{
-		G::string_view tail = line.substr( std::nothrow , out.tailpos ) ;
+		G::string_view tail = G::sv_substr( line , out.tailpos ) ;
 		G::StringTokenView word( tail , " \t"_sv ) ;
 		for( ; word && !result ; ++word )
 		{

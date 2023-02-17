@@ -308,11 +308,10 @@ struct UpdateBootLink : public ActionBase
 	bool m_active ;
 	bool m_start_on_boot ;
 	trstring m_ok ;
-	G::Path m_dir_boot ;
 	std::string m_name ;
 	G::Path m_startstop_src ;
 	G::Path m_exe ;
-	UpdateBootLink( bool active , bool start_on_boot , G::Path dir_boot , std::string , G::Path startstop_src , G::Path exe ) ;
+	UpdateBootLink( bool active , bool start_on_boot , std::string , G::Path startstop_src , G::Path exe ) ;
 	void run() override ;
 	trstring text() const override ;
 	std::string subject() const override ;
@@ -385,13 +384,12 @@ struct GenerateKey : public ActionBase
 
 struct Launcher : public ActionBase
 {
-	Launcher( bool as_service , const G::Path & bat , const G::Path & exe , const G::Path & conf , const G::Path & dir_boot ) ;
+	Launcher( bool as_service , const G::Path & bat , const G::Path & exe , const G::Path & conf ) ;
 	void run() override ;
 	trstring text() const override ;
 	std::string subject() const override ;
 	trstring ok() const override ;
 	bool m_as_service ;
-	G::Path m_dir_boot ;
 	trstring m_text ;
 	std::string m_subject ;
 	trstring m_ok ;
@@ -985,11 +983,11 @@ void InstallService::run()
 	}
 	else if( m_start_on_boot )
 	{
-		Gui::Boot::install( G::Path() , "emailrelay" , m_bat , m_service_wrapper ) ;
+		Gui::Boot::install( "emailrelay" , m_bat , m_service_wrapper ) ;
 	}
 	else
 	{
-		bool ok = Gui::Boot::uninstall( G::Path() , "emailrelay" , m_bat , m_service_wrapper ) ;
+		bool ok = Gui::Boot::uninstall( "emailrelay" , m_bat , m_service_wrapper ) ;
 		m_ok = ok ? tr("uninstalled") : tr("nothing to do") ;
 	}
 }
@@ -1011,10 +1009,9 @@ trstring InstallService::ok() const
 
 // ==
 
-UpdateBootLink::UpdateBootLink( bool active , bool start_on_boot , G::Path dir_boot , std::string name , G::Path startstop_src , G::Path exe ) :
+UpdateBootLink::UpdateBootLink( bool active , bool start_on_boot , std::string name , G::Path startstop_src , G::Path exe ) :
 	m_active(active) ,
 	m_start_on_boot(start_on_boot) ,
-	m_dir_boot(dir_boot) ,
 	m_name(name) ,
 	m_startstop_src(startstop_src) ,
 	m_exe(exe)
@@ -1028,7 +1025,7 @@ trstring UpdateBootLink::text() const
 
 std::string UpdateBootLink::subject() const
 {
-	return (m_dir_boot+m_name).str() ;
+	return m_name ;
 }
 
 void UpdateBootLink::run()
@@ -1037,17 +1034,17 @@ void UpdateBootLink::run()
 	{
 		m_ok = tr("not possible") ; // see Gui::Boot::installable()
 	}
-	else if( m_dir_boot.empty() || m_startstop_src.empty() || m_exe.empty() )
+	else if( m_startstop_src.empty() || m_exe.empty() )
 	{
 		m_ok = tr("nothing to do") ;
 	}
 	else if( m_start_on_boot )
 	{
-		Gui::Boot::install( m_dir_boot , m_name , m_startstop_src , m_exe ) ;
+		Gui::Boot::install( m_name , m_startstop_src , m_exe ) ;
 	}
 	else
 	{
-		bool removed = Gui::Boot::uninstall( m_dir_boot , m_name , m_startstop_src , m_exe ) ;
+		bool removed = Gui::Boot::uninstall( m_name , m_startstop_src , m_exe ) ;
 		m_ok = removed ? tr("removed") : tr("nothing to remove") ;
 	}
 }
@@ -1090,7 +1087,9 @@ CreateFilterScript::CreateFilterScript( const G::Path & path , bool client_filte
 
 void CreateFilterScript::run()
 {
-	if( m_path.empty() )
+	if( m_path.empty() ||
+		G::Str::headMatch( m_path.str() , "copy:" ) ||
+		G::Str::headMatch( m_path.str() , "spam-edit:" ) )
 	{
 		m_ok = tr("nothing to do") ;
 	}
@@ -1117,9 +1116,9 @@ void CreateFilterScript::run()
 trstring CreateFilterScript::text() const
 {
 	if( m_client_filter )
-		return tr("creating an empty client filter script") ;
+		return tr("creating client filter script") ;
 	else
-		return tr("creating an empty filter script") ;
+		return tr("creating filter script") ;
 }
 
 std::string CreateFilterScript::subject() const
@@ -1212,11 +1211,11 @@ G::Path GenerateKey::exe( bool is_windows )
 
 void GenerateKey::run()
 {
-	G::NewProcess task(
-		G::NewProcessConfig( m_exe , m_issuer , m_path_out.str() )
-			.set_fd_stdout( G::NewProcess::Fd::devnull() )
-			.set_fd_stderr( G::NewProcess::Fd::pipe() )
-			.set_exec_error_format( "failed to execute ["+m_exe.str()+"]: __strerror__" ) ) ;
+	G::NewProcess task( m_exe , {m_issuer,m_path_out.str()} ,
+		G::NewProcess::Config()
+			.set_stdout( G::NewProcess::Fd::devnull() )
+			.set_stderr( G::NewProcess::Fd::pipe() )
+			.set_exec_error_format( "failed to execute ["+m_exe.str()+"]: __""strerror""__" ) ) ;
 
 	int rc = task.waitable().wait().get() ;
 	std::string output = G::Str::printable( G::Str::trimmed(task.waitable().output(),G::Str::ws()) ) ;
@@ -1239,10 +1238,8 @@ std::string GenerateKey::subject() const
 
 // ==
 
-Launcher::Launcher( bool as_service , const G::Path & bat , const G::Path & exe , const G::Path & config_file ,
-	const G::Path & dir_boot ) :
-		m_as_service(as_service) ,
-		m_dir_boot(dir_boot)
+Launcher::Launcher( bool as_service , const G::Path & bat , const G::Path & exe , const G::Path & config_file ) :
+	m_as_service(as_service)
 {
 	if( m_as_service )
 	{
@@ -1267,7 +1264,7 @@ void Launcher::run()
 {
 	if( m_as_service )
 	{
-		Gui::Boot::launch( m_dir_boot , "emailrelay" ) ;
+		Gui::Boot::launch( "emailrelay" ) ;
 	}
 	else
 	{
@@ -1659,7 +1656,6 @@ void InstallerImp::addActions()
 		G::Path dir_desktop = pvalue( "dir-desktop" ) ;
 		G::Path dir_menu = pvalue( "dir-menu" ) ;
 		G::Path dir_login = pvalue( "dir-login" ) ;
-		G::Path dir_boot = pvalue( "dir-boot" ) ;
 
 		G::Path bat = ivalue( "-bat" ) ;
 		G::Path target = isWindows() ? bat : server_exe ;
@@ -1683,7 +1679,7 @@ void InstallerImp::addActions()
 		}
 		else
 		{
-			addAction( new UpdateBootLink(do_boot_update,boot_state,dir_boot,"emailrelay",ivalue("-startstop"),server_exe) ) ;
+			addAction( new UpdateBootLink(do_boot_update,boot_state,"emailrelay",ivalue("-startstop"),server_exe) ) ;
 		}
 	}
 
@@ -1696,13 +1692,12 @@ G::Path InstallerImp::addLauncher()
 {
 	G::Path bat = ivalue( "-bat" ) ;
 	G::Path exe = ivalue( "-exe" ) ;
-	G::Path dir_boot = pvalue( "dir-boot" ) ;
 	G::Path dir_config = pvalue( "dir-config" ) ;
 	G::Path config_file = dir_config + "emailrelay.conf" ;
 	bool as_service = yes( pvalue("start-on-boot") ) ;
 
 	std::size_t list_size = m_list.size() ;
-	addAction( new Launcher( as_service , bat , exe , config_file , dir_boot ) ) ;
+	addAction( new Launcher( as_service , bat , exe , config_file ) ) ;
 	m_p = list_size ? m_list.begin() : m_list.end() ;
 	if( list_size )
 		std::advance( m_p , list_size-1U ) ;

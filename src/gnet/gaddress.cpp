@@ -339,12 +339,10 @@ bool GNet::Address::operator==( const Address & other ) const
 		( m_local && other.m_local && m_local->same(*other.m_local) ) ;
 }
 
-#ifndef G_LIB_SMALL
 bool GNet::Address::operator!=( const Address & other ) const
 {
 	return !( *this == other ) ;
 }
-#endif
 
 #ifndef G_LIB_SMALL
 bool GNet::Address::sameHostPart( const Address & other ) const
@@ -430,8 +428,8 @@ const sockaddr * GNet::Address::address() const
 socklen_t GNet::Address::length() const
 {
 	G_ASSERT( m_ipv4 || m_ipv6 || m_local ) ;
-	if( m_ipv4 ) return m_ipv4->length() ;
-	if( m_ipv6 ) return m_ipv6->length() ;
+	if( m_ipv4 ) return Address4::length() ;
+	if( m_ipv6 ) return Address6::length() ;
 	if( m_local ) return m_local->length() ;
 	return 0 ;
 }

@@ -79,8 +79,9 @@ void G::Root::atExit( SignalSafe safe ) noexcept
 
 void G::Root::init( const std::string & nobody , bool fixed_group )
 {
-	m_nobody = Identity( nobody ) ;
-	m_startup = Process::beOrdinaryAtStartup( m_nobody , !fixed_group ) ;
+	auto pair = Process::beOrdinaryAtStartup( nobody , !fixed_group ) ;
+	m_nobody = pair.first ;
+	m_startup = pair.second ;
 	m_fixed_group = fixed_group ;
 	m_initialised = true ;
 }

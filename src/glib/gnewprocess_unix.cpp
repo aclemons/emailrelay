@@ -78,15 +78,11 @@ class G::NewProcessImp
 {
 public:
 	using Fd = NewProcess::Fd ;
-	NewProcessImp( const Path & exe , const StringArray & args , const Environment & env ,
-		Fd fd_stdin , Fd fd_stdout , Fd fd_stderr , const G::Path & cd ,
-		bool strict_path , Identity run_as_id , bool strict_id ,
-		int exec_error_exit , const std::string & exec_error_format ,
-		std::string (*exec_error_format_fn)(std::string,int) ) ;
+	NewProcessImp( const Path & , const StringArray & , const NewProcess::Config & ) ;
 	int id() const noexcept ;
 	static std::pair<bool,pid_t> fork() ;
 	NewProcessWaitable & waitable() noexcept ;
-	int run( const Path & , const StringArray & , const Environment & , bool strict_path ) ;
+	int run( const Path & , const StringArray & , const Environment & , bool strict_exe ) ;
 	void kill() noexcept ;
 	static void printError( int , const std::string & s ) ;
 	std::string execErrorFormat( const std::string & format , int errno_ ) ;
@@ -102,19 +98,14 @@ public:
 private:
 	Pipe m_pipe ;
 	NewProcessWaitable m_waitable ;
-	pid_t m_child_pid{-1} ;
-	bool m_killed{false} ;
+	pid_t m_child_pid {-1} ;
+	bool m_killed {false} ;
 } ;
 
 // ==
 
-G::NewProcess::NewProcess( const Path & exe , const StringArray & args , const Environment & env ,
-	Fd fd_stdin , Fd fd_stdout , Fd fd_stderr , const G::Path & cd ,
-	bool strict_path , Identity run_as_id , bool strict_id ,
-	int exec_error_exit , const std::string & exec_error_format ,
-	std::string (*exec_error_format_fn)(std::string,int) ) :
-		m_imp(std::make_unique<NewProcessImp>(exe,args,env,fd_stdin,fd_stdout,fd_stderr,cd,strict_path,
-			run_as_id,strict_id,exec_error_exit,exec_error_format,exec_error_format_fn))
+G::NewProcess::NewProcess( const Path & exe , const StringArray & args , const Config & config ) :
+	m_imp(std::make_unique<NewProcessImp>(exe,args,config))
 {
 }
 
@@ -149,23 +140,19 @@ void G::NewProcess::kill( bool yield ) noexcept
 
 // ==
 
-G::NewProcessImp::NewProcessImp( const Path & exe , const StringArray & args , const Environment & env ,
-	Fd fd_stdin , Fd fd_stdout , Fd fd_stderr , const G::Path & cd ,
-	bool strict_path , Identity run_as_id , bool strict_id ,
-	int exec_error_exit , const std::string & exec_error_format ,
-	std::string (*exec_error_format_fn)(std::string,int) )
+G::NewProcessImp::NewProcessImp( const Path & exe , const StringArray & args , const NewProcess::Config & config )
 {
 	// sanity checks
-	if( 1 != (fd_stdout==Fd::pipe()?1:0) + (fd_stderr==Fd::pipe()?1:0) || fd_stdin==Fd::pipe() )
+	if( 1 != (config.stdout==Fd::pipe()?1:0) + (config.stderr==Fd::pipe()?1:0) || config.stdin==Fd::pipe() )
 		throw NewProcess::InvalidParameter() ;
 	if( exe.empty() )
 		throw NewProcess::InvalidParameter() ;
 
 	// safety checks
-	if( strict_path && exe.isRelative() )
+	if( config.strict_exe && exe.isRelative() )
 		throw NewProcess::InvalidPath( exe.str() ) ;
-	if( strict_id && run_as_id != Identity::invalid() &&
-		( Identity::effective().isRoot() || run_as_id.isRoot() ) )
+	if( config.strict_id && config.run_as != Identity::invalid() &&
+		( Identity::effective().isRoot() || config.run_as.isRoot() ) )
 			throw NewProcess::Insecure() ;
 
 	// fork
@@ -176,26 +163,26 @@ G::NewProcessImp::NewProcessImp( const Path & exe , const StringArray & args , c
 		try
 		{
 			// change directory
-			if( !cd.empty() )
-				Process::cd( cd ) ; // throws on error
+			if( !config.cd.empty() )
+				Process::cd( config.cd ) ; // throws on error
 
 			// set real id
-			if( run_as_id != Identity::invalid() )
-				Process::beOrdinaryForExec( run_as_id ) ;
+			if( config.run_as != Identity::invalid() )
+				Process::beOrdinaryForExec( config.run_as ) ;
 
 			// set up standard streams
 			m_pipe.inChild() ;
-			if( fd_stdout == Fd::pipe() )
+			if( config.stdout == Fd::pipe() )
 			{
 				m_pipe.dupTo( STDOUT_FILENO ) ;
-				duplicate( fd_stderr , STDERR_FILENO ) ;
+				duplicate( config.stderr , STDERR_FILENO ) ;
 			}
 			else
 			{
-				duplicate( fd_stdout , STDOUT_FILENO ) ;
+				duplicate( config.stdout , STDOUT_FILENO ) ;
 				m_pipe.dupTo( STDERR_FILENO ) ;
 			}
-			duplicate( fd_stdin , STDIN_FILENO ) ;
+			duplicate( config.stdin , STDIN_FILENO ) ;
 			Process::closeOtherFiles() ;
 
 			// restore SIGPIPE handling so that writing to
@@ -205,20 +192,24 @@ G::NewProcessImp::NewProcessImp( const Path & exe , const StringArray & args , c
 			// start a new process group
 			::setpgrp() ; // feature-tested -- see gdef.h
 
+			// set the execvp() path
+			if( !config.strict_exe && !config.exec_search_path.empty() )
+				G::Environment::put( "PATH" , config.exec_search_path ) ;
+
 			// exec -- doesnt normally return from run()
-			int e = run( exe , args , env , strict_path ) ;
+			int e = run( exe , args , config.env , config.strict_exe ) ;
 
 			// execve() failed -- write an error message to the pipe
-			int fd_pipe = fd_stdout == Fd::pipe() ? STDOUT_FILENO : STDERR_FILENO ;
-			if( exec_error_format_fn != nullptr )
-				printError( fd_pipe , (*exec_error_format_fn)(exec_error_format,e) ) ;
-			else if( !exec_error_format.empty() )
-				printError( fd_pipe , execErrorFormat(exec_error_format,e) ) ;
+			int fd_pipe = config.stdout == Fd::pipe() ? STDOUT_FILENO : STDERR_FILENO ;
+			if( config.exec_error_format_fn != nullptr )
+				printError( fd_pipe , (config.exec_error_format_fn)(config.exec_error_format,e) ) ;
+			else if( !config.exec_error_format.empty() )
+				printError( fd_pipe , execErrorFormat(config.exec_error_format,e) ) ;
 		}
 		catch(...)
 		{
 		}
-		std::_Exit( exec_error_exit ) ;
+		std::_Exit( config.exec_error_exit ) ;
 	}
 	else
 	{
@@ -247,7 +238,7 @@ void G::NewProcessImp::printError( int stdxxx , const std::string & s )
 }
 
 int G::NewProcessImp::run( const G::Path & exe , const StringArray & args ,
-	const Environment & env , bool strict_path )
+	const Environment & env , bool strict_exe )
 {
 	char ** argv = new char* [ args.size() + 2U ] ;
 	argv[0U] = const_cast<char*>( exe.cstr() ) ;
@@ -259,7 +250,7 @@ int G::NewProcessImp::run( const G::Path & exe , const StringArray & args ,
 	int e = 0 ;
 	if( env.empty() )
 	{
-		if( strict_path )
+		if( strict_exe )
 		{
 			::execv( exe.cstr() , argv ) ;
 			e = Process::errno_() ;
@@ -272,7 +263,7 @@ int G::NewProcessImp::run( const G::Path & exe , const StringArray & args ,
 	}
 	else
 	{
-		if( strict_path )
+		if( strict_exe )
 		{
 			::execve( exe.cstr() , argv , env.v() ) ;
 			e = Process::errno_() ;
@@ -312,8 +303,8 @@ void G::NewProcessImp::kill() noexcept
 std::string G::NewProcessImp::execErrorFormat( const std::string & format , int errno_ )
 {
 	std::string result = format ;
-	Str::replaceAll( result , "__errno__" , Str::fromInt(errno_) ) ;
-	Str::replaceAll( result , "__strerror__" , Process::strerror(errno_) ) ;
+	Str::replaceAll( result , "__""errno""__" , Str::fromInt(errno_) ) ;
+	Str::replaceAll( result , "__""strerror""__" , Process::strerror(errno_) ) ;
 	return result ;
 }
 
@@ -519,7 +510,7 @@ int G::NewProcessWaitable::get() const
 	return result ;
 }
 
-int G::NewProcessWaitable::get( std::nothrow_t , int ec ) const
+int G::NewProcessWaitable::get( std::nothrow_t , int ec ) const noexcept
 {
 	int result = 0 ;
 	if( m_pid != 0 )

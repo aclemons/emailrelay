@@ -410,7 +410,7 @@ G::StringArray GNet::Address6::wildcards() const
 	struct in6_addr mask {} ;
 	imp::fill( mask ) ;
 
-	for( int bit = 0 ; bit < 128 ; bit++ )
+	for( int bit = 0 ; bit <= 128 ; bit++ )
 	{
 		std::ostringstream ss ;
 		ss << a.hostPartString() << "/" << (128-bit) ;

@@ -53,7 +53,7 @@ public:
 	} ;
 	struct Config /// Configuration passed to address verifier constructors.
 	{
-		unsigned int timeout ;
+		unsigned int timeout {60U} ;
 		std::string domain ;
 		Config & set_timeout( unsigned int ) noexcept ;
 		Config & set_domain( const std::string & ) ;

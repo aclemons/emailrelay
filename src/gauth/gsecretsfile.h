@@ -47,6 +47,7 @@ class GAuth::SecretsFile
 {
 public:
 	G_EXCEPTION( Error , tx("invalid secrets file") ) ;
+	G_EXCEPTION( OpenError , tx("cannot read secrets file") ) ;
 
 	static void check( const std::string & path ) ;
 		///< Checks the given file. Logs warnings and throws an exception

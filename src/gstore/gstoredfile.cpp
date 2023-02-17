@@ -161,9 +161,9 @@ void GStore::StoredFile::editRecipients( const G::StringArray & recipients )
 	editEnvelope( [&recipients](Envelope &env_){env_.to_remote=recipients;} ) ;
 }
 
-void GStore::StoredFile::editEnvelope( std::function<void(Envelope&)> edit_fn )
+void GStore::StoredFile::editEnvelope( std::function<void(Envelope&)> edit_fn , std::istream * headers_stream )
 {
-	// re-read the envelope (disregard existing m_env because we need the stream)
+	// re-read the envelope (disregard m_env because we need the stream)
 	G::Path envelope_path = epath(m_state) ;
 	std::ifstream envelope_stream ;
 	Envelope envelope = FileStore::readEnvelope( envelope_path , &envelope_stream ) ;
@@ -179,8 +179,12 @@ void GStore::StoredFile::editEnvelope( std::function<void(Envelope&)> edit_fn )
 	envelope.endpos = writeEnvelopeImp( envelope , envelope_path_tmp , envelope_stream_tmp ) ;
 	envelope.crlf = true ;
 
-	// copy any trailing headers (see StoredMessage::fail(), MessageDelivery::deliver())
+	// copy trailing headers (see StoredMessage::fail(), MessageDelivery::deliver(), etc)
 	GStore::Envelope::copyExtra( envelope_stream , envelope_stream_tmp ) ;
+
+	// add more trailing headers
+	if( headers_stream )
+		GStore::Envelope::copyExtra( *headers_stream , envelope_stream_tmp ) ;
 
 	// close
 	envelope_stream.close() ;

@@ -5,27 +5,16 @@ Principles
 ----------
 The main principles in the design of E-MailRelay can be summarised as:
 
+* Functionality without imposing policy
 * Minimal third-party dependencies
 * Windows/Unix portability without #ifdefs
 * Event-driven, non-blocking, single-threaded networking code
-* Functionality without imposing policy
-
-Dependencies
-------------
-E-MailRelay started life at a time when Linux had no decent package manager and
-Windows was in the grip of DLL hell. As a result, a key principle is that it
-has no dependencies other than a good C++ run-time. Since that time OpenSSL
-has been introduced as a dependency to support [TLS][] encryption, and the optional
-configuration and installation GUI has been developed using the Qt toolkit.
-
-In those early years multi-threading support in C++ libraries was poor, so up
-until version 2.0 the code was single-threaded throughout, and multi-threading
-is still optional.
+* Multi-threading optional
 
 Portability
 -----------
-The E-MailRelay code is now written in C++11. Earlier versions of E-MailRelay
-used C++03.
+The E-MailRelay code is written in C++11. Earlier versions of E-MailRelay used
+C++03.
 
 The header files `gdef.h` in `src/glib` is used to fix up some compiler
 portability issues such as missing standard types, non-standard system headers
@@ -85,7 +74,7 @@ The main C++ libraries in the E-MailRelay code base are as follows:
 
 ### "gssl" ###
 
-    A thin layer over the third-party TLS libraries.
+    A thin layer over the third-party [TLS][] libraries.
 
 
 ### "gnet" ###
@@ -106,6 +95,16 @@ The main C++ libraries in the E-MailRelay code base are as follows:
 ### "gpop" ###
 
     POP3 protocol classes.
+
+
+### "gfilters" ###
+
+    Built-in filters.
+
+
+### "gverifiers" ###
+
+    Built-in address verifiers.
 
 All of these libraries are portable between Unix-like systems and Windows.
 
@@ -134,9 +133,14 @@ pattern is used whereby the forwarding class uses an instance of the storage
 class to do the message storing and filtering, while adding in an instance
 of the `GSmtp::Client` class to do the forwarding.
 
-Message filtering (`--filter`) is implemented via an abstract `Filter`
-interface. Concrete implementations are provided for doing nothing, running an
-external executable program and talking to an external network server.
+Message filtering (`--filter`) is implemented via an abstract `GSmtp::Filter`
+interface. Concrete implementations in the `GFilters` namespace are provided for
+doing nothing, running an external executable program, talking to an external
+network server, etc.
+
+Address verifiers (`--address-verifier`) are implemented via an abstract
+`GSmtp::Verifier` interface, with concrete implementations in the `GVerifiers`
+namespace.
 
 The protocol, processor and message-store interfaces are brought together by
 the high-level `GSmtp::Server` and `GSmtp::Client` classes. Dependency
@@ -176,12 +180,12 @@ relevant EventHandler/ExceptionHandler code via the `EventEmitter` class.
 
 Multi-threading
 ---------------
-Multi-threading can be used as a build-time option to make DNS lookup and the
-execution of helper programs asynchronous; if enabled then std::thread is
-used in a future/promise pattern to wrap up `getaddrinfo()` and `waitpid()`
-system calls. The shared state comprises only the parameters and return results
-from these system calls, and synchronisation back to the main thread uses the
-event loop (see `GNet::FutureEvent`).
+Multi-threading can be used as a build-time option to make DNS lookup and
+external program asynchronous; if enabled then std::thread is used in a
+future/promise pattern to wrap up `getaddrinfo()` and `waitpid()` system calls.
+The shared state comprises only the parameters and return results from these
+system calls, and synchronisation back to the main thread uses the event loop
+(see `GNet::FutureEvent`).
 
 E-MailRelay GUI
 ---------------
@@ -241,7 +245,7 @@ run `configure.bat` with `-static -release`; run `nmake -f Makefile` for
 then `mc messages.mc`; then copy `emailrelay-icon.ico`; and finally
 `nmake -f Makefile.Release`.
 
-For MinGW cross-builds use `./configure.sh -m` and `make` on a Linux box and
+For MinGW cross-builds use `./configure.sh -w64` and `make` on a Linux box and
 copy the built executables and the MinGW run-time to the target. Any extra
 run-time files can be identified by running `dumpbin /dependents` in the normal
 way.
@@ -254,11 +258,12 @@ On Windows E-MailRelay is packaged as a zip file containing the executables
 again, and while this duplication is not ideal it is at least straightforward.
 
 The Qt tool `windeployqt` is used to add run-time dependencies, such as the
-Qt DLLs.
+platform DLL. (Public releases of Windows builds are normally statically linked,
+so many of the DLLs added by `windeployqt` are not needed.)
 
-To target ancient versions of Windows start with a cross-build using MinGW;
-then `winbuild.pl mingw` can be used to assemble a slimmed-down package for
-distribution.
+To target ancient versions of Windows start with a cross-build using MinGW
+for 32-bit (`./configure.sh -w32`); then `winbuild.pl mingw` can be used to
+assemble a slimmed-down package for distribution.
 
 Unix packaging
 --------------
