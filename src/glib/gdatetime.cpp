@@ -94,14 +94,18 @@ namespace G
 				throw DateTime::Error() ;
 			tm_out.tm_isdst = -1 ;
 		}
-		std::time_t mktimelocal( const std::tm & local_tm_in )
+		std::time_t mktime_( std::tm & tm )
 		{
-			struct std::tm tm = local_tm_in ;
 			tm.tm_isdst = -1 ;
 			std::time_t t = std::mktime( &tm ) ;
 			if( t == std::time_t(-1) )
 				throw DateTime::Error() ;
 			return t ;
+		}
+		std::time_t mktimelocal( const std::tm & local_tm_in )
+		{
+			struct std::tm tm = local_tm_in ;
+			return mktime_( tm ) ;
 		}
 		std::time_t mktimeutc( const std::tm & utc_tm_in , std::time_t begin , std::time_t end )
 		{
@@ -226,8 +230,7 @@ bool G::BrokenDownTime::format( char * out , std::size_t out_size , const char *
 	}
 
 	std::tm tm_copy = m_tm ;
-	tm_copy.tm_isdst = -1 ;
-	(void) mktime( &tm_copy ) ; // fill in isdst, wday, yday
+	DateTimeImp::mktime_( tm_copy ) ; // fill in isdst, wday, yday
 
 	return std::strftime( out , out_size , fmt , &tm_copy ) > 0U ;
 }
@@ -245,7 +248,7 @@ std::string G::BrokenDownTime::str() const
 
 std::string G::BrokenDownTime::str( const char * fmt ) const
 {
-	std::size_t n = std::strlen( fmt ) ;
+	std::size_t n = std::strlen( fmt ) + 1U ;
 	for( const char * p = std::strchr(fmt,'%') ; p && p[1] ; p = std::strchr(p+1,'%') )
 		n += 10U ; // biggest allowed format is eg. %F -> "2001-12-31"
 
@@ -287,7 +290,9 @@ int G::BrokenDownTime::day() const
 
 int G::BrokenDownTime::wday() const
 {
-	return m_tm.tm_wday ;
+	std::tm tm_copy = m_tm ;
+	DateTimeImp::mktime_( tm_copy ) ;
+	return tm_copy.tm_wday ;
 }
 
 bool G::BrokenDownTime::sameMinute( const BrokenDownTime & other ) const noexcept

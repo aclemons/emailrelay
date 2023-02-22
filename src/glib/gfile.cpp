@@ -273,7 +273,7 @@ bool G::File::mkdirsr( const Path & path , int & e , int & limit )
 		return false ;
 	}
 
-	return true ;
+	return e == 0 ;
 }
 
 bool G::File::mkdirs( const Path & path , std::nothrow_t , int limit )
