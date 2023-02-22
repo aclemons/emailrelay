@@ -139,11 +139,11 @@ private:
 	static bool isLeapYear( int y ) ;
 
 private:
-	int m_day{1} ;
-	int m_month{1} ;
-	int m_year{2000} ;
-	bool m_weekday_set{false} ;
-	Weekday m_weekday{Weekday::sunday} ;
+	int m_day {1} ;
+	int m_month {1} ;
+	int m_year {2000} ;
+	bool m_weekday_set {false} ;
+	Weekday m_weekday {Weekday::sunday} ;
 } ;
 
 #endif

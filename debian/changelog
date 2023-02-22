@@ -8,7 +8,7 @@ emailrelay (2.5) unstable; urgency=low
   * New built-in filters: "deliver:", "split:", "copy:", "mx:"
   * New built-in address verifiers: "allow:", "local:"
   * Main binary acts as a submission tool if named "emailrelay-submit".
- -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Fri, 10 Feb 2023 00:00:00 +0000
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Wed, 22 Feb 2023 00:00:00 +0000
 
 emailrelay (2.4) unstable; urgency=low
   * Multiple "--filter" and "--client-filter" options allowed.
@@ -21,7 +21,7 @@ emailrelay (2.4) unstable; urgency=low
   * The Linux event loop uses "epoll" by default rather than "select".
   * Some support for message routing (see NEWS).
   * Fix of error handling in network client filters ("--client-filter=net:...") [bug-id #50].
- -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Fri, 10 Feb 2023 00:00:00 +0000
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Wed, 22 Feb 2023 00:00:00 +0000
 
 emailrelay (2.3) unstable; urgency=low
   * Unix domain sockets supported (eg. "--interface=/tmp/smtp.s").
