@@ -50,10 +50,12 @@ G::Time::Time( SystemTime t ) :
 }
 #endif
 
+#ifndef G_LIB_SMALL
 G::Time::Time( const LocalTime & ) :
 	Time(SystemTime::now().local())
 {
 }
+#endif
 
 #ifndef G_LIB_SMALL
 G::Time::Time( SystemTime t , const LocalTime & ) :

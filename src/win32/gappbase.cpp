@@ -48,9 +48,9 @@ std::string GGui::ApplicationBase::createWindow( int show_style , bool do_show ,
 		initFirst() ;
 	}
 
-	// create the main window
-	dx = dx ? dx : CW_USEDEFAULT ;
-	dy = dy ? dy : CW_USEDEFAULT ;
+	// create the main window (GGui::Window::create())
+	dx = dx ? dx : CW_USEDEFAULT ; // outer width
+	dy = dy ? dy : CW_USEDEFAULT ; // outer height
 	if( !create( className() , title() , windowStyle() ,
 			CW_USEDEFAULT , CW_USEDEFAULT , // position (x,y)
 			dx , dy , // size
@@ -66,8 +66,8 @@ std::string GGui::ApplicationBase::createWindow( int show_style , bool do_show ,
 
 	if( do_show )
 	{
-		show( show_style ) ;
-		update() ;
+		show( show_style ) ; // GGui::Window::show(), ShowWindow()
+		update() ; // GGui::Window::update(), UpdateWindow()
 	}
 	return std::string() ;
 }
@@ -106,12 +106,9 @@ void GGui::ApplicationBase::close() const
 	SendMessage( handle() , WM_CLOSE , 0 , 0 ) ;
 }
 
-void GGui::ApplicationBase::run( bool with_idle )
+void GGui::ApplicationBase::run()
 {
-	if( with_idle )
-		GGui::Pump::run( handle() , GGui::Cracker::wm_idle() ) ;
-	else
-		GGui::Pump::run() ;
+	GGui::Pump::run() ;
 }
 
 void GGui::ApplicationBase::onDestroy()

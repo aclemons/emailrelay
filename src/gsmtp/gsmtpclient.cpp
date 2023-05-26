@@ -109,7 +109,7 @@ G::Slot::Signal<const std::string&> & GSmtp::Client::messageDoneSignal()
 
 void GSmtp::Client::sendMessage( std::unique_ptr<GStore::StoredMessage> message )
 {
-	G_ASSERT( message && message->toCount() ) ;
+	G_ASSERT( message.get() != nullptr ) ;
 	m_message = std::move( message ) ;
 	if( connected() )
 		start() ;
@@ -117,7 +117,7 @@ void GSmtp::Client::sendMessage( std::unique_ptr<GStore::StoredMessage> message 
 
 void GSmtp::Client::sendMessage( std::shared_ptr<GStore::StoredMessage> message )
 {
-	G_ASSERT( message && message->toCount() ) ;
+	G_ASSERT( message.get() != nullptr ) ;
 	m_message = std::move( message ) ;
 	if( connected() )
 		start() ;
@@ -173,10 +173,6 @@ bool GSmtp::Client::sendNext()
 			m_message_count = 0U ;
 			return false ;
 		}
-		else if( message->toCount() == 0U )
-		{
-			message->fail( "no recipients" , 501 ) ;
-		}
 		else
 		{
 			m_message = std::move( message ) ;
@@ -189,7 +185,6 @@ bool GSmtp::Client::sendNext()
 
 void GSmtp::Client::start()
 {
-	G_ASSERT( message()->toCount() != 0U ) ;
 	m_message_count++ ;
 
 	// basic routing if forward-to is defined in the envelope

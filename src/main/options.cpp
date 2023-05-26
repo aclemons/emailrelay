@@ -250,15 +250,15 @@ G::Options Main::Options::spec( bool is_windows )
 				// Specifies the directory used for holding mail messages that have been
 				// received but not yet forwarded.
 
-		G::Options::add( opt , 's' , "local-delivery-dir" ,
+		G::Options::add( opt , 's' , "delivery-dir" ,
 			tx("specifies a base directory for local mailbox delivery") , "" ,
 			M::one , "dir" , 30 ,
 			t_smtpserver ) ;
 				//example: /var/spool/emailrelay/in
 				//example: C:/ProgramData/E-MailRelay/spool/in
-				// Enables local delivery of mail messages that have local recipients,
-				// as determined by an address verifier, into mailbox sub-directories.
-				// The mailbox names come from the output of the address verifier.
+				// Specifies the base directory for mailboxes when delivering
+				// messages that have local recipients. This defaults to the main
+				// spool directory.
 
 		G::Options::add( opt , 'V' , "version" ,
 			tx("displays version information and exits") , "" ,

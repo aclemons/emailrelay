@@ -205,7 +205,7 @@ private:
 
 private:
 	T * m_p ;
-	bool m_has_connected{false} ;
+	bool m_has_connected {false} ;
 } ;
 
 template <typename T>
@@ -227,8 +227,7 @@ namespace GNet
 
 template <typename T>
 GNet::ClientPtr<T>::ClientPtr( ClientPtr<T> && other ) noexcept :
-	m_p(nullptr) ,
-	m_has_connected(false)
+	m_p(nullptr)
 {
 	using std::swap ;
 	swap( *this , other ) ;

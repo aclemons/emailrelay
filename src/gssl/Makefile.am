@@ -99,6 +99,7 @@ endif
 
 EXTRA_DIST = \
 	mbedtls-vsnprintf-fix.p1 \
+	mbedtls-vsnprintf-fix-new.p1 \
 	$(SSL_EXTRA_DIST)
 
 noinst_LIBRARIES = libgssl.a libgsslkeygen.a

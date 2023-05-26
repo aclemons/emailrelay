@@ -264,12 +264,14 @@ void G::Str::removeAll( std::string & s , char c )
 	s.erase( std::remove_if( s.begin() , s.end() , [c](char x){return x==c;} ) , s.end() ) ;
 }
 
+#ifndef G_LIB_SMALL
 std::string G::Str::removedAll( const std::string & s_in , char c )
 {
 	std::string s( s_in ) ;
 	removeAll( s , c ) ;
 	return s ;
 }
+#endif
 
 std::string G::Str::only( string_view chars , string_view s )
 {
@@ -550,10 +552,12 @@ int G::Str::toInt( string_view s )
 	return result ;
 }
 
+#ifndef G_LIB_SMALL
 int G::Str::toInt( string_view s1 , string_view s2 )
 {
 	return !s1.empty() && isInt(s1) ? toInt(s1) : toInt(s2) ;
 }
+#endif
 
 int G::StrImp::toInt( string_view s , bool & overflow , bool & invalid ) noexcept
 {
@@ -625,10 +629,12 @@ unsigned int G::Str::toUInt( string_view s1 , string_view s2 )
 	return !s1.empty() && isUInt(s1) ? toUInt(s1) : toUInt(s2) ;
 }
 
+#ifndef G_LIB_SMALL
 unsigned int G::Str::toUInt( string_view s , unsigned int default_ )
 {
 	return !s.empty() && isUInt(s) ? toUInt(s) : default_ ;
 }
+#endif
 
 #ifndef G_LIB_SMALL
 unsigned int G::Str::toUInt( string_view s , Limited )
@@ -936,6 +942,7 @@ std::string G::Str::toPrintableAscii( const std::string & in , char escape )
 	return result ;
 }
 
+#ifndef G_LIB_SMALL
 std::string G::Str::toPrintableAscii( const std::wstring & in , wchar_t escape )
 {
 	std::string result ;
@@ -944,6 +951,7 @@ std::string G::Str::toPrintableAscii( const std::wstring & in , wchar_t escape )
 		StrImp::outputPrintable( [&result](wchar_t cc){result.append(1U,static_cast<char>(cc));} , c , escape , static_cast<char>(escape) , false ) ;
 	return result ;
 }
+#endif
 
 std::string G::Str::readLineFrom( std::istream & stream , string_view eol )
 {
@@ -1190,6 +1198,7 @@ G::StringArray G::Str::splitIntoFields( string_view in , char sep )
 	return out ;
 }
 
+#ifndef G_LIB_SMALL
 std::string G::Str::join( string_view sep , const StringMap & map , string_view pre ,
 	string_view post )
 {
@@ -1204,6 +1213,7 @@ std::string G::Str::join( string_view sep , const StringMap & map , string_view 
 			.append(post.data(),post.size()) ;
 	return result ;
 }
+#endif
 
 std::string G::Str::join( string_view sep , const StringArray & strings )
 {
@@ -1437,9 +1447,9 @@ T G::StrImp::unique( T in , T end , V repeat , V replacement )
 	while( in != end )
 	{
 		T in_next = in ; ++in_next ;
-		if( *in == repeat && *in_next == repeat )
+		if( *in == repeat && in_next != end && *in_next == repeat )
 		{
-			while( *in == repeat )
+			while( in != end && *in == repeat )
 				++in ;
 			*out++ = replacement ;
 		}

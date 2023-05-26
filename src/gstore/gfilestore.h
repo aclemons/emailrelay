@@ -57,7 +57,7 @@ class GStore::FileStore : public MessageStore
 public:
 	G_EXCEPTION( InvalidDirectory , tx("invalid spool directory") ) ;
 	G_EXCEPTION( EnvelopeReadError , tx("cannot read envelope file") ) ;
-	G_EXCEPTION( GetError , tx("error reading specific message") ) ;
+	G_EXCEPTION( GetError , tx("error getting message") ) ;
 	enum class State // see GStore::FileStore::envelopePath()
 	{
 		New ,
@@ -77,8 +77,8 @@ public:
 		FileOp() = delete ;
 		static int & errno_() noexcept ;
 		static bool rename( const G::Path & , const G::Path & ) ;
-		static bool renameOver( const G::Path & , const G::Path & ) ;
-		static bool remove( const G::Path & ) ;
+		static bool renameOnto( const G::Path & , const G::Path & ) ;
+		static bool remove( const G::Path & ) noexcept ;
 		static bool exists( const G::Path & ) ;
 		static int fdopen( const G::Path & ) ;
 		static bool hardlink( const G::Path & , const G::Path & ) ;
@@ -91,13 +91,17 @@ public:
 		static std::ofstream & openAppend( std::ofstream & , const G::Path & ) ;
 	} ;
 
-	FileStore( const G::Path & dir , const Config & config ) ;
-		///< Constructor. Throws an exception if the storage directory
+	FileStore( const G::Path & spool_dir , const G::Path & delivery_dir , const Config & config ) ;
+		///< Constructor. Throws an exception if the spool directory
 		///< is invalid.
 
 	G::Path directory() const ;
 		///< Returns the spool directory path, as passed in to the
 		///< constructor.
+
+	G::Path deliveryDir() const ;
+		///< Returns the base directory for local delivery. Returns
+		///< directory() by default.
 
 	MessageId newId() ;
 		///< Hands out a new unique message id.
@@ -162,6 +166,7 @@ private:
 private:
 	unsigned long m_seq ;
 	G::Path m_dir ;
+	G::Path m_delivery_dir ;
 	const Config m_config ;
 	G::Slot::Signal<> m_update_signal ;
 	G::Slot::Signal<> m_rescan_signal ;

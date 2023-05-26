@@ -38,7 +38,7 @@ namespace GAuth
 class GAuth::SaslClientSecrets
 {
 public:
-	virtual ~SaslClientSecrets() ;
+	virtual ~SaslClientSecrets() = default ;
 		///< Destructor.
 
 	virtual bool valid() const = 0 ;

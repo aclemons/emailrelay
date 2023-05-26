@@ -79,7 +79,7 @@ sub find_msbuild
 sub find_cmake
 {
 	my ( $msbuild ) = @_ ;
-	my $msbuild_root = _sanepath(File::Basename::dirname($msbuild))."/../../.." ;
+	my $msbuild_root = $msbuild ? _sanepath(File::Basename::dirname($msbuild))."/../../.." : "." ;
 	return _fcache( "cmake" ,
 		_find_bypass( "find-cmake" , "cmake" ) ||
 		_find_basic( "find-cmake" , "cmake.exe" , "$msbuild_root/common7/ide/commonextensions/microsoft/cmake/cmake/bin" ) ||

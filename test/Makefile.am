@@ -97,9 +97,6 @@ test_names = \
 	testNetworkVerifierFail.test \
 	testProxyConnectsOnce.test \
 	testDelivery.test \
-	testDeliveryWithVerifier.test \
-	testLocalDelivery.test \
-	testLocalDeliveryOnly.test \
 	testClientFilterPass.test \
 	testClientFilterBlock.test \
 	testClientNetworkFilter.test \

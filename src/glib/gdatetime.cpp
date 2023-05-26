@@ -82,13 +82,13 @@ namespace G
 		{
 			return sameMinute( a , b ) && a.tm_sec == b.tm_sec ;
 		}
-		void localtime( std::tm & tm_out , std::time_t t_in )
+		void localtime_( std::tm & tm_out , std::time_t t_in )
 		{
 			if( localtime_r( &t_in , &tm_out ) == nullptr )
 				throw DateTime::Error() ;
 			tm_out.tm_isdst = -1 ;
 		}
-		void gmtime( std::tm & tm_out , std::time_t t_in )
+		void gmtime_( std::tm & tm_out , std::time_t t_in )
 		{
 			if( gmtime_r( &t_in , &tm_out ) == nullptr )
 				throw DateTime::Error() ;
@@ -119,7 +119,7 @@ namespace G
 				std::time_t step = count / 2 ;
 				i += step ;
 				std::tm tm {} ;
-				gmtime( tm , i ) ;
+				gmtime_( tm , i ) ;
 				if( tm < utc_tm_in )
 				{
 					t = ++i ;
@@ -180,7 +180,7 @@ std::time_t G::BrokenDownTime::epochTimeFromUtc() const
 	if( memo.has_value() )
 	{
 		std::tm tm {} ;
-		DateTimeImp::gmtime( tm , t0+memo.value() ) ;
+		DateTimeImp::gmtime_( tm , t0+memo.value() ) ;
 		if( DateTimeImp::sameSecond(tm,m_tm) )
 			return t0 + memo.value() ;
 	}
@@ -206,14 +206,14 @@ G::BrokenDownTime G::BrokenDownTime::null()
 G::BrokenDownTime G::BrokenDownTime::local( SystemTime t )
 {
 	BrokenDownTime bdt ;
-	DateTimeImp::localtime( bdt.m_tm , t.s() ) ;
+	DateTimeImp::localtime_( bdt.m_tm , t.s() ) ;
 	return bdt ;
 }
 
 G::BrokenDownTime G::BrokenDownTime::utc( SystemTime t )
 {
 	BrokenDownTime bdt ;
-	DateTimeImp::gmtime( bdt.m_tm , t.s() ) ;
+	DateTimeImp::gmtime_( bdt.m_tm , t.s() ) ;
 	return bdt ;
 }
 

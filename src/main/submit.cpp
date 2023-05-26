@@ -63,7 +63,7 @@
 
 std::string versionNumber()
 {
-	return "2.5rc2" ;
+	return "2.5rc3" ;
 }
 
 static std::pair<G::Path,G::Path> writeFiles( const G::Path & spool_dir ,
@@ -74,7 +74,7 @@ static std::pair<G::Path,G::Path> writeFiles( const G::Path & spool_dir ,
 	// create the output file
 	//
 	std::string envelope_from = from.empty() ? "anonymous" : from ;
-	GStore::FileStore file_store( spool_dir , {} ) ;
+	GStore::FileStore file_store( spool_dir , "" , {} ) ;
 	GStore::MessageStore & store = file_store ;
 	GStore::MessageStore::SmtpInfo smtp_info ;
 	smtp_info.auth = from_auth_in ;

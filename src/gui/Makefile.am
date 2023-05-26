@@ -42,8 +42,8 @@ QT_SOURCES = \
 	guidialog.h \
 	guipage.cpp \
 	guipage.h \
-	pages.h \
-	pages.cpp \
+	guipages.cpp \
+	guipages.h \
 	gqt.h
 
 LIB_SOURCES = \
@@ -99,7 +99,7 @@ AM_INSTALL_PROGRAM_FLAGS=-s
 MOC_OUTPUT=\
 	moc_guidialog.cpp \
 	moc_guipage.cpp \
-	moc_pages.cpp
+	moc_guipages.cpp
 
 CLEANFILES = $(MOC_OUTPUT) $(QM_FILES)
 DISTCLEANFILES = ./.deps/moc*
@@ -128,12 +128,12 @@ moc_guidialog.cpp: $(srcdir)/guidialog.h
 moc_guipage.cpp: $(srcdir)/guipage.h
 	$(GCONFIG_QT_MOC) $< -o $@
 
-moc_pages.cpp: $(srcdir)/pages.h
+moc_guipages.cpp: $(srcdir)/guipages.h
 	$(GCONFIG_QT_MOC) $< -o $@
 
 guidialog.o: moc_guidialog.cpp
 guipage.o: moc_guipage.cpp
-pages.o: moc_pages.cpp
+guipages.o: moc_guipages.cpp
 
 noinst_SCRIPTS = $(OS_NOINST)
 noinst_LIBRARIES = libguimain.a

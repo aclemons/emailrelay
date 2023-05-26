@@ -46,7 +46,10 @@ GStore::StoredFile::~StoredFile()
 	try
 	{
 		if( m_unlock && m_state == State::Locked )
+		{
+			G_DEBUG( "GStore::StoredFile::dtor: envelope: unlocking [" << epath(State::Locked).basename() << "]" ) ;
 			FileOp::rename( epath(State::Locked) , epath(State::Normal) ) ;
+		}
 	}
 	catch(...) // dtor
 	{
@@ -115,7 +118,7 @@ bool GStore::StoredFile::openContent( std::string & reason )
 {
 	try
 	{
-		G_DEBUG( "GStore::FileStore::openContent: \"" << cpath() << "\"" ) ;
+		G_DEBUG( "GStore::FileStore::openContent: content: reading [" << cpath().basename() << "]" ) ;
 		auto stream = std::make_unique<Stream>( cpath() ) ;
 		if( !stream )
 		{
@@ -143,14 +146,19 @@ const std::string & GStore::StoredFile::eol() const
 
 bool GStore::StoredFile::lock()
 {
+	G_DEBUG( "GStore::StoredFile::lock: envelope: locking [" << epath(m_state).basename() << "]" ) ;
 	const G::Path src = epath( m_state ) ;
 	const G::Path dst = epath( State::Locked ) ;
 	bool ok = FileOp::rename( src , dst ) ;
 	if( ok )
 	{
-		G_DEBUG( "GStore::StoredFile::lock: locking file \"" << src.basename() << "\"" ) ;
 		m_state = State::Locked ;
 		m_unlock = true ;
+	}
+	else
+	{
+		G_DEBUG( "GStore::StoredFile::lock: envelope: failed to lock "
+			"[" << src.basename() << "] (" << G::Process::strerror(FileOp::errno_()) << ")" ) ;
 	}
 	static_cast<MessageStore&>(m_store).updated() ;
 	return ok ;
@@ -200,7 +208,10 @@ void GStore::StoredFile::editEnvelope( std::function<void(Envelope&)> edit_fn , 
 
 void GStore::StoredFile::replaceEnvelope( const G::Path & envelope_path , const G::Path & envelope_path_tmp )
 {
-	if( !FileOp::renameOver( envelope_path_tmp , envelope_path ) )
+	G_DEBUG( "GStore::StoredFile::replaceEnvelope: envelope: renaming "
+		"[" << envelope_path.basename() << "] -> [" << envelope_path_tmp.basename() << "]" ) ;
+
+	if( !FileOp::renameOnto( envelope_path_tmp , envelope_path ) )
 		throw EditError( "renaming" , envelope_path.basename() , G::Process::strerror(FileOp::errno_()) ) ;
 }
 
@@ -222,12 +233,15 @@ void GStore::StoredFile::fail( const std::string & reason , int reason_code )
 		addReason( epath(m_state) , reason , reason_code ) ;
 
 		G::Path bad_path = epath( State::Bad ) ;
-		G_LOG_S( "GStore::StoredFile::fail: failing file: "
-			<< "\"" << epath(m_state).basename() << "\" -> "
-			<< "\"" << bad_path.basename() << "\"" ) ;
+		G_LOG_S( "GStore::StoredFile::fail: envelope: failing [" << epath(m_state).basename() << "] "
+			<< "-> [" << bad_path.basename() << "]" ) ;
 
 		FileOp::rename( epath(m_state) , bad_path ) ;
 		m_state = State::Bad ;
+	}
+	else
+	{
+		G_DEBUG( "GStore::StoredFile::fail: envelope: cannot fail [" << epath(m_state).basename() << "]" ) ;
 	}
 	m_unlock = false ;
 }
@@ -236,7 +250,8 @@ void GStore::StoredFile::addReason( const G::Path & path , const std::string & r
 {
 	std::ofstream stream ;
 	if( !FileOp::openAppend( stream , path ) )
-		G_ERROR( "GStore::StoredFile::addReason: cannot re-open envelope file to append the failure reason: " << path ) ;
+		G_ERROR( "GStore::StoredFile::addReason: cannot re-open envelope file to append the failure reason: "
+			<< "[" << path.basename() << "] (" << G::Process::strerror(FileOp::errno_()) << ")" ) ;
 
 	stream << FileStore::x() << "Reason: " << G::Str::toPrintableAscii(reason) << eol() ;
 	stream << FileStore::x() << "ReasonCode:" ; if( reason_code ) stream << " " << reason_code ; stream << eol() ;
@@ -244,14 +259,16 @@ void GStore::StoredFile::addReason( const G::Path & path , const std::string & r
 
 void GStore::StoredFile::destroy()
 {
-	G_LOG( "GStore::StoredFile::destroy: deleting file: \"" << epath(m_state).basename() << "\"" ) ;
+	G_LOG( "GStore::StoredFile::destroy: envelope: deleting [" << epath(m_state).basename() << "]" ) ;
 	if( !FileOp::remove( epath(m_state) ) )
-		G_WARNING( "GStore::StoredFile::destroy: failed to delete envelope file: " << G::Process::strerror(FileOp::errno_()) ) ;
+		G_WARNING( "GStore::StoredFile::destroy: failed to delete envelope file "
+			<< "[" << epath(m_state).basename() << "] (" << G::Process::strerror(FileOp::errno_()) << ")" ) ;
 
-	G_LOG( "GStore::StoredFile::destroy: deleting file: \"" << cpath().basename() << "\"" ) ;
+	G_LOG( "GStore::StoredFile::destroy: content: deleting [" << cpath().basename() << "]" ) ;
 	m_content.reset() ; // close it before deleting
 	if( !FileOp::remove( cpath() ) )
-		G_WARNING( "GStore::StoredFile::destroy: failed to delete content file: " << G::Process::strerror(FileOp::errno_()) ) ;
+		G_WARNING( "GStore::StoredFile::destroy: failed to delete content file "
+			<< "[" << cpath().basename() << "] (" << G::Process::strerror(FileOp::errno_()) << "]" ) ;
 
 	m_unlock = false ;
 }

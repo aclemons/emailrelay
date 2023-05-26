@@ -45,8 +45,8 @@ struct G::Option
 	bool hidden ;
 	std::string value_description ;
 	unsigned int level ;
-	unsigned int main_tag ;
-	unsigned int tag_bits ;
+	unsigned int main_tag ; // principal category
+	unsigned int tag_bits ; // all categories
 
 	Option( char c , const std::string & name , const std::string & description ,
 		const std::string & description_extra , Multiplicity value_multiplicity ,

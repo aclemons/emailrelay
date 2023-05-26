@@ -52,9 +52,9 @@ GVerifiers::VerifierFactory::Spec GVerifiers::VerifierFactory::parse( const std:
 		result = Spec( "net" , tail ) ;
 		checkNet( result ) ;
 	}
-	else if( G::Str::headMatch( spec_in , "allow:" ) )
+	else if( G::Str::headMatch( spec_in , "strict:" ) )
 	{
-		result = Spec( "allow" , tail ) ;
+		result = Spec( "strict" , tail ) ;
 		checkRange( result ) ;
 	}
 	else if( G::Str::headMatch( spec_in , "local:" ) )
@@ -74,8 +74,6 @@ GVerifiers::VerifierFactory::Spec GVerifiers::VerifierFactory::parse( const std:
 		fixFile( result , base_dir , app_dir ) ;
 		checkFile( result , warnings_p ) ;
 	}
-
-	G_ASSERT( !result.first.empty() ) ;
 	return result ;
 }
 
@@ -90,17 +88,15 @@ std::unique_ptr<GSmtp::Verifier> GVerifiers::VerifierFactory::newVerifier( GNet:
 	{
 		return std::make_unique<NetworkVerifier>( es , config , spec.second ) ;
 	}
-	else if( spec.first == "allow" )
+	else if( spec.first == "strict" )
 	{
 		bool local = false ;
-		bool allow_postmaster = false ;
-		return std::make_unique<UserVerifier>( es , local , config , spec.second , allow_postmaster ) ;
+		return std::make_unique<UserVerifier>( es , local , config , spec.second ) ;
 	}
 	else if( spec.first == "local" )
 	{
 		bool local = true ;
-		bool allow_postmaster = false ;
-		return std::make_unique<UserVerifier>( es , local , config , spec.second , allow_postmaster ) ;
+		return std::make_unique<UserVerifier>( es , local , config , spec.second ) ;
 	}
 	else if( spec.first == "file" )
 	{

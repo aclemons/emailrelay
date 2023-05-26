@@ -311,8 +311,8 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam , LPARAM lparam , boo
 
 		case WM_MOUSEMOVE:
 		{
-			const unsigned int x = LOWORD(lparam) ;
-			const unsigned int y = HIWORD(lparam) ;
+			int x = GET_X_LPARAM( lparam ) ;
+			int y = GET_Y_LPARAM( lparam ) ;
 			const bool shift = !!( wparam & MK_SHIFT ) ;
 			const bool control = !!( wparam & MK_CONTROL ) ;
 			const bool left = !!( wparam & MK_LBUTTON ) ;
@@ -341,7 +341,8 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam , LPARAM lparam , boo
 
 		case WM_USER+1U: // see wm_idle()
 		{
-			return onIdle() ? 1 : 0 ;
+			onIdle() ;
+			return 0 ;
 		}
 
 		case WM_USER+2U: // see wm_tray()
@@ -550,10 +551,8 @@ void GGui::Cracker::onInitMenuPopup( HMENU , unsigned int , bool )
 {
 }
 
-bool GGui::Cracker::onIdle()
+void GGui::Cracker::onIdle()
 {
-	const bool keep_calling_on_idle = false ;
-	return keep_calling_on_idle ;
 }
 
 LRESULT GGui::Cracker::onUser( WPARAM , LPARAM )
@@ -592,7 +591,7 @@ bool GGui::Cracker::onEraseBackground( HDC hdc )
 	return !! DefWindowProc( handle() , WM_ERASEBKGND , wparam , 0L ) ;
 }
 
-void GGui::Cracker::onMouseMove( unsigned int /*x*/ , unsigned int /*y*/ ,
+void GGui::Cracker::onMouseMove( int /*x*/ , int /*y*/ ,
 	bool /*shift_key_down*/ , bool /*control_key_down*/ ,
 	bool /*left_button_down*/ , bool /*middle_button_down*/ ,
 	bool /*right_button_down*/ )
@@ -651,10 +650,10 @@ LRESULT GGui::Cracker::doMouseButton( Fn fn , MouseButton button ,
 	MouseButtonDirection  direction , unsigned int ,
 	WPARAM wparam , LPARAM lparam )
 {
-	const int x = static_cast<int>(LOWORD(lparam)) ;
-	const int y = static_cast<int>(HIWORD(lparam)) ;
-	const bool shift = !!( wparam & MK_SHIFT ) ;
-	const bool control = !!( wparam & MK_CONTROL ) ;
+	int x = GET_X_LPARAM( lparam ) ;
+	int y = GET_Y_LPARAM( lparam ) ;
+	bool shift = !!( wparam & MK_SHIFT ) ;
+	bool control = !!( wparam & MK_CONTROL ) ;
 	onMouseButton( button , direction , x , y , shift , control ) ;
 	(this->*fn)( x , y , shift , control ) ;
 	return 0 ;

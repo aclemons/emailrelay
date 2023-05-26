@@ -529,6 +529,13 @@
 			#define GCONFIG_HAVE_X11 0
 		#endif
 	#endif
+	#if !defined(GCONFIG_HAVE_WAYLAND)
+		#ifdef G_UNIX
+			#define GCONFIG_HAVE_WAYLAND 0
+		#else
+			#define GCONFIG_HAVE_WAYLAND 0
+		#endif
+	#endif
 	#if !defined(GCONFIG_HAVE_MBEDTLS)
 		#define GCONFIG_HAVE_MBEDTLS 1
 	#endif
@@ -639,6 +646,13 @@
 			#define GCONFIG_HAVE_FSOPEN 0
 		#else
 			#define GCONFIG_HAVE_FSOPEN 1
+		#endif
+	#endif
+	#if !defined(GCONFIG_HAVE_FOPEN_S)
+		#if defined(G_WINDOWS)
+			#define GCONFIG_HAVE_FOPEN_S 1
+		#else
+			#define GCONFIG_HAVE_FOPEN_S 0
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_SOPEN)

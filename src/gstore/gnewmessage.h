@@ -34,13 +34,13 @@ namespace GStore
 /// the message store.
 ///
 /// \code
-/// auto msg = make_unique<NewMessageImp>( envelope_from ) ;
-/// msg->addTo( envelope_to_1 ) ;
-/// msg->addTo( envelope_to_2 ) ;
+/// auto new_msg = make_unique<NewMessageImp>( envelope_from ) ;
+/// new_msg->addTo( envelope_to_1 ) ;
+/// new_msg->addTo( envelope_to_2 ) ;
 /// for( auto line : content )
-///   msg->addContent( line ) ;
-/// if( !msg->prepare(...) )
-///   msg->commit( true ) ;
+///   new_msg->addContent( line ) ;
+/// new_msg->prepare(...) ;
+/// startFiltering( new_msg ) ;
 /// \endcode
 ///
 /// \see GStore::MessageStore
@@ -64,13 +64,11 @@ public:
 		///< and thrown by prepare(). Adding zero bytes in order
 		///< to test the current status is allowed.
 
-	virtual bool prepare( const std::string & session_auth_id ,
+	virtual void prepare( const std::string & session_auth_id ,
 		const std::string & peer_socket_address , const std::string & peer_certificate ) = 0 ;
 			///< Prepares to store the message in the message store.
 			///< Throws on error, including any errors that accumulated
-			///< while adding content. Returns true if a local-mailbox
-			///< only message that has been fully written and needs
-			///< no commit().
+			///< while adding content.
 
 	virtual void commit( bool throw_on_error ) = 0 ;
 		///< Commits the prepare()d message to the store and disables

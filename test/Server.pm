@@ -209,7 +209,6 @@ sub _switches
 		( exists($sw{ClientFilterNet}) ? "--client-filter __SCANNER__ " : "" ) .
 		( exists($sw{Scanner}) ? "--filter __SCANNER__ " : "" ) .
 		( exists($sw{Verifier}) ? "--address-verifier __VERIFIER__ " : "" ) .
-		( exists($sw{LocalDelivery}) ? "--local-delivery-dir __LOCAL_DELIVERY_DIR__ " : "" ) .
 		( exists($sw{DontServe}) ? "--dont-serve " : "" ) .
 		( exists($sw{ClientAuth}) ? "--client-auth __CLIENT_SECRETS__ " : "" ) .
 		( exists($sw{MaxSize}) ? "--size __MAX_SIZE__ " : "" ) .
@@ -440,6 +439,20 @@ sub hasUnixDomainSockets
 	{
 		chomp( my $line = $_ ) ;
 		return 1 if( $line =~ m/Unix domain sockets: enabled/i ) ;
+	}
+	return undef ;
+}
+
+sub hasPop
+{
+	my ( $this ) = @_ ;
+	return undef if !System::unix() ;
+	my $exe = $this->exe() ;
+	my $fh = new FileHandle( "$exe --version --verbose |" ) ;
+	while(<$fh>)
+	{
+		chomp( my $line = $_ ) ;
+		return 1 if( $line =~ m/^ *POP.*: enabled/i ) ;
 	}
 	return undef ;
 }

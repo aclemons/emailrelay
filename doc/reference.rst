@@ -150,6 +150,11 @@ SMTP server options
     anonymise: *vrfy*, *server*, *content* and/or *client*, eg.
     \ *--anonymous=server*\ ,content.
 
+*   --delivery-dir \<dir\> (-s)
+
+    Specifies the base directory for mailboxes when delivering  messages that
+    have local recipients. This defaults to the main spool directory.
+
 *   --dnsbl \<config\>
 
     Specifies a list of DNSBL_ servers that are used to reject SMTP connections
@@ -195,12 +200,6 @@ SMTP server options
     suffix only their IPv4 or IPv6 addresses will be used (eg. *ppp0-ipv4*).
     To inherit listening file descriptors from the parent process on unix use a
     syntax like this: *--interface* smtp=fd#3,smtp=fd#4,pop=fd#5.
-
-*   --local-delivery-dir \<dir\> (-s)
-
-    Enables local delivery of mail messages that have local recipients, as
-    determined by an address verifier, into mailbox sub-directories. The
-    mailbox names come from the output of the address verifier.
 
 *   --prompt-timeout \<time\> (-w)
 
@@ -513,10 +512,12 @@ A configuration file can be used to provide additional options; put each
 option on a separate line, use the long option names but without the double
 dash, and separate the option name from the option value with spaces.
 
-Additional configuration files can be used to effectively run multiple
-E-MailRelay processes in one. The same effect can be obtained by prefixing the
-long options with arbitrary names, for example *--in-spool-dir* and
-\ *--out-spool-dir*\ , and then *--in-port* and *--out-port* etc.
+It is possible to run multiple E-MailRelay instances in one process by
+prefixing the *--spool-dir* option with an arbitrary name like *in* or *out*,
+ie. *--in-spool-dir* and *--out-spool-dir*. Subsequent options like *--in-port*
+and *--out-port* will then apply to the *in* and *out* instances separately. Any
+options without a prefix will apply to the instance named by the first
+*--spool-dir* option.
 
 All command-line options that specify a filename can use a special *@app*
 substitution variable that is interpreted as the directory that contains
@@ -539,13 +540,12 @@ The envelope file suffixes are:
 * *.new* -- while the envelope is first being written
 * *.busy* -- while the message is being forwarded
 * *.bad* -- if the message cannot be forwarded
-* *.local* -- for copies for delivery to local recipients
 
 If an e-mail message cannot be forwarded the envelope file is given a *.bad*
 suffix, and the failure reason is written into the file.
 
-Sub-directories of the main spool directory are sometimes used for mail messages
-that have been delivered to local e-mail recipients.
+Sub-directories of the main spool directory are sometimes used as mailboxes
+containing e-mail messages that have been delivered to local e-mail recipients.
 
 Forwarding
 ==========
@@ -615,8 +615,8 @@ the filter program then it should use an exit code of 100.
 If the filter program creates completely new e-mail messages in the spool
 directory then they may not be processed immediately, or they may be completely
 ignored. To get E-MailRelay to pick up any new messages use the special 103 exit
-code together with with *--poll*, or perhaps run *emailrelay --as-client* from
-within the filter program itself.
+code or perhaps run *emailrelay --as-client* from within the filter program
+itself.
 
 As an example of a simple filter program processor this shell script examines
 the sending client's IP address and conditionally passes the message into
@@ -777,9 +777,8 @@ The *split:* filter can be used when outgoing e-mail messages need to be routed
 to different next-hop servers according to the recipient addresses. The filter
 examines the domain part of the recipient addresses in the SMTP envelope file
 and if there is more than one domain then the message is copied so that each
-copy relates to a single domain. It any case it then copies the domain name into
-the *forward-to* field within the envelope file to mark it as a candidate for
-routing.
+copy relates to a single domain. It then copies the recipient address's domain
+name into the *forward-to* field within the envelope file.
 
 Note that if new messages are created by the *split:* filter then they will not
 be processed by any other filters. However, the *split:* filter does trigger
@@ -790,8 +789,7 @@ mx:
 ---
 The *mx:* filter performs a DNS MX lookup on any *forward-to* domain given in
 the envelope file and stores the resulting IP address in the
-*forward-to-address* field. If E-MailRelay sees a *forward-to-address* value it
-connects to that address when forwarding the message.
+*forward-to-address* field.
 
 The *mx:* filter should normally be run as a client filter (\ *--client-filter*\ )
 so that the IP address is up-to-date when the forwarding connection is made.
@@ -822,17 +820,25 @@ See *Routing* below for more details.
 deliver:
 --------
 The *deliver:* filter is used to deliver copies of incoming e-mail messages into
-a separate mailbox sub-directory for each message recipient.
+a separate mailbox directory for each message recipient where the address
+verifier has supplied a valid mailbox name:
 
 ::
 
     --filter=deliver:
 
+The delivery base directory defaults to the main spool directory but it can be
+overridden with the *--delivery-dir* option:
+
+::
+
+    --filter=deliver: --delivery-dir=@app/mailboxes --spool-dir=@app/spool
+
 Optional semi-colon separated parameters can be used to modify its behaviour:
 
 ::
 
-    --filter="deliver:lowercase;hardlink;no_delete"
+    --filter="deliver:hardlink;no_delete"
 
 See *Delivery* below for more details.
 
@@ -841,10 +847,13 @@ Address verifiers
 By default the E-MailRelay server will accept all recipient addresses for
 incoming e-mails as valid. This default behaviour can be modified by using an
 external verifier program, specified with the *--address-verifier* command-line
-option, so the script can choose which recipient addresses are accepted as valid
-and which are rejected.
+option, so the verifier can choose which recipient addresses are accepted as
+valid and which are rejected.
 
-The verifier script is passed a command-line containing: (1) the recipient
+Address verifiers can also be used to identify recipient addresses that are
+local addresses with an associated mailbox.
+
+The verifier program is passed a command-line containing: (1) the recipient
 e-mail address as supplied by the remote client, (2) the *from* e-mail address
 as supplied by the client, or the empty string in the case of the *VRFY*
 command, (3) the IP address and port of the far end of the client
@@ -886,11 +895,14 @@ converting to lower-case:
     echo "$1" | tr '[A-Z]' '[a-z]'
     exit 1
 
-If the address is valid but it should be delivered to a local mailbox rather
-than forwarded then the verifier program should write two lines to the standard
-output -- the full name associated with the mailbox (used in the response to the
-VRFY command), and the mailbox name used for message delivery -- and then exit
-with a value of zero.
+The modified recipient address is stored in the envelope file and will be used
+as the SMTP SEND-TO address when the message is forwarded.
+
+If the address verifier identifies a recipient address as being a local user
+with an associated mailbox then it should write two lines to the standard
+output -- the full name associated with the mailbox (only used in the response
+to the VRFY command), and the mailbox name used for message delivery -- and then
+exit with a value of zero.
 
 ::
 
@@ -900,18 +912,15 @@ with a value of zero.
     echo postmaster
     exit 0
 
-Local delivery means that the message files in the spool directory are copied to
-files with a *.local* filename suffix, and if all the envelope recipients are
-local then no normal message files are created. The *.local* files can then be
-delivered to mailbox sub-directories of the main spool directory by using the
-built-in *deliver:* filter, or delivered to sub-directories of some other base
-directory by using the *--local-delivery-dir* option, or processed in some other
-way.
+Messages with recipient addresses that have been identified as local should
+be delivered to the relevant mailbox by a filter such as the built-in *deliver:*
+filter. Note that local recipient addresses are ignored when a message is
+forwarded by the SMTP client.
 
 For invalid addresses the verifier's exit value should be non-zero and the first
 line of output will be taken as the error response sent to the remote client. An
-optional second output line can be used for diagnostic information that gets put
-into the E-MailRelay log file.
+optional second output line can be used for diagnostic information that gets
+recorded in the E-MailRelay log file.
 
 ::
 
@@ -941,41 +950,8 @@ which may be useful in limiting the impact of denial of service attacks.
 Any other exit code, from 4 to 99 or 101 and above, behaves in the same way
 as an exit code of 2.
 
-In this more complete example the verifier script accepts all addresses as
-valid as long as they contain an *at* character:
-
-::
-
-    #!/bin/sh
-    # address verifier -- accept only if containing an at sign
-    address="$1"
-    expr "$address" : ".*@" > /dev/null || exit 2
-    echo ""
-    echo "$address"
-    exit 1 # accept
-
-As another example, this verifier script accepts all recipient addresses by
-default but rejects remote addresses if the client has bypassed authentication
-by connecting on a trusted IP address:
-
-::
-
-    #!/bin/sh
-    # address verifier
-    address="$1"
-    local_domain="$4"
-    auth_mechanism="$5"
-    host="`echo \"$address\" | sed 's/.*@//'`"
-    if test "$auth_mechanism" = "none" -a "$host" != "$local_domain"
-    then
-        echo "cannot relay without authentication"
-        exit 2 # reject the recipient address
-    fi
-    echo ""
-    echo "$address"
-    exit 1 # accept the recipient address
-
-or written in JavaScript for Windows:
+On Windows address verifier scripts can be written in JavaScript, something
+like this:
 
 ::
 
@@ -985,15 +961,25 @@ or written in JavaScript for Windows:
         var address = WScript.Arguments(0) ;
         var local_domain = WScript.Arguments(3) ;
         var auth_mechanism = WScript.Arguments(4) ;
-        var host = address.split(/@/)[1] || "" ;
-        if( ( auth_mechanism === "none" || !auth_mechanism ) && host !== local_domain )
+        var user = address.split(/@/)[0] || "" ;
+        var domain = address.split(/@/)[1] || "" ;
+        if( user === "postmaster" )
         {
-            WScript.Stdout.WriteLine( "cannot relay without authentication" ) ;
-            WScript.Quit( 2 ) ;
+            WScript.Stdout.WriteLine( "Postmaster <postmaster@example.com>" ) ;
+            WScript.Stdout.WriteLine( "postmaster" ) ;
+            WScript.Quit( 0 ) ; // accept for delivery to mailbox "postmaster"
         }
-        WScript.Stdout.WriteLine( "" ) ;
-        WScript.Stdout.WriteLine( address ) ;
-        WScript.Quit( 1 ) ;
+        else if( domain !== "example.com" )
+        {
+            WScript.Stdout.WriteLine( "invalid domain" ) ;
+            WScript.Quit( 2 ) ; // reject (550)
+        }
+        else
+        {
+            WScript.Stdout.WriteLine( "" ) ;
+            WScript.Stdout.WriteLine( address ) ;
+            WScript.Quit( 1 ) ; // accept
+        }
     }
     catch( e )
     {
@@ -1008,7 +994,7 @@ Address verifier servers
 E-MailRelay address verifiers are normally external programs or scripts but it
 is also possible to do address verification in a separate network server if
 the *--address-verifier* option starts with *net:* followed by the network
-address.
+address and port number.
 
 Eg:
 
@@ -1028,135 +1014,50 @@ so the server should not normally disconnect after responding.
 
 Built-in address verifiers
 ==========================
-There are two built-in address verifiers: *allow:* and *local:*.
+There are two built-in address verifiers: *strict:* and *local:*.
 
-allow:
-------
-The *allow:* verifier is intended for e-mail messages coming in from external
-systems and it only accepts recipient addresses if the user part has a matching
-system account and the domain part matches the local network domain or
-*--domain* value.
+strict:
+-------
+The *strict:* verifier does strict validation of recipient address against system
+account names and the network domain or *--domain* value. For example, it will
+accept *alice@example.com* as a valid recipient address only if there is a
+system account called *alice* and the local fully-qualified domain name is
+\ *example.com*\ . This verifier is intended to be used for e-mail messages coming
+in from the public internet.
 
 Eg:
 
 ::
 
-    --address-verifier=allow: --domain=example.com --port=25 --remote-clients
+    --address-verifier=strict: --domain=example.com --port=25 --remote-clients
 
 
 local:
 ------
-The *local:* verifier is intended for outgoing e-mail messages and it accepts
-all address as valid but it marks addresses as local if the user part has a
-matching system account and the domain part matches the local network domain or
-*--domain* value.
-
-Both verifiers can be given a valid user-id range (defaulting to 512-32767).
-
-Eg:
-
-::
-
-    --address-verifier=local:1000-1002 --forward-to=smarthost.example.com:587
-
-
-Routing
-=======
-E-MailRelay is often used to store-and-forward e-mail messages, with the
-forwarded messages going to a *smarthost* for onward routing. (The smarthost
-address is given by the *--forward-to* or *--as-client* command-line option.)
-
-However, E-MailRelay can also be used to route outgoing e-mail messages directly
-to their final destinations without needing a smarthost. This works by using
-*forward-to* and *forward-to-address* fields in the message envelope files: if
-E-MailRelay sees an IP address in the *forward-to-address* field when a message
-is being forwarded then it will connect to that address rather than the
-*--forward-to* default.
-
-In fact E-MailRelay will always connect to the *--forward-to* address first and
-then make one-off connections for any messages that have a *forward-to-address*
-defined. If every message has a *forward-to-address* then the smarthost
-connection will not be used to tranfer any e-mail messages, so it can be
-a dummy server on the local machine.
-
-Normally a filter program should be used to fill in the *forward-to* field with
-the message recipient's domain name; and if there are multiple recipients with
-different domains then the filter should split the message up into independent
-copies. The built-in *split:* filter can be used for this.
-
-If E-MailRelay sees a *forward-to* value when it is forwarding a message and if
-there is a defined *--client-filter* then this filter will be run early to give
-the filter the chance to populate a *forward-to-address*. This routing filter
-run will typically do a DNS MX lookup on the *forward-to* domain name and put
-the result into the *forward-to-address*. The *--client-filter* is run again as
-normal once the connection is made. The built-in *mx:* filter can be used to do
-the DNS MX lookup.
-
-Delivery
-========
-When running in store-and-forward applications E-MailRelay does not concern
-itself with message delivery; every e-mail message ends up in the main spool
-directory without regard to the recipient addresses. However, it is not
-difficult for a filter program to examine the recipient addresses in each
-message's envelope file and copy the message files into a separate *mailbox* for
-each recipient.
-
-A *mailbox* is normally just a sub-directory of the main spool directory with a
-name that matches the recipient address, and a catch-all mailbox called
-*postmaster* is used for any unrecognised addresses.
-
-Note that delivery requires a mapping from a recipient address to a mailbox
-name. This mapping can be done by the filter that copies the message into the
-mailbox sub-directory, but it can also be done by an address verifier that runs
-before the filter: the address verifier checks the recipient address and maps
-it to a particular mailbox, and then the filter copies the message files into
-the mailbox.
-
-The *--pop-by-name* option is designed to work with e-mail messages that have
-been delivered into mailbox sub-directories. When an e-mail user agent retrieves
-e-mail messages using POP it supplies a user-id for authentication purposes and
-E-MailRelay will use this user-id to select the relevant mailbox from which to
-serve up e-mails.
-
-Delivery is normally only relevant to incoming messages being received by
-E-MailRelay from external systems, but it might also be desirable for outgoing
-messages that are addressed to local users. For these messages is makes sense
-to deliver them straight into incoming mailboxes rather have them forwarded to
-the smarthost and then come back in again.
-
-The *--local-delivery-dir* option can be used for this, together with an
-appropriate address verifier; if the address verifier identifies a message
-recipient as a local user then E-MailRelay will deliver the message straight
-into their mailbox under the *--local-delivery-dir* base directory.
-
-deliver:
---------
-The built-in *deliver:* filter can be used to do message delivery: when the
-*deliver:* filter runs it examines the message's recipient addresses and uses
-the first part of each address as a mailbox name. It then copies the message
-files into the mailbox sub-directories and deletes the original files from the
-main spool directory.
-
-For example, if there is one recipient address in a message's envelope file of
-*alice@example.com* the *deliver:* filter will copy the message files into the
-*alice* sub-directory and then delete the original.
-
-The *deliver:* filter creates mailbox directories as necessary, but if the
-mailbox directory already exists and it has *new*, *tmp* and *cur*
-sub-directories within it then it is treated as a *maildir* mailbox. This can be
-useful for serving up messages with an IMAP_ server such as dovecot_.
-
-The *deliver:* filter should normally be used with an address verifier so that
-it does not create spurious mailboxes from messages that have invalid or
-malformed recipient addresses. The built-in *allow:* verifier can be used to
-do normalisation and strict validation of recipient addresses in advance of
-message delivery:
+The *local:* verifier tests whether a recipient address is for a local user.
+A recipient address where the first part matches a system account name and the
+second part matches the network domain or *--domain* value is treated as local
+and the mailbox name is just the account name. If there is no match then the
+recipient address is treated as valid and not local. This verifier is intended
+to be used for outgoing e-mail messages.
 
 Eg:
 
 ::
 
-    --address-verifier=allow: --filter=deliver:
+    --address-verifier=local: --forward-to=smarthost.example.com:587
+
+Both verifiers can have one or more semi-colon separated configuration
+parameters following the verifier name, including a user-id range (defaulting to
+512-32767) that is used to obtain the list of system account names, and *pm*
+to always allow *postmaster* (with any domain) as a valid local address with a
+mailbox.
+
+Eg:
+
+::
+
+    --address-verifier="strict:1000-1002;pm" --domain=example.com --port=25 --remote-clients
 
 
 Authentication
@@ -1180,9 +1081,8 @@ contain at least one *client* entry.
 
 It is also possible to give the client authentication details directly by
 specifying *plain:<base64-user-id>:<base64-password>* as the *--client-auth*
-value. It is better to do this in a configuration file rather than on the
-command-line so that the password is not exposed through the process table
-or command-line history.
+value. This is not recommended because it exposes the account details
+through the process table, command-line history, etc.
 
 The server-side secrets file specified with *--server-auth* is used when a
 remote client tries to authenticate with the E-MailRelay server. The file
@@ -1208,8 +1108,8 @@ Lines have four white-space delimited fields:
 The *client-or-server* field must be *client* or *server*; the *password-type*
 field should be *plain* or *md5*; the *userid* field is xtext-encoded
 user identifier; and the *password* field is the xtext-encoded plain password
-or a base64-encoded *HMAC-MD5* state. For *client* lines the password-type can
-also be *oauth*.
+or a base64-encoded *HMAC-MD5* state from *emailrelay-passwd*. For *client*
+lines the password-type can also be *oauth*.
 
 The *xtext* encoding scheme is defined properly in RFC-3461_, but basically it
 says that non-alphanumeric characters (including space, *+*, *#* and *=*) should
@@ -1357,7 +1257,7 @@ Similarly, when using *--server-tls-connection* the E-MailRelay server will
 expect all connections to be using TLS from the start, so the whole SMTP
 dialogue is encrypted, without the need for *STARTTLS*.
 
-PAM Authentication
+PAM authentication
 ==================
 E-MailRelay on Linux supports the use of PAM (Pluggable Authentication Modules)
 for authentication if it has been built with the *--with-pam* configure option.
@@ -1385,6 +1285,100 @@ this will require special permissioning to allow the E-MailRelay server to
 read the shadow password database, so run the server as *root* and also add the
 *--user=root* command-line option to make sure that the process's effective
 user-id stays as *root* while it accesses the PAM system.
+
+Routing
+=======
+E-MailRelay is often used to store-and-forward e-mail messages, with the
+forwarded messages going to a *smarthost* for onward routing. (The smarthost
+address is given by the *--forward-to* or *--as-client* command-line option.)
+
+However, E-MailRelay can also be used to route outgoing e-mail messages directly
+to their final destinations without needing a smarthost. This works by using
+*forward-to* and *forward-to-address* fields in the message envelope files: if
+E-MailRelay sees an IP address in the *forward-to-address* field when a message
+is being forwarded then it will connect to that address rather than the
+*--forward-to* default.
+
+In fact E-MailRelay will always connect to the *--forward-to* address first and
+then make one-off connections for any messages that have a *forward-to-address*
+defined. If every message has a *forward-to-address* then the default
+*--forward-to* address will not be used at all so it can be a dummy server on
+the local machine.
+
+Normally a filter program should be used to fill in the *forward-to* field with
+the message recipient's domain name; and if there are multiple recipients with
+different domains then the filter should split the message up into independent
+copies.
+
+(The built-in *split:* filter can be used to split messages by recipient domain
+and fill in the *forward-to* envelope fields.)
+
+If E-MailRelay sees a *forward-to* value in the envelope file when it is
+forwarding a message and if there is a defined *--client-filter* then the filter
+will be run early so that it can populate a *forward-to-address* before talking
+to the remote server. This early run of the client filter will typically do a
+DNS MX lookup on the *forward-to* domain name and put the result into the
+envelope file's *forward-to-address*. The client filter is run again as normal
+once the connection is made.
+
+(The built-in *mx:* filter can be used to do a DNS MX lookup on the *forward-to*
+domain and fill in the *forward-to-address*.)
+
+Delivery
+========
+When running in store-and-forward applications E-MailRelay does not concern
+itself with message delivery; every e-mail message ends up in the main spool
+directory without regard to the recipient addresses. However, it is quite easy
+to write a *delivery* filter that examines the recipient addresses in each
+message's envelope file and copies the message files into a separate *mailbox*
+for each recipient.
+
+A *mailbox* is normally just a sub-directory of the main spool directory with a
+name derived from the first part of the recipient address. It is traditional to
+have a catch-all mailbox called *postmaster* for unrecognised addresses.
+
+Deriving a suitable mailbox name from the recipient address is best done by an
+address verifier. The address verifier checks the recipient address and maps it
+to a mailbox name which gets written into the envelope file in the *to-local*
+list. Then the delivery filter just has to copy the message files into the
+designated mailbox.
+
+Once e-mail messages have been delivered into separate mailboxes they can be
+accessed by individual users using POP with the *--pop-by-name* option. When a
+user's e-mail user agent retrieves messages using POP it supplies a user-id for
+authentication purposes and E-MailRelay will use this user-id to select the
+appropriate mailbox from which to serve up e-mails.
+
+Delivery is normally only relevant to incoming messages being received from
+external systems, but it might also be desirable for outgoing messages that are
+addressed to local users. For these messages is makes sense to deliver them
+straight into incoming mailboxes rather have them forwarded to the smarthost and
+then come back in again.
+
+deliver:
+--------
+The built-in *deliver:* filter does message delivery to the mailboxes associated
+with any local recipient addresses. Once an address verifier has identified
+one or more of the recipient addresses as local and the mailbox names have been
+written into the envelope file the *deliver:* filter copies the message files
+into the mailbox sub-directories. If all the recipient addresses were local then
+the filter deletes the original message from the spool directory.
+
+Eg:
+
+::
+
+    --address-verifier=strict: --filter=deliver:
+
+The *deliver:* filter creates mailbox directories as necessary, but if the
+mailbox directory already exists and has *new*, *tmp* and *cur* sub-directories
+within it then it is treated as a *maildir* mailbox. In this case the content
+file (only) is copied into the *cur* sub-directory. This can be useful for
+serving up messages with an IMAP_ server such as dovecot_.
+
+Mailboxes are normally sub-directories of the spool directory, but the
+*--delivery-dir* command-line option can be used to provide a different base
+directory.
 
 IP addresses
 ============
@@ -1682,12 +1676,14 @@ Installation directories can be defined at build-time by the following
 These are all defaulted to paths that are ultimately based on *--prefix*, so
 *./configure --prefix=$HOME* will work as expected.
 
-For a directory structure conforming more closely to the File Hierarchy
-Standard (FHS_) use this configure command:
+For a directory structure conforming more closely to the Linux File Hierarchy
+Standard (FHS_) use the *configure.sh* wrapper script:
 
 ::
 
-    ./configure --prefix=/usr --localstatedir=/var --libexecdir=/usr/lib --sysconfdir=/etc e_initdir=/etc/init.d e_rundir=/run/emailrelay
+    ./configure.sh
+    make
+    sudo make install
 
 It is possible to change the installation root directory after building by
 using *make DESTDIR=<root> install* or *DESTDIR=<root> make -e install*.

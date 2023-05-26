@@ -262,7 +262,7 @@ void GSmtp::ServerSend::send( std::string line_in , bool go_secure )
 {
 	G_LOG( "GSmtp::ServerSend: tx>>: \"" << G::Str::printable(line_in) << "\"" ) ;
 	static const char * crlf = "\015\012" ;
-	m_sender->protocolSend( G::Str::printable(std::move(line_in)).append(crlf,2U) , go_secure || sendFlush() ) ;
+	m_sender->protocolSend( G::Str::printable(line_in).append(crlf,2U) , go_secure || sendFlush() ) ;
 	if( go_secure )
 		m_sender->protocolSecure() ;
 }

@@ -290,6 +290,7 @@ G::Path::Path( const Path & path , const std::string & tail ) :
 	PathImp::normalise( m_str ) ;
 }
 
+#ifndef G_LIB_SMALL
 G::Path::Path( const Path & path , const std::string & tail_1 , const std::string & tail_2 ) :
 	m_str(path.m_str)
 {
@@ -297,6 +298,7 @@ G::Path::Path( const Path & path , const std::string & tail_1 , const std::strin
 	pathAppend( tail_2 ) ;
 	PathImp::normalise( m_str ) ;
 }
+#endif
 
 #ifndef G_LIB_SMALL
 G::Path::Path( const Path & path , const std::string & tail_1 , const std::string & tail_2 ,
@@ -499,12 +501,10 @@ bool G::Path::operator==( const Path & other ) const
 	return m_str == other.m_str ; // noexcept only in c++14
 }
 
-#ifndef G_LIB_SMALL
 bool G::Path::operator!=( const Path & other ) const
 {
 	return m_str != other.m_str ; // noexcept only in c++14
 }
-#endif
 
 void G::Path::swap( Path & other ) noexcept
 {

@@ -32,9 +32,6 @@ GFilters::SimpleFilterBase::SimpleFilterBase( GNet::ExceptionSink es ,
 {
 }
 
-GFilters::SimpleFilterBase::~SimpleFilterBase()
-= default ;
-
 std::string GFilters::SimpleFilterBase::id() const
 {
 	return m_id ;

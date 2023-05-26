@@ -22,6 +22,7 @@
 #include "gxtext.h"
 #include "gstr.h"
 #include "gassert.h"
+#include <array>
 
 namespace G
 {
@@ -29,7 +30,8 @@ namespace G
 	{
 		inline char hex( unsigned int n )
 		{
-			static constexpr char map[17] = "0123456789ABCDEF" ;
+			static constexpr std::array<char,17> map {{ "0123456789ABCDEF" }} ;
+			static_assert( map[15] == 'F' , "" ) ;
 			return map[n] ;
 		}
 		inline bool ishex( char c , bool allow_lowercase )
@@ -119,7 +121,7 @@ std::string G::Xtext::decode( string_view s )
 	namespace imp = XtextImp ;
 	std::string result ;
 	result.reserve( s.size() ) ;
-	for( auto p = s.begin() ; p != s.end() ; ++p )
+	for( auto p = s.begin() ; p != s.end() ; ++p ) // NOLINT
 	{
 		if( *p == '+' )
 		{

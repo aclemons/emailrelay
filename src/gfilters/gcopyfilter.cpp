@@ -34,9 +34,6 @@ GFilters::CopyFilter::CopyFilter( GNet::ExceptionSink es , GStore::FileStore & s
 {
 }
 
-GFilters::CopyFilter::~CopyFilter()
-= default ;
-
 GSmtp::Filter::Result GFilters::CopyFilter::run( const GStore::MessageId & message_id ,
 	bool & , GStore::FileStore::State e_state )
 {

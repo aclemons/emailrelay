@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
-/// \file pages.h
+/// \file guipages.h
 ///
 
 #ifndef G_MAIN_GUI_PAGES_H
@@ -386,7 +386,6 @@ class LogWatchThread : public QThread
 {Q_OBJECT
 public:
 	explicit LogWatchThread( G::Path ) ;
-	~LogWatchThread() = default ;
 	void run() override ;
 
 private:

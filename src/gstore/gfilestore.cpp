@@ -106,9 +106,10 @@ std::unique_ptr<GStore::StoredMessage> GStore::FileIterator::next()
 
 // ===
 
-GStore::FileStore::FileStore( const G::Path & dir , const Config & config ) :
+GStore::FileStore::FileStore( const G::Path & dir , const G::Path & delivery_dir , const Config & config ) :
 	m_seq(config.seq) ,
 	m_dir(dir) ,
+	m_delivery_dir(delivery_dir) ,
 	m_config(config)
 {
 	checkPath( dir ) ;
@@ -117,6 +118,11 @@ GStore::FileStore::FileStore( const G::Path & dir , const Config & config ) :
 G::Path GStore::FileStore::directory() const
 {
 	return m_dir ;
+}
+
+G::Path GStore::FileStore::deliveryDir() const
+{
+	return m_delivery_dir.empty() ? m_dir : m_delivery_dir ;
 }
 
 std::string GStore::FileStore::x()
@@ -379,23 +385,29 @@ bool GStore::FileStore::FileOp::rename( const G::Path & src , const G::Path & ds
 	return ok ;
 }
 
-bool GStore::FileStore::FileOp::renameOver( const G::Path & src , const G::Path & dst )
+bool GStore::FileStore::FileOp::renameOnto( const G::Path & src , const G::Path & dst )
 {
 	FileWriter claim_writer ;
-	G::File::remove( dst , std::nothrow ) ;
 	errno_() = 0 ;
-	bool ok = G::File::rename( src , dst , std::nothrow ) ;
+	bool ok = G::File::renameOnto( src , dst , std::nothrow ) ;
 	errno_() = G::Process::errno_() ;
 	return ok ;
 }
 
-bool GStore::FileStore::FileOp::remove( const G::Path & path )
+bool GStore::FileStore::FileOp::remove( const G::Path & path ) noexcept
 {
-	FileWriter claim_writer ;
-	errno_() = 0 ;
-	bool ok = G::File::remove( path , std::nothrow ) ;
-	errno_() = G::Process::errno_() ;
-	return ok ;
+	try
+	{
+		FileWriter claim_writer ;
+		errno_() = 0 ;
+		bool ok = G::File::remove( path , std::nothrow ) ;
+		errno_() = G::Process::errno_() ;
+		return ok ;
+	}
+	catch(...)
+	{
+		return false ;
+	}
 }
 
 bool GStore::FileStore::FileOp::exists( const G::Path & path )

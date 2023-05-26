@@ -113,8 +113,7 @@ Main::Unit::Unit( Run & run , unsigned int unit_id , const std::string & version
 
 	// create message store stuff
 	//
-	m_file_store = std::make_unique<GStore::FileStore>( m_configuration.spoolDir() , m_configuration.fileStoreConfig() ) ;
-	m_file_delivery = std::make_unique<GStore::FileDelivery>( *m_file_store , m_configuration.localDeliveryDir() , GStore::FileDelivery::Config() ) ;
+	m_file_store = std::make_unique<GStore::FileStore>( m_configuration.spoolDir() , m_configuration.deliveryDir() , m_configuration.fileStoreConfig() ) ;
 	m_filter_factory = std::make_unique<GFilters::FilterFactory>( *m_file_store ) ;
 	m_verifier_factory = std::make_unique<GVerifiers::VerifierFactory>() ;
 	store().messageStoreRescanSignal().connect( G::Slot::slot(*this,&Unit::onStoreRescanEvent) ) ;
@@ -146,7 +145,6 @@ Main::Unit::Unit( Run & run , unsigned int unit_id , const std::string & version
 		m_smtp_server = std::make_unique<GSmtp::Server>(
 			GNet::ExceptionSink() ,
 			*m_file_store ,
-			*m_file_delivery ,
 			*m_filter_factory ,
 			*m_verifier_factory ,
 			*m_client_secrets ,

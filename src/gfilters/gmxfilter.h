@@ -51,6 +51,12 @@ public:
 	~MxFilter() override ;
 		///< Destructor.
 
+public:
+	MxFilter( const MxFilter & ) = delete ;
+	MxFilter & operator=( const MxFilter & ) = delete ;
+	MxFilter( MxFilter && ) = delete ;
+	MxFilter & operator=( MxFilter && ) = delete ;
+
 private: // overrides
 	std::string id() const override ; // GSmtp::Filter
 	bool quiet() const override ; // GSmtp::Filter

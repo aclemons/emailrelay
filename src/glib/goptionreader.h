@@ -44,7 +44,7 @@ public:
 		///< Reads options from file as a list of strings like "--foo=bar".
 		///< Throws on error.
 
-private:
+public:
 	OptionReader() = delete ;
 } ;
 

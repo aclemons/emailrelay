@@ -38,9 +38,6 @@ GFilters::SplitFilter::SplitFilter( GNet::ExceptionSink es , GStore::FileStore &
 {
 }
 
-GFilters::SplitFilter::~SplitFilter()
-= default ;
-
 GSmtp::Filter::Result GFilters::SplitFilter::run( const GStore::MessageId & message_id ,
 	bool & rescan_out , GStore::FileStore::State e_state )
 {
@@ -68,7 +65,7 @@ GSmtp::Filter::Result GFilters::SplitFilter::run( const GStore::MessageId & mess
 	if( ids.size() > 1U )
 	{
 		extra_headers << m_store.x() << "SplitGroupCount: " << ids.size() << "\n" ;
-		for( const auto id : ids )
+		for( const auto & id : ids )
 			extra_headers << m_store.x() << "SplitGroup: " << id << "\n" ;
 	}
 

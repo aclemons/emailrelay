@@ -54,7 +54,7 @@ public:
 
 	StringArray parse( const StringArray & args_in , std::size_t start_position = 1U ,
 		std::size_t ignore_non_options = 0U ,
-		std::function<std::string(const std::string&)> callback_fn = {} ) ;
+		std::function<std::string(const std::string&,bool)> callback_fn = {} ) ;
 			///< Parses the given command-line arguments into the value map and/or
 			///< error list defined by the constructor. This can be called
 			///< more than once, with options accumulating in the internal
@@ -63,6 +63,12 @@ public:
 			///< By default the program name is expected to be the first item in
 			///< the array and it is ignored, although the 'start-position' parameter
 			///< can be used to change this. See also G::Arg::array().
+			///<
+			///< Parsing stops at the first non-option or at "--" and the
+			///< remaining non-options are returned. Optionally some number of
+			///< non-options are tolerated without stopping the parsing if
+			///< 'ignore_non_options' is non-zero. This is to allow for
+			///< sub-commands like "exe subcmd --opt arg".
 			///<
 			///< Individual arguments can be in short-form like "-c", or long-form
 			///< like "--foo" or "--foo=bar". Long-form arguments can be passed in
@@ -78,10 +84,13 @@ public:
 			///< Errors are appended to the caller's error list.
 			///<
 			///< The optional callback function can be used to modify the parsing
-			///< of each double-dash option. The callback should convert the option
-			///< name as given to the option name used for parsing, with an
-			///< optional leading '-' character to indicate that the parsing
-			///< results should be discarded.
+			///< of each option. For a double-dash option the callback is passed
+			///< the string after the double-dash (with false) and it should return
+			///< the option name to be used for parsing, with an optional leading
+			///< '-' character to indicate that the parsing results should be
+			///< discarded. For single-dash options the option letter is looked up
+			///< in the Options spec first and the long name is passed to the
+			///< callback (with true).
 			///<
 			///< Returns the non-option arguments.
 
@@ -92,7 +101,7 @@ public:
 	static StringArray parse( const StringArray & args_in , const Options & spec ,
 		OptionMap & values_out , StringArray * errors_out = nullptr ,
 		std::size_t start_position = 1U , std::size_t ignore_non_options = 0U ,
-		std::function<std::string(const std::string&)> callback_fn = {} ) ;
+		std::function<std::string(const std::string&,bool)> callback_fn = {} ) ;
 			///< A static function to contruct an OptionParser object
 			///< and call its parse() method. Returns the residual
 			///< non-option arguments. Throws on error.

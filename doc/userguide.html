@@ -204,7 +204,7 @@
      For more verbose logging add the <em>--verbose</em> option. This is a good idea when
      setting up or trouble-shooting your E-MailRelay configuration.
     </p>
-   <h2><a class="a-header" name="SH_1_5">Failed e-mails</a></h2> <!-- index:2:SH:1:5:Failed e-mails -->
+   <h2><a class="a-header" name="SH_1_5">Failures and retries</a></h2> <!-- index:2:SH:1:5:Failures and retries -->
     <p>
      If e-mail messages cannot be forwarded by the E-MailRelay system then the
      envelope files in the spool directory are given a <em>.bad</em> suffix. The reason for
@@ -213,8 +213,15 @@
 
     <p>
      You should check for <em>.bad</em> envelope files in the E-MailRelay spool directory
-     from time to time. If you want them to be retried next time then just remove
-     the <em>.bad</em> filename suffix.
+     from time to time. If you want failed messages to be retried then just remove
+     the <em>.bad</em> filename suffix. On Unix-like systems you can do this automatically
+     with a cron job that runs the <em>emailrelay-resubmit.sh</em> script occasionally.
+    </p>
+
+    <p>
+     Once a failed message has been renamed it will be forwarded along with all the
+     others. It is generally a good idea to use regular polling (eg. <em>--poll=60</em>) to
+     make sure that this happens in a timely manner.
     </p>
    <h2><a class="a-header" name="SH_1_6">Open mail servers</a></h2> <!-- index:2:SH:1:6:Open mail servers -->
     <p>
@@ -236,11 +243,11 @@
     <p>
      A good first step in limiting abuse is to use an address verifier that checks
      that e-mails are correctly addressed to you. You can use the built-in address
-     verifier called <em>allow:</em> to do this or you can write your own verifier script.
+     verifier called <em>strict:</em> to do this or you can write your own verifier script.
     </p>
 
       <div class="div-pre">
-       <pre>emailrelay --as-server --remote-clients --address-verifier=allow: --domain=mydomain.com
+       <pre>emailrelay --as-server --remote-clients --address-verifier=strict: --domain=mydomain.com
 </pre>
       </div><!-- div-pre -->
     <p>
@@ -306,7 +313,7 @@ server plain user2 password2
     </p>
 
       <div class="div-pre">
-       <pre>emailrelay --as-server --filter=copy: --pop --pop-by-name --pop-auth-/etc/pop.auth
+       <pre>emailrelay --as-server --filter=copy: --pop --pop-by-name --pop-auth=/etc/pop.auth
 </pre>
       </div><!-- div-pre -->
     <p>
@@ -429,7 +436,7 @@ WScript.Quit( 0 ) ;
    <h2><a class="a-header" name="SH_1_12">Google mail</a></h2> <!-- index:2:SH:1:12:Google mail -->
     <p>
      To send mail via Google mail's SMTP gateway you will need to obtain a new
-     <em>application password</em> from Google. Log in to your Google account and look for
+     <em>application password</em> from Google: log in to your Google account and look for
      the account's security settings and then <em>app passwords</em>. Create the password
      for E-MailRelay selecting an application type <em>other</em>.
     </p>
@@ -541,7 +548,7 @@ client-auth C:/ProgramData/E-MailRelay/emailrelay.auth</pre>
 --in-spool-dir @app/in
 --in-port 25
 --in-domain example.com
---in-address-verifier allow:
+--in-address-verifier strict:pm
 --in-dnsbl 1.1.1.1:53,500,1,dnsbl.example.com
 --in-filter spam-edit:127.0.0.1:783
 --in-filter deliver:
@@ -557,12 +564,13 @@ client-auth C:/ProgramData/E-MailRelay/emailrelay.auth</pre>
 --out-forward-on-disconnect
 --out-forward-to-some
 --out-poll 60
+--out-address-verifier local:
+--out-delivery-dir @app/in
+--out-filter deliver:
 --out-filter split:
 --out-client-filter mx:
 --out-forward-to 127.0.0.1:588
 --out-domain example.com
---out-address-verifier local:
---out-local-delivery-dir @app/in
 
 --other-spool-dir @app/other
 --other-port 588
@@ -580,23 +588,24 @@ client-auth C:/ProgramData/E-MailRelay/emailrelay.auth</pre>
 
     <p>
      The <em>in</em> server is an internet-facing e-mail server with delivery to individual
-     mailboxes accessed via POP. The <em>allow:</em> verifier checks the addressees in the
-     incoming e-mails against the list of accounts on the local machine and against
-     the given domain name; the IP address of the network connection is checked
-     against a DNSBL database; and SpamAssassin is used to identify spam. System
-     accounts are used for address verification and POP authentication.
+     mailboxes that can be accessed via POP. The <em>strict:</em> verifier checks the
+     addressees in the incoming e-mails against the list of accounts on the local
+     machine and against the given domain name; the IP address of the network
+     connection is checked against a DNSBL database; SpamAssassin is used to
+     identify spam; and Linux PAM is used for POP authentication.
     </p>
 
     <p>
-     The <em>out</em> server is a routing MTA that sends out-going e-mail messages directly
-     to destination servers. It uses DNS MX queries against the system's default
-     name servers to do the routing. If any e-mail messages are addressed to local
-     users they are short-circuited and delivered directly to the <em>in</em> mailboxes.
+     The <em>out</em> server is a routing MTA that sends outgoing e-mail messages directly
+     to destination servers. It uses DNS MX queries against the local system's
+     default name servers to do the routing. If any e-mail messages are addressed to
+     local users they are short-circuited and delivered directly to their <em>in</em>
+     mailboxes.
     </p>
 
     <p>
      The <em>other</em> server does store-and-forward to a gmail smarthost and acts as the
-     default destination for the routing MTA. Note that in this example the gmail
+     default destination for the <em>out</em> server. Note that in this example the gmail
      password is given directly on the command-line but it is normally more secure to
      use a separate secrets file.
     </p>

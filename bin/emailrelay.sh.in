@@ -130,7 +130,7 @@ root_root()
 spooldir()
 {
 	# Prints the spool directory path from the config file, but with a
-	# default because packaged installs may not edit the config file
+	# default because packaged installs might not edit the config file
 	# like 'make install' does
 	( echo spool-dir /var/spool/emailrelay ; cat "$CONFIG" ) | \
 		tr '\t' ' ' | sed 's/  */ /g' | grep '^spool-dir [^ ]' | \

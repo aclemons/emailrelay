@@ -64,8 +64,11 @@ int main( int argc , char * argv [] )
 	try
 	{
 		G::Arg arg( argc , argv ) ;
-		if( Main::Submission::enabled(arg) )
-			return Main::Submission::submit( arg ) ;
+
+		#if GCONFIG_ENABLE_SUBMISSION
+			if( Main::Submission::enabled(arg) )
+				return Main::Submission::submit( arg ) ;
+		#endif
 
 		Main::App app ;
 		Main::Run run( app , arg ) ;

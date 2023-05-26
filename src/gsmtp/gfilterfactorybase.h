@@ -56,10 +56,8 @@ public:
 			///< Returns a Filter on the heap. Optionally throws if
 			///< an invalid or unsupported filter specification.
 
-	virtual ~FilterFactoryBase() ;
+	virtual ~FilterFactoryBase() = default ;
 		///< Destructor.
 } ;
-
-inline GSmtp::FilterFactoryBase::~FilterFactoryBase() = default ;
 
 #endif

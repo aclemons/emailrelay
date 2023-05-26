@@ -75,11 +75,13 @@ public:
 	std::size_t lineArgsPos() const ;
 		///< Returns the position in line() where the arguments start.
 
-	static void write( const Path & , const StringArray & args ,
+	static void write( const Path & new_batch_file , const StringArray & args ,
 		const std::string & start_window_name = {} ) ;
 			///< Writes a startup batch file, including a "start" prefix.
 			///< If the "start" window name is not supplied then it is
-			///< derived from the command-line.
+			///< derived from the command-line. The 'args' must not
+			///< contain double-quote characters. The first 'args' item
+			///< is the target executable.
 
 private:
 	static std::string quote( const std::string & ) ;

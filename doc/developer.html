@@ -108,11 +108,15 @@
       </dd>
    <h3><a class="a-header"><em>gsmtp</em></a></h3>
       <dd>
-       SMTP protocol and message-store classes.
+       SMTP protocol classes.
       </dd>
    <h3><a class="a-header"><em>gpop</em></a></h3>
       <dd>
        POP3 protocol classes.
+      </dd>
+   <h3><a class="a-header"><em>gstore</em></a></h3>
+      <dd>
+       Message store classes.
       </dd>
    <h3><a class="a-header"><em>gfilters</em></a></h3>
       <dd>
@@ -173,8 +177,8 @@
     <p>
      The protocol, processor and message-store interfaces are brought together by
      the high-level <em>GSmtp::Server</em> and <em>GSmtp::Client</em> classes. Dependency
-     injection is used to create the concrete instances of the <em>ProtocolMessage</em> and
-     <em>Filter</em> interfaces.
+     injection is used to create the concrete instances of the <em>MessageStore</em>,
+     <em>Filter</em> and <em>Verifier</em> interfaces.
     </p>
    <h2><a class="a-header" name="SH_1_6">Event handling and exceptions</a></h2> <!-- index:2:SH:1:6:Event handling and exceptions -->
     <p>

@@ -32,24 +32,12 @@ std::string GGui::Pump::m_quit_reason ;
 
 std::string GGui::Pump::run()
 {
-	return runImp( false , 0 , 0 , false ).second ;
-}
-
-std::string GGui::Pump::run( HWND idle_window , unsigned int idle_message )
-{
-	PostMessage( idle_window , idle_message , 0 , 0 ) ; // pump priming
-	return runImp( true , idle_window , idle_message , false ).second ;
+	return runImp( false ).second ;
 }
 
 std::pair<bool,std::string> GGui::Pump::runToEmpty()
 {
-	return runImp( false , 0 , 0 , true ) ;
-}
-
-std::pair<bool,std::string> GGui::Pump::runToEmpty( HWND idle_window , unsigned int idle_message )
-{
-	PostMessage( idle_window , idle_message , 0 , 0 ) ; // pump priming
-	return runImp( true , idle_window , idle_message , true ) ;
+	return runImp( true ) ;
 }
 
 void GGui::Pump::quit( const std::string & reason )
@@ -61,20 +49,25 @@ void GGui::Pump::quit( const std::string & reason )
 
 bool GGui::Pump::getMessage( MSG * msg_p , bool block )
 {
-	BOOL rc =
-		block ?
-			GetMessage( msg_p , HNULL , 0 , 0 ) :
-			PeekMessage( msg_p , HNULL , 0 , 0 , PM_REMOVE ) ;
-	return rc != -1 && rc != 0 ; // sic
+	if( block )
+	{
+		BOOL rc = GetMessage( msg_p , HNULL , 0 , 0 ) ;
+		if( rc == -1 )
+			throw std::runtime_error( "GetMessage error" ) ;
+		return true ; // crack WM_QUIT as normal, quit on our wm_quit()
+	}
+	else
+	{
+		BOOL rc = PeekMessage( msg_p , HNULL , 0 , 0 , PM_REMOVE ) ;
+		return rc != 0 ;
+	}
 }
 
-std::pair<bool,std::string> GGui::Pump::runImp( bool send_idle_messages , HWND hwnd_idle ,
-	unsigned int wm_idle , bool run_to_empty )
+std::pair<bool,std::string> GGui::Pump::runImp( bool run_to_empty )
 {
 	G::ScopeExit _([&](){ m_run_id++ ; }) ; // enable quit() for this run or the next
 	MSG msg ;
 	bool block = false ;
-	bool done_idling = false ;
 	bool seen_quit = false ;
 	for(;;)
 	{
@@ -102,18 +95,7 @@ std::pair<bool,std::string> GGui::Pump::runImp( bool send_idle_messages , HWND h
 				DispatchMessage( &msg ) ;
 			}
 		}
-		else if( run_to_empty && send_idle_messages )
-		{
-			if( done_idling )
-				break ;
-			if( sendIdle( hwnd_idle , wm_idle ) )
-				done_idling = true ;
-		}
-		else if( send_idle_messages )
-		{
-			block = sendIdle( hwnd_idle , wm_idle ) ;
-		}
-		else if( run_to_empty )
+		else if( seen_quit || run_to_empty )
 		{
 			break ;
 		}
@@ -121,18 +103,9 @@ std::pair<bool,std::string> GGui::Pump::runImp( bool send_idle_messages , HWND h
 		{
 			block = true ; // empty, so block for the next one
 		}
-
-		if( seen_quit && !run_to_empty )
-			break ;
 	}
 	std::string reason = m_quit_reason ;
 	m_quit_reason.clear() ;
 	return { seen_quit , reason } ;
-}
-
-bool GGui::Pump::sendIdle( HWND hwnd_idle , unsigned int wm_idle )
-{
-	G_ASSERT( hwnd_idle != 0 ) ;
-	return 1 == SendMessage( hwnd_idle , wm_idle , 0 , 0 ) ;
 }
 

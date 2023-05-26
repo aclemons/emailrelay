@@ -52,10 +52,8 @@ public:
 			///< Returns a Verifier on the heap. Throws if an invalid
 			///< or unsupported specification.
 
-	virtual ~VerifierFactoryBase() ;
+	virtual ~VerifierFactoryBase() = default ;
 		///< Destructor.
 } ;
-
-inline GSmtp::VerifierFactoryBase::~VerifierFactoryBase() = default ;
 
 #endif

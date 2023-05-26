@@ -45,9 +45,6 @@ public:
 	SimpleFilterBase( GNet::ExceptionSink , Filter::Type , G::string_view id ) ;
 		///< Constructor.
 
-	~SimpleFilterBase() override ;
-		///< Destructor.
-
 	virtual Result run( const GStore::MessageId & , bool & special_out ,
 		GStore::FileStore::State ) = 0 ;
 			///< Runs the filter synchronously and returns the result.

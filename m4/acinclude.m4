@@ -42,6 +42,7 @@ AC_DEFUN([GCONFIG_FN_CHECK_FUNCTIONS],[
 	AC_REQUIRE([GCONFIG_FN_GETENV_S])
 	AC_REQUIRE([GCONFIG_FN_PUTENV_S])
 	AC_REQUIRE([GCONFIG_FN_FSOPEN])
+	AC_REQUIRE([GCONFIG_FN_FOPEN_S])
 	AC_REQUIRE([GCONFIG_FN_SOPEN])
 	AC_REQUIRE([GCONFIG_FN_SOPEN_S])
 	AC_REQUIRE([GCONFIG_FN_EXTENDED_OPEN])
@@ -575,6 +576,21 @@ AC_DEFUN([GCONFIG_FN_ENABLE_STD_THREAD],
 	fi
 ])
 
+dnl GCONFIG_FN_ENABLE_SUBMISSION
+dnl ----------------------------
+dnl Enables submission-tool functionality.
+dnl Typically used after AC_ARG_ENABLE(submission).
+dnl
+AC_DEFUN([GCONFIG_FN_ENABLE_SUBMISSION],
+[
+	if test "$enable_submission" = "yes"
+	then
+		AC_DEFINE(GCONFIG_ENABLE_SUBMISSION,1,[Define true to enable submission-tool functionality])
+	else
+		AC_DEFINE(GCONFIG_ENABLE_SUBMISSION,0,[Define true to enable submission-tool functionality])
+	fi
+])
+
 dnl GCONFIG_FN_ENABLE_TESTING
 dnl -------------------------
 dnl Disables make-check tests if "--disable-testing" is used.
@@ -743,6 +759,33 @@ AC_DEFUN([GCONFIG_FN_FSOPEN],
 		AC_DEFINE(GCONFIG_HAVE_FSOPEN,1,[Define true if _fsopen() is available])
 	else
 		AC_DEFINE(GCONFIG_HAVE_FSOPEN,0,[Define true if _fsopen() is available])
+	fi
+])
+
+dnl GCONFIG_FN_FOPEN_S
+dnl ------------------
+dnl Defines GCONFIG_HAVE_FSOPEN if fopen_s() is available.
+dnl
+AC_DEFUN([GCONFIG_FN_FOPEN_S],
+[AC_CACHE_CHECK([for fopen_s()],[gconfig_cv_fopen_s],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#include <stdio.h>]
+			[#include <share.h>]
+			[FILE * fp = 0 ;]
+			[errno_t e = 0 ;]
+		],
+		[
+			[e = fopen_s(&fp,"foo","w") ;]
+		])],
+		gconfig_cv_fopen_s=yes ,
+		gconfig_cv_fopen_s=no )
+])
+	if test "$gconfig_cv_fopen_s" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_FOPEN_S,1,[Define true if fopen_s() is available])
+	else
+		AC_DEFINE(GCONFIG_HAVE_FOPEN_S,0,[Define true if fopen_s() is available])
 	fi
 ])
 

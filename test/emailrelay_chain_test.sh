@@ -195,10 +195,10 @@ CrLf()
 
 TestDone()
 {
-	local store="$1"
+	local mbox_dir="$1"
 	test \
-		"`ls -1 $cfg_base_dir/$store/emailrelay.*.content 2>/dev/null | wc -l`" -eq 2 -a \
-		"`ls -1 $cfg_base_dir/$store/emailrelay.*.envelope 2>/dev/null | wc -l`" -eq 2
+		"`ls -1 $mbox_dir/emailrelay.*.content 2>/dev/null | wc -l`" -eq 2 -a \
+		"`ls -1 $mbox_dir/emailrelay.*.envelope 2>/dev/null | wc -l`" -eq 2
 }
 
 ReportResults()
@@ -258,7 +258,7 @@ CreateAuth()
 
 CreateFilter()
 {
-	cat <<EOF | sed 's/^ *_//' > ${cfg_base_dir}/filter.sh
+	cat <<EOF | sed 's/^ *_//' > "${cfg_base_dir}/filter.sh"
             _#!/bin/sh
             _# filter.sh
             _content="\$1"
@@ -271,12 +271,14 @@ EOF
 
 CreateVerifier()
 {
-	cat <<EOF | sed 's/^ *_//' > ${cfg_base_dir}/verifier.sh
+	cat <<EOF | sed 's/^ *_//' > "${cfg_base_dir}/verifier.sh"
             _#!/bin/sh
             _# verifier.sh
-            _echo ""
-            _echo success
-            _exit 1
+            _recipient="\$1"
+            _mailbox="mbox"
+            _echo "full name"
+            _echo "\$mailbox"
+            _exit 0
 EOF
 	chmod +x "$cfg_base_dir/verifier.sh"
 }
@@ -340,7 +342,7 @@ Main()
 	for i in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19
 	do
 		Sleep 1
-		if TestDone store-5/success
+		if TestDone "$cfg_base_dir/store-5/mbox"
 		then
 			success="1"
 			break

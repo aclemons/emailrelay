@@ -314,19 +314,19 @@ public:
 		///< Exception: InvalidFormat
 
 	static void toUpper( std::string & s ) ;
-		///< Replaces all Latin-1 lower-case characters in string 's' by
+		///< Replaces all seven-bit lower-case characters in string 's' by
 		///< upper-case characters.
 
 	static void toLower( std::string & s ) ;
-		///< Replaces all Latin-1 upper-case characters in string 's' by
+		///< Replaces all seven-bit upper-case characters in string 's' by
 		///< lower-case characters.
 
 	static std::string upper( string_view ) ;
-		///< Returns a copy of 's' in which all Latin-1 lower-case characters
+		///< Returns a copy of 's' in which all seven-bit lower-case characters
 		///< have been replaced by upper-case characters.
 
 	static std::string lower( string_view ) ;
-		///< Returns a copy of 's' in which all Latin-1 upper-case characters
+		///< Returns a copy of 's' in which all seven-bit upper-case characters
 		///< have been replaced by lower-case characters.
 
 	static std::string toPrintableAscii( const std::string & in , char escape = '\\' ) ;
@@ -525,23 +525,23 @@ public:
 
 	static bool iless( string_view , string_view ) noexcept ;
 		///< Returns true if the first string is lexicographically less
-		///< than the first, after Latin-1 lower-case letters have been
+		///< than the first, after seven-bit lower-case letters have been
 		///< folded to upper-case.
 
 	static bool imatch( char , char ) noexcept ;
-		///< Returns true if the two characters are the same, ignoring Latin-1 case.
+		///< Returns true if the two characters are the same, ignoring seven-bit case.
 
 	static bool imatch( string_view , string_view ) noexcept ;
-		///< Returns true if the two strings are the same, ignoring Latin-1 case.
+		///< Returns true if the two strings are the same, ignoring seven-bit case.
 		///< The locale is ignored.
 
 	static std::size_t ifind( string_view s , string_view key ) ;
-			///< Returns the position of the key in 's' using a Latin-1 case-insensitive
+			///< Returns the position of the key in 's' using a seven-bit case-insensitive
 			///< search. Returns std::string::npos if not found. The locale is ignored.
 
 	static std::size_t ifindat( string_view s , string_view key , std::size_t pos ) ;
 			///< Returns the position of the key in 's' at of after position 'pos'
-			///< using a Latin-1 case-insensitive search. Returns std::string::npos
+			///< using a seven-bit case-insensitive search. Returns std::string::npos
 			///< if not found. The locale is ignored.
 
 	static bool tailMatch( const std::string & in , string_view ending ) noexcept ;

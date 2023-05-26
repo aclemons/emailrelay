@@ -15,12 +15,12 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
-/// \file pages.cpp
+/// \file guipages.cpp
 ///
 
 #include "gdef.h"
 #include "gqt.h"
-#include "pages.h"
+#include "guipages.h"
 #include "guilegal.h"
 #include "guidialog.h"
 #include "guidir.h"
@@ -41,7 +41,7 @@
 #include <fstream>
 #include <cstring>
 
-#include "moc_pages.cpp"
+#include "moc_guipages.cpp"
 
 // ==
 
@@ -1959,7 +1959,7 @@ void ProgressPage::onInstallTimeout()
 					m_logwatch_thread->start() ;
 			}
 		}
-		emit pageUpdateSignal() ;
+		emit pageUpdateSignal() ; // NOLINT
 	}
 	catch( std::exception & e )
 	{

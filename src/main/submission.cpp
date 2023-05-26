@@ -77,7 +77,7 @@ std::pair<G::Path,G::Path> SubmissionImp::writeFiles( const G::Path & spool_dir 
 	// create the output file
 	//
 	std::string envelope_from = from.empty() ? "anonymous" : from ;
-	GStore::FileStore file_store( spool_dir , {} ) ;
+	GStore::FileStore file_store( spool_dir , "" , {} ) ;
 	GStore::MessageStore & store = file_store ;
 	GStore::MessageStore::SmtpInfo smtp_info ;
 	std::unique_ptr<GStore::NewMessage> msg = store.newMessage( envelope_from , smtp_info , {} ) ;

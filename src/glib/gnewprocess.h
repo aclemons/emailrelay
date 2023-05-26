@@ -72,6 +72,7 @@ public:
 	G_EXCEPTION( InvalidPath , tx("invalid executable path -- must be absolute") ) ;
 	G_EXCEPTION( InvalidParameter , tx("invalid parameter") ) ;
 	G_EXCEPTION( CreateProcessError , tx("CreateProcess error") ) ; // windows
+	G_EXCEPTION( SystemError , tx("system error") ) ; // windows
 
 	struct Fd /// Wraps up a file descriptor for passing to G::NewProcess.
 	{

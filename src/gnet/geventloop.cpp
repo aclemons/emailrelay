@@ -29,8 +29,6 @@ GNet::EventLoop::EventLoop()
 {
 	if( m_this == nullptr )
 		m_this = this ;
-	else
-		G_WARNING( "GNet::EventLoop::ctor: multiple instances" ) ;
 }
 
 GNet::EventLoop::~EventLoop()

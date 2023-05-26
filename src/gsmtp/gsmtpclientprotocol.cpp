@@ -745,7 +745,7 @@ bool GSmtp::ClientProtocol::sendNextContentLine( std::string & line )
 	line.erase( 1U ) ; // leave "."
 	if( G::Str::readLine( message()->contentStream() , line ,
 		m_config.crlf_only ? G::Str::Eol::CrLf : G::Str::Eol::Cr_Lf_CrLf ,
-		/*erase=*/false ) )
+		/*pre_erase_result=*/false ) )
 	{
 		line.append( "\r\n" , 2U ) ;
 		ok = sendContentLineImp( line , line.at(1U) == '.' ? 0U : 1U ) ;
@@ -808,11 +808,11 @@ bool GSmtp::ClientProtocol::sendBdatAndChunk( std::size_t size , const std::stri
 	m_message_buffer.resize( buffer_size + margin ) ;
 	char * out = &m_message_buffer[0] + margin ;
 
-	std::memcpy( out , "BDAT " , 5U ) ;
-	std::memcpy( out+5U , size_str.data() , size_str.size() ) ;
+	std::memcpy( out , "BDAT " , 5U ) ; // NOLINT bugprone-not-null-terminated-result
+	std::memcpy( out+5U , size_str.data() , size_str.size() ) ; // NOLINT
 	if( last )
-		std::memcpy( out+5U+size_str.size() , " LAST" , 5U ) ;
-	std::memcpy( out+eolpos , "\r\n" , 2U ) ;
+		std::memcpy( out+5U+size_str.size() , " LAST" , 5U ) ; // NOLINT
+	std::memcpy( out+eolpos , "\r\n" , 2U ) ; // NOLINT
 
 	G_ASSERT( buffer_size > datapos ) ;
 	G_ASSERT( (out+datapos) < (&m_message_buffer[0]+m_message_buffer.size()) ) ;
@@ -835,9 +835,9 @@ bool GSmtp::ClientProtocol::sendBdatAndChunk( std::size_t size , const std::stri
 		datapos = cmdsize ;
 		G_ASSERT( n.size() <= size_str.size() ) ;
 		G_ASSERT( out >= &m_message_buffer[0] ) ;
-		std::memcpy( out , "BDAT " , 5U ) ;
-		std::memcpy( out+5U , n.data() , n.size() ) ;
-		std::memcpy( out+5U+n.size(), " LAST\r\n" , 7U ) ;
+		std::memcpy( out , "BDAT " , 5U ) ; // NOLINT
+		std::memcpy( out+5U , n.data() , n.size() ) ; // NOLINT
+		std::memcpy( out+5U+n.size(), " LAST\r\n" , 7U ) ; // NOLINT
 	}
 
 	sendChunkImp( out , datapos+nread ) ;

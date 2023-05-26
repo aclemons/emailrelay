@@ -27,10 +27,10 @@
 #include <iostream>
 
 // from winsvc.h
-#define SERVICE_STOPPED 1
-#define SERVICE_START_PENDING 2
-#define SERVICE_STOP_PENDING 3
-#define SERVICE_RUNNING 4
+static constexpr DWORD SERVICE_STOPPED = 1 ;
+static constexpr DWORD SERVICE_START_PENDING = 2 ;
+static constexpr DWORD SERVICE_STOP_PENDING = 3 ;
+static constexpr DWORD SERVICE_RUNNING = 4 ;
 
 namespace ServiceImp
 {

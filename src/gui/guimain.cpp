@@ -115,7 +115,7 @@
 #include "installer.h"
 #include "guidir.h"
 #include "guilink.h"
-#include "pages.h"
+#include "guipages.h"
 #include "guiboot.h"
 #include "serverconfiguration.h"
 #include "glogoutput.h"
@@ -194,10 +194,10 @@ static bool isWindows()
 class Application : public QApplication
 {
 public:
-	Application( int & argc , char * argv [] ) ;
+	Application( int & argc , char * argv [] ) ; // NOLINT std::array
 	bool notify( QObject * p1 , QEvent * p2 ) override ;
 } ;
-Application::Application( int & argc , char * argv [] ) :
+Application::Application( int & argc , char * argv [] ) : // NOLINT std::array
 	QApplication(argc,argv)
 {
 }

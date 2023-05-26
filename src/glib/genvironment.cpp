@@ -146,10 +146,12 @@ char ** G::Environment::v() const noexcept
 	return const_cast<char**>(&m_pointers[0]) ;
 }
 
+#ifndef G_LIB_SMALL
 const char * G::Environment::ptr() const noexcept
 {
 	return m_block.data() ;
 }
+#endif
 
 bool G::Environment::contains( const std::string & name ) const
 {

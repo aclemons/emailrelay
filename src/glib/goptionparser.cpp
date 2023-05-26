@@ -47,14 +47,14 @@ G::OptionParser::OptionParser( const Options & spec , OptionMap & values_out , S
 
 G::StringArray G::OptionParser::parse( const StringArray & args_in , const Options & spec ,
 	OptionMap & map_out , StringArray * errors_out , std::size_t start_position ,
-	std::size_t ignore_non_options , std::function<std::string(const std::string&)> callback_fn )
+	std::size_t ignore_non_options , std::function<std::string(const std::string&,bool)> callback_fn )
 {
 	OptionParser parser( spec , map_out , errors_out ) ;
 	return parser.parse( args_in , start_position , ignore_non_options , callback_fn ) ;
 }
 
 G::StringArray G::OptionParser::parse( const StringArray & args_in , std::size_t start ,
-	std::size_t ignore_non_options , std::function<std::string(const std::string&)> callback_fn )
+	std::size_t ignore_non_options , std::function<std::string(const std::string&,bool)> callback_fn )
 {
 	StringArray args_out ;
 	std::size_t i = start ;
@@ -73,7 +73,7 @@ G::StringArray G::OptionParser::parse( const StringArray & args_in , std::size_t
 			for( std::size_t n = 1U ; n < arg.length() ; n++ )
 			{
 				char c = arg.at( n ) ;
-				bool discard = callback_fn ? callback_fn(m_spec.lookup(c)).substr(0,1) == "-" : false ;
+				bool discard = callback_fn ? callback_fn(m_spec.lookup(c),true).substr(0,1) == "-" : false ;
 				if( !discard )
 					processOptionOn( c ) ;
 			}
@@ -81,7 +81,7 @@ G::StringArray G::OptionParser::parse( const StringArray & args_in , std::size_t
 		else if( isOldOption(arg) ) // eg. "-v"
 		{
 			char c = arg.at(1U) ;
-			bool discard = callback_fn ? callback_fn(m_spec.lookup(c)).substr(0,1) == "-" : false ;
+			bool discard = callback_fn ? callback_fn(m_spec.lookup(c),true).substr(0,1) == "-" : false ;
 			if( discard )
 				i += ( m_spec.valued(c) ? 1U : 0U ) ;
 			else if( m_spec.valued(c) && (i+1U) >= args_in.size() )
@@ -98,7 +98,7 @@ G::StringArray G::OptionParser::parse( const StringArray & args_in , std::size_t
 			bool has_eq = pos_eq != std::string::npos ;
 			std::string key_in = has_eq ? key_value.substr(0U,pos_eq) : key_value ; // "foo"
 			std::string value = eqValue( key_value , pos_eq ) ; // "..."
-			std::string key = callback_fn ? callback_fn( key_in ) : key_in ;
+			std::string key = callback_fn ? callback_fn(key_in,false) : key_in ;
 			bool discard = !key.empty() && key.at( 0U ) == '-' ;
 			key = key.substr( discard ? 1U : 0U ) ;
 			if( discard )

@@ -306,7 +306,7 @@ void GSmtp::AdminServerPeer::sendMessageIds( const std::vector<GStore::MessageId
 {
 	std::ostringstream ss ;
 	bool first = true ;
-	for( auto id : ids )
+	for( const auto & id : ids )
 	{
 		if( !first ) ss << eol() ;
 		ss << id.str() ;

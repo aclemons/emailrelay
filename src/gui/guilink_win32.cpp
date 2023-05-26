@@ -99,12 +99,12 @@ Gui::LinkImp::bstr::bstr( const std::string & s )
 {
 	std::wstring ws ;
 	G::Convert::convert( ws , s ) ;
-	m_p = SysAllocString( ws.c_str() ) ;
+	m_p = SysAllocString( ws.c_str() ) ; // oleaut32.lib
 }
 
 Gui::LinkImp::bstr::~bstr()
 {
-	SysFreeString( m_p ) ;
+	SysFreeString( m_p ) ; // oleaut32.lib
 }
 
 BSTR Gui::LinkImp::bstr::p()

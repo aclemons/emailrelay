@@ -21,6 +21,4 @@
 #include "gdef.h"
 #include "gsaslserversecrets.h"
 
-GAuth::SaslServerSecrets::~SaslServerSecrets()
-= default ;
-
+// empty

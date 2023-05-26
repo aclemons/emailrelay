@@ -36,8 +36,14 @@ namespace GStore
 }
 
 //| \class GStore::FileDelivery
-/// An implementation of the MessageDelivery interface that delivers a message
-/// to mailboxes corresponding to its local and remote recipient addresses.
+/// An implementation of the MessageDelivery interface that delivers
+/// message files to mailboxes. Also provides a low-level delivery
+/// function deliverTo().
+///
+/// The deliver() override takes a ".new" or ".busy" message from the
+/// file store and delivers it to its local recipient mailbox
+/// sub-directories and then deletes the original message files
+/// (unless configured as 'no_delete').
 ///
 class GStore::FileDelivery : public MessageDelivery
 {
@@ -49,23 +55,15 @@ public:
 	G_EXCEPTION( MaildirMoveError , tx("delivery: cannot move maildir file") ) ;
 	struct Config /// A configuration structure for GStore::FileDelivery.
 	{
-		bool lowercase {true} ; // user-part to mailbox mapping: to lowercase if ascii
 		bool hardlink {false} ; // copy the content by hard-linking
 		bool no_delete {false} ; // don't delete the original message
 	} ;
 
 	FileDelivery( FileStore & , const Config & ) ;
-		///< Constructor. The deliver() override will take a ".new" message from
-		///< the given file store and deliver it to mailbox sub-directories.
+		///< Constructor. The delivery base directory is an attribute of
+		///< the FileStore.
 
-	FileDelivery( FileStore & , const G::Path & to_base_dir , const Config & ) ;
-		///< Constructor. The deliver() override will take a ".local" message
-		///< from the file store and deliver it to mailboxes that are
-		///< sub-directories of the given base directory. If the deliver()
-		///< call is for a message that has no ".local" files then deliver()
-		///< does nothing.
-
-	static void deliverTo( FileStore & , const G::Path & mbox_dir ,
+	static void deliverTo( FileStore & , const G::Path & delivery_dir ,
 		const G::Path & envelope_path , const G::Path & content_path ,
 		bool hardlink = false ) ;
 			///< Low-level function to copy a message into a mailbox.
@@ -76,21 +74,20 @@ public:
 			///< The content file is optionally hard-linked.
 
 private: // overrides
-	void deliver( const MessageId & ) override ; // GStore::MessageDelivery
+	bool deliver( const MessageId & , bool ) override ; // GStore::MessageDelivery
 
 private:
 	using FileOp = FileStore::FileOp ;
-	bool deliverToMailboxes( const G::Path & , const G::Path & , const G::Path & ) ;
+	bool deliverToMailboxes( const G::Path & , const Envelope & , const G::Path & , const G::Path & ) ;
 	static G::StringArray mailboxes( const Config & , const GStore::Envelope & ) ;
 	static std::string mailbox( const Config & , const std::string & ) ;
-	static std::string short_( const G::Path & ) ;
+	static std::string id( const G::Path & ) ;
+	G::Path cpath( const MessageId & ) const ;
+	G::Path epath( const MessageId & , FileStore::State ) const ;
 
 private:
-	bool m_active ;
 	FileStore & m_store ;
-	G::Path m_to_base_dir ;
 	Config m_config ;
-	bool m_local_files ;
 } ;
 
 #endif

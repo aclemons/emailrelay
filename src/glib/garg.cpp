@@ -54,6 +54,7 @@ G::Arg::Arg( const StringArray & args ) :
 G::Arg::Arg()
 = default ;
 
+#ifndef G_LIB_SMALL
 void G::Arg::parse( HINSTANCE , const std::string & command_line_tail )
 {
 	std::string proc_exe = Process::exe() ;
@@ -62,6 +63,7 @@ void G::Arg::parse( HINSTANCE , const std::string & command_line_tail )
 	m_array.push_back( proc_exe ) ;
 	parseImp( command_line_tail ) ;
 }
+#endif
 
 void G::Arg::parse( const std::string & command_line )
 {

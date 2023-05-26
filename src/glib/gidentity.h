@@ -89,12 +89,13 @@ public:
 	bool operator!=( const Identity & ) const noexcept ;
 		///< Comparison operator.
 
-	static Identity lookup( const std::string & user ) ;
-		///< Does a username lookup. Throws if no such user
-		///< or on error.
+	static std::pair<Identity,std::string> lookup( const std::string & user ) ;
+		///< Does a username lookup returning the identity and the
+		///< canonical name. Throws if no such user or on error.
 
-	static Identity lookup( const std::string & user , std::nothrow_t ) ;
-		///< Does a username lookup. Returns invalid() if
+	static std::pair<Identity,std::string> lookup( const std::string & user , std::nothrow_t ) ;
+		///< Does a username lookup returning the identity and the
+		///< canonical name. Returns with Identitiy::invalid() if
 		///< no such user. Throws on error.
 
 	static gid_t lookupGroup( const std::string & group ) ;

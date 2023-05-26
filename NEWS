@@ -3,36 +3,13 @@ News
 
 Multiple configurations
 -----------------------
-In previous releases it has been possible to specifiy options on the
-command-line and/or in a configuration file named on the command-line, and
-then have the options from the configuration file added to those from the
-command-line.
+In previous releases E-MailRelay runs with one spool directory and typically
+one SMTP server and one SMTP client doing store-and-forward. In this release
+one E-MailRelay process can have multiple configurations, each with their own
+independent spool directory, SMTP server and SMTP client. Everything still
+runs single-threaded, except as documented in "developer.txt".
 
-For example:
-
-	./emailrelay --log -v /etc/emailrelay.conf
-
-In this release more than one configuration file can be specified. The first
-file is added to the options on the command-line as before, but then each
-subsequent configuration file gives rise to a whole new configuration, as if
-multiple emailrelays are running in parallel.
-
-For example:
-
-	./emailrelay --log -v /etc/emailrelay-in.conf /etc/emailrelay-out.conf
-
-Some options, such as "--verbose" and "--no-daemon" are only relevant if they
-are in the first configuration because they affect the process as a whole.
-If they are used in subsequent configurations they are ignored.
-
-Another way to get multiple configurations is to use prefixes on option names;
-for example you can use "--in-spool-dir=/tmp/in" and "--out-spool-dir=/tmp/out",
-and then also "--in-port=25" and "--out-port=587" etc.
-
-The configuration prefixes ("in" and "out" in this example) are identified
-from the "--spool-dir" options.
-
-When using this approach configuration files are not allowed.
+Refer to the reference document for more details.
 
 More built-in filters and address verifiers
 -------------------------------------------
@@ -41,7 +18,7 @@ options like "--filter=exit:99" and "--filter=spam:localhost:783", with a
 small number of special prefixes like "exit:", "net:", "file:" and "spam:".
 
 In this release there are more built-in filters and address verifiers, including
-"deliver:", "split:", "mx:", and "copy:" filters and "allow:" and "local:"
+"deliver:", "split:", "mx:", and "copy:" filters and "strict:" and "local:"
 address verifiers.
 
 Refer to the reference document for more details.
@@ -51,10 +28,26 @@ Delivery
 E-MailRelay can now act as a Message Delivery Agent (MDA) so it can deliver
 e-mail messages to local mailboxes according to the e-mail addressees.
 
-A mailbox is a simple sub-directory of the main spool directory or a "maildir"
-directory.
+A mailbox is a simple sub-directory of some delivery base directory, defaulting
+to the spool directory. So Alice's mailbox might be the "alice" sub-directory
+"/var/spool/emailrelay/alice", containing envelope and content files. Or it
+can have its own "maildir" structure, "/var/spool/emailrelay/alice/new,cur,tmp",
+in which case the content file will be delivered to the "cur" directory and
+there will be no envelope file.
+
+The delivery base directory can be specified with the "--delivery-dir" option.
+This can be useful if outgoing messages need to be delivered straight to
+incoming mailboxes without going via the smarthost.
 
 Refer to the reference document for more details.
+
+Local files
+-----------
+In previous releases ".local" message files were created for messages with local
+recipients (as determined by an address verifier) in order to create a separate
+path for messages sent to the local postmaster. These files are no longer
+created because E-MailRelay can now run multiple filters in a chain and it is
+easy enough to write a filter to separate out these messages.
 
 7BIT/8BITMIME
 -------------
@@ -65,16 +58,15 @@ it will attempt to forward 8-bit messages to a remote server that does not
 advertise 8BITMIME, albeit with a warning in the log.
 
 In this release E-MailRelay no longer tests messages for eight-bit content,
-so the envelope "Content" field will always be "8bit". If this is not desired
-behaviour then a filter script should be used to test for seven-bit or eight-bit
-content and edit the "Content" value in the envelope file accordingly.
+so the envelope "Content" field will always be "8bit". If this is not the
+desired behaviour then a filter script should be used to test for seven-bit or
+eight-bit content and edit the "Content" value in the envelope file accordingly.
 
-The SMTP client can now be made to behave more strictly by using the new
-"--client-smtp-config" command-line option so that it no longer tries to forward
-eight-bit messages to seven-bit servers; eight-bit messages are failed
-immediately by marking the envelope as ".bad". Using this option will need a
-filter script to identify seven-bit messages otherwise all messages forwarded
-to a seven-bit server will fail.
+The SMTP client can now be made to behave more strictly (see
+"--client-smtp-config") so that it no longer tries to forward eight-bit messages
+to seven-bit servers; eight-bit messages are failed immediately by marking the
+envelope as ".bad". Enabling this behaviour will also require a filter script to
+identify seven-bit messages.
 
 PIPELINING
 ----------
@@ -109,38 +101,33 @@ messages to non-BINARYMIME and non-SMTPUTF8 forms (RFC-3030 calls these
 disabled in the E-MailRelay server if there is any doubt about the capabilities
 of the next-hop server.
 
-Furthermore, if the the SMTPUTF8 extension is enabled in the E-MailRelay server
-then the mailbox addresses passed to any address-verifier script might contain
-UTF-8 characters. This might in turn require changes to the script if it assumes
-that mailbox addresses are printable ASCII.
+In previous releases address verifiers only need to deal with printable ASCII
+addresses because of the character-set retrictions imposed by the SMTP protocol.
+But if the the SMTPUTF8 extension is enabled in the E-MailRelay server then the
+addresses passed to any address verifier script might contain UTF-8 characters
+and this might require changes to the script.
 
-In passing, note that mailbox addresses passed to address-verifier scripts are
+In passing, note that recipient addresses given to address verifier scripts are
 as they appear on the wire, so a badly-behaved SMTP client might send addresses
 containing double-quotes and backslash escapes that are semantically redundant.
 For example, a message submitted to "\A\l\i\c\e"@example.com will have that
 address passed to the verifier with all the redundant double quotes and
-backslashes present. Removing quotes and backslashes is reasonably easy for a
-verifier to do, but with SMTPUTF8 things become more complex due to the way
-Unicode can represent the same string in more than one way.
+backslashes present. Normalising an address by removing quotes and backslashes
+is reasonably easy in ASCII but might be more tricky with UTF-8.
 
 Another corner case with SMTPUTF8 is that the remote client might use the VRFY
-SMTP command without the optional SMTPUTF8 parameter. In principle the address
-verifier script should not then return UTF-8 results, but in practice it has
-no way of knowning whether the SMTPUTF8 parameter was used or not. However, this
-issue only arises when a verifier script determines that an address is a local
-mailbox because for remote addresses the returned address strings are
-effectively ignored by E-MailRelay. The issue does not arise at all when the
-verifier is called as the result of a RCPT-TO command because although the
-results are stored in the envelope file they are not passed back to the remote
-client. If necessary the VRFY command can be disabled by using "--anonymous".
+SMTP command without the optional SMTPUTF8 parameter. In principle a UTF-8
+address verifier script should not then return UTF-8 results, but in practice it
+has no way of knowning whether the SMTPUTF8 parameter was used. If necessary the
+VRFY command can be disabled by using "--anonymous".
 
 Hashed passwords
 ----------------
-Hashed passwords using the SHA-1 or SHA-256 hashing algorithm will no longer
-work when E-MailRelay is built using the latest versions of the OpenSSL and
-MbedTLS libraries. Both libraries have stopped exposing the relevant state
-variables used within their hashing functions. MD5 hashed passwords will still
-work.
+Hashed passwords created by "emailrelay-passwd" that use the SHA-1 or SHA-256
+hashing algorithm will no longer work when E-MailRelay is built using the latest
+versions of the OpenSSL and MbedTLS libraries. Both libraries have stopped
+exposing the relevant state variables used within their hashing functions. MD5
+hashed passwords will still work.
 
 Code size
 ---------
@@ -160,4 +147,4 @@ MTA operation
 E-MailRelay can now be run as a complete MTA performing message routing and
 delivery, with no need for an external "smarthost" to do the routing.
 
-Refer to the user guile for a worked example.
+Refer to the user guide for a worked example.

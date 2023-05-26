@@ -42,9 +42,6 @@ namespace GGui
 /// The implementation guarantees that there will be no extraneous
 /// calls to PeekMessage() that might upset MsgWaitForMultipleObjects().
 ///
-/// Optionally idle messages can be generated when the message queue
-/// becomes empty.
-///
 /// \see GGui::Cracker, GGui::Dialog, GGui::ApplicationInstance
 ///
 class GGui::Pump
@@ -54,28 +51,15 @@ public:
 		///< Runs the GetMessage()/DispatchMessage() message pump.
 		///< Returns a reason string if quit() was called.
 
-	static std::string run( HWND idle_window , unsigned int idle_message ) ;
-		///< An overload that sends an idle message whenever the
-		///< message queue gets to empty. The idle message handler
-		///< should return 0 if it has more idle work to do, or 1
-		///< if complete.
-
 	static std::pair<bool,std::string> runToEmpty() ;
 		///< Runs the PeekMessage()/DispatchMessage() message pump
 		///< until the message queue gets to empty. Returns true and
 		///< a reason string if quit() was called at some point.
 
-	static std::pair<bool,std::string> runToEmpty( HWND idle_window , unsigned int idle_message ) ;
-		///< An overload that sends an idle message when the
-		///< message queue gets to empty for the first time
-		///< and then returns if-and-when the message queue is
-		///< empty. If the idle message handler returns 0
-		///< then multiple idle message can be sent.
-
 	static void quit( const std::string & reason = {} ) ;
-		///< Causes run() to return as soon as the call stack
-		///< has unwound, or sets the return value for
-		///< runToEmpty().
+		///< Causes run() to return as soon as the message queue
+		///< is empty and the call stack has unwound. Also
+		///< sets the return value for runToEmpty().
 
 public:
 	Pump() = delete ;
@@ -83,8 +67,7 @@ public:
 private:
 	static bool getMessage( MSG * , bool ) ;
 	static bool empty() ;
-	static bool sendIdle( HWND , unsigned int ) ;
-	static std::pair<bool,std::string> runImp( bool , HWND , unsigned int , bool ) ;
+	static std::pair<bool,std::string> runImp( bool ) ;
 	static WPARAM m_run_id ;
 	static std::string m_quit_reason ;
 } ;

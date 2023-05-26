@@ -73,8 +73,9 @@ public:
 			///< the trailing arguments and then calls add(Option) on the
 			///< given Options object. The 'text' string is passed through
 			///< G::gettext() and should therefore normally be marked
-			///< for translation with G::tx(). The parameters for the
-			///< main tag and the extra tags are both bit-masks.
+			///< for translation with G::tx(). The tag parameters
+			///< are both bit-masks, with only one bit set in the
+			///< main tag.
 
 	void add( const Option & , char sep = '!' , char escape = '\\' ) ;
 		///< Adds one component of the specification. If the 'description'

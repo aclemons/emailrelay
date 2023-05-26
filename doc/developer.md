@@ -89,12 +89,17 @@ The main C++ libraries in the E-MailRelay code base are as follows:
 
 ### "gsmtp" ###
 
-    SMTP protocol and message-store classes.
+    SMTP protocol classes.
 
 
 ### "gpop" ###
 
     POP3 protocol classes.
+
+
+### "gstore" ###
+
+    Message store classes.
 
 
 ### "gfilters" ###
@@ -144,8 +149,8 @@ namespace.
 
 The protocol, processor and message-store interfaces are brought together by
 the high-level `GSmtp::Server` and `GSmtp::Client` classes. Dependency
-injection is used to create the concrete instances of the `ProtocolMessage` and
-`Filter` interfaces.
+injection is used to create the concrete instances of the `MessageStore`,
+`Filter` and `Verifier` interfaces.
 
 Event handling and exceptions
 -----------------------------

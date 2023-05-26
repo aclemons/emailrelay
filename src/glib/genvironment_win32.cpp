@@ -72,9 +72,7 @@ std::string G::Environment::get( const std::string & name , const std::string & 
 
 G::Environment G::Environment::minimal( bool )
 {
-	// could copy from _environ, but for now just act like inherit()
-	//char ** e = ::_environ ;
-	return Environment() ; // ie. inherit()
+	return Environment() ;
 }
 
 void G::Environment::put( const std::string & name , const std::string & value )

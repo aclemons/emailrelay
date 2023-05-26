@@ -32,7 +32,6 @@
 #include "gprocess.h"
 #include "gscope.h"
 #include "gstrmacros.h"
-#include "gxtext.h"
 #include "glog.h"
 #include "gassert.h"
 #include <array>
@@ -140,10 +139,11 @@ GSsl::MbedTls::Config GSsl::MbedTls::LibraryImp::config() const
 
 std::string GSsl::MbedTls::LibraryImp::credit( const std::string & prefix , const std::string & eol , const std::string & eot )
 {
+	// echo "..." | perl -e 'chomp(my $x=<>);print join("",map{chr(ord($_)+1)} split("",$x)),"\n"'
+	std::array<char,100> text { "ncfe!UMT;!Dpqzsjhiu!)D*!3117.3129-!BSN!Mjnjufe!)ps!jut!bggjmjbuft*\0" } ;
+	for( char & c : text ) { if(c) c-- ; }
 	std::ostringstream ss ;
-	ss
-		<< prefix << G::Xtext::decode("mbed TLS: Cop+79right (+43) 2006-2018, +41RM +4Cimited (or its affiliates)") << eol
-		<< eot ;
+	ss << prefix << G::Str::printable(std::string(&text[0])) << eol << eot ;
 	return ss.str() ;
 }
 

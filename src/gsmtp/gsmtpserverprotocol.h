@@ -356,7 +356,7 @@ private:
 	std::unique_ptr<GAuth::SaslServer> m_sasl ;
 	Config m_config ;
 	G::Slot::Signal<> m_change_signal ;
-	const ApplyArgsTuple * m_apply_data {nullptr} ;
+	const ApplyArgsTuple * m_apply_data ;
 	bool m_apply_more ;
 	Fsm m_fsm ;
 	bool m_with_starttls ;

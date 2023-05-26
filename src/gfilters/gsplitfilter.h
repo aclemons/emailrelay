@@ -42,9 +42,6 @@ public:
 		Filter::Type , const Filter::Config & , const std::string & spec ) ;
 			///< Constructor.
 
-	~SplitFilter() override ;
-		///< Destructor.
-
 private: // overrides
 	Result run( const GStore::MessageId & , bool & , GStore::FileStore::State ) override ; // GFilters::SimpleFilterBase
 

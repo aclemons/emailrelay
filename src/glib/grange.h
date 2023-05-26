@@ -22,6 +22,7 @@
 #define G_RANGE_H
 
 #include "gdef.h"
+#include "gstringview.h"
 #include "gstr.h"
 #include "gexception.h"
 
@@ -29,7 +30,7 @@ namespace G
 {
 	namespace Range /// Utility functions for pair-of-integer ranges.
 	{
-		inline std::pair<int,int> range( const std::string & spec_part )
+		inline std::pair<int,int> range( string_view spec_part )
 		{
 			if( spec_part.empty() )
 			{
@@ -37,14 +38,14 @@ namespace G
 			}
 			else if( spec_part.find('-') == std::string::npos )
 			{
-				int value = static_cast<int>( G::Str::toUInt( spec_part ) ) ;
+				int value = static_cast<int>( Str::toUInt( spec_part ) ) ;
 				return { value , value } ;
 			}
 			else
 			{
 				return {
-					static_cast<int>(G::Str::toUInt(G::Str::head(spec_part,"-",false))) ,
-					static_cast<int>(G::Str::toUInt(G::Str::tail(spec_part,"-",true)))
+					static_cast<int>(Str::toUInt(Str::headView(spec_part,"-",false))) ,
+					static_cast<int>(Str::toUInt(Str::tailView(spec_part,"-",true)))
 				} ;
 			}
 		}
@@ -52,21 +53,21 @@ namespace G
 		inline std::pair<int,int> from( int n ) { return { n , -1 } ; }
 		inline std::pair<int,int> none() { return { -1 , -1 } ; }
 		inline std::pair<int,int> all() { return { 0 , -1 } ; }
-		inline std::string str( std::pair<int,int> range )
+		inline std::string str( std::pair<int,int> range , int big = 9999 )
 		{
-			return G::Str::fromInt(range.first).append(1U,'-').append(G::Str::fromInt(range.second<0?9999:range.second)) ;
+			return Str::fromInt(range.first).append(1U,'-').append(Str::fromInt(range.second<0?big:range.second)) ;
 		}
-		inline bool within( std::pair<int,int> range , int uid )
+		inline bool within( std::pair<int,int> range , int n )
 		{
-			return uid >= 0 && uid >= range.first && ( range.second < 0 || uid <= range.second ) ;
+			return n >= 0 && n >= range.first && ( range.second < 0 || n <= range.second ) ;
 		}
-		inline void check( const std::string & spec )
+		inline void check( string_view spec )
 		{
     		if( !spec.empty() )
     		{
         		auto r = range( spec ) ; // throws on error -- see G::Str::toUInt()
         		if( r.first != -1 && r.second < r.first ) // eg. "1000-900"
-            		throw G::Exception( "not a valid numeric range" ) ;
+            		throw Exception( "not a valid numeric range" ) ;
     		}
 		}
 	}

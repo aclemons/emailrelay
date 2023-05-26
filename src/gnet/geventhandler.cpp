@@ -29,7 +29,7 @@ GNet::EventHandler::EventHandler()
 
 GNet::EventHandler::~EventHandler()
 {
-	EventLoop * event_loop ;
+	EventLoop * event_loop = nullptr ;
 	if( (event_loop=EventLoop::ptr()) != nullptr && m_fd.valid() )
 	{
 		event_loop->drop( m_fd ) ;

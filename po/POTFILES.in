@@ -112,7 +112,6 @@
 ./src/glib/gtest.cpp
 ./src/glib/gdatetime.cpp
 ./src/glib/gstringwrap.cpp
-./src/glib/gexecutablecommand_unix.cpp
 ./src/glib/gdate.cpp
 ./src/glib/goption.cpp
 ./src/glib/gmd5.cpp

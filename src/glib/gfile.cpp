@@ -63,7 +63,7 @@ bool G::File::rename( const char * from , const char * to , bool & enoent ) noex
 {
 	bool ok = 0 == std::rename( from , to ) ;
 	int error = Process::errno_() ;
-	enoent = !ok && error == ENOENT ;
+	enoent = ( !ok && error == ENOENT ) ;
 	return ok ;
 }
 

@@ -90,7 +90,7 @@ void G::Options::addOption( Option opt , char sep , char escape )
 		StringArray sub_parts ;
 		sub_parts.reserve( 2U ) ;
 		Str::splitIntoFields( opt.description , sub_parts , sep , escape ) ;
-		if( sub_parts.empty() || sub_parts.size() > 2U || ( sub_parts.size()==2U && !opt.description_extra.empty() ) )
+		if( sub_parts.size() > 2U || ( sub_parts.size()==2U && !opt.description_extra.empty() ) )
 			throw InvalidSpecification() ;
 		if( sub_parts.size() == 2U )
 		{

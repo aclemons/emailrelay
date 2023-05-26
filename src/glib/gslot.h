@@ -230,9 +230,9 @@ namespace G
 			}
 			~Signal() = default ;
 			Signal( const Signal & ) = delete ;
-			Signal( Signal && ) = default ;
+			Signal( Signal && ) noexcept = default ;
 			Signal & operator=( const Signal & ) = delete ;
-			Signal & operator=( Signal && ) = default ;
+			Signal & operator=( Signal && ) noexcept = default ;
 		} ;
 
 		/// A factory function for Slot objects.

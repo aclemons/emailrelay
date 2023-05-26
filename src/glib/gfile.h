@@ -25,7 +25,7 @@
 #include "gpath.h"
 #include "gexception.h"
 #include "gdatetime.h"
-#include <cstdio> // std::remove()
+#include <cstdio> // std::remove(), std::FILE
 #include <new> // std::nothrow
 #include <fstream>
 
@@ -86,13 +86,18 @@ public:
 		///< Deletes the file or directory. Throws an exception on error.
 
 	static bool rename( const Path & from , const Path & to , std::nothrow_t ) noexcept ;
-		///< Renames the file. Returns false on error. Tries to
-		///< delete the target 'to' file if necessary.
+		///< Renames the file. Whether it fails if 'to' already
+		///< exists depends on the o/s (see also renameOnto()).
+		///< Returns false on error.
 
 	static void rename( const Path & from , const Path & to , bool ignore_missing = false ) ;
 		///< Renames the file. Throws on error, but optionally
 		///< ignores errors caused by a missing 'from' file or
 		///< missing 'to' directory component.
+
+	static bool renameOnto( const Path & from , const Path & to , std::nothrow_t ) noexcept ;
+		///< Renames the file, deleting 'to' first if necessary.
+		///< Returns false on error.
 
 	static bool copy( const Path & from , const Path & to , std::nothrow_t ) ;
 		///< Copies a file. Returns false on error.
@@ -247,6 +252,9 @@ public:
 		///< Creates a file and returns a writable file descriptor.
 		///< Fails if the file already exists. Returns -1 on error.
 		///< Uses SH_DENYNO and O_BINARY on windows.
+
+	static std::FILE * fopen( const char * , const char * mode ) noexcept ;
+		///< Calls std::fopen().
 
 	static bool probe( const char * ) noexcept ;
 		///< Creates and deletes a temporary probe file. Fails if

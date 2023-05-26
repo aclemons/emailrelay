@@ -80,7 +80,7 @@ public:
 		///< This should be called from WinMain().
 		///< Returns an error string if no-throw.
 
-	void run( bool with_idle = true ) ;
+	void run() ;
 		///< Runs the GGui::Pump class's GetMessage()/DispatchMessage() message
 		///< pump. This is typically used by simple GUI applications that do not
 		///< have a separate network event loop.

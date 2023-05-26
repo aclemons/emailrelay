@@ -51,7 +51,7 @@ GStore::NewFile::NewFile( FileStore & store , const std::string & from ,
 	m_env.utf8_mailboxes = smtp_info.utf8address ;
 
 	// ask the store for a content stream
-	G_LOG( "GStore::NewFile: content file: " << cpath() ) ;
+	G_LOG( "GStore::NewFile: content: new file [" << cpath().basename() << "]" ) ;
 	m_content = m_store.stream( cpath() ) ;
 }
 
@@ -59,7 +59,6 @@ GStore::NewFile::~NewFile()
 {
 	try
 	{
-		G_DEBUG( "GStore::NewFile::dtor: " << cpath() ) ;
 		cleanup() ;
 	}
 	catch(...) // dtor
@@ -69,15 +68,18 @@ GStore::NewFile::~NewFile()
 
 void GStore::NewFile::cleanup()
 {
-	discardContent() ;
+	m_content.reset() ;
 	if( !m_committed )
 	{
+		G_DEBUG( "GStore::NewFile::cleanup: envelope: deleting [" << epath(State::New).basename() << "]" ) ;
 		FileOp::remove( epath(State::New) ) ;
+
+		G_DEBUG( "GStore::NewFile::cleanup: content: deleting [" << cpath().basename() << "]" ) ;
 		FileOp::remove( cpath() ) ;
 	}
 }
 
-bool GStore::NewFile::prepare( const std::string & session_auth_id ,
+void GStore::NewFile::prepare( const std::string & session_auth_id ,
 	const std::string & peer_socket_address , const std::string & peer_certificate )
 {
 	// flush and close the content file
@@ -87,38 +89,13 @@ bool GStore::NewFile::prepare( const std::string & session_auth_id ,
 		throw FileError( "cannot write content file " + cpath().str() ) ;
 	m_content.reset() ;
 
+	// save the envelope
 	m_env.authentication = session_auth_id ;
 	m_env.client_socket_address = peer_socket_address ;
 	m_env.client_certificate = peer_certificate ;
+	saveEnvelope( m_env , epath(State::New) ) ;
 
-	// save envelope -- also copy or move aside for local mailboxes
-	bool rc = false ;
-	if( !m_env.to_local.empty() && m_env.to_remote.empty() )
-	{
-		G_LOG( "GStore::NewFile: moving " << m_id.str() << " to .local" ) ;
-		G::Path new_content_path = localPath( cpath() ) ;
-		G::Path new_envelope_path = localPath( epath(State::Normal) ) ;
-		FileOp::rename( cpath() , new_content_path ) ;
-		saveEnvelope( m_env , new_envelope_path ) ;
-		rc = true ; // no commit() needed
-	}
-	else if( !m_env.to_local.empty() )
-	{
-		G_DEBUG( "GStore::NewFile: copying " << m_id.str() << " to .local" ) ;
-		G::Path new_content_path = localPath( cpath() ) ;
-		G::Path new_envelope_path = localPath( epath(State::Normal) ) ;
-		FileOp::hardlink( cpath() , new_content_path ) ;
-		Envelope new_envelope = m_env ;
-		new_envelope.to_remote.clear() ; // local file has only local recipients
-		saveEnvelope( new_envelope , new_envelope_path ) ;
-		saveEnvelope( m_env , epath(State::New) ) ;
-	}
-	else
-	{
-		saveEnvelope( m_env , epath(State::New) ) ;
-	}
 	static_cast<MessageStore&>(m_store).updated() ;
-	return rc ;
 }
 
 void GStore::NewFile::commit( bool throw_on_error )
@@ -178,25 +155,15 @@ std::size_t GStore::NewFile::contentSize() const
 	return m_size ;
 }
 
-void GStore::NewFile::discardContent()
-{
-	m_content.reset() ;
-}
-
 void GStore::NewFile::saveEnvelope( Envelope & env , const G::Path & path )
 {
-	G_LOG( "GStore::NewFile: envelope file: " << G::Str::join("/",path.dirname().basename(),path.basename()) ) ;
+	G_LOG( "GStore::NewFile: envelope: new file [" << path.basename() << "]" ) ;
 	std::unique_ptr<std::ofstream> envelope_stream = m_store.stream( path ) ;
 	env.endpos = GStore::Envelope::write( *envelope_stream , env ) ;
 	env.crlf = true ;
 	envelope_stream->close() ;
 	if( envelope_stream->fail() )
 		throw FileError( "cannot write envelope file" , path.str() ) ;
-}
-
-G::Path GStore::NewFile::localPath( const G::Path & path )
-{
-	return path.str().append(".local") ;
 }
 
 GStore::MessageId GStore::NewFile::id() const

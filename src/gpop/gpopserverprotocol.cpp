@@ -181,7 +181,7 @@ bool GPop::ServerProtocol::sendContentLine( std::string & line , bool & eot )
 	line.erase( 1U ) ; // leave "."
 	bool eof = !G::Str::readLine( *m_content , line ,
 		m_config.crlf_only ? G::Str::Eol::CrLf : G::Str::Eol::Cr_Lf_CrLf ,
-		/*erase=*/false ) ;
+		/*pre_erase_result=*/false ) ;
 
 	eot = eof || limited ;
 	if( eot ) line.erase( 1U ) ;

@@ -35,6 +35,8 @@ GetOptions( \%opt , "host=s" ) or die "usage error" ;
 die "usage error" if scalar(@ARGV) == 0 ;
 my $cfg_upload_version = $ARGV[0] ;
 
+my $cfg_button_paragraph = 5 ; # which 'what-is-it' paragraph for the green button
+
 my $cfg_author = "Graeme Walker" ;
 my $cfg_copyright = "Copyright (C) 2023 $cfg_author" ;
 my $cfg_output_dir = "website" ;
@@ -441,7 +443,7 @@ sub fixup_mainpage
 		print $fh_out $line , "\n" ;
 
 		# add a big green button
-		if( $line =~ m/^<p>/ && $p == 4 )
+		if( $line =~ m/^<p>/ && $p == $cfg_button_paragraph )
 		{
 			print $fh_out "<div class=\"button\" align=\"center\">\n" ;
 			print $fh_out $cfg_button_html ;

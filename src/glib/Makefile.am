@@ -28,7 +28,6 @@ UNIX_SOURCES = \
 	gdaemon_unix.cpp \
 	gdirectory_unix.cpp \
 	genvironment_unix.cpp \
-	gexecutablecommand_unix.cpp \
 	gfile_unix.cpp \
 	ghostname_unix.cpp \
 	gidentity_unix.cpp \
@@ -44,7 +43,6 @@ WINDOWS_SOURCES = \
 	gdaemon_win32.cpp \
 	gdirectory_win32.cpp \
 	genvironment_win32.cpp \
-	gexecutablecommand_win32.cpp \
 	gfile_win32.cpp \
 	ghostname_win32.cpp \
 	gidentity_win32.cpp \

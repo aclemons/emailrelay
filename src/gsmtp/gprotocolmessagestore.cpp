@@ -21,15 +21,13 @@
 #include "gdef.h"
 #include "gprotocolmessagestore.h"
 #include "gmessagestore.h"
-#include "gmessagedelivery.h"
 #include "gstr.h"
 #include "gassert.h"
 #include "glog.h"
 
 GSmtp::ProtocolMessageStore::ProtocolMessageStore( GStore::MessageStore & store ,
-	GStore::MessageDelivery & delivery , std::unique_ptr<Filter> filter ) :
+	std::unique_ptr<Filter> filter ) :
 		m_store(store) ,
-		m_delivery(delivery) ,
 		m_filter(std::move(filter))
 {
 	m_filter->doneSignal().connect( G::Slot::slot(*this,&ProtocolMessageStore::filterDone) ) ;
@@ -143,24 +141,13 @@ void GSmtp::ProtocolMessageStore::process( const std::string & session_auth_id ,
 		G_ASSERT( m_new_msg != nullptr ) ;
 
 		// write ".new" envelope and close the content
-		bool local_only = m_new_msg->prepare( session_auth_id , peer_socket_address , peer_certificate ) ;
+		m_new_msg->prepare( session_auth_id , peer_socket_address , peer_certificate ) ;
 
-		// do local delivery
-		m_delivery.deliver( m_new_msg->id() ) ;
-
-		if( local_only )
-		{
-			// local-mailbox only -- handle a bit like filter-abandonded
-			m_done_signal.emit( true , GStore::MessageId::none() , std::string() , std::string() ) ;
-		}
-		else
-		{
-			// start the filter
-			if( !m_filter->quiet() )
-				G_LOG( "GSmtp::ProtocolMessageStore::process: filter: start [" << m_filter->id() << "] "
-					<< "[" << m_new_msg->location() << "]" ) ;
-			m_filter->start( m_new_msg->id() ) ;
-		}
+		// start filtering
+		if( !m_filter->quiet() )
+			G_LOG( "GSmtp::ProtocolMessageStore::process: filter: start [" << m_filter->id() << "] "
+				<< "[" << m_new_msg->location() << "]" ) ;
+		m_filter->start( m_new_msg->id() ) ;
 	}
 	catch( std::exception & e ) // catch filtering errors, size-limit errors, and file i/o errors
 	{

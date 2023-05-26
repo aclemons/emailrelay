@@ -21,6 +21,4 @@
 #include "gdef.h"
 #include "gmessagedelivery.h"
 
-GStore::MessageDelivery::~MessageDelivery()
-= default ;
-
+// empty

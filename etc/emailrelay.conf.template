@@ -189,6 +189,14 @@
 #
 #anonymous
 
+# Name: delivery-dir
+# Format: delivery-dir <dir>
+# Description: Specifies the base directory for mailboxes when delivering
+# messages that have local recipients. This defaults to the main spool
+# directory.
+#
+#delivery-dir /var/spool/emailrelay/in
+
 # Name: dnsbl
 # Format: dnsbl <config>
 # Description: Specifies a list of DNSBL servers that are used to reject SMTP
@@ -245,15 +253,6 @@
 # smtp=fd#3,smtp=fd#4,pop=fd#5.
 #
 #interface 127.0.0.1,smtp=eth0
-
-# Name: local-delivery-dir
-# Format: local-delivery-dir <dir>
-# Description: Enables local delivery of mail messages that have local
-# recipients, as determined by an address verifier, into mailbox
-# sub-directories. The mailbox names come from the output of the address
-# verifier.
-#
-#local-delivery-dir /var/spool/emailrelay/in
 
 # Name: prompt-timeout
 # Format: prompt-timeout <time>

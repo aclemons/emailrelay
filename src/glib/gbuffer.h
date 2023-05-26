@@ -65,7 +65,7 @@ namespace G
 		Buffer() noexcept = default ;
 		explicit Buffer( std::size_t n ) : m_n(n) , m_c(n)
 		{
-			m_p = static_cast<T*>(std::malloc(n)) ; // NOLINT cppcoreguidelines-no-malloc
+			m_p = static_cast<T*>( std::malloc(n) ) ; // NOLINT cppcoreguidelines-no-malloc
 			checkalloc() ;
 		}
 		~Buffer()
@@ -90,7 +90,7 @@ namespace G
 		std::size_t capacity() const noexcept { return m_c ; }
 		bool empty() const noexcept { return m_n == 0U ; }
 		void clear() noexcept { m_n = 0 ; }
-		void shrink_to_fit() noexcept { if( empty() && m_p ) { std::free(m_p) ; m_p = nullptr ; m_c = 0U ; } } // NOLINT cppcoreguidelines-no-malloc
+		void shrink_to_fit() noexcept { if( empty() && m_p ) { std::free( m_p ) ; m_p = nullptr ; m_c = 0U ; } } // NOLINT cppcoreguidelines-no-malloc
 		iterator begin() noexcept { return m_p ? m_p : &m_c0 ; }
 		iterator end() noexcept { return m_p ? (m_p+m_n) : &m_c0 ; }
 		const value_type * data() const noexcept { return m_p ? m_p : &m_c0 ; }

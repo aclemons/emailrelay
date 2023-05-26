@@ -23,9 +23,9 @@
 #include "legal.h"
 #include "configuration.h"
 #include "commandline.h"
+#include "gpop.h"
 #include "options.h"
 #include "gmessagestore.h"
-#include "ggetopt.h"
 #include "goptionparser.h"
 #include "goptionreader.h"
 #include "goptionsusage.h"
@@ -46,8 +46,8 @@ namespace Main
 }
 
 //| \class Main::Show
-/// A private implementation class used by Main::CommandLine
-/// to generate user feedback.
+/// Used by Main::CommandLine to generate user feedback via
+/// the Main::Output interface.
 ///
 class Main::Show
 {
@@ -80,72 +80,88 @@ Main::CommandLine::CommandLine( Output & output , const G::Arg & args_in ,
 		m_version(version) ,
 		m_arg_prefix(args_in.prefix())
 {
-	// look for special config names
-	G::StringArray config_names ;
+	const bool multiconfig = !G::Test::enabled("main-commandline-simple") ;
+
+	G::StringArray config_names = multiconfig ? configNames(args_in) : G::StringArray() ;
+	if( config_names.empty() )
+		config_names.push_back( "" ) ;
+
+	for( std::size_t i = 0U ; i < config_names.size() ; i++ )
 	{
-		for( std::size_t i = 1U ; i < args_in.c() ; i++ )
+		m_config_names.push_back( config_names[i] ) ;
+		m_option_maps.emplace_back() ;
+
+		std::function<std::string(std::string,bool)> parser_callback ;
+		if( multiconfig )
+			parser_callback = [&config_names,i]( const std::string & name_ , bool sf_ ){ return onParse(config_names,i,name_,sf_) ; } ;
+
+		G::StringArray args = G::OptionParser::parse( args_in.array() ,
+			options_spec , m_option_maps.back() , &m_errors , 1U , 0U ,
+			parser_callback ) ;
+
+		if( !args.empty() )
 		{
-			std::string arg = args_in.v( i ) ;
-			std::size_t keypos = arg.find( "-spool-dir" ) ;
-			std::size_t eqpos = arg.find( '=' ) ;
-			if( G::Str::headMatch(arg,"--") && keypos > 2U && keypos < eqpos )
-				config_names.push_back( arg.substr(2U,keypos-2U) ) ;
+			std::string config_file = configFile( args[0] ) ;
+			G::OptionParser::parse( G::OptionReader::read(config_file) ,
+				options_spec , m_option_maps.back() , &m_errors , 0U , 0U ,
+				parser_callback ) ;
 		}
+
+		if( args.size() > 1U )
+			m_argc_error = true ;
+		if( m_option_maps.back().contains("verbose") )
+			m_verbose = true ;
 	}
-	if( !config_names.empty() )
+
+	if( multiconfig )
 	{
-		for( std::size_t i = 0U ; i < config_names.size() ; i++ )
-		{
-			m_option_maps.emplace_back() ;
-			m_config_names.push_back( config_names.at(i) ) ;
-			G::OptionParser parser( options_spec , m_option_maps.back() , &m_errors ) ;
-			G::StringArray args = parser.parse( args_in.array() , 1U , 0U ,
-				[&config_names,i]( const std::string & name_ ){ return onParse(config_names,i,name_) ; } ) ;
-			if( !args.empty() && m_errors.empty() )
-				m_errors.push_back( "config files cannot be used with a multi-dimensional command-line" ) ;
-		}
 		std::sort( m_errors.begin() , m_errors.end() ) ;
 		m_errors.erase( std::unique( m_errors.begin() , m_errors.end() ) , m_errors.end() ) ;
 	}
-	else
-	{
-		// normal command-line parsing
-		m_option_maps.emplace_back() ;
-		m_config_names.push_back( "" ) ;
-		G::OptionParser parser0( options_spec , m_option_maps.back() , &m_errors ) ;
-		G::StringArray args = parser0.parse( args_in.array() ) ;
-		m_verbose = m_option_maps.back().contains( "verbose" ) ;
 
-		// any non-option arguments are treated as config files - each
-		// config file after the first creates a new configuration
-		if( m_errors.empty() && !args.empty() )
-		{
-			std::string app_dir = G::Path(G::Process::exe()).dirname().str() ;
-			for( std::size_t i = 0U ; i < args.size() ; i++ )
-			{
-				std::string config_file = args[i] ;
-				if( config_file.find("@app") == 0U && !app_dir.empty() )
-					G::Str::replace( config_file , "@app" , app_dir ) ;
-
-				if( i != 0U )
-				{
-					m_option_maps.push_back( G::OptionMap() ) ;
-					m_config_names.emplace_back() ;
-				}
-				m_config_names.back() = G::Path(config_file).withoutExtension().basename() ;
-				G::OptionParser parser( options_spec , m_option_maps.back() , &m_errors ) ;
-				parser.parse( G::OptionReader::read(config_file) , 0U ) ;
-			}
-		}
-		if( m_config_names.size() == 1U )
-			m_config_names[0].clear() ;
-	}
+	if( G::Test::enabled("main-commandline-dump") )
+		dump() ;
 }
 
 Main::CommandLine::~CommandLine()
 = default ;
 
-std::string Main::CommandLine::onParse( const G::StringArray & config_names , std::size_t i , const std::string & parser_name )
+std::string Main::CommandLine::configFile( const std::string & arg )
+{
+	std::string path = arg ;
+	G::Str::replace( path , "@app" , G::Path(G::Process::exe()).dirname().str() ) ;
+	return path ;
+}
+
+G::StringArray Main::CommandLine::configNames( const G::Arg & args_in )
+{
+	// look for special config names eg. "in" from "--in-spool-dir"
+	G::StringArray config_names ;
+	for( std::size_t i = 1U ; i < args_in.c() ; i++ )
+	{
+		std::string arg = args_in.v( i ) ;
+		std::size_t keypos = arg.find( "-spool-dir" ) ;
+		std::size_t eqpos = arg.find( '=' ) ;
+		if( G::Str::headMatch(arg,"--") && keypos > 2U && keypos < eqpos )
+			config_names.push_back( arg.substr(2U,keypos-2U) ) ;
+	}
+	return config_names ;
+}
+
+void Main::CommandLine::dump() const
+{
+	for( std::size_t i = 0U ; i < m_config_names.size() ; i++ )
+	{
+		std::cout << m_config_names.at(i) << "...\n" ;
+		for( auto p = m_option_maps.at(i).begin() ; p != m_option_maps.at(i).end() ; ++p ) // NOLINT modernize-loop-convert
+		{
+			std::cout << "  " << (*p).first << "=[" << (*p).second.value() << "] (" << (*p).second.count() << ")\n" ;
+		}
+	}
+}
+
+std::string Main::CommandLine::onParse( const G::StringArray & config_names , std::size_t i ,
+	const std::string & parser_name , bool short_form )
 {
 	// we want parser names like "in-port" (where "in" is the current (i'th) config-name)
 	// to be parsed as if "port", but we want to ignore "out-port" where "out" is
@@ -153,7 +169,12 @@ std::string Main::CommandLine::onParse( const G::StringArray & config_names , st
 	// not the zero'th name
 
 	std::string result = parser_name ;
-	if( G::Str::headMatch( parser_name , config_names.at(i)+"-" ) ) // "in-port" and "in-"
+	if( short_form )
+	{
+		bool discard = i != 0U ;
+		result = std::string(1U,discard).append(parser_name) ;
+	}
+	else if( G::Str::headMatch( parser_name , config_names.at(i)+"-" ) ) // "in-port" and "in-"
 	{
 		result = parser_name.substr( config_names[i].size()+1U ) ; // "port"
 	}
@@ -193,7 +214,7 @@ std::string Main::CommandLine::configurationName( std::size_t i ) const
 
 bool Main::CommandLine::argcError() const
 {
-	return false ; // we now accept any number of arguments
+	return m_argc_error ;
 }
 
 bool Main::CommandLine::hasUsageErrors() const
@@ -368,6 +389,13 @@ void Main::CommandLine::showUds( bool e , const std::string & eot ) const
 	}
 }
 
+void Main::CommandLine::showPop( bool e , const std::string & eot ) const
+{
+	bool enabled = GPop::enabled() ;
+	Show show( m_output , e , m_verbose ) ;
+	show.s() << "POP server: " << (enabled?"enabled":"disabled") << eot ;
+}
+
 void Main::CommandLine::showVersion( bool e ) const
 {
 	Show show( m_output , e , m_verbose ) ;
@@ -377,6 +405,7 @@ void Main::CommandLine::showVersion( bool e ) const
 	{
 		showThreading( e , "\n" ) ;
 		showUds( e , "\n" ) ;
+		showPop( e , "\n" ) ;
 		showSslVersion( e , "\n" ) ;
 	}
 	showSslCredit( e , "\n" ) ;

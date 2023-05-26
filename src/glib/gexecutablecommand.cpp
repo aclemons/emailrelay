@@ -23,6 +23,7 @@
 #include "garg.h"
 #include "gstr.h"
 #include <algorithm>
+#include <iterator>
 
 #ifndef G_LIB_SMALL
 G::ExecutableCommand::ExecutableCommand( const std::string & s )
@@ -43,23 +44,13 @@ G::ExecutableCommand::ExecutableCommand( const std::string & s )
 			m_args.pop_back() ; // remove exe
 		}
 	}
-
-	// do o/s-specific fixups
-	if( !m_exe.empty() && !osNativelyRunnable() )
-	{
-		osAddWrapper() ;
-	}
 }
 #endif
 
-G::ExecutableCommand::ExecutableCommand( const G::Path & exe_ , const G::StringArray & args_ , bool add_wrapper ) :
+G::ExecutableCommand::ExecutableCommand( const G::Path & exe_ , const G::StringArray & args_ ) :
 	m_exe(exe_) ,
 	m_args(args_)
 {
-	if( add_wrapper && !m_exe.empty() && !osNativelyRunnable() )
-	{
-		osAddWrapper() ;
-	}
 }
 
 G::Path G::ExecutableCommand::exe() const
@@ -84,4 +75,16 @@ void G::ExecutableCommand::add( const std::string & arg )
 {
 	m_args.push_back( arg ) ;
 }
+
+#ifndef G_LIB_SMALL
+void G::ExecutableCommand::insert( const G::StringArray & array )
+{
+	if( !array.empty() )
+	{
+		m_args.insert( m_args.begin() , m_exe.str() ) ;
+		m_args.insert( m_args.begin() , std::next(array.begin()) , array.end() ) ;
+		m_exe = m_args.at( 0U ) ;
+	}
+}
+#endif
 

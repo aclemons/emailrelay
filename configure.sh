@@ -31,8 +31,8 @@
 #         -w64 cross-compile for windows 64-bit with mingw-w64
 #         -p   cross-compile for rpi
 #         -g   git-clone mbedtls and exit
-#         -S   force e_systemddir for systemd
-#         -X   suppress e_systemddir for systemd
+#         -S   force e_systemddir
+#         -X   suppress e_systemddir
 #
 # When cross-compiling with mbedtls the mbedtls source should be unpacked
 # into this base directory (see MBEDTLS_DIR below), or use '-g' to
@@ -79,7 +79,7 @@ if test "0$opt_git" -eq 1
 then
 	git clone https://salsa.debian.org/debian/mbedtls.git
 	e="$?"
-	patch -d mbedtls/library -p1 < src/gssl/mbedtls-vsnprintf-fix.p1
+	patch -d mbedtls/library -l -p1 < src/gssl/mbedtls-vsnprintf-fix-new.p1 || patch -d mbedtls/library -l -p1 < src/gssl/mbedtls-vsnprintf-fix.p1
 	if test "$e" -eq 0 -a "0$opt_mingw" -eq 0
 	then
 		echo build with...

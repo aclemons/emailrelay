@@ -6,6 +6,9 @@
 /* Define true to use std::thread */
 #undef GCONFIG_ENABLE_STD_THREAD
 
+/* Define true to enable submission-tool functionality */
+#undef GCONFIG_ENABLE_SUBMISSION
+
 /* Bitmask of built-in filters */
 #undef GCONFIG_FILTER_MASK
 
@@ -38,6 +41,9 @@
 
 /* Define true if extended fstream::open() is available */
 #undef GCONFIG_HAVE_EXTENDED_OPEN
+
+/* Define true if fopen_s() is available */
+#undef GCONFIG_HAVE_FOPEN_S
 
 /* Define true if _fsopen() is available */
 #undef GCONFIG_HAVE_FSOPEN

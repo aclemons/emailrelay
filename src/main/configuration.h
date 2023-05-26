@@ -264,7 +264,7 @@ public:
 	unsigned int filterTimeout() const ;
 		///< Returns the filter timeout.
 
-	G::Path localDeliveryDir() const ;
+	G::Path deliveryDir() const ;
 		///< Returns a local-delivery base directory.
 
 private:
@@ -326,6 +326,10 @@ private:
 	{
 		explicit Switches( const std::string & ) ;
 		~Switches() ;
+		Switches( const Switches & ) = default ;
+		Switches( Switches && ) noexcept = default ;
+		Switches & operator=( const Switches & ) = default ;
+		Switches & operator=( Switches && ) noexcept = default ;
 		bool operator()( G::string_view item , bool default_ ) ;
 		G::StringArray m_items ;
 		static std::string str( char , G::string_view ) ;
