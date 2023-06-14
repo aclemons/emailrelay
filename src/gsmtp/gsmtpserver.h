@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,7 +28,6 @@
 #include "glinebuffer.h"
 #include "gverifier.h"
 #include "gmessagestore.h"
-#include "gmessagedelivery.h"
 #include "gfilterfactorybase.h"
 #include "gverifierfactorybase.h"
 #include "gsmtpserverprotocol.h"
@@ -95,7 +94,7 @@ public:
 		Config & set_domain( const std::string & ) ;
 	} ;
 
-	Server( GNet::ExceptionSink es , GStore::MessageStore & , GStore::MessageDelivery & ,
+	Server( GNet::ExceptionSink es , GStore::MessageStore & ,
 		FilterFactoryBase & , VerifierFactoryBase & , const GAuth::SaslClientSecrets & ,
 		const GAuth::SaslServerSecrets & , const Config & server_config ,
 		const std::string & forward_to , int forward_to_family ,
@@ -146,7 +145,6 @@ private:
 
 private:
 	GStore::MessageStore & m_store ;
-	GStore::MessageDelivery & m_delivery ;
 	FilterFactoryBase & m_ff ;
 	VerifierFactoryBase & m_vf ;
 	Config m_server_config ;

@@ -16,10 +16,12 @@
      <li>SMTP CHUNKING/8BITMIME 'BDAT' extension (RFC-3030), disabled by default.</li>
      <li>SMTP SMTPUTF8 extension (RFC-6531), disabled by default.</li>
      <li>No 7-bit/8-bit check on received message content (see NEWS file).</li>
-     <li>Mailbox delivery for local addressees (<em>--local-delivery-dir</em>).</li>
-     <li>New built-in filters: <em>deliver:</em>, <em>split:</em>, <em>copy:</em>, <em>mx:</em></li>
-     <li>New built-in address verifiers: <em>allow:</em>, <em>local:</em></li>
-     <li>Main binary acts as a submission tool if named <em>emailrelay-submit</em>.</li>
+     <li>New built-in filters: <em>deliver:</em>, <em>split:</em>, <em>copy:</em>, <em>mx:</em>.</li>
+     <li>New built-in address verifiers: <em>strict:</em>, <em>local:</em>.</li>
+     <li>No <em>.local</em> files (see NEWS file).</li>
+     <li>PAM authentication is now enabled with <em>--smtp-auth=pam:</em> not <em>/pam</em>.</li>
+     <li>Client authentication details can be given directly from the command-line.</li>
+     <li>Main binary can act as a simple submission tool (<em>configure --enable-submission</em>).</li>
     </ul>
    <h2><a class="a-header" name="SH_1_2">2.3 -> 2.4</a></h2> <!-- index:2:SH:1:2:2.3 -> 2.4 -->
     <ul>
@@ -442,4 +444,4 @@
  </div> <!-- div-main -->
  </body>
 </html>
-<!-- Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->
+<!-- Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->

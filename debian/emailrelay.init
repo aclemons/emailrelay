@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -130,7 +130,7 @@ root_root()
 spooldir()
 {
 	# Prints the spool directory path from the config file, but with a
-	# default because packaged installs may not edit the config file
+	# default because packaged installs might not edit the config file
 	# like 'make install' does
 	( echo spool-dir /var/spool/emailrelay ; cat "$CONFIG" ) | \
 		tr '\t' ' ' | sed 's/  */ /g' | grep '^spool-dir [^ ]' | \

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@ namespace G
 {
 	namespace IdentityImp
 	{
-		bool lookupUser( const std::string & name , uid_t & uid , gid_t & gid ) ;
+		bool lookupUser( std::string & name , uid_t & uid , gid_t & gid ) ;
 		bool lookupGroup( const std::string & group , gid_t & gid ) ;
 		int sysconf_( int key ) ;
 	}
@@ -56,11 +56,12 @@ G::Identity::Identity( SignalSafe ) noexcept : // invalid()
 {
 }
 
-G::Identity::Identity( const std::string & name , const std::string & group ) :
+G::Identity::Identity( const std::string & name_in , const std::string & group ) :
 	Identity()
 {
+	std::string name = name_in ;
 	if( !IdentityImp::lookupUser( name , m_uid , m_gid ) )
-		throw NoSuchUser( name ) ;
+		throw NoSuchUser( name_in ) ;
 
 	if( !group.empty() && !IdentityImp::lookupGroup( group , m_gid ) )
 		throw NoSuchGroup( group ) ;
@@ -128,20 +129,22 @@ bool G::Identity::operator!=( const Identity & other ) const noexcept
 }
 
 #ifndef G_LIB_SMALL
-G::Identity G::Identity::lookup( const std::string & name )
+std::pair<G::Identity,std::string> G::Identity::lookup( const std::string & name_in )
 {
 	Identity result ;
+	std::string name = name_in ;
 	if( !IdentityImp::lookupUser( name , result.m_uid , result.m_gid ) )
-		throw NoSuchUser( name ) ;
-	return result ;
+		throw NoSuchUser( name_in ) ;
+	return std::make_pair( result , name ) ;
 }
 #endif
 
-G::Identity G::Identity::lookup( const std::string & name , std::nothrow_t )
+std::pair<G::Identity,std::string> G::Identity::lookup( const std::string & name_in , std::nothrow_t )
 {
 	Identity result ;
+	std::string name = name_in ;
 	IdentityImp::lookupUser( name , result.m_uid , result.m_gid ) ;
-	return result ;
+	return std::make_pair( result , name ) ;
 }
 
 gid_t G::Identity::lookupGroup( const std::string & group )
@@ -158,7 +161,7 @@ bool G::Identity::match( std::pair<int,int> uid_range ) const
 
 // ==
 
-bool G::IdentityImp::lookupUser( const std::string & name , uid_t & uid , gid_t & gid )
+bool G::IdentityImp::lookupUser( std::string & name , uid_t & uid , gid_t & gid )
 {
 	using passwd_t = struct passwd ;
 	std::array<int,3U> sizes {{ 120 , 0 , 16000 }} ;
@@ -179,6 +182,7 @@ bool G::IdentityImp::lookupUser( const std::string & name , uid_t & uid , gid_t 
 		}
 		else if( rc == 0 && result_p )
 		{
+			name = result_p->pw_name ;
 			uid = result_p->pw_uid ;
 			gid = result_p->pw_gid ;
 			return true ;

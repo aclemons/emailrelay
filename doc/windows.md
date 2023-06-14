@@ -150,4 +150,4 @@ and `DATA`.
 [SMTP]: https://en.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol
 
 _____________________________________
-Copyright (C) 2001-2022 Graeme Walker
+Copyright (C) 2001-2023 Graeme Walker

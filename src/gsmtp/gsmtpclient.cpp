@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -36,23 +36,10 @@ GSmtp::Client::Client( GNet::ExceptionSink es , GStore::MessageStore & store ,
 	FilterFactoryBase & ff , const GNet::Location & remote ,
 	const GAuth::SaslClientSecrets & secrets ,
 	const Config & config ) :
-		GNet::Client(es,remote,netConfig(config)) ,
-		m_es(es) ,
-		m_ff(ff) ,
-		m_config(config) ,
-		m_secrets(secrets) ,
-		m_store(&store) ,
-		m_filter(ff.newFilter(es,Filter::Type::client,config.filter_config,config.filter_spec,{})) ,
-		m_routing_filter(ff.newFilter(es,Filter::Type::routing,config.filter_config,config.filter_spec,"routing-filter")) ,
-		m_protocol(es,*this,secrets,config.sasl_client_config,config.client_protocol_config,config.secure_tunnel) ,
-		m_message_count(0U)
+		Client(es,ff,remote,secrets,config)
 {
-	G_ASSERT( m_filter.get() != nullptr ) ;
+	m_store = &store ;
 	m_iter = m_store->iterator( true ) ;
-	m_protocol.doneSignal().connect( G::Slot::slot(*this,&Client::protocolDone) ) ;
-	m_protocol.filterSignal().connect( G::Slot::slot(*this,&Client::filterStart) ) ;
-	m_filter->doneSignal().connect( G::Slot::slot(*this,&Client::filterDone) ) ;
-	m_routing_filter->doneSignal().connect( G::Slot::slot(*this,&Client::routingFilterDone) ) ;
 }
 
 GSmtp::Client::Client( GNet::ExceptionSink es ,
@@ -61,12 +48,13 @@ GSmtp::Client::Client( GNet::ExceptionSink es ,
 	const Config & config ) :
 		GNet::Client(es,remote,netConfig(config)) ,
 		m_es(es) ,
+		m_routing_es(this,nullptr) ,
 		m_ff(ff) ,
 		m_config(config) ,
 		m_secrets(secrets) ,
 		m_store(nullptr) ,
+		m_routing_timer(*this,&Client::onRoutingTimeout,m_es) ,
 		m_filter(ff.newFilter(es,Filter::Type::client,config.filter_config,config.filter_spec,{})) ,
-		m_routing_filter(ff.newFilter(es,Filter::Type::routing,config.filter_config,config.filter_spec,"routing-filter")) ,
 		m_protocol(es,*this,secrets,config.sasl_client_config,config.client_protocol_config,config.secure_tunnel) ,
 		m_message_count(0U)
 {
@@ -74,7 +62,11 @@ GSmtp::Client::Client( GNet::ExceptionSink es ,
 	m_protocol.doneSignal().connect( G::Slot::slot(*this,&Client::protocolDone) ) ;
 	m_protocol.filterSignal().connect( G::Slot::slot(*this,&Client::filterStart) ) ;
 	m_filter->doneSignal().connect( G::Slot::slot(*this,&Client::filterDone) ) ;
-	m_routing_filter->doneSignal().connect( G::Slot::slot(*this,&Client::routingFilterDone) ) ;
+	if( m_config.with_routing )
+	{
+		m_routing_filter = ff.newFilter(es,Filter::Type::routing,config.filter_config,config.filter_spec,"routing-filter") ;
+		m_routing_filter->doneSignal().connect( G::Slot::slot(*this,&Client::routingFilterDone) ) ;
+	}
 }
 
 GSmtp::Client::~Client()
@@ -82,7 +74,8 @@ GSmtp::Client::~Client()
 	m_protocol.doneSignal().disconnect() ;
 	m_protocol.filterSignal().disconnect() ;
 	m_filter->doneSignal().disconnect() ;
-	m_routing_filter->doneSignal().disconnect() ;
+	if( m_routing_filter )
+		m_routing_filter->doneSignal().disconnect() ;
 }
 
 GNet::Client::Config GSmtp::Client::netConfig( const Config & smtp_config )
@@ -109,7 +102,7 @@ G::Slot::Signal<const std::string&> & GSmtp::Client::messageDoneSignal()
 
 void GSmtp::Client::sendMessage( std::unique_ptr<GStore::StoredMessage> message )
 {
-	G_ASSERT( message && message->toCount() ) ;
+	G_ASSERT( message.get() != nullptr ) ;
 	m_message = std::move( message ) ;
 	if( connected() )
 		start() ;
@@ -117,7 +110,7 @@ void GSmtp::Client::sendMessage( std::unique_ptr<GStore::StoredMessage> message 
 
 void GSmtp::Client::sendMessage( std::shared_ptr<GStore::StoredMessage> message )
 {
-	G_ASSERT( message && message->toCount() ) ;
+	G_ASSERT( message.get() != nullptr ) ;
 	m_message = std::move( message ) ;
 	if( connected() )
 		start() ;
@@ -173,10 +166,6 @@ bool GSmtp::Client::sendNext()
 			m_message_count = 0U ;
 			return false ;
 		}
-		else if( message->toCount() == 0U )
-		{
-			message->fail( "no recipients" , 501 ) ;
-		}
 		else
 		{
 			m_message = std::move( message ) ;
@@ -189,7 +178,6 @@ bool GSmtp::Client::sendNext()
 
 void GSmtp::Client::start()
 {
-	G_ASSERT( message()->toCount() != 0U ) ;
 	m_message_count++ ;
 
 	// basic routing if forward-to is defined in the envelope
@@ -441,12 +429,26 @@ void GSmtp::Client::routingFilterDone( int filter_result )
 		}
 		else
 		{
-			m_routing_client.reset( new Client( m_es , m_ff , GNet::Location(forward_to_address) ,
+			m_routing_client.reset( new Client( m_routing_es , m_ff , GNet::Location(forward_to_address) ,
 				m_secrets , Config(m_config).set_with_routing(false) ) ) ;
 			m_routing_client->messageDoneSignal().connect( G::Slot::slot( *this , &GSmtp::Client::routedMessageDone ) ) ;
 			m_routing_client->sendMessage( message() ) ;
 		}
 	}
+}
+
+void GSmtp::Client::onException( GNet::ExceptionSource * , std::exception & e , bool done )
+{
+	// this is an exception from m_routing_client
+	G_DEBUG( "GSmtp::Client::onException: [" << e.what() << "] done=" << done ) ;
+	if( !done )
+		G_WARNING( "GSmtp::Client::onException: routing: " << e.what() ) ;
+	m_routing_timer.startTimer( 0U ) ;
+}
+
+void GSmtp::Client::onRoutingTimeout()
+{
+	routedMessageDone( std::string() ) ;
 }
 
 void GSmtp::Client::routedMessageDone( const std::string & )

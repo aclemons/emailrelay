@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -56,17 +56,6 @@ void GNet::ClientPtrBase::eventSlot( const std::string & s1 , const std::string 
 {
 	m_event_signal.emit( std::string(s1) , std::string(s2) , std::string(s3) ) ;
 }
-
-#ifndef G_LIB_SMALL
-void GNet::ClientPtrBase::swap( ClientPtrBase & other ) noexcept
-{
-	using std::swap ;
-	swap( m_client , other.m_client ) ;
-	swap( m_deleted_signal , other.m_deleted_signal ) ;
-	swap( m_event_signal , other.m_event_signal ) ;
-	swap( m_delete_signal , other.m_delete_signal ) ;
-}
-#endif
 
 #ifndef G_LIB_SMALL
 void GNet::ClientPtrBase::rebind() noexcept

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -51,7 +51,7 @@ namespace GSmtp
 /// A class which acts as an SMTP client, extracting messages from a
 /// message store and forwarding them to a remote SMTP server.
 ///
-class GSmtp::Client : public GNet::Client , private ClientProtocol::Sender
+class GSmtp::Client : public GNet::Client , private ClientProtocol::Sender , private GNet::ExceptionHandler
 {
 public:
 	struct Config /// A structure containing GSmtp::Client configuration parameters.
@@ -130,12 +130,13 @@ public:
 		///< has completed or failed.
 
 private: // overrides
-	void onConnect() override ; // Override from GNet::Client.
-	bool onReceive( const char * , std::size_t , std::size_t , std::size_t , char ) override ; // Override from GNet::Client.
-	void onDelete( const std::string & ) override ; // Override from GNet::HeapClient.
-	void onSendComplete() override ; // Override from GNet::BufferedClient.
-	void onSecure( const std::string & , const std::string & , const std::string & ) override ; // Override from GNet::SocketProtocol.
-	bool protocolSend( G::string_view , std::size_t , bool ) override ; // Override from ClientProtocol::Sender.
+	void onConnect() override ; // GNet::Client
+	bool onReceive( const char * , std::size_t , std::size_t , std::size_t , char ) override ; // GNet::Client
+	void onDelete( const std::string & ) override ; // GNet::HeapClient
+	void onSendComplete() override ; // GNet::BufferedClient
+	void onSecure( const std::string & , const std::string & , const std::string & ) override ; // GNet::SocketProtocol
+	bool protocolSend( G::string_view , std::size_t , bool ) override ; // ClientProtocol::Sender
+	void onException( GNet::ExceptionSource * , std::exception & , bool done ) override ; // GNet::ExceptionHandler
 
 public:
 	Client( const Client & ) = delete ;
@@ -148,6 +149,7 @@ private:
 	void protocolDone( int , const std::string & , const std::string & , const G::StringArray & ) ; // see ClientProtocol::doneSignal()
 	void filterStart() ;
 	void filterDone( int ) ;
+	void onRoutingTimeout() ;
 	bool sendNext() ;
 	void start() ;
 	void messageFail( int = 0 , const std::string & = {} ) ;
@@ -160,10 +162,12 @@ private:
 
 private:
 	GNet::ExceptionSink m_es ;
+	GNet::ExceptionSink m_routing_es ;
 	FilterFactoryBase & m_ff ;
 	Config m_config ;
 	const GAuth::SaslClientSecrets & m_secrets ;
 	GStore::MessageStore * m_store ;
+	GNet::Timer<Client> m_routing_timer ;
 	std::shared_ptr<GStore::StoredMessage> m_message ;
 	std::unique_ptr<Filter> m_filter ;
 	std::unique_ptr<Filter> m_routing_filter ;

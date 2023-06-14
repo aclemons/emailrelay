@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -72,9 +72,7 @@ std::string G::Environment::get( const std::string & name , const std::string & 
 
 G::Environment G::Environment::minimal( bool )
 {
-	// could copy from _environ, but for now just act like inherit()
-	//char ** e = ::_environ ;
-	return Environment() ; // ie. inherit()
+	return Environment() ;
 }
 
 void G::Environment::put( const std::string & name , const std::string & value )

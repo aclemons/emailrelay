@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -262,7 +262,7 @@ void GSmtp::ServerSend::send( std::string line_in , bool go_secure )
 {
 	G_LOG( "GSmtp::ServerSend: tx>>: \"" << G::Str::printable(line_in) << "\"" ) ;
 	static const char * crlf = "\015\012" ;
-	m_sender->protocolSend( G::Str::printable(std::move(line_in)).append(crlf,2U) , go_secure || sendFlush() ) ;
+	m_sender->protocolSend( G::Str::printable(line_in).append(crlf,2U) , go_secure || sendFlush() ) ;
 	if( go_secure )
 		m_sender->protocolSecure() ;
 }

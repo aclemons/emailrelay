@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -68,6 +68,7 @@ use Check ;
 use System ;
 use Scanner ;
 use Verifier ;
+use DnsServer ;
 use Openssl ;
 use OpensslCast ;
 use OpensslRun ;
@@ -182,6 +183,15 @@ sub requireTls
 	$server->cleanup() ;
 	die "skipped: no tls\n"
 		if !$has_tls ;
+}
+
+sub requirePop
+{
+	my $server = new Server() ;
+	my $has_pop = $server->hasPop() ;
+	$server->cleanup() ;
+	die "skipped: no pop\n"
+		if !$has_pop ;
 }
 
 sub createCerts
@@ -569,6 +579,7 @@ sub testServerPop
 		PidFile => 1 ,
 		SpoolDir => 1 ,
 	) ;
+	requirePop() ;
 	my $server = new Server() ;
 	System::createFile( $server->popSecrets() , "server login me secret" ) ;
 	$server->run( \%args ) ;
@@ -606,6 +617,7 @@ sub testServerPopDisconnect
 		SpoolDir => 1 ,
 		Debug => 1 ,
 	) ;
+	requirePop() ;
 	my $server = new Server() ;
 	System::createFile( $server->popSecrets() , "server login me secret" ) ;
 	$server->run( \%args ) ;
@@ -708,7 +720,7 @@ sub testServerFlush
 	my $spool_dir_2 = System::createSpoolDir( "spool-2" ) ;
 	my $server_1 = new Server(undef,undef,undef,$spool_dir_1) ;
 	my $server_2 = new Server(System::nextPort(),undef,System::nextPort(),$spool_dir_2) ;
-	$server_1->set_dst( $server_2->smtpPort() ) ;
+	$server_1->set_forwardToPort( $server_2->smtpPort() ) ;
 	System::submitMessage( $spool_dir_1 , 10000 ) ;
 	System::submitMessage( $spool_dir_1 , 10000 ) ;
 	Check::ok( $server_1->run(\%args) , "failed to run" , $server_1->message() ) ;
@@ -760,7 +772,7 @@ sub testServerPolling
 	my $spool_dir_2 = System::createSpoolDir( "spool-2" ) ;
 	my $server_1 = new Server(undef,undef,undef,$spool_dir_1) ;
 	my $server_2 = new Server(System::nextPort(),undef,System::nextPort(),$spool_dir_2) ;
-	$server_1->set_dst( $server_2->smtpPort() ) ;
+	$server_1->set_forwardToPort( $server_2->smtpPort() ) ;
 	System::submitMessage( $spool_dir_1 , 10000 ) ;
 	$server_1->run(\%args) ;
 	$server_2->run(\%args) ;
@@ -886,7 +898,7 @@ sub testClientContinuesIfNoSecrets
 	) ;
 	my $server = new Server() ;
 	my $client = new Server() ;
-	$client->set_dst( $server->smtpPort() ) ;
+	$client->set_forwardToPort( $server->smtpPort() ) ;
 	System::createFile( $server->serverSecrets() , "server login me secret" ) ;
 	System::submitSmallMessage( $client->spoolDir() ) ;
 	Check::ok( $server->run(\%server_args) , "failed to run server" , $server->message() ) ;
@@ -919,7 +931,7 @@ sub testClientSavesReasonCode
 	) ;
 	my $test_server = new TestServer( System::nextPort() ) ;
 	my $client = new Server() ;
-	$client->set_dst( $test_server->port() ) ;
+	$client->set_forwardToPort( $test_server->port() ) ;
 	$test_server->run( "--fail-at 1" ) ;
 	System::submitSmallMessage( $client->spoolDir() ) ;
 	System::submitSmallMessage( $client->spoolDir() ) ;
@@ -1152,7 +1164,7 @@ sub _testFilterWithFileDeletion
 	) ;
 	my $server_1 = new Server() ; # proxy
 	my $server_2 = new Server( System::nextPort() ) ; # target server
-	$server_1->set_dst( $server_2->smtpPort() ) ;
+	$server_1->set_forwardToPort( $server_2->smtpPort() ) ;
 	Filter::create( $server_1->filter() , {} , {
 			unix => [
 				'rm `dirname $1`/emailrelay.*' ,
@@ -1515,7 +1527,7 @@ sub testProxyConnectsOnce
 	my $spool_dir_2 = System::createSpoolDir( "spool-2" ) ;
 	my $server_1 = new Server(undef,undef,undef,$spool_dir_1) ;
 	my $server_2 = new Server(System::nextPort,undef,System::nextPort(),$spool_dir_2) ;
-	$server_1->set_dst( $server_2->smtpPort() ) ;
+	$server_1->set_forwardToPort( $server_2->smtpPort() ) ;
 	Check::ok( $server_1->run(\%args) , "failed to run" , $server_1->message() ) ;
 	delete $args{Immediate} ;
 	delete $args{ForwardTo} ;
@@ -1564,29 +1576,97 @@ sub testDelivery
 		SpoolDir => 1 ,
 		PidFile => 1 ,
 		Filter => 1 ,
+		Verifier => 1 ,
 	) ;
 	my $server = new Server() ;
 	$server->set_filter( "deliver:" ) ;
+	my $verifier = new Verifier( $server->verifierPort() ) ;
+	Check::ok( $server->run(\%args) , "failed to run" , $server->message() ) ;
+	Check::running( $server->pid() , $server->message() ) ;
+	$verifier->run() ;
+	my $smtp_client = new SmtpClient( $server->smtpPort() , $System::localhost ) ;
+	Check::ok( $smtp_client->open() ) ;
+
+	# test that the message is delivered once to each derived mailbox
+	$smtp_client->submit_start( ['OK@remote.com','L.A@local.com','L.B@local.com'] ) ; # B for bob, L for local
+	$smtp_client->submit_line( "just testing" ) ;
+	$smtp_client->submit_end() ;
+	Check::fileMatchCount( $server->spoolDir()."/alice/emailrelay.*.envelope" , 1 ) ;
+	Check::allFilesContain( $server->spoolDir()."/alice/emailrelay.*.envelope" , "ToCount: 3" ) ;
+	Check::allFilesContain( $server->spoolDir()."/alice/emailrelay.*.envelope" , "To-Local: alice" ) ;
+	Check::fileMatchCount( $server->spoolDir()."/alice/emailrelay.*.content" , 1 ) ;
+	Check::fileMatchCount( $server->spoolDir()."/bob/emailrelay.*.envelope" , 1 ) ;
+	Check::fileMatchCount( $server->spoolDir()."/bob/emailrelay.*.content" , 1 ) ;
+	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.envelope" , 1 ) ;
+	Check::allFilesContain( $server->spoolDir()."/emailrelay.*.envelope" , "ToCount: 3" ) ;
+	Check::allFilesContain( $server->spoolDir()."/alice/emailrelay.*.envelope" , "To-Remote: OK" ) ;
+	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.content" , 1 ) ;
+
+	# tear down
+	$smtp_client->close() ;
+	$server->kill() ;
+	$verifier->kill() ;
+	$verifier->cleanup() ;
+	$server->cleanup() ;
+}
+
+sub _testSplitFilter
+{
+	# setup
+	my ( $filter_spec ) = @_ ;
+	my $raw = ( $filter_spec =~ m/raw/ ) ;
+	my %args = (
+		Log => 1 ,
+		LogFile => 1 ,
+		Verbose => 1 ,
+		Domain => 1 ,
+		Port => 1 ,
+		SpoolDir => 1 ,
+		PidFile => 1 ,
+		Filter => 1 ,
+	) ;
+	my $server = new Server() ;
+	$server->set_filter( $filter_spec ) ; # "split:"
 	Check::ok( $server->run(\%args) , "failed to run" , $server->message() ) ;
 	Check::running( $server->pid() , $server->message() ) ;
 	my $smtp_client = new SmtpClient( $server->smtpPort() , $System::localhost ) ;
 	Check::ok( $smtp_client->open() ) ;
 
-	# test that messages are delivered to a mailbox
-	$smtp_client->submit_start( ['Alice@local.com','Bob@local.com'] ) ;
+	# test that the message is split up, grouped by recipient address domain
+	$smtp_client->submit_start( ['OK.alice@Domain_one.com','OK.alice@Domain_two.com','OK.bob@Domain_one.com','OK.bob@domain_two.com'] ) ;
 	$smtp_client->submit_line( "just testing" ) ;
 	$smtp_client->submit_end() ;
-	Check::fileMatchCount( $server->spoolDir()."/Alice/emailrelay.*.envelope" , 1 ) ;
-	Check::fileMatchCount( $server->spoolDir()."/Alice/emailrelay.*.content" , 1 ) ;
-	Check::fileMatchCount( $server->spoolDir()."/Bob/emailrelay.*.envelope" , 1 ) ;
-	Check::fileMatchCount( $server->spoolDir()."/Bob/emailrelay.*.content" , 1 ) ;
+	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.envelope" , $raw ? 3 : 2 ) ;
+	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.content" , $raw ? 3 : 2 ) ;
+	if( $raw )
+	{
+		Check::allFilesContain( $server->spoolDir()."/emailrelay.*.envelope" , "ForwardTo: [dD]omain_" ) ;
+		Check::allFilesContain( $server->spoolDir()."/emailrelay.*.envelope" , "To-Remote:.*omain" ) ;
+	}
+	else
+	{
+		Check::allFilesContain( $server->spoolDir()."/emailrelay.*.envelope" , "ForwardTo: Domain_" ) ; # (case-preserving)
+		Check::allFilesContain( $server->spoolDir()."/emailrelay.*.envelope" , "To-Remote:.*alice" ) ;
+		Check::allFilesContain( $server->spoolDir()."/emailrelay.*.envelope" , "To-Remote:.*bob" ) ;
+	}
 
 	# tear down
+	$smtp_client->close() ;
 	$server->kill() ;
 	$server->cleanup() ;
 }
 
-sub testDeliveryWithVerifier
+sub testSplitFilter
+{
+	_testSplitFilter( "split:" ) ;
+}
+
+sub testSplitFilterRaw
+{
+	_testSplitFilter( "split:raw" ) ;
+}
+
+sub testSplitFilterWithVerifier
 {
 	# setup
 	my %args = (
@@ -1601,7 +1681,7 @@ sub testDeliveryWithVerifier
 		Verifier => 1 ,
 	) ;
 	my $server = new Server() ;
-	$server->set_filter( "deliver:" ) ;
+	$server->set_filter( "split:" ) ;
 	my $verifier = new Verifier( $server->verifierPort() ) ;
 	Check::ok( $server->run(\%args) , "failed to run" , $server->message() ) ;
 	Check::running( $server->pid() , $server->message() ) ;
@@ -1609,23 +1689,23 @@ sub testDeliveryWithVerifier
 	my $smtp_client = new SmtpClient( $server->smtpPort() , $System::localhost ) ;
 	Check::ok( $smtp_client->open() ) ;
 
-	# test that the message is delivered once to each derived mailbox
-	$smtp_client->submit_start( ['OK@remote.com','OK.B@remote.com','L.B@local.com'] ) ; # B for bob, L for local
+	# test that the message is split up, grouped according to the verifier's output
+	$smtp_client->submit_start( ['OK.C@dOmAiN_OnE.CoM','OK.C@DoMaIn_tWo.cOm','OK.C@DoMaIn_OnE.CoM','OK.C@dOmAiN_TwO.CoM'] ) ;
 	$smtp_client->submit_line( "just testing" ) ;
 	$smtp_client->submit_end() ;
-	Check::fileMatchCount( $server->spoolDir()."/bob/emailrelay.*.envelope" , 1 ) ;
-	Check::fileMatchCount( $server->spoolDir()."/bob/emailrelay.*.content" , 1 ) ;
-	Check::fileMatchCount( $server->spoolDir()."/OK/emailrelay.*.envelope" , 1 ) ;
-	Check::fileMatchCount( $server->spoolDir()."/OK/emailrelay.*.content" , 1 ) ;
+	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.envelope" , 2 ) ;
+	Check::allFilesContain( $server->spoolDir()."/emailrelay.*.envelope" , "ForwardTo: domain_" ) ;
+	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.content" , 2 ) ;
 
 	# tear down
-	$server->kill() ;
+	$smtp_client->close() ;
 	$verifier->kill() ;
 	$verifier->cleanup() ;
+	$server->kill() ;
 	$server->cleanup() ;
 }
 
-sub testLocalDelivery
+sub testRouting
 {
 	# setup
 	my %args = (
@@ -1636,77 +1716,50 @@ sub testLocalDelivery
 		Port => 1 ,
 		SpoolDir => 1 ,
 		PidFile => 1 ,
-		Verifier => 1 ,
-		LocalDelivery => 1 ,
+		Filter => 1 ,
+		ClientFilter => 1 ,
+		ForwardTo => 1 ,
 	) ;
 	my $server = new Server() ;
-	my $verifier = new Verifier( $server->verifierPort() ) ;
+	my $dnsserver = new DnsServer( System::nextPort() , "127.0.@.123" ) ; # should fail to connect
+	my $test_server = new TestServer( System::nextPort() ) ;
+	$server->set_filter( "split:" ) ;
+	$server->set_clientFilter( "mx:".$System::localhost.":".$dnsserver->port().(System::windows()?";":"\\;")."9" ) ;
+	$server->set_forwardToPort( $test_server->port() ) ;
 	Check::ok( $server->run(\%args) , "failed to run" , $server->message() ) ;
+	$dnsserver->run() ;
+	$test_server->run() ;
 	Check::running( $server->pid() , $server->message() ) ;
-	$verifier->run() ;
+	Check::running( $dnsserver->pid() ) ;
+	Check::running( $test_server->pid() ) ;
 	my $smtp_client = new SmtpClient( $server->smtpPort() , $System::localhost ) ;
 	Check::ok( $smtp_client->open() ) ;
-	mkdir $server->spoolDir()."/in" , 0777 ;
+	my $error_match =
+		System::windows() ?
+			"warning:.* routing: .* connection failed" :
+			"warning:.* routing: .* cannot connect to 127.0.*:9" ;
 
-	# test that the message is delivered for the local recipient
-	$smtp_client->submit_start( ['LocalBob@local.com','OK@remote.com'] ) ; # L for local, B for bob
+	# test that the message is split by domain with forward-to-addresses provided by the test dns server
+	$smtp_client->submit_start( ['OK@domain_one.com','OK@domain_two.com','OK@domain_one.com','OK@domain_two.com','OK@zero.net'] ) ;
 	$smtp_client->submit_line( "just testing" ) ;
 	$smtp_client->submit_end() ;
-	Check::fileMatchCount( $server->spoolDir()."/in/bob/emailrelay.*.envelope" , 1 ) ;
-	Check::fileMatchCount( $server->spoolDir()."/in/bob/emailrelay.*.content" , 1 ) ;
-	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.envelope" , 1 ) ;
-	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.content" , 1 ) ;
-	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.local" , 0 ) ;
+	System::waitForFileLineCount( $server->log() , $error_match , 2 ) ;
+	System::waitForFileLine( $server->log() , "info: envelope: deleting .*busy" ) ;
+	System::waitForFileLine( $server->log() , "info: no more messages to send" ) ;
+	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.envelope" , 2 ) ;
+	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.content" , 2 ) ;
+	Check::allFilesContain( $server->spoolDir()."/emailrelay.*.envelope" , "SplitGroup" ) ;
+	Check::allFilesContain( $server->spoolDir()."/emailrelay.*.envelope" , "ForwardTo: domain_" ) ;
+	Check::allFilesContain( $server->spoolDir()."/emailrelay.*.envelope" , "ForwardToAddress: 127.0.*:9" ) ;
 
 	# tear down
+	$smtp_client->close() ;
+	$dnsserver->kill() ;
 	$server->kill() ;
-	$verifier->kill() ;
-	$verifier->cleanup() ;
-	System::deleteSpoolDir( $server->spoolDir()."/in/bob" ) ;
-	System::rmdir_( $server->spoolDir()."/in" ) ;
+	$test_server->kill() ;
+	$dnsserver->cleanup() ;
 	$server->cleanup() ;
-}
-
-sub testLocalDeliveryOnly
-{
-	# setup
-	my %args = (
-		Log => 1 ,
-		LogFile => 1 ,
-		Verbose => 1 ,
-		Domain => 1 ,
-		Port => 1 ,
-		SpoolDir => 1 ,
-		PidFile => 1 ,
-		Verifier => 1 ,
-		LocalDelivery => 1 ,
-	) ;
-	my $server = new Server() ;
-	my $verifier = new Verifier( $server->verifierPort() ) ;
-	Check::ok( $server->run(\%args) , "failed to run" , $server->message() ) ;
-	Check::running( $server->pid() , $server->message() ) ;
-	$verifier->run() ;
-	my $smtp_client = new SmtpClient( $server->smtpPort() , $System::localhost ) ;
-	Check::ok( $smtp_client->open() ) ;
-	mkdir $server->spoolDir()."/in" , 0777 ;
-
-	# test that the message is delivered for the local recipient and nothing spooled
-	$smtp_client->submit_start( 'LocalBob@local.com' ) ; # L for local, B for bob
-	$smtp_client->submit_line( "just testing" ) ;
-	$smtp_client->submit_end() ;
-	Check::fileMatchCount( $server->spoolDir()."/in/bob/emailrelay.*.envelope" , 1 ) ;
-	Check::fileMatchCount( $server->spoolDir()."/in/bob/emailrelay.*.content" , 1 ) ;
-	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.envelope" , 0 ) ;
-	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.content" , 0 ) ;
-	Check::fileMatchCount( $server->spoolDir()."/emailrelay.*.local" , 0 ) ;
-
-	# tear down
-	$server->kill() ;
-	$verifier->kill() ;
-	$verifier->cleanup() ;
-	System::deleteSpoolDir( $server->spoolDir()."/in/bob" ) ;
-	System::rmdir_( $server->spoolDir()."/in" ) ;
-	$server->cleanup() ;
+	$test_server->cleanup() ;
 }
 
 sub testClientFilterPass
@@ -1741,7 +1794,7 @@ sub testClientFilterPass
 	$server_args{Port} = 1 ;
 	Check::ok( $server_2->run(\%server_args) , "failed to run" , $server_2->message() ) ;
 	Check::running( $server_2->pid() , $server_2->message() ) ;
-	$server_1->set_dst( $server_2->smtpPort() ) ;
+	$server_1->set_forwardToPort( $server_2->smtpPort() ) ;
 	my $outputfile = System::tempfile( "output" ) ;
 	Filter::create( $server_1->clientFilter() , {edit=>1} , {
 			unix => [
@@ -1812,7 +1865,7 @@ sub testClientFilterBlock
 	$server_args{Port} = 1 ;
 	Check::ok( $server_2->run(\%server_args) , "failed to run" , $server_2->message() ) ;
 	Check::running( $server_2->pid() , $server_2->message() ) ;
-	$server_1->set_dst( $server_2->smtpPort() ) ;
+	$server_1->set_forwardToPort( $server_2->smtpPort() ) ;
 	my $outputfile = System::tempfile( "output" ) ;
 	Filter::create( $server_1->clientFilter() , {edit=>1} , {
 			unix => [
@@ -1885,7 +1938,7 @@ sub testClientNetworkFilter
 	$scanner->run() ;
 	Check::ok( $server_2->run(\%server_args) , "failed to run" , $server_2->message() ) ;
 	Check::running( $server_2->pid() , $server_2->message() ) ;
-	$server_1->set_dst( $server_2->smtpPort() ) ;
+	$server_1->set_forwardToPort( $server_2->smtpPort() ) ;
 	Check::ok( $server_1->run(\%args) , "failed to run" , $server_1->message() ) ;
 
 	# test that the messages are fowarded or not according to the filter
@@ -1929,7 +1982,7 @@ sub testClientGivenUnknownMechanisms
 	Check::fileMatchCount( $spool_dir ."/emailrelay.*.envelope", 2 ) ;
 	my $emailrelay = new Server( undef , undef , undef , $spool_dir ) ;
 	System::createFile( $emailrelay->clientSecrets() , "client login me secret" ) ;
-	$emailrelay->set_dst( $test_server->port() ) ;
+	$emailrelay->set_forwardToPort( $test_server->port() ) ;
 
 	# test that protocol fails and one message fails
 	Check::ok( $emailrelay->run( \%args ) , "failed to run" , $emailrelay->message() ) ;
@@ -1968,7 +2021,7 @@ sub testClientAuthenticationFailure
 	Check::fileMatchCount( $spool_dir ."/emailrelay.*.envelope", 2 ) ;
 	my $emailrelay = new Server( undef , undef , undef , $spool_dir ) ;
 	System::createFile( $emailrelay->clientSecrets() , "client login me secret" ) ;
-	$emailrelay->set_dst( $test_server->port() ) ;
+	$emailrelay->set_forwardToPort( $test_server->port() ) ;
 
 	# test that protocol fails and one message fails
 	Check::ok( $emailrelay->run( \%args ) , "failed to run" , $emailrelay->message() ) ;
@@ -2007,7 +2060,7 @@ sub testClientMessageFailure
 	System::submitSmallMessage( $spool_dir ) ;
 	Check::fileMatchCount( $spool_dir ."/emailrelay.*.envelope", 4 ) ;
 	my $emailrelay = new Server( undef , undef , undef , $spool_dir ) ;
-	$emailrelay->set_dst( $test_server->port() ) ;
+	$emailrelay->set_forwardToPort( $test_server->port() ) ;
 
 	# test that two of the four messages are left as ".bad"
 	Check::ok( $emailrelay->run( \%args ) , "failed to run" , $emailrelay->message() ) ;
@@ -2048,7 +2101,7 @@ sub testClientInvalidRecipients
 	System::submitSmallMessage( $spool_dir , "rejectme1\@there.com" , "rejectme2\@there.com" ) ;
 	Check::fileMatchCount( $spool_dir ."/emailrelay.*.envelope", 5 ) ;
 	my $emailrelay = new Server( undef , undef , undef , $spool_dir ) ;
-	$emailrelay->set_dst( $test_server->port() ) ;
+	$emailrelay->set_forwardToPort( $test_server->port() ) ;
 
 	# test that the three messages with "rejectme" are left as ".bad"
 	Check::ok( $emailrelay->run(\%args) , "failed to run" , $emailrelay->message() ) ;
@@ -2092,7 +2145,7 @@ sub testClientInvalidRecipientsWithForwardToSome
 	System::submitSmallMessage( $spool_dir , "rejectme1\@there.com" , "rejectme2\@there.com" ) ;
 	Check::fileMatchCount( $spool_dir ."/emailrelay.*.envelope", 5 ) ;
 	my $emailrelay = new Server( undef , undef , undef , $spool_dir ) ;
-	$emailrelay->set_dst( $test_server->port() ) ;
+	$emailrelay->set_forwardToPort( $test_server->port() ) ;
 
 	# test that the three messages with "rejectme" are left as ".bad" and have no "acceptme" recipients
 	Check::ok( $emailrelay->run(\%args) , "failed to run" , $emailrelay->message() ) ;
@@ -2295,7 +2348,7 @@ sub _testTlsClient
 	my $spool_dir = System::createSpoolDir() ;
 	System::submitSmallMessage( $spool_dir ) ;
 	my $emailrelay = new Server( undef , undef , undef , $spool_dir , $client_cert , $client_ca ) ;
-	$emailrelay->set_dst( $server_port ) ;
+	$emailrelay->set_forwardToPort( $server_port ) ;
 	my $admin_client = new AdminClient( $emailrelay->adminPort() , $System::localhost ) ;
 	Check::ok( $emailrelay->run( \%args ) , "failed to start" , $emailrelay->message() ) ;
 	Check::ok( $admin_client->open() , "cannot connect for admin" ) ;
@@ -2420,7 +2473,7 @@ sub _testTls
 	System::submitSmallMessage( $client_spool_dir ) ;
 	my $client = new Server( undef , undef , undef , $client_spool_dir , $client_cert , $client_ca ) ;
 	my $server = new Server( $server_port , undef , undef , $server_spool_dir , $server_cert , $server_ca ) ;
-	$client->set_dst( $server_port ) ;
+	$client->set_forwardToPort( $server_port ) ;
 	Check::ok( $server->run( \%server_args ) , "failed to start" , $server->message() ) ;
 	$client->run( \%client_args ) ;
 	my $client_log = $client->log() ;
@@ -2430,7 +2483,7 @@ sub _testTls
 	if( $special == 1 )
 	{
 		System::waitForFiles( $server->spoolDir()."/emailrelay.*.envelope" , 1 ) ;
-		System::waitForFileLine( $server_log , "envelope file:" ) ;
+		System::waitForFileLine( $server_log , "envelope: new" ) ;
 		Check::fileDoesNotContain( $server_log , "tls.*established" ) ;
 		Check::fileDoesNotContain( $server_log , "tls error" ) ;
 		Check::fileDoesNotContain( $client_log , "tls.*established" ) ;
@@ -2567,7 +2620,7 @@ sub run
 		{
 			print $System::verbose ? "$name: failed: $error\n\n" : "failed: $error\n" ;
 			$run_all_ok = 0 ;
-			return 1 unless $opt_keep_going ;
+			return $opt_keep_going ? 0 : 1 ;
 		}
 	}
 	else

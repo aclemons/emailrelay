@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -42,8 +42,8 @@ QT_SOURCES = \
 	guidialog.h \
 	guipage.cpp \
 	guipage.h \
-	pages.h \
-	pages.cpp \
+	guipages.cpp \
+	guipages.h \
 	gqt.h
 
 LIB_SOURCES = \
@@ -70,17 +70,17 @@ emailrelay.no.qm: emailrelay.no.qm_in
 	@test -s $(QM_FILES)
 
 if GCONFIG_WINDOWS
-OS_EXTRA_DIST = $(MAC_SOURCES) $(UNIX_SOURCES)
 OS_SOURCES = $(WIN32_SOURCES)
+OS_EXTRA_DIST = $(MAC_SOURCES) $(UNIX_SOURCES)
 OS_NOINST =
 else
 if GCONFIG_MAC
-OS_EXTRA_DIST = $(UNIX_SOURCES) $(WIN32_SOURCES)
 OS_SOURCES = $(MAC_SOURCES)
+OS_EXTRA_DIST = $(UNIX_SOURCES) $(WIN32_SOURCES)
 OS_NOINST =
 else
-OS_EXTRA_DIST = $(MAC_SOURCES) $(WIN32_SOURCES)
 OS_SOURCES = $(UNIX_SOURCES)
+OS_EXTRA_DIST = $(MAC_SOURCES) $(WIN32_SOURCES)
 OS_NOINST =
 endif
 endif
@@ -99,7 +99,7 @@ AM_INSTALL_PROGRAM_FLAGS=-s
 MOC_OUTPUT=\
 	moc_guidialog.cpp \
 	moc_guipage.cpp \
-	moc_pages.cpp
+	moc_guipages.cpp
 
 CLEANFILES = $(MOC_OUTPUT) $(QM_FILES)
 DISTCLEANFILES = ./.deps/moc*
@@ -128,12 +128,12 @@ moc_guidialog.cpp: $(srcdir)/guidialog.h
 moc_guipage.cpp: $(srcdir)/guipage.h
 	$(GCONFIG_QT_MOC) $< -o $@
 
-moc_pages.cpp: $(srcdir)/pages.h
+moc_guipages.cpp: $(srcdir)/guipages.h
 	$(GCONFIG_QT_MOC) $< -o $@
 
 guidialog.o: moc_guidialog.cpp
 guipage.o: moc_guipage.cpp
-pages.o: moc_pages.cpp
+guipages.o: moc_guipages.cpp
 
 noinst_SCRIPTS = $(OS_NOINST)
 noinst_LIBRARIES = libguimain.a

@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -17,14 +17,6 @@
 
 noinst_LIBRARIES = libgfilters.a
 
-if GCONFIG_EXTRA_FILTERS
- FILTER_SOURCES = # gextrafilter.cpp gextrafilter.h
- FILTER_EXTRA_DIST =
-else
- FILTER_SOURCES =
- FILTER_EXTRA_DIST = # gextrafilter.cpp gextrafilter.h
-endif
-
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/glib \
 	-I$(top_srcdir)/src/gssl \
@@ -35,7 +27,6 @@ AM_CPPFLAGS = \
 	-DG_LIB_SMALL
 
 libgfilters_a_SOURCES = \
-	$(FILTER_SOURCES) \
 	gcopyfilter.cpp \
 	gcopyfilter.h \
 	gdeliveryfilter.cpp \
@@ -60,7 +51,4 @@ libgfilters_a_SOURCES = \
 	gspamfilter.h \
 	gsplitfilter.cpp \
 	gsplitfilter.h
-
-EXTRA_DIST = \
-	$(FILTER_EXTRA_DIST)
 

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -38,7 +38,6 @@ GPop::ServerProtocol::ServerProtocol( Sender & sender , Security & security , St
 		m_security(security) ,
 		m_store(store) ,
 		m_config(config) ,
-		m_store_lock(m_store) ,
 		m_sasl(GAuth::SaslServerFactory::newSaslServer(server_secrets,true,sasl_server_config,config.sasl_server_challenge_domain)) ,
 		m_peer_address(peer_address) ,
 		m_fsm(State::sStart,State::sEnd,State::s_Same,State::s_Any) ,
@@ -181,7 +180,7 @@ bool GPop::ServerProtocol::sendContentLine( std::string & line , bool & eot )
 	line.erase( 1U ) ; // leave "."
 	bool eof = !G::Str::readLine( *m_content , line ,
 		m_config.crlf_only ? G::Str::Eol::CrLf : G::Str::Eol::Cr_Lf_CrLf ,
-		/*erase=*/false ) ;
+		/*pre_erase_result=*/false ) ;
 
 	eot = eof || limited ;
 	if( eot ) line.erase( 1U ) ;
@@ -259,7 +258,7 @@ void GPop::ServerProtocol::doQuitEarly( const std::string & , bool & )
 
 void GPop::ServerProtocol::doQuit( const std::string & , bool & )
 {
-	m_store_lock.commit() ;
+	m_store_list.commit() ;
 	sendLine( std::string("+OK ",4U).append(m_text.quit()) ) ;
 	throw ProtocolDone() ;
 }
@@ -267,9 +266,9 @@ void GPop::ServerProtocol::doQuit( const std::string & , bool & )
 void GPop::ServerProtocol::doStat( const std::string & , bool & )
 {
 	sendLine( std::string("+OK ",4U)
-		.append(std::to_string(m_store_lock.messageCount()))
+		.append(std::to_string(m_store_list.messageCount()))
 		.append(1U,' ')
- 		.append(std::to_string(m_store_lock.totalByteCount())) ) ;
+ 		.append(std::to_string(m_store_list.totalByteCount())) ) ;
 }
 
 void GPop::ServerProtocol::doUidl( const std::string & line , bool & )
@@ -291,7 +290,7 @@ void GPop::ServerProtocol::sendList( const std::string & line , bool uidl )
 	if( !id_string.empty() )
 	{
 		id = commandNumber( line , -1 ) ;
-		if( !m_store_lock.valid(id) )
+		if( !m_store_list.valid(id) )
 		{
 			sendError( "invalid id" ) ;
 			return ;
@@ -299,25 +298,33 @@ void GPop::ServerProtocol::sendList( const std::string & line , bool uidl )
 	}
 
 	// send back the list with sizes or uidls
-	bool multi_line = id == -1 ;
-	GPop::StoreLock::List list = m_store_lock.list( id ) ;
 	std::ostringstream ss ;
 	ss << "+OK " ;
-	if( multi_line ) ss << list.size() << " message(s)" << "\r\n" ;
-	for( auto & item : list )
-	{
-		ss << item.id << " " ;
-		if( uidl ) ss << item.uidl ;
-		if( !uidl ) ss << item.size ;
-		if( multi_line ) ss << "\r\n" ;
-	}
+	bool multi_line = id == -1 ;
 	if( multi_line )
 	{
+		ss << m_store_list.messageCount() << " message(s)" << "\r\n" ;
+		std::size_t i = 1 ;
+		for( auto item_p = m_store_list.cbegin() ; item_p != m_store_list.cend() ; ++item_p , ++i )
+		{
+			const auto & item = *item_p ;
+			if( !item.deleted )
+			{
+				ss << i << " " ;
+				if( uidl ) ss << item.uidl() ;
+				if( !uidl ) ss << item.size ;
+				ss << "\r\n" ;
+			}
+		}
 		ss << "." ;
 		sendLines( ss ) ;
 	}
 	else
 	{
+		auto item = m_store_list.get( id ) ;
+		ss << id << " " ;
+		if( uidl ) ss << item.uidl() ;
+		if( !uidl ) ss << item.size ;
 		sendLine( ss.str() ) ;
 	}
 }
@@ -325,18 +332,18 @@ void GPop::ServerProtocol::sendList( const std::string & line , bool uidl )
 void GPop::ServerProtocol::doRetr( const std::string & line , bool & more )
 {
 	int id = commandNumber( line , -1 ) ;
-	if( id == -1 || !m_store_lock.valid(id) )
+	if( id == -1 || !m_store_list.valid(id) )
 	{
 		more = false ; // stay in the same state
 		sendError() ;
 	}
 	else
 	{
-		m_content = m_store_lock.get(id) ;
+		m_content = m_store_list.content(id) ;
 		m_body_limit = -1L ;
 
 		std::ostringstream ss ;
-		ss << "+OK " << m_store_lock.byteCount(id) << " octets" ;
+		ss << "+OK " << m_store_list.byteCount(id) << " octets" ;
 		sendLine( ss.str() ) ;
 	}
 }
@@ -346,14 +353,14 @@ void GPop::ServerProtocol::doTop( const std::string & line , bool & more )
 	int id = commandNumber( line , -1 , 1U ) ;
 	int n = commandNumber( line , -1 , 2U ) ;
 	G_DEBUG( "ServerProtocol::doTop: " << id << ", " << n ) ;
-	if( id == -1 || !m_store_lock.valid(id) || n < 0 )
+	if( id == -1 || !m_store_list.valid(id) || n < 0 )
 	{
 		more = false ; // stay in the same state
 		sendError() ;
 	}
 	else
 	{
-		m_content = m_store_lock.get( id ) ;
+		m_content = m_store_list.content( id ) ;
 		m_body_limit = n ;
 		m_in_body = false ;
 		sendOk() ;
@@ -363,20 +370,20 @@ void GPop::ServerProtocol::doTop( const std::string & line , bool & more )
 void GPop::ServerProtocol::doDele( const std::string & line , bool & )
 {
 	int id = commandNumber( line , -1 ) ;
-	if( id == -1 || !m_store_lock.valid(id) )
+	if( id == -1 || !m_store_list.valid(id) )
 	{
 		sendError() ;
 	}
 	else
 	{
-		m_store_lock.remove( id ) ;
+		m_store_list.remove( id ) ;
 		sendOk() ;
 	}
 }
 
 void GPop::ServerProtocol::doRset( const std::string & , bool & )
 {
-	m_store_lock.rollback() ;
+	m_store_list.rollback() ;
 	sendOk() ;
 }
 
@@ -470,13 +477,14 @@ void GPop::ServerProtocol::doAuthComplete( const std::string & , bool & )
 {
 	G_LOG_S( "GPop::ServerProtocol: pop authentication of " << m_sasl->id() << " connected from " << m_peer_address.displayString() ) ;
 	m_user = m_sasl->id() ;
-	lockStore() ;
+	readStore( m_user ) ;
 	sendOk() ;
 }
 
-void GPop::ServerProtocol::lockStore()
+void GPop::ServerProtocol::readStore( const std::string & user )
 {
-	m_store_lock.lock( m_user ) ;
+	m_store_user = std::make_unique<StoreUser>( m_store , user ) ;
+	m_store_list = StoreList( *m_store_user , m_store.allowDelete() ) ;
 }
 
 void GPop::ServerProtocol::doStls( const std::string & , bool & )
@@ -549,7 +557,7 @@ void GPop::ServerProtocol::doPass( const std::string & line , bool & ok )
 		std::string ignore = m_sasl->apply( rsp , done ) ;
 		if( done && m_sasl->authenticated() )
 		{
-			lockStore() ;
+			readStore( m_user ) ;
 			sendOk() ;
 		}
 		else
@@ -575,7 +583,7 @@ void GPop::ServerProtocol::doApop( const std::string & line , bool & ok )
 		if( done && m_sasl->authenticated() )
 		{
 			m_user = m_sasl->id() ;
-			lockStore() ;
+			readStore( m_user ) ;
 			sendOk() ;
 		}
 		else

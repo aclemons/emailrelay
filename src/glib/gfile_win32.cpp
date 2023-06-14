@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,10 +20,12 @@
 
 #include "gdef.h"
 #include "gfile.h"
+#include "gassert.h"
 #include "gprocess.h"
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <io.h>
+#include <cstdio>
 #include <direct.h>
 #include <share.h>
 #include <iomanip>
@@ -57,6 +59,20 @@ namespace G
 					return _sopen( path , flags | _O_NOINHERIT , _SH_DENYNO , pmode ) ;
 				#else
 					return _open( path , flags | _O_NOINHERIT , pmode ) ;
+				#endif
+			#endif
+		}
+		std::FILE * fopen( const char * path , const char * mode ) noexcept
+		{
+			#if GCONFIG_HAVE_FSOPEN
+				return _fsopen( path , mode , _SH_DENYNO ) ;
+			#else
+				#if GCONFIG_HAVE_FOPEN_S
+					std::FILE * fp = nullptr ;
+					errno_t e = fopen_s( &fp , path , mode ) ;
+					return e ? nullptr : fp ;
+				#else
+					return std::fopen( path , mode ) ;
 				#endif
 			#endif
 		}
@@ -113,6 +129,12 @@ int G::File::open( const char * path , CreateExclusive ) noexcept
 	return FileImp::open( path , _O_WRONLY|_O_CREAT|_O_EXCL|_O_BINARY , pmode ) ;
 }
 
+std::FILE * G::File::fopen( const char * path , const char * mode ) noexcept
+{
+	G_ASSERT( path && mode ) ;
+	return FileImp::fopen( path , mode ) ;
+}
+
 bool G::File::probe( const char * path ) noexcept
 {
 	int pmode = _S_IREAD | _S_IWRITE ;
@@ -128,6 +150,18 @@ void G::File::create( const Path & path )
 	if( fd < 0 )
 		throw CannotCreate( path.str() ) ;
 	_close( fd ) ;
+}
+
+bool G::File::renameOnto( const Path & from , const Path & to , std::nothrow_t ) noexcept
+{
+	bool ok = 0 == std::rename( from.cstr() , to.cstr() ) ;
+	int error = Process::errno_() ;
+	if( !ok && error == EEXIST ) // MS documentation says EACCES :-<
+	{
+		std::remove( to.cstr() ) ;
+		ok = 0 == std::rename( from.cstr() , to.cstr() ) ;
+	}
+	return ok ;
 }
 
 ssize_t G::File::read( int fd , char * p , std::size_t n ) noexcept

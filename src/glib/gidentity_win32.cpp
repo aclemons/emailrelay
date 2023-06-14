@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -36,17 +36,18 @@ namespace G
 		struct Account
 		{
 			Account() = default ;
-			Account( SID_NAME_USE , const std::string & , const std::string & ) ;
+			Account( SID_NAME_USE , const std::string & , const std::string & , const std::string & ) ;
 			SID_NAME_USE type {SidTypeInvalid} ;
 			std::string sid ;
 			std::string domain ;
+			std::string name ; // if requested
 			bool valid() const noexcept { return type == SidTypeUser ; }
 		} ;
 		std::string sid() ;
 		std::string rootsid() ;
 		std::string sidstr( PSID sid_p ) ;
 		std::string computername() ;
-		Account lookup( const std::string & name ) ;
+		Account lookup( const std::string & name , bool = false ) ;
 	}
 }
 
@@ -61,7 +62,7 @@ G::Identity::Identity() noexcept : // invalid()
 	m_uid(-1) ,
 	m_gid(-1)
 {
-	static_assert( noexcept(std::string()) , "" ) ; // c++17
+	static_assert( noexcept(std::string()) , "" ) ; // only guaranteed for c++17
 }
 
 G::Identity::Identity( SignalSafe ) noexcept : // invalid()
@@ -145,23 +146,30 @@ bool G::Identity::operator!=( const Identity & other ) const noexcept
 	return m_sid != other.m_sid ;
 }
 
-G::Identity G::Identity::lookup( const std::string & name )
+std::pair<G::Identity,std::string> G::Identity::lookup( const std::string & name )
 {
-	Identity result ;
-	auto account = IdentityImp::lookup( name ) ;
+	auto account = IdentityImp::lookup( name , true ) ;
 	if( !account.valid() )
 		throw NoSuchUser( name ) ;
-	result.m_sid = account.sid ;
-	return result ;
+
+	Identity id ;
+	id.m_sid = account.sid ;
+	return std::make_pair( id , account.name ) ;
 }
 
-G::Identity G::Identity::lookup( const std::string & name , std::nothrow_t )
+std::pair<G::Identity,std::string> G::Identity::lookup( const std::string & name , std::nothrow_t )
 {
-	Identity result ;
-	auto account = IdentityImp::lookup( name ) ;
+	auto account = IdentityImp::lookup( name , true ) ;
 	if( account.valid() )
-		result.m_sid = account.sid ;
-	return result ;
+	{
+		Identity id ;
+		id.m_sid = account.sid ;
+		return std::make_pair( id , account.name ) ;
+	}
+	else
+	{
+		return std::make_pair( Identity() , std::string() ) ;
+	}
 }
 
 gid_t G::Identity::lookupGroup( const std::string & group )
@@ -234,25 +242,44 @@ std::string G::IdentityImp::computername()
 	return std::string( &buffer[0] ) ;
 }
 
-G::IdentityImp::Account G::IdentityImp::lookup( const std::string & name )
+G::IdentityImp::Account G::IdentityImp::lookup( const std::string & name , bool with_canonical_name )
 {
+	const Account error ;
 	if( name.empty() || name.find('\\') != std::string::npos )
-		return {} ;
+		return error ;
 	std::string domain = computername() ; // => local accounts
 	if( domain.empty() )
-		return {} ;
+		return error ;
 	std::string full_name = domain.append(1U,'\\').append(name) ;
 	DWORD sidsize = 0 ;
 	DWORD domainsize = 0 ;
 	SID_NAME_USE type = SidTypeInvalid ;
 	if( LookupAccountNameA( NULL , full_name.c_str() , NULL , &sidsize , NULL , &domainsize , &type ) )
-		return {} ;
+		return error ;
 	G::Buffer<char> sidbuffer( std::max(DWORD(1),sidsize) ) ;
 	std::vector<char> domainbuffer( std::max(DWORD(1),domainsize) ) ;
 	if( !LookupAccountNameA( NULL , full_name.c_str() , &sidbuffer[0] , &sidsize , &domainbuffer[0] , &domainsize , &type ) )
-		return {} ;
+		return error ;
 	SID * sid_p = G::buffer_cast<SID*>(sidbuffer) ;
-	return { type , sidstr(sid_p) , &domain[0] } ;
+
+	std::string canonical_name ;
+	if( with_canonical_name )
+	{
+		DWORD namebuffersize = 0 ;
+		DWORD domainbuffersize = 0 ;
+		if( LookupAccountSidA( NULL , sid_p , NULL , &namebuffersize , NULL , &domainbuffersize , &type ) )
+			return error ;
+		std::vector<char> namebuffer( std::max(DWORD(1),namebuffersize) ) ;
+		std::vector<char> domainbuffer( std::max(DWORD(1),domainbuffersize) ) ; // not used
+		if( !LookupAccountSidA( NULL , sid_p , &namebuffer[0] , &namebuffersize , &domainbuffer[0] , &domainbuffersize , &type ) )
+			return error ;
+		namebuffer[namebuffer.size()-1U] = '\0' ;
+		canonical_name = std::string( &namebuffer[0] ) ;
+		if( canonical_name.empty() )
+			return error ;
+	}
+
+	return { type , sidstr(sid_p) , &domain[0] , canonical_name } ;
 }
 
 std::string G::IdentityImp::rootsid()
@@ -268,10 +295,12 @@ std::string G::IdentityImp::rootsid()
 	return sidstr( sid_p ) ;
 }
 
-G::IdentityImp::Account::Account( SID_NAME_USE type_ , const std::string & sid_ , const std::string & domain_ ) :
-	type(type_) ,
-	sid(sid_) ,
-	domain(domain_)
+G::IdentityImp::Account::Account( SID_NAME_USE type_ , const std::string & sid_ ,
+	const std::string & domain_ , const std::string & name_ ) :
+		type(type_) ,
+		sid(sid_) ,
+		domain(domain_) ,
+		name(name_)
 {
 }
 

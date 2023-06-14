@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,8 +22,11 @@
 #include "gsplitfilter.h"
 #include "gstoredfile.h"
 #include "gprocess.h"
+#include "gstringview.h"
+#include "gstringtoken.h"
 #include "gexception.h"
 #include "gscope.h"
+#include "gassert.h"
 #include "glog.h"
 #include <algorithm>
 #include <iterator>
@@ -33,13 +36,15 @@ GFilters::SplitFilter::SplitFilter( GNet::ExceptionSink es , GStore::FileStore &
 		SimpleFilterBase(es,filter_type,"split:") ,
 		m_store(store) ,
 		m_filter_type(filter_type) ,
-		m_filter_config(filter_config) ,
-		m_spec(spec)
+		m_filter_config(filter_config)
 {
+	G::string_view spec_sv = spec ;
+	for( G::StringTokenView t(spec_sv,";",1U) ; t ; ++t )
+	{
+		if( t() == "raw"_sv )
+			m_raw = true ;
+	}
 }
-
-GFilters::SplitFilter::~SplitFilter()
-= default ;
 
 GSmtp::Filter::Result GFilters::SplitFilter::run( const GStore::MessageId & message_id ,
 	bool & rescan_out , GStore::FileStore::State e_state )
@@ -53,8 +58,15 @@ GSmtp::Filter::Result GFilters::SplitFilter::run( const GStore::MessageId & mess
 	G::StringArray domains ;
 	std::transform( envelope.to_remote.begin() , envelope.to_remote.end() ,
 		std::back_inserter(domains) , [](std::string &to_){return G::Str::tail(to_,"@");} ) ;
+	bool raw = m_raw ;
+	std::for_each( domains.begin() , domains.end() , [raw](std::string &to_){normalise(to_,raw);} ) ;
 	std::sort( domains.begin() , domains.end() ) ;
 	domains.erase( std::unique(domains.begin(),domains.end()) , domains.end() ) ;
+	if( domains.empty() )
+	{
+		G_LOG( "GFilters::SplitFilter::start: split: no remote domains: nothing to do" ) ;
+		return Result::ok ;
+	}
 
 	// assign a message-id per domain
 	G::StringArray ids ;
@@ -68,7 +80,7 @@ GSmtp::Filter::Result GFilters::SplitFilter::run( const GStore::MessageId & mess
 	if( ids.size() > 1U )
 	{
 		extra_headers << m_store.x() << "SplitGroupCount: " << ids.size() << "\n" ;
-		for( const auto id : ids )
+		for( const auto & id : ids )
 			extra_headers << m_store.x() << "SplitGroup: " << id << "\n" ;
 	}
 
@@ -77,18 +89,19 @@ GSmtp::Filter::Result GFilters::SplitFilter::run( const GStore::MessageId & mess
 	{
 		std::string domain = domains[i] ;
 		GStore::MessageId new_id( ids[i] ) ;
-		G::StringArray recipients = match( envelope.to_remote , domain ) ;
+		G::StringArray recipients = matching( envelope.to_remote , domain ) ;
+		G_ASSERT( !recipients.empty() ) ;
 
 		G::Path new_content_path = m_store.contentPath( new_id ) ;
 		G::Path new_envelope_path = m_store.envelopePath( new_id ) ;
 
 		G_LOG( "GFilters::SplitFilter::start: split: creating message "
-			<< new_id.str() << ": setting forward-to [" << domain << "]" ) ;
+			<< new_id.str() << ": forward-to [" << domain << "]" ) ;
 
 		GStore::Envelope new_envelope = envelope ;
 		new_envelope.to_local.clear() ;
 		new_envelope.to_remote = recipients ;
-		new_envelope.forward_to = domain ;
+		new_envelope.forward_to = G::Str::tail( recipients.at(0) , "@" ) ; // case-preserving -- moot
 
 		if( !FileOp::hardlink( content_path , new_content_path ) )
 			throw G::Exception( "split: cannot copy content file" ,
@@ -112,13 +125,15 @@ GSmtp::Filter::Result GFilters::SplitFilter::run( const GStore::MessageId & mess
 
 	// update the original message
 	G_LOG( "GFilters::SplitFilter::start: split: updating message "
-		<< message_id.str() << ": setting forward-to [" << domains[0] << "]" ) ;
-	std::string domain = domains[0] ;
-	G::StringArray recipients = match( envelope.to_remote , domain ) ;
+		<< message_id.str() << ": forward-to [" << domains[0] << "]" ) ;
+	G_ASSERT( !domains.empty() ) ;
+	G::StringArray recipients = matching( envelope.to_remote , domains.at(0) ) ;
+	G_ASSERT( !recipients.empty() ) ;
+	std::string forward_to = G::Str::tail( recipients.at(0) , "@" ) ; // case-preserving
 	GStore::StoredFile msg( m_store , message_id , GStore::StoredFile::State::New ) ;
-	msg.editEnvelope( [domain,&recipients](GStore::Envelope &env_){
+	msg.editEnvelope( [forward_to,&recipients](GStore::Envelope &env_){
 			env_.to_remote = recipients ;
-			env_.forward_to = domain ;
+			env_.forward_to = forward_to ;
 		} , &extra_headers ) ;
 
 	if( m_filter_type == Filter::Type::server && domains.size() >= 2U )
@@ -126,11 +141,23 @@ GSmtp::Filter::Result GFilters::SplitFilter::run( const GStore::MessageId & mess
 	return Result::ok ;
 }
 
-G::StringArray GFilters::SplitFilter::match( const G::StringArray & recipients , const std::string & domain )
+G::StringArray GFilters::SplitFilter::matching( const G::StringArray & recipients , const std::string & domain ) const
 {
 	G::StringArray result ;
+	bool raw = m_raw ;
 	std::copy_if( recipients.begin() , recipients.end() , std::back_inserter(result) ,
-		[domain](const std::string &to_){return G::Str::tail(to_,"@") == domain;} ) ;
+		[domain,raw](const std::string &to_){return match(G::Str::tail(to_,"@"),domain,raw) ;} ) ;
 	return result ;
+}
+
+bool GFilters::SplitFilter::match( const std::string & a , const std::string & b , bool raw )
+{
+	return raw ? a == b : G::Str::imatch( a , b ) ;
+}
+
+void GFilters::SplitFilter::normalise( std::string & domain , bool raw )
+{
+	if( !raw )
+		G::Str::toLower( domain ) ;
 }
 

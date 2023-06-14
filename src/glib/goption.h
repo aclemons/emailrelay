@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -45,8 +45,8 @@ struct G::Option
 	bool hidden ;
 	std::string value_description ;
 	unsigned int level ;
-	unsigned int main_tag ;
-	unsigned int tag_bits ;
+	unsigned int main_tag ; // principal category
+	unsigned int tag_bits ; // all categories
 
 	Option( char c , const std::string & name , const std::string & description ,
 		const std::string & description_extra , Multiplicity value_multiplicity ,

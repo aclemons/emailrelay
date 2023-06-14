@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -553,6 +553,7 @@ socklen_t GNet::AddressStorage::n() const
 
 #if ! GCONFIG_HAVE_INET_PTON
 // fallback implementation for inet_pton() using getaddrinfo() -- see gdef.h
+#ifndef G_LIB_SMALL
 int GNet::inet_pton_imp( int f , const char * p , void * result )
 {
 	if( p == nullptr || result == nullptr ) return 0 ; // just in case
@@ -588,9 +589,11 @@ int GNet::inet_pton_imp( int f , const char * p , void * result )
 	return ok ? 1 : 0 ;
 }
 #endif
+#endif
 
 #if ! GCONFIG_HAVE_INET_NTOP
 // fallback implementation for inet_ntop() using inet_ntoa() for ipv4 and by hand for ipv6 -- see gdef.h
+#ifndef G_LIB_SMALL
 const char * GNet::inet_ntop_imp( int f , void * ap , char * buffer , std::size_t n )
 {
 	std::string s ;
@@ -652,5 +655,6 @@ const char * GNet::inet_ntop_imp( int f , void * ap , char * buffer , std::size_
 	std::strncpy( buffer , s.c_str() , n ) ;
 	return buffer ;
 }
+#endif
 #endif
 

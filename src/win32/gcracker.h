@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -220,50 +220,52 @@ protected:
 		///< is displayed. Overrides will normally enable
 		///< and/or grey out menu items as appropriate.
 
-	virtual void onMouseMove( unsigned int x , unsigned int y ,
+	enum class MouseButton { Left , Middle , Right } ;
+	enum class MouseButtonDirection { Up , Down } ;
+
+	virtual void onMouseMove( int x , int y ,
 		bool shift_key_down , bool control_key_down ,
 		bool left_button_down , bool middle_button_down ,
 		bool right_button_down ) ;
 			///< Overridable. Called on receipt of a mouse-move message.
-
-	enum class MouseButton { Left , Middle , Right } ;
-	enum class MouseButtonDirection { Up , Down } ;
+			///< The origin is top left and co-ordindates can be negative.
 
 	virtual void onMouseButton( MouseButton , MouseButtonDirection ,
 		int x , int y , bool shift_key_down , bool control_key_down ) ;
 			///< Overridable. Called on receipt of a mouse
-			///< button-down/button-up message. Called before
+			///< button-down/button-up message. The origin is top left
+			///< and co-ordindates can be negative. Called before
 			///< the separate functions below.
 
 	virtual void onLeftMouseButtonDown( int x , int y ,
 		bool shift_key_down , bool control_key_down ) ;
 			///< Overridable. Called on receipt of a mouse left-button-down
-			///< message.
+			///< message. The origin is top left.
 
 	virtual void onLeftMouseButtonUp( int x , int y ,
 		bool shift_key_down , bool control_key_down ) ;
 			///< Overridable. Called on receipt of a mouse left-button-up
-			///< message.
+			///< message. The origin is top left and co-ordindates can be negative.
 
 	virtual void onMiddleMouseButtonDown( int x , int y ,
 		bool shift_key_down , bool control_key_down ) ;
 			///< Overridable. Called on receipt of a mouse middle-button-down
-			///< message.
+			///< message. The origin is top left.
 
 	virtual void onMiddleMouseButtonUp( int x , int y ,
 		bool shift_key_down , bool control_key_down ) ;
 			///< Overridable. Called on receipt of a mouse middle-button-up
-			///< message.
+			///< message. The origin is top left and co-ordindates can be negative.
 
 	virtual void onRightMouseButtonDown( int x , int y ,
 		bool shift_key_down , bool control_key_down ) ;
 			///< Overridable. Called on receipt of a mouse right-button-down
-			///< message.
+			///< message. The origin is top left.
 
 	virtual void onRightMouseButtonUp( int x , int y ,
 		bool shift_key_down , bool control_key_down ) ;
 			///< Overridable. Called on receipt of a mouse right-button-up
-			///< message.
+			///< message. The origin is top left and co-ordindates can be negative.
 
 	virtual bool onPalette() ;
 		///< Called when the window gets focus, allowing it to realise
@@ -283,11 +285,8 @@ protected:
 		///<
 		/// \see WM_PALETTECHANGED
 
-	virtual bool onIdle() ;
-		///< Called whenever the event loop becomes empty. If true is
-		///< returned then it is called again (as long as the queue is
-		///< still empty).
-		/// \see GGui::Pump
+	virtual void onIdle() ;
+		///< Called when a wm_idle() message is posted.
 
 public:
 	Cracker( const Cracker & ) = delete ;

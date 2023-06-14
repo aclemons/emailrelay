@@ -1,4 +1,4 @@
-dnl Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+dnl Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 dnl 
 dnl This program is free software: you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
@@ -19,10 +19,12 @@ dnl
 dnl Process this file with autoconf to produce a configure script.
 dnl
 
-AC_INIT([E-MailRelay],[2.5rc1],[],[emailrelay])
+AC_INIT([E-MailRelay],[2.5],[],[emailrelay])
 AC_CONFIG_SRCDIR([src/glib/gdef.h])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([no-define])
+AM_SILENT_RULES([no])
+AM_EXTRA_RECURSIVE_TARGETS([extra])
 AC_CONFIG_HEADERS([src/gconfig_defs.h])
 AM_MAINTAINER_MODE
 AC_DISABLE_OPTION_CHECKING
@@ -43,6 +45,7 @@ AC_CHECK_PROG([GCONFIG_HAVE_DOXYGEN],[doxygen],[yes])
 AC_CHECK_PROG([GCONFIG_HAVE_MAN2HTML],[man2html],[yes])
 GCONFIG_FN_PROG_WINDRES
 GCONFIG_FN_PROG_WINDMC
+GCONFIG_FN_ARFLAGS
 
 dnl check for system libraries
 dnl
@@ -73,8 +76,6 @@ GCONFIG_FN_TLS_MBEDTLS
 
 dnl "--enable-whatever" for internal features
 dnl
-GCONFIG_FN_ENABLE_EXTRA_FILTERS
-GCONFIG_FN_ENABLE_EXTRA_VERIFIERS
 AC_ARG_ENABLE([bsd],AS_HELP_STRING([--enable-bsd],[enable building for bsd (default auto)]))
 GCONFIG_FN_ENABLE_BSD
 AC_ARG_ENABLE([debug],AS_HELP_STRING([--enable-debug],[enable extra debug messages at compile-time (default no)]))
@@ -103,6 +104,8 @@ AC_ARG_ENABLE([uds],AS_HELP_STRING([--enable-uds],[enable unix domain sockets (d
 GCONFIG_FN_ENABLE_UDS
 AC_ARG_ENABLE([dnsbl],AS_HELP_STRING([--enable-dnsbl],[enable DNSBL (default yes)]))
 GCONFIG_FN_ENABLE_DNSBL
+AC_ARG_ENABLE([submission],AS_HELP_STRING([--enable-submission],[main binary is a submission tool when named emailrelay-submit (default no)]))
+GCONFIG_FN_ENABLE_SUBMISSION
 
 dnl "--with-whatever" for external dependencies
 dnl

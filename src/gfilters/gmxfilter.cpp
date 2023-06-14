@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@
 
 GFilters::MxFilter::MxFilter( GNet::ExceptionSink es , GStore::FileStore & store ,
 	Filter::Type filter_type , const Filter::Config & filter_config , const std::string & spec ) :
+		m_es(es) ,
 		m_store(store) ,
 		m_filter_type(filter_type) ,
 		m_filter_config(filter_config) ,
@@ -40,13 +41,8 @@ GFilters::MxFilter::MxFilter( GNet::ExceptionSink es , GStore::FileStore & store
 		m_special(false) ,
 		m_timer(*this,&MxFilter::onTimeout,es)
 {
-	if( filter_type != Filter::Type::client )
-	{
-		if( !MxLookup::enabled() )
-			throw G::Exception( "mx: dns mx routing not enabled at build time" ) ;
-		m_lookup = std::make_unique<MxLookup>( es , mxconfig(m_spec) , mxnameservers(m_spec) ) ;
-		m_lookup->doneSignal().connect( G::Slot::slot(*this,&MxFilter::lookupDone) ) ;
-	}
+	if( !MxLookup::enabled() )
+		throw G::Exception( "mx: not enabled at build time" ) ;
 }
 
 GFilters::MxFilter::~MxFilter()
@@ -57,29 +53,27 @@ GFilters::MxFilter::~MxFilter()
 
 void GFilters::MxFilter::start( const GStore::MessageId & message_id )
 {
-	m_timer.cancelTimer() ;
-	if( m_filter_type == Filter::Type::client )
+	G::Path envelope_path = m_store.envelopePath( message_id , storestate() ) ;
+	GStore::Envelope envelope = m_store.readEnvelope( envelope_path ) ;
+	std::string domain = G::Str::tail( envelope.forward_to , "@" , false ) ;
+	if( domain.empty() )
 	{
 		m_timer.startTimer( 0U ) ;
 		m_result = Result::ok ;
 	}
 	else
 	{
-		G::Path envelope_path = m_store.envelopePath( message_id , storestate() ) ;
-		GStore::Envelope envelope = m_store.readEnvelope( envelope_path ) ;
-		std::string domain = G::Str::tail( envelope.forward_to , "@" , false ) ;
-		if( domain.empty() )
-		{
-			m_timer.startTimer( 0U ) ;
-			m_result = Result::ok ;
-		}
+		G_LOG( "GFilters::MxFilter::start: mx: " << message_id.str() << ": looking up [" << domain << "]" ) ;
+
+		if( m_lookup ) m_lookup->doneSignal().disconnect() ;
+		m_lookup = std::make_unique<MxLookup>( m_es , mxconfig(m_spec) , mxnameservers(m_spec) ) ;
+		m_lookup->doneSignal().connect( G::Slot::slot(*this,&MxFilter::lookupDone) ) ;
+
+		m_lookup->start( message_id , domain ) ;
+		if( m_filter_config.timeout )
+			m_timer.startTimer( m_filter_config.timeout ) ;
 		else
-		{
-			G_LOG( "GFilters::MxFilter::start: mx: " << message_id.str() << ": looking up [" << domain << "]" ) ;
-			m_lookup->start( message_id , domain ) ;
-			if( m_filter_config.timeout )
-				m_timer.startTimer( m_filter_config.timeout ) ;
-		}
+			m_timer.cancelTimer() ;
 	}
 }
 
@@ -126,6 +120,7 @@ void GFilters::MxFilter::cancel()
 
 void GFilters::MxFilter::onTimeout()
 {
+	G_DEBUG( "GFilters::MxFilter::onTimeout: response=[" << response() << "] special=" << m_special ) ;
 	m_done_signal.emit( static_cast<int>(m_result) ) ;
 }
 

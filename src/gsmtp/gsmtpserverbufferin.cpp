@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,8 +28,7 @@ GSmtp::ServerBufferIn::ServerBufferIn( GNet::ExceptionSink es , ServerProtocol &
 		m_protocol(protocol) ,
 		m_config(config) ,
 		m_line_buffer(GNet::LineBufferConfig::smtp()) ,
-		m_timer(*this,&ServerBufferIn::onTimeout,es) ,
-		m_flow_on(true)
+		m_timer(*this,&ServerBufferIn::onTimeout,es)
 {
 	m_protocol.changeSignal().connect( G::Slot::slot(*this,&ServerBufferIn::onProtocolChange) ) ;
 }

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -104,6 +104,13 @@ int G::File::open( const char * path , CreateExclusive ) noexcept
 }
 #endif
 
+#ifndef G_LIB_SMALL
+std::FILE * G::File::fopen( const char * path , const char * mode ) noexcept
+{
+	return std::fopen( path , mode ) ;
+}
+#endif
+
 bool G::File::probe( const char * path ) noexcept
 {
 	int fd = ::open( path , O_WRONLY|O_CREAT|O_EXCL , 0666 ) ; // NOLINT
@@ -123,6 +130,11 @@ void G::File::create( const Path & path )
 	::close( fd ) ;
 }
 #endif
+
+bool G::File::renameOnto( const Path & from , const Path & to , std::nothrow_t ) noexcept
+{
+	return 0 == std::rename( from.cstr() , to.cstr() ) ; // overwrites 'to'
+}
 
 ssize_t G::File::read( int fd , char * p , std::size_t n ) noexcept
 {

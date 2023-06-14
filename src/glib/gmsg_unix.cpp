@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -207,7 +207,7 @@ bool G::Msg::fatal( int error ) noexcept
 
 #ifndef G_LIB_SMALL
 template <typename Tin, typename Tout, typename Fn1, typename Fn2>
-std::size_t G::MsgImp::copy( Tin in_begin , Tin in_end , Tout out_begin , Tout out_end ,
+std::size_t G::MsgImp::copy( Tin in_begin , Tin in_end , Tout out_begin , Tout /*out_end*/ ,
 	Fn1 fn_convert , Fn2 fn_empty )
 {
 	return std::distance( out_begin ,

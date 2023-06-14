@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -374,10 +374,10 @@ int GNet::Listeners::parseFd( const std::string & listener )
 void GNet::Listeners::addWildcards( unsigned int port )
 {
 	if( Address::supports(Address::Family::ipv4) )
-		m_fixed.push_back( Address(Address::Family::ipv4,port) ) ;
+		m_fixed.emplace_back( Address::Family::ipv4 , port ) ;
 
 	if( Address::supports(Address::Family::ipv6) )
-		m_fixed.push_back( Address(Address::Family::ipv6,port) ) ;
+		m_fixed.emplace_back( Address::Family::ipv6 , port ) ;
 }
 
 bool GNet::Listeners::isAddress( const std::string & s , unsigned int port )

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,7 +25,9 @@
 // recipient:
 // * OK -- verify as remote ("1|<rcpt-to>")
 // * L -- verify as local ("0|<user>|<user>")
-// * B -- verify as 'bob' ("1|bob@<domain>" or "0|bob|bob")
+// * A -- verify as remote 'alice' (with OK) or local 'alice' (with L) ("1|alice@<domain>" or "0|alice|alice")
+// * B -- verify as remote 'bob' (with OK) or local 'bob' (with L) ("1|bob@<domain>" or "0|bob|bob")
+// * C -- make the response lower-case
 // * X -- no response (to test response timeouts)
 // * x -- disconnect
 // * ! -- abort
@@ -106,10 +108,18 @@ bool Main::VerifierPeer::processLine( std::string line )
 
 	bool valid_remote = rcpt_to.find("OK") != std::string::npos ;
 	bool valid_local = rcpt_to.find("L") != std::string::npos ;
+	bool alice = rcpt_to.find("A") != std::string::npos ;
 	bool bob = rcpt_to.find("B") != std::string::npos ;
+	bool lowercase = rcpt_to.find("C") != std::string::npos ;
 	bool blackhole = rcpt_to.find("X") != std::string::npos ;
 	bool disconnect = rcpt_to.find("x") != std::string::npos ;
 	bool abort = rcpt_to.find("!") != std::string::npos ;
+
+	if( lowercase )
+	{
+		G::Str::toLower( at_domain ) ;
+		G::Str::toLower( rcpt_to ) ;
+	}
 
 	if( abort )
 	{
@@ -125,6 +135,11 @@ bool Main::VerifierPeer::processLine( std::string line )
 		G_LOG_S( "VerifierPeer::processLine: got 'x': disconnecting" ) ;
 		throw std::runtime_error( "disconnection" ) ;
 	}
+	else if( valid_local && alice )
+	{
+		G_LOG_S( "VerifierPeer::processLine: got 'A' and 'L': sending valid local [alice]" ) ;
+		send( std::string("0|alice|alice\n") ) ; // GNet::ServerPeer::send()
+	}
 	else if( valid_local && bob )
 	{
 		G_LOG_S( "VerifierPeer::processLine: got 'B' and 'L': sending valid local [bob]" ) ;
@@ -134,6 +149,11 @@ bool Main::VerifierPeer::processLine( std::string line )
 	{
 		G_LOG_S( "VerifierPeer::processLine: got 'L': sending valid local [" << user << "]" ) ;
 		send( "0|"+user+"|"+user+"\n" ) ; // GNet::ServerPeer::send()
+	}
+	else if( valid_remote && alice )
+	{
+		G_LOG_S( "VerifierPeer::processLine: got 'A' and 'OK': sending valid remote [alice" << at_domain << "]" ) ;
+		send( "1|alice"+at_domain+"\n" ) ; // GNet::ServerPeer::send()
 	}
 	else if( valid_remote && bob )
 	{

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -124,7 +124,10 @@ private:
 	void showSslVersion( bool e = false , const std::string & eot = {} ) const ;
 	void showThreading( bool e = false , const std::string & eot = {} ) const ;
 	void showUds( bool e = false , const std::string & eod = {} ) const ;
-	static std::string onParse( const G::StringArray & , std::size_t i , const std::string & ) ;
+	void showPop( bool e = false , const std::string & eod = {} ) const ;
+	static const G::Option * parserFind( const G::Options & , const std::string & , std::string * = nullptr ) ;
+	static std::string configFile( const std::string & ) ;
+	void dump() const ;
 
 private:
 	Output & m_output ;
@@ -135,6 +138,7 @@ private:
 	std::string m_version ;
 	std::string m_arg_prefix ;
 	bool m_verbose {false} ;
+	bool m_argc_error {false} ;
 } ;
 
 inline

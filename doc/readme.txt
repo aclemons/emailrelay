@@ -58,7 +58,7 @@ Use "--remote-clients" ("-r") to allow connections from outside the local
 network, define your domain name with "--domain" and use an address verifier as
 a first line of defense against spammers:
 
-	emailrelay --as-server -v -r --domain=example.com --address-verifier=allow:
+	emailrelay --as-server -v -r --domain=example.com --address-verifier=strict:
 
 Then enable POP access to the incoming e-mails with "--pop", "--pop-port" and
 "--pop-auth":

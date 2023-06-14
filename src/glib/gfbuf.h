@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -59,10 +59,10 @@ public:
 	using close_fn_t = std::function<void(T)> ;
 
 	explicit fbuf( read_fn_t , write_fn_t , close_fn_t ) ;
-		///< Constructor.
+		///< Constructor. Use open() to initialise.
 
 	explicit fbuf( T file , read_fn_t , write_fn_t , close_fn_t ) ;
-		///< Constructor.
+		///< Constructor passed an open file descriptor.
 
 	~fbuf() override ;
 		///< Destructor. Closes the file.

@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,10 +45,11 @@ our $bin_dir = "." ;
 
 sub new
 {
-	my ( $classname , $exe , $port ) = @_ ;
+	my ( $classname , $exe , $port , $extra_args_ref ) = @_ ;
 
 	die if !defined($exe) ;
 	$port ||= 10010 ;
+	$extra_args_ref = [] if !defined($extra_args_ref) ;
 
 	( my $short_name = $exe ) =~ s/emailrelay_test_// ;
 	$short_name =~ s/\.[a-z]*$// ;
@@ -64,6 +65,7 @@ sub new
 		m_logfile => System::tempfile("$short_name.out") ,
 		m_pidfile => System::tempfile("$short_name.pid") ,
 		m_pid => undef ,
+		m_extra_args => $extra_args_ref ,
 	} , $classname ;
 }
 
@@ -92,7 +94,12 @@ sub run
 	my $pidfile = $this->{m_pidfile} ;
 	my $logfile = $this->{m_logfile} ;
 	my $exe = $this->exe() ;
-	my $cmd = System::sanepath($exe) . " --port $port --log --log-file $logfile --debug --pid-file $pidfile" ;
+	my @args = (
+		"--port" , $port ,
+		"--log" , "--debug" , "--log-file" , $logfile ,
+		"--pid-file" , $pidfile ,
+	) ;
+	my $cmd = join( " " , System::sanepath($exe) , @args , @{$this->{m_extra_args}} ) ;
 	my $full = System::commandline( $cmd , { background => 1 } ) ;
 	System::log_( "running [$full]" ) ;
 	system( $full ) ;

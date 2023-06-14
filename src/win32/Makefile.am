@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -17,13 +17,13 @@
 
 AM_CPPFLAGS = -I$(top_srcdir)/src/glib
 
-noinst_LIBRARIES = libextra.a
+noinst_LIBRARIES = libwin32.a
 
 if GCONFIG_WINDOWS
 
 EXTRA_DIST = empty.cpp
 
-libextra_a_SOURCES = \
+libwin32_a_SOURCES = \
 	gappinst.cpp \
 	gappinst.h \
 	gappbase.cpp \
@@ -77,6 +77,6 @@ EXTRA_DIST = \
 	gwindow.cpp \
 	gwindow.h
 
-libextra_a_SOURCES = empty.cpp
+libwin32_a_SOURCES = empty.cpp
 
 endif

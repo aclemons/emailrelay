@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -55,7 +55,7 @@ use AutoMakeParser ;
 $AutoMakeParser::debug = 0 ;
 
 my %opt = () ;
-GetOptions( \%opt , "out=s" , "cdb" , "cdb-cxx=s" , "cdb-top=s" , "base=s" , "config-status=s" ) or die "make2unity: usage error" ;
+GetOptions( \%opt , "out=s" , "cdb" , "cdb-cxx=s" , "cdb-top=s" , "base=s" , "config-status=s" , "include=s" ) or die "make2unity: usage error" ;
 die "make2unity: usage error" if scalar(@ARGV) == 0 ;
 die "make2unity: usage error" if ( $opt{out} && scalar(@ARGV) != 1 ) ;
 
@@ -67,6 +67,7 @@ my $cfg_config_status = $opt{'config-status'} ;
 my @cfg_programs = @ARGV ;
 push @cfg_programs , "emailrelay" if !@cfg_programs ;
 my $cfg_cxx = $opt{'cdb-cxx'} || "/usr/bin/c++" ;
+my $cfg_first_include_dir = $opt{include} ; # eg. moc files
 
 my $cs = new ConfigStatus( $cfg_config_status ) ;
 my %switches = $cs->switches() ;
@@ -151,8 +152,7 @@ sub stanza
 	my $src = "$program.cpp" ;
 	my $autoconf_dir = "../src" ;
 	my $program_dir = File::Basename::dirname( $m->path() ) ;
-	my $moc_dir = "." ;
-	my @includes = ( $autoconf_dir , $program_dir , $moc_dir , $m->includes($cfg_top_srcdir,0,1) ) ;
+	my @includes = grep { defined($_) }( $cfg_first_include_dir , $autoconf_dir , $program_dir , $m->includes($cfg_top_srcdir,0,1) ) ;
 	my $includes = join( " -I" , ("",@includes) ) ;
 	my $options = $m->compile_options() ;
 	my $cmd = "$cfg_cxx $options $includes -c $program.cpp" ;

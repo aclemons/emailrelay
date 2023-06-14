@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -356,7 +356,7 @@ private:
 	std::unique_ptr<GAuth::SaslServer> m_sasl ;
 	Config m_config ;
 	G::Slot::Signal<> m_change_signal ;
-	const ApplyArgsTuple * m_apply_data {nullptr} ;
+	const ApplyArgsTuple * m_apply_data ;
 	bool m_apply_more ;
 	Fsm m_fsm ;
 	bool m_with_starttls ;

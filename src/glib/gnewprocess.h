@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -72,6 +72,7 @@ public:
 	G_EXCEPTION( InvalidPath , tx("invalid executable path -- must be absolute") ) ;
 	G_EXCEPTION( InvalidParameter , tx("invalid parameter") ) ;
 	G_EXCEPTION( CreateProcessError , tx("CreateProcess error") ) ; // windows
+	G_EXCEPTION( SystemError , tx("system error") ) ; // windows
 
 	struct Fd /// Wraps up a file descriptor for passing to G::NewProcess.
 	{

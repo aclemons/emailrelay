@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,7 +24,6 @@
 #include "gdef.h"
 #include "gprotocolmessage.h"
 #include "gmessagestore.h"
-#include "gmessagedelivery.h"
 #include "gnewmessage.h"
 #include "gfilter.h"
 #include "gslot.h"
@@ -44,7 +43,7 @@ namespace GSmtp
 class GSmtp::ProtocolMessageStore : public ProtocolMessage
 {
 public:
-	ProtocolMessageStore( GStore::MessageStore & store , GStore::MessageDelivery & delivery ,
+	ProtocolMessageStore( GStore::MessageStore & store ,
 		std::unique_ptr<Filter> ) ;
 			///< Constructor.
 
@@ -77,7 +76,6 @@ private:
 
 private:
 	GStore::MessageStore & m_store ;
-	GStore::MessageDelivery & m_delivery ;
 	std::unique_ptr<Filter> m_filter ;
 	std::unique_ptr<GStore::NewMessage> m_new_msg ;
 	std::string m_from ;

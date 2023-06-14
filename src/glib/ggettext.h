@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -55,8 +55,8 @@ namespace G
 		///< Returns the parameter. Used to mark a string-literal for
 		///< translation, with the conversion at run-time done with
 		///< a call to gettext() elsewhere in the code.
-		///< \code
 		///<
+		///< \code
 		///< using G::gettext_noop ;
 		///< std::cout << call_gettext( gettext_noop("hello, world") ) ;
 		///< \endcode

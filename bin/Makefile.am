@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -29,13 +29,11 @@ example_scripts_static = \
 	emailrelay-set-from.pl
 
 example_scripts_in = \
-	emailrelay-deliver.sh.in \
 	emailrelay-notify.sh.in \
 	emailrelay-resubmit.sh.in \
 	emailrelay-submit.sh.in
 
 example_scripts_out = \
-	emailrelay-deliver.sh \
 	emailrelay-notify.sh \
 	emailrelay-resubmit.sh \
 	emailrelay-submit.sh \
@@ -75,10 +73,6 @@ CLEANFILES = \
 	$(example_scripts_out)
 
 do_sed = sed -e "s%__SPOOL_DIR__%${e_spooldir}%g" -e "s%__SBIN_DIR__%${sbindir}%g" -e "s%__SYSCONF_DIR__%${e_sysconfdir}%g" -e "s%__LIBEXEC_DIR__%${e_libexecdir}%g" -e "s%__RUN_DIR__%${e_rundir}%g"
-
-emailrelay-deliver.sh: emailrelay-deliver.sh.in
-	$(do_sed) < $(srcdir)/emailrelay-deliver.sh.in > emailrelay-deliver.sh
-	chmod +x emailrelay-deliver.sh
 
 emailrelay-notify.sh: emailrelay-notify.sh.in
 	$(do_sed) < $(srcdir)/emailrelay-notify.sh.in > emailrelay-notify.sh

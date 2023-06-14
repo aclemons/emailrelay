@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -97,9 +97,15 @@ public:
 	NewProcessImp & operator=( NewProcessImp && ) = delete ;
 
 private:
-	static std::string commandLine( const std::string & exe , const StringArray & args ) ;
+	static std::pair<std::string,std::string> commandLine( std::string exe , StringArray args ) ;
 	static std::pair<HANDLE,DWORD> createProcess( const std::string & exe , const std::string & command_line ,
 		const Environment & , HANDLE hpipe , Fd fd_stdout , Fd fd_stderr , const char * cd ) ;
+	static void dequote( std::string & ) ;
+	static std::string withQuotes( const std::string & ) ;
+	static bool isSpaced( const std::string & ) ;
+	static bool isSimplyQuoted( const std::string & ) ;
+	static std::string windowsPath() ;
+	static std::string cscript() ;
 
 private:
 	HANDLE m_hprocess ;
@@ -152,7 +158,7 @@ G::NewProcessImp::NewProcessImp( const Path & exe , const StringArray & args , c
 	m_killed(false) ,
 	m_waitable(HNULL,HNULL,0)
 {
-	G_DEBUG( "G::NewProcess::spawn: running [" << exe << "]: [" << Str::join("],[",args) << "]" ) ;
+	G_DEBUG( "G::NewProcessImp::ctor: exe=[" << exe << "] args=[" << Str::join("],[",args) << "]" ) ;
 
 	// only support Fd::devnull() and Fd::pipe() here
 	if( config.stdin != Fd::devnull() ||
@@ -163,9 +169,9 @@ G::NewProcessImp::NewProcessImp( const Path & exe , const StringArray & args , c
 		throw NewProcess::Error( "invalid parameters" ) ;
 	}
 
-	std::string command_line = commandLine( exe.str() , args ) ;
-	std::pair<HANDLE,DWORD> pair = createProcess( exe.str() , command_line , config.env ,
-		m_pipe.hwrite() , config.stdout , config.stderr ,
+	auto command_line_pair = commandLine( exe.str() , args ) ;
+	std::pair<HANDLE,DWORD> pair = createProcess( command_line_pair.first , command_line_pair.second ,
+		config.env , m_pipe.hwrite() , config.stdout , config.stderr ,
 		config.cd.empty() ? nullptr : config.cd.cstr() ) ;
 
 	m_hprocess = pair.first ;
@@ -201,6 +207,8 @@ int G::NewProcessImp::id() const noexcept
 std::pair<HANDLE,DWORD> G::NewProcessImp::createProcess( const std::string & exe , const std::string & command_line ,
 	const Environment & env , HANDLE hpipe , Fd fd_stdout , Fd fd_stderr , const char * cd )
 {
+	G_DEBUG( "G::NewProcessImp::createProcess: exe=[" << exe << "] command-line=[" << command_line << "]" ) ;
+
 	// redirect stdout or stderr onto the read end of our pipe
 	STARTUPINFOA start {} ;
 	start.cb = sizeof(start) ;
@@ -227,40 +235,113 @@ std::pair<HANDLE,DWORD> G::NewProcessImp::createProcess( const std::string & exe
 	{
 		DWORD e = GetLastError() ;
 		std::ostringstream ss ;
-		ss << "error " << e << ": [" << command_line << "]" ;
+		ss << "error " << e << ": [" << exe << "] [" << command_line << "]" ;
 		throw NewProcess::CreateProcessError( ss.str() ) ;
 	}
 
-	G_DEBUG( "G::NewProcessImp::createProcess: hprocess=" << info.hProcess ) ;
 	G_DEBUG( "G::NewProcessImp::createProcess: process-id=" << info.dwProcessId ) ;
-	G_DEBUG( "G::NewProcessImp::createProcess: hthread=" << info.hThread ) ;
 	G_DEBUG( "G::NewProcessImp::createProcess: thread-id=" << info.dwThreadId ) ;
 
 	CloseHandle( info.hThread ) ;
 	return { info.hProcess , info.dwProcessId } ;
 }
 
-std::string G::NewProcessImp::commandLine( const std::string & exe , const StringArray & args )
+std::pair<std::string,std::string> G::NewProcessImp::commandLine( std::string exe , StringArray args )
 {
-	// returns quoted exe followed by args -- each part is quoted iff it has one
-	// or more spaces and no quotes
+	// there is no correct way to do this because every target program
+	// will parse its command-line differently -- quotes, spaces and
+	// empty arguments are best avoided
 
-	char q = '\"' ;
-	const std::string quote = std::string(1U,q) ;
-	const std::string space = std::string(" ") ;
+	// in this implementation all quotes are deleted(!) unless
+	// an exe, executable paths with a space are quoted, empty
+	// arguments and arguments with a space are quoted (unless
+	// a batch file that has been quoted)
 
-	bool exe_is_quoted = exe.length() > 1U && exe.at(0U) == q && exe.at(exe.length()-1U) == q ;
+	if( isSimplyQuoted(exe) )
+		dequote( exe ) ;
 
-	std::string command_line = exe_is_quoted ? exe : ( quote + exe + quote ) ;
-	for( StringArray::const_iterator arg_p = args.begin() ; arg_p != args.end() ; ++arg_p )
+	for( auto & arg : args )
+		dequote( arg ) ;
+
+	std::string type = Str::lower( G::Path(exe).extension() ) ;
+	if( type == "exe" || type == "bat" )
 	{
-		std::string arg = *arg_p ;
-		if( arg.find(" ") != std::string::npos && arg.find("\"") != 0U )
-			arg = quote + arg + quote ;
-		command_line += ( space + arg ) ;
+		// we can run CreateProcess() directly -- but note
+		// that CreateProcess() with a batch file runs
+		// "cmd.exe /c" internally
+	}
+	else
+	{
+		args.insert( args.begin() , exe ) ;
+		args.insert( args.begin() , "//B" ) ;
+		args.insert( args.begin() , "//nologo" ) ;
+		exe = cscript() ;
 	}
 
-	return command_line ;
+	std::string command_line = isSpaced(exe) ? withQuotes(exe) : exe ;
+	for( auto & arg : args )
+	{
+		if( ( arg.empty() || isSpaced(arg) ) && isSpaced(exe) && type == "bat" )
+		{
+			G_WARNING_ONCE( "G::NetProcessImp::commandLine: batch file path contains a space so arguments cannot be quoted" ) ;
+			command_line.append(1U,' ').append(arg) ; // this fails >-: cmd /c "a b.bat" "c d"
+		}
+		else if( arg.empty() || isSpaced(arg) )
+		{
+			command_line.append(1U,' ').append(withQuotes(arg)) ;
+		}
+		else
+		{
+			command_line.append(1U,' ').append(arg) ;
+		}
+	}
+	return { exe , command_line } ;
+}
+
+void G::NewProcessImp::dequote( std::string & s )
+{
+	if( isSimplyQuoted(s) )
+	{
+		s = s.substr( 1U , s.length()-2U ) ;
+	}
+	else if( s.find( '\"' ) != std::string::npos )
+	{
+		G::Str::removeAll( s , '\"' ) ;
+		G_WARNING_ONCE( "G::NewProcessImp::dequote: quotes removed when building command-line" ) ;
+	}
+}
+
+bool G::NewProcessImp::isSimplyQuoted( const std::string & s )
+{
+	static constexpr char q = '\"' ;
+	return
+		s.length() > 1U && s.at(0U) == q && s.at(s.length()-1U) == q &&
+		s.find(q,1U) == (s.length()-1U) ;
+}
+
+bool G::NewProcessImp::isSpaced( const std::string & s )
+{
+	return s.find(' ') != std::string::npos ;
+}
+
+std::string G::NewProcessImp::withQuotes( const std::string & s )
+{
+	return std::string(1U,'\"').append(s).append(1U,'\"') ;
+}
+
+std::string G::NewProcessImp::windowsPath()
+{
+	std::vector<char> buffer( MAX_PATH+1 ) ;
+	buffer.at(0) = '\0' ;
+	unsigned int n = ::GetWindowsDirectoryA( &buffer[0] , MAX_PATH ) ;
+	if( n == 0 || n > MAX_PATH )
+		throw NewProcess::SystemError( "GetWindowsDirectoryA failed" ) ;
+	return std::string( &buffer[0] , n ) ;
+}
+
+std::string G::NewProcessImp::cscript()
+{
+	return windowsPath().append("\\system32\\cscript.exe") ;
 }
 
 // ===

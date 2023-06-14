@@ -73,7 +73,7 @@
      between objects (not to be confused with operating system signals). The
      slot/signal implementation has been simplified compared to Qt or boost by not
      supporting signal multicasting, so each signal connects to no more than one
-     slot.
+     slot. The implementation now uses std::function.
     </p>
 
     <p>
@@ -108,11 +108,15 @@
       </dd>
    <h3><a class="a-header"><em>gsmtp</em></a></h3>
       <dd>
-       SMTP protocol and message-store classes.
+       SMTP protocol classes.
       </dd>
    <h3><a class="a-header"><em>gpop</em></a></h3>
       <dd>
        POP3 protocol classes.
+      </dd>
+   <h3><a class="a-header"><em>gstore</em></a></h3>
+      <dd>
+       Message store classes.
       </dd>
    <h3><a class="a-header"><em>gfilters</em></a></h3>
       <dd>
@@ -173,8 +177,8 @@
     <p>
      The protocol, processor and message-store interfaces are brought together by
      the high-level <em>GSmtp::Server</em> and <em>GSmtp::Client</em> classes. Dependency
-     injection is used to create the concrete instances of the <em>ProtocolMessage</em> and
-     <em>Filter</em> interfaces.
+     injection is used to create the concrete instances of the <em>MessageStore</em>,
+     <em>Filter</em> and <em>Verifier</em> interfaces.
     </p>
    <h2><a class="a-header" name="SH_1_6">Event handling and exceptions</a></h2> <!-- index:2:SH:1:6:Event handling and exceptions -->
     <p>
@@ -215,12 +219,13 @@
     </p>
    <h2><a class="a-header" name="SH_1_7">Multi-threading</a></h2> <!-- index:2:SH:1:7:Multi-threading -->
     <p>
-     Multi-threading can be used as a build-time option to make DNS lookup and
-     external program asynchronous; if enabled then std::thread is used in a
-     future/promise pattern to wrap up <em>getaddrinfo()</em> and <em>waitpid()</em> system calls.
-     The shared state comprises only the parameters and return results from these
-     system calls, and synchronisation back to the main thread uses the event loop
-     (see <em>GNet::FutureEvent</em>).
+     Multi-threading is used to make DNS lookup and external program asynchronous so
+     unless disabled at build-time std::thread is used in a future/promise pattern to
+     wrap up <em>getaddrinfo()</em> and <em>waitpid()</em> system calls. The shared state comprises
+     only the parameters and return results from these system calls, and
+     synchronisation back to the main thread uses the main event loop (see
+     <em>GNet::FutureEvent</em>). Threading is not used elsewhere so the C/C++ run-time
+     library does not need to be thread-safe.
     </p>
    <h2><a class="a-header" name="SH_1_8">E-MailRelay GUI</a></h2> <!-- index:2:SH:1:8:E-MailRelay GUI -->
     <p>
@@ -383,10 +388,10 @@
 
     <div class="div-footer">
      <p>
-      Copyright (C) 2001-2022 Graeme Walker
+      Copyright (C) 2001-2023 Graeme Walker
      </p>
     </div><!-- div-footer -->
  </div> <!-- div-main -->
  </body>
 </html>
-<!-- Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->
+<!-- Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->

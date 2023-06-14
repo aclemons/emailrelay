@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -82,26 +82,30 @@ namespace G
 		{
 			return sameMinute( a , b ) && a.tm_sec == b.tm_sec ;
 		}
-		void localtime( std::tm & tm_out , std::time_t t_in )
+		void localtime_( std::tm & tm_out , std::time_t t_in )
 		{
 			if( localtime_r( &t_in , &tm_out ) == nullptr )
 				throw DateTime::Error() ;
 			tm_out.tm_isdst = -1 ;
 		}
-		void gmtime( std::tm & tm_out , std::time_t t_in )
+		void gmtime_( std::tm & tm_out , std::time_t t_in )
 		{
 			if( gmtime_r( &t_in , &tm_out ) == nullptr )
 				throw DateTime::Error() ;
 			tm_out.tm_isdst = -1 ;
 		}
-		std::time_t mktimelocal( const std::tm & local_tm_in )
+		std::time_t mktime_( std::tm & tm )
 		{
-			struct std::tm tm = local_tm_in ;
 			tm.tm_isdst = -1 ;
 			std::time_t t = std::mktime( &tm ) ;
 			if( t == std::time_t(-1) )
 				throw DateTime::Error() ;
 			return t ;
+		}
+		std::time_t mktimelocal( const std::tm & local_tm_in )
+		{
+			struct std::tm tm = local_tm_in ;
+			return mktime_( tm ) ;
 		}
 		std::time_t mktimeutc( const std::tm & utc_tm_in , std::time_t begin , std::time_t end )
 		{
@@ -115,7 +119,7 @@ namespace G
 				std::time_t step = count / 2 ;
 				i += step ;
 				std::tm tm {} ;
-				gmtime( tm , i ) ;
+				gmtime_( tm , i ) ;
 				if( tm < utc_tm_in )
 				{
 					t = ++i ;
@@ -147,6 +151,20 @@ G::BrokenDownTime::BrokenDownTime( const struct std::tm & tm_in ) :
 }
 #endif
 
+G::BrokenDownTime::BrokenDownTime( int y , int mon , int d , int h , int min , int s ) :
+	m_tm{}
+{
+	m_tm.tm_year = y - 1900 ;
+	m_tm.tm_mon = mon - 1 ;
+	m_tm.tm_mday = d ;
+	m_tm.tm_hour = h ;
+	m_tm.tm_min = min ;
+	m_tm.tm_sec = s ;
+	m_tm.tm_isdst = -1 ;
+	m_tm.tm_wday = 0 ;
+	m_tm.tm_yday = 0 ;
+}
+
 #ifndef G_LIB_SMALL
 std::time_t G::BrokenDownTime::epochTimeFromLocal() const
 {
@@ -162,7 +180,7 @@ std::time_t G::BrokenDownTime::epochTimeFromUtc() const
 	if( memo.has_value() )
 	{
 		std::tm tm {} ;
-		DateTimeImp::gmtime( tm , t0+memo.value() ) ;
+		DateTimeImp::gmtime_( tm , t0+memo.value() ) ;
 		if( DateTimeImp::sameSecond(tm,m_tm) )
 			return t0 + memo.value() ;
 	}
@@ -188,29 +206,15 @@ G::BrokenDownTime G::BrokenDownTime::null()
 G::BrokenDownTime G::BrokenDownTime::local( SystemTime t )
 {
 	BrokenDownTime bdt ;
-	DateTimeImp::localtime( bdt.m_tm , t.s() ) ;
+	DateTimeImp::localtime_( bdt.m_tm , t.s() ) ;
 	return bdt ;
 }
 
 G::BrokenDownTime G::BrokenDownTime::utc( SystemTime t )
 {
 	BrokenDownTime bdt ;
-	DateTimeImp::gmtime( bdt.m_tm , t.s() ) ;
+	DateTimeImp::gmtime_( bdt.m_tm , t.s() ) ;
 	return bdt ;
-}
-
-G::BrokenDownTime::BrokenDownTime( int y , int mon , int d , int h , int min , int s ) :
-	m_tm{}
-{
-	m_tm.tm_year = y - 1900 ;
-	m_tm.tm_mon = mon - 1 ;
-	m_tm.tm_mday = d ;
-	m_tm.tm_hour = h ;
-	m_tm.tm_min = min ;
-	m_tm.tm_sec = s ;
-	m_tm.tm_isdst = -1 ;
-	m_tm.tm_wday = 0 ;
-	m_tm.tm_yday = 0 ;
 }
 
 G::BrokenDownTime G::BrokenDownTime::midday( int year , int month , int day )
@@ -234,8 +238,7 @@ bool G::BrokenDownTime::format( char * out , std::size_t out_size , const char *
 	}
 
 	std::tm tm_copy = m_tm ;
-	tm_copy.tm_isdst = -1 ;
-	(void) mktime( &tm_copy ) ; // fill in isdst, wday, yday
+	DateTimeImp::mktime_( tm_copy ) ; // fill in isdst, wday, yday
 
 	return std::strftime( out , out_size , fmt , &tm_copy ) > 0U ;
 }
@@ -255,14 +258,14 @@ std::string G::BrokenDownTime::str() const
 
 std::string G::BrokenDownTime::str( const char * fmt ) const
 {
-	std::size_t n = std::strlen( fmt ) ;
+	std::size_t n = std::strlen( fmt ) + 1U ;
 	for( const char * p = std::strchr(fmt,'%') ; p && p[1] ; p = std::strchr(p+1,'%') )
 		n += 10U ; // biggest allowed format is eg. %F -> "2001-12-31"
 
 	std::vector<char> buffer( n ) ;
 	format( buffer , fmt ) ;
 	buffer.at(buffer.size()-1U) = '\0' ; // just in case
-	return { &buffer[0] } ;
+	return std::string( &buffer[0] ) ;
 }
 
 int G::BrokenDownTime::hour() const
@@ -297,7 +300,9 @@ int G::BrokenDownTime::day() const
 
 int G::BrokenDownTime::wday() const
 {
-	return m_tm.tm_wday ;
+	std::tm tm_copy = m_tm ;
+	DateTimeImp::mktime_( tm_copy ) ;
+	return tm_copy.tm_wday ;
 }
 
 #ifndef G_LIB_SMALL

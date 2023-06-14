@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -73,8 +73,9 @@ public:
 			///< the trailing arguments and then calls add(Option) on the
 			///< given Options object. The 'text' string is passed through
 			///< G::gettext() and should therefore normally be marked
-			///< for translation with G::tx(). The parameters for the
-			///< main tag and the extra tags are both bit-masks.
+			///< for translation with G::tx(). The tag parameters
+			///< are both bit-masks, with only one bit set in the
+			///< main tag.
 
 	void add( const Option & , char sep = '!' , char escape = '\\' ) ;
 		///< Adds one component of the specification. If the 'description'
@@ -91,6 +92,10 @@ public:
 
 	bool valid( const std::string & ) const ;
 		///< Returns true if the long-form option name is valid.
+
+	const Option * find( const std::string & ) const ;
+		///< Returns a pointer to the option with a matching
+		///< long-form name. Returns nullptr if none.
 
 	bool visible( const std::string & name , unsigned int level , bool level_exact = false ) const ;
 		///< Returns true if the option is visible at the given level.
@@ -136,7 +141,6 @@ private:
 	using List = std::vector<Option> ;
 	void parseSpec( const std::string & spec , char , char , char ) ;
 	void addOption( Option , char , char ) ;
-	List::const_iterator find( const std::string & ) const ;
 
 private:
 	List m_list ;

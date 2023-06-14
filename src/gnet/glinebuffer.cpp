@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -144,7 +144,7 @@ bool GNet::LineBuffer::more( bool fragments )
 
 bool GNet::LineBuffer::peekmore() const
 {
-	return !m_in.empty() && !m_eol.empty() && m_in.find(m_eol,m_pos) != std::string::npos ;
+	return !m_in.empty() && !m_eol.empty() && !transparent() && m_in.find(m_eol,m_pos) != std::string::npos ;
 }
 
 bool GNet::LineBuffer::trivial( std::size_t pos ) const

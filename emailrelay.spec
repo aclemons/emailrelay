@@ -1,11 +1,11 @@
 Summary: Simple e-mail message transfer agent and proxy using SMTP
 Name: emailrelay
-Version: 2.5rc1
+Version: 2.5
 Release: 1
 License: GPL3
 Group: System Environment/Daemons
 URL: http://emailrelay.sourceforge.net
-Source: http://sourceforge.net/projects/emailrelay/files/emailrelay/2.5rc1/emailrelay-2.5rc1-src.tar.gz
+Source: http://sourceforge.net/projects/emailrelay/files/emailrelay/2.5/emailrelay-2.5-src.tar.gz
 BuildRoot: /tmp/emailrelay-install
 ##BuildRequires: systemd-rpm-macros
 
@@ -54,13 +54,11 @@ test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
 /etc/emailrelay.conf.template
 %config /etc/pam.d/emailrelay
 %dir /usr/lib/emailrelay
-%attr(2755, root, daemon) /usr/lib/emailrelay/emailrelay-filter-copy
 %dir /usr/lib/emailrelay/examples
 /usr/lib/emailrelay/examples/emailrelay
 /usr/lib/emailrelay/examples/emailrelay-bcc-check.pl
 /usr/lib/emailrelay/examples/emailrelay-check-ipaddress.js
 /usr/lib/emailrelay/examples/emailrelay-check-ipaddress.pl
-/usr/lib/emailrelay/examples/emailrelay-deliver.sh
 /usr/lib/emailrelay/examples/emailrelay-dkim-signer.pl
 /usr/lib/emailrelay/examples/emailrelay-fail2ban-filter
 /usr/lib/emailrelay/examples/emailrelay-fail2ban-jail
@@ -92,7 +90,6 @@ test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
 %doc /usr/share/doc/emailrelay/changelog.md
 %doc /usr/share/doc/emailrelay/changelog.rst
 %doc /usr/share/doc/emailrelay/changelog.txt
-%doc /usr/share/doc/emailrelay/conf.py.sphinx
 %doc /usr/share/doc/emailrelay/developer.html
 %doc /usr/share/doc/emailrelay/developer.md
 %doc /usr/share/doc/emailrelay/developer.rst
@@ -106,7 +103,6 @@ test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
 %doc /usr/share/doc/emailrelay/emailrelay.css
 %doc /usr/share/doc/emailrelay/forwardto.png
 %doc /usr/share/doc/emailrelay/index.html
-%doc /usr/share/doc/emailrelay/index.rst
 %doc /usr/share/doc/emailrelay/mailserver.png
 %doc /usr/share/doc/emailrelay/popbyname.png
 %doc /usr/share/doc/emailrelay/readme.html
@@ -129,7 +125,6 @@ test "$RPM_BUILD_ROOT" = "/" || rm -rf "$RPM_BUILD_ROOT"
 %doc /usr/share/doc/emailrelay/windows.txt
 %dir /usr/share/emailrelay
 /usr/share/emailrelay/emailrelay-icon.png
-/usr/share/man/man1/emailrelay-filter-copy.1.gz
 /usr/share/man/man1/emailrelay-passwd.1.gz
 /usr/share/man/man1/emailrelay-submit.1.gz
 /usr/share/man/man1/emailrelay.1.gz

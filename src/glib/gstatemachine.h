@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
 
 namespace G
 {
-	template <typename T, typename State, typename Event, typename Arg> class StateMachine ;
+	template <typename T, typename State, typename Event, typename Argument> class StateMachine ;
 	class StateMachineImp ;
 }
 
@@ -105,11 +105,11 @@ namespace G
 /// } ;
 /// \endcode
 ///
-template <typename T, typename State, typename Event, typename Arg>
+template <typename T, typename State, typename Event, typename Argument>
 class G::StateMachine
 {
 public:
-	using Action = void (T::*)(Arg, bool &) ;
+	using Action = void (T::*)(Argument, bool &) ;
 
 	StateMachine( State s_start , State s_end , State s_same , State s_any ) ;
 		///< Constructor.
@@ -123,7 +123,7 @@ public:
 		///< The 'alt' state is taken as an alternative 'to' state
 		///< if the action's predicate is returned as false.
 
-	State apply( T & t , Event event , Arg arg ) ;
+	State apply( T & t , Event event , Argument arg ) ;
 		///< Applies an event. Calls the appropriate action method
 		///< on object "t" and changes state. The state change
 		///< takes into account the predicate returned by the
@@ -182,8 +182,8 @@ public:
 	StateMachineImp() = delete ;
 } ;
 
-template <typename T, typename State, typename Event, typename Arg>
-G::StateMachine<T,State,Event,Arg>::StateMachine( State s_start , State s_end , State s_same , State s_any ) :
+template <typename T, typename State, typename Event, typename Argument>
+G::StateMachine<T,State,Event,Argument>::StateMachine( State s_start , State s_end , State s_same , State s_any ) :
 	m_state(s_start) ,
 	m_end(s_end) ,
 	m_same(s_same) ,
@@ -191,14 +191,14 @@ G::StateMachine<T,State,Event,Arg>::StateMachine( State s_start , State s_end , 
 {
 }
 
-template <typename T, typename State, typename Event, typename Arg>
-void G::StateMachine<T,State,Event,Arg>::operator()( Event event , State from , State to , Action action )
+template <typename T, typename State, typename Event, typename Argument>
+void G::StateMachine<T,State,Event,Argument>::operator()( Event event , State from , State to , Action action )
 {
 	operator()( event , from , to , action , to ) ;
 }
 
-template <typename T, typename State, typename Event, typename Arg>
-void G::StateMachine<T,State,Event,Arg>::operator()( Event event , State from , State to , Action action , State alt )
+template <typename T, typename State, typename Event, typename Argument>
+void G::StateMachine<T,State,Event,Argument>::operator()( Event event , State from , State to , Action action , State alt )
 {
 	if( to == m_any || alt == m_any || from == m_same ||
 		( to == m_end && alt != to ) ||
@@ -208,22 +208,22 @@ void G::StateMachine<T,State,Event,Arg>::operator()( Event event , State from , 
 	m_map.insert( Map_value_type( event , Transition(from,to,action,alt) ) ) ;
 }
 
-template <typename T, typename State, typename Event, typename Arg>
-State G::StateMachine<T,State,Event,Arg>::reset( State new_state )
+template <typename T, typename State, typename Event, typename Argument>
+State G::StateMachine<T,State,Event,Argument>::reset( State new_state )
 {
 	State old_state = m_state ;
 	m_state = new_state ;
 	return old_state ;
 }
 
-template <typename T, typename State, typename Event, typename Arg>
-State G::StateMachine<T,State,Event,Arg>::state() const
+template <typename T, typename State, typename Event, typename Argument>
+State G::StateMachine<T,State,Event,Argument>::state() const
 {
 	return m_state ;
 }
 
-template <typename T, typename State, typename Event, typename Arg>
-State G::StateMachine<T,State,Event,Arg>::apply( T & t , Event event , Arg arg )
+template <typename T, typename State, typename Event, typename Argument>
+State G::StateMachine<T,State,Event,Argument>::apply( T & t , Event event , Argument arg )
 {
 	m_event = event ;
 	State state = m_state ;
@@ -252,8 +252,8 @@ State G::StateMachine<T,State,Event,Arg>::apply( T & t , Event event , Arg arg )
 	return m_any ;
 }
 
-template <typename T, typename State, typename Event, typename Arg>
-Event G::StateMachine<T,State,Event,Arg>::event() const
+template <typename T, typename State, typename Event, typename Argument>
+Event G::StateMachine<T,State,Event,Argument>::event() const
 {
 	return m_event ;
 }

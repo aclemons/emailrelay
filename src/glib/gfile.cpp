@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -63,7 +63,7 @@ bool G::File::rename( const char * from , const char * to , bool & enoent ) noex
 {
 	bool ok = 0 == std::rename( from , to ) ;
 	int error = Process::errno_() ;
-	enoent = !ok && error == ENOENT ;
+	enoent = ( !ok && error == ENOENT ) ;
 	return ok ;
 }
 

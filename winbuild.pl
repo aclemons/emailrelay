@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -83,8 +83,6 @@ my %switches = (
 	GCONFIG_BSD => 0 ,
 	GCONFIG_DNSBL => 1 ,
 	GCONFIG_EPOLL => 0 ,
-	GCONFIG_EXTRA_FILTERS => 0 ,
-	GCONFIG_EXTRA_VERIFIERS => 0 ,
 	GCONFIG_GETTEXT => 0 ,
 	GCONFIG_GUI => 1 , # << zero if no qt libraries
 	GCONFIG_ICONV => 0 ,
@@ -170,8 +168,8 @@ warn "error: cannot find mbedtls source: please download from tls.mbed.org " .
 if( $no_cmake || $no_msbuild || $no_qt || $no_mbedtls )
 {
 	winbuild::fcache_write() if $ARGV[0] eq "find" ;
-	warn "error: missing prerequisites: please install the missing components" ,
-		( -f "winbuild.cfg" ? "" : " or use a winbuild.cfg configuration file" ) ,
+	warn "error: missing prerequisites: please install the missing components " ,
+		"or " . (-f "winbuild.cfg"?"edit the":"use a") . " winbuild.cfg configuration file" ,
 		( ($no_qt||$no_mbedtls) ? " or unset configuration items in winbuild.pl\n" : "\n" ) ;
 	die "error: missing prerequisites\n" unless ( scalar(@ARGV) > 0 && $ARGV[0] eq "mingw" ) ;
 }
@@ -180,8 +178,8 @@ if( $no_cmake || $no_msbuild || $no_qt || $no_mbedtls )
 
 my @default_parts =
 	$need_mbedtls ?
-		qw( batchfiles generate mbedtls cmake msbuild ) :
-		qw( batchfiles generate cmake msbuild ) ;
+		qw( batchfiles generate mbedtls cmake build ) :
+		qw( batchfiles generate cmake build ) ;
 
 # run stuff ...
 
@@ -200,7 +198,7 @@ for my $part ( @run_parts )
 	elsif( $part eq "batchfiles" )
 	{
 		winbuild::spit_out_batch_files( qw(
-			find generate cmake msbuild
+			find generate cmake build
 			debug-build debug-test test
 			mbedtls clean vclean install ) ) ;
 	}
@@ -222,7 +220,7 @@ for my $part ( @run_parts )
 		run_cmake( $cmake , $mbedtls , $qt_info , "x64" ) if $cfg_x64 ;
 		run_cmake( $cmake , $mbedtls , $qt_info , "x86" ) if $cfg_x86 ;
 	}
-	elsif( $part eq "msbuild" )
+	elsif( $part eq "build" )
 	{
 		winbuild::run_msbuild( $msbuild , $project , "x64" , "Release" ) if $cfg_x64 ;
 		winbuild::run_msbuild( $msbuild , $project , "x64" , "Debug" ) if ( $cfg_x64 && $cfg_debug ) ;
@@ -285,7 +283,7 @@ for my $part ( @run_parts )
 winbuild::create_touchfile( winbuild::default_touchfile($0) ) ;
 
 # show a helpful message
-if( (grep {$_ eq "msbuild"} @run_parts) && !(grep {$_ eq "install"} @run_parts) )
+if( (grep {$_ eq "build"} @run_parts) && !(grep {$_ eq "install"} @run_parts) )
 {
 	print "build finished -- try winbuild-install.bat for packaging\n"
 }
@@ -375,10 +373,13 @@ sub create_cmake_file
 		if( $sources )
 		{
 			( my $library_key = $library ) =~ s/\.a$// ; $library_key =~ s/^lib// ;
-			print $fh "\n" ;
-			print $fh "add_library($library_key $sources)\n" ;
-			print $fh "target_include_directories($library_key PUBLIC $includes)\n" ;
-			print $fh "target_compile_definitions($library_key PUBLIC $definitions)\n" ;
+			if( $library_key !~ m/extra$/ )
+			{
+				print $fh "\n" ;
+				print $fh "add_library($library_key $sources)\n" ;
+				print $fh "target_include_directories($library_key PUBLIC $includes)\n" ;
+				print $fh "target_compile_definitions($library_key PUBLIC $definitions)\n" ;
+			}
 		}
 	}
 
@@ -686,6 +687,7 @@ sub install_mingw
 			close-stderr
 			spool-dir=@app
 			port=25
+			interface=0.0.0.0
 			forward
 			forward-to=127.0.0.1:25
 			pop
@@ -818,7 +820,6 @@ sub install_core
 		__main_bin_dir__/emailrelay-service.exe .
 		__main_bin_dir__/emailrelay.exe .
 		__main_bin_dir__/emailrelay-submit.exe .
-		__main_bin_dir__/emailrelay-filter-copy.exe .
 		__main_bin_dir__/emailrelay-passwd.exe .
 		__main_bin_dir__/emailrelay-textmode.exe .
 		bin/emailrelay-bcc-check.pl examples

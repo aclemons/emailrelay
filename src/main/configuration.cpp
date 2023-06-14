@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -89,7 +89,7 @@ bool Main::Configuration::forwardOnDisconnect() const { return contains( "forwar
 bool Main::Configuration::forwardOnStartup() const { return contains( "forward" ) || contains( "as-client" ) ; }
 bool Main::Configuration::hidden() const { return contains( "hidden" ) ; }
 bool Main::Configuration::immediate() const { return contains( "immediate" ) ; }
-G::Path Main::Configuration::localDeliveryDir() const { return contains("local-delivery-dir") ? pathValue("local-delivery-dir") : G::Path() ; }
+G::Path Main::Configuration::deliveryDir() const { return contains("delivery-dir") ? pathValue("delivery-dir") : spoolDir() ; }
 bool Main::Configuration::log() const { return contains( "log" ) || contains( "as-client" ) || contains( "as-proxy" ) || contains( "as-server" ) ; }
 std::string Main::Configuration::logFile() const { return contains("log-file") ? pathValue("log-file").str() : std::string() ; }
 G::Path Main::Configuration::pidFile() const { return pathValue( "pid-file" ) ; }
@@ -120,7 +120,7 @@ Main::Configuration::Configuration( const G::OptionMap & map , const std::string
 	G_ASSERT( m_base_dir.isAbsolute() ) ;
 	if( G::Test::enabled("configuration-dump") )
 	{
-		for( auto p : map )
+		for( const auto & p : map )
 			std::cout << "config: [" << name << "] " << p.first << "=[" << p.second.value() << "]\n" ;
 	}
 }
@@ -532,6 +532,12 @@ G::StringArray Main::Configuration::semanticWarnings() const
 			txt("the --show option is ignored when using --no-daemon, --as-client or --hidden") ) ;
 	}
 
+	if( stringValue("server-auth") == "/pam" || stringValue("pop-auth") == "/pam" )
+	{
+		warnings.push_back(
+			txt("pam authentication should be enabled with pam: rather than /pam") ) ;
+	}
+
 	filterValue( "filter" , &warnings ) ;
 	filterValue( "client-filter" , &warnings ) ;
 	verifierValue( "address-verifier" , &warnings ) ;
@@ -561,10 +567,15 @@ G::Path Main::Configuration::pathValue( G::string_view option_name ) const
 		// dont mess with eg. "--tls-client-verify=<none>"
 		return value ;
 	}
-	else if( option_name.find("-auth") != std::string::npos && ( G::Str::headMatch(value,"pam:") ||
-		( G::Str::headMatch(value,"plain:") && option_name == "client-auth"_sv ) ) )
+	else if( ( option_name == "smtp-auth"_sv || option_name == "pop-auth"_sv ) &&
+		( value == "pam:" || value == "/pam" ) )
 	{
-		// dont mess with "--xxx-auth=pam:" or "--client-auth=plain:user:pwd"
+		// dont mess with "--smtp-auth=/pam" etc.
+		return value ;
+	}
+	else if( option_name == "client-auth"_sv && G::Str::headMatch(value,"plain:") )
+	{
+		// dont mess with "--client-auth=plain:user:pwd"
 		return value ;
 	}
 	else
@@ -633,8 +644,8 @@ G::StringArray Main::Configuration::display( const G::Options & options ) const
 				result.push_back( useSyslog()?yes:no ) ;
 			else if( option.name == "spool-dir" )
 				result.push_back( spoolDir().str() ) ;
-			else if( option.name == "local-delivery-dir" )
-				result.push_back( localDeliveryDir().str() ) ;
+			else if( option.name == "delivery-dir" )
+				result.push_back( deliveryDir().str() ) ;
 			else if( option.name == "close-stderr" )
 				result.push_back( closeStderr()?yes:no ) ;
 			else if( option.name == "no-daemon" )
@@ -868,7 +879,7 @@ Main::Configuration::Switches::~Switches()
 {
 	try
 	{
-		for( auto item : m_items )
+		for( const auto & item : m_items )
 		{
 			G_WARNING( "Main::Configuration::Switches::dtor: unknown smtp-config item [" << item << "]" ) ;
 		}

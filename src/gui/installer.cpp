@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -1247,14 +1247,14 @@ Launcher::Launcher( bool as_service , const G::Path & bat , const G::Path & exe 
 	}
 	else if( isWindows() )
 	{
-		m_cmd = G::ExecutableCommand( bat , G::StringArray() , false ) ;
+		m_cmd = G::ExecutableCommand( bat , G::StringArray() ) ;
 		m_text = tr("running startup batch file") ;
 		m_subject = bat.str() ;
 		m_ok = tr("done") ; // since not necessarily 'ok'
 	}
 	else
 	{
-		m_cmd = G::ExecutableCommand( exe , {config_file.str()} , false ) ;
+		m_cmd = G::ExecutableCommand( exe , {config_file.str()} ) ;
 		m_text = tr("running") ;
 		m_subject = exe.str() + " " + config_file.str() ;
 	}
@@ -1631,7 +1631,7 @@ void InstallerImp::addActions()
 		G::Path bat = ivalue( "-bat" ) ;
 		G::Path dir_install = pvalue( "dir-install" ) ;
 		G::Path working_dir = pvalue( "dir-config" ) ;
-		G::Path target = bat ;
+		G::Path target = ivalue( "-bat" ) ;
 		G::Path icon = ivalue( "-icon" ) ;
 		G::StringArray args = ServerConfiguration::fromPages(m_pages_output).args() ;
 		addAction( new CreateBatchFile(bat,exe,args) ) ;

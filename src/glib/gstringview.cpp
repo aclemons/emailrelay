@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -40,8 +40,10 @@ bool G::sv_imatch( string_view a , string_view b ) noexcept
 
 G::string_view G::sv_substr( string_view sv , std::size_t pos , std::size_t count ) noexcept
 {
-	if( pos >= sv.size() ) return string_view( sv.data() , std::size_t(0U) ) ;
-	return string_view( sv.data() + pos , std::min(sv.size()-pos,count) ) ;
+	if( pos >= sv.size() )
+		return { sv.data() , std::size_t(0U) } ;
+	else
+		return { sv.data() + pos , std::min(sv.size()-pos,count) } ;
 }
 
 // ==
@@ -54,9 +56,12 @@ int G::string_view::compare( const string_view & other ) const noexcept
 
 G::string_view G::string_view::substr( std::size_t pos , std::size_t count ) const
 {
-	if( (empty() && pos!=0U) || pos > m_n ) throw std::out_of_range( "string_view::substr" ) ;
-	if( pos == m_n ) return string_view( m_p , std::size_t(0U) ) ; // (more than the standard requires)
-	return string_view( m_p + pos , std::min(m_n-pos,count) ) ;
+	if( (empty() && pos!=0U) || pos > m_n )
+		throw std::out_of_range( "string_view::substr" ) ;
+	else if( pos == m_n )
+		return { m_p , std::size_t(0U) } ; // (more than the standard requires)
+	else
+		return { m_p + pos , std::min(m_n-pos,count) } ;
 }
 
 std::size_t G::string_view::find( char c , std::size_t pos ) const noexcept

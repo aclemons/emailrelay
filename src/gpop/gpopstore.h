@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,13 +28,14 @@
 #include <memory>
 #include <iostream>
 #include <set>
-#include <list>
+#include <vector>
 
 namespace GPop
 {
 	class Store ;
-	class StoreLock ;
-	class StoreLockEntry ;
+	class StoreMessage ;
+	class StoreUser ;
+	class StoreList ;
 }
 
 //| \class GPop::Store
@@ -48,7 +49,7 @@ public:
 	G_EXCEPTION( InvalidDirectory , tx("invalid spool directory") ) ;
 
 	Store( const G::Path & spool_dir , bool by_name , bool allow_delete ) ;
-		///< Constructor.
+		///< Constructor. Throws InvalidDirectory.
 
 	G::Path dir() const ;
 		///< Returns the spool directory path.
@@ -68,8 +69,7 @@ public:
 	Store & operator=( Store && ) = delete ;
 
 private:
-	static void checkPath( const G::Path & , bool , bool ) ;
-	static bool valid( const G::Path & , bool ) ;
+	static bool accessible( const G::Path & dir , bool ) ;
 
 private:
 	G::Path m_path ;
@@ -77,55 +77,80 @@ private:
 	bool m_allow_delete ;
 } ;
 
-//| \class GPop::StoreLockEntry
-/// Represents a file in the GPop::Store.
-/// \see GPop::StoreLock
+//| \class GPop::StoreMessage
+/// A structure representing a pop message.
 ///
-class GPop::StoreLockEntry
+class GPop::StoreMessage
 {
 public:
-	int id ;
 	using Size = unsigned long ;
+	StoreMessage( const std::string & name , Size size , bool in_parent ) ;
+	G::Path epath( const G::Path & edir ) const ;
+	G::Path cpath( const G::Path & edir , const G::Path & sdir ) const ;
+	G::Path cpath( const G::Path & ) const ;
+	std::string uidl() const ;
+	static StoreMessage invalid() ;
+
+public:
+	std::string name ;
 	Size size ;
-	std::string uidl ;
-	StoreLockEntry( int id_ , Size size_ , const std::string & uidl_ ) :
-		id(id_) ,
-		size(size_) ,
-		uidl(uidl_)
-	{
-	}
+	bool in_parent ;
+	bool deleted ;
 } ;
 
-//| \class GPop::StoreLock
-/// Represents an exclusive lock on the message store.
+//| \class GPop::StoreUser
+/// Holds the list of messages available to a particular pop user.
+///
+class GPop::StoreUser
+{
+public:
+	StoreUser( Store & , const std::string & user ) ;
+		///< Constructor.
+
+public:
+	~StoreUser() = default ;
+	StoreUser( const StoreUser & ) = delete ;
+	StoreUser( StoreUser && ) = delete ;
+	StoreUser & operator=( const StoreUser & ) = delete ;
+	StoreUser & operator=( StoreUser && ) = delete ;
+
+private:
+	friend class GPop::StoreList ;
+	Store & m_store ;
+	std::string m_user ;
+	G::Path m_edir ;
+	G::Path m_sdir ;
+	std::vector<StoreMessage> m_list ;
+} ;
+
+//| \class GPop::StoreList
+/// Represents the protocol's view of the pop store having 1-based
+/// message ids. Messages can be marked as deleted and then
+/// actually deleted by commit().
 /// \see RFC-1939
 ///
-class GPop::StoreLock
+class GPop::StoreList
 {
 public:
 	G_EXCEPTION( CannotDelete , tx("cannot delete message file") ) ;
 	G_EXCEPTION( CannotRead , tx("cannot read message file") ) ;
-	using Size = StoreLockEntry::Size ;
-	using Entry = StoreLockEntry ;
-	using List = std::list<Entry> ;
-	using Fn = void (*)(std::ostream &, const std::string &) ;
+	using Size = StoreMessage::Size ;
+	using List = std::vector<StoreMessage> ;
 
-	explicit StoreLock( Store & store ) ;
-		///< Constructor. Keeps the reference.
-		///<
-		///< Postcondition: !locked()
+	StoreList() ;
+		///< Constructor for an empty list.
 
-	void lock( const std::string & user ) ;
-		///< Initialisation.
-		///<
-		///< Precondition: !user.empty() && !locked()
-		///< Postcondition: locked()
+	StoreList( const StoreUser & , bool allow_delete ) ;
+		///< Constructor.
 
-	bool locked() const ;
-		///< Returns true if locked.
+	List::const_iterator cbegin() const ;
+		///< Returns the begin iterator.
 
-	~StoreLock() ;
-		///< Destructor.
+	List::const_iterator cend() const ;
+		///< Returns the end iterator.
+
+	List::value_type get( int id ) const ;
+		///< Returns the item with index id-1.
 
 	Size messageCount() const ;
 		///< Returns the store's message count.
@@ -133,74 +158,45 @@ public:
 	Size totalByteCount() const ;
 		///< Returns the store's total byte count.
 
-	Size byteCount( int id ) const ;
-		///< Returns a message size.
-
 	std::string uidl( int id ) const ;
-		///< Returns a message's unique id.
+		///< Returns a message's unique 1-based id.
 
 	bool valid( int id ) const ;
-		///< Validates a message number.
+		///< Validates a message id.
 
-	List list( int id = -1 ) const ;
-		///< Lists messages in the store.
+	Size byteCount( int id ) const ;
+		///< Returns the message size.
 
-	std::unique_ptr<std::istream> get( int id ) const ;
+	std::unique_ptr<std::istream> content( int id ) const ;
 		///< Retrieves the message content.
 
 	void remove( int ) ;
-		///< Marks the message for removal.
+		///< Marks the message files for deletion.
 
 	void rollback() ;
-		///< Rolls back remove()als but retains the lock.
-		///<
-		///< Precondition: locked()
-		///< Postcondition: locked() [sic]
+		///< Rolls back remove()als.
 
 	void commit() ;
-		///< Commits remove()als.
-		///< Postcondition: !locked()
-
-private:
-	struct File /// A private implementation class used by GPop::StoreLock.
-	{
-		std::string name ; // content name
-		StoreLockEntry::Size size ;
-		explicit File( const G::Path & ) ;
-		File( const std::string & name_ , const std::string & size_string ) ;
-		bool operator<( const File & ) const ;
-		static StoreLockEntry::Size toSize( const std::string & s ) ;
-	} ;
-	using Set = std::set<File> ;
+		///< Commits remove()als. Messages remain marked
+		///< for deletion so another commit() will emit
+		///< 'cannot delete' error messages.
 
 public:
-	StoreLock( const StoreLock & ) = delete ;
-	StoreLock( StoreLock && ) = delete ;
-	StoreLock & operator=( const StoreLock & ) = delete ;
-	StoreLock & operator=( StoreLock && ) = delete ;
+	~StoreList() = default ;
+	StoreList( const StoreList & ) = delete ;
+	StoreList( StoreList && ) = default ;
+	StoreList & operator=( const StoreList & ) = delete ;
+	StoreList & operator=( StoreList && ) = default ;
 
 private:
-	Set::iterator find( const std::string & ) ;
-	Set::const_iterator find( int id ) const ;
-	Set::iterator find( int id ) ;
-	void doCommit( Store & ) const ;
-	G::Path path( int id ) const ;
-	G::Path path( const std::string & , bool fallback ) const ;
-	std::string envelopeName( const std::string & ) const ;
-	std::string contentName( const std::string & ) const ;
-	G::Path contentPath( const std::string & ) const ;
-	G::Path contentPath( const File & ) const ;
-	G::Path envelopePath( const File & ) const ;
 	void deleteFile( const G::Path & , bool & ) const ;
-	bool unlinked( Store & , const File & ) const ;
+	bool shared( const StoreMessage & ) const ;
 
 private:
-	Store * m_store ;
-	G::Path m_dir ;
-	std::string m_user ;
-	Set m_initial ;
-	Set m_current ;
-	Set m_deleted ;
+	bool m_allow_delete {false} ;
+	G::Path m_edir ;
+	G::Path m_sdir ;
+	std::vector<StoreMessage> m_list ;
 } ;
 
 #endif

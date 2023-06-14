@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
 ///
 /// \file emailrelay_test_server.cpp
 ///
-// A dummy smtp server for testing purposes.
+// A dummy SMTP server for testing purposes.
 //
 // usage: emailrelay_test_server [--quiet] [--tls] [--auth-foo-bar] [--auth-cram] [--auth-login] [--auth-plain]
 //        [--auth-ok] [--slow] [--fail-at <n>] [--drop] [--ipv6] [--port <port>]

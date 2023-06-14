@@ -8,7 +8,6 @@
 ./src/gauth/gsecretsfile.cpp
 ./src/gauth/gsaslclient.cpp
 ./src/gauth/gsaslclientsecrets.cpp
-./src/gauth/gvalid.cpp
 ./src/gauth/gsaslserverfactory_basic.cpp
 ./src/gauth/gsaslserverfactory_pam.cpp
 ./src/gauth/gsecrets.cpp
@@ -40,7 +39,6 @@
 ./src/main/run.cpp
 ./src/main/commandline.cpp
 ./src/main/licence.cpp
-./src/main/filter.cpp
 ./src/main/winmain.cpp
 ./src/main/legal.cpp
 ./src/main/output.cpp
@@ -112,7 +110,6 @@
 ./src/glib/gtest.cpp
 ./src/glib/gdatetime.cpp
 ./src/glib/gstringwrap.cpp
-./src/glib/gexecutablecommand_unix.cpp
 ./src/glib/gdate.cpp
 ./src/glib/goption.cpp
 ./src/glib/gmd5.cpp

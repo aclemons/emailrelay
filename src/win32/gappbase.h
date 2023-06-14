@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -80,7 +80,7 @@ public:
 		///< This should be called from WinMain().
 		///< Returns an error string if no-throw.
 
-	void run( bool with_idle = true ) ;
+	void run() ;
 		///< Runs the GGui::Pump class's GetMessage()/DispatchMessage() message
 		///< pump. This is typically used by simple GUI applications that do not
 		///< have a separate network event loop.

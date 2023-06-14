@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -94,6 +94,12 @@ sub run
 	$this->{m_pid} = $pid ;
 	push @pid_list , $pid if $pid ;
 	return $pid && System::processIsRunning($pid) ;
+}
+
+sub log
+{
+	my ( $this ) = @_ ;
+	return $this->{m_logfile} ;
 }
 
 sub kill

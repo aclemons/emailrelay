@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -115,7 +115,7 @@
 #include "installer.h"
 #include "guidir.h"
 #include "guilink.h"
-#include "pages.h"
+#include "guipages.h"
 #include "guiboot.h"
 #include "serverconfiguration.h"
 #include "glogoutput.h"
@@ -194,10 +194,10 @@ static bool isWindows()
 class Application : public QApplication
 {
 public:
-	Application( int & argc , char * argv [] ) ;
+	Application( int & argc , char * argv [] ) ; // NOLINT std::array
 	bool notify( QObject * p1 , QEvent * p2 ) override ;
 } ;
-Application::Application( int & argc , char * argv [] ) :
+Application::Application( int & argc , char * argv [] ) : // NOLINT std::array
 	QApplication(argc,argv)
 {
 }

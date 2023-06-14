@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -306,31 +306,46 @@ sub waitFor
 
 sub waitForFileLine
 {
-	my ( $file , $string , $more ) = @_ ;
+	my ( $file , $re , $more , $timeout ) = @_ ;
 	waitFor( sub {
 		my $fh = new FileHandle( $file ) ;
 		while(<$fh>)
 		{
 			chomp( my $line = $_ ) ;
-			return 1 if( $line =~ m/$string/ )
+			return 1 if( $line =~ m/$re/ )
 		}
-	} , "file [$file] containing [$string]" , $more ) ;
+	} , "file [$file] containing [$re]" , $more , $timeout ) ;
+}
+
+sub waitForFileLineCount
+{
+	my ( $file , $re , $count , $more , $timeout ) = @_ ;
+	waitFor( sub {
+		my $fh = new FileHandle( $file ) ;
+		my $n = 0 ;
+		while(<$fh>)
+		{
+			chomp( my $line = $_ ) ;
+			$n++ if( $line =~ m/$re/ )
+		}
+		return $n == $count ? 1 : 0 ;
+	} , "file [$file] containing [$re] exactly [$count] times" , $more , $timeout ) ;
 }
 
 sub waitForFile
 {
-	my ( $file , $more ) = @_ ;
+	my ( $file , $more , $timeout ) = @_ ;
 	waitFor( sub {
 		-f $file
-	} , "file [$file]" , $more ) ;
+	} , "file [$file]" , $more , $timeout ) ;
 }
 
 sub waitForFiles
 {
-	my ( $glob , $count , $more ) = @_ ;
+	my ( $glob , $count , $more , $timeout ) = @_ ;
 	waitFor( sub {
 		$count == scalar(grep{-f $_} glob_($glob))
-	} , "$count files matching [$glob]" , $more ) ;
+	} , "$count files matching [$glob]" , $more , $timeout ) ;
 }
 
 sub waitForPid

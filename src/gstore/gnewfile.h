@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -36,9 +36,14 @@ namespace GStore
 }
 
 //| \class GStore::NewFile
-/// A concrete derived class implementing the GStore::NewMessage
-/// interface. Writes itself to the i/o streams supplied by
-/// GStore::FileStore.
+/// A concrete class implementing the GStore::NewMessage interface using
+/// files.
+///
+/// The prepare() override creates one ".envelope.new" file and one
+/// ".content" file.
+///
+/// The commit() override renames the envelope file to remove the ".new"
+/// filename extension. This makes it visible to FileStore::iterator().
 ///
 class GStore::NewFile : public NewMessage
 {
@@ -71,7 +76,7 @@ private: // overrides
 	void addTo( const std::string & to , bool local , bool utf8address ) override ; // GStore::NewMessage
 	NewMessage::Status addContent( const char * , std::size_t ) override ; // GStore::NewMessage
 	std::size_t contentSize() const override ; // GStore::NewMessage
-	bool prepare( const std::string & auth_id , const std::string & peer_socket_address ,
+	void prepare( const std::string & auth_id , const std::string & peer_socket_address ,
 		const std::string & peer_certificate ) override ; // GStore::NewMessage
 
 private:
@@ -80,9 +85,7 @@ private:
 	G::Path cpath() const ;
 	G::Path epath( State ) const ;
 	void cleanup() ;
-	void discardContent() ;
 	void saveEnvelope( Envelope & , const G::Path & ) ;
-	static G::Path localPath( const G::Path & ) ;
 
 private:
 	FileStore & m_store ;

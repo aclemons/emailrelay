@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -34,26 +34,33 @@ namespace GVerifiers
 }
 
 //| \class GVerifiers::UserVerifier
-/// A concrete Verifier class that verifies against the password database.
-/// Users are valid if they appear in the password database with a uid
-/// within the configured range. A sub-range for 'local' users can be
-/// configured.
+/// A concrete Verifier class that verifies against the password database
+/// (ie. getpwnam() or LookupAccountName()).
+///
+/// The first part of the recipient address has to match an entry in the
+/// password database and the second part has to match the configured domain
+/// name. A sub-range for the password database entries can be configured
+/// via the 'spec' string. This has a sensible default that excludes
+/// system accounts. The domain name match is case insensitive.
+///
+/// In local mode the matching addresses are returned as valid local
+/// mailboxes and non-matching addresses are returned as valid remote
+/// addresses. The returned mailbox names are the account names as read
+/// from the password database, optionally with seven-bit uppercase
+/// letters converted to lowercase.
+///
+/// If not in local mode then the matching addresses are returned as
+/// valid remote addresses and non-matching addresses are returned as
+/// invalid.
 ///
 class GVerifiers::UserVerifier : public GSmtp::Verifier
 {
 public:
-	UserVerifier( GNet::ExceptionSink es , bool local ,
-		const GSmtp::Verifier::Config & config , const std::string & spec ,
-		bool allow_postmaster = true ) ;
-			///< Constructor. If 'local' (typically for outgoing messages) then
-			///< addresses are verified as local if they match the 'spec' range
-			///< with the correct domain and remote otherwise. If not 'local'
-			///< (typically for incoming messages) then addresses are verified
-			///< as remote if they match the 'spec' range and are rejected
-			///< otherwise.
-
-	~UserVerifier() override ;
-		///< Destructor.
+	UserVerifier( GNet::ExceptionSink es , bool local_mode ,
+		const GSmtp::Verifier::Config & config , const std::string & spec ) ;
+			///< Constructor. The spec string is semi-colon separated list
+			///< of values including a uid range and "lc"/"lowercase"
+			///< eg. "1000-1002;pm;lc".
 
 private: // overrides
 	void verify( Command command , const std::string & , const GSmtp::Verifier::Info & ) override ;
@@ -62,8 +69,8 @@ private: // overrides
 
 private:
 	void onTimeout() ;
-	static std::string normalise( const std::string & ) ;
-	bool lookup( const std::string & , const std::string & , std::string * = nullptr ) const ;
+	bool lookup( const std::string & , const std::string & , std::string * = nullptr , std::string * = nullptr ) const ;
+	static std::string dequote( const std::string & ) ;
 
 private:
 	using Signal = G::Slot::Signal<GSmtp::Verifier::Command,const GSmtp::VerifierStatus&> ;
@@ -74,7 +81,7 @@ private:
 	GSmtp::VerifierStatus m_result ;
 	Signal m_done_signal ;
 	std::pair<int,int> m_range ;
-	bool m_allow_postmaster ;
+	bool m_lowercase ;
 } ;
 
 #endif

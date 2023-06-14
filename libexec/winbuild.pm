@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -79,7 +79,7 @@ sub find_msbuild
 sub find_cmake
 {
 	my ( $msbuild ) = @_ ;
-	my $msbuild_root = _sanepath(File::Basename::dirname($msbuild))."/../../.." ;
+	my $msbuild_root = $msbuild ? _sanepath(File::Basename::dirname($msbuild))."/../../.." : "." ;
 	return _fcache( "cmake" ,
 		_find_bypass( "find-cmake" , "cmake" ) ||
 		_find_basic( "find-cmake" , "cmake.exe" , "$msbuild_root/common7/ide/commonextensions/microsoft/cmake/cmake/bin" ) ||
@@ -236,7 +236,14 @@ sub fcache_write
 	my $fh = new FileHandle( $path , "w" ) or die "error: install: cannot create [$path]\n" ;
 	for my $k ( sort keys %fcache )
 	{
-		print $fh "$k $fcache{$k}\n" ;
+		if( $fcache{$k} )
+		{
+			print $fh "$k $fcache{$k}\n" ;
+		}
+		else
+		{
+			print $fh "$k # not found -- edit here\n" ;
+		}
 	}
 	$fh->close() or die ;
 }
@@ -259,6 +266,7 @@ sub _find_bypass
 	while(<$fh>)
 	{
 		chomp( my $line = $_ ) ;
+		$line =~ s/#.*// ;
 		my ( $k , $v ) = ( $line =~ m/(\S+)\s+(.*)/ ) ;
 		if( $k eq $key )
 		{

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -97,10 +97,10 @@ void GFilters::FilterChain::start( const GStore::MessageId & id )
 
 void GFilters::FilterChain::onFilterDone( int ok_abandon_fail )
 {
+	m_filter_index++ ;
 	m_filter->doneSignal().disconnect() ;
 	if( ok_abandon_fail == 0 ) // ok
 	{
-		m_filter_index++ ;
 		G_ASSERT( m_filter_index <= m_filters.size() ) ;
 		if( m_filter_index >= m_filters.size() )
 		{
@@ -116,7 +116,6 @@ void GFilters::FilterChain::onFilterDone( int ok_abandon_fail )
 	}
 	else // abandon/fail
 	{
-		G_DEBUG_IF( ((m_filter_index+1U)<m_filters.size()) , "GFilters::FilterChain::onFilterDone: some chained filters not run" ) ;
 		m_running = false ;
 		m_done_signal.emit( ok_abandon_fail ) ;
 	}
@@ -149,6 +148,11 @@ std::string GFilters::FilterChain::reason() const
 
 bool GFilters::FilterChain::special() const
 {
-	return m_filter->special() ;
+	for( std::size_t i = 0U ; i < m_filter_index ; i++ ) // (new)
+	{
+		if( m_filters.at(i)->special() )
+			return true ;
+	}
+	return false ;
 }
 

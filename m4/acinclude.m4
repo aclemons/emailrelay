@@ -1,4 +1,4 @@
-dnl Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+dnl Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 dnl 
 dnl This program is free software: you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
@@ -13,6 +13,22 @@ dnl
 dnl You should have received a copy of the GNU General Public License
 dnl along with this program.  If not, see <http://www.gnu.org/licenses/>.
 dnl ===
+dnl GCONFIG_FN_ARFLAGS
+dnl ------------------
+dnl Does AC_SUBST to set ARFLAGS to "cr", depending on the output from
+dnl "ar --version".
+dnl
+AC_DEFUN([GCONFIG_FN_ARFLAGS],
+[
+	if test "`uname 2>/dev/null`" = "Linux"
+	then
+		if "${AR}" --version | grep "GNU ar" > /dev/null
+		then
+			AC_SUBST([ARFLAGS],[${ARFLAGS-cr}])
+		fi
+	fi
+])
+
 dnl GCONFIG_FN_CHECK_CXX
 dnl ----------------------
 dnl Checks c++ language features.
@@ -42,6 +58,7 @@ AC_DEFUN([GCONFIG_FN_CHECK_FUNCTIONS],[
 	AC_REQUIRE([GCONFIG_FN_GETENV_S])
 	AC_REQUIRE([GCONFIG_FN_PUTENV_S])
 	AC_REQUIRE([GCONFIG_FN_FSOPEN])
+	AC_REQUIRE([GCONFIG_FN_FOPEN_S])
 	AC_REQUIRE([GCONFIG_FN_SOPEN])
 	AC_REQUIRE([GCONFIG_FN_SOPEN_S])
 	AC_REQUIRE([GCONFIG_FN_EXTENDED_OPEN])
@@ -341,38 +358,6 @@ AC_DEFUN([GCONFIG_FN_CXX_STRING_VIEW],
 	fi
 ])
 
-dnl GCONFIG_FN_ENABLE_EXTRA_FILTERS
-dnl -------------------------------
-dnl Enables extra built-in filters.
-dnl
-AC_DEFUN([GCONFIG_FN_ENABLE_EXTRA_FILTERS],
-[
-	if test "$enable_all_filters" = "yes"
-	then
-		AC_DEFINE(GCONFIG_FILTER_MASK,65535,[Bitmask of built-in filters])
-		AM_CONDITIONAL([GCONFIG_EXTRA_FILTERS],[true])
-	else
-		AC_DEFINE(GCONFIG_FILTER_MASK,0,[Bitmask of built-in filters])
-		AM_CONDITIONAL([GCONFIG_EXTRA_FILTERS],[false])
-	fi
-])
-
-dnl GCONFIG_FN_ENABLE_EXTRA_VERIFIERS
-dnl ---------------------------------
-dnl Enables extra built-in address verifiers.
-dnl
-AC_DEFUN([GCONFIG_FN_ENABLE_EXTRA_VERIFIERS],
-[
-	if test "$enable_all_verifiers" = "yes"
-	then
-		AC_DEFINE(GCONFIG_VERIFIER_MASK,65535,[Bitmask of built-in address-verifiers])
-		AM_CONDITIONAL([GCONFIG_EXTRA_VERIFIERS],[true])
-	else
-		AC_DEFINE(GCONFIG_VERIFIER_MASK,0,[Bitmask of built-in address-verifiers])
-		AM_CONDITIONAL([GCONFIG_EXTRA_VERIFIERS],[false])
-	fi
-])
-
 dnl GCONFIG_FN_ENABLE_BSD
 dnl ---------------------
 dnl Enables bsd tweaks if "--enable-bsd" is used. Typically used after
@@ -575,6 +560,21 @@ AC_DEFUN([GCONFIG_FN_ENABLE_STD_THREAD],
 	fi
 ])
 
+dnl GCONFIG_FN_ENABLE_SUBMISSION
+dnl ----------------------------
+dnl Enables submission-tool functionality.
+dnl Typically used after AC_ARG_ENABLE(submission).
+dnl
+AC_DEFUN([GCONFIG_FN_ENABLE_SUBMISSION],
+[
+	if test "$enable_submission" = "yes"
+	then
+		AC_DEFINE(GCONFIG_ENABLE_SUBMISSION,1,[Define true to enable submission-tool functionality])
+	else
+		AC_DEFINE(GCONFIG_ENABLE_SUBMISSION,0,[Define true to enable submission-tool functionality])
+	fi
+])
+
 dnl GCONFIG_FN_ENABLE_TESTING
 dnl -------------------------
 dnl Disables make-check tests if "--disable-testing" is used.
@@ -743,6 +743,33 @@ AC_DEFUN([GCONFIG_FN_FSOPEN],
 		AC_DEFINE(GCONFIG_HAVE_FSOPEN,1,[Define true if _fsopen() is available])
 	else
 		AC_DEFINE(GCONFIG_HAVE_FSOPEN,0,[Define true if _fsopen() is available])
+	fi
+])
+
+dnl GCONFIG_FN_FOPEN_S
+dnl ------------------
+dnl Defines GCONFIG_HAVE_FSOPEN if fopen_s() is available.
+dnl
+AC_DEFUN([GCONFIG_FN_FOPEN_S],
+[AC_CACHE_CHECK([for fopen_s()],[gconfig_cv_fopen_s],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#include <stdio.h>]
+			[#include <share.h>]
+			[FILE * fp = 0 ;]
+			[errno_t e = 0 ;]
+		],
+		[
+			[e = fopen_s(&fp,"foo","w") ;]
+		])],
+		gconfig_cv_fopen_s=yes ,
+		gconfig_cv_fopen_s=no )
+])
+	if test "$gconfig_cv_fopen_s" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_FOPEN_S,1,[Define true if fopen_s() is available])
+	else
+		AC_DEFINE(GCONFIG_HAVE_FOPEN_S,0,[Define true if fopen_s() is available])
 	fi
 ])
 
@@ -1682,93 +1709,108 @@ dnl distribution.
 dnl
 AC_DEFUN([GCONFIG_FN_QT],
 [
-	# try pkg-config -- this says 'checking for QT'
-	PKG_CHECK_MODULES([QT],[Qt5Widgets > 5],
-		[
-			gconfig_pkgconfig_qt=yes
-		],
-		[
-			gconfig_pkgconfig_qt=no
-			AC_MSG_NOTICE([no QT 5 pkg-config])
-		]
-	)
-
-	# allow the moc command to be defined with QT_MOC on the configure
-	# command-line, typically also with CXXFLAGS and LIBS pointing to Qt
-	# headers and libraries
-	AC_ARG_VAR([QT_MOC],[moc command for QT])
-
-	if echo "$QT_MOC" | grep -q /
+	# skip the madness if the user has specified everything we need
+	if test "$QT_MOC" != "" -a "$QT_CFLAGS" != "" -a "$QT_LIBS" != ""
 	then
-		QT_LRELEASE="`dirname \"$QT_MOC\"`/lrelease"
-	else
-		QT_LRELEASE="lrelease"
-	fi
-
-	# or build the moc command using pkg-config results
-	if test "$QT_MOC" = ""
-	then
-		if test "$gconfig_pkgconfig_qt" = "yes"
+		if echo "$QT_MOC" | grep -q /
 		then
-			QT_MOC="`$PKG_CONFIG --variable=host_bins Qt5Core`/moc"
-			QT_LRELEASE="`$PKG_CONFIG --variable=host_bins Qt5Core`/lrelease"
-			QT_CHOOSER="`$PKG_CONFIG --variable=exec_prefix Qt5Core`/bin/qtchooser"
-			if test -x "$QT_MOC" ; then : ; else QT_MOC="" ; fi
-			if test -x "$QT_LRELEASE" ; then : ; else QT_LRELEASE="" ; fi
-			if test -x "$QT_CHOOSER" ; then : ; else QT_CHOOSER="" ; fi
-			if test "$QT_MOC" = "" -a "$QT_CHOOSER" != ""
+			QT_LRELEASE="`dirname \"$QT_MOC\"`/lrelease"
+		else
+			QT_LRELEASE="lrelease"
+		fi
+		AC_MSG_CHECKING([for QT])
+		AC_MSG_RESULT([overridden])
+		gconfig_have_qt=yes
+	else
+
+		# try pkg-config -- this says 'checking for QT'
+		PKG_CHECK_MODULES([QT],[Qt5Widgets > 5],
+			[
+				gconfig_pkgconfig_qt=yes
+			],
+			[
+				gconfig_pkgconfig_qt=no
+				AC_MSG_NOTICE([no QT 5 pkg-config])
+			]
+		)
+
+		# allow the moc command to be defined with QT_MOC on the configure
+		# command-line, typically also with CXXFLAGS and LIBS pointing to Qt
+		# headers and libraries
+		AC_ARG_VAR([QT_MOC],[moc command for QT])
+
+		if echo "$QT_MOC" | grep -q /
+		then
+			QT_LRELEASE="`dirname \"$QT_MOC\"`/lrelease"
+		else
+			QT_LRELEASE="lrelease"
+		fi
+
+		# or build the moc command using pkg-config results
+		if test "$QT_MOC" = ""
+		then
+			if test "$gconfig_pkgconfig_qt" = "yes"
 			then
-				QT_MOC="$QT_CHOOSER -run-tool=moc -qt=qt5"
-			fi
-			if test "$QT_LRELEASE" = "" -a "$QT_CHOOSER" != ""
-			then
-				QT_LRELEASE="$QT_CHOOSER -run-tool=lrelease -qt=qt5"
+				QT_MOC="`$PKG_CONFIG --variable=host_bins Qt5Core`/moc"
+				QT_LRELEASE="`$PKG_CONFIG --variable=host_bins Qt5Core`/lrelease"
+				QT_CHOOSER="`$PKG_CONFIG --variable=exec_prefix Qt5Core`/bin/qtchooser"
+				if test -x "$QT_MOC" ; then : ; else QT_MOC="" ; fi
+				if test -x "$QT_LRELEASE" ; then : ; else QT_LRELEASE="" ; fi
+				if test -x "$QT_CHOOSER" ; then : ; else QT_CHOOSER="" ; fi
+				if test "$QT_MOC" = "" -a "$QT_CHOOSER" != ""
+				then
+					QT_MOC="$QT_CHOOSER -run-tool=moc -qt=qt5"
+				fi
+				if test "$QT_LRELEASE" = "" -a "$QT_CHOOSER" != ""
+				then
+					QT_LRELEASE="$QT_CHOOSER -run-tool=lrelease -qt=qt5"
+				fi
 			fi
 		fi
-	fi
 
-	# or find moc on the path
-	if test "$QT_MOC" = ""
-	then
-		AC_PATH_PROG([QT_MOC],[moc])
-	fi
+		# or find moc on the path
+		if test "$QT_MOC" = ""
+		then
+			AC_PATH_PROG([QT_MOC],[moc])
+		fi
 
-	if test "$QT_LRELEASE" = ""
-	then
-		AC_PATH_PROG([QT_LRELEASE],[lrelease])
 		if test "$QT_LRELEASE" = ""
 		then
-			QT_LRELEASE=false
+			AC_PATH_PROG([QT_LRELEASE],[lrelease])
+			if test "$QT_LRELEASE" = ""
+			then
+				QT_LRELEASE=false
+			fi
 		fi
-	fi
 
-	if test "$QT_MOC" != ""
-	then
-		AC_MSG_NOTICE([QT moc command: $QT_MOC])
-	fi
-
-	# set gconfig_have_qt, QT_CFLAGS and QT_LIBS iff we have a moc command
-	if test "$QT_MOC" != ""
-	then
-		gconfig_have_qt="yes"
-		if test "$gconfig_pkgconfig_qt" = "yes"
+		if test "$QT_MOC" != ""
 		then
-			QT_CFLAGS="-fPIC `$PKG_CONFIG --cflags Qt5Widgets`"
-			QT_LIBS="`$PKG_CONFIG --libs Qt5Widgets`"
-		else
-			QT_CFLAGS="-fPIC"
-			QT_LIBS=""
+			AC_MSG_NOTICE([QT moc command: $QT_MOC])
 		fi
-	else
-		gconfig_have_qt="no"
-	fi
 
-	# mac modifications
-	if test "$QT_MOC" != "" -a "`uname`" = "Darwin"
-	then
-		QT_DIR="`dirname $QT_MOC`/.."
-		QT_CFLAGS="-F $QT_DIR/lib"
-		QT_LIBS="-F $QT_DIR/lib -framework QtWidgets -framework QtGui -framework QtCore"
+		# set gconfig_have_qt, QT_CFLAGS and QT_LIBS iff we have a moc command
+		if test "$QT_MOC" != ""
+		then
+			gconfig_have_qt="yes"
+			if test "$gconfig_pkgconfig_qt" = "yes"
+			then
+				QT_CFLAGS="-fPIC `$PKG_CONFIG --cflags Qt5Widgets`"
+				QT_LIBS="`$PKG_CONFIG --libs Qt5Widgets`"
+			else
+				QT_CFLAGS="-fPIC"
+				QT_LIBS=""
+			fi
+		else
+			gconfig_have_qt="no"
+		fi
+
+		# mac modifications
+		if test "$QT_MOC" != "" -a "`uname`" = "Darwin"
+		then
+			QT_DIR="`dirname $QT_MOC`/.."
+			QT_CFLAGS="-F $QT_DIR/lib"
+			QT_LIBS="-F $QT_DIR/lib -framework QtWidgets -framework QtGui -framework QtCore"
+		fi
 	fi
 ])
 

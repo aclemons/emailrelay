@@ -157,4 +157,4 @@ and *DATA*.
 
 .. _SMTP: https://en.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol
 
-.. footer:: Copyright (C) 2001-2022 Graeme Walker
+.. footer:: Copyright (C) 2001-2023 Graeme Walker

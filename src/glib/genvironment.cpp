@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -146,10 +146,12 @@ char ** G::Environment::v() const noexcept
 	return const_cast<char**>(&m_pointers[0]) ;
 }
 
+#ifndef G_LIB_SMALL
 const char * G::Environment::ptr() const noexcept
 {
 	return m_block.data() ;
 }
+#endif
 
 bool G::Environment::contains( const std::string & name ) const
 {

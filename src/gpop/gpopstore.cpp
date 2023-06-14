@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,42 +26,31 @@
 #include "gtest.h"
 #include "groot.h"
 #include "gassert.h"
+#include <algorithm>
+#include <iterator>
 #include <sstream>
 #include <fstream>
 
 namespace GPop
 {
-	struct FileReader ;
-	struct DirectoryReader ;
-	struct FileDeleter ;
+	namespace StoreImp /// An implementation namespace for GPop::Store
+	{
+		struct FileReader /// Used by GPop::Store like G::Root when reading.
+		{
+			FileReader() ;
+		} ;
+		struct DirectoryReader : private G::Root /// Used by GPop::Store like G::Root when reading a directory.
+		{
+		} ;
+		struct FileDeleter : private G::Root /// Used by GPop::Store like G::Root when deleting.
+		{
+		} ;
+		unsigned long toSize( const std::string & s )
+		{
+			return (s.empty() || !G::Str::isULong(s) ) ? 0UL : G::Str::toULong(s,G::Str::Limited()) ;
+		}
+	}
 }
-
-//| \class GPop::FileReader
-/// A trivial class which is used like G::Root by GPop::Store for reading files.
-/// The implementation does nothing because files in the pop store are group-readable.
-///
-struct GPop::FileReader
-{
-	FileReader() ;
-} ;
-
-//| \class GPop::DirectoryReader
-/// A trivial class which is used like G::Root by GPop::Store for reading
-/// directory listings.
-///
-struct GPop::DirectoryReader : private G::Root
-{
-	DirectoryReader() = default;
-} ;
-
-//| \class GPop::FileDeleter
-/// A trivial specialisation of G::Root used by GPop::Store for deleting files.
-/// The specialisation is not really necessary because the pop store directory
-/// is group-writeable.
-///
-struct GPop::FileDeleter : private G::Root
-{
-} ;
 
 // ==
 
@@ -70,7 +59,61 @@ GPop::Store::Store( const G::Path & path , bool by_name , bool allow_delete ) :
 	m_by_name(by_name) ,
 	m_allow_delete(allow_delete)
 {
-	checkPath( path , by_name , allow_delete ) ;
+	if( !accessible( path , by_name?false:allow_delete ) )
+		throw InvalidDirectory() ;
+
+	if( by_name )
+	{
+		// read the spool directory
+		G::DirectoryList iter ;
+		{
+			StoreImp::DirectoryReader claim_reader ;
+			iter.readAll( path ) ;
+		}
+
+		// check every sub-directory is accessible() and count them
+		int n = 0 ;
+		while( iter.more() )
+		{
+			if( iter.isDir() )
+			{
+				bool ok = accessible( iter.filePath() , allow_delete ) ;
+				G_DEBUG( "GPop::Store::ctor: [" << iter.filePath() << "]: " << (ok?"good":"bad") ) ;
+				if( ok )
+					n++ ;
+			}
+		}
+
+		// warn if no accessible() sub-directories
+		if( n == 0 )
+		{
+			G_WARNING( "GPop::Store::ctor: no sub-directories for pop-by-name found in \"" << path << "\": "
+				<< "create one sub-directory for each authorised pop account" ) ;
+		}
+	}
+}
+
+bool GPop::Store::accessible( const G::Path & dir_path , bool for_write )
+{
+	G::Directory dir_test( dir_path ) ;
+	bool ok = false ;
+	if( for_write )
+	{
+		std::string tmp_filename = G::Directory::tmp() ;
+		StoreImp::FileDeleter claim_deleter ;
+		ok = dir_test.valid() && dir_test.writeable( tmp_filename ) ;
+	}
+	else
+	{
+		StoreImp::FileReader claim_reader ;
+		ok = dir_test.valid() ;
+	}
+	if( !ok )
+	{
+		const char * op = for_write ? "writing" : "reading" ;
+		G_WARNING( "GPop::Store: directory not valid for " << op << ": \"" << dir_path << "\"" ) ;
+	}
+	return ok ;
 }
 
 G::Path GPop::Store::dir() const
@@ -88,411 +131,248 @@ bool GPop::Store::byName() const
 	return m_by_name ;
 }
 
-void GPop::Store::checkPath( const G::Path & dir_path , bool by_name , bool allow_delete )
+// ===
+
+GPop::StoreMessage::StoreMessage( const std::string & name_in , Size size_in , bool in_parent_in ) :
+	name(name_in) ,
+	size(size_in) ,
+	in_parent(in_parent_in) ,
+	deleted(false)
 {
-	if( by_name )
-	{
-		if( !valid(dir_path,false) )
-			throw InvalidDirectory() ;
-
-		G::DirectoryList iter ;
-		{
-			DirectoryReader claim_reader ;
-			iter.readAll( dir_path ) ;
-		}
-
-		int n = 0 ;
-		while( iter.more() )
-		{
-			if( iter.isDir() )
-			{
-				n++ ;
-				if( !valid(iter.filePath(),allow_delete) )
-				{
-					; // no-op -- warning only
-				}
-			}
-		}
-		if( n == 0 )
-		{
-			G_WARNING( "GPop::Store: no sub-directories for pop-by-name found in \"" << dir_path << "\": "
-				<< "create one sub-directory for each authorised pop account" ) ;
-		}
-	}
-	else if( !valid(dir_path,allow_delete) )
-	{
-		throw InvalidDirectory() ;
-	}
 }
 
-bool GPop::Store::valid( const G::Path & dir_path , bool allow_delete )
+G::Path GPop::StoreMessage::cpath( const G::Path & edir , const G::Path & sdir ) const
 {
-	G::Directory dir_test( dir_path ) ;
-	bool ok = false ;
-	if( allow_delete )
-	{
-		std::string tmp_filename = G::Directory::tmp() ;
-		FileDeleter claim_deleter ;
-		ok = dir_test.valid() && dir_test.writeable( tmp_filename ) ;
-	}
-	else
-	{
-		FileReader claim_reader ;
-		ok = dir_test.valid() ;
-	}
-	if( !ok )
-	{
-		const char * op = allow_delete ? "writing" : "reading" ;
-		G_WARNING( "GPop::Store: directory not valid for " << op << ": \"" << dir_path << "\"" ) ;
-	}
-	return ok ;
+	return in_parent ? cpath(sdir) : cpath(edir) ;
+}
+
+G::Path GPop::StoreMessage::cpath( const G::Path & dir ) const
+{
+	return G::Path( dir , name+".content" ) ;
+}
+
+G::Path GPop::StoreMessage::epath( const G::Path & edir ) const
+{
+	return G::Path( edir , name+".envelope" ) ;
+}
+
+GPop::StoreMessage GPop::StoreMessage::invalid()
+{
+	return {{},0,false} ;
+}
+
+std::string GPop::StoreMessage::uidl() const
+{
+	return name + ".content" ;
 }
 
 // ===
 
-GPop::StoreLock::File::File( const G::Path & content_path ) :
-	name(content_path.basename()) ,
-	size(toSize(G::File::sizeString(content_path.str())))
+GPop::StoreUser::StoreUser( Store & store , const std::string & user ) :
+	m_store(store) ,
+	m_user(user) ,
+	m_edir(store.byName()?G::Path(store.dir(),user):store.dir()) ,
+	m_sdir(store.dir())
 {
-}
-
-#ifndef G_LIB_SMALL
-GPop::StoreLock::File::File( const std::string & content_name , const std::string & size_string ) :
-	name(content_name) ,
-	size(toSize(size_string))
-{
-}
-#endif
-
-bool GPop::StoreLock::File::operator<( const File & rhs ) const
-{
-	return name < rhs.name ;
-}
-
-GPop::StoreLock::Size GPop::StoreLock::File::toSize( const std::string & s )
-{
-	if( s.empty() || !G::Str::isULong(s) ) return 0 ;
-	return G::Str::toULong( s , G::Str::Limited() ) ;
-}
-
-// ===
-
-GPop::StoreLock::StoreLock( Store & store ) :
-	m_store(&store)
-{
-}
-
-void GPop::StoreLock::lock( const std::string & user )
-{
-	G_ASSERT( !locked() ) ;
 	G_ASSERT( !user.empty() ) ;
-	G_ASSERT( m_store != nullptr ) ;
 
-	m_user = user ;
-	m_dir = m_store->dir() ;
-	if( m_store->byName() )
-		m_dir.pathAppend( user ) ;
-
-	// build a read-only list of files (inc. file sizes)
+	// build a list of envelope files, with content file sizes
 	{
-		DirectoryReader claim_reader ;
+		StoreImp::DirectoryReader claim_reader ;
 		G::DirectoryList iter ;
-		iter.readType( m_dir , ".envelope" ) ;
+		std::size_t n = iter.readType( m_edir , ".envelope" ) ;
+		m_list.reserve( n ) ;
 		while( iter.more() )
 		{
-			File file( contentPath(iter.fileName()) ) ;
-			if( file.size )
-				m_initial.insert( file ) ;
+			std::string ename = iter.fileName() ;
+			std::string name = G::Str::head( ename , ename.rfind('.') ) ;
+			std::string cname = name + ".content" ;
+
+			bool in_parent =
+				!G::File::exists( G::Path(m_edir,cname) , std::nothrow ) &&
+				m_store.byName() &&
+				G::File::exists( G::Path(m_sdir,cname) , std::nothrow ) ;
+
+			G::Path cpath = in_parent ? G::Path(m_sdir,cname) : G::Path(m_edir,cname) ;
+
+			auto csize = StoreImp::toSize( G::File::sizeString(cpath) ) ;
+			if( csize )
+				m_list.emplace_back( name , csize , in_parent ) ;
 		}
 	}
-
-	if( G::Test::enabled("large-pop-list") )
-	{
-		// create a larger list
-		std::size_t limit = m_initial.size() * 1000U ;
-		for( std::size_t i = 0U ; i < limit ; i++ )
-		{
-			std::ostringstream ss ;
-			ss << "dummy." << i << ".content" ;
-			m_initial.insert( File(ss.str()) ) ;
-		}
-	}
-
-	// take a mutable copy
-	m_current = m_initial ;
-
-	G_ASSERT( locked() ) ;
 }
 
-bool GPop::StoreLock::locked() const
+// ==
+
+GPop::StoreList::StoreList()
+= default ;
+
+GPop::StoreList::StoreList( const StoreUser & store_user , bool allow_delete ) :
+	m_allow_delete(allow_delete) ,
+	m_edir(store_user.m_edir) ,
+	m_sdir(store_user.m_sdir) ,
+	m_list(store_user.m_list)
 {
-	return m_store != nullptr && ! m_user.empty() ;
 }
 
-GPop::StoreLock::~StoreLock()
-= default;
-
-GPop::StoreLock::Size GPop::StoreLock::messageCount() const
+GPop::StoreList::List::const_iterator GPop::StoreList::cbegin() const
 {
-	G_ASSERT( locked() ) ;
-	return static_cast<Size>(m_current.size()) ;
+	return m_list.cbegin() ;
 }
 
-GPop::StoreLock::Size GPop::StoreLock::totalByteCount() const
+GPop::StoreList::List::const_iterator GPop::StoreList::cend() const
 {
-	G_ASSERT( locked() ) ;
+	return m_list.cend() ;
+}
+
+GPop::StoreMessage::Size GPop::StoreList::messageCount() const
+{
+	std::size_t n = std::count_if( m_list.begin() , m_list.end() ,
+		[](const StoreMessage &msg_){return !msg_.deleted;} ) ;
+
+	return static_cast<StoreMessage::Size>(n) ;
+}
+
+GPop::StoreList::Size GPop::StoreList::totalByteCount() const
+{
 	Size total = 0 ;
-	for( const auto & item : m_current )
-		total += item.size ;
+	for( const auto & item : m_list )
+	{
+		if( !item.deleted )
+			total += item.size ;
+	}
 	return total ;
 }
 
-bool GPop::StoreLock::valid( int id ) const
+bool GPop::StoreList::valid( int id ) const
 {
-	G_ASSERT( locked() ) ;
-	return id >= 1 && id <= static_cast<int>(m_initial.size()) ;
+	return id >= 1 && id <= static_cast<int>(m_list.size()) && !m_list.at(id-1).deleted ;
 }
 
-GPop::StoreLock::Set::iterator GPop::StoreLock::find( int id )
-{
-	G_ASSERT( valid(id) ) ;
-	auto initial_p = m_initial.begin() ;
-	for( int i = 1 ; i < id && initial_p != m_initial.end() ; i++ , ++initial_p ) {;}
-	return initial_p ;
-}
-
-GPop::StoreLock::Set::const_iterator GPop::StoreLock::find( int id ) const
+GPop::StoreMessage GPop::StoreList::get( int id ) const
 {
 	G_ASSERT( valid(id) ) ;
-	auto initial_p = m_initial.begin() ;
-	for( int i = 1 ; i < id && initial_p != m_initial.end() ; i++ , ++initial_p ) {;}
-	return initial_p ;
+	return valid(id) ? m_list.at(id-1) : StoreMessage::invalid() ;
 }
 
-GPop::StoreLock::Set::iterator GPop::StoreLock::find( const std::string & name )
+GPop::StoreList::Size GPop::StoreList::byteCount( int id ) const
 {
-	auto current_p = m_current.begin() ;
-	for( ; current_p != m_current.end() ; ++current_p )
-	{
-		if( (*current_p).name == name )
-			break ;
-	}
-	return current_p ;
-}
-
-GPop::StoreLock::Size GPop::StoreLock::byteCount( int id ) const
-{
-	G_ASSERT( locked() ) ;
-	return (*find(id)).size ;
-}
-
-GPop::StoreLock::List GPop::StoreLock::list( int id ) const
-{
-	G_ASSERT( locked() ) ;
-	List list ;
-	int i = 1 ;
-	for( auto p = m_current.begin() ; p != m_current.end() ; ++p , i++ )
-	{
-		if( id == -1 || id == i )
-			list.push_back( Entry(i,(*p).size,(*p).name) ) ;
-	}
-	return list ;
-}
-
-std::unique_ptr<std::istream> GPop::StoreLock::get( int id ) const
-{
-	G_ASSERT( locked() ) ;
 	G_ASSERT( valid(id) ) ;
-
-	G_DEBUG( "GPop::StoreLock::get: " << id << ": " << path(id) ) ;
-
-	auto file = std::make_unique<std::ifstream>() ;
-	G::Path file_path = path( id ) ;
-	{
-		FileReader claim_reader ;
-		G::File::open( *file , file_path ) ;
-	}
-
-	if( !file->good() )
-		throw CannotRead( file_path.str() ) ;
-
-	return std::unique_ptr<std::istream>( file.release() ) ;
+	return valid(id) ? m_list.at(id-1).size : Size(0) ;
 }
 
-void GPop::StoreLock::remove( int id )
+std::unique_ptr<std::istream> GPop::StoreList::content( int id ) const
 {
-	G_ASSERT( locked() ) ;
 	G_ASSERT( valid(id) ) ;
+	if( !valid(id) ) throw CannotRead( std::to_string(id) ) ;
 
-	auto initial_p = find( id ) ;
-	auto current_p = find( (*initial_p).name ) ;
-	if( current_p != m_current.end() )
+	G::Path cpath = m_list.at(id-1).cpath(m_edir,m_sdir) ;
+	G_DEBUG( "GPop::StoreList::get: " << id << " " << cpath ) ;
+
+	auto fstream = std::make_unique<std::ifstream>() ;
 	{
-		m_deleted.insert( *initial_p ) ;
-		m_current.erase( current_p ) ;
+		StoreImp::FileReader claim_reader ;
+		G::File::open( *fstream , cpath ) ;
 	}
+
+	if( !fstream->good() )
+		throw CannotRead( cpath.str() ) ;
+
+	return fstream ;
 }
 
-void GPop::StoreLock::commit()
+void GPop::StoreList::remove( int id )
 {
-	G_ASSERT( locked() ) ;
-	if( m_store )
-	{
-		Store * store = m_store ;
-		m_store = nullptr ;
-		doCommit( *store ) ;
-	}
-	m_store = nullptr ;
+	if( valid(id) )
+		m_list.at(id-1).deleted = true ;
 }
 
-void GPop::StoreLock::doCommit( Store & store ) const
+void GPop::StoreList::commit()
 {
 	bool all_ok = true ;
-	for( const auto & item : m_deleted )
+	for( const auto & item : m_list )
 	{
-		if( store.allowDelete() )
+		if( item.deleted && m_allow_delete )
 		{
-			deleteFile( envelopePath(item) , all_ok ) ;
-			if( unlinked(store,item) ) // race condition could leave content files undeleted
-				deleteFile( contentPath(item) , all_ok ) ;
+			deleteFile( item.epath(m_edir) , all_ok ) ;
+			if( !shared(item) ) // race condition could leave content files undeleted
+				deleteFile( item.cpath(m_edir,m_sdir) , all_ok ) ;
 		}
-		else
+		else if( item.deleted )
 		{
-			G_DEBUG( "StoreLock::doCommit: not deleting \"" << item.name << "\"" ) ;
+			G_DEBUG( "StoreList::doCommit: not deleting \"" << item.name << "\"" ) ;
 		}
 	}
 	if( ! all_ok )
 		throw CannotDelete() ;
 }
 
-void GPop::StoreLock::deleteFile( const G::Path & path , bool & all_ok ) const
+void GPop::StoreList::deleteFile( const G::Path & path , bool & all_ok ) const
 {
 	bool ok = false ;
 	{
-		FileDeleter claim_deleter ;
+		StoreImp::FileDeleter claim_deleter ;
 		ok = G::File::remove( path , std::nothrow ) ;
 	}
 	all_ok = ok && all_ok ;
 	if( ! ok )
-		G_ERROR( "StoreLock::remove: failed to delete " << path ) ;
+		G_ERROR( "StoreList::deleteFile: failed to delete " << path ) ;
 }
 
 #ifndef G_LIB_SMALL
-std::string GPop::StoreLock::uidl( int id ) const
+std::string GPop::StoreList::uidl( int id ) const
 {
 	G_ASSERT( valid(id) ) ;
-	auto p = find( id ) ;
-	return (*p).name ;
+	return valid(id) ? m_list.at(id-1).uidl() : std::string() ;
 }
 #endif
 
-G::Path GPop::StoreLock::path( int id ) const
+void GPop::StoreList::rollback()
 {
-	G_ASSERT( valid(id) ) ;
-	auto p = find( id ) ;
-	const File & file = (*p) ;
-	return contentPath( file ) ;
+	for( auto & item : m_list )
+		item.deleted = false ;
 }
 
-G::Path GPop::StoreLock::path( const std::string & filename , bool fallback ) const
+bool GPop::StoreList::shared( const StoreMessage & message ) const
 {
-	// expected path
-	G::Path path_1 = m_dir ;
-	path_1.pathAppend( filename ) ;
-
-	// or fallback to the parent directory
-	G::Path path_2 = m_dir ; path_2.pathAppend("..") ;
-	path_2.pathAppend( filename ) ;
-
-	return ( fallback && !G::File::exists(path_1,std::nothrow) ) ? path_2 : path_1 ;
-}
-
-std::string GPop::StoreLock::envelopeName( const std::string & content_name ) const
-{
-	std::string filename = content_name ;
-	G::Str::replace( filename , "content" , "envelope" ) ;
-	return filename ;
-}
-
-std::string GPop::StoreLock::contentName( const std::string & envelope_name ) const
-{
-	std::string filename = envelope_name ;
-	G::Str::replace( filename , "envelope" , "content" ) ;
-	return filename ;
-}
-
-G::Path GPop::StoreLock::contentPath( const std::string & envelope_name ) const
-{
-	const bool try_parent_directory = true ;
-	return path( contentName(envelope_name) , try_parent_directory ) ;
-}
-
-G::Path GPop::StoreLock::contentPath( const File & file ) const
-{
-	const bool try_parent_directory = true ;
-	return path( file.name , try_parent_directory ) ;
-}
-
-G::Path GPop::StoreLock::envelopePath( const File & file ) const
-{
-	const bool try_parent_directory = false ;
-	return path( envelopeName(file.name) , try_parent_directory ) ;
-}
-
-void GPop::StoreLock::rollback()
-{
-	G_ASSERT( locked() ) ;
-	m_deleted.clear() ;
-	m_current = m_initial ;
-}
-
-bool GPop::StoreLock::unlinked( Store & store , const File & file ) const
-{
-	if( !store.byName() )
+	if( !message.in_parent )
 	{
-		G_DEBUG( "StoreLock::unlinked: unlinked since not pop-by-name: " << file.name ) ;
-		return true ;
+		return false ;
 	}
-
-	G::Path normal_content_path = m_dir ; normal_content_path.pathAppend( file.name ) ;
-	if( G::File::exists(normal_content_path,std::nothrow) )
+	else
 	{
-		G_DEBUG( "StoreLock::unlinked: unlinked since in its own directory: " << normal_content_path ) ;
-		return true ;
-	}
+		// look for envelopes that share this content
+		G_DEBUG( "GPop::StoreList::shared: test sharing of " << message.cpath(m_edir,m_sdir) ) ;
 
-	// look for corresponding envelopes in all child directories
-	bool found = false ;
-	{
+		// start with the main spool directory
+		bool found = G::File::exists( message.epath(m_sdir) , std::nothrow ) ;
+		G_DEBUG_IF( found , "GPop::StoreList::shared: content shared: envelope: " << message.epath(m_sdir) ) ;
+
+		// and then sub-directories
 		G::DirectoryList iter ;
 		{
-			DirectoryReader claim_reader ;
-			iter.readAll( store.dir() ) ;
+			StoreImp::DirectoryReader claim_reader ;
+			iter.readAll( m_sdir ) ;
 		}
-		while( iter.more() )
+		while( iter.more() && !found )
 		{
-			if( ! iter.isDir() ) continue ;
-			G_DEBUG( "Store::unlinked: checking sub-directory: " << iter.fileName() ) ;
-			G::Path envelope_path = iter.filePath() ; envelope_path.pathAppend(envelopeName(file.name)) ;
-			if( G::File::exists(envelope_path,std::nothrow) )
-			{
-				G_DEBUG( "StoreLock::unlinked: still in use: envelope exists: " << envelope_path ) ;
-				found = true ;
-				break ;
-			}
+			if( !iter.isDir() )
+				continue ;
+
+			G::Path sub_dir = iter.filePath() ;
+			G_DEBUG( "GPop::StoreList::shared: checking sub-directory: " << sub_dir ) ;
+
+			G::Path epath( message.epath(m_sdir+sub_dir.basename()) ) ;
+			found = G::File::exists( epath , std::nothrow ) ;
+			G_DEBUG_IF( found , "GPop::StoreList::shared: content shared: envelope: " << epath ) ;
 		}
+		G_DEBUG_IF( !found , "GPop::StoreList::shared: content not shared: no matching envelope" ) ;
+		return found ;
 	}
-
-	if( ! found )
-	{
-		G_DEBUG( "StoreLock::unlinked: unlinked since no envelope found in any sub-directory" ) ;
-		return true ;
-	}
-
-	return false ;
+	return true ;
 }
 
-GPop::FileReader::FileReader() // NOLINT modernize-use-equals-default because of -Wunused
+GPop::StoreImp::FileReader::FileReader() // NOLINT modernize-use-equals-default because of -Wunused
 {
 }
 

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -608,7 +608,6 @@ GNet::Socket::ssize_type GNet::DatagramSocket::read( char * buffer , size_type l
 	return nread ;
 }
 
-#ifndef G_LIB_SMALL
 GNet::Socket::ssize_type GNet::DatagramSocket::readfrom( char * buffer , size_type length , Address & src_address )
 {
 	if( length == 0 ) return 0 ;
@@ -623,7 +622,6 @@ GNet::Socket::ssize_type GNet::DatagramSocket::readfrom( char * buffer , size_ty
 	src_address = Address( &sender , sender_len ) ;
 	return nread ;
 }
-#endif
 
 GNet::Socket::ssize_type GNet::DatagramSocket::writeto( const char * buffer , size_type length , const Address & dst )
 {

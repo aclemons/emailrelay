@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -50,10 +50,12 @@ void GVerifiers::NetworkVerifier::verify( Command command , const std::string & 
 	m_command = command ;
 	if( m_client_ptr.get() == nullptr )
 	{
+		unsigned int idle_timeout = 0U ;
 		m_client_ptr.reset( std::make_unique<GSmtp::RequestClient>(
 			GNet::ExceptionSink(m_client_ptr,m_es.esrc()),
 			"verify" , "" ,
-			m_location , m_connection_timeout , m_response_timeout ) ) ;
+			m_location , m_connection_timeout , m_response_timeout ,
+			idle_timeout ) ) ;
 	}
 
 	G_LOG( "GVerifiers::NetworkVerifier: verification request: ["

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -116,6 +116,7 @@ void G::Date::check()
 		throw DateError( "out of range" ) ;
 }
 
+#ifndef G_LIB_SMALL
 std::string G::Date::str( Format format ) const
 {
 	std::ostringstream ss ;
@@ -137,6 +138,7 @@ std::string G::Date::str( Format format ) const
 	}
 	return ss.str() ;
 }
+#endif
 
 int G::Date::monthday() const
 {

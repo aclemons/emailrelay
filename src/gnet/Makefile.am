@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -16,6 +16,8 @@
 #
 
 noinst_LIBRARIES = libgnet.a
+
+EXTRA_LIBRARIES = libgnetextra.a
 
 COMMON_SOURCES = \
 	gaddress.cpp \
@@ -94,35 +96,39 @@ if GCONFIG_WINDOWS
 
 AM_CPPFLAGS = -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl -I$(top_srcdir)/src/win32
 
-OS_EXTRA_DIST = \
-	gdescriptor_unix.cpp \
-	gfutureevent_unix.cpp \
-	gnameservers_unix.cpp \
-	gsocket_unix.cpp
-
 OS_SOURCES = \
 	gdescriptor_win32.cpp \
 	geventloop_win32.cpp \
 	gfutureevent_win32.cpp \
 	gnameservers_win32.cpp \
 	gsocket_win32.cpp
+
+OS_EXTRA_SOURCES =
+
+OS_EXTRA_DIST = \
+	gdescriptor_unix.cpp \
+	gfutureevent_unix.cpp \
+	gnameservers_unix.cpp \
+	gsocket_unix.cpp
 
 else
 
 AM_CPPFLAGS = -I$(top_srcdir)/src/glib -I$(top_srcdir)/src/gssl -DG_LIB_SMALL
 
+OS_SOURCES = \
+	gdescriptor_unix.cpp \
+	gfutureevent_unix.cpp \
+	gnameservers_unix.cpp \
+	gsocket_unix.cpp
+
+OS_EXTRA_SOURCES =
+
 OS_EXTRA_DIST = \
 	gdescriptor_win32.cpp \
 	geventloop_win32.cpp \
 	gfutureevent_win32.cpp \
 	gnameservers_win32.cpp \
 	gsocket_win32.cpp
-
-OS_SOURCES = \
-	gdescriptor_unix.cpp \
-	gfutureevent_unix.cpp \
-	gnameservers_unix.cpp \
-	gsocket_unix.cpp
 
 endif
 
@@ -132,35 +138,44 @@ if GCONFIG_INTERFACE_NAMES
 
 if GCONFIG_WINDOWS
 
-INTERFACES_EXTRA_DIST = \
-	ginterfaces_unix.cpp \
-	ginterfaces_none.cpp
-
 INTERFACES_SOURCES = \
 	ginterfaces_common.cpp \
 	ginterfaces_win32.cpp
 
-else
+INTERFACES_EXTRA_SOURCES =
 
 INTERFACES_EXTRA_DIST = \
-	ginterfaces_win32.cpp \
+	ginterfaces_unix.cpp \
 	ginterfaces_none.cpp
+
+else
 
 INTERFACES_SOURCES = \
 	ginterfaces_unix.cpp \
 	ginterfaces_common.cpp
+
+INTERFACES_EXTRA_SOURCES = \
+	ginterfaces_none.cpp
+
+INTERFACES_EXTRA_DIST = \
+	ginterfaces_win32.cpp \
+	ginterfaces_none.cpp
 
 endif
 
 else
 
+INTERFACES_SOURCES = \
+	ginterfaces_none.cpp
+
+INTERFACES_EXTRA_SOURCES = \
+	ginterfaces_unix.cpp \
+	ginterfaces_common.cpp
+
 INTERFACES_EXTRA_DIST = \
 	ginterfaces_unix.cpp \
 	ginterfaces_win32.cpp \
 	ginterfaces_common.cpp
-
-INTERFACES_SOURCES = \
-	ginterfaces_none.cpp
 
 endif
 
@@ -168,25 +183,32 @@ endif
 
 if GCONFIG_DNSBL
 
-DNSBL_EXTRA_DIST = \
-	gdnsbl_disabled.cpp
-
 DNSBL_SOURCES = \
 	gdnsbl.h \
 	gdnsbl_enabled.cpp \
 	gdnsblock.h \
 	gdnsblock.cpp
+
+DNSBL_EXTRA_SOURCES = \
+	gdnsbl_disabled.cpp
+
+DNSBL_EXTRA_DIST = \
+	gdnsbl_disabled.cpp
 
 else
 
+DNSBL_SOURCES = \
+	gdnsbl.h \
+	gdnsbl_disabled.cpp
+
+DNSBL_EXTRA_SOURCES = \
+	gdnsbl_enabled.cpp \
+	gdnsblock.cpp
+
 DNSBL_EXTRA_DIST = \
 	gdnsbl_enabled.cpp \
 	gdnsblock.h \
 	gdnsblock.cpp
-
-DNSBL_SOURCES = \
-	gdnsbl.h \
-	gdnsbl_disabled.cpp
 
 endif
 
@@ -199,7 +221,7 @@ if GCONFIG_WINDOWS
 UDS_SOURCES = \
 	gaddresslocal_none.cpp
 
-UDS_EXTRA_DIST =
+UDS_EXTRA_SOURCES = \
 	gaddresslocal_unix.cpp
 
 else
@@ -207,7 +229,10 @@ else
 UDS_SOURCES = \
 	gaddresslocal_unix.cpp
 
-UDS_EXTRA_DIST =
+UDS_EXTRA_SOURCES = \
+	gaddresslocal_none.cpp
+
+UDS_EXTRA_DIST = \
 	gaddresslocal_none.cpp
 
 endif
@@ -217,7 +242,10 @@ else
 UDS_SOURCES = \
 	gaddresslocal_none.cpp
 
-UDS_EXTRA_DIST =
+UDS_EXTRA_SOURCES = \
+	gaddresslocal_unix.cpp
+
+UDS_EXTRA_DIST = \
 	gaddresslocal_unix.cpp
 
 endif
@@ -226,38 +254,46 @@ endif
 
 if GCONFIG_WINDOWS
 
+EVENTLOOP_SOURCES = \
+	geventloop_win32.cpp \
+	geventloophandles.h \
+	geventloophandles_st.cpp
+
+EVENTLOOP_EXTRA_SOURCES =
+
 EVENTLOOP_EXTRA_DIST = \
 	geventloop_epoll.cpp \
 	geventloop_select.cpp
 
+else
+
+if GCONFIG_EPOLL
+
 EVENTLOOP_SOURCES = \
+	geventloop_epoll.cpp
+
+EVENTLOOP_EXTRA_SOURCES = \
+	geventloop_select.cpp
+
+EVENTLOOP_EXTRA_DIST = \
+	geventloop_select.cpp \
 	geventloop_win32.cpp \
 	geventloophandles.h \
 	geventloophandles_st.cpp
 
 else
 
-if GCONFIG_EPOLL
-
-EVENTLOOP_EXTRA_DIST = \
-	geventloop_win32.cpp \
-	geventloophandles.h \
-	geventloophandles_st.cpp \
+EVENTLOOP_SOURCES = \
 	geventloop_select.cpp
 
-EVENTLOOP_SOURCES = \
+EVENTLOOP_EXTRA_SOURCES = \
 	geventloop_epoll.cpp
 
-else
-
 EVENTLOOP_EXTRA_DIST = \
+	geventloop_epoll.cpp \
 	geventloop_win32.cpp \
 	geventloophandles.h \
-	geventloophandles_st.cpp \
-	geventloop_select.cpp
-
-EVENTLOOP_SOURCES = \
-	geventloop_select.cpp
+	geventloophandles_st.cpp
 
 endif
 
@@ -279,4 +315,13 @@ libgnet_a_SOURCES = \
 	$(INTERFACES_SOURCES) \
 	$(OS_SOURCES) \
 	$(UDS_SOURCES)
+
+libgnetextra_a_SOURCES = \
+	$(DNSBL_EXTRA_SOURCES) \
+	$(EVENTLOOP_EXTRA_SOURCES) \
+	$(INTERFACES_EXTRA_SOURCES) \
+	$(OS_EXTRA_SOURCES) \
+	$(UDS_EXTRA_SOURCES)
+
+extra-local: libgnetextra.a
 

@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -60,7 +60,7 @@ AM_CPPFLAGS = \
 	-I . \
 	$(GCONFIG_QT_CFLAGS)
 
-MOC = moc_guidialog.cpp moc_guipage.cpp moc_pages.cpp
+MOC = moc_guidialog.cpp moc_guipage.cpp moc_guipages.cpp
 
 else
 
@@ -99,7 +99,7 @@ CDB = compile_commands.json
 
 $(SOURCES_) $(CDB): Makefile Makefile.in
 	-chmod +x $(top_srcdir)/libexec/make2unity || true
-	$(top_srcdir)/libexec/make2unity --cdb --cdb-cxx="$(CXX)" --cdb-top=$(top_srcdir) --base=$(top_srcdir)/src $(SOURCES_)
+	$(top_srcdir)/libexec/make2unity --include=. --cdb --cdb-cxx="$(CXX)" --cdb-top=$(top_srcdir) --base=$(top_srcdir)/src $(SOURCES_)
 
 .PHONY: programs
 programs: $(PROGRAMS_)
@@ -135,16 +135,19 @@ moc_guidialog.cpp: $(top_srcdir)/src/gui/guidialog.h
 moc_guipage.cpp: $(top_srcdir)/src/gui/guipage.h
 	$(GCONFIG_QT_MOC) $< -o $@
 
-moc_pages.cpp: $(top_srcdir)/src/gui/pages.h
+moc_guipages.cpp: $(top_srcdir)/src/gui/guipages.h
 	$(GCONFIG_QT_MOC) $< -o $@
 
 .PHONY: tidy
-tidy: emailrelay.cpp .clang-tidy $(CDB)
-	clang-tidy emailrelay.cpp
+tidy: emailrelay.cpp $(CDB) .clang-tidy
+	clang-tidy --header-filter=.* emailrelay.cpp
 
 .PHONY: tidygui
-tidygui: emailrelay.cpp .clang-tidy $(CDB) $(MOC)
-	clang-tidy emailrelay-gui.cpp
+tidygui: emailrelay.cpp $(CDB) $(MOC) .clang-tidy
+	-@rm $(top_builddir)/src/gui/moc_guipage.cpp 2>/dev/null
+	-@rm $(top_builddir)/src/gui/moc_guidialog.cpp 2>/dev/null
+	-@rm $(top_builddir)/src/gui/moc_guipages.cpp 2>/dev/null
+	clang-tidy --header-filter=src/ emailrelay-gui.cpp
 
 .clang-tidy:
 	cp $(top_srcdir)/src/.clang-tidy .

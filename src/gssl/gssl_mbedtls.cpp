@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -32,7 +32,6 @@
 #include "gprocess.h"
 #include "gscope.h"
 #include "gstrmacros.h"
-#include "gxtext.h"
 #include "glog.h"
 #include "gassert.h"
 #include <array>
@@ -138,13 +137,10 @@ GSsl::MbedTls::Config GSsl::MbedTls::LibraryImp::config() const
 	return m_config ;
 }
 
-std::string GSsl::MbedTls::LibraryImp::credit( const std::string & prefix , const std::string & eol , const std::string & eot )
+std::string GSsl::MbedTls::LibraryImp::credit( const std::string & /*prefix*/ , const std::string & /*eol*/ , const std::string & /*eot*/ )
 {
-	std::ostringstream ss ;
-	ss
-		<< prefix << G::Xtext::decode("mbed TLS: Cop+79right (+43) 2006-2018, +41RM +4Cimited (or its affiliates)") << eol
-		<< eot ;
-	return ss.str() ;
+	// "Mbed TLS is Copyright The Mbed TLS Contributors"
+	return {} ;
 }
 
 G::StringArray GSsl::MbedTls::LibraryImp::digesters( bool ) const

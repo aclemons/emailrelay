@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -41,13 +41,22 @@ helper_programs = \
 	emailrelay_test_scanner \
 	emailrelay_test_client \
 	emailrelay_test_server \
+	emailrelay_test_dnsserver \
 	emailrelay_test_verifier
+
+helper_programs_win32 = \
+	emailrelay_test_scanner.exe \
+	emailrelay_test_client.exe \
+	emailrelay_test_server.exe \
+	emailrelay_test_dnsserver.exe \
+	emailrelay_test_verifier.exe
 
 helper_sources = \
 	emailrelay_test_keygen.cpp \
 	emailrelay_test_scanner.cpp \
 	emailrelay_test_client.cpp \
 	emailrelay_test_server.cpp \
+	emailrelay_test_dnsserver.cpp \
 	emailrelay_test_verifier.cpp
 
 other_scripts = \
@@ -97,9 +106,10 @@ test_names = \
 	testNetworkVerifierFail.test \
 	testProxyConnectsOnce.test \
 	testDelivery.test \
-	testDeliveryWithVerifier.test \
-	testLocalDelivery.test \
-	testLocalDeliveryOnly.test \
+	testSplitFilter.test \
+	testSplitFilterRaw.test \
+	testSplitFilterWithVerifier.test \
+	testRouting.test \
 	testClientFilterPass.test \
 	testClientFilterBlock.test \
 	testClientNetworkFilter.test \
@@ -129,6 +139,7 @@ test_names = \
 modules = \
 	AdminClient.pm \
 	Check.pm \
+	DnsServer.pm \
 	Filter.pm \
 	Helper.pm \
 	NetClient.pm \
@@ -197,7 +208,7 @@ endif
 emailrelay_test_scanner_LDADD = \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gssl/libgssl.a \
-	$(top_builddir)/src/win32/libextra.a \
+	$(top_builddir)/src/win32/libwin32.a \
 	$(COMMON_LDADD) \
 	$(GCONFIG_TLS_LIBS) \
 	$(SYS_LIBS)
@@ -209,7 +220,19 @@ endif
 emailrelay_test_server_LDADD = \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gssl/libgssl.a \
-	$(top_builddir)/src/win32/libextra.a \
+	$(top_builddir)/src/win32/libwin32.a \
+	$(COMMON_LDADD) \
+	$(GCONFIG_TLS_LIBS) \
+	$(SYS_LIBS)
+
+emailrelay_test_dnsserver_SOURCES = emailrelay_test_dnsserver.cpp
+if GCONFIG_WINDOWS
+emailrelay_test_dnsserver_LDFLAGS = -static
+endif
+emailrelay_test_dnsserver_LDADD = \
+	$(top_builddir)/src/gnet/libgnet.a \
+	$(top_builddir)/src/gssl/libgssl.a \
+	$(top_builddir)/src/win32/libwin32.a \
 	$(COMMON_LDADD) \
 	$(GCONFIG_TLS_LIBS) \
 	$(SYS_LIBS)
@@ -228,16 +251,16 @@ endif
 emailrelay_test_verifier_LDADD = \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gssl/libgssl.a \
-	$(top_builddir)/src/win32/libextra.a \
+	$(top_builddir)/src/win32/libwin32.a \
 	$(COMMON_LDADD) \
 	$(GCONFIG_TLS_LIBS) \
 	$(SYS_LIBS)
 
 .PHONY: programs
 if GCONFIG_WINDOWS
-programs: emailrelay_test_keygen.exe emailrelay_test_scanner.exe emailrelay_test_client.exe emailrelay_test_server.exe emailrelay_test_verifier.exe
+programs: $(helper_programs_win32) emailrelay_test_keygen.exe
 else
-programs: $(utility_programs) $(helper_programs)
+programs: $(helper_programs)
 endif
 
 # the .test files are empty files passed to emailrelay_test.sh

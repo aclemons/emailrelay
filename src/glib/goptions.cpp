@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -90,7 +90,7 @@ void G::Options::addOption( Option opt , char sep , char escape )
 		StringArray sub_parts ;
 		sub_parts.reserve( 2U ) ;
 		Str::splitIntoFields( opt.description , sub_parts , sep , escape ) ;
-		if( sub_parts.empty() || sub_parts.size() > 2U || ( sub_parts.size()==2U && !opt.description_extra.empty() ) )
+		if( sub_parts.size() > 2U || ( sub_parts.size()==2U && !opt.description_extra.empty() ) )
 			throw InvalidSpecification() ;
 		if( sub_parts.size() == 2U )
 		{
@@ -110,8 +110,8 @@ void G::Options::addOption( Option opt , char sep , char escape )
 
 bool G::Options::defaulting( const std::string & name ) const
 {
-	auto p = find( name ) ;
-	return p == m_list.end() ? false : (*p).defaulting() ;
+	const Option * p = find( name ) ;
+	return p ? p->defaulting() : false ;
 }
 
 bool G::Options::valued( char c ) const
@@ -121,8 +121,8 @@ bool G::Options::valued( char c ) const
 
 bool G::Options::valued( const std::string & name ) const
 {
-	auto p = find( name ) ;
-	return p == m_list.end() ? false : (*p).valued() ;
+	const Option * p = find( name ) ;
+	return p ? p->valued() : false ;
 }
 
 bool G::Options::unvalued( const std::string & name ) const
@@ -137,14 +137,14 @@ bool G::Options::multivalued( char c ) const
 
 bool G::Options::multivalued( const std::string & name ) const
 {
-	auto p = find( name ) ;
-	return p == m_list.end() ? false : (*p).multivalued() ;
+	const Option * p = find( name ) ;
+	return p ? p->multivalued() : false ;
 }
 
 bool G::Options::visible( const std::string & name , unsigned int level , bool level_exact ) const
 {
-	auto p = find( name ) ;
-	return p == m_list.end() ? false : (*p).visible({level_exact?level:1U,level}) ;
+	const Option * p = find( name ) ;
+	return p ? p->visible({level_exact?level:1U,level}) : false ;
 }
 
 #ifndef G_LIB_SMALL
@@ -156,7 +156,7 @@ bool G::Options::visible( const std::string & name ) const
 
 bool G::Options::valid( const std::string & name ) const
 {
-	return find(name) != m_list.end() ;
+	return find(name) != nullptr ;
 }
 
 std::string G::Options::lookup( char c ) const
@@ -169,14 +169,14 @@ std::string G::Options::lookup( char c ) const
 	return {} ;
 }
 
-G::Options::List::const_iterator G::Options::find( const std::string & name ) const
+const G::Option * G::Options::find( const std::string & name ) const
 {
-	for( auto p = m_list.begin() ; p != m_list.end() ; ++p )
+	for( auto & option : m_list )
 	{
-		if( (*p).name == name )
-			return p ;
+		if( option.name == name )
+			return &option ;
 	}
-	return m_list.end() ;
+	return nullptr ;
 }
 
 const std::vector<G::Option> & G::Options::list() const

@@ -96,7 +96,7 @@ a first line of defense against spammers:
 
 ::
 
-    emailrelay --as-server -v -r --domain=example.com --address-verifier=allow:
+    emailrelay --as-server -v -r --domain=example.com --address-verifier=strict:
 
 Then enable POP access to the incoming e-mails with *--pop*, *--pop-port* and
 \ *--pop-auth*\ :
@@ -133,7 +133,7 @@ configuration from the startup batch file *emailrelay-start.bat*.
 
 You can change the E-MailRelay server configuration by editing the configuration
 file or startup batch file directly and then restarting the server. Or you can
-use the E-MailRelay configuration GUI if it is avaliable.
+use the E-MailRelay configuration GUI if it is available.
 
 In many cases E-MailRelay will need to be configured with user-ids and
 passwords. For example, if e-mail is being forwarded to a *smarthost* for onward
@@ -156,15 +156,20 @@ Logging is configured with options like *--log*, *--log-file*, *--as-server* and
 For more verbose logging add the *--verbose* option. This is a good idea when
 setting up or trouble-shooting your E-MailRelay configuration.
 
-Failed e-mails
-==============
+Failures and retries
+====================
 If e-mail messages cannot be forwarded by the E-MailRelay system then the
 envelope files in the spool directory are given a *.bad* suffix. The reason for
 the failure will be recorded in the envelope file itself.
 
 You should check for *.bad* envelope files in the E-MailRelay spool directory
-from time to time. If you want them to be retried next time then just remove
-the *.bad* filename suffix.
+from time to time. If you want failed messages to be retried then just remove
+the *.bad* filename suffix. On Unix-like systems you can do this automatically
+with a cron job that runs the *emailrelay-resubmit.sh* script occasionally.
+
+Once a failed message has been renamed it will be forwarded along with all the
+others. It is generally a good idea to use regular polling (eg. *--poll=60*) to
+make sure that this happens in a timely manner.
 
 Open mail servers
 =================
@@ -182,18 +187,18 @@ scope.
 
 A good first step in limiting abuse is to use an address verifier that checks
 that e-mails are correctly addressed to you. You can use the built-in address
-verifier called *allow:* to do this or you can write your own verifier script.
+verifier called *strict:* to do this or you can write your own verifier script.
 
 ::
 
-    emailrelay --as-server --remote-clients --address-verifier=allow: --domain=mydomain.com
+    emailrelay --as-server --remote-clients --address-verifier=strict: --domain=mydomain.com
 
 Refer to the *Address verifiers* section in the E-MailRelay reference document
 for more details.
 
 If you want to run an internet mail server that is not open to everyone then you
 can require that remote users authenticate themselves. Do this with a secrets
-file containing a user-id and password for every remote user, somthing like
+file containing a user-id and password for every remote user, something like
 this:
 
 ::
@@ -231,12 +236,11 @@ copy the e-mail files into multiple sub-directories of the main spool directory
 and then use *--pop-by-name* so that each e-mail client accesses its own
 sub-directory according to which account name it used when authenticating.
 
-The filter can be an external program such as *emailrelay-filter-copy* or the
-built-in *copy:* filter:
+The filter can be an external program or the built-in *copy:* filter:
 
 ::
 
-    emailrelay --as-server --filter=copy: --pop --pop-by-name --pop-auth-/etc/pop.auth
+    emailrelay --as-server --filter=copy:pop --pop --pop-by-name --pop-auth=/etc/pop.auth
 
 Add the account for each e-mail client in the POP authentication secrets file
 and manually create the corresponding sub-directory.
@@ -252,6 +256,9 @@ the mailbox owner.
 
 Refer to the *Delivery* section in the E-MailRelay reference document for more
 information.
+
+If you are using POP to view a spool directory that is also being used for
+e-mail forwarding then you must use *--pop-no-delete*.
 
 IMAP
 ====
@@ -333,7 +340,7 @@ outright:
 Google mail
 ===========
 To send mail via Google mail's SMTP gateway you will need to obtain a new
-*application password* from Google. Log in to your Google account and look for
+*application password* from Google: log in to your Google account and look for
 the account's security settings and then *app passwords*. Create the password
 for E-MailRelay selecting an application type *other*.
 
@@ -360,7 +367,7 @@ On Windows the E-MailRelay startup batch file should contain something like this
 
     emailrelay --as-proxy=smtp.gmail.com:587 --client-tls --client-auth=C:/ProgramData/E-MailRelay/emailrelay.auth ...
 
-Or an equivalent configration file like this:
+Or an equivalent configuration file like this:
 
 ::
 
@@ -404,7 +411,7 @@ same *Bcc:* header when forwarded.
 It is normally the responsibility of the program that submits an e-mail message
 to submit it separately for each *Bcc* recipient, removing the *Bcc:* header
 from the message content or changing it to contain only the 'current' recipient.
-If this is not done, perhaps through mis-configuration of the e-mail user agent
+If this is not done, perhaps through misconfiguration of the e-mail user agent
 program, then *Bcc* recipients may be visible to the *To* and *Cc* message
 recipients.
 
@@ -427,7 +434,7 @@ command-line, split onto multiple lines for readability:
     --in-spool-dir @app/in
     --in-port 25
     --in-domain example.com
-    --in-address-verifier allow:
+    --in-address-verifier strict:pm
     --in-dnsbl 1.1.1.1:53,500,1,dnsbl.example.com
     --in-filter spam-edit:127.0.0.1:783
     --in-filter deliver:
@@ -443,12 +450,13 @@ command-line, split onto multiple lines for readability:
     --out-forward-on-disconnect
     --out-forward-to-some
     --out-poll 60
+    --out-address-verifier local:
+    --out-delivery-dir @app/in
+    --out-filter deliver:
     --out-filter split:
     --out-client-filter mx:
     --out-forward-to 127.0.0.1:588
     --out-domain example.com
-    --out-address-verifier local:
-    --out-local-delivery-dir @app/in
 
     --other-spool-dir @app/other
     --other-port 588
@@ -462,21 +470,23 @@ This is a three-in-one configuration so there are effectively three E-MailRelay
 servers running in one process, named *in*, *out* and *other*.
 
 The *in* server is an internet-facing e-mail server with delivery to individual
-mailboxes accessed via POP. The *allow:* verifier checks the addressees in the
-incoming e-mails against the list of accounts on the local machine and against
-the given domain name; the IP address of the network connection is checked
-against a DNSBL database; and SpamAssassin is used to identify spam. System
-accounts are used for address verification and POP authentication.
+mailboxes that can be accessed via POP. The *strict:* verifier checks the
+addressees in the incoming e-mails against the list of accounts on the local
+machine and against the given domain name; the IP address of the network
+connection is checked against a DNSBL database; SpamAssassin is used to
+identify spam; and Linux PAM_ is used for POP authentication.
 
-The *out* server is a routing MTA_ that sends out-going e-mail messages directly
-to destination servers. It uses DNS MX queries against the system's default
-name servers to do the routing. If any e-mail messages are addressed to local
-users they are short-circuited and delivered directly to the *in* mailboxes.
+The *out* server is a routing MTA_ that sends outgoing e-mail messages directly
+to destination servers. The filter makes copies so that eash e-mail message goes
+to just one domain. The client filter uses DNS MX queries against the local
+system's default name servers to do the routing. If any e-mail messages are
+addressed to local users they are short-circuited and delivered directly to
+their *in* mailboxes.
 
 The *other* server does store-and-forward to a gmail smarthost and acts as the
-default destination for the routing MTA. Note that in this example the gmail
-password is given directly on the command-line but it is normally more secure to
-use a separate secrets file.
+default destination for the *out* server. In this example the gmail password is
+given directly on the command-line but it is normally more secure to use a
+separate secrets file.
 
 
 
@@ -486,6 +496,7 @@ use a separate secrets file.
 .. _DNSBL: https://en.wikipedia.org/wiki/DNSBL
 .. _IMAP: https://en.wikipedia.org/wiki/Internet_Message_Access_Protocol
 .. _MTA: https://en.wikipedia.org/wiki/Message_transfer_agent
+.. _PAM: https://en.wikipedia.org/wiki/Linux_PAM
 .. _POP: https://en.wikipedia.org/wiki/Post_Office_Protocol
 .. _SMTP: https://en.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol
 .. _SOCKS: https://en.wikipedia.org/wiki/SOCKS
@@ -493,4 +504,4 @@ use a separate secrets file.
 .. _dovecot: https://www.dovecot.org
 .. _maildir: https://en.wikipedia.org/wiki/Maildir
 
-.. footer:: Copyright (C) 2001-2022 Graeme Walker
+.. footer:: Copyright (C) 2001-2023 Graeme Walker

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -46,9 +46,6 @@ public:
 		Filter::Type , const Filter::Config & , const std::string & spec ) ;
 			///< Constructor.
 
-	~CopyFilter() override ;
-		///< Destructor.
-
 private: // overrides
 	Result run( const GStore::MessageId & , bool & , GStore::FileStore::State ) override ;
 		///< Runs the filter.
@@ -58,6 +55,9 @@ private:
 	GStore::FileStore & m_store ;
 	Filter::Config m_filter_config ;
 	std::string m_spec ;
+	bool m_pop_by_name {false} ;
+	bool m_hardlink {false} ;
+	bool m_no_delete {false} ;
 } ;
 
 #endif
