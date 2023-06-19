@@ -31,7 +31,7 @@ namespace G
 		inline char hex( unsigned int n )
 		{
 			static constexpr std::array<char,17> map {{ "0123456789ABCDEF" }} ;
-			static_assert( map[15] == 'F' , "" ) ;
+			//static_assert( map[15] == 'F' , "" ) ;
 			return map[n] ;
 		}
 		inline bool ishex( char c , bool allow_lowercase )

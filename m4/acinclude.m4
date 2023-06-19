@@ -20,13 +20,15 @@ dnl "ar --version".
 dnl
 AC_DEFUN([GCONFIG_FN_ARFLAGS],
 [
+	gconfig_arflags="${ARFLAGS-cru}"
 	if test "`uname 2>/dev/null`" = "Linux"
 	then
 		if "${AR}" --version | grep "GNU ar" > /dev/null
 		then
-			AC_SUBST([ARFLAGS],[${ARFLAGS-cr}])
+			gconfig_arflags="cr"
 		fi
 	fi
+	AC_SUBST([ARFLAGS],["$gconfig_arflags"])
 ])
 
 dnl GCONFIG_FN_CHECK_CXX
@@ -1938,13 +1940,13 @@ dnl such as e_sysconf_DATA, are also magically meaningful.
 dnl
 AC_DEFUN([GCONFIG_FN_SET_DIRECTORIES_E],
 [
-	if test "$e_libexecdir" = ""
+	if test "$e_libdir" = ""
 	then
-		e_libexecdir="$libexecdir/$PACKAGE"
+		e_libdir="$libexecdir/$PACKAGE"
 	fi
 	if test "$e_examplesdir" = ""
 	then
-		e_examplesdir="$libexecdir/$PACKAGE/examples"
+		e_examplesdir="$e_libdir/examples"
 	fi
 	if test "$e_sysconfdir" = ""
 	then
@@ -1968,7 +1970,7 @@ AC_DEFUN([GCONFIG_FN_SET_DIRECTORIES_E],
 	fi
 	if test "$e_initdir" = ""
 	then
-		e_initdir="$libexecdir/$PACKAGE/init"
+		e_initdir="$e_libdir/init"
 	fi
 	if test "$e_bsdinitdir" = ""
 	then
@@ -1976,7 +1978,7 @@ AC_DEFUN([GCONFIG_FN_SET_DIRECTORIES_E],
 		then
 			e_bsdinitdir="$sysconfdir/rc.d"
 		else
-			e_bsdinitdir="$libexecdir/$PACKAGE/init/bsd"
+			e_bsdinitdir="$e_libdir/init/bsd"
 		fi
 	fi
 	if test "$e_icondir" = ""
@@ -2006,7 +2008,7 @@ AC_DEFUN([GCONFIG_FN_SET_DIRECTORIES_E],
 	AC_SUBST([e_trdir])
 	AC_SUBST([e_spooldir])
 	AC_SUBST([e_examplesdir])
-	AC_SUBST([e_libexecdir])
+	AC_SUBST([e_libdir])
 	AC_SUBST([e_pamdir])
 	AC_SUBST([e_sysconfdir])
 	AC_SUBST([e_rundir])

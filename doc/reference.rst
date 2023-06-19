@@ -1,6 +1,6 @@
-*********************
-E-MailRelay Reference
-*********************
+*********
+Reference
+*********
 
 Command line usage
 ==================
@@ -109,6 +109,12 @@ SMTP client options
     Specifies a timeout (in seconds) for getting responses from remote SMTP
     servers. The default is 60 seconds.
 
+*   --forward-to-all
+
+    Requires all recipient addresses to be accepted by the remote server before
+    forwarding. This is currently the default behaviour  so this option is for
+    forwards compatibility only.
+
 *   --forward-to-some
 
     Allow forwarding to continue even if some recipient addresses on an e-mail
@@ -139,7 +145,9 @@ SMTP server options
 *   --address-verifier \<program\>
 
     Runs the specified external program to verify a message recipient's e-mail
-    address. A network verifier can be specified as *net:<tcp-address>*.
+    address. A network verifier can be specified as *net:<tcp-address>*. The
+    *strict:* and *local:* built-in address verifiers can be used to check
+    recipient addresses against the list of local system account names.
 
 *   --anonymous[=\<scope\>] (-A)
 
@@ -229,13 +237,12 @@ POP server options
 
 *   --pop-by-name (-J)
 
-    Modifies the POP server's spool directory to be the sub-directory named after
-    the user-id used for POP authentication. This allows POP clients to see
-    only their own messages after they have been moved into separate
-    sub-directories typically by the built-in  *copy:* or *deliver:* filters.
-    Content files can remain in  the main spool directory to save disk space;
-    they will be deleted by the POP server when it deletes the last matching
-    envelope file.
+    Modifies the POP server's spool directory to be the sub-directory with the
+    same name as the user-id used for POP authentication. This  allows POP
+    clients to see only their own messages after they have  been moved into
+    separate sub-directories typically by the built-in  *deliver:* or *copy:*
+    filters. Content files can remain in the  main spool directory to save disk
+    space; they will be deleted by
 
 *   --pop-no-delete (-G)
 
@@ -516,7 +523,8 @@ Logging options
 
 A configuration file can be used to provide additional options; put each
 option on a separate line, use the long option names but without the double
-dash, and separate the option name from the option value with spaces, eg:
+dash, and separate the option name from the option value with spaces. For
+example:
 
 ::
 
@@ -598,12 +606,17 @@ When using *--as-client*, or *--dont-serve* with *--forward*, the spooled
 messages begin to be forwarded as soon as the program starts up, and the
 program terminates once they have all been sent.
 
-By default all recipient e-mail addresses must be accepted by the remote server
-when E-MailRelay forwards an e-mail message. If any one recipient is rejected
-then the message will be left in the spool directory with a *.bad* suffix on
-the envelope file. This behaviour can be changed by using *--forward-to-some*
-command-line option so that forwarding will succeed for the valid recipients
-and the failed message will contain the invalid ones.
+All recipient e-mail addresses must be accepted by the remote server when
+E-MailRelay forwards an e-mail message. If any one recipient is rejected then
+the message will be left in the spool directory with a *.bad* suffix on the
+envelope file.
+
+This *--forward-to-all* behaviour is currently the default. However, if the
+*--forward-to-some* option is used then forwarding will succeed for the valid
+recipients and the failed message will contain just the invalid ones.
+
+Future E-MailRelay releases will switch to *--forward-to-some* as the default,
+so use *--forward-to-all* if that is what is required.
 
 Filters
 =======
@@ -1052,7 +1065,7 @@ strict:
 -------
 The *strict:* verifier does strict validation of recipient address against system
 account names and the network domain or *--domain* value. For example, it will
-accept *alice@example.com* as a valid recipient address only if there is a
+accept *alice@example.com* as a valid local recipient address only if there is a
 system account called *alice* and the local fully-qualified domain name is
 \ *example.com*\ . This verifier is intended to be used for e-mail messages coming
 in from the public internet.
@@ -1066,12 +1079,12 @@ Eg:
 
 local:
 ------
-The *local:* verifier tests whether a recipient address is for a local user.
-A recipient address where the first part matches a system account name and the
-second part matches the network domain or *--domain* value is treated as local
-and the mailbox name is just the account name. If there is no match then the
-recipient address is treated as valid and not local. This verifier is intended
-to be used for outgoing e-mail messages.
+The *local:* verifier tests whether a recipient address is for a local user but
+still allows other address. A recipient address where the first part matches
+a system account name and the second part matches the network domain or
+*--domain* value is treated as local and the mailbox name is just the account
+name. If there is no match then the recipient address is treated as valid and
+not local. This verifier is intended to be used for outgoing e-mail messages.
 
 Eg:
 
@@ -1081,8 +1094,9 @@ Eg:
 
 Both verifiers can have one or more semi-colon separated configuration
 parameters following the verifier name, including a user-id range (defaulting to
-1000-32767) that is used to obtain the list of system account names, and *lc*
-to convert the mailbox name derived from the system account name to lower-case.
+1000-32767) that is used to obtain the list of system account names, *remote* to
+verifiy local system account addresses as remote, and *lc* to convert the
+mailbox name derived from the system account name to lower-case.
 
 Eg:
 
@@ -1678,8 +1692,8 @@ To save disk space the POP server using *--pop-by-name* will look for content
 files in the main spool directory if it cannot see the content file in the
 sub-directory. In that case the POP delete command will delete the envelope
 file from the sub-directory but only delete the content file if there are no
-other envelope files with the same name in the main spool directory or any
-other sub-directory.
+other envelope files with the same name in either the main spool directory or
+any other sub-directory.
 
 Alternatively on Linux/Unix the filter script can copy content files using
 hard links in order to save disk space.
@@ -1690,7 +1704,7 @@ or not) and by default it deletes the original message files. To keep the
 original files in the main spool directory so they can be forwarded use
 \ *copy:nodelete*\ ; to copy just the envelope file and leave the content file alone
 use *copy:pop*; and to copy content files with hard links use *copy:hardlink*.
-Remember to create matching sub-directories when adding users to the pop secrets
+Remember to create matching sub-directories when adding users to the POP secrets
 file.
 
 The built-in *delivery:* filter also works well with *--pop-by-name*. It copies
@@ -1715,10 +1729,10 @@ spool directory has ownership of *root.daemon* with permissions of *-rwxrwsr-x*
 so messages files are created with permissions of *-rw-rw----*. This allows
 normal users to list messages files but not read them.
 
-The *emailrelay-submit* utility is normally group ownership of *daemon* with its
-group set-user-id flag set. This allows it to create message files in the spool
-directory and the files created end up owned by the submitter but with group
-ownership of *daemon*.
+The *emailrelay-submit* program normally has group ownership of *daemon* with
+its group set-user-id flag set. This allows it to create message files in the
+spool directory and the files created end up owned by the submitter but with
+group ownership of *daemon*.
 
 External filters and address verifiers are executed as the unprivileged user and
 they are given an almost empty set of environment variables (*PATH* and *IFS*),
@@ -1749,7 +1763,7 @@ Installation directories can be defined at build-time by the following
 * e_icondir=\<dir\>
 * e_trdir=\<dir\>
 * e_initdir=\<dir\>
-* e_libexecdir=\<dir\>
+* e_libdir=\<dir\>
 * e_pamdir=\<dir\>
 * e_spooldir=\<dir\>
 * e_sysconfdir=\<dir\>

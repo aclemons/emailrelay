@@ -273,7 +273,6 @@ private:
 	using Fsm = G::StateMachine<ServerProtocol,State,Event,EventData> ;
 
 private: // overrides
-	std::string sendUseStartTls() const override ; // GSmtp::ServerSend
 	bool sendFlush() const override ; // GSmtp::ServerSend
 
 private:

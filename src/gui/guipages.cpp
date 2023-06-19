@@ -1701,29 +1701,27 @@ StartupPage::StartupPage( Gui::Dialog & dialog , const G::MapFile & config , con
 {
 	m_on_boot_checkbox = new QCheckBox( tr("At system startup") ) ;
 	m_at_login_checkbox = new QCheckBox( tr("When logging in") ) ;
-	auto * auto_layout = new QVBoxLayout ;
-	auto_layout->addWidget( m_on_boot_checkbox ) ;
-	auto_layout->addWidget( m_at_login_checkbox ) ;
-
 	m_add_menu_item_checkbox = new QCheckBox( tr("Add to start menu") ) ;
 	m_add_desktop_item_checkbox = new QCheckBox( tr("Add to desktop") ) ;
 
+	tip( m_on_boot_checkbox , tr("System service") ) ;
+
+	auto * auto_layout = new QVBoxLayout ;
 	auto * manual_layout = new QVBoxLayout ;
+	auto_layout->addWidget( m_on_boot_checkbox ) ;
+	auto_layout->addWidget( m_at_login_checkbox ) ;
 	manual_layout->addWidget( m_add_menu_item_checkbox ) ;
 	manual_layout->addWidget( m_add_desktop_item_checkbox ) ;
 
-	if( m_is_mac )
-	{
-		m_add_menu_item_checkbox->setEnabled( false ) ;
-		m_add_desktop_item_checkbox->setEnabled( false ) ;
-	}
-	m_at_login_checkbox->setEnabled( !Gui::Dir::autostart().str().empty() ) ;
 	m_on_boot_checkbox->setEnabled( config.booleanValue("=dir-boot-enabled",false) ) ;
+	m_at_login_checkbox->setEnabled( config.booleanValue("=dir-autostart-enabled",false) ) ;
+	m_add_menu_item_checkbox->setEnabled( config.booleanValue("=dir-menu-enabled",false) ) ;
+	m_add_desktop_item_checkbox->setEnabled( config.booleanValue("=dir-desktop-enabled",false) ) ;
 
-	m_at_login_checkbox->setChecked( !Gui::Dir::autostart().str().empty() && config.booleanValue("start-at-login",false) ) ;
-	m_add_menu_item_checkbox->setChecked( !m_is_mac && config.booleanValue("start-link-menu",true) ) ;
-	m_add_desktop_item_checkbox->setChecked( !m_is_mac && config.booleanValue("start-link-desktop",false) ) ;
 	m_on_boot_checkbox->setChecked( config.booleanValue("start-on-boot",false) ) ;
+	m_at_login_checkbox->setChecked( config.booleanValue("start-at-login",false) ) ;
+	m_add_menu_item_checkbox->setChecked( config.booleanValue("start-link-menu",false) ) ;
+	m_add_desktop_item_checkbox->setChecked( config.booleanValue("start-link-desktop",false) ) ;
 
 	QGroupBox * auto_group = new QGroupBox( tr("Automatic") ) ;
 	auto_group->setLayout( auto_layout ) ;

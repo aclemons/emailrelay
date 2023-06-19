@@ -74,7 +74,8 @@ bool Gui::Boot::installable()
 void Gui::Boot::install( const std::string & name , const G::Path & startstop_src , const G::Path & )
 {
 	using namespace BootImp ;
-	G::File::copy( startstop_src , dir_boot()+name ) ;
+	if( startstop_src != (dir_boot()+name) )
+		G::File::copy( startstop_src , dir_boot()+name ) ;
 	G::File::chmodx( dir_boot()+name , std::nothrow ) ;
 	bool ok = run( "update-rc.d" , {name,"defaults"} ) == 0 || run( "rc-update" , {"add",name} ) == 0 ;
 	if( !ok )

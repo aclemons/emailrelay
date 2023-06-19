@@ -23,7 +23,9 @@ etc. through external scripts.
 
 Basic operation
 ---------------
-E-MailRelay can be run straight from the command-line.
+E-MailRelay can be run straight from the command-line, and on Windows you can
+run `emailrelay.exe` or `emailrelay-textmode.exe` from the zip file without
+going through the installation process.
 
 To use E-MailRelay in store-and-forward mode use the `--as-server` option to
 start the storage daemon in the background, and then do delivery of spooled
@@ -31,41 +33,45 @@ messages by running with `--as-client`.
 
 ![serverclient.png](serverclient.png)
 
-For example, to start a storage daemon in the background listening on port 587
+For example, to start a storage daemon in the background listening on port 10025
 use a command like this:
 
-        emailrelay --as-server --syslog --port 587 --spool-dir /tmp
+        emailrelay --as-server --port 10025 --spool-dir /tmp
+
+On Windows use `c:/temp` for testing, rather than `/tmp`.
 
 Or to run it in the foreground:
 
-        emailrelay --log --verbose --no-daemon --port 587 --spool-dir /tmp
+        emailrelay --log --no-daemon --port 10025 --spool-dir /tmp
 
 And then to forward the spooled mail to `smtp.example.com` run something
 like this:
 
         emailrelay --as-client smtp.example.com:25 --spool-dir /tmp
 
-To get behaviour more like a proxy you can add the `--poll` and `--forward-to`
-options so that messages are forwarded continuously rather than on-demand.
+To forward continuously you can add the `--poll` and `--forward-to` options to
+the server command-line:
 
 ![forwardto.png](forwardto.png)
 
-This example starts a store-and-forward server that forwards spooled-up e-mail
-every minute:
+For example, this starts a server that also forwards spooled-up e-mail every
+minute:
 
         emailrelay --as-server --poll 60 --forward-to smtp.example.com:25
 
-Or for a proxy server that forwards each message soon after it has been
-received, you can use `--as-proxy` or add `--forward-on-disconnect`:
+Or for a server that forwards each message as soon as it has been received, you
+can use `--forward-on-disconnect`:
 
         emailrelay --as-server --forward-on-disconnect --forward-to smtp.example.com:25
 
-To edit or filter e-mail as it passes through the proxy specify your filter
+To edit or filter e-mail as it passes through the server specify your filter
 program with the `--filter` option, something like this:
 
-        emailrelay --as-proxy smtp.example.com:25 --filter=addsig.js
+        emailrelay --as-server --filter /tmp/set-from.js
 
-E-MailRelay can be used as a personal internet mail server:
+Look for example filter scripts in the `examples` directory.
+
+E-MailRelay can also be used as a personal internet mail server:
 
 ![mailserver.png](mailserver.png)
 
@@ -138,8 +144,8 @@ the `.bad` filename suffix. On Unix-like systems you can do this automatically
 with a cron job that runs the `emailrelay-resubmit.sh` script occasionally.
 
 Once a failed message has been renamed it will be forwarded along with all the
-others. It is generally a good idea to use regular polling (eg. `--poll=60`) to
-make sure that this happens in a timely manner.
+others. It is a good idea to use regular polling (eg. `--poll=60`) to make sure
+that this happens in a timely manner.
 
 Open mail servers
 -----------------
@@ -224,7 +230,7 @@ E-MailRelay does not support the [IMAP][] protocol directly but a simple filter
 script can be used to move e-mails into a [maildir][] directory and an IMAP server
 such as [dovecot][] can be used to serve them from there.
 
-It is normally sufficient for the filter script to just move the E-MailRelay
+It is normally sufficient for a filter script to just move the E-MailRelay
 content file straight into the mailbox `cur` directory, delete the corresponding
 envelope file and then exit with an exit code of 100.
 

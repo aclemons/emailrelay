@@ -19,9 +19,10 @@ EXTRA_DIST = \
 	emailrelay.init \
 	emailrelay.default \
 	emailrelay.service \
+	emailrelay.pam \
 	changelog \
+	conffiles \
 	control \
-	compat \
 	copyright \
 	preinst \
 	postinst \

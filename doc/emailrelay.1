@@ -102,6 +102,9 @@ Specifies a timeout (in seconds) for receiving network traffic from remote SMTP 
 .B \-T, --response-timeout \fI<time>\fR
 Specifies a timeout (in seconds) for getting responses from remote SMTP servers. The default is 60 seconds.
 .TP
+.B --forward-to-all
+Requires all recipient addresses to be accepted by the remote server before forwarding. This is currently the default behaviour  so this option is for forwards compatibility only.
+.TP
 .B --forward-to-some
 Allow forwarding to continue even if some recipient addresses on an e-mail envelope are rejected by the remote server.
 .TP
@@ -116,7 +119,7 @@ Sets the port number used for listening for incoming SMTP connections.
 Allows incoming connections from addresses that are not local. The default behaviour is to reject connections that are not local in order to prevent accidental exposure to the public internet, although a firewall should also be used. Local address ranges are defined in RFC-1918, RFC-6890 etc.
 .TP
 .B --address-verifier \fI<program>\fR
-Runs the specified external program to verify a message recipient's e-mail address. A network verifier can be specified as \fInet:<tcp-address>\fR.
+Runs the specified external program to verify a message recipient's e-mail address. A network verifier can be specified as \fInet:<tcp-address>\fR. The \fIstrict:\fR and \fIlocal:\fR built-in address verifiers can be used to check recipient addresses against the list of local system account names.
 .TP
 .B \-A, --anonymous, --anonymous=\fI<scope>\fR
 Disables the server's SMTP VRFY command, sends less verbose SMTP greeting and responses, stops \fIReceived\fR lines being added to mail message content files, and stops the SMTP client protocol adding \fIAUTH=\fR to the \fIMAIL\fR command. For finer control use a comma-separated list of things to anonymise: \fIvrfy\fR, \fIserver\fR, \fIcontent\fR and/or \fIclient\fR, eg. \fI--anonymous\fR=server\fR,content.
@@ -153,7 +156,7 @@ Limits the size of mail messages that can be submitted over SMTP.
 Enables the POP server, listening by default on port 110, providing access to spooled mail messages. Negotiated TLS using the POP \fISTLS\fR command will be enabled if the \fI--server-tls\fR option is also given.
 .TP
 .B \-J, --pop-by-name
-Modifies the POP server's spool directory to be the sub-directory named after the user-id used for POP authentication. This allows POP clients to see only their own messages after they have been moved into separate sub-directories typically by the built-in  \fIcopy:\fR or \fIdeliver:\fR filters. Content files can remain in  the main spool directory to save disk space; they will be deleted by the POP server when it deletes the last matching  envelope file.
+Modifies the POP server's spool directory to be the sub-directory with the same name as the user-id used for POP authentication. This  allows POP clients to see only their own messages after they have  been moved into separate sub-directories typically by the built-in  \fIdeliver:\fR or \fIcopy:\fR filters. Content files can remain in the  main spool directory to save disk space; they will be deleted by
 .TP
 .B \-G, --pop-no-delete
 Disables the POP DELE command so that the command appears to succeed but mail messages are not deleted from the spool directory.

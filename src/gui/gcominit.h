@@ -26,7 +26,7 @@
 #include <objbase.h>
 struct GComInit
 {
-	static void init() { GDEF_UNUSED HRESULT h = CoInitializeEx(0,0) ; }
+	static void init() { CoInitializeEx(0,0) ; }
 	GComInit() { init() ; }
 	~GComInit() { CoUninitialize() ; }
 	GComInit( const GComInit & ) = delete ;

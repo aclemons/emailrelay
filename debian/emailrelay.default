@@ -1,3 +1,2 @@
-# enable system-v init-script 'start' command -- change to 1 when
-# configured and run 'service emailrelay start' to start
-EMAILRELAY_ENABLED=0
+# set EMAILRELAY_ENABLED=0 to disable sysv-init emailrelay start
+#EMAILRELAY_ENABLED=0

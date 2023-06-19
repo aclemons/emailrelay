@@ -83,10 +83,10 @@ G::StringArray G::OptionParser::parse( const StringArray & args_in , std::size_t
 			char c = arg.at(1U) ;
 			bool discard = callback_fn ? callback_fn(m_spec.lookup(c),true).substr(0,1) == "-" : false ;
 			if( discard )
-				i += ( m_spec.valued(c) ? 1U : 0U ) ;
-			else if( m_spec.valued(c) && (i+1U) >= args_in.size() )
+				i += ( ( m_spec.valued(c) && !m_spec.defaulting(c) ) ? 1U : 0U ) ;
+			else if( m_spec.valued(c) && !m_spec.defaulting(c) && (i+1U) >= args_in.size() )
 				errorNoValue( c ) ;
-			else if( m_spec.valued(c) )
+			else if( m_spec.valued(c) && !m_spec.defaulting(c) )
 				processOption( c , args_in.at(++i) ) ;
 			else
 				processOptionOn( c ) ;
@@ -102,7 +102,7 @@ G::StringArray G::OptionParser::parse( const StringArray & args_in , std::size_t
 			bool discard = !key.empty() && key.at( 0U ) == '-' ;
 			key = key.substr( discard ? 1U : 0U ) ;
 			if( discard )
-				i += ( (m_spec.valued(key) && !has_eq) ? 1U : 0U ) ;
+				i += ( (m_spec.valued(key) && !m_spec.defaulting(key) && !has_eq) ? 1U : 0U ) ;
 			else if( has_eq && m_spec.unvalued(key) && Str::isPositive(value) ) // "foo=yes"
 				processOptionOn( key ) ;
 			else if( has_eq && m_spec.unvalued(key) && Str::isNegative(value) ) // "foo=no"
@@ -137,7 +137,7 @@ void G::OptionParser::processOptionOn( const std::string & name )
 {
 	if( !m_spec.valid(name) )
 		errorUnknownOption( name ) ;
-	else if( m_spec.valued(name) )
+	else if( m_spec.valued(name) && !m_spec.defaulting(name) )
 		errorNoValue( name ) ;
 	else if( haveSeenOff(name) )
 		errorConflict( name ) ;
@@ -185,7 +185,7 @@ void G::OptionParser::processOptionOn( char c )
 	std::string name = m_spec.lookup( c ) ;
 	if( !m_spec.valid(name) )
 		errorUnknownOption( c ) ;
-	else if( m_spec.valued(name) )
+	else if( m_spec.valued(name) && !m_spec.defaulting(name) )
 		errorNoValue( c ) ;
 	else if( haveSeenOff(name) )
 		errorConflict( name ) ;

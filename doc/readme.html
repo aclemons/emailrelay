@@ -9,7 +9,7 @@
   <!-- index:0::::E-MailRelay Readme -->
  <div class="div-main">
   <h1><a class="a-header" name="H_1">E-MailRelay Readme</a></h1> <!-- index:1:H:E-MailRelay Readme -->
-   <h2><a class="a-header" name="SH_1_1">Abstract</a></h2> <!-- index:2:SH:1:1:Abstract -->
+   <h2><a class="a-header" name="SH_1_1">Introduction</a></h2> <!-- index:2:SH:1:1:Introduction -->
     <p>
      E-MailRelay is a lightweight SMTP store-and-forward mail server with POP access
      to spooled messages. It can be used as a personal internet mail server with
@@ -27,7 +27,9 @@
     </p>
    <h2><a class="a-header" name="SH_1_2">Quick start</a></h2> <!-- index:2:SH:1:2:Quick start -->
     <p>
-     E-MailRelay can be run straight from the command-line.
+     E-MailRelay can be run straight from the command-line, and on Windows you can
+     run <em>emailrelay.exe</em> or <em>emailrelay-textmode.exe</em> from the zip file without
+     going through the installation process.
     </p>
 
     <p>
@@ -40,20 +42,24 @@
 
 
     <p>
-     For example, to start a storage daemon in the background listening on port 587
+     For example, to start a storage daemon in the background listening on port 10025
      use a command like this:
     </p>
 
       <div class="div-pre">
-       <pre>emailrelay --as-server --syslog --port 587 --spool-dir /tmp
+       <pre>emailrelay --as-server --port 10025 --spool-dir /tmp
 </pre>
       </div><!-- div-pre -->
+    <p>
+     On Windows use <em>c:/temp</em> for testing, rather than <em>/tmp</em>.
+    </p>
+
     <p>
      Or to run it in the foreground:
     </p>
 
       <div class="div-pre">
-       <pre>emailrelay --log --verbose --no-daemon --port 587 --spool-dir /tmp
+       <pre>emailrelay --log --no-daemon --port 10025 --spool-dir /tmp
 </pre>
       </div><!-- div-pre -->
     <p>
@@ -66,16 +72,16 @@
 </pre>
       </div><!-- div-pre -->
     <p>
-     To get behaviour more like a proxy you can add the <em>--poll</em> and <em>--forward-to</em>
-     options so that messages are forwarded continuously rather than on-demand.
+     To forward continuously you can add the <em>--poll</em> and <em>--forward-to</em> options to
+     the server command-line:
     </p>
 
 <img src="forwardto.png" alt="image">
 
 
     <p>
-     This example starts a store-and-forward server that forwards spooled-up e-mail
-     every minute:
+     For example, this starts a server that also forwards spooled-up e-mail every
+     minute:
     </p>
 
       <div class="div-pre">
@@ -83,8 +89,8 @@
 </pre>
       </div><!-- div-pre -->
     <p>
-     Or for a proxy server that forwards each message soon after it has been
-     received, you can use <em>--as-proxy</em> or add <em>--forward-on-disconnect</em>:
+     Or for a server that forwards each message as soon as it has been received, you
+     can use <em>--forward-on-disconnect</em>:
     </p>
 
       <div class="div-pre">
@@ -92,16 +98,20 @@
 </pre>
       </div><!-- div-pre -->
     <p>
-     To edit or filter e-mail as it passes through the proxy specify your filter
+     To edit or filter e-mail as it passes through the server specify your filter
      program with the <em>--filter</em> option, something like this:
     </p>
 
       <div class="div-pre">
-       <pre>emailrelay --as-proxy smtp.example.com:25 --filter=addsig.js
+       <pre>emailrelay --as-server --filter /tmp/set-from.js
 </pre>
       </div><!-- div-pre -->
     <p>
-     E-MailRelay can be used as a personal internet mail server:
+     Look for example filter scripts in the <em>examples</em> directory.
+    </p>
+
+    <p>
+     E-MailRelay can also be used as a personal internet mail server:
     </p>
 
 <img src="mailserver.png" alt="image">
@@ -146,7 +156,9 @@
    <h2><a class="a-header" name="SH_1_3">Autostart</a></h2> <!-- index:2:SH:1:3:Autostart -->
     <p>
      To install E-MailRelay on Windows run the <em>emailrelay-setup</em> program and choose
-     the automatic startup option so that E-MailRelay runs as a Windows service.
+     the automatic startup option on the last page so that E-MailRelay runs as a
+     Windows service. Use the Windows <em>Services</em> utility to configure the E-MailRelay
+     service as automatic or manual startup.
     </p>
 
     <p>
@@ -178,8 +190,8 @@ systemctl status emailrelay
 </pre>
       </div><!-- div-pre -->
     <p>
-     On other systems try some combination of these commands to set up and activate
-     the E-MailRelay service:
+     On other Linux systems try some combination of these commands to set up and
+     activate the E-MailRelay service:
     </p>
 
       <div class="div-pre">
@@ -189,7 +201,15 @@ rc-update add emailrelay
 invoke-rc.d emailrelay start
 service emailrelay start
 tail /var/log/messages
-tail /var/log/syslog</pre>
+tail /var/log/syslog
+</pre>
+      </div><!-- div-pre -->
+    <p>
+     On BSD systems add this line to /etc/rc.conf:
+    </p>
+
+      <div class="div-pre">
+       <pre>emailrelay_enable="YES"</pre>
       </div><!-- div-pre -->
    <h2><a class="a-header" name="SH_1_4">Documentation</a></h2> <!-- index:2:SH:1:4:Documentation -->
     <p>

@@ -425,17 +425,28 @@ int main( int argc , char * argv [] )
 			pages_config.add( "=dir-install" , dir_install.str() ) ;
 			pages_config.add( "=dir-run" , dir_run.str() ) ;
 			pages_config.add( "=dir-boot-enabled" , Gui::Boot::installable() ? "y" : "n" ) ;
+			pages_config.add( "=dir-autostart-enabled" , !Gui::Dir::autostart().str().empty() ? "y" : "n" ) ;
+			pages_config.add( "=dir-menu-enabled" , !Gui::Dir::menu().str().empty() ? "y" : "n" ) ;
+			pages_config.add( "=dir-desktop-enabled" , !Gui::Dir::desktop().str().empty() ? "y" : "n" ) ;
 			if( !pages_config.contains("spool-dir") )
 				pages_config.add( "spool-dir" , Gui::Dir::spool().str() ) ;
 
-			// set widget states based on the current file-system state
+			// set widget states
 			if( configure_mode )
 			{
+				// ... based on the current file-system state
 				std::string fname = Gui::Link::filename( "E-MailRelay" ) ;
 				pages_config.add( "start-on-boot" , Gui::Boot::installed("emailrelay") ? "y" : "n" ) ;
-				pages_config.add( "start-link-desktop" , Gui::Link::exists(Gui::Dir::desktop()+fname) ? "y" : "n" ) ;
-				pages_config.add( "start-link-menu" , Gui::Link::exists(Gui::Dir::menu()+fname) ? "y" : "n" ) ;
-				pages_config.add( "start-at-login" , Gui::Link::exists(Gui::Dir::autostart()+fname) ? "y" : "n" ) ;
+				pages_config.add( "start-at-login" , Gui::Link::exists(Gui::Dir::autostart(),fname) ? "y" : "n" ) ;
+				pages_config.add( "start-link-menu" , Gui::Link::exists(Gui::Dir::menu(),fname) ? "y" : "n" ) ;
+				pages_config.add( "start-link-desktop" , Gui::Link::exists(Gui::Dir::desktop(),fname) ? "y" : "n" ) ;
+			}
+			else
+			{
+				pages_config.add( "start-on-boot" , Gui::Boot::installable() ? "y" : "n" ) ;
+				pages_config.add( "start-at-login" , "n" ) ;
+				pages_config.add( "start-link-menu" , !Gui::Dir::menu().str().empty() ? "y" : "n" ) ;
+				pages_config.add( "start-link-desktop" , "n" ) ;
 			}
 
 			// check the config file (or windows batch file) will be writeable

@@ -27,10 +27,11 @@
 #include "glog.h"
 #include <sstream>
 
-GVerifiers::UserVerifier::UserVerifier( GNet::ExceptionSink es , bool local ,
+GVerifiers::UserVerifier::UserVerifier( GNet::ExceptionSink es , bool strict ,
 	const GSmtp::Verifier::Config & config , const std::string & spec ) :
 		m_command(Command::RCPT) ,
-		m_local(local) ,
+		m_strict(strict) ,
+		m_force_remote(false) ,
 		m_config(config) ,
 		m_timer(*this,&UserVerifier::onTimeout,es) ,
 		m_result(GSmtp::VerifierStatus::invalid({})) ,
@@ -41,6 +42,7 @@ GVerifiers::UserVerifier::UserVerifier( GNet::ExceptionSink es , bool local ,
 	for( G::StringTokenView t( spec_view , ";" , 1U ) ; t ; ++t )
 	{
 		if( t() == "lc"_sv || t() == "lowercase"_sv ) m_lowercase = true ;
+		if( t() == "r"_sv || t() == "remote"_sv ) m_force_remote = true ;
 		if( !t().empty() && G::Str::isNumeric(t().substr(0U,1U)) ) m_range = G::Range::range( t() ) ;
 	}
 	G_DEBUG( "GVerifiers::UserVerifier: uid range " << G::Range::str(m_range) ) ;
@@ -51,30 +53,24 @@ void GVerifiers::UserVerifier::verify( Command command , const std::string & rcp
 {
 	using namespace G::Range ; // within()
 	m_command = command ;
-	std::string mailbox ;
+
 	std::string user = dequote( G::Str::head( dequote(rcpt_to_parameter) , "@" , false ) ) ;
 	std::string domain = G::Str::tail( dequote(rcpt_to_parameter) , "@" ) ;
-	if( m_local )
-	{
-		// outgoing messages -- permissive -- always allow but local if a match
-		if( user == "postmaster" && domain.empty() )
-			m_result = GSmtp::VerifierStatus::local( rcpt_to_parameter , {} , "postmaster" ) ;
-		else if( lookup(user,domain,nullptr,&mailbox) )
-			m_result = GSmtp::VerifierStatus::local( rcpt_to_parameter , {} , m_lowercase?G::Str::lower(mailbox):mailbox ) ;
-		else
-			m_result = GSmtp::VerifierStatus::remote( rcpt_to_parameter ) ;
-	}
+	std::string reason ;
+	std::string mailbox ;
+
+	if( user == "postmaster" && domain.empty() )
+		m_result = GSmtp::VerifierStatus::local( rcpt_to_parameter , {} , "postmaster" ) ;
+	else if( lookup(user,domain,&reason,&mailbox) )
+		m_result =
+			m_force_remote ?
+				GSmtp::VerifierStatus::remote( rcpt_to_parameter ) :
+				GSmtp::VerifierStatus::local( rcpt_to_parameter , {} , m_lowercase?G::Str::lower(mailbox):mailbox ) ;
+	else if( m_strict )
+		m_result = GSmtp::VerifierStatus::invalid( rcpt_to_parameter , false , "rejected" , reason ) ;
 	else
-	{
-		// incoming messages -- strict -- allow only if a match
-		std::string reason ;
-		if( user == "postmaster" && domain.empty() )
-			m_result = GSmtp::VerifierStatus::local( rcpt_to_parameter , {} , "postmaster" ) ;
-		else if( lookup(user,domain,&reason) )
-			m_result = GSmtp::VerifierStatus::remote( rcpt_to_parameter ) ;
-		else
-			m_result = GSmtp::VerifierStatus::invalid( rcpt_to_parameter , false , "rejected" , reason ) ;
-	}
+		m_result = GSmtp::VerifierStatus::remote( rcpt_to_parameter ) ;
+
 	m_timer.startTimer( 0U ) ;
 }
 
@@ -90,6 +86,10 @@ bool GVerifiers::UserVerifier::lookup( const std::string & user , const std::str
 	else
 	{
 		auto pair = G::Identity::lookup( user , std::nothrow ) ;
+
+		if( pair.first == G::Identity::invalid() && G::Str::isPrintableAscii(user) && !G::is_windows() )
+			pair = G::Identity::lookup( G::Str::lower(user) , std::nothrow ) ;
+
 		if( pair.first == G::Identity::invalid() || pair.second.empty() )
 		{
 			ss << "[" << user << "] is not a valid account name" ;

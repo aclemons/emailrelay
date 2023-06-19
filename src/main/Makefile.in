@@ -93,7 +93,6 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 sbin_PROGRAMS = emailrelay$(EXEEXT) emailrelay-submit$(EXEEXT) \
 	emailrelay-passwd$(EXEEXT) $(am__EXEEXT_1) $(am__EXEEXT_2)
-e_libexec_PROGRAMS =
 @GCONFIG_TLS_USE_BOTH_TRUE@@GCONFIG_TLS_USE_MBEDTLS_FALSE@noinst_PROGRAMS = emailrelay-keygen$(EXEEXT)
 @GCONFIG_TLS_USE_MBEDTLS_TRUE@noinst_PROGRAMS =  \
 @GCONFIG_TLS_USE_MBEDTLS_TRUE@	emailrelay-keygen$(EXEEXT)
@@ -109,12 +108,11 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/src/gconfig_defs.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-am__installdirs = "$(DESTDIR)$(e_libexecdir)" "$(DESTDIR)$(sbindir)" \
-	"$(DESTDIR)$(e_spooldir)"
 @GCONFIG_MAC_TRUE@am__EXEEXT_1 = emailrelay-start$(EXEEXT)
 @GCONFIG_WINDOWS_TRUE@am__EXEEXT_2 = emailrelay-service$(EXEEXT) \
 @GCONFIG_WINDOWS_TRUE@	emailrelay-textmode$(EXEEXT)
-PROGRAMS = $(e_libexec_PROGRAMS) $(noinst_PROGRAMS) $(sbin_PROGRAMS)
+am__installdirs = "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(e_spooldir)"
+PROGRAMS = $(noinst_PROGRAMS) $(sbin_PROGRAMS)
 LIBRARIES = $(noinst_LIBRARIES)
 AM_V_AR = $(am__v_AR_@AM_V@)
 am__v_AR_ = $(am__v_AR_@AM_DEFAULT_V@)
@@ -503,7 +501,7 @@ e_docdir = @e_docdir@
 e_examplesdir = @e_examplesdir@
 e_icondir = @e_icondir@
 e_initdir = @e_initdir@
-e_libexecdir = @e_libexecdir@
+e_libdir = @e_libdir@
 e_pamdir = @e_pamdir@
 e_rundir = @e_rundir@
 e_spooldir = @e_spooldir@
@@ -781,48 +779,6 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
-install-e_libexecPROGRAMS: $(e_libexec_PROGRAMS)
-	@$(NORMAL_INSTALL)
-	@list='$(e_libexec_PROGRAMS)'; test -n "$(e_libexecdir)" || list=; \
-	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(e_libexecdir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(e_libexecdir)" || exit 1; \
-	fi; \
-	for p in $$list; do echo "$$p $$p"; done | \
-	sed 's/$(EXEEXT)$$//' | \
-	while read p p1; do if test -f $$p \
-	  ; then echo "$$p"; echo "$$p"; else :; fi; \
-	done | \
-	sed -e 'p;s,.*/,,;n;h' \
-	    -e 's|.*|.|' \
-	    -e 'p;x;s,.*/,,;s/$(EXEEXT)$$//;$(transform);s/$$/$(EXEEXT)/' | \
-	sed 'N;N;N;s,\n, ,g' | \
-	$(AWK) 'BEGIN { files["."] = ""; dirs["."] = 1 } \
-	  { d=$$3; if (dirs[d] != 1) { print "d", d; dirs[d] = 1 } \
-	    if ($$2 == $$4) files[d] = files[d] " " $$1; \
-	    else { print "f", $$3 "/" $$4, $$1; } } \
-	  END { for (d in files) print "f", d, files[d] }' | \
-	while read type dir files; do \
-	    if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
-	    test -z "$$files" || { \
-	      echo " $(INSTALL_PROGRAM_ENV) $(INSTALL_PROGRAM) $$files '$(DESTDIR)$(e_libexecdir)$$dir'"; \
-	      $(INSTALL_PROGRAM_ENV) $(INSTALL_PROGRAM) $$files "$(DESTDIR)$(e_libexecdir)$$dir" || exit $$?; \
-	    } \
-	; done
-
-uninstall-e_libexecPROGRAMS:
-	@$(NORMAL_UNINSTALL)
-	@list='$(e_libexec_PROGRAMS)'; test -n "$(e_libexecdir)" || list=; \
-	files=`for p in $$list; do echo "$$p"; done | \
-	  sed -e 'h;s,^.*/,,;s/$(EXEEXT)$$//;$(transform)' \
-	      -e 's/$$/$(EXEEXT)/' \
-	`; \
-	test -n "$$list" || exit 0; \
-	echo " ( cd '$(DESTDIR)$(e_libexecdir)' && rm -f" $$files ")"; \
-	cd "$(DESTDIR)$(e_libexecdir)" && rm -f $$files
-
-clean-e_libexecPROGRAMS:
-	-test -z "$(e_libexec_PROGRAMS)" || rm -f $(e_libexec_PROGRAMS)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
@@ -1140,7 +1096,7 @@ check: check-recursive
 all-am: Makefile $(PROGRAMS) $(LIBRARIES) $(DATA)
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(e_libexecdir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(e_spooldir)"; do \
+	for dir in "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(e_spooldir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-recursive
@@ -1175,8 +1131,8 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-recursive
 
-clean-am: clean-e_libexecPROGRAMS clean-generic clean-noinstLIBRARIES \
-	clean-noinstPROGRAMS clean-sbinPROGRAMS mostlyclean-am
+clean-am: clean-generic clean-noinstLIBRARIES clean-noinstPROGRAMS \
+	clean-sbinPROGRAMS mostlyclean-am
 
 distclean: distclean-recursive
 		-rm -f ./$(DEPDIR)/commandline.Po
@@ -1229,8 +1185,7 @@ install-dvi: install-dvi-recursive
 
 install-dvi-am:
 
-install-exec-am: install-e_libexecPROGRAMS install-exec-local \
-	install-sbinPROGRAMS
+install-exec-am: install-exec-local install-sbinPROGRAMS
 
 install-html: install-html-recursive
 
@@ -1292,29 +1247,28 @@ ps: ps-recursive
 
 ps-am:
 
-uninstall-am: uninstall-e_libexecPROGRAMS uninstall-e_spoolDATA \
-	uninstall-local uninstall-sbinPROGRAMS
+uninstall-am: uninstall-e_spoolDATA uninstall-local \
+	uninstall-sbinPROGRAMS
 
 .MAKE: $(am__recursive_targets) install-am install-strip
 
 .PHONY: $(am__recursive_targets) CTAGS GTAGS TAGS all all-am \
-	am--depfiles check check-am clean clean-e_libexecPROGRAMS \
-	clean-generic clean-noinstLIBRARIES clean-noinstPROGRAMS \
-	clean-sbinPROGRAMS cscopelist-am ctags ctags-am distclean \
-	distclean-compile distclean-generic distclean-tags distdir dvi \
-	dvi-am extra-am extra-local html html-am info info-am install \
-	install-am install-data install-data-am install-data-local \
-	install-dvi install-dvi-am install-e_libexecPROGRAMS \
-	install-e_spoolDATA install-exec install-exec-am \
-	install-exec-local install-html install-html-am install-info \
-	install-info-am install-man install-pdf install-pdf-am \
-	install-ps install-ps-am install-sbinPROGRAMS install-strip \
-	installcheck installcheck-am installdirs installdirs-am \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
-	tags tags-am uninstall uninstall-am \
-	uninstall-e_libexecPROGRAMS uninstall-e_spoolDATA \
-	uninstall-local uninstall-sbinPROGRAMS
+	am--depfiles check check-am clean clean-generic \
+	clean-noinstLIBRARIES clean-noinstPROGRAMS clean-sbinPROGRAMS \
+	cscopelist-am ctags ctags-am distclean distclean-compile \
+	distclean-generic distclean-tags distdir dvi dvi-am extra-am \
+	extra-local html html-am info info-am install install-am \
+	install-data install-data-am install-data-local install-dvi \
+	install-dvi-am install-e_spoolDATA install-exec \
+	install-exec-am install-exec-local install-html \
+	install-html-am install-info install-info-am install-man \
+	install-pdf install-pdf-am install-ps install-ps-am \
+	install-sbinPROGRAMS install-strip installcheck \
+	installcheck-am installdirs installdirs-am maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic pdf pdf-am ps ps-am tags tags-am uninstall \
+	uninstall-am uninstall-e_spoolDATA uninstall-local \
+	uninstall-sbinPROGRAMS
 
 .PRECIOUS: Makefile
 
@@ -1322,7 +1276,7 @@ uninstall-am: uninstall-e_libexecPROGRAMS uninstall-e_spoolDATA \
 @GCONFIG_WINDOWS_TRUE@$(RESOURCES): emailrelay.rc MSG00001.bin messages.rc
 @GCONFIG_WINDOWS_TRUE@	$(GCONFIG_WINDRES) --preprocessor "$(CC) -E -xc-header -DRC_INVOKED" -D_WIN32=1 --include-dir . --include-dir icon --include-dir $(top_srcdir)/src/main/icon -i $(top_srcdir)/src/main/emailrelay.rc -o $(RESOURCES)
 
-install-data-local: install-sbinPROGRAMS install-e_spoolDATA install-e_libexecPROGRAMS
+install-data-local: install-sbinPROGRAMS install-e_spoolDATA
 	-mkdir -p "$(DESTDIR)$(e_spooldir)"
 	-chgrp daemon "$(DESTDIR)$(e_spooldir)"
 	-chmod 775 "$(DESTDIR)$(e_spooldir)"
@@ -1335,7 +1289,6 @@ install-exec-local:
 
 uninstall-local:
 	-rmdir "$(DESTDIR)$(e_spooldir)" 2>/dev/null
-	-rmdir "$(DESTDIR)$(e_libexecdir)" 2>/dev/null
 
 MSG00001.bin messages.rc: fakemc.exe messages.mc
 	$(GCONFIG_WINDMC) $(top_srcdir)/src/main/messages.mc
@@ -1345,7 +1298,7 @@ fakemc.exe: $(top_srcdir)/src/main/fakemc.c
 
 .PHONY: strip
 strip:
-	$(STRIP) $(sbin_PROGRAMS) $(e_libexec_PROGRAMS)
+	$(STRIP) $(sbin_PROGRAMS)
 
 .PHONY: map
 map:

@@ -60,9 +60,12 @@ void GSmtp::ServerSend::sendAuthenticationCancelled()
 	send( "501 authentication cancelled" ) ;
 }
 
-void GSmtp::ServerSend::sendInsecureAuth()
+void GSmtp::ServerSend::sendInsecureAuth( bool with_starttls_help )
 {
-	send( "504 unsupported authentication mechanism" + sendUseStartTls() ) ;
+	if( with_starttls_help )
+		send( "504 unsupported authentication mechanism: use starttls" ) ;
+	else
+		send( "504 unsupported authentication mechanism" ) ;
 }
 
 void GSmtp::ServerSend::sendBadMechanism( const std::string & preferred )
@@ -126,14 +129,20 @@ void GSmtp::ServerSend::sendNotImplemented()
 	send( "502 command not implemented" ) ;
 }
 
-void GSmtp::ServerSend::sendAuthRequired()
+void GSmtp::ServerSend::sendAuthRequired( bool with_starttls_help )
 {
-	send( "530 authentication required" + sendUseStartTls() ) ;
+	if( with_starttls_help )
+		send( "530 authentication required: use starttls" ) ;
+	else
+		send( "530 authentication required" ) ;
 }
 
-void GSmtp::ServerSend::sendEncryptionRequired()
+void GSmtp::ServerSend::sendEncryptionRequired( bool with_starttls_help )
 {
-	send( "530 encryption required" + sendUseStartTls() ) ; // 530 sic
+	if( with_starttls_help )
+		send( "530 encryption required: use starttls" ) ; // 530 sic
+	else
+		send( "530 encryption required" ) ;
 }
 
 void GSmtp::ServerSend::sendNoRecipients()

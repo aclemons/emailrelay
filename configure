@@ -628,7 +628,7 @@ e_systemddir
 e_rundir
 e_sysconfdir
 e_pamdir
-e_libexecdir
+e_libdir
 e_examplesdir
 e_spooldir
 e_trdir
@@ -5090,14 +5090,16 @@ $as_echo "$GCONFIG_WINDMC" >&6; }
 
 
 
+	gconfig_arflags="${ARFLAGS-cru}"
 	if test "`uname 2>/dev/null`" = "Linux"
 	then
 		if "${AR}" --version | grep "GNU ar" > /dev/null
 		then
-			ARFLAGS=${ARFLAGS-cr}
-
+			gconfig_arflags="cr"
 		fi
 	fi
+	ARFLAGS="$gconfig_arflags"
+
 
 
 ac_ext=c
@@ -10065,13 +10067,13 @@ fi
 
 
 
-	if test "$e_libexecdir" = ""
+	if test "$e_libdir" = ""
 	then
-		e_libexecdir="$libexecdir/$PACKAGE"
+		e_libdir="$libexecdir/$PACKAGE"
 	fi
 	if test "$e_examplesdir" = ""
 	then
-		e_examplesdir="$libexecdir/$PACKAGE/examples"
+		e_examplesdir="$e_libdir/examples"
 	fi
 	if test "$e_sysconfdir" = ""
 	then
@@ -10095,7 +10097,7 @@ fi
 	fi
 	if test "$e_initdir" = ""
 	then
-		e_initdir="$libexecdir/$PACKAGE/init"
+		e_initdir="$e_libdir/init"
 	fi
 	if test "$e_bsdinitdir" = ""
 	then
@@ -10103,7 +10105,7 @@ fi
 		then
 			e_bsdinitdir="$sysconfdir/rc.d"
 		else
-			e_bsdinitdir="$libexecdir/$PACKAGE/init/bsd"
+			e_bsdinitdir="$e_libdir/init/bsd"
 		fi
 	fi
 	if test "$e_icondir" = ""

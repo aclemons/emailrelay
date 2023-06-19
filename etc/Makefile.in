@@ -147,10 +147,10 @@ am__uninstall_files_from_dir = { \
     || { echo " ( cd '$$dir' && rm -f" $$files ")"; \
          $(am__cd) "$$dir" && rm -f $$files; }; \
   }
-am__installdirs = "$(DESTDIR)$(e_examplesdir)" "$(DESTDIR)$(e_pamdir)" \
-	"$(DESTDIR)$(e_sysconfdir)" "$(DESTDIR)$(e_systemddir)"
-DATA = $(e_examples_DATA) $(e_pam_DATA) $(e_sysconf_DATA) \
-	$(e_systemd_DATA)
+am__installdirs = "$(DESTDIR)$(e_examplesdir)" "$(DESTDIR)$(e_libdir)" \
+	"$(DESTDIR)$(e_pamdir)" "$(DESTDIR)$(e_systemddir)"
+DATA = $(e_examples_DATA) $(e_lib_DATA) $(e_pam_DATA) \
+	$(e_systemd_DATA) $(noinst_DATA)
 am__extra_recursive_targets = extra-recursive
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 am__DIST_COMMON = $(srcdir)/Makefile.in
@@ -249,7 +249,7 @@ e_docdir = @e_docdir@
 e_examplesdir = @e_examplesdir@
 e_icondir = @e_icondir@
 e_initdir = @e_initdir@
-e_libexecdir = @e_libexecdir@
+e_libdir = @e_libdir@
 e_pamdir = @e_pamdir@
 e_rundir = @e_rundir@
 e_spooldir = @e_spooldir@
@@ -285,27 +285,34 @@ top_srcdir = @top_srcdir@
 @GCONFIG_PAM_FALSE@e_pam_DATA = 
 @GCONFIG_PAM_TRUE@e_pam_DATA = emailrelay
 EXTRA_DIST = \
-	emailrelay.conf.template \
-	emailrelay.auth.template \
-	emailrelay-fail2ban-jail \
-	emailrelay-fail2ban-filter \
+	emailrelay.auth.in \
+	emailrelay.conf.in \
+	emailrelay.pam \
 	emailrelay.service.in \
-	emailrelay.pam
-
-e_sysconf_DATA = \
-	emailrelay.conf.template \
-	emailrelay.auth.template
-
-e_examples_DATA = \
 	emailrelay-fail2ban-jail \
 	emailrelay-fail2ban-filter
+
+noinst_DATA = \
+	emailrelay.auth \
+	emailrelay.conf
+
+e_lib_DATA = \
+	emailrelay.auth.in \
+	emailrelay.conf.in
+
+e_examples_DATA = \
+	emailrelay-fail2ban-filter \
+	emailrelay-fail2ban-jail
 
 e_systemd_DATA = \
 	emailrelay.service
 
 do_sed = sed -e "s:__INIT_DIR__:$(e_initdir):g" -e "s:__RUN_DIR__:$(e_rundir):g" -e "s:__SYSCONF_DIR__:$(e_sysconfdir):g" -e "s:__SBIN_DIR__:$(sbindir):g"
+do_sed2 = sed -e "s:^.spool-dir .*:spool-dir $(e_spooldir):g" -e "s:/var/spool/emailrelay:$(e_spooldir):g" -e "s:/etc:$(e_sysconfdir):g" -e "s:/usr/local/sbin:$(sbindir):g"
 CLEANFILES = \
 	emailrelay \
+	emailrelay.auth \
+	emailrelay.conf \
 	emailrelay.service
 
 all: all-am
@@ -361,6 +368,27 @@ uninstall-e_examplesDATA:
 	@list='$(e_examples_DATA)'; test -n "$(e_examplesdir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(e_examplesdir)'; $(am__uninstall_files_from_dir)
+install-e_libDATA: $(e_lib_DATA)
+	@$(NORMAL_INSTALL)
+	@list='$(e_lib_DATA)'; test -n "$(e_libdir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(e_libdir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(e_libdir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(e_libdir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(e_libdir)" || exit $$?; \
+	done
+
+uninstall-e_libDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(e_lib_DATA)'; test -n "$(e_libdir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(e_libdir)'; $(am__uninstall_files_from_dir)
 install-e_pamDATA: $(e_pam_DATA)
 	@$(NORMAL_INSTALL)
 	@list='$(e_pam_DATA)'; test -n "$(e_pamdir)" || list=; \
@@ -382,27 +410,6 @@ uninstall-e_pamDATA:
 	@list='$(e_pam_DATA)'; test -n "$(e_pamdir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(e_pamdir)'; $(am__uninstall_files_from_dir)
-install-e_sysconfDATA: $(e_sysconf_DATA)
-	@$(NORMAL_INSTALL)
-	@list='$(e_sysconf_DATA)'; test -n "$(e_sysconfdir)" || list=; \
-	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(e_sysconfdir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(e_sysconfdir)" || exit 1; \
-	fi; \
-	for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  echo "$$d$$p"; \
-	done | $(am__base_list) | \
-	while read files; do \
-	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(e_sysconfdir)'"; \
-	  $(INSTALL_DATA) $$files "$(DESTDIR)$(e_sysconfdir)" || exit $$?; \
-	done
-
-uninstall-e_sysconfDATA:
-	@$(NORMAL_UNINSTALL)
-	@list='$(e_sysconf_DATA)'; test -n "$(e_sysconfdir)" || list=; \
-	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
-	dir='$(DESTDIR)$(e_sysconfdir)'; $(am__uninstall_files_from_dir)
 install-e_systemdDATA: $(e_systemd_DATA)
 	@$(NORMAL_INSTALL)
 	@list='$(e_systemd_DATA)'; test -n "$(e_systemddir)" || list=; \
@@ -469,7 +476,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(DATA)
 installdirs:
-	for dir in "$(DESTDIR)$(e_examplesdir)" "$(DESTDIR)$(e_pamdir)" "$(DESTDIR)$(e_sysconfdir)" "$(DESTDIR)$(e_systemddir)"; do \
+	for dir in "$(DESTDIR)$(e_examplesdir)" "$(DESTDIR)$(e_libdir)" "$(DESTDIR)$(e_pamdir)" "$(DESTDIR)$(e_systemddir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -503,6 +510,8 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+@GCONFIG_INSTALL_HOOK_FALSE@install-data-hook:
+@GCONFIG_INSTALL_HOOK_FALSE@uninstall-hook:
 clean: clean-am
 
 clean-am: clean-generic mostlyclean-am
@@ -527,8 +536,8 @@ info: info-am
 
 info-am:
 
-install-data-am: install-e_examplesDATA install-e_pamDATA \
-	install-e_sysconfDATA install-e_systemdDATA
+install-data-am: install-e_examplesDATA install-e_libDATA \
+	install-e_pamDATA install-e_systemdDATA
 	@$(NORMAL_INSTALL)
 	$(MAKE) $(AM_MAKEFLAGS) install-data-hook
 install-dvi: install-dvi-am
@@ -573,8 +582,8 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-e_examplesDATA uninstall-e_pamDATA \
-	uninstall-e_sysconfDATA uninstall-e_systemdDATA
+uninstall-am: uninstall-e_examplesDATA uninstall-e_libDATA \
+	uninstall-e_pamDATA uninstall-e_systemdDATA
 	@$(NORMAL_INSTALL)
 	$(MAKE) $(AM_MAKEFLAGS) uninstall-hook
 .MAKE: install-am install-data-am install-strip uninstall-am
@@ -584,15 +593,15 @@ uninstall-am: uninstall-e_examplesDATA uninstall-e_pamDATA \
 	extra-am extra-local html html-am info info-am install \
 	install-am install-data install-data-am install-data-hook \
 	install-dvi install-dvi-am install-e_examplesDATA \
-	install-e_pamDATA install-e_sysconfDATA install-e_systemdDATA \
+	install-e_libDATA install-e_pamDATA install-e_systemdDATA \
 	install-exec install-exec-am install-html install-html-am \
 	install-info install-info-am install-man install-pdf \
 	install-pdf-am install-ps install-ps-am install-strip \
 	installcheck installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-generic pdf \
 	pdf-am ps ps-am tags-am uninstall uninstall-am \
-	uninstall-e_examplesDATA uninstall-e_pamDATA \
-	uninstall-e_sysconfDATA uninstall-e_systemdDATA uninstall-hook
+	uninstall-e_examplesDATA uninstall-e_libDATA \
+	uninstall-e_pamDATA uninstall-e_systemdDATA uninstall-hook
 
 .PRECIOUS: Makefile
 
@@ -603,27 +612,23 @@ emailrelay: emailrelay.pam
 emailrelay.service: emailrelay.service.in
 	$(do_sed) < $(srcdir)/emailrelay.service.in > emailrelay.service
 
-# disable this section when running configure for a .deb or .rpm
-# package by using 'configure --disable-install-hook'
-#
-# creates the .conf file from .conf.template with directory edits
-#
+emailrelay.conf: emailrelay.conf.in
+	$(do_sed2) < $(srcdir)/emailrelay.conf.in > emailrelay.conf
+
+emailrelay.auth: emailrelay.auth.in
+	$(do_sed2) < $(srcdir)/emailrelay.auth.in > emailrelay.auth
+
+# don't clobber user's auth and conf files -- disable with 'configure --disable-install-hook'
+
 @GCONFIG_INSTALL_HOOK_TRUE@install-data-hook:
-@GCONFIG_INSTALL_HOOK_TRUE@	if test -f "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; then : ; else sed -e "s:^#spool-dir .*:spool-dir $(e_spooldir):g" -e 's:"/var/spool/emailrelay":"'"$(e_spooldir)"'":g' -e "s:/etc:$(e_sysconfdir):g" -e "s:/usr/local/bin:$(e_libexecdir):g" < "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf.template" > "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; fi
-@GCONFIG_INSTALL_HOOK_TRUE@	cp "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf.makeinstall"
+@GCONFIG_INSTALL_HOOK_TRUE@	-$(MKDIR_P) "$(DESTDIR)$(e_sysconfdir)/" || true
+@GCONFIG_INSTALL_HOOK_TRUE@	if test -f "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; then : ; else $(INSTALL_DATA) "emailrelay.conf" "$(DESTDIR)$(e_sysconfdir)/" ; fi
+@GCONFIG_INSTALL_HOOK_TRUE@	if test -f "$(DESTDIR)$(e_sysconfdir)/emailrelay.auth" ; then : ; else $(INSTALL_DATA) "emailrelay.auth" "$(DESTDIR)$(e_sysconfdir)/" ; fi
 
-# remove the .conf file if it has not been edited
 @GCONFIG_INSTALL_HOOK_TRUE@uninstall-hook:
-@GCONFIG_INSTALL_HOOK_TRUE@	if diff -q "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf.makeinstall" ; then rm "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; fi
-@GCONFIG_INSTALL_HOOK_TRUE@	-rm "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf.makeinstall"
-
-# if there is no .conf file then copy it from .conf.template
-@GCONFIG_INSTALL_HOOK_FALSE@install-data-hook:
-@GCONFIG_INSTALL_HOOK_FALSE@	test -f "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" || cp "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf.template" "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf"
-
-# remove the .conf file - the .conf.template has been deleted when this runs
-@GCONFIG_INSTALL_HOOK_FALSE@uninstall-hook:
-@GCONFIG_INSTALL_HOOK_FALSE@	-rm "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf"
+@GCONFIG_INSTALL_HOOK_TRUE@	-cp "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" /tmp/emailrelay.conf.uninstall || true
+@GCONFIG_INSTALL_HOOK_TRUE@	-rm "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" || true
+@GCONFIG_INSTALL_HOOK_TRUE@	-rm "$(DESTDIR)$(e_sysconfdir)/emailrelay.auth" || true
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

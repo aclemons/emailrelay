@@ -105,7 +105,7 @@ deb: $(DEB)
 $(DEB): dist
 	-mv emailrelay-$(VERSION) emailrelay-$(VERSION).old.$$$$ || true
 	tar -xzf $(TAR)
-	cd emailrelay-$(VERSION) && fakeroot debian/rules binary
+	cd emailrelay-$(VERSION) && fakeroot debian/rules binary # or dpkg-buildpackage -b --jobs=10
 	mkdir emailrelay-$(VERSION)/debian/source
 
 .PHONY: deb-src

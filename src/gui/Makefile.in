@@ -380,7 +380,7 @@ e_docdir = @e_docdir@
 e_examplesdir = @e_examplesdir@
 e_icondir = @e_icondir@
 e_initdir = @e_initdir@
-e_libexecdir = @e_libexecdir@
+e_libdir = @e_libdir@
 e_pamdir = @e_pamdir@
 e_rundir = @e_rundir@
 e_spooldir = @e_spooldir@
@@ -481,7 +481,7 @@ AM_CPPFLAGS = \
 	-D "G_INITDIR=$(e_initdir)" \
 	-D "G_SYSCONFDIR=$(e_sysconfdir)" \
 	-D "G_ICONDIR=$(e_icondir)" \
-	-D "G_LIBEXECDIR=$(e_libexecdir)" \
+	-D "G_LIBDIR=$(e_libdir)" \
 	-D "G_MANDIR=$(mandir)" \
 	-D "G_DOCDIR=$(e_docdir)" \
 	-D "G_EXAMPLESDIR=$(e_examplesdir)" \
@@ -963,10 +963,10 @@ emailrelay.no.qm: emailrelay.no.qm_in
 
 @GCONFIG_GUI_FALSE@uninstall-hook:
 
-payload: $(top_srcdir)/bin/make-setup.sh
+payload: $(top_srcdir)/libexec/make-setup.sh
 	-mkdir payload 2>/dev/null
-	-@chmod +x $(top_srcdir)/bin/make-setup.sh
-	$(top_srcdir)/bin/make-setup.sh $(MAKE_SETUP_DEBUG) $@ "$(top_srcdir)/src/gui/emailrelay-icon.png"
+	-@chmod +x $(top_srcdir)/libexec/make-setup.sh
+	$(top_srcdir)/libexec/make-setup.sh $(MAKE_SETUP_DEBUG) $@
 
 .PHONY: lrelease
 lrelease:

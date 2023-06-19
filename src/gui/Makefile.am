@@ -114,7 +114,7 @@ AM_CPPFLAGS=\
 	-D "G_INITDIR=$(e_initdir)" \
 	-D "G_SYSCONFDIR=$(e_sysconfdir)" \
 	-D "G_ICONDIR=$(e_icondir)" \
-	-D "G_LIBEXECDIR=$(e_libexecdir)" \
+	-D "G_LIBDIR=$(e_libdir)" \
 	-D "G_MANDIR=$(mandir)" \
 	-D "G_DOCDIR=$(e_docdir)" \
 	-D "G_EXAMPLESDIR=$(e_examplesdir)" \
@@ -185,10 +185,10 @@ uninstall-hook:
 
 endif
 
-payload: $(top_srcdir)/bin/make-setup.sh
+payload: $(top_srcdir)/libexec/make-setup.sh
 	-mkdir payload 2>/dev/null
-	-@chmod +x $(top_srcdir)/bin/make-setup.sh
-	$(top_srcdir)/bin/make-setup.sh $(MAKE_SETUP_DEBUG) $@ "$(top_srcdir)/src/gui/emailrelay-icon.png"
+	-@chmod +x $(top_srcdir)/libexec/make-setup.sh
+	$(top_srcdir)/libexec/make-setup.sh $(MAKE_SETUP_DEBUG) $@
 
 .PHONY: lrelease
 lrelease:

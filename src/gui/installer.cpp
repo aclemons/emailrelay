@@ -1378,16 +1378,16 @@ InstallerImp::InstallerImp( bool installing , bool is_windows , bool is_mac , co
 	Helper::m_is_mac = is_mac ;
 
 	// define ivalue o/s-specific paths
-	m_installer_config.add( "-authtemplate" , isWindows() ? "" : "%payload%/etc/emailrelay.auth.template" ) ;
-	m_installer_config.add( "-conftemplate" , isWindows() ? "" : "%payload%/etc/emailrelay.conf.template" ) ;
+	m_installer_config.add( "-authtemplate" , isWindows() ? "" : "%payload%/usr/lib/emailrelay/emailrelay.auth.in" ) ;
+	m_installer_config.add( "-conftemplate" , isWindows() ? "" : "%payload%/usr/lib/emailrelay/emailrelay.conf.in" ) ;
 	m_installer_config.add( "-bat" , isWindows() ? "%dir-config%/emailrelay-start.bat" : "" ) ; // not dir-install -- see guimain
 	m_installer_config.add( "-exe" , isWindows() ? "%dir-install%/emailrelay.exe" :
 		( isMac() ? "%dir-install%/E-MailRelay.app/Contents/MacOS/emailrelay" : "%dir-install%/sbin/emailrelay" ) ) ;
 	m_installer_config.add( "-gui" , isWindows() ? "%dir-install%/emailrelay-gui.exe" : "%dir-install%/sbin/emailrelay-gui.real" ) ;
-	m_installer_config.add( "-icon" , isWindows()?"%dir-install%/emailrelay.exe":"%dir-install%/lib/emailrelay/emailrelay-icon.png");
+	m_installer_config.add( "-icon" , isWindows()?"%dir-install%/emailrelay.exe":"%dir-install%/share/emailrelay/emailrelay-icon.png");
 	m_installer_config.add( "-trdir" , isWindows()?"%dir-install%/translations":"%dir-install%/share/emailrelay") ;
 	m_installer_config.add( "-pointer" , isWindows() ? "%dir-install%/emailrelay-gui.cfg" : "%dir-install%/sbin/emailrelay-gui" ) ;
-	m_installer_config.add( "-startstop" , isWindows() ? "" : "%dir-install%/lib/emailrelay/emailrelay-startstop.sh" ) ;
+	m_installer_config.add( "-startstop" , isWindows() ? "" : "%dir-install%/etc/init.d/emailrelay" ) ;
 	m_installer_config.add( "-servicewrapper" , isWindows() ? "%dir-install%/emailrelay-service.exe" : "" ) ;
 
 	// define some substitution variables (used for expansion of pvalues, ivalues and payload.cfg)

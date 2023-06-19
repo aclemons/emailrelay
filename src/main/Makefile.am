@@ -18,7 +18,6 @@
 SUBDIRS = icon
 
 sbin_PROGRAMS = emailrelay emailrelay-submit emailrelay-passwd $(MAC_PROGS) $(WINDOWS_PROGS)
-e_libexec_PROGRAMS =
 e_spool_DATA =
 noinst_LIBRARIES = libmain.a
 
@@ -290,7 +289,7 @@ $(RESOURCES): emailrelay.rc MSG00001.bin messages.rc
 	$(GCONFIG_WINDRES) --preprocessor "$(CC) -E -xc-header -DRC_INVOKED" -D_WIN32=1 --include-dir . --include-dir icon --include-dir $(top_srcdir)/src/main/icon -i $(top_srcdir)/src/main/emailrelay.rc -o $(RESOURCES)
 endif
 
-install-data-local: install-sbinPROGRAMS install-e_spoolDATA install-e_libexecPROGRAMS
+install-data-local: install-sbinPROGRAMS install-e_spoolDATA
 	-mkdir -p "$(DESTDIR)$(e_spooldir)"
 	-chgrp daemon "$(DESTDIR)$(e_spooldir)"
 	-chmod 775 "$(DESTDIR)$(e_spooldir)"
@@ -303,7 +302,6 @@ install-exec-local:
 
 uninstall-local:
 	-rmdir "$(DESTDIR)$(e_spooldir)" 2>/dev/null
-	-rmdir "$(DESTDIR)$(e_libexecdir)" 2>/dev/null
 
 MSG00001.bin messages.rc: fakemc.exe messages.mc
 	$(GCONFIG_WINDMC) $(top_srcdir)/src/main/messages.mc
@@ -313,7 +311,7 @@ fakemc.exe: $(top_srcdir)/src/main/fakemc.c
 
 .PHONY: strip
 strip:
-	$(STRIP) $(sbin_PROGRAMS) $(e_libexec_PROGRAMS)
+	$(STRIP) $(sbin_PROGRAMS)
 
 .PHONY: map
 map:

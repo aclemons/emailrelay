@@ -343,6 +343,7 @@ private:
 	std::string m_name ;
 	G::Path m_app_dir ;
 	G::Path m_base_dir ;
+	bool m_pid_file_warning {false} ;
 } ;
 
 inline

@@ -94,7 +94,7 @@ G::Identity G::Identity::invalid() noexcept
 	return {} ;
 }
 
-G::Identity G::Identity::invalid( SignalSafe safe ) noexcept
+G::Identity G::Identity::invalid( SignalSafe ) noexcept
 {
 	return {} ;
 }
@@ -172,7 +172,7 @@ std::pair<G::Identity,std::string> G::Identity::lookup( const std::string & name
 	}
 }
 
-gid_t G::Identity::lookupGroup( const std::string & group )
+gid_t G::Identity::lookupGroup( const std::string & /*group*/ )
 {
 	return -1 ;
 }
@@ -187,7 +187,7 @@ bool G::Identity::match( std::pair<int,int> range ) const
 std::string G::IdentityImp::sidstr( PSID sid_p )
 {
 	char * sidstr_p = nullptr ;
-	if( !ConvertSidToStringSid( sid_p , &sidstr_p ) || sidstr_p == nullptr )
+	if( !ConvertSidToStringSidA( sid_p , &sidstr_p ) || sidstr_p == nullptr )
 		return {} ;
 	std::string result( sidstr_p ) ;
 	LocalFree( sidstr_p ) ;

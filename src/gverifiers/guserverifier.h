@@ -56,7 +56,7 @@ namespace GVerifiers
 class GVerifiers::UserVerifier : public GSmtp::Verifier
 {
 public:
-	UserVerifier( GNet::ExceptionSink es , bool local_mode ,
+	UserVerifier( GNet::ExceptionSink es , bool strict ,
 		const GSmtp::Verifier::Config & config , const std::string & spec ) ;
 			///< Constructor. The spec string is semi-colon separated list
 			///< of values including a uid range and "lc"/"lowercase"
@@ -75,7 +75,8 @@ private:
 private:
 	using Signal = G::Slot::Signal<GSmtp::Verifier::Command,const GSmtp::VerifierStatus&> ;
 	Command m_command ;
-	bool m_local ;
+	bool m_strict ;
+	bool m_force_remote ;
 	GSmtp::Verifier::Config m_config ;
 	GNet::Timer<UserVerifier> m_timer ;
 	GSmtp::VerifierStatus m_result ;

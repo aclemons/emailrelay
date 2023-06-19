@@ -77,7 +77,7 @@ SOURCES += \
 	guimain.cpp \
 	guidialog.cpp \
 	guipage.cpp \
-	pages.cpp \
+	guipages.cpp \
 	installer.cpp \
 	guidir.cpp \
 	glibsources.cpp \
@@ -87,7 +87,7 @@ SOURCES += \
 HEADERS += \
 	guidialog.h \
 	guipage.h \
-	pages.h
+	guipages.h
 
 INCLUDEPATH += \
 	.. \

@@ -38,7 +38,9 @@
     </p>
    <h2><a class="a-header" name="SH_1_2">Basic operation</a></h2> <!-- index:2:SH:1:2:Basic operation -->
     <p>
-     E-MailRelay can be run straight from the command-line.
+     E-MailRelay can be run straight from the command-line, and on Windows you can
+     run <em>emailrelay.exe</em> or <em>emailrelay-textmode.exe</em> from the zip file without
+     going through the installation process.
     </p>
 
     <p>
@@ -51,20 +53,24 @@
 
 
     <p>
-     For example, to start a storage daemon in the background listening on port 587
+     For example, to start a storage daemon in the background listening on port 10025
      use a command like this:
     </p>
 
       <div class="div-pre">
-       <pre>emailrelay --as-server --syslog --port 587 --spool-dir /tmp
+       <pre>emailrelay --as-server --port 10025 --spool-dir /tmp
 </pre>
       </div><!-- div-pre -->
+    <p>
+     On Windows use <em>c:/temp</em> for testing, rather than <em>/tmp</em>.
+    </p>
+
     <p>
      Or to run it in the foreground:
     </p>
 
       <div class="div-pre">
-       <pre>emailrelay --log --verbose --no-daemon --port 587 --spool-dir /tmp
+       <pre>emailrelay --log --no-daemon --port 10025 --spool-dir /tmp
 </pre>
       </div><!-- div-pre -->
     <p>
@@ -77,16 +83,16 @@
 </pre>
       </div><!-- div-pre -->
     <p>
-     To get behaviour more like a proxy you can add the <em>--poll</em> and <em>--forward-to</em>
-     options so that messages are forwarded continuously rather than on-demand.
+     To forward continuously you can add the <em>--poll</em> and <em>--forward-to</em> options to
+     the server command-line:
     </p>
 
 <img src="forwardto.png" alt="image">
 
 
     <p>
-     This example starts a store-and-forward server that forwards spooled-up e-mail
-     every minute:
+     For example, this starts a server that also forwards spooled-up e-mail every
+     minute:
     </p>
 
       <div class="div-pre">
@@ -94,8 +100,8 @@
 </pre>
       </div><!-- div-pre -->
     <p>
-     Or for a proxy server that forwards each message soon after it has been
-     received, you can use <em>--as-proxy</em> or add <em>--forward-on-disconnect</em>:
+     Or for a server that forwards each message as soon as it has been received, you
+     can use <em>--forward-on-disconnect</em>:
     </p>
 
       <div class="div-pre">
@@ -103,16 +109,20 @@
 </pre>
       </div><!-- div-pre -->
     <p>
-     To edit or filter e-mail as it passes through the proxy specify your filter
+     To edit or filter e-mail as it passes through the server specify your filter
      program with the <em>--filter</em> option, something like this:
     </p>
 
       <div class="div-pre">
-       <pre>emailrelay --as-proxy smtp.example.com:25 --filter=addsig.js
+       <pre>emailrelay --as-server --filter /tmp/set-from.js
 </pre>
       </div><!-- div-pre -->
     <p>
-     E-MailRelay can be used as a personal internet mail server:
+     Look for example filter scripts in the <em>examples</em> directory.
+    </p>
+
+    <p>
+     E-MailRelay can also be used as a personal internet mail server:
     </p>
 
 <img src="mailserver.png" alt="image">
@@ -220,8 +230,8 @@
 
     <p>
      Once a failed message has been renamed it will be forwarded along with all the
-     others. It is generally a good idea to use regular polling (eg. <em>--poll=60</em>) to
-     make sure that this happens in a timely manner.
+     others. It is a good idea to use regular polling (eg. <em>--poll=60</em>) to make sure
+     that this happens in a timely manner.
     </p>
    <h2><a class="a-header" name="SH_1_6">Open mail servers</a></h2> <!-- index:2:SH:1:6:Open mail servers -->
     <p>
@@ -347,7 +357,7 @@ server plain user2 password2
     </p>
 
     <p>
-     It is normally sufficient for the filter script to just move the E-MailRelay
+     It is normally sufficient for a filter script to just move the E-MailRelay
      content file straight into the mailbox <em>cur</em> directory, delete the corresponding
      envelope file and then exit with an exit code of 100.
     </p>

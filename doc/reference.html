@@ -113,6 +113,12 @@
        Specifies a timeout (in seconds) for getting responses from remote SMTP
        servers. The default is 60 seconds.
       </dd>
+     <dt>--forward-to-all</dt>
+      <dd>
+       Requires all recipient addresses to be accepted by the remote server before
+       forwarding. This is currently the default behaviour  so this option is for
+       forwards compatibility only.
+      </dd>
      <dt>--forward-to-some</dt>
       <dd>
        Allow forwarding to continue even if some recipient addresses on an e-mail
@@ -142,7 +148,9 @@
      <dt>--address-verifier &lt;program&gt;</dt>
       <dd>
        Runs the specified external program to verify a message recipient's e-mail
-       address. A network verifier can be specified as <em>net:<tcp-address></em>.
+       address. A network verifier can be specified as <em>net:<tcp-address></em>. The
+       <em>strict:</em> and <em>local:</em> built-in address verifiers can be used to check
+       recipient addresses against the list of local system account names.
       </dd>
      <dt>--anonymous[=&lt;scope&gt;] (-A)</dt>
       <dd>
@@ -231,13 +239,12 @@
       </dd>
      <dt>--pop-by-name (-J)</dt>
       <dd>
-       Modifies the POP server's spool directory to be the sub-directory named after
-       the user-id used for POP authentication. This allows POP clients to see
-       only their own messages after they have been moved into separate
-       sub-directories typically by the built-in  <em>copy:</em> or <em>deliver:</em> filters.
-       Content files can remain in  the main spool directory to save disk space;
-       they will be deleted by the POP server when it deletes the last matching
-       envelope file.
+       Modifies the POP server's spool directory to be the sub-directory with the
+       same name as the user-id used for POP authentication. This  allows POP
+       clients to see only their own messages after they have  been moved into
+       separate sub-directories typically by the built-in  <em>deliver:</em> or <em>copy:</em>
+       filters. Content files can remain in the  main spool directory to save disk
+       space; they will be deleted by
       </dd>
      <dt>--pop-no-delete (-G)</dt>
       <dd>
@@ -515,7 +522,8 @@
     <p>
      A configuration file can be used to provide additional options; put each
      option on a separate line, use the long option names but without the double
-     dash, and separate the option name from the option value with spaces, eg:
+     dash, and separate the option name from the option value with spaces. For
+     example:
     </p>
 
       <div class="div-pre">
@@ -618,12 +626,21 @@ out-forward-to smtp.smarthost.com</pre>
     </p>
 
     <p>
-     By default all recipient e-mail addresses must be accepted by the remote server
-     when E-MailRelay forwards an e-mail message. If any one recipient is rejected
-     then the message will be left in the spool directory with a <em>.bad</em> suffix on
-     the envelope file. This behaviour can be changed by using <em>--forward-to-some</em>
-     command-line option so that forwarding will succeed for the valid recipients
-     and the failed message will contain the invalid ones.
+     All recipient e-mail addresses must be accepted by the remote server when
+     E-MailRelay forwards an e-mail message. If any one recipient is rejected then
+     the message will be left in the spool directory with a <em>.bad</em> suffix on the
+     envelope file.
+    </p>
+
+    <p>
+     This <em>--forward-to-all</em> behaviour is currently the default. However, if the
+     <em>--forward-to-some</em> option is used then forwarding will succeed for the valid
+     recipients and the failed message will contain just the invalid ones.
+    </p>
+
+    <p>
+     Future E-MailRelay releases will switch to <em>--forward-to-some</em> as the default,
+     so use <em>--forward-to-all</em> if that is what is required.
     </p>
    <h2><a class="a-header" name="SH_1_4">Filters</a></h2> <!-- index:2:SH:1:4:Filters -->
     <p>
@@ -1168,7 +1185,7 @@ catch( e )
     <p>
      The <em>strict:</em> verifier does strict validation of recipient address against system
      account names and the network domain or <em>--domain</em> value. For example, it will
-     accept <em>alice@example.com</em> as a valid recipient address only if there is a
+     accept <em>alice@example.com</em> as a valid local recipient address only if there is a
      system account called <em>alice</em> and the local fully-qualified domain name is
      <em>example.com</em>. This verifier is intended to be used for e-mail messages coming
      in from the public internet.
@@ -1182,12 +1199,12 @@ catch( e )
       </div><!-- div-pre -->
    <h3><a class="a-header">local:</a></h3>
     <p>
-     The <em>local:</em> verifier tests whether a recipient address is for a local user.
-     A recipient address where the first part matches a system account name and the
-     second part matches the network domain or <em>--domain</em> value is treated as local
-     and the mailbox name is just the account name. If there is no match then the
-     recipient address is treated as valid and not local. This verifier is intended
-     to be used for outgoing e-mail messages.
+     The <em>local:</em> verifier tests whether a recipient address is for a local user but
+     still allows other address. A recipient address where the first part matches
+     a system account name and the second part matches the network domain or
+     <em>--domain</em> value is treated as local and the mailbox name is just the account
+     name. If there is no match then the recipient address is treated as valid and
+     not local. This verifier is intended to be used for outgoing e-mail messages.
     </p>
 
     <p>
@@ -1200,8 +1217,9 @@ catch( e )
     <p>
      Both verifiers can have one or more semi-colon separated configuration
      parameters following the verifier name, including a user-id range (defaulting to
-     1000-32767) that is used to obtain the list of system account names, and <em>lc</em>
-     to convert the mailbox name derived from the system account name to lower-case.
+     1000-32767) that is used to obtain the list of system account names, <em>remote</em> to
+     verifiy local system account addresses as remote, and <em>lc</em> to convert the
+     mailbox name derived from the system account name to lower-case.
     </p>
 
     <p>
@@ -1954,8 +1972,8 @@ E-MailRelay&gt; quit
      files in the main spool directory if it cannot see the content file in the
      sub-directory. In that case the POP delete command will delete the envelope
      file from the sub-directory but only delete the content file if there are no
-     other envelope files with the same name in the main spool directory or any
-     other sub-directory.
+     other envelope files with the same name in either the main spool directory or
+     any other sub-directory.
     </p>
 
     <p>
@@ -1970,7 +1988,7 @@ E-MailRelay&gt; quit
      original files in the main spool directory so they can be forwarded use
      <em>copy:nodelete</em>; to copy just the envelope file and leave the content file alone
      use <em>copy:pop</em>; and to copy content files with hard links use <em>copy:hardlink</em>.
-     Remember to create matching sub-directories when adding users to the pop secrets
+     Remember to create matching sub-directories when adding users to the POP secrets
      file.
     </p>
 
@@ -2001,10 +2019,10 @@ E-MailRelay&gt; quit
     </p>
 
     <p>
-     The <em>emailrelay-submit</em> utility is normally group ownership of <em>daemon</em> with its
-     group set-user-id flag set. This allows it to create message files in the spool
-     directory and the files created end up owned by the submitter but with group
-     ownership of <em>daemon</em>.
+     The <em>emailrelay-submit</em> program normally has group ownership of <em>daemon</em> with
+     its group set-user-id flag set. This allows it to create message files in the
+     spool directory and the files created end up owned by the submitter but with
+     group ownership of <em>daemon</em>.
     </p>
 
     <p>
@@ -2044,7 +2062,7 @@ E-MailRelay&gt; quit
      <li>e_icondir=&lt;dir&gt;</li>
      <li>e_trdir=&lt;dir&gt;</li>
      <li>e_initdir=&lt;dir&gt;</li>
-     <li>e_libexecdir=&lt;dir&gt;</li>
+     <li>e_libdir=&lt;dir&gt;</li>
      <li>e_pamdir=&lt;dir&gt;</li>
      <li>e_spooldir=&lt;dir&gt;</li>
      <li>e_sysconfdir=&lt;dir&gt;</li>

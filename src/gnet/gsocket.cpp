@@ -437,7 +437,6 @@ GNet::StreamSocket::Config::Config( const Socket::Config & base ) :
 {
 }
 
-#ifndef G_LIB_SMALL
 bool GNet::StreamSocket::supports( Address::Family af )
 {
 	if( af == Address::Family::ipv6 )
@@ -465,7 +464,6 @@ bool GNet::StreamSocket::supports( Address::Family af )
 		return true ; // ipv4 always supported
 	}
 }
-#endif
 
 GNet::StreamSocket::StreamSocket( Address::Family af , const Config & config ) :
 	Socket(af,SOCK_STREAM,0,config) ,

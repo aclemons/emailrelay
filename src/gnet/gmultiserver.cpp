@@ -373,10 +373,10 @@ int GNet::Listeners::parseFd( const std::string & listener )
 
 void GNet::Listeners::addWildcards( unsigned int port )
 {
-	if( Address::supports(Address::Family::ipv4) )
+	if( StreamSocket::supports(Address::Family::ipv4) )
 		m_fixed.emplace_back( Address::Family::ipv4 , port ) ;
 
-	if( Address::supports(Address::Family::ipv6) )
+	if( StreamSocket::supports(Address::Family::ipv6) )
 		m_fixed.emplace_back( Address::Family::ipv6 , port ) ;
 }
 

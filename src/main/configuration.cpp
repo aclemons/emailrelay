@@ -40,76 +40,6 @@
 #include <iterator>
 #include <iostream>
 
-unsigned int Main::Configuration::_adminPort() const { return numberValue( "admin" , 0U ) ; }
-std::pair<int,int> Main::Configuration::_adminServerSocketLinger() const { return std::make_pair( -1 , -1 ) ; }
-bool Main::Configuration::_allowRemoteClients() const { return contains( "remote-clients" ) ; }
-GSmtp::FilterFactoryBase::Spec Main::Configuration::_clientFilter() const { return filterValue( "client-filter" ) ; }
-std::pair<int,int> Main::Configuration::_clientSocketLinger() const { return std::make_pair( -1 , -1 ) ; }
-unsigned int Main::Configuration::_connectionTimeout() const { return numberValue( "connection-timeout" , 40U ) ; }
-unsigned int Main::Configuration::_idleTimeout() const { return numberValue( "idle-timeout" , 1800U ) ; }
-unsigned int Main::Configuration::_maxSize() const { return numberValue( "size" , 0U ) ; }
-unsigned int Main::Configuration::_popPort() const { return numberValue( "pop-port" , 110U ) ; }
-std::string Main::Configuration::_popSaslServerConfig() const { return stringValue( "server-auth-config" ) ; }
-std::pair<int,int> Main::Configuration::_popServerSocketLinger() const { return std::make_pair( -1 , -1 ) ; }
-unsigned int Main::Configuration::_port() const { return numberValue( "port" , 25U ) ; }
-unsigned int Main::Configuration::_promptTimeout() const { return numberValue( "prompt-timeout" , 20U ) ; }
-unsigned int Main::Configuration::_responseTimeout() const { return numberValue( "response-timeout" , 1800U ) ; }
-unsigned int Main::Configuration::_secureConnectionTimeout() const { return _connectionTimeout() ; }
-bool Main::Configuration::_serverTlsRequired() const { return contains( "server-tls-required" ) ; }
-std::string Main::Configuration::_show() const { return stringValue( "show" ) ; }
-int Main::Configuration::_shutdownHowOnQuit() const { return 1 ; }
-std::string Main::Configuration::_smtpSaslClientConfig() const { return stringValue( "client-auth-config" ) ; }
-std::string Main::Configuration::_smtpSaslServerConfig() const { return stringValue( "server-auth-config" ) ; }
-std::pair<int,int> Main::Configuration::_smtpServerSocketLinger() const { return std::make_pair( -1 , -1 ) ; }
-GSmtp::VerifierFactoryBase::Spec Main::Configuration::_verifier() const { return verifierValue( "address-verifier" ) ; }
-bool Main::Configuration::_nodaemon() const { return contains( "no-daemon" ) || contains( "as-client" ) ; }
-
-std::string Main::Configuration::clientBindAddress() const { return stringValue( "client-interface" ) ; }
-bool Main::Configuration::clientOverTls() const { return contains( "client-tls-connection" ) ; }
-G::Path Main::Configuration::clientSecretsFile() const { return contains( "client-auth" ) ? pathValue( "client-auth" ) : G::Path() ; }
-G::Path Main::Configuration::clientTlsCaList() const { return contains( "client-tls-verify" ) ? pathValue( "client-tls-verify" ) : G::Path() ; }
-G::Path Main::Configuration::clientTlsCertificate() const { return certificateFile( "client-tls-certificate" ) ; }
-bool Main::Configuration::clientTls() const { return contains( "client-tls" ) ; }
-std::string Main::Configuration::clientTlsPeerCertificateName() const { return stringValue( "client-tls-verify-name" ) ; }
-std::string Main::Configuration::clientTlsPeerHostName() const { return stringValue( "client-tls-server-name" ) ; }
-G::Path Main::Configuration::clientTlsPrivateKey() const { return keyFile( "client-tls-certificate" ) ; }
-bool Main::Configuration::closeStderr() const { return contains( "close-stderr" ) || contains( "as-proxy" ) || contains( "as-server" ) ; }
-bool Main::Configuration::daemon() const { return !_nodaemon() ; }
-bool Main::Configuration::debug() const { return contains( "debug" ) ; }
-std::string Main::Configuration::dnsbl() const { return stringValue( "dnsbl" ) ; }
-std::string Main::Configuration::domain( std::function<std::string()> default_domain_fn ) const { return stringValue( "domain" , default_domain_fn ) ; }
-bool Main::Configuration::doAdmin() const { return contains( "admin" ) ; }
-bool Main::Configuration::doPolling() const { return contains( "poll" ) && pollingTimeout() > 0U ; }
-bool Main::Configuration::doPop() const { return contains( "pop" ) ; }
-bool Main::Configuration::doServing() const { return !contains( "dont-serve" ) && !contains( "as-client" ) ; }
-bool Main::Configuration::doSmtp() const { return !contains( "no-smtp" ) ; }
-GSmtp::FilterFactoryBase::Spec Main::Configuration::filter() const { return filterValue( "filter" ) ; }
-unsigned int Main::Configuration::filterTimeout() const { return numberValue( "filter-timeout" , 60U ) ; } // was 300
-bool Main::Configuration::forwardOnDisconnect() const { return contains( "forward-on-disconnect" ) || contains( "as-proxy" ) ; }
-bool Main::Configuration::forwardOnStartup() const { return contains( "forward" ) || contains( "as-client" ) ; }
-bool Main::Configuration::hidden() const { return contains( "hidden" ) ; }
-bool Main::Configuration::immediate() const { return contains( "immediate" ) ; }
-G::Path Main::Configuration::deliveryDir() const { return contains("delivery-dir") ? pathValue("delivery-dir") : spoolDir() ; }
-bool Main::Configuration::log() const { return contains( "log" ) || contains( "as-client" ) || contains( "as-proxy" ) || contains( "as-server" ) ; }
-std::string Main::Configuration::logFile() const { return contains("log-file") ? pathValue("log-file").str() : std::string() ; }
-G::Path Main::Configuration::pidFile() const { return pathValue( "pid-file" ) ; }
-bool Main::Configuration::pollingLog() const { return doPolling() && pollingTimeout() > 60U ; }
-unsigned int Main::Configuration::pollingTimeout() const { return numberValue( "poll" , 0U ) ; }
-bool Main::Configuration::popByName() const { return contains( "pop-by-name" ) ; }
-bool Main::Configuration::popNoDelete() const { return contains( "pop-no-delete" ) ; }
-G::Path Main::Configuration::popSecretsFile() const { return contains( "pop-auth" ) ? pathValue( "pop-auth" ) : G::Path() ; }
-G::Path Main::Configuration::serverSecretsFile() const { return contains( "server-auth" ) ? pathValue( "server-auth" ) : G::Path() ; }
-G::Path Main::Configuration::serverTlsCaList() const { return contains( "server-tls-verify" ) ? pathValue( "server-tls-verify" ) : G::Path() ; }
-G::Path Main::Configuration::serverTlsCertificate() const { return certificateFile( "server-tls-certificate" ) ; }
-bool Main::Configuration::serverTlsConnection() const { return contains( "server-tls-connection" ) ; }
-bool Main::Configuration::serverTls() const { return contains( "server-tls" ) ; }
-G::Path Main::Configuration::serverTlsPrivateKey() const { return keyFile( "server-tls-certificate" ) ; }
-std::string Main::Configuration::tlsConfig() const { return stringValue( "tls-config" ) ; }
-bool Main::Configuration::usePidFile() const { return contains( "pid-file" ) ; }
-std::string Main::Configuration::user() const { return stringValue( "user" , "daemon" ) ; }
-
-// ==
-
 Main::Configuration::Configuration( const G::OptionMap & map , const std::string & name ,
 	const G::Path & app_dir , const G::Path & base_dir ) :
 		m_map(map) ,
@@ -118,6 +48,12 @@ Main::Configuration::Configuration( const G::OptionMap & map , const std::string
 		m_base_dir(base_dir)
 {
 	G_ASSERT( m_base_dir.isAbsolute() ) ;
+	if( m_map.count("pid-file") > 1U )
+	{
+		// let the start/stop override the config file
+		m_pid_file_warning = true ;
+		m_map.replace( "pid-file" , (*m_map.find("pid-file")).second.value() ) ;
+	}
 	if( G::Test::enabled("configuration-dump") )
 	{
 		for( const auto & p : map )
@@ -496,6 +432,9 @@ G::StringArray Main::Configuration::semanticWarnings() const
 	using G::txt ;
 	G::StringArray warnings ;
 
+	if( m_pid_file_warning )
+		warnings.push_back( txt("more than one --pid-file: using the first") ) ;
+
 	const bool no_syslog =
 		contains( "no-syslog" ) ||
 		contains( "as-client") ;
@@ -567,10 +506,10 @@ G::Path Main::Configuration::pathValue( G::string_view option_name ) const
 		// dont mess with eg. "--tls-client-verify=<none>"
 		return value ;
 	}
-	else if( ( option_name == "smtp-auth"_sv || option_name == "pop-auth"_sv ) &&
+	else if( ( option_name == "server-auth"_sv || option_name == "pop-auth"_sv ) &&
 		( value == "pam:" || value == "/pam" ) )
 	{
-		// dont mess with "--smtp-auth=/pam" etc.
+		// dont mess with "--server-auth=/pam" etc.
 		return value ;
 	}
 	else if( option_name == "client-auth"_sv && G::Str::headMatch(value,"plain:") )
@@ -924,4 +863,74 @@ bool Main::Configuration::Switches::operator()( G::string_view item , bool defau
 	if( remove(str('=',item)) ) return default_ ;
 	return default_ ;
 }
+
+// ==
+
+unsigned int Main::Configuration::_adminPort() const { return numberValue( "admin" , 0U ) ; }
+std::pair<int,int> Main::Configuration::_adminServerSocketLinger() const { return std::make_pair( -1 , -1 ) ; }
+bool Main::Configuration::_allowRemoteClients() const { return contains( "remote-clients" ) ; }
+GSmtp::FilterFactoryBase::Spec Main::Configuration::_clientFilter() const { return filterValue( "client-filter" ) ; }
+std::pair<int,int> Main::Configuration::_clientSocketLinger() const { return std::make_pair( -1 , -1 ) ; }
+unsigned int Main::Configuration::_connectionTimeout() const { return numberValue( "connection-timeout" , 40U ) ; }
+unsigned int Main::Configuration::_idleTimeout() const { return numberValue( "idle-timeout" , 1800U ) ; }
+unsigned int Main::Configuration::_maxSize() const { return numberValue( "size" , 0U ) ; }
+unsigned int Main::Configuration::_popPort() const { return numberValue( "pop-port" , 110U ) ; }
+std::string Main::Configuration::_popSaslServerConfig() const { return stringValue( "server-auth-config" ) ; }
+std::pair<int,int> Main::Configuration::_popServerSocketLinger() const { return std::make_pair( -1 , -1 ) ; }
+unsigned int Main::Configuration::_port() const { return numberValue( "port" , 25U ) ; }
+unsigned int Main::Configuration::_promptTimeout() const { return numberValue( "prompt-timeout" , 20U ) ; }
+unsigned int Main::Configuration::_responseTimeout() const { return numberValue( "response-timeout" , 1800U ) ; }
+unsigned int Main::Configuration::_secureConnectionTimeout() const { return _connectionTimeout() ; }
+bool Main::Configuration::_serverTlsRequired() const { return contains( "server-tls-required" ) ; }
+std::string Main::Configuration::_show() const { return stringValue( "show" ) ; }
+int Main::Configuration::_shutdownHowOnQuit() const { return 1 ; }
+std::string Main::Configuration::_smtpSaslClientConfig() const { return stringValue( "client-auth-config" ) ; }
+std::string Main::Configuration::_smtpSaslServerConfig() const { return stringValue( "server-auth-config" ) ; }
+std::pair<int,int> Main::Configuration::_smtpServerSocketLinger() const { return std::make_pair( -1 , -1 ) ; }
+GSmtp::VerifierFactoryBase::Spec Main::Configuration::_verifier() const { return verifierValue( "address-verifier" ) ; }
+bool Main::Configuration::_nodaemon() const { return contains( "no-daemon" ) || contains( "as-client" ) ; }
+
+std::string Main::Configuration::clientBindAddress() const { return stringValue( "client-interface" ) ; }
+bool Main::Configuration::clientOverTls() const { return contains( "client-tls-connection" ) ; }
+G::Path Main::Configuration::clientSecretsFile() const { return contains( "client-auth" ) ? pathValue( "client-auth" ) : G::Path() ; }
+G::Path Main::Configuration::clientTlsCaList() const { return contains( "client-tls-verify" ) ? pathValue( "client-tls-verify" ) : G::Path() ; }
+G::Path Main::Configuration::clientTlsCertificate() const { return certificateFile( "client-tls-certificate" ) ; }
+bool Main::Configuration::clientTls() const { return contains( "client-tls" ) ; }
+std::string Main::Configuration::clientTlsPeerCertificateName() const { return stringValue( "client-tls-verify-name" ) ; }
+std::string Main::Configuration::clientTlsPeerHostName() const { return stringValue( "client-tls-server-name" ) ; }
+G::Path Main::Configuration::clientTlsPrivateKey() const { return keyFile( "client-tls-certificate" ) ; }
+bool Main::Configuration::closeStderr() const { return contains( "close-stderr" ) || contains( "as-proxy" ) || contains( "as-server" ) ; }
+bool Main::Configuration::daemon() const { return !_nodaemon() ; }
+bool Main::Configuration::debug() const { return contains( "debug" ) ; }
+std::string Main::Configuration::dnsbl() const { return stringValue( "dnsbl" ) ; }
+std::string Main::Configuration::domain( std::function<std::string()> default_domain_fn ) const { return stringValue( "domain" , default_domain_fn ) ; }
+bool Main::Configuration::doAdmin() const { return contains( "admin" ) ; }
+bool Main::Configuration::doPolling() const { return contains( "poll" ) && pollingTimeout() > 0U ; }
+bool Main::Configuration::doPop() const { return contains( "pop" ) ; }
+bool Main::Configuration::doServing() const { return !contains( "dont-serve" ) && !contains( "as-client" ) ; }
+bool Main::Configuration::doSmtp() const { return !contains( "no-smtp" ) ; }
+GSmtp::FilterFactoryBase::Spec Main::Configuration::filter() const { return filterValue( "filter" ) ; }
+unsigned int Main::Configuration::filterTimeout() const { return numberValue( "filter-timeout" , 60U ) ; } // was 300
+bool Main::Configuration::forwardOnDisconnect() const { return contains( "forward-on-disconnect" ) || contains( "as-proxy" ) ; }
+bool Main::Configuration::forwardOnStartup() const { return contains( "forward" ) || contains( "as-client" ) ; }
+bool Main::Configuration::hidden() const { return contains( "hidden" ) ; }
+bool Main::Configuration::immediate() const { return contains( "immediate" ) ; }
+G::Path Main::Configuration::deliveryDir() const { return contains("delivery-dir") ? pathValue("delivery-dir") : spoolDir() ; }
+bool Main::Configuration::log() const { return contains( "log" ) || contains( "as-client" ) || contains( "as-proxy" ) || contains( "as-server" ) ; }
+std::string Main::Configuration::logFile() const { return contains("log-file") ? pathValue("log-file").str() : std::string() ; }
+G::Path Main::Configuration::pidFile() const { return pathValue( "pid-file" ) ; }
+bool Main::Configuration::pollingLog() const { return doPolling() && pollingTimeout() > 60U ; }
+unsigned int Main::Configuration::pollingTimeout() const { return numberValue( "poll" , 0U ) ; }
+bool Main::Configuration::popByName() const { return contains( "pop-by-name" ) ; }
+bool Main::Configuration::popNoDelete() const { return contains( "pop-no-delete" ) ; }
+G::Path Main::Configuration::popSecretsFile() const { return contains( "pop-auth" ) ? pathValue( "pop-auth" ) : G::Path() ; }
+G::Path Main::Configuration::serverSecretsFile() const { return contains( "server-auth" ) ? pathValue( "server-auth" ) : G::Path() ; }
+G::Path Main::Configuration::serverTlsCaList() const { return contains( "server-tls-verify" ) ? pathValue( "server-tls-verify" ) : G::Path() ; }
+G::Path Main::Configuration::serverTlsCertificate() const { return certificateFile( "server-tls-certificate" ) ; }
+bool Main::Configuration::serverTlsConnection() const { return contains( "server-tls-connection" ) ; }
+bool Main::Configuration::serverTls() const { return contains( "server-tls" ) ; }
+G::Path Main::Configuration::serverTlsPrivateKey() const { return keyFile( "server-tls-certificate" ) ; }
+std::string Main::Configuration::tlsConfig() const { return stringValue( "tls-config" ) ; }
+bool Main::Configuration::usePidFile() const { return contains( "pid-file" ) ; }
+std::string Main::Configuration::user() const { return stringValue( "user" , "daemon" ) ; }
 

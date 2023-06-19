@@ -44,7 +44,6 @@ G::OptionMap::const_iterator G::OptionMap::find( string_view key ) const
 	return pair.first == pair.second ? m_map.end() : pair.first ;
 }
 
-#ifndef G_LIB_SMALL
 void G::OptionMap::replace( string_view key , const std::string & value )
 {
 	auto pair = findRange( key ) ;
@@ -52,7 +51,6 @@ void G::OptionMap::replace( string_view key , const std::string & value )
 		m_map.erase( pair.first , pair.second ) ;
 	m_map.insert( Map::value_type(sv_to_string(key),OptionValue(value)) ) ;
 }
-#endif
 
 void G::OptionMap::increment( string_view key )
 {

@@ -640,6 +640,14 @@ G::Options Main::Options::spec( bool is_windows )
 				// Allow forwarding to continue even if some recipient addresses on an
 				// e-mail envelope are rejected by the remote server.
 
+		G::Options::add( opt , '\0' , "forward-to-all" ,
+			tx("requires all addressees to be accepted when forwarding") , "" ,
+			M::zero , "" , 32 ,
+			t_smtpclient ) ;
+				// Requires all recipient addresses to be accepted by the remote
+				// server before forwarding. This is currently the default behaviour
+				// so this option is for forwards compatibility only.
+
 		G::Options::add( opt , 'T' , "response-timeout" ,
 			tx("sets the response timeout (in seconds) when talking to a remote server (default is 60)") , "" ,
 			M::one , "time" , 31 ,
@@ -718,7 +726,7 @@ G::Options Main::Options::spec( bool is_windows )
 
 		G::Options::add( opt , 'i' , "pid-file" ,
 			tx("defines a file for storing the daemon process-id") , "" ,
-			M::one , "path" , 30 ,
+			M::many , "path" , 30 ,
 			t_process ) ;
 				//example: /run/emailrelay/emailrelay.pid
 				//example: C:/ProgramData/E-MailRelay/pid.txt
@@ -742,7 +750,9 @@ G::Options Main::Options::spec( bool is_windows )
 				//example: /usr/local/sbin/emailrelay-verifier.sh
 				//example: C:/ProgramData/E-MailRelay/verifier.js
 				// Runs the specified external program to verify a message recipient's e-mail
-				// address. A network verifier can be specified as "net:<tcp-address>".
+				// address. A network verifier can be specified as "net:<tcp-address>". The
+				// "strict:" and "local:" built-in address verifiers can be used to check
+				// recipient addresses against the list of local system account names.
 
 		G::Options::add( opt , 'Y' , "client-filter" ,
 			tx("specifies an external program to process messages when they are forwarded") , "" ,
@@ -821,13 +831,11 @@ G::Options Main::Options::spec( bool is_windows )
 			M::zero , "" , 30 ,
 			t_pop , t_smtpserver ) ;
 				// Modifies the POP server's spool directory to be the sub-directory
-				// named after the user-id used for POP authentication. This allows
-				// POP clients to see only their own messages after they have been
-				// moved into separate sub-directories typically by the built-in
-				// "copy:" or "deliver:" filters. Content files can remain in
-				// the main spool directory to save disk space; they will be
-				// deleted by the POP server when it deletes the last matching
-				// envelope file.
+				// with the same name as the user-id used for POP authentication. This
+				// allows POP clients to see only their own messages after they have
+				// been moved into separate sub-directories typically by the built-in
+				// "deliver:" or "copy:" filters. Content files can remain in the
+				// main spool directory to save disk space; they will be deleted by
 
 		G::Options::add( opt , 'M' , "size" ,
 			tx("limits the size of submitted messages") , "" ,

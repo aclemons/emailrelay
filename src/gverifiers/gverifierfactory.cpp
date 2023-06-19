@@ -26,6 +26,7 @@
 #include "guserverifier.h"
 #include "gfile.h"
 #include "gstr.h"
+#include "gstringtoken.h"
 #include "grange.h"
 #include "gexception.h"
 
@@ -90,13 +91,13 @@ std::unique_ptr<GSmtp::Verifier> GVerifiers::VerifierFactory::newVerifier( GNet:
 	}
 	else if( spec.first == "strict" )
 	{
-		bool local = false ;
-		return std::make_unique<UserVerifier>( es , local , config , spec.second ) ;
+		bool strict = true ;
+		return std::make_unique<UserVerifier>( es , strict , config , spec.second ) ;
 	}
 	else if( spec.first == "local" )
 	{
-		bool local = true ;
-		return std::make_unique<UserVerifier>( es , local , config , spec.second ) ;
+		bool strict = false ;
+		return std::make_unique<UserVerifier>( es , strict , config , spec.second ) ;
 	}
 	else if( spec.first == "file" )
 	{
@@ -133,7 +134,12 @@ void GVerifiers::VerifierFactory::checkRange( Spec & result )
 {
 	try
 	{
-		G::Range::check( result.second ) ;
+		G::string_view spec_view( result.second ) ;
+		for( G::StringTokenView t( spec_view , ";" , 1U ) ; t ; ++t )
+		{
+			if( !t().empty() && G::Str::isNumeric(t().substr(0U,1U)) )
+				G::Range::check( t() ) ;
+		}
 	}
 	catch( std::exception & e )
 	{

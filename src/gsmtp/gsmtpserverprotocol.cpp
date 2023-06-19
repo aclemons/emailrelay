@@ -166,6 +166,8 @@ bool GSmtp::ServerProtocol::rcptState() const
 
 bool GSmtp::ServerProtocol::sendFlush() const
 {
+	// the return value is currently ignored by GSmtp::ServerPeer::protocolSend() ...
+
 	// always flush if no pipelining
 	if( !m_session_esmtp || !m_config.with_pipelining )
 		return true ;
@@ -599,15 +601,16 @@ void GSmtp::ServerProtocol::doVrfy( EventData event_data , bool & predicate )
 {
 	G_ASSERT( m_config.with_vrfy ) ;
 	if( m_config.mail_requires_authentication &&
-		!m_sasl->authenticated() && !m_sasl->trusted(m_peer_address.wildcards(),m_peer_address.hostPartString()) )
+		!m_sasl->authenticated() &&
+		!m_sasl->trusted(m_peer_address.wildcards(),m_peer_address.hostPartString()) )
 	{
 		predicate = false ;
-		sendAuthRequired() ;
+		sendAuthRequired( m_config.mail_requires_encryption && !m_secure && m_with_starttls ) ;
 	}
 	else if( m_config.mail_requires_encryption && !m_secure )
 	{
 		predicate = false ;
-		sendEncryptionRequired() ;
+		sendEncryptionRequired( m_with_starttls ) ;
 	}
 	else
 	{
@@ -728,7 +731,7 @@ void GSmtp::ServerProtocol::doAuth( EventData event_data , bool & predicate )
 	{
 		G_WARNING( "GSmtp::ServerProtocol: rejecting authentication attempt without encryption" ) ;
 		predicate = false ; // => idle
-		sendInsecureAuth() ;
+		sendInsecureAuth( m_with_starttls ) ;
 	}
 	else if( mechanisms().empty() )
 	{
@@ -809,17 +812,19 @@ void GSmtp::ServerProtocol::doMail( EventData event_data , bool & predicate )
 {
 	G::string_view mail_line = event_data ;
 	m_message.clear() ;
-	if( m_config.mail_requires_authentication && !m_sasl->authenticated() && !m_sasl->trusted(m_peer_address.wildcards(),m_peer_address.hostPartString()) )
+	if( m_config.mail_requires_authentication &&
+		!m_sasl->authenticated() &&
+		!m_sasl->trusted(m_peer_address.wildcards(),m_peer_address.hostPartString()) )
 	{
 		G_LOG( "GSmtp::ServerProtocol::doMail: server authentication enabled "
 			"but not a trusted address: " << m_peer_address.hostPartString() ) ;
 		predicate = false ;
-		sendAuthRequired() ;
+		sendAuthRequired( m_config.mail_requires_encryption && !m_secure && m_with_starttls ) ;
 	}
 	else if( m_config.mail_requires_encryption && !m_secure )
 	{
 		predicate = false ;
-		sendEncryptionRequired() ;
+		sendEncryptionRequired( m_with_starttls ) ;
 	}
 	else
 	{
@@ -1017,11 +1022,6 @@ G::StringArray GSmtp::ServerProtocol::mechanisms() const
 G::StringArray GSmtp::ServerProtocol::mechanisms( bool secure ) const
 {
 	return m_sasl->mechanisms( secure ) ;
-}
-
-std::string GSmtp::ServerProtocol::sendUseStartTls() const
-{
-	return !m_secure && m_with_starttls ? ": use starttls" : "" ;
 }
 
 // ===

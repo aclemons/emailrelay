@@ -23,7 +23,7 @@
 #
 # For windows this is now done elsewhere.
 #
-# usage: make-setup.sh [-d] <payload> <icon>
+# usage: make-setup.sh [-d] <payload>
 #           -d : debug
 #
 # Normally run by "make payload" in the "src/gui" directory.
@@ -32,12 +32,11 @@
 # parse the command line
 debug="0" ; if test "$1" = "-d" ; then shift ; debug="1" ; fi
 payload="$1"
-icon="$2"
 
 # check the command-line
 if test "$payload" = ""
 then
-	echo usage: `basename $0` '<payload> [<icon>]' >&2
+	echo usage: `basename $0` '<payload>' >&2
 	exit 2
 fi
 if test ! -d "$payload" -o -f "$payload/*"
@@ -51,30 +50,32 @@ echo `basename $0`: running make install into $payload
 payload_path="`cd $payload && pwd`"
 ( cd ../.. && make install GCONFIG_HAVE_DOXYGEN=no DESTDIR=$payload_path ) > /dev/null 2>&1
 
-# check the "./configure" was done by "bin/configure.sh" for FHS compliance
-if test ! -d "$payload/usr/lib/emailrelay"
+# check the "./configure" was done by "bin/configure.sh --enable-gui --without-doxygen"
+if test \
+	! -d "$payload/usr/lib/emailrelay" -o \
+	! -f "$payload/usr/share/emailrelay/emailrelay.no.qm" -o \
+	! -f "$payload/usr/lib/emailrelay/emailrelay.auth.in" -o \
+	! -f "$payload/usr/lib/emailrelay/emailrelay.conf.in" -o \
+	! -f "$payload/usr/sbin/emailrelay-gui.real" -o \
+	-f "$payload/usr/share/doc/emailrelay/doxygen/classes.html"
 then
-	echo `basename $0`: cannot see expected directories: configure with \"configure.sh\" >&2
+	echo `basename $0`: cannot see expected files: configure with \"configure.sh --enable-gui --without-doxygen\" >&2
 	exit 1
 fi
 
 # clean up the "make install" output
-rm -f $payload/etc/emailrelay.conf.makeinstall 2>/dev/null
 rm -f $payload/usr/sbin/emailrelay-gui
-rm -rf $payload/usr/share/doc/emailrelay/doxygen
-
-# add the icon
-cp "$icon" $payload/usr/lib/emailrelay/ 2>/dev/null
 
 # create the payload config file
 cat <<EOF >$payload/payload.cfg
-etc/emailrelay.conf=%dir-config%/emailrelay.conf
-etc/emailrelay.conf.template=%dir-config%/emailrelay.conf.template
-etc/emailrelay.auth.template=%dir-config%/emailrelay.auth.template
-etc/init.d/emailrelay=%dir-config%/init.d/emailrelay
+# all of /etc excluding .conf and .auth files created by gui
+etc/pam.d/emailrelay=%dir-install%/etc/pam.d/emailrelay
+etc/init.d/emailrelay=%dir-install%/etc/init.d/emailrelay
+# all sub-dirs of /usr
 usr/lib/=%dir-install%/lib/
 usr/share/=%dir-install%/share/
 usr/sbin/=%dir-install%/sbin/
+# permission fix-ups
 +%dir-spool% group daemon 770 g+s
 +%dir-install%/sbin/emailrelay-submit group daemon 775 g+s
 EOF

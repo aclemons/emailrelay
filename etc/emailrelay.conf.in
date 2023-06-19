@@ -134,6 +134,14 @@
 #
 #response-timeout 2
 
+# Name: forward-to-all
+# Format: forward-to-all
+# Description: Requires all recipient addresses to be accepted by the remote
+# server before forwarding. This is currently the default behaviour  so this
+# option is for forwards compatibility only.
+#
+#forward-to-all
+
 # Name: forward-to-some
 # Format: forward-to-some
 # Description: Allow forwarding to continue even if some recipient addresses
@@ -174,7 +182,9 @@
 # Format: address-verifier <program>
 # Description: Runs the specified external program to verify a message
 # recipient's e-mail address. A network verifier can be specified as
-# "net:<tcp-address>".
+# "net:<tcp-address>". The "strict:" and "local:" built-in address verifiers
+# can be used to check recipient addresses against the list of local system
+# account names.
 #
 #address-verifier /usr/local/sbin/emailrelay-verifier.sh
 
@@ -291,12 +301,11 @@
 # Name: pop-by-name
 # Format: pop-by-name
 # Description: Modifies the POP server's spool directory to be the
-# sub-directory named after the user-id used for POP authentication. This
-# allows POP clients to see only their own messages after they have been
-# moved into separate sub-directories typically by the built-in  "copy:" or
-# "deliver:" filters. Content files can remain in  the main spool directory
-# to save disk space; they will be deleted by the POP server when it deletes
-# the last matching  envelope file.
+# sub-directory with the same name as the user-id used for POP
+# authentication. This	allows POP clients to see only their own messages
+# after they have  been moved into separate sub-directories typically by the
+# built-in  "deliver:" or "copy:" filters. Content files can remain in the
+# main spool directory to save disk space; they will be deleted by
 #
 #pop-by-name
 

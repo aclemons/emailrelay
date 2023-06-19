@@ -517,7 +517,7 @@ goptionmap.cpp	26	keep	void G::OptionMap::insert( const Map::value_type & value 
 goptionmap.cpp	31	keep	G::OptionMap::Range G::OptionMap::findRange( string_view key ) const
 goptionmap.cpp	36	keep	G::OptionMap::Map::iterator G::OptionMap::findFirst( string_view key )
 goptionmap.cpp	41	keep	G::OptionMap::const_iterator G::OptionMap::find( string_view key ) const
-goptionmap.cpp	47	remove	void G::OptionMap::replace( string_view key , const std::string & value )
+goptionmap.cpp	47	keep	void G::OptionMap::replace( string_view key , const std::string & value )
 goptionmap.cpp	55	keep	void G::OptionMap::increment( string_view key )
 goptionmap.cpp	62	keep	G::OptionMap::const_iterator G::OptionMap::begin() const
 goptionmap.cpp	67	remove	G::OptionMap::const_iterator G::OptionMap::cbegin() const
@@ -569,18 +569,19 @@ goptions.cpp	35	keep	void G::Options::parseSpec( const std::string & spec , char
 goptions.cpp	69	keep	void G::Options::add( Options & options , char c , const char * name , const char * text , const char * more , Option::Multiplicity m , const char * argname , unsigned int level , unsigned int main_tag , unsigned int tag_bits )
 goptions.cpp	76	keep	void G::Options::add( const Option & opt , char sep , char escape )
 goptions.cpp	81	keep	void G::Options::addOption( Option opt , char sep , char escape )
-goptions.cpp	111	keep	bool G::Options::defaulting( const std::string & name ) const
-goptions.cpp	117	keep	bool G::Options::valued( char c ) const
-goptions.cpp	122	keep	bool G::Options::valued( const std::string & name ) const
-goptions.cpp	128	keep	bool G::Options::unvalued( const std::string & name ) const
-goptions.cpp	133	keep	bool G::Options::multivalued( char c ) const
-goptions.cpp	138	keep	bool G::Options::multivalued( const std::string & name ) const
-goptions.cpp	144	keep	bool G::Options::visible( const std::string & name , unsigned int level , bool level_exact ) const
-goptions.cpp	150	remove	bool G::Options::visible( const std::string & name ) const
-goptions.cpp	155	keep	bool G::Options::valid( const std::string & name ) const
-goptions.cpp	160	keep	std::string G::Options::lookup( char c ) const
-goptions.cpp	170	keep	const G::Option * G::Options::find( const std::string & name ) const
-goptions.cpp	180	keep	const std::vector<G::Option> & G::Options::list() const
+goptions.cpp	111	keep	bool G::Options::defaulting( char c ) const
+goptions.cpp	116	keep	bool G::Options::defaulting( const std::string & name ) const
+goptions.cpp	122	keep	bool G::Options::valued( char c ) const
+goptions.cpp	127	keep	bool G::Options::valued( const std::string & name ) const
+goptions.cpp	133	keep	bool G::Options::unvalued( const std::string & name ) const
+goptions.cpp	138	keep	bool G::Options::multivalued( char c ) const
+goptions.cpp	143	keep	bool G::Options::multivalued( const std::string & name ) const
+goptions.cpp	149	keep	bool G::Options::visible( const std::string & name , unsigned int level , bool level_exact ) const
+goptions.cpp	155	remove	bool G::Options::visible( const std::string & name ) const
+goptions.cpp	160	keep	bool G::Options::valid( const std::string & name ) const
+goptions.cpp	165	keep	std::string G::Options::lookup( char c ) const
+goptions.cpp	175	keep	const G::Option * G::Options::find( const std::string & name ) const
+goptions.cpp	185	keep	const std::vector<G::Option> & G::Options::list() const
 goptionsusage.cpp	32	keep	G::OptionsUsage::OptionsUsage( const std::vector<Option> & options , std::function<bool(const Option&,const Option&)> sort_fn ) : m_options(options)
 goptionsusage.cpp	49	keep	std::string G::OptionsUsage::summary( const Config & config_in , const std::string & exe , const std::string & args ) const
 goptionsusage.cpp	69	keep	std::string G::OptionsUsage::help( const Config & config_in , bool * overflow_p ) const
@@ -958,88 +959,88 @@ gssl_mbedtls.cpp	112	keep	std::string GSsl::MbedTls::LibraryImp::version()
 gssl_mbedtls.cpp	121	keep	std::string GSsl::MbedTls::LibraryImp::sid()
 gssl_mbedtls.cpp	130	keep	std::string GSsl::MbedTls::LibraryImp::id() const
 gssl_mbedtls.cpp	135	keep	GSsl::MbedTls::Config GSsl::MbedTls::LibraryImp::config() const
-gssl_mbedtls.cpp	140	keep	std::string GSsl::MbedTls::LibraryImp::credit( const std::string & prefix , const std::string & eol , const std::string & eot )
-gssl_mbedtls.cpp	150	keep	G::StringArray GSsl::MbedTls::LibraryImp::digesters( bool ) const
-gssl_mbedtls.cpp	155	keep	GSsl::Digester GSsl::MbedTls::LibraryImp::digester( const std::string & hash_type , const std::string & state , bool need_state ) const
-gssl_mbedtls.cpp	162	keep	GSsl::MbedTls::Config::Config( G::StringArray & config ) : m_noverify(consume(config,"noverify")), m_clientnoverify(consume(config,"clientnoverify")), m_servernoverify(consume(config,"servernoverify")), m_min(-1), m_max(-1)
-gssl_mbedtls.cpp	206	keep	int GSsl::MbedTls::Config::min_() const noexcept
-gssl_mbedtls.cpp	211	keep	int GSsl::MbedTls::Config::max_() const noexcept
-gssl_mbedtls.cpp	216	keep	bool GSsl::MbedTls::Config::noverify() const noexcept
-gssl_mbedtls.cpp	221	keep	bool GSsl::MbedTls::Config::clientnoverify() const noexcept
-gssl_mbedtls.cpp	226	keep	bool GSsl::MbedTls::Config::servernoverify() const noexcept
-gssl_mbedtls.cpp	231	keep	bool GSsl::MbedTls::Config::consume( G::StringArray & list , G::string_view item )
-gssl_mbedtls.cpp	238	keep	GSsl::MbedTls::DigesterImp::DigesterImp( const std::string & hash_name , const std::string & state , bool need_state )
-gssl_mbedtls.cpp	309	keep	GSsl::MbedTls::DigesterImp::~DigesterImp()
-gssl_mbedtls.cpp	319	keep	void GSsl::MbedTls::DigesterImp::add( G::string_view sv )
-gssl_mbedtls.cpp	329	keep	std::string GSsl::MbedTls::DigesterImp::value()
-gssl_mbedtls.cpp	355	keep	std::string GSsl::MbedTls::DigesterImp::state()
-gssl_mbedtls.cpp	371	keep	std::size_t GSsl::MbedTls::DigesterImp::blocksize() const noexcept
-gssl_mbedtls.cpp	376	keep	std::size_t GSsl::MbedTls::DigesterImp::valuesize() const noexcept
-gssl_mbedtls.cpp	381	keep	std::size_t GSsl::MbedTls::DigesterImp::statesize() const noexcept
-gssl_mbedtls.cpp	388	keep	GSsl::MbedTls::ProfileImp::ProfileImp( const LibraryImp & library_imp , bool is_server_profile , const std::string & key_file , const std::string & cert_file , const std::string & ca_path , const std::string & default_peer_certificate_name , const std::string & default_peer_host_name , const std::string & profile_config ) : m_library_imp(library_imp) , m_default_peer_certificate_name(default_peer_certificate_name) , m_default_peer_host_name(default_peer_host_name) , m_config{} , m_authmode(0)
-gssl_mbedtls.cpp	498	keep	GSsl::MbedTls::ProfileImp::~ProfileImp()
-gssl_mbedtls.cpp	503	keep	std::unique_ptr<GSsl::ProtocolImpBase> GSsl::MbedTls::ProfileImp::newProtocol( const std::string & peer_certificate_name , const std::string & peer_host_name ) const
-gssl_mbedtls.cpp	511	keep	mbedtls_x509_crl * GSsl::MbedTls::ProfileImp::crl() const
-gssl_mbedtls.cpp	517	keep	const mbedtls_ssl_config * GSsl::MbedTls::ProfileImp::config() const
-gssl_mbedtls.cpp	522	keep	void GSsl::MbedTls::ProfileImp::onDebug( void * This , int level_in , const char * file , int line , const char * message )
-gssl_mbedtls.cpp	533	keep	void GSsl::MbedTls::ProfileImp::doDebug( int level_in , const char * file , int line , const char * message )
-gssl_mbedtls.cpp	557	keep	void GSsl::MbedTls::ProfileImp::logAt( int level_out , std::string s ) const
-gssl_mbedtls.cpp	568	keep	const std::string & GSsl::MbedTls::ProfileImp::defaultPeerCertificateName() const
-gssl_mbedtls.cpp	573	keep	const std::string & GSsl::MbedTls::ProfileImp::defaultPeerHostName() const
-gssl_mbedtls.cpp	578	keep	int GSsl::MbedTls::ProfileImp::authmode() const
-gssl_mbedtls.cpp	585	keep	GSsl::MbedTls::ProtocolImp::ProtocolImp( const ProfileImp & profile , const std::string & required_peer_certificate_name , const std::string & target_peer_host_name ) : m_profile(profile) , m_io(nullptr) , m_ssl(profile.config()) , m_verified(false)
-gssl_mbedtls.cpp	604	keep	GSsl::MbedTls::ProtocolImp::~ProtocolImp()
-gssl_mbedtls.cpp	607	keep	GSsl::Protocol::Result GSsl::MbedTls::ProtocolImp::read( char * buffer , std::size_t buffer_size_in , ssize_t & data_size_out )
-gssl_mbedtls.cpp	616	keep	GSsl::Protocol::Result GSsl::MbedTls::ProtocolImp::write( const char * buffer_in , std::size_t data_size_in , ssize_t & data_size_out )
-gssl_mbedtls.cpp	641	keep	GSsl::Protocol::Result GSsl::MbedTls::ProtocolImp::shutdown()
-gssl_mbedtls.cpp	647	remove	int GSsl::MbedTls::ProtocolImp::doRecvTimeout( void * This , unsigned char * p , std::size_t n , uint32_t /*timeout_ms*/ )
-gssl_mbedtls.cpp	654	keep	int GSsl::MbedTls::ProtocolImp::doRecv( void * This , unsigned char * p , std::size_t n )
-gssl_mbedtls.cpp	664	keep	int GSsl::MbedTls::ProtocolImp::doSend( void * This , const unsigned char * p , std::size_t n )
-gssl_mbedtls.cpp	674	keep	GSsl::Protocol::Result GSsl::MbedTls::ProtocolImp::convert( const char * fnname , int rc , bool more )
-gssl_mbedtls.cpp	687	keep	std::string GSsl::MbedTls::ProtocolImp::verifyResultString( int rc )
-gssl_mbedtls.cpp	703	keep	GSsl::Protocol::Result GSsl::MbedTls::ProtocolImp::connect( G::ReadWrite & io )
-gssl_mbedtls.cpp	709	keep	GSsl::Protocol::Result GSsl::MbedTls::ProtocolImp::accept( G::ReadWrite & io )
-gssl_mbedtls.cpp	715	keep	GSsl::Protocol::Result GSsl::MbedTls::ProtocolImp::handshake()
-gssl_mbedtls.cpp	753	keep	std::string GSsl::MbedTls::ProtocolImp::protocol() const
-gssl_mbedtls.cpp	759	keep	std::string GSsl::MbedTls::ProtocolImp::cipher() const
-gssl_mbedtls.cpp	765	remove	const GSsl::Profile & GSsl::MbedTls::ProtocolImp::profile() const
-gssl_mbedtls.cpp	770	keep	std::string GSsl::MbedTls::ProtocolImp::getPeerCertificate()
-gssl_mbedtls.cpp	803	keep	std::string GSsl::MbedTls::ProtocolImp::peerCertificate() const
-gssl_mbedtls.cpp	808	keep	std::string GSsl::MbedTls::ProtocolImp::peerCertificateChain() const
-gssl_mbedtls.cpp	813	keep	bool GSsl::MbedTls::ProtocolImp::verified() const
-gssl_mbedtls.cpp	820	keep	GSsl::MbedTls::Context::Context( const mbedtls_ssl_config * config_p ) : x{}
-gssl_mbedtls.cpp	829	keep	GSsl::MbedTls::Context::~Context()
-gssl_mbedtls.cpp	834	keep	mbedtls_ssl_context * GSsl::MbedTls::Context::ptr()
-gssl_mbedtls.cpp	839	keep	mbedtls_ssl_context * GSsl::MbedTls::Context::ptr() const
-gssl_mbedtls.cpp	846	keep	GSsl::MbedTls::Rng::Rng() : x{} , entropy{}
-gssl_mbedtls.cpp	869	keep	GSsl::MbedTls::Rng::~Rng()
-gssl_mbedtls.cpp	875	remove	mbedtls_ctr_drbg_context * GSsl::MbedTls::Rng::ptr()
-gssl_mbedtls.cpp	880	keep	mbedtls_ctr_drbg_context * GSsl::MbedTls::Rng::ptr() const
-gssl_mbedtls.cpp	887	keep	std::size_t GSsl::MbedTls::SecureFile::fileSize( std::filebuf & fp )
-gssl_mbedtls.cpp	895	keep	bool GSsl::MbedTls::SecureFile::fileRead( std::filebuf & fp , char * p , std::size_t n )
-gssl_mbedtls.cpp	904	keep	void GSsl::MbedTls::SecureFile::scrub( char * p_in , std::size_t n ) noexcept
-gssl_mbedtls.cpp	912	keep	void GSsl::MbedTls::SecureFile::clear( std::vector<char> & buffer ) noexcept
-gssl_mbedtls.cpp	923	keep	GSsl::MbedTls::SecureFile::SecureFile( const std::string & path , bool with_counted_nul )
-gssl_mbedtls.cpp	949	keep	GSsl::MbedTls::SecureFile::~SecureFile()
-gssl_mbedtls.cpp	954	keep	const char * GSsl::MbedTls::SecureFile::p() const
-gssl_mbedtls.cpp	960	remove	const unsigned char * GSsl::MbedTls::SecureFile::pu() const
-gssl_mbedtls.cpp	965	keep	unsigned char * GSsl::MbedTls::SecureFile::pu()
-gssl_mbedtls.cpp	970	keep	std::size_t GSsl::MbedTls::SecureFile::size() const
-gssl_mbedtls.cpp	975	keep	bool GSsl::MbedTls::SecureFile::empty() const
-gssl_mbedtls.cpp	982	keep	GSsl::MbedTls::Key::Key() : x{}
-gssl_mbedtls.cpp	988	keep	GSsl::MbedTls::Key::~Key()
-gssl_mbedtls.cpp	993	keep	void GSsl::MbedTls::Key::load( const std::string & pem_file , const Rng & rng )
-gssl_mbedtls.cpp	1008	keep	mbedtls_pk_context * GSsl::MbedTls::Key::ptr()
-gssl_mbedtls.cpp	1013	remove	mbedtls_pk_context * GSsl::MbedTls::Key::ptr() const
-gssl_mbedtls.cpp	1020	keep	GSsl::MbedTls::Certificate::Certificate() : x{}
-gssl_mbedtls.cpp	1026	keep	GSsl::MbedTls::Certificate::~Certificate()
-gssl_mbedtls.cpp	1031	keep	void GSsl::MbedTls::Certificate::load( const std::string & path )
-gssl_mbedtls.cpp	1046	keep	bool GSsl::MbedTls::Certificate::loaded() const
-gssl_mbedtls.cpp	1051	keep	mbedtls_x509_crt * GSsl::MbedTls::Certificate::ptr()
-gssl_mbedtls.cpp	1056	remove	mbedtls_x509_crt * GSsl::MbedTls::Certificate::ptr() const
-gssl_mbedtls.cpp	1066	keep	GSsl::MbedTls::Error::Error( const std::string & s ) : std::runtime_error("tls error: "+s)
-gssl_mbedtls.cpp	1071	keep	GSsl::MbedTls::Error::Error( const std::string & fnname , int rc , const std::string & more ) : std::runtime_error(format(fnname,rc,more))
-gssl_mbedtls.cpp	1076	keep	std::string GSsl::MbedTls::Error::format( const std::string & fnname , int rc , const std::string & more )
+gssl_mbedtls.cpp	140	keep	std::string GSsl::MbedTls::LibraryImp::credit( const std::string & /*prefix*/ , const std::string & /*eol*/ , const std::string & /*eot*/ )
+gssl_mbedtls.cpp	146	keep	G::StringArray GSsl::MbedTls::LibraryImp::digesters( bool ) const
+gssl_mbedtls.cpp	151	keep	GSsl::Digester GSsl::MbedTls::LibraryImp::digester( const std::string & hash_type , const std::string & state , bool need_state ) const
+gssl_mbedtls.cpp	158	keep	GSsl::MbedTls::Config::Config( G::StringArray & config ) : m_noverify(consume(config,"noverify")), m_clientnoverify(consume(config,"clientnoverify")), m_servernoverify(consume(config,"servernoverify")), m_min(-1), m_max(-1)
+gssl_mbedtls.cpp	202	keep	int GSsl::MbedTls::Config::min_() const noexcept
+gssl_mbedtls.cpp	207	keep	int GSsl::MbedTls::Config::max_() const noexcept
+gssl_mbedtls.cpp	212	keep	bool GSsl::MbedTls::Config::noverify() const noexcept
+gssl_mbedtls.cpp	217	keep	bool GSsl::MbedTls::Config::clientnoverify() const noexcept
+gssl_mbedtls.cpp	222	keep	bool GSsl::MbedTls::Config::servernoverify() const noexcept
+gssl_mbedtls.cpp	227	keep	bool GSsl::MbedTls::Config::consume( G::StringArray & list , G::string_view item )
+gssl_mbedtls.cpp	234	keep	GSsl::MbedTls::DigesterImp::DigesterImp( const std::string & hash_name , const std::string & state , bool need_state )
+gssl_mbedtls.cpp	305	keep	GSsl::MbedTls::DigesterImp::~DigesterImp()
+gssl_mbedtls.cpp	315	keep	void GSsl::MbedTls::DigesterImp::add( G::string_view sv )
+gssl_mbedtls.cpp	325	keep	std::string GSsl::MbedTls::DigesterImp::value()
+gssl_mbedtls.cpp	351	keep	std::string GSsl::MbedTls::DigesterImp::state()
+gssl_mbedtls.cpp	367	keep	std::size_t GSsl::MbedTls::DigesterImp::blocksize() const noexcept
+gssl_mbedtls.cpp	372	keep	std::size_t GSsl::MbedTls::DigesterImp::valuesize() const noexcept
+gssl_mbedtls.cpp	377	keep	std::size_t GSsl::MbedTls::DigesterImp::statesize() const noexcept
+gssl_mbedtls.cpp	384	keep	GSsl::MbedTls::ProfileImp::ProfileImp( const LibraryImp & library_imp , bool is_server_profile , const std::string & key_file , const std::string & cert_file , const std::string & ca_path , const std::string & default_peer_certificate_name , const std::string & default_peer_host_name , const std::string & profile_config ) : m_library_imp(library_imp) , m_default_peer_certificate_name(default_peer_certificate_name) , m_default_peer_host_name(default_peer_host_name) , m_config{} , m_authmode(0)
+gssl_mbedtls.cpp	494	keep	GSsl::MbedTls::ProfileImp::~ProfileImp()
+gssl_mbedtls.cpp	499	keep	std::unique_ptr<GSsl::ProtocolImpBase> GSsl::MbedTls::ProfileImp::newProtocol( const std::string & peer_certificate_name , const std::string & peer_host_name ) const
+gssl_mbedtls.cpp	507	keep	mbedtls_x509_crl * GSsl::MbedTls::ProfileImp::crl() const
+gssl_mbedtls.cpp	513	keep	const mbedtls_ssl_config * GSsl::MbedTls::ProfileImp::config() const
+gssl_mbedtls.cpp	518	keep	void GSsl::MbedTls::ProfileImp::onDebug( void * This , int level_in , const char * file , int line , const char * message )
+gssl_mbedtls.cpp	529	keep	void GSsl::MbedTls::ProfileImp::doDebug( int level_in , const char * file , int line , const char * message )
+gssl_mbedtls.cpp	553	keep	void GSsl::MbedTls::ProfileImp::logAt( int level_out , std::string s ) const
+gssl_mbedtls.cpp	564	keep	const std::string & GSsl::MbedTls::ProfileImp::defaultPeerCertificateName() const
+gssl_mbedtls.cpp	569	keep	const std::string & GSsl::MbedTls::ProfileImp::defaultPeerHostName() const
+gssl_mbedtls.cpp	574	keep	int GSsl::MbedTls::ProfileImp::authmode() const
+gssl_mbedtls.cpp	581	keep	GSsl::MbedTls::ProtocolImp::ProtocolImp( const ProfileImp & profile , const std::string & required_peer_certificate_name , const std::string & target_peer_host_name ) : m_profile(profile) , m_io(nullptr) , m_ssl(profile.config()) , m_verified(false)
+gssl_mbedtls.cpp	600	keep	GSsl::MbedTls::ProtocolImp::~ProtocolImp()
+gssl_mbedtls.cpp	603	keep	GSsl::Protocol::Result GSsl::MbedTls::ProtocolImp::read( char * buffer , std::size_t buffer_size_in , ssize_t & data_size_out )
+gssl_mbedtls.cpp	612	keep	GSsl::Protocol::Result GSsl::MbedTls::ProtocolImp::write( const char * buffer_in , std::size_t data_size_in , ssize_t & data_size_out )
+gssl_mbedtls.cpp	637	keep	GSsl::Protocol::Result GSsl::MbedTls::ProtocolImp::shutdown()
+gssl_mbedtls.cpp	643	remove	int GSsl::MbedTls::ProtocolImp::doRecvTimeout( void * This , unsigned char * p , std::size_t n , uint32_t /*timeout_ms*/ )
+gssl_mbedtls.cpp	650	keep	int GSsl::MbedTls::ProtocolImp::doRecv( void * This , unsigned char * p , std::size_t n )
+gssl_mbedtls.cpp	660	keep	int GSsl::MbedTls::ProtocolImp::doSend( void * This , const unsigned char * p , std::size_t n )
+gssl_mbedtls.cpp	670	keep	GSsl::Protocol::Result GSsl::MbedTls::ProtocolImp::convert( const char * fnname , int rc , bool more )
+gssl_mbedtls.cpp	683	keep	std::string GSsl::MbedTls::ProtocolImp::verifyResultString( int rc )
+gssl_mbedtls.cpp	699	keep	GSsl::Protocol::Result GSsl::MbedTls::ProtocolImp::connect( G::ReadWrite & io )
+gssl_mbedtls.cpp	705	keep	GSsl::Protocol::Result GSsl::MbedTls::ProtocolImp::accept( G::ReadWrite & io )
+gssl_mbedtls.cpp	711	keep	GSsl::Protocol::Result GSsl::MbedTls::ProtocolImp::handshake()
+gssl_mbedtls.cpp	749	keep	std::string GSsl::MbedTls::ProtocolImp::protocol() const
+gssl_mbedtls.cpp	755	keep	std::string GSsl::MbedTls::ProtocolImp::cipher() const
+gssl_mbedtls.cpp	761	remove	const GSsl::Profile & GSsl::MbedTls::ProtocolImp::profile() const
+gssl_mbedtls.cpp	766	keep	std::string GSsl::MbedTls::ProtocolImp::getPeerCertificate()
+gssl_mbedtls.cpp	799	keep	std::string GSsl::MbedTls::ProtocolImp::peerCertificate() const
+gssl_mbedtls.cpp	804	keep	std::string GSsl::MbedTls::ProtocolImp::peerCertificateChain() const
+gssl_mbedtls.cpp	809	keep	bool GSsl::MbedTls::ProtocolImp::verified() const
+gssl_mbedtls.cpp	816	keep	GSsl::MbedTls::Context::Context( const mbedtls_ssl_config * config_p ) : x{}
+gssl_mbedtls.cpp	825	keep	GSsl::MbedTls::Context::~Context()
+gssl_mbedtls.cpp	830	keep	mbedtls_ssl_context * GSsl::MbedTls::Context::ptr()
+gssl_mbedtls.cpp	835	keep	mbedtls_ssl_context * GSsl::MbedTls::Context::ptr() const
+gssl_mbedtls.cpp	842	keep	GSsl::MbedTls::Rng::Rng() : x{} , entropy{}
+gssl_mbedtls.cpp	865	keep	GSsl::MbedTls::Rng::~Rng()
+gssl_mbedtls.cpp	871	remove	mbedtls_ctr_drbg_context * GSsl::MbedTls::Rng::ptr()
+gssl_mbedtls.cpp	876	keep	mbedtls_ctr_drbg_context * GSsl::MbedTls::Rng::ptr() const
+gssl_mbedtls.cpp	883	keep	std::size_t GSsl::MbedTls::SecureFile::fileSize( std::filebuf & fp )
+gssl_mbedtls.cpp	891	keep	bool GSsl::MbedTls::SecureFile::fileRead( std::filebuf & fp , char * p , std::size_t n )
+gssl_mbedtls.cpp	900	keep	void GSsl::MbedTls::SecureFile::scrub( char * p_in , std::size_t n ) noexcept
+gssl_mbedtls.cpp	908	keep	void GSsl::MbedTls::SecureFile::clear( std::vector<char> & buffer ) noexcept
+gssl_mbedtls.cpp	919	keep	GSsl::MbedTls::SecureFile::SecureFile( const std::string & path , bool with_counted_nul )
+gssl_mbedtls.cpp	945	keep	GSsl::MbedTls::SecureFile::~SecureFile()
+gssl_mbedtls.cpp	950	keep	const char * GSsl::MbedTls::SecureFile::p() const
+gssl_mbedtls.cpp	956	remove	const unsigned char * GSsl::MbedTls::SecureFile::pu() const
+gssl_mbedtls.cpp	961	keep	unsigned char * GSsl::MbedTls::SecureFile::pu()
+gssl_mbedtls.cpp	966	keep	std::size_t GSsl::MbedTls::SecureFile::size() const
+gssl_mbedtls.cpp	971	keep	bool GSsl::MbedTls::SecureFile::empty() const
+gssl_mbedtls.cpp	978	keep	GSsl::MbedTls::Key::Key() : x{}
+gssl_mbedtls.cpp	984	keep	GSsl::MbedTls::Key::~Key()
+gssl_mbedtls.cpp	989	keep	void GSsl::MbedTls::Key::load( const std::string & pem_file , const Rng & rng )
+gssl_mbedtls.cpp	1004	keep	mbedtls_pk_context * GSsl::MbedTls::Key::ptr()
+gssl_mbedtls.cpp	1009	remove	mbedtls_pk_context * GSsl::MbedTls::Key::ptr() const
+gssl_mbedtls.cpp	1016	keep	GSsl::MbedTls::Certificate::Certificate() : x{}
+gssl_mbedtls.cpp	1022	keep	GSsl::MbedTls::Certificate::~Certificate()
+gssl_mbedtls.cpp	1027	keep	void GSsl::MbedTls::Certificate::load( const std::string & path )
+gssl_mbedtls.cpp	1042	keep	bool GSsl::MbedTls::Certificate::loaded() const
+gssl_mbedtls.cpp	1047	keep	mbedtls_x509_crt * GSsl::MbedTls::Certificate::ptr()
+gssl_mbedtls.cpp	1052	remove	mbedtls_x509_crt * GSsl::MbedTls::Certificate::ptr() const
+gssl_mbedtls.cpp	1062	keep	GSsl::MbedTls::Error::Error( const std::string & s ) : std::runtime_error("tls error: "+s)
+gssl_mbedtls.cpp	1067	keep	GSsl::MbedTls::Error::Error( const std::string & fnname , int rc , const std::string & more ) : std::runtime_error(format(fnname,rc,more))
+gssl_mbedtls.cpp	1072	keep	std::string GSsl::MbedTls::Error::format( const std::string & fnname , int rc , const std::string & more )
 gssl_openssl.cpp	43	keep	GSsl::OpenSSL::LibraryImp::LibraryImp( G::StringArray & library_config , Library::LogFn log_fn , bool verbose ) : m_log_fn(log_fn) , m_verbose(verbose) , m_config(library_config)
 gssl_openssl.cpp	62	keep	GSsl::OpenSSL::LibraryImp::~LibraryImp()
 gssl_openssl.cpp	67	keep	void GSsl::OpenSSL::LibraryImp::cleanup()
@@ -1776,7 +1777,7 @@ gsocket.cpp	415	keep	bool GNet::Socket::setOption( int level , const char * , in
 gsocket.cpp	424	keep	void GNet::Socket::setOption( int level , const char * opp , int op , int arg )
 gsocket.cpp	432	keep	GNet::StreamSocket::Config::Config()
 gsocket.cpp	435	keep	GNet::StreamSocket::Config::Config( const Socket::Config & base ) : Socket::Config(base)
-gsocket.cpp	440	remove	bool GNet::StreamSocket::supports( Address::Family af )
+gsocket.cpp	440	keep	bool GNet::StreamSocket::supports( Address::Family af )
 gsocket.cpp	468	keep	GNet::StreamSocket::StreamSocket( Address::Family af , const Config & config ) : Socket(af,SOCK_STREAM,0,config) , m_config(config)
 gsocket.cpp	475	keep	GNet::StreamSocket::StreamSocket( Address::Family af , const Listener & , const Config & config ) : Socket(af,SOCK_STREAM,0,config) , m_config(config)
 gsocket.cpp	482	keep	GNet::StreamSocket::StreamSocket( const Listener & , Descriptor fd , const Config & config ) : Socket(family(fd),fd,Socket::Adopted(),config) , m_config(config)
@@ -2354,22 +2355,22 @@ gmxfilter.cpp	167	keep	std::vector<GNet::Address> GFilters::MxFilter::mxnameserv
 gmxlookup.cpp	43	keep	bool GFilters::MxLookup::enabled()
 gmxlookup.cpp	48	remove	GFilters::MxLookup::MxLookup( GNet::ExceptionSink es , Config config ) : MxLookup(es,config,GNet::nameservers(53U))
 gmxlookup.cpp	53	keep	GFilters::MxLookup::MxLookup( GNet::ExceptionSink es , Config config , const std::vector<GNet::Address> & nameservers ) : m_es(es) , m_config(config) , m_message_id(GStore::MessageId::none()) , m_ns_index(0U) , m_ns_failures(0U) , m_nameservers(nameservers) , m_timer(*this,&MxLookup::onTimeout,es)
-gmxlookup.cpp	97	keep	void GFilters::MxLookup::start( const GStore::MessageId & message_id , const std::string & forward_to )
-gmxlookup.cpp	118	keep	void GFilters::MxLookup::readEvent()
-gmxlookup.cpp	131	keep	void GFilters::MxLookup::process( const char * p , std::size_t n )
-gmxlookup.cpp	153	keep	void GFilters::MxLookup::disable( std::size_t ns_index , const std::string & reason )
-gmxlookup.cpp	161	keep	std::pair<GFilters::MxLookupImp::Result,std::string> GFilters::MxLookupImp::parse( const GNet::DnsMessage & response , const GNet::Address & ns_address , unsigned int port )
-gmxlookup.cpp	229	keep	void GFilters::MxLookup::sendMxQuestion( std::size_t ns_index , const std::string & mx_question )
-gmxlookup.cpp	242	keep	void GFilters::MxLookup::sendHostQuestion( std::size_t ns_index , const std::string & host_question )
-gmxlookup.cpp	254	keep	void GFilters::MxLookup::cancel()
-gmxlookup.cpp	260	keep	void GFilters::MxLookup::dropReadHandlers()
-gmxlookup.cpp	268	keep	void GFilters::MxLookup::fail( const std::string & error )
-gmxlookup.cpp	275	keep	void GFilters::MxLookup::onTimeout()
-gmxlookup.cpp	293	keep	void GFilters::MxLookup::startTimer()
-gmxlookup.cpp	300	keep	void GFilters::MxLookup::succeed( const std::string & result )
-gmxlookup.cpp	306	keep	GNet::DatagramSocket & GFilters::MxLookup::socket( std::size_t ns_index )
-gmxlookup.cpp	311	keep	G::Slot::Signal<GStore::MessageId,std::string,std::string> & GFilters::MxLookup::doneSignal() noexcept
-gmxlookup.cpp	316	keep	GFilters::MxLookup::Config::Config()
+gmxlookup.cpp	92	keep	void GFilters::MxLookup::start( const GStore::MessageId & message_id , const std::string & forward_to )
+gmxlookup.cpp	113	keep	void GFilters::MxLookup::readEvent()
+gmxlookup.cpp	126	keep	void GFilters::MxLookup::process( const char * p , std::size_t n )
+gmxlookup.cpp	148	keep	void GFilters::MxLookup::disable( std::size_t ns_index , const std::string & reason )
+gmxlookup.cpp	156	keep	std::pair<GFilters::MxLookupImp::Result,std::string> GFilters::MxLookupImp::parse( const GNet::DnsMessage & response , const GNet::Address & ns_address , unsigned int port )
+gmxlookup.cpp	224	keep	void GFilters::MxLookup::sendMxQuestion( std::size_t ns_index , const std::string & mx_question )
+gmxlookup.cpp	237	keep	void GFilters::MxLookup::sendHostQuestion( std::size_t ns_index , const std::string & host_question )
+gmxlookup.cpp	249	keep	void GFilters::MxLookup::cancel()
+gmxlookup.cpp	255	keep	void GFilters::MxLookup::dropReadHandlers()
+gmxlookup.cpp	263	keep	void GFilters::MxLookup::fail( const std::string & error )
+gmxlookup.cpp	270	keep	void GFilters::MxLookup::onTimeout()
+gmxlookup.cpp	288	keep	void GFilters::MxLookup::startTimer()
+gmxlookup.cpp	295	keep	void GFilters::MxLookup::succeed( const std::string & result )
+gmxlookup.cpp	301	keep	GNet::DatagramSocket & GFilters::MxLookup::socket( std::size_t ns_index )
+gmxlookup.cpp	306	keep	G::Slot::Signal<GStore::MessageId,std::string,std::string> & GFilters::MxLookup::doneSignal() noexcept
+gmxlookup.cpp	311	keep	GFilters::MxLookup::Config::Config()
 gnetworkfilter.cpp	27	keep	GFilters::NetworkFilter::NetworkFilter( GNet::ExceptionSink es , GStore::FileStore & file_store , Filter::Type , const Filter::Config & config , const std::string & server ) : m_es(es) , m_file_store(file_store) , m_timer(*this,&NetworkFilter::onTimeout,m_es) , m_done_signal(true) , m_location(server) , m_connection_timeout(config.timeout) , m_response_timeout(config.timeout) , m_result(Result::fail)
 gnetworkfilter.cpp	42	keep	GFilters::NetworkFilter::~NetworkFilter()
 gnetworkfilter.cpp	47	keep	std::string GFilters::NetworkFilter::id() const
@@ -2445,21 +2446,21 @@ gnetworkverifier.cpp	76	keep	void GVerifiers::NetworkVerifier::clientDeleted( co
 gnetworkverifier.cpp	89	keep	void GVerifiers::NetworkVerifier::clientEvent( const std::string & s1 , const std::string & s2 , const std::string & )
 gnetworkverifier.cpp	137	keep	G::Slot::Signal<GSmtp::Verifier::Command,const GSmtp::VerifierStatus&> & GVerifiers::NetworkVerifier::doneSignal()
 gnetworkverifier.cpp	142	keep	void GVerifiers::NetworkVerifier::cancel()
-guserverifier.cpp	30	keep	GVerifiers::UserVerifier::UserVerifier( GNet::ExceptionSink es , bool local , const GSmtp::Verifier::Config & config , const std::string & spec ) : m_command(Command::RCPT) , m_local(local) , m_config(config) , m_timer(*this,&UserVerifier::onTimeout,es) , m_result(GSmtp::VerifierStatus::invalid({})) , m_range(G::Range::range(1000,32767)) , m_lowercase(false)
-guserverifier.cpp	49	keep	void GVerifiers::UserVerifier::verify( Command command , const std::string & rcpt_to_parameter , const GSmtp::Verifier::Info & )
-guserverifier.cpp	81	keep	bool GVerifiers::UserVerifier::lookup( const std::string & user , const std::string & domain , std::string * reason_p , std::string * mailbox_p ) const
+guserverifier.cpp	30	keep	GVerifiers::UserVerifier::UserVerifier( GNet::ExceptionSink es , bool strict , const GSmtp::Verifier::Config & config , const std::string & spec ) : m_command(Command::RCPT) , m_strict(strict) , m_force_remote(false) , m_config(config) , m_timer(*this,&UserVerifier::onTimeout,es) , m_result(GSmtp::VerifierStatus::invalid({})) , m_range(G::Range::range(1000,32767)) , m_lowercase(false)
+guserverifier.cpp	51	keep	void GVerifiers::UserVerifier::verify( Command command , const std::string & rcpt_to_parameter , const GSmtp::Verifier::Info & )
+guserverifier.cpp	77	keep	bool GVerifiers::UserVerifier::lookup( const std::string & user , const std::string & domain , std::string * reason_p , std::string * mailbox_p ) const
 guserverifier.cpp	112	keep	GVerifiers::UserVerifier::Signal & GVerifiers::UserVerifier::doneSignal()
 guserverifier.cpp	117	keep	void GVerifiers::UserVerifier::cancel()
 guserverifier.cpp	122	keep	void GVerifiers::UserVerifier::onTimeout()
 guserverifier.cpp	127	keep	std::string GVerifiers::UserVerifier::dequote( const std::string & s )
-gverifierfactory.cpp	32	keep	GVerifiers::VerifierFactory::VerifierFactory()
-gverifierfactory.cpp	35	keep	GVerifiers::VerifierFactory::Spec GVerifiers::VerifierFactory::parse( const std::string & spec_in , const G::Path & base_dir , const G::Path & app_dir , G::StringArray * warnings_p )
-gverifierfactory.cpp	80	keep	std::unique_ptr<GSmtp::Verifier> GVerifiers::VerifierFactory::newVerifier( GNet::ExceptionSink es , const GSmtp::Verifier::Config & config , const Spec & spec )
-gverifierfactory.cpp	110	keep	void GVerifiers::VerifierFactory::checkExit( Spec & result )
-gverifierfactory.cpp	119	keep	void GVerifiers::VerifierFactory::checkNet( Spec & result )
-gverifierfactory.cpp	132	keep	void GVerifiers::VerifierFactory::checkRange( Spec & result )
-gverifierfactory.cpp	145	keep	void GVerifiers::VerifierFactory::fixFile( Spec & result , const G::Path & base_dir , const G::Path & app_dir )
-gverifierfactory.cpp	153	keep	void GVerifiers::VerifierFactory::checkFile( Spec & result , G::StringArray * warnings_p )
+gverifierfactory.cpp	33	keep	GVerifiers::VerifierFactory::VerifierFactory()
+gverifierfactory.cpp	36	keep	GVerifiers::VerifierFactory::Spec GVerifiers::VerifierFactory::parse( const std::string & spec_in , const G::Path & base_dir , const G::Path & app_dir , G::StringArray * warnings_p )
+gverifierfactory.cpp	81	keep	std::unique_ptr<GSmtp::Verifier> GVerifiers::VerifierFactory::newVerifier( GNet::ExceptionSink es , const GSmtp::Verifier::Config & config , const Spec & spec )
+gverifierfactory.cpp	111	keep	void GVerifiers::VerifierFactory::checkExit( Spec & result )
+gverifierfactory.cpp	120	keep	void GVerifiers::VerifierFactory::checkNet( Spec & result )
+gverifierfactory.cpp	133	keep	void GVerifiers::VerifierFactory::checkRange( Spec & result )
+gverifierfactory.cpp	151	keep	void GVerifiers::VerifierFactory::fixFile( Spec & result , const G::Path & base_dir , const G::Path & app_dir )
+gverifierfactory.cpp	159	keep	void GVerifiers::VerifierFactory::checkFile( Spec & result , G::StringArray * warnings_p )
 gadminserver.cpp	37	keep	GSmtp::AdminServerPeer::AdminServerPeer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo && peer_info , AdminServer & server , const std::string & remote_address , const G::StringMap & info_commands , bool with_terminate ) : GNet::ServerPeer(esu.bind(this),std::move(peer_info),GNet::LineBufferConfig::autodetect()), m_es(esu.bind(this)) , m_server(server) , m_prompt("E-MailRelay> ") , m_blocked(false) , m_remote_address(remote_address) , m_notifying(false) , m_info_commands(info_commands) , m_with_terminate(with_terminate) , m_error_limit(30U) , m_error_count(0U)
 gadminserver.cpp	58	keep	GSmtp::AdminServerPeer::~AdminServerPeer()
 gadminserver.cpp	63	keep	void GSmtp::AdminServerPeer::clientDone( const std::string & s )
@@ -2693,66 +2694,65 @@ gsmtpserverprotocol.cpp	137	keep	G::Slot::Signal<> & GSmtp::ServerProtocol::chan
 gsmtpserverprotocol.cpp	142	keep	bool GSmtp::ServerProtocol::inBusyState() const
 gsmtpserverprotocol.cpp	158	remove	bool GSmtp::ServerProtocol::rcptState() const
 gsmtpserverprotocol.cpp	165	keep	bool GSmtp::ServerProtocol::sendFlush() const
-gsmtpserverprotocol.cpp	189	keep	bool GSmtp::ServerProtocol::inDataState() const
-gsmtpserverprotocol.cpp	197	remove	void GSmtp::ServerProtocol::setSender( ServerSender & sender )
-gsmtpserverprotocol.cpp	203	keep	void GSmtp::ServerProtocol::init()
-gsmtpserverprotocol.cpp	211	keep	void GSmtp::ServerProtocol::applyEvent( Event event , EventData event_data )
-gsmtpserverprotocol.cpp	218	keep	void GSmtp::ServerProtocol::secure( const std::string & certificate , const std::string & protocol , const std::string & cipher )
-gsmtpserverprotocol.cpp	228	keep	void GSmtp::ServerProtocol::doSecure( EventData , bool & )
-gsmtpserverprotocol.cpp	234	keep	void GSmtp::ServerProtocol::doSecureGreeting( EventData , bool & )
-gsmtpserverprotocol.cpp	240	keep	void GSmtp::ServerProtocol::doStartTls( EventData , bool & ok )
-gsmtpserverprotocol.cpp	254	keep	bool GSmtp::ServerProtocol::apply( const ApplyArgsTuple & args )
-gsmtpserverprotocol.cpp	318	keep	void GSmtp::ServerProtocol::doDataContent( EventData , bool & )
-gsmtpserverprotocol.cpp	335	keep	void GSmtp::ServerProtocol::doEot( EventData , bool & ok )
-gsmtpserverprotocol.cpp	358	keep	void GSmtp::ServerProtocol::processDone( bool success , const GStore::MessageId & id , const std::string & response , const std::string & reason )
-gsmtpserverprotocol.cpp	370	keep	void GSmtp::ServerProtocol::doComplete( EventData event_data , bool & )
-gsmtpserverprotocol.cpp	376	keep	void GSmtp::ServerProtocol::doQuit( EventData , bool & )
-gsmtpserverprotocol.cpp	384	keep	void GSmtp::ServerProtocol::doBadDataCommand( EventData , bool & )
-gsmtpserverprotocol.cpp	390	keep	void GSmtp::ServerProtocol::doBdatOutOfSequence( EventData , bool & )
-gsmtpserverprotocol.cpp	396	keep	void GSmtp::ServerProtocol::doBdatFirst( EventData event_data , bool & ok )
-gsmtpserverprotocol.cpp	401	keep	void GSmtp::ServerProtocol::doBdatFirstLast( EventData event_data , bool & ok )
-gsmtpserverprotocol.cpp	406	keep	void GSmtp::ServerProtocol::doBdatFirstLastZero( EventData event_data , bool & ok )
-gsmtpserverprotocol.cpp	411	keep	void GSmtp::ServerProtocol::doBdatMore( EventData event_data , bool & ok )
-gsmtpserverprotocol.cpp	416	keep	void GSmtp::ServerProtocol::doBdatMoreLast( EventData event_data , bool & ok )
-gsmtpserverprotocol.cpp	421	keep	void GSmtp::ServerProtocol::doBdatMoreLastZero( EventData event_data , bool & ok )
-gsmtpserverprotocol.cpp	426	keep	void GSmtp::ServerProtocol::doBdatImp( G::string_view bdat_line , bool & ok , bool first , bool last , bool zero )
-gsmtpserverprotocol.cpp	476	keep	void GSmtp::ServerProtocol::doBdatContent( EventData , bool & complete )
-gsmtpserverprotocol.cpp	503	keep	void GSmtp::ServerProtocol::doBdatContentLast( EventData , bool & complete )
-gsmtpserverprotocol.cpp	527	keep	void GSmtp::ServerProtocol::doBdatCheck( EventData , bool & ok )
-gsmtpserverprotocol.cpp	547	keep	bool GSmtp::ServerProtocol::messageAddContentFailed()
-gsmtpserverprotocol.cpp	555	keep	bool GSmtp::ServerProtocol::messageAddContentTooBig()
-gsmtpserverprotocol.cpp	563	keep	void GSmtp::ServerProtocol::doBdatComplete( EventData event_data , bool & )
-gsmtpserverprotocol.cpp	569	keep	void GSmtp::ServerProtocol::doIgnore( EventData , bool & )
-gsmtpserverprotocol.cpp	573	keep	void GSmtp::ServerProtocol::doNoop( EventData , bool & )
-gsmtpserverprotocol.cpp	578	remove	void GSmtp::ServerProtocol::doNothing( EventData , bool & )
-gsmtpserverprotocol.cpp	582	keep	void GSmtp::ServerProtocol::doExpn( EventData , bool & )
-gsmtpserverprotocol.cpp	587	keep	void GSmtp::ServerProtocol::doHelp( EventData , bool & )
-gsmtpserverprotocol.cpp	592	keep	void GSmtp::ServerProtocol::doVrfy( EventData event_data , bool & predicate )
-gsmtpserverprotocol.cpp	621	keep	void GSmtp::ServerProtocol::verify( Verifier::Command command , const std::string & to , const std::string & from )
-gsmtpserverprotocol.cpp	631	keep	void GSmtp::ServerProtocol::verifyDone( Verifier::Command command , const VerifierStatus & status )
-gsmtpserverprotocol.cpp	648	keep	void GSmtp::ServerProtocol::doVrfyReply( EventData event_data , bool & )
-gsmtpserverprotocol.cpp	660	keep	void GSmtp::ServerProtocol::doEhlo( EventData event_data , bool & predicate )
-gsmtpserverprotocol.cpp	689	keep	void GSmtp::ServerProtocol::doHelo( EventData event_data , bool & predicate )
-gsmtpserverprotocol.cpp	705	keep	void GSmtp::ServerProtocol::doAuth( EventData event_data , bool & predicate )
-gsmtpserverprotocol.cpp	772	keep	void GSmtp::ServerProtocol::doAuthData( EventData event_data , bool & predicate )
-gsmtpserverprotocol.cpp	802	keep	void GSmtp::ServerProtocol::doMail( EventData event_data , bool & predicate )
-gsmtpserverprotocol.cpp	850	keep	void GSmtp::ServerProtocol::doRcpt( EventData event_data , bool & predicate )
-gsmtpserverprotocol.cpp	870	keep	void GSmtp::ServerProtocol::doRcptToReply( EventData event_data , bool & predicate )
-gsmtpserverprotocol.cpp	891	keep	void GSmtp::ServerProtocol::doUnknown( EventData event_data , bool & )
-gsmtpserverprotocol.cpp	897	keep	void GSmtp::ServerProtocol::clear()
-gsmtpserverprotocol.cpp	908	keep	void GSmtp::ServerProtocol::doRset( EventData , bool & )
-gsmtpserverprotocol.cpp	916	keep	void GSmtp::ServerProtocol::doNoRecipients( EventData , bool & )
-gsmtpserverprotocol.cpp	921	keep	void GSmtp::ServerProtocol::doData( EventData , bool & )
-gsmtpserverprotocol.cpp	932	keep	bool GSmtp::ServerProtocol::isEndOfText( const ApplyArgsTuple & args ) const
-gsmtpserverprotocol.cpp	940	keep	bool GSmtp::ServerProtocol::isEscaped( const ApplyArgsTuple & args ) const
-gsmtpserverprotocol.cpp	948	keep	GSmtp::ServerProtocol::Event GSmtp::ServerProtocol::commandEvent( G::string_view line ) const
-gsmtpserverprotocol.cpp	969	keep	GSmtp::ServerProtocol::Event GSmtp::ServerProtocol::dataEvent( G::string_view ) const
-gsmtpserverprotocol.cpp	978	keep	GSmtp::ServerProtocol::Event GSmtp::ServerProtocol::bdatEvent( G::string_view line ) const
-gsmtpserverprotocol.cpp	990	keep	void GSmtp::ServerProtocol::badClientEvent()
-gsmtpserverprotocol.cpp	1001	keep	std::string GSmtp::ServerProtocol::str( EventData sv )
-gsmtpserverprotocol.cpp	1006	keep	G::StringArray GSmtp::ServerProtocol::mechanisms() const
-gsmtpserverprotocol.cpp	1011	keep	G::StringArray GSmtp::ServerProtocol::mechanisms( bool secure ) const
-gsmtpserverprotocol.cpp	1016	keep	std::string GSmtp::ServerProtocol::sendUseStartTls() const
+gsmtpserverprotocol.cpp	191	keep	bool GSmtp::ServerProtocol::inDataState() const
+gsmtpserverprotocol.cpp	199	remove	void GSmtp::ServerProtocol::setSender( ServerSender & sender )
+gsmtpserverprotocol.cpp	205	keep	void GSmtp::ServerProtocol::init()
+gsmtpserverprotocol.cpp	213	keep	void GSmtp::ServerProtocol::applyEvent( Event event , EventData event_data )
+gsmtpserverprotocol.cpp	220	keep	void GSmtp::ServerProtocol::secure( const std::string & certificate , const std::string & protocol , const std::string & cipher )
+gsmtpserverprotocol.cpp	230	keep	void GSmtp::ServerProtocol::doSecure( EventData , bool & )
+gsmtpserverprotocol.cpp	236	keep	void GSmtp::ServerProtocol::doSecureGreeting( EventData , bool & )
+gsmtpserverprotocol.cpp	242	keep	void GSmtp::ServerProtocol::doStartTls( EventData , bool & ok )
+gsmtpserverprotocol.cpp	256	keep	bool GSmtp::ServerProtocol::apply( const ApplyArgsTuple & args )
+gsmtpserverprotocol.cpp	320	keep	void GSmtp::ServerProtocol::doDataContent( EventData , bool & )
+gsmtpserverprotocol.cpp	337	keep	void GSmtp::ServerProtocol::doEot( EventData , bool & ok )
+gsmtpserverprotocol.cpp	360	keep	void GSmtp::ServerProtocol::processDone( bool success , const GStore::MessageId & id , const std::string & response , const std::string & reason )
+gsmtpserverprotocol.cpp	372	keep	void GSmtp::ServerProtocol::doComplete( EventData event_data , bool & )
+gsmtpserverprotocol.cpp	378	keep	void GSmtp::ServerProtocol::doQuit( EventData , bool & )
+gsmtpserverprotocol.cpp	386	keep	void GSmtp::ServerProtocol::doBadDataCommand( EventData , bool & )
+gsmtpserverprotocol.cpp	392	keep	void GSmtp::ServerProtocol::doBdatOutOfSequence( EventData , bool & )
+gsmtpserverprotocol.cpp	398	keep	void GSmtp::ServerProtocol::doBdatFirst( EventData event_data , bool & ok )
+gsmtpserverprotocol.cpp	403	keep	void GSmtp::ServerProtocol::doBdatFirstLast( EventData event_data , bool & ok )
+gsmtpserverprotocol.cpp	408	keep	void GSmtp::ServerProtocol::doBdatFirstLastZero( EventData event_data , bool & ok )
+gsmtpserverprotocol.cpp	413	keep	void GSmtp::ServerProtocol::doBdatMore( EventData event_data , bool & ok )
+gsmtpserverprotocol.cpp	418	keep	void GSmtp::ServerProtocol::doBdatMoreLast( EventData event_data , bool & ok )
+gsmtpserverprotocol.cpp	423	keep	void GSmtp::ServerProtocol::doBdatMoreLastZero( EventData event_data , bool & ok )
+gsmtpserverprotocol.cpp	428	keep	void GSmtp::ServerProtocol::doBdatImp( G::string_view bdat_line , bool & ok , bool first , bool last , bool zero )
+gsmtpserverprotocol.cpp	478	keep	void GSmtp::ServerProtocol::doBdatContent( EventData , bool & complete )
+gsmtpserverprotocol.cpp	505	keep	void GSmtp::ServerProtocol::doBdatContentLast( EventData , bool & complete )
+gsmtpserverprotocol.cpp	529	keep	void GSmtp::ServerProtocol::doBdatCheck( EventData , bool & ok )
+gsmtpserverprotocol.cpp	549	keep	bool GSmtp::ServerProtocol::messageAddContentFailed()
+gsmtpserverprotocol.cpp	557	keep	bool GSmtp::ServerProtocol::messageAddContentTooBig()
+gsmtpserverprotocol.cpp	565	keep	void GSmtp::ServerProtocol::doBdatComplete( EventData event_data , bool & )
+gsmtpserverprotocol.cpp	571	keep	void GSmtp::ServerProtocol::doIgnore( EventData , bool & )
+gsmtpserverprotocol.cpp	575	keep	void GSmtp::ServerProtocol::doNoop( EventData , bool & )
+gsmtpserverprotocol.cpp	580	remove	void GSmtp::ServerProtocol::doNothing( EventData , bool & )
+gsmtpserverprotocol.cpp	584	keep	void GSmtp::ServerProtocol::doExpn( EventData , bool & )
+gsmtpserverprotocol.cpp	589	keep	void GSmtp::ServerProtocol::doHelp( EventData , bool & )
+gsmtpserverprotocol.cpp	594	keep	void GSmtp::ServerProtocol::doVrfy( EventData event_data , bool & predicate )
+gsmtpserverprotocol.cpp	624	keep	void GSmtp::ServerProtocol::verify( Verifier::Command command , const std::string & to , const std::string & from )
+gsmtpserverprotocol.cpp	634	keep	void GSmtp::ServerProtocol::verifyDone( Verifier::Command command , const VerifierStatus & status )
+gsmtpserverprotocol.cpp	651	keep	void GSmtp::ServerProtocol::doVrfyReply( EventData event_data , bool & )
+gsmtpserverprotocol.cpp	663	keep	void GSmtp::ServerProtocol::doEhlo( EventData event_data , bool & predicate )
+gsmtpserverprotocol.cpp	692	keep	void GSmtp::ServerProtocol::doHelo( EventData event_data , bool & predicate )
+gsmtpserverprotocol.cpp	708	keep	void GSmtp::ServerProtocol::doAuth( EventData event_data , bool & predicate )
+gsmtpserverprotocol.cpp	775	keep	void GSmtp::ServerProtocol::doAuthData( EventData event_data , bool & predicate )
+gsmtpserverprotocol.cpp	805	keep	void GSmtp::ServerProtocol::doMail( EventData event_data , bool & predicate )
+gsmtpserverprotocol.cpp	855	keep	void GSmtp::ServerProtocol::doRcpt( EventData event_data , bool & predicate )
+gsmtpserverprotocol.cpp	875	keep	void GSmtp::ServerProtocol::doRcptToReply( EventData event_data , bool & predicate )
+gsmtpserverprotocol.cpp	896	keep	void GSmtp::ServerProtocol::doUnknown( EventData event_data , bool & )
+gsmtpserverprotocol.cpp	902	keep	void GSmtp::ServerProtocol::clear()
+gsmtpserverprotocol.cpp	913	keep	void GSmtp::ServerProtocol::doRset( EventData , bool & )
+gsmtpserverprotocol.cpp	921	keep	void GSmtp::ServerProtocol::doNoRecipients( EventData , bool & )
+gsmtpserverprotocol.cpp	926	keep	void GSmtp::ServerProtocol::doData( EventData , bool & )
+gsmtpserverprotocol.cpp	937	keep	bool GSmtp::ServerProtocol::isEndOfText( const ApplyArgsTuple & args ) const
+gsmtpserverprotocol.cpp	945	keep	bool GSmtp::ServerProtocol::isEscaped( const ApplyArgsTuple & args ) const
+gsmtpserverprotocol.cpp	953	keep	GSmtp::ServerProtocol::Event GSmtp::ServerProtocol::commandEvent( G::string_view line ) const
+gsmtpserverprotocol.cpp	974	keep	GSmtp::ServerProtocol::Event GSmtp::ServerProtocol::dataEvent( G::string_view ) const
+gsmtpserverprotocol.cpp	983	keep	GSmtp::ServerProtocol::Event GSmtp::ServerProtocol::bdatEvent( G::string_view line ) const
+gsmtpserverprotocol.cpp	995	keep	void GSmtp::ServerProtocol::badClientEvent()
+gsmtpserverprotocol.cpp	1006	keep	std::string GSmtp::ServerProtocol::str( EventData sv )
+gsmtpserverprotocol.cpp	1011	keep	G::StringArray GSmtp::ServerProtocol::mechanisms() const
+gsmtpserverprotocol.cpp	1016	keep	G::StringArray GSmtp::ServerProtocol::mechanisms( bool secure ) const
 gsmtpserverprotocol.cpp	1023	keep	GSmtp::ServerProtocol::Config::Config()
 gsmtpserversend.cpp	28	keep	GSmtp::ServerSend::ServerSend( ServerSender * sender ) : m_sender(sender)
 gsmtpserversend.cpp	33	keep	void GSmtp::ServerSend::setSender( ServerSender * sender )
@@ -2761,37 +2761,37 @@ gsmtpserversend.cpp	43	keep	void GSmtp::ServerSend::sendGreeting( const std::str
 gsmtpserversend.cpp	48	keep	void GSmtp::ServerSend::sendReadyForTls()
 gsmtpserversend.cpp	53	keep	void GSmtp::ServerSend::sendInvalidArgument()
 gsmtpserversend.cpp	58	keep	void GSmtp::ServerSend::sendAuthenticationCancelled()
-gsmtpserversend.cpp	63	keep	void GSmtp::ServerSend::sendInsecureAuth()
-gsmtpserversend.cpp	68	keep	void GSmtp::ServerSend::sendBadMechanism( const std::string & preferred )
-gsmtpserversend.cpp	76	keep	void GSmtp::ServerSend::sendAuthDone( bool ok )
-gsmtpserversend.cpp	84	keep	void GSmtp::ServerSend::sendBadDataOutOfSequence()
-gsmtpserversend.cpp	89	keep	void GSmtp::ServerSend::sendOutOfSequence()
-gsmtpserversend.cpp	94	keep	void GSmtp::ServerSend::sendMissingParameter()
-gsmtpserversend.cpp	99	keep	void GSmtp::ServerSend::sendQuitOk()
-gsmtpserversend.cpp	104	keep	void GSmtp::ServerSend::sendVerified( const std::string & user )
-gsmtpserversend.cpp	109	keep	void GSmtp::ServerSend::sendNotVerified( const std::string & response , bool temporary )
-gsmtpserversend.cpp	114	keep	void GSmtp::ServerSend::sendWillAccept( const std::string & user )
-gsmtpserversend.cpp	119	keep	void GSmtp::ServerSend::sendUnrecognised( const std::string & )
-gsmtpserversend.cpp	124	keep	void GSmtp::ServerSend::sendNotImplemented()
-gsmtpserversend.cpp	129	keep	void GSmtp::ServerSend::sendAuthRequired()
-gsmtpserversend.cpp	134	keep	void GSmtp::ServerSend::sendEncryptionRequired()
-gsmtpserversend.cpp	139	keep	void GSmtp::ServerSend::sendNoRecipients()
-gsmtpserversend.cpp	144	keep	void GSmtp::ServerSend::sendTooBig()
-gsmtpserversend.cpp	149	keep	void GSmtp::ServerSend::sendDataReply()
-gsmtpserversend.cpp	154	keep	void GSmtp::ServerSend::sendRsetReply()
-gsmtpserversend.cpp	159	keep	void GSmtp::ServerSend::sendMailReply( const std::string & from )
-gsmtpserversend.cpp	164	keep	void GSmtp::ServerSend::sendCompletionReply( bool ok , const std::string & response )
-gsmtpserversend.cpp	173	keep	void GSmtp::ServerSend::sendFailed()
-gsmtpserversend.cpp	178	keep	void GSmtp::ServerSend::sendRcptReply( const std::string & to , bool is_local )
-gsmtpserversend.cpp	184	keep	void GSmtp::ServerSend::sendBadFrom( const std::string & response_extra )
-gsmtpserversend.cpp	195	keep	void GSmtp::ServerSend::sendBadTo( const std::string & to , const std::string & text , bool temporary )
-gsmtpserversend.cpp	203	keep	void GSmtp::ServerSend::sendEhloReply( const Advertise & advertise )
-gsmtpserversend.cpp	239	keep	void GSmtp::ServerSend::sendHeloReply()
-gsmtpserversend.cpp	244	keep	void GSmtp::ServerSend::sendOk( const std::string & text )
-gsmtpserversend.cpp	249	remove	void GSmtp::ServerSend::sendOk()
-gsmtpserversend.cpp	254	keep	void GSmtp::ServerSend::send( const char * line )
-gsmtpserversend.cpp	259	keep	void GSmtp::ServerSend::send( std::string line_in , bool go_secure )
-gsmtpserversend.cpp	268	keep	void GSmtp::ServerSend::send( const std::ostringstream & ss )
+gsmtpserversend.cpp	63	keep	void GSmtp::ServerSend::sendInsecureAuth( bool with_starttls_help )
+gsmtpserversend.cpp	71	keep	void GSmtp::ServerSend::sendBadMechanism( const std::string & preferred )
+gsmtpserversend.cpp	79	keep	void GSmtp::ServerSend::sendAuthDone( bool ok )
+gsmtpserversend.cpp	87	keep	void GSmtp::ServerSend::sendBadDataOutOfSequence()
+gsmtpserversend.cpp	92	keep	void GSmtp::ServerSend::sendOutOfSequence()
+gsmtpserversend.cpp	97	keep	void GSmtp::ServerSend::sendMissingParameter()
+gsmtpserversend.cpp	102	keep	void GSmtp::ServerSend::sendQuitOk()
+gsmtpserversend.cpp	107	keep	void GSmtp::ServerSend::sendVerified( const std::string & user )
+gsmtpserversend.cpp	112	keep	void GSmtp::ServerSend::sendNotVerified( const std::string & response , bool temporary )
+gsmtpserversend.cpp	117	keep	void GSmtp::ServerSend::sendWillAccept( const std::string & user )
+gsmtpserversend.cpp	122	keep	void GSmtp::ServerSend::sendUnrecognised( const std::string & )
+gsmtpserversend.cpp	127	keep	void GSmtp::ServerSend::sendNotImplemented()
+gsmtpserversend.cpp	132	keep	void GSmtp::ServerSend::sendAuthRequired( bool with_starttls_help )
+gsmtpserversend.cpp	140	keep	void GSmtp::ServerSend::sendEncryptionRequired( bool with_starttls_help )
+gsmtpserversend.cpp	148	keep	void GSmtp::ServerSend::sendNoRecipients()
+gsmtpserversend.cpp	153	keep	void GSmtp::ServerSend::sendTooBig()
+gsmtpserversend.cpp	158	keep	void GSmtp::ServerSend::sendDataReply()
+gsmtpserversend.cpp	163	keep	void GSmtp::ServerSend::sendRsetReply()
+gsmtpserversend.cpp	168	keep	void GSmtp::ServerSend::sendMailReply( const std::string & from )
+gsmtpserversend.cpp	173	keep	void GSmtp::ServerSend::sendCompletionReply( bool ok , const std::string & response )
+gsmtpserversend.cpp	182	keep	void GSmtp::ServerSend::sendFailed()
+gsmtpserversend.cpp	187	keep	void GSmtp::ServerSend::sendRcptReply( const std::string & to , bool is_local )
+gsmtpserversend.cpp	193	keep	void GSmtp::ServerSend::sendBadFrom( const std::string & response_extra )
+gsmtpserversend.cpp	204	keep	void GSmtp::ServerSend::sendBadTo( const std::string & to , const std::string & text , bool temporary )
+gsmtpserversend.cpp	212	keep	void GSmtp::ServerSend::sendEhloReply( const Advertise & advertise )
+gsmtpserversend.cpp	248	keep	void GSmtp::ServerSend::sendHeloReply()
+gsmtpserversend.cpp	253	keep	void GSmtp::ServerSend::sendOk( const std::string & text )
+gsmtpserversend.cpp	258	remove	void GSmtp::ServerSend::sendOk()
+gsmtpserversend.cpp	263	keep	void GSmtp::ServerSend::send( const char * line )
+gsmtpserversend.cpp	268	keep	void GSmtp::ServerSend::send( std::string line_in , bool go_secure )
+gsmtpserversend.cpp	277	keep	void GSmtp::ServerSend::send( const std::ostringstream & ss )
 gsmtpservertext.cpp	32	keep	GSmtp::ServerText::ServerText( const std::string & code_ident , bool anonymous , bool with_received_line , const std::string & domain , const GNet::Address & peer_address ) : m_code_ident(code_ident) , m_anonymous(anonymous) , m_with_received_line(with_received_line) , m_domain(domain) , m_peer_address(peer_address)
 gsmtpservertext.cpp	45	keep	std::string GSmtp::ServerText::greeting() const
 gsmtpservertext.cpp	54	keep	std::string GSmtp::ServerText::hello( const std::string & ) const
