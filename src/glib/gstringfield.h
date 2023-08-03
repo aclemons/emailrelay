@@ -145,7 +145,7 @@ private:
 
 namespace G
 {
-	namespace StringFieldImp
+	namespace StringFieldImp /// An implementation namespace for G::StringField.
 	{
 		template <typename T> inline T substr( const T & s ,
 			std::size_t pos , std::size_t len ) noexcept(std::is_same<T,string_view>::value)

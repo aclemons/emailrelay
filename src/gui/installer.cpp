@@ -1202,11 +1202,18 @@ GenerateKey::GenerateKey( G::Path path_out , const std::string & issuer ) :
 G::Path GenerateKey::exe( bool is_windows )
 {
 	// (guimain.cpp tests for this binary and tells the gui 'smtp server' page)
+
 	std::string this_exe = G::Process::exe() ;
-	return
-		this_exe.empty() ?
-			G::Path() :
-			G::Path(this_exe).dirname() + (is_windows?"emailrelay-keygen.exe":"emailrelay-keygen") ;
+	if( this_exe.empty() )
+		return {} ;
+
+	G::Path dir = G::Path(this_exe).dirname() ;
+	std::string filename = is_windows ? "emailrelay-keygen.exe" : "emailrelay-keygen" ;
+
+	if( G::File::exists(dir+"programs"+filename) )
+		return dir + "programs" + filename ;
+	else
+		return dir + filename ;
 }
 
 void GenerateKey::run()

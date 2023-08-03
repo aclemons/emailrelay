@@ -19,8 +19,23 @@
 ///
 // A dummy SMTP server for testing purposes.
 //
-// usage: emailrelay_test_server [--quiet] [--tls] [--auth-foo-bar] [--auth-cram] [--auth-login] [--auth-plain]
-//        [--auth-ok] [--slow] [--fail-at <n>] [--drop] [--ipv6] [--port <port>]
+// usage: emailrelay_test_server [options]
+//           --port=<port>           port number
+//           --pid-file=<path>       pid file
+//           --quiet                 less logging
+//           --debug                 more logging
+//           --ipv6                  use ipv6
+//           --auth-cram             enable mechanism cram-md5
+//           --auth-foo-bar          enable mechanisms foo and bar
+//           --auth-login            enable mechanism login
+//           --auth-ok               successful authentication
+//           --auth-plain            enable mechanism plain
+//           --drop                  drop the connection when content has DROP or when
+//           --fail-at=<n>           fail from the n'th message
+//           --idle-timeout=<s>      idle timeout
+//           --pause                 slow final ok response
+//           --terminate             terminate when failing
+//           --tls                   enable tls
 //
 
 #include "gdef.h"
@@ -45,21 +60,6 @@
 #include <stdexcept>
 #include <iostream>
 
-namespace
-{
-	void sleep_ms( int ms )
-	{
-		#if G_WINDOWS
-			::Sleep( ms ) ;
-		#else
-			struct timeval t ;
-			t.tv_sec = 0 ;
-			t.tv_usec = ms * 1000 ;
-			::select( 0 , nullptr , nullptr , nullptr , &t ) ;
-		#endif
-	}
-}
-
 struct TestServerConfig
 {
 	bool m_ipv6 ;
@@ -69,29 +69,13 @@ struct TestServerConfig
 	bool m_auth_login ;
 	bool m_auth_plain ;
 	bool m_auth_ok ;
-	bool m_slow ;
+	bool m_pause ;
 	int m_fail_at ;
 	bool m_drop ;
+	bool m_terminate ;
 	bool m_tls ;
 	bool m_quiet ;
 	unsigned int m_idle_timeout ;
-	TestServerConfig( bool ipv6 , unsigned int port , bool auth_foo_bar , bool auth_cram , bool auth_login , bool auth_plain ,
-		bool auth_ok , bool slow , int fail_at , bool drop , bool tls , bool quiet , unsigned int idle_timeout ) :
-			m_ipv6(ipv6) ,
-			m_port(port) ,
-			m_auth_foo_bar(auth_foo_bar) ,
-			m_auth_cram(auth_cram) ,
-			m_auth_login(auth_login) ,
-			m_auth_plain(auth_plain) ,
-			m_auth_ok(auth_ok) ,
-			m_slow(slow) ,
-			m_fail_at(fail_at) ,
-			m_drop(drop) ,
-			m_tls(tls) ,
-			m_quiet(quiet) ,
-			m_idle_timeout(idle_timeout)
-	{
-	}
 } ;
 
 class Peer : public GNet::ServerPeer
@@ -105,12 +89,12 @@ public:
 	void tx( const std::string & ) ;
 
 private:
-	void onSlowTimeout() ;
+	void onPauseTimeout() ;
 
 private:
 	GNet::ExceptionSink m_es ;
 	TestServerConfig m_config ;
-	GNet::Timer<Peer> m_slow_timer ;
+	GNet::Timer<Peer> m_pause_timer ;
 	bool m_in_data ;
 	bool m_in_auth_1 ;
 	bool m_in_auth_2 ;
@@ -124,13 +108,19 @@ public:
 	~Server() override ;
 	std::unique_ptr<GNet::ServerPeer> newPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo && ) override ;
 	TestServerConfig m_config ;
+	static GNet::Address address( const TestServerConfig & config )
+	{
+		auto family = config.m_ipv6 ? GNet::Address::Family::ipv6 : GNet::Address::Family::ipv4 ;
+		//return GNet::Address( family , config.m_port ) ;
+		return GNet::Address::loopback( family , config.m_port ) ;
+	}
 } ;
 
 Server::Server( GNet::ExceptionSink es , TestServerConfig config ) :
 	GNet::Server(es,
-		GNet::Address(config.m_ipv6?GNet::Address::Family::ipv6:GNet::Address::Family::ipv4,config.m_port),
+		GNet::Address(address(config)) ,
 		GNet::ServerPeer::Config()
-			.set_socket_protocol_config( GNet::SocketProtocol::Config().set_read_buffer_size(config.m_slow?3U:G::Limits<>::net_buffer) )
+			.set_socket_protocol_config( GNet::SocketProtocol::Config() )
 			.set_idle_timeout(config.m_idle_timeout),
 		GNet::Server::Config()) ,
 	m_config(config)
@@ -162,21 +152,13 @@ Peer::Peer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo && peer_info ,
 	GNet::ServerPeer(esu.bind(this),std::move(peer_info),GNet::LineBufferConfig::smtp()) ,
 	m_es(esu.bind(this)) ,
 	m_config(config) ,
-	m_slow_timer(*this,&Peer::onSlowTimeout,m_es) ,
+	m_pause_timer(*this,&Peer::onPauseTimeout,m_es) ,
 	m_in_data(false) ,
 	m_in_auth_1(false) ,
 	m_in_auth_2(false) ,
 	m_message(0)
 {
 	send( "220 test server\r\n"_sv ) ;
-	if( m_config.m_slow )
-		m_slow_timer.startTimer( 0U ) ;
-}
-
-void Peer::onSlowTimeout()
-{
-	sleep_ms( 10 ) ;
-	m_slow_timer.startTimer( 0U , 10 ) ;
 }
 
 void Peer::onDelete( const std::string & )
@@ -195,8 +177,7 @@ void Peer::onSecure( const std::string & , const std::string & , const std::stri
 bool Peer::onReceive( const char * line_data , std::size_t line_size , std::size_t , std::size_t , char )
 {
 	std::string line( line_data , line_size ) ;
-	if( !m_config.m_quiet )
-		std::cout << "rx<<: [" << line << "]" << std::endl ;
+	G_LOG_IF( !m_config.m_quiet , "Peer::onReceive: " << "rx<<: [" << line << "]" ) ;
 
 	G::StringArray uwords = G::Str::splitIntoTokens( G::Str::upper(line) , " \t\r" ) ;
 	uwords.push_back( "" ) ;
@@ -237,8 +218,22 @@ bool Peer::onReceive( const char * line_data , std::size_t line_size , std::size
 		m_in_data = false ;
 		bool fail = m_config.m_fail_at >= 0 && m_message >= m_config.m_fail_at ;
 		m_message++ ;
-		if( fail && m_config.m_drop ) throw G::Exception("connection dropped") ;
-		tx( fail ? "452 failed\r\n" : "250 OK\r\n" ) ;
+		if( fail )
+		{
+			if( m_config.m_drop )
+				throw G::Exception( "connection dropped" ) ;
+			else if( m_config.m_terminate )
+				GNet::EventLoop::instance().quit( "fail-at with terminate" ) ;
+			tx( "452 failed\r\n" ) ;
+		}
+		else if( m_config.m_pause )
+		{
+			m_pause_timer.startTimer( 2U ) ;
+		}
+		else
+		{
+			tx( "250 OK\r\n" ) ;
+		}
 	}
 	else if( uwords[0] == "STARTTLS" )
 	{
@@ -316,9 +311,14 @@ void Peer::tx( const std::string & s )
 	{
 		std::string ss( s ) ;
 		G::Str::trimRight( ss , "\n\r" ) ;
-		std::cout << "tx>>: [" << ss << "]" << std::endl ;
+		G_LOG_IF( !m_config.m_quiet , "Peer::tx: tx>>: [" << ss << "]" ) ;
 	}
 	send( s ) ; // GNet::ServerPeer::send()
+}
+
+void Peer::onPauseTimeout()
+{
+	tx( "250 OK\r\n" ) ;
 }
 
 //
@@ -330,18 +330,20 @@ int main( int argc , char * argv [] )
 		G::Arg arg( argc , argv ) ;
 		G::Options options ;
 		using M = G::Option::Multiplicity ;
+		G::Options::add( options , 'L' , "log-file" , "log to file" , "" , M::one , "log-file" , 1 , 0 ) ;
 		G::Options::add( options , 'h' , "help" , "show help" , "" , M::zero , "" , 1 , 0 ) ;
 		G::Options::add( options , 'b' , "auth-foo-bar" , "enable mechanisms foo and bar" , "" , M::zero , "" , 1 , 0 ) ;
 		G::Options::add( options , 'c' , "auth-cram" , "enable mechanism cram-md5" , "" , M::zero , "" , 1 , 0 ) ;
 		G::Options::add( options , 'l' , "auth-login" , "enable mechanism login" , "" , M::zero , "" , 1 , 0 ) ;
 		G::Options::add( options , 'p' , "auth-plain" , "enable mechanism plain" , "" , M::zero , "" , 1 , 0 ) ;
 		G::Options::add( options , 'o' , "auth-ok" , "successful authentication" , "" , M::zero , "" , 1 , 0 ) ;
-		G::Options::add( options , 's' , "slow" , "slow responses" , "" , M::zero , "" , 1 , 0 ) ;
+		G::Options::add( options , 'S' , "pause" , "slow final ok response" , "" , M::zero , "" , 1 , 0 ) ;
 		G::Options::add( options , 't' , "tls" , "enable tls" , "" , M::zero , "" , 1 , 0 ) ;
 		G::Options::add( options , 'q' , "quiet" , "less logging" , "" , M::zero , "" , 1 , 0 ) ;
 		G::Options::add( options , '\0', "debug" , "debug logging" , "" , M::zero , "" , 1 , 0 ) ;
 		G::Options::add( options , 'f' , "fail-at" , "fail from the n'th message" , "of the session (zero-based index)" , M::one , "n" , 1 , 0 ) ;
 		G::Options::add( options , 'd' , "drop" , "drop the connection when content has DROP or when failing" , "" , M::zero , "" , 1 , 0 ) ;
+		G::Options::add( options , 'T' , "terminate" , "terminate when failing" , "" , M::zero , "" , 1 , 0 ) ;
 		G::Options::add( options , 'i' , "idle-timeout" , "idle timeout" , "" , M::one , "s" , 1 , 0 ) ;
 		G::Options::add( options , 'P' , "port" , "port number" , "" , M::one , "port" , 1 , 0 ) ;
 		G::Options::add( options , 'f' , "pid-file" , "pid file" , "" , M::one , "path" , 1 , 0 ) ;
@@ -358,51 +360,64 @@ int main( int argc , char * argv [] )
 			return 0 ;
 		}
 
-		bool auth_foo_bar = opt.contains( "auth-foo-bar" ) ;
-		bool auth_cram = opt.contains( "auth-cram" ) ;
-		bool auth_login = opt.contains( "auth-login" ) ;
-		bool auth_plain = opt.contains( "auth-plain" ) ;
-		bool auth_ok = opt.contains( "auth-ok" ) ;
-		bool slow = opt.contains( "slow" ) ;
-		bool tls = opt.contains( "tls" ) ;
-		bool quiet = opt.contains( "quiet" ) ;
+		TestServerConfig test_config ;
+		test_config.m_auth_foo_bar = opt.contains( "auth-foo-bar" ) ;
+		test_config.m_auth_cram = opt.contains( "auth-cram" ) ;
+		test_config.m_auth_login = opt.contains( "auth-login" ) ;
+		test_config.m_auth_plain = opt.contains( "auth-plain" ) ;
+		test_config.m_auth_ok = opt.contains( "auth-ok" ) ;
+		test_config.m_pause = opt.contains( "pause" ) ;
+		test_config.m_tls = opt.contains( "tls" ) ;
+		test_config.m_quiet = opt.contains( "quiet" ) ;
+		test_config.m_fail_at = opt.contains("fail-at") ? G::Str::toInt(opt.value("fail-at")) : -1 ;
+		test_config.m_drop = opt.contains( "drop" ) ;
+		test_config.m_terminate = opt.contains( "terminate" ) ;
+		test_config.m_ipv6 = opt.contains( "ipv6" ) ;
+		test_config.m_port = opt.contains("port") ? G::Str::toUInt(opt.value("port")) : 10025U ;
+		test_config.m_idle_timeout = opt.contains("idle-timeout") ? G::Str::toInt(opt.value("idle-timeout")) : 300U ;
 		bool debug = opt.contains( "debug" ) ;
-		int fail_at = opt.contains("fail-at") ? G::Str::toInt(opt.value("fail-at")) : -1 ;
-		bool drop = opt.contains( "drop" ) ;
-		bool ipv6 = opt.contains( "ipv6" ) ;
-		unsigned int port = opt.contains("port") ? G::Str::toUInt(opt.value("port")) : 10025U ;
-		unsigned int idle_timeout = opt.contains("idle-timeout") ? G::Str::toInt(opt.value("idle-timeout")) : 300U ;
 
 		G::Path argv0 = G::Path(arg.v(0)).withoutExtension().basename() ;
 		std::string pid_file_name = opt.value( "pid-file" , "."+argv0.str()+".pid" ) ;
+		std::string log_file = opt.value( "log-file" , std::string() ) ;
 
-		G::LogOutput log( "" ,
-			G::LogOutput::Config()
-				.set_output_enabled(!quiet)
-				.set_summary_info(!quiet)
-				.set_debug(debug)
-				.set_with_level(true)
-				.set_strip(true) ) ;
-
-		G_LOG_S( "pid=[" << G::Process::Id() << "]" ) ;
-		G_LOG_S( "pidfile=[" << pid_file_name << "]" ) ;
-		G_LOG_S( "port=[" << port << "]" ) ;
-		G_LOG_S( "fail-at=[" << fail_at << "]" ) ;
-
+		try
 		{
-			std::ofstream pid_file ;
-			G::File::open( pid_file , pid_file_name , G::File::Text() ) ;
-			pid_file << G::Process::Id().str() << std::endl ;
+			G::LogOutput log( arg.prefix() ,
+				G::LogOutput::Config()
+					.set_output_enabled(!test_config.m_quiet)
+					.set_summary_info(!test_config.m_quiet)
+					.set_verbose_info(!test_config.m_quiet)
+					.set_debug(debug)
+					.set_with_level(true)
+					.set_strip(true) ,
+				log_file ) ;
+
+			G_LOG_S( "pid=[" << G::Process::Id() << "]" ) ;
+			G_LOG_S( "pidfile=[" << pid_file_name << "]" ) ;
+			G_LOG_S( "port=[" << test_config.m_port << "]" ) ;
+			G_LOG_S( "fail-at=[" << test_config.m_fail_at << "]" ) ;
+
+			{
+				std::ofstream pid_file ;
+				G::File::open( pid_file , pid_file_name , G::File::Text() ) ;
+				pid_file << G::Process::Id().str() << std::endl ;
+			}
+
+			auto event_loop = GNet::EventLoop::create() ;
+			GNet::ExceptionSink es ;
+			GNet::TimerList timer_list ;
+			Server server( es , test_config ) ;
+
+			event_loop->run() ;
+
+			return 0 ;
 		}
-
-		std::unique_ptr<GNet::EventLoop> event_loop = GNet::EventLoop::create() ;
-		GNet::ExceptionSink es ;
-		GNet::TimerList timer_list ;
-		Server server( es , TestServerConfig(ipv6,port,auth_foo_bar,auth_cram,auth_login,auth_plain,auth_ok,slow,fail_at,drop,tls,quiet,idle_timeout) ) ;
-
-		event_loop->run() ;
-
-		return 0 ;
+		catch( std::exception & e )
+		{
+			G_ERROR( "main: exception: " << e.what() ) ;
+			throw ;
+		}
 	}
 	catch( std::exception & e )
 	{

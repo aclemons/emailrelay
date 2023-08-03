@@ -184,6 +184,11 @@ bool G::File::isLink( const Path & path , std::nothrow_t )
 	return 0 == s.error && s.is_link ;
 }
 
+G::File::Stat G::File::stat( const Path & path , bool read_symlink )
+{
+	return statImp( path.cstr() , read_symlink ) ;
+}
+
 bool G::File::isDirectory( const Path & path , std::nothrow_t )
 {
 	Stat s = statImp( path.cstr() ) ;

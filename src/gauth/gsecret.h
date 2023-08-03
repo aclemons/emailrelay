@@ -67,15 +67,16 @@ public:
 		///< Returns the secret shared key. Throws if not valid().
 
 	bool masked() const ;
-		///< Returns true if key() is masked.
+		///< Returns true if a non-empty hash function was passed
+		///< to the ctor.
 
 	std::string maskHashFunction() const ;
-		///< Returns the masking function name, such as "md5", or the
-		///< empty string if not masked(). Throws if not valid().
+		///< Returns the masking function name as passed to the ctor,
+		///< such as "md5", or the empty string if not masked().
+		///< Throws if not valid().
 
 	static Secret none() ;
-		///< Factory function that returns a secret that is not valid() and
-		///< has an empty id().
+		///< Factory function that returns a secret that is not valid().
 
 	std::string info( const std::string & id = {} ) const ;
 		///< Returns information for logging, excluding anything

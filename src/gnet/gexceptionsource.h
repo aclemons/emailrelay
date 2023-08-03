@@ -51,9 +51,9 @@ public:
 public:
 	ExceptionSource() = default ;
 	ExceptionSource( const ExceptionSource & ) = delete ;
-	ExceptionSource( ExceptionSource && ) = default ;
+	ExceptionSource( ExceptionSource && ) = delete ;
 	ExceptionSource & operator=( const ExceptionSource & ) = delete ;
-	ExceptionSource & operator=( ExceptionSource && ) = default ;
+	ExceptionSource & operator=( ExceptionSource && ) = delete ;
 } ;
 
 #endif

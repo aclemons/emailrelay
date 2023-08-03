@@ -26,7 +26,7 @@
 
 namespace G
 {
-	namespace Random
+	namespace Random /// An enclosing namespace for G::Random::rand().
 	{
 		unsigned int rand( unsigned int start = 0U , unsigned int end = 32767 ) ;
 			///< Returns a random value, uniformly distributed over the

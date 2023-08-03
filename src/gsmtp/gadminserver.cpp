@@ -62,6 +62,7 @@ GSmtp::AdminServerPeer::~AdminServerPeer()
 
 void GSmtp::AdminServerPeer::clientDone( const std::string & s )
 {
+	G_DEBUG( "GSmtp::AdminServerPeer::clientDone: [" << s << "]" ) ;
 	if( s.empty() )
 		sendLine( "OK" ) ;
 	else
@@ -226,7 +227,7 @@ void GSmtp::AdminServerPeer::flush()
 	}
 	else
 	{
-		m_client_ptr.reset( std::make_unique<GSmtp::Client>( GNet::ExceptionSink(m_client_ptr,m_es.esrc()) ,
+		m_client_ptr.reset( std::make_unique<GSmtp::Forward>( GNet::ExceptionSink(m_client_ptr,m_es.esrc()) ,
 			m_server.store() , m_server.ff() , GNet::Location(m_remote_address) ,
 			m_server.clientSecrets() , m_server.clientConfig() ) ) ;
 		// no sendLine() -- sends "OK" or "error:" when complete -- see AdminServerPeer::clientDone()
@@ -255,8 +256,7 @@ void GSmtp::AdminServerPeer::sendLine( std::string && line )
 	sendImp( line ) ;
 }
 
-void GSmtp::AdminServerPeer::notify( const std::string & s0 , const std::string & s1 ,
-	const std::string & s2 , const std::string &s3 )
+void GSmtp::AdminServerPeer::notify( const std::string & s0 , const std::string & s1 , const std::string & s2 , const std::string & s3 )
 {
 	if( m_notifying )
 	{
@@ -400,8 +400,7 @@ void GSmtp::AdminServer::report( const std::string & group ) const
 	serverReport( group ) ;
 }
 
-void GSmtp::AdminServer::notify( const std::string & s0 , const std::string & s1 ,
-	const std::string & s2 , const std::string & s3 )
+void GSmtp::AdminServer::notify( const std::string & s0 , const std::string & s1 , const std::string & s2 , const std::string & s3 )
 {
 	if( hasPeers() )
 	{
@@ -412,7 +411,6 @@ void GSmtp::AdminServer::notify( const std::string & s0 , const std::string & s1
 			if( wptr.expired() ) continue ;
 			std::shared_ptr<GNet::ServerPeer> ptr = wptr.lock() ;
 			AdminServerPeer * peer = static_cast<AdminServerPeer*>( ptr.get() ) ; // downcast
-			G_DEBUG( "GSmtp::AdminServer::notify: " << peer << ": " << s0 << ": " << s1 ) ;
 			peer->notify( s0 , s1 , s2 , s3 ) ;
 		}
 	}

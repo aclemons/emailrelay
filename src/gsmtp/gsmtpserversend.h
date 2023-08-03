@@ -99,6 +99,7 @@ protected:
 	void sendNoRecipients() ;
 	void sendMissingParameter() ;
 	void sendVerified( const std::string & ) ;
+	void sendCannotVerify() ;
 	void sendNotVerified( const std::string & , bool ) ;
 	void sendWillAccept( const std::string & ) ;
 	void sendAuthDone( bool ok ) ;

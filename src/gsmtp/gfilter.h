@@ -109,10 +109,12 @@ public:
 		///< required.
 
 	std::string str( Type type ) const ;
-		///< Returns a diagnostic string for logging.
+		///< Returns a diagnostic string for logging, including the
+		///< filter result.
 
 	static G::string_view strtype( Type type ) noexcept ;
-		///< Returns a type string for logging.
+		///< Returns a type string for logging: "filter",
+		///< "client-filter" or "routing-filter".
 
 protected:
 	struct Exit /// Interprets an executable filter's exit code.

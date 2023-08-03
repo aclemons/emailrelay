@@ -136,13 +136,15 @@ Main::CommandLine::CommandLine( Output & output , const G::Arg & args_in ,
 				[&config_names,options_spec,i](const std::string & s_,bool){
 					std::string prefix ;
 					auto option_p = parserFind( options_spec , s_ , &prefix ) ;
-					if( option_p && s_ == option_p->name && i == 0U )
+					if( option_p == nullptr )
+						return s_ ;
+					else if( s_ == option_p->name && i == 0U )
 						return option_p->name ; // no prefix, first config
-					else if( option_p && s_ == option_p->name )
+					else if( s_ == option_p->name )
 						return "-"+option_p->name ; // no prefix, not first config
-					else if( option_p && s_ == (config_names[i]+option_p->name) )
+					else if( s_ == (config_names[i]+option_p->name) )
 						return option_p->name ; // our prefix
-					else if( option_p && std::find(config_names.begin(),config_names.end(),prefix+"-") != config_names.end() )
+					else if( std::find(config_names.begin(),config_names.end(),prefix+"-") != config_names.end() )
 						return "-"+option_p->name ; // valid prefix but not ours
 					else
 						return s_ ; // invalid, fail as normal

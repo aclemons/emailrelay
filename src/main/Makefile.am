@@ -311,7 +311,7 @@ fakemc.exe: $(top_srcdir)/src/main/fakemc.c
 
 .PHONY: strip
 strip:
-	$(STRIP) $(sbin_PROGRAMS)
+	"$(STRIP)" $(sbin_PROGRAMS)
 
 .PHONY: map
 map:

@@ -33,7 +33,7 @@
 
 namespace GFilters
 {
-	namespace MxLookupImp
+	namespace MxLookupImp /// An implementation namespace for GFilters::MxLookup.
 	{
 		enum class Result { error , fatal , mx , cname , ip } ;
 		std::pair<Result,std::string> parse( const GNet::DnsMessage & , const GNet::Address & , unsigned int ) ;
@@ -62,10 +62,6 @@ GFilters::MxLookup::MxLookup( GNet::ExceptionSink es , Config config ,
 		m_nameservers(nameservers) ,
 		m_timer(*this,&MxLookup::onTimeout,es)
 {
-	G_ASSERT( m_config.port != 0U ) ;
-	if( m_config.port == 0U )
-		m_config.port = 25U ;
-
 	if( m_nameservers.empty() )
 	{
 		m_nameservers.push_back( GNet::Address::loopback( GNet::Address::Family::ipv4 , 53U ) ) ;
@@ -91,7 +87,7 @@ GFilters::MxLookup::MxLookup( GNet::ExceptionSink es , Config config ,
 	}
 }
 
-void GFilters::MxLookup::start( const GStore::MessageId & message_id , const std::string & forward_to )
+void GFilters::MxLookup::start( const GStore::MessageId & message_id , const std::string & forward_to , unsigned int port )
 {
 	if( !m_socket4 && !m_socket6 )
 	{
@@ -104,6 +100,7 @@ void GFilters::MxLookup::start( const GStore::MessageId & message_id , const std
 	else
 	{
 		m_message_id = message_id ;
+		m_port = port ? port : 25U ;
 		m_ns_index = 0U ;
 		m_ns_failures = 0U ;
 		m_question = forward_to ;
@@ -133,7 +130,7 @@ void GFilters::MxLookup::process( const char * p , std::size_t n )
 	if( response.valid() && response.QR() && response.ID() && response.ID() < (m_nameservers.size()+1U) )
 	{
 		std::size_t ns_index = static_cast<std::size_t>(response.ID()) - 1U ;
-		auto pair = parse( response , m_nameservers.at(ns_index) , m_config.port ) ;
+		auto pair = parse( response , m_nameservers.at(ns_index) , m_port ) ;
 		if( pair.first == Result::error && (m_ns_failures+1U) < m_nameservers.size() )
 			disable( ns_index , pair.second ) ;
 		else if( pair.first == Result::error || pair.first == Result::fatal )
@@ -158,6 +155,7 @@ void GFilters::MxLookup::disable( std::size_t ns_index , const std::string & rea
 std::pair<GFilters::MxLookupImp::Result,std::string> GFilters::MxLookupImp::parse( const GNet::DnsMessage & response ,
 	const GNet::Address & ns_address , unsigned int port )
 {
+	G_ASSERT( port != 0U ) ;
 	std::string from = " from " + ns_address.hostPartString() ;
 	if( response.RCODE() == 3 && response.AA() )
 	{

@@ -83,7 +83,7 @@ GSmtp::Filter::Result GFilters::CopyFilter::run( const GStore::MessageId & messa
 	}
 	else
 	{
-		G_LOG( "GFilters::CopyFilter::start: copy filter: "
+		G_LOG( "GFilters::CopyFilter::start: " << prefix() << ": "
 			<< message_id.str() << " copied to [" << G::Str::join(",",copy_names) << "]"
 			<< (ignore_names.empty()?"":" not [") << G::Str::join(",",ignore_names)
 			<< (ignore_names.empty()?"":"]") ) ;

@@ -88,6 +88,7 @@ test_names = \
 	testServerPolling.test \
 	testServerWithBadClient.test \
 	testServerSizeLimit.test \
+	testClientAccountSelection.test \
 	testClientContinuesIfNoSecrets.test \
 	testClientSavesReasonCode.test \
 	testFilter.test \
@@ -105,11 +106,15 @@ test_names = \
 	testNetworkVerifierPass.test \
 	testNetworkVerifierFail.test \
 	testProxyConnectsOnce.test \
+	testProxyServerRejection.test \
+	testProxyClientFilterFails.test \
+	testProxyRoutingFilterFails.test \
 	testDelivery.test \
 	testSplitFilter.test \
 	testSplitFilterRaw.test \
 	testSplitFilterWithVerifier.test \
 	testRouting.test \
+	testRoutingWithSplitAndMxFilters.test \
 	testClientFilterPass.test \
 	testClientFilterBlock.test \
 	testClientNetworkFilter.test \
@@ -118,6 +123,7 @@ test_names = \
 	testClientMessageFailure.test \
 	testClientInvalidRecipients.test \
 	testClientInvalidRecipientsWithForwardToSome.test \
+	testClientFailsMessagesWithNoRemoteRecipients.test \
 	testTlsServerNoClientCertificateNoVerifyAccepted.test \
 	testTlsServerNoClientCertificateVerifyRejected.test \
 	testTlsServerNoCaAccepted.test \

@@ -42,7 +42,6 @@
 ./src/main/winmain.cpp
 ./src/main/legal.cpp
 ./src/main/output.cpp
-./src/main/verifierfactory.cpp
 ./src/main/winmenu.cpp
 ./src/gsmtp/gsmtpserverprotocol.cpp
 ./src/gsmtp/gsmtpclientreply.cpp
@@ -51,6 +50,7 @@
 ./src/gsmtp/gsmtpserver.cpp
 ./src/gsmtp/gprotocolmessageforward.cpp
 ./src/gsmtp/gsmtpclientprotocol.cpp
+./src/gsmtp/gsmtpforward.cpp
 ./src/gsmtp/gfilter.cpp
 ./src/gsmtp/gsmtpservertext.cpp
 ./src/gsmtp/gsmtpclient.cpp

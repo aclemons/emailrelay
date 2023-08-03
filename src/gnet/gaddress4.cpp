@@ -34,7 +34,7 @@
 
 namespace GNet
 {
-	namespace Address4Imp
+	namespace Address4Imp /// An implementation namespace for GNet::Address4.
 	{
 		constexpr const char * port_separators = ":" ;
 		constexpr char port_separator = ':' ;

@@ -74,7 +74,7 @@ public:
 protected: // overrides
 	std::unique_ptr<GSmtp::Filter> newFilter( GNet::ExceptionSink ,
 		GSmtp::Filter::Type , const GSmtp::Filter::Config & ,
-		const Spec & , const std::string & log_prefix ) override ;
+		const Spec & ) override ;
 
 private:
 	static void checkNumber( Spec & ) ;

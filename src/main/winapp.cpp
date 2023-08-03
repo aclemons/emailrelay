@@ -302,10 +302,10 @@ bool Main::WinApp::onClose()
 	}
 }
 
-void Main::WinApp::onRunEvent( std::string category , std::string s1 , std::string s2 , std::string s3 )
+void Main::WinApp::onRunEvent( std::string s0 , std::string s1 , std::string s2 , std::string s3 )
 {
 	if( m_form.get() )
-		m_form->setStatus( category , s1 , s2 , s3 ) ;
+		m_form->setStatus( s0 , s1 , s2 , s3 ) ;
 }
 
 void Main::WinApp::onWindowException( std::exception & e )

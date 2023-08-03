@@ -149,8 +149,8 @@
       <dd>
        Runs the specified external program to verify a message recipient's e-mail
        address. A network verifier can be specified as <em>net:<tcp-address></em>. The
-       <em>strict:</em> and <em>local:</em> built-in address verifiers can be used to check
-       recipient addresses against the list of local system account names.
+       <em>account:</em> built-in address verifier can be used to check recipient
+       addresses against the list of local system account names.
       </dd>
      <dt>--anonymous[=&lt;scope&gt;] (-A)</dt>
       <dd>
@@ -244,7 +244,8 @@
        clients to see only their own messages after they have  been moved into
        separate sub-directories typically by the built-in  <em>deliver:</em> or <em>copy:</em>
        filters. Content files can remain in the  main spool directory to save disk
-       space; they will be deleted by
+       space; they will be deleted by  the POP server when it deletes the last
+       matching envelope file.
       </dd>
      <dt>--pop-no-delete (-G)</dt>
       <dd>
@@ -519,11 +520,16 @@
        <em>--as-server</em> and <em>--as-proxy</em>.
       </dd>
     </dl>
+   <h2><a class="a-header" name="SH_1_2">Configuration</a></h2> <!-- index:2:SH:1:2:Configuration -->
     <p>
-     A configuration file can be used to provide additional options; put each
-     option on a separate line, use the long option names but without the double
-     dash, and separate the option name from the option value with spaces. For
-     example:
+     E-MailRelay is configured with command-line options and/or a configuration file.
+     The configuration filename is given as the last command-line parameter.
+    </p>
+
+    <p>
+     A configuration file should contain command-line options without double dashes,
+     with each option on a separate line. The option name and the option value should
+     be separated with a space. For example:
     </p>
 
       <div class="div-pre">
@@ -535,9 +541,9 @@ port 10025
 </pre>
       </div><!-- div-pre -->
     <p>
-     All command-line options that specify a filename can use a special <em>@app</em>
-     substitution variable that is interpreted as the directory that contains
-     the <em>emailrelay</em> executable or MacOS application bundle.
+     All options that specify a filename can use a special <em>@app</em> substitution
+     variable that is interpreted as the directory that contains the <em>emailrelay</em>
+     executable or MacOS application bundle.
     </p>
 
     <p>
@@ -558,7 +564,7 @@ user root
 in-spool-dir /var/spool/in
 in-port 25
 in-remote-clients
-in-filter strict:
+in-filter account:
 in-domain example.com
 # out...
 out-spool-dir /var/spool/out
@@ -566,12 +572,18 @@ out-port 587
 out-forward-on-disconnect
 out-forward-to smtp.smarthost.com</pre>
       </div><!-- div-pre -->
-   <h2><a class="a-header" name="SH_1_2">Message store</a></h2> <!-- index:2:SH:1:2:Message store -->
+   <h2><a class="a-header" name="SH_1_3">Message store</a></h2> <!-- index:2:SH:1:3:Message store -->
     <p>
      E-mail messages are stored as text files in the configured spool directory; each
      message is represented as an envelope file and a content file. The envelope file
      contains parameters relevant to the SMTP dialogue, and the content file contains
      the RFC-822 headers and body text.
+    </p>
+
+    <p>
+     Envelope files can be modified by external filter scripts as long as the basic
+     structure is retained, and some E-MailRelay features such as routing and client
+     account selection can only be accessed in this way.
     </p>
 
     <p>
@@ -600,7 +612,7 @@ out-forward-to smtp.smarthost.com</pre>
      Sub-directories of the main spool directory are sometimes used as mailboxes
      containing e-mail messages that have been delivered to local e-mail recipients.
     </p>
-   <h2><a class="a-header" name="SH_1_3">Forwarding</a></h2> <!-- index:2:SH:1:3:Forwarding -->
+   <h2><a class="a-header" name="SH_1_4">Forwarding</a></h2> <!-- index:2:SH:1:4:Forwarding -->
     <p>
      Spooled e-mail messages can be forwarded at various times, depending on the
      command-line options:
@@ -626,23 +638,23 @@ out-forward-to smtp.smarthost.com</pre>
     </p>
 
     <p>
-     All recipient e-mail addresses must be accepted by the remote server when
-     E-MailRelay forwards an e-mail message. If any one recipient is rejected then
-     the message will be left in the spool directory with a <em>.bad</em> suffix on the
-     envelope file.
+     Normally all recipient e-mail addresses must be accepted by the remote server
+     when E-MailRelay forwards an e-mail message (<em>--forward-to-all</em>). If any one
+     recipient is rejected then the message will be left in the spool directory with
+     a <em>.bad</em> suffix on the envelope file.
     </p>
 
     <p>
-     This <em>--forward-to-all</em> behaviour is currently the default. However, if the
-     <em>--forward-to-some</em> option is used then forwarding will succeed for the valid
-     recipients and the failed message will contain just the invalid ones.
+     However, if the <em>--forward-to-some</em> option is used then forwarding will succeed
+     for the valid recipients and the failed message will contain just the invalid
+     ones.
     </p>
 
     <p>
-     Future E-MailRelay releases will switch to <em>--forward-to-some</em> as the default,
+     Future E-MailRelay releases might switch to <em>--forward-to-some</em> as the default,
      so use <em>--forward-to-all</em> if that is what is required.
     </p>
-   <h2><a class="a-header" name="SH_1_4">Filters</a></h2> <!-- index:2:SH:1:4:Filters -->
+   <h2><a class="a-header" name="SH_1_5">Filters</a></h2> <!-- index:2:SH:1:5:Filters -->
     <p>
      The <em>--filter</em> command-line option can be used to specify a program or script
      that operates on e-mail messages as they pass through the E-MailRelay system.
@@ -658,8 +670,7 @@ out-forward-to smtp.smarthost.com</pre>
     </p>
 
       <div class="div-pre">
-       <pre>emailrelay --as-proxy=localhost:smtp --port=587 --no-syslog \
-  --filter=$HOME/myfilter --spool-dir=$HOME/spool
+       <pre>emailrelay --as-proxy=127.0.0.1:25 --port=587 --filter=@app/myfilter --spool-dir=@app/spool
 </pre>
       </div><!-- div-pre -->
     <p>
@@ -690,7 +701,8 @@ out-forward-to smtp.smarthost.com</pre>
      The filter program can edit any part of the e-mail message's envelope file or
      content file: E-MailRelay remembers nothing about the e-mail message while the
      filter is running except the filename. However, if the message is deleted by
-     the filter program then it should use an exit code of 100.
+     the filter program then it should use an exit code of 100 to avoid spurious
+     warning messages.
     </p>
 
     <p>
@@ -753,12 +765,11 @@ WScript.Quit( 0 ) ;
     <p>
      E-MailRelay also has a <em>--client-filter</em> option that enables processing of
      e-mail messages just before they are forwarded, rather than after they are
-     stored. The disadvantage is that by then it is too late to notify the
-     submitting SMTP client of any processing failures, so in many store-and-forward
-     applications using <em>--filter</em> is more useful. The special exit code of 100 can
-     be used to ignore the current message, and 102 to stop scanning for more
-     spooled messages after processing the current one (eg. for simple
-     rate-limiting).
+     stored. The disadvantage is that by then it is too late to notify the submitting
+     SMTP client of any processing failures so in many store-and-forward applications
+     using <em>--filter</em> is more useful. The special exit code of 100 can be used to
+     ignore the current message, and 102 to stop scanning for more spooled messages
+     after processing the current one (eg. for simple rate-limiting).
     </p>
 
     <p>
@@ -769,11 +780,11 @@ WScript.Quit( 0 ) ;
      <li>The standard input and output are not used; the message filenames are passed on the command-line.</li>
      <li>Programs are run with a reduced set of environment variables.</li>
      <li>Message files use CR-LF line terminators.</li>
-     <li>Envelope files will have a file extension of <em>.new</em> or <em>.busy</em> when the program runs.</li>
+     <li>Envelope files will have a file extension of <em>.new</em> or <em>.busy</em> when the filter runs.</li>
      <li>Content files on Linux/Unix might be hard-linked if using <em>--filter=split:</em>.</li>
      <li>On Linux/Unix the filter runs as an unprivileged user unless using <em>--user=root</em>.</li>
     </ul>
-   <h2><a class="a-header" name="SH_1_5">Network filters</a></h2> <!-- index:2:SH:1:5:Network filters -->
+   <h2><a class="a-header" name="SH_1_6">Network filters</a></h2> <!-- index:2:SH:1:6:Network filters -->
     <p>
      E-MailRelay filters are normally external programs or scripts that operate on
      the message files in the spool directory, but filters can also be network
@@ -817,10 +828,10 @@ WScript.Quit( 0 ) ;
       </div><!-- div-pre -->
     <p>
      Using <em>spam:</em> means that the e-mail message will be rejected outright if it
-     fails the SpamAssissin tests, whereas with <em>spam-edit:</em> the message content is
+     fails the SpamAssassin tests, whereas with <em>spam-edit:</em> the message content is
      edited by SpamAssassin to hide the spam content within an attachment.
     </p>
-   <h2><a class="a-header" name="SH_1_6">Built-in filters</a></h2> <!-- index:2:SH:1:6:Built-in filters -->
+   <h2><a class="a-header" name="SH_1_7">Built-in filters</a></h2> <!-- index:2:SH:1:7:Built-in filters -->
     <p>
      E-MailRelay has a few built-in filters.
     </p>
@@ -836,7 +847,7 @@ WScript.Quit( 0 ) ;
       </div><!-- div-pre -->
     <p>
      This is useful for the special exit codes, such as exit code 103 which requests
-     a rescan of the spool directory.
+     a rescan of the spool directory for forwarding.
     </p>
    <h3><a class="a-header">copy:</a></h3>
     <p>
@@ -912,14 +923,12 @@ WScript.Quit( 0 ) ;
      examines the domain part of the recipient addresses in the SMTP envelope file
      and if there is more than one domain then the message is copied so that each
      copy relates to a single domain. It then copies the recipient address's domain
-     name into the <em>forward-to</em> field within the envelope file.
+     name into the <em>ForwardTo</em> field within the envelope file.
     </p>
 
     <p>
      Note that if new messages are created by the <em>split:</em> filter then they will not
-     be processed by any other filters. However, the <em>split:</em> filter does trigger
-     immediate forwarding similar to a 103 exit code if it creates new messages, so
-     the new messages will be processed almost immediately by a client filter.
+     be processed by any other server filters.
     </p>
 
     <p>
@@ -929,13 +938,14 @@ WScript.Quit( 0 ) ;
     </p>
 
     <p>
-     On Linux/Unix the content file copies might be hard links.
+     On Linux/Unix the content file copies will be hard links where possible.
     </p>
    <h3><a class="a-header">mx:</a></h3>
     <p>
-     The <em>mx:</em> filter performs a DNS MX lookup on any <em>forward-to</em> domain given in
+     The <em>mx:</em> filter performs a DNS MX lookup on any <em>ForwardTo</em> domain given in
      the envelope file and stores the resulting IP address in the
-     <em>forward-to-address</em> field.
+     <em>ForwardToAddress</em> field. The <em>ForwardTo</em> field can optionally have a colon
+     separated numeric port number.
     </p>
 
     <p>
@@ -957,25 +967,24 @@ WScript.Quit( 0 ) ;
     </p>
 
     <p>
-     The filter can be configured with optional semi-colon separated parameters after
-     the <em>mx:</em> string. The first optional parameter is the address of the DNS server
-     and the second is the port number for the <em>forward-to</em> address:
+     The filter can be configured with optional address for the DNS server after
+     the <em>mx:</em> string:
     </p>
 
       <div class="div-pre">
-       <pre>--client-filter="mx:127.0.0.1:10053;10025"
+       <pre>--client-filter="mx:127.0.0.1:53"
 </pre>
       </div><!-- div-pre -->
     <p>
      If the DNS server responds with a forwarding address of <em>0.0.0.0</em> then the
-     <em>forward-to-address</em> will be cleared and the message will be forwarded to the
+     <em>ForwardToAddress</em> will be cleared and the message will be forwarded to the
      default <em>--forward-to</em> address.
     </p>
 
     <p>
      See <em>Routing</em> below for more details.
     </p>
-   <h2><a class="a-header" name="SH_1_7">Address verifiers</a></h2> <!-- index:2:SH:1:7:Address verifiers -->
+   <h2><a class="a-header" name="SH_1_8">Address verifiers</a></h2> <!-- index:2:SH:1:8:Address verifiers -->
     <p>
      By default the E-MailRelay server will accept all recipient addresses for
      incoming e-mails as valid. This default behaviour can be modified by using an
@@ -1149,7 +1158,7 @@ catch( e )
     WScript.Quit( 3 ) ;
 }</pre>
       </div><!-- div-pre -->
-   <h2><a class="a-header" name="SH_1_8">Address verifier servers</a></h2> <!-- index:2:SH:1:8:Address verifier servers -->
+   <h2><a class="a-header" name="SH_1_9">Address verifier servers</a></h2> <!-- index:2:SH:1:9:Address verifier servers -->
     <p>
      E-MailRelay address verifiers are normally external programs or scripts but it
      is also possible to do address verification in a separate network server if
@@ -1177,58 +1186,60 @@ catch( e )
      E-MailRelay is responsible for maintaining the connection to the <em>net:</em> server
      so the server should not normally disconnect after responding.
     </p>
-   <h2><a class="a-header" name="SH_1_9">Built-in address verifiers</a></h2> <!-- index:2:SH:1:9:Built-in address verifiers -->
+   <h2><a class="a-header" name="SH_1_10">Built-in address verifiers</a></h2> <!-- index:2:SH:1:10:Built-in address verifiers -->
     <p>
-     There are two built-in address verifiers: <em>strict:</em> and <em>local:</em>.
+     There is one built-in address verifier called <em>account:</em>.
     </p>
-   <h3><a class="a-header">strict:</a></h3>
+   <h3><a class="a-header">account:</a></h3>
     <p>
-     The <em>strict:</em> verifier does strict validation of recipient address against system
+     The <em>account:</em> verifier does validation of recipient address against system
      account names and the network domain or <em>--domain</em> value. For example, it will
-     accept <em>alice@example.com</em> as a valid local recipient address only if there is a
-     system account called <em>alice</em> and the local fully-qualified domain name is
-     <em>example.com</em>. This verifier is intended to be used for e-mail messages coming
-     in from the public internet.
+     accept <em>alice@example.com</em> only if there is a local system account called
+     <em>alice</em> and the local fully-qualified domain name is <em>example.com</em>.
     </p>
 
     <p>
      Eg:
     </p>
       <div class="div-pre">
-       <pre>--address-verifier=strict: --domain=example.com --port=25 --remote-clients</pre>
-      </div><!-- div-pre -->
-   <h3><a class="a-header">local:</a></h3>
-    <p>
-     The <em>local:</em> verifier tests whether a recipient address is for a local user but
-     still allows other address. A recipient address where the first part matches
-     a system account name and the second part matches the network domain or
-     <em>--domain</em> value is treated as local and the mailbox name is just the account
-     name. If there is no match then the recipient address is treated as valid and
-     not local. This verifier is intended to be used for outgoing e-mail messages.
-    </p>
-
-    <p>
-     Eg:
-    </p>
-      <div class="div-pre">
-       <pre>--address-verifier=local: --forward-to=smarthost.example.com:587
+       <pre>--address-verifier=account: --domain=example.com
 </pre>
       </div><!-- div-pre -->
     <p>
-     Both verifiers can have one or more semi-colon separated configuration
+     The <em>account:</em> verifier can have one or more semi-colon separated configuration
      parameters following the verifier name, including a user-id range (defaulting to
-     1000-32767) that is used to obtain the list of system account names, <em>remote</em> to
-     verifiy local system account addresses as remote, and <em>lc</em> to convert the
-     mailbox name derived from the system account name to lower-case.
+     1000-32767) that is used to obtain the list of system account names and
+     <em>lowercase</em> to convert upper-case 7-bit characters in the system account name to
+     lower-case, <em>check</em> and <em>remote</em>.
     </p>
 
     <p>
      Eg:
     </p>
       <div class="div-pre">
-       <pre>--address-verifier="strict:1000-1002;lc" --domain=example.com --port=25 --remote-clients</pre>
+       <pre>--address-verifier="account:1000-1002;lc" --domain=example.com
+</pre>
       </div><!-- div-pre -->
-   <h2><a class="a-header" name="SH_1_10">Authentication</a></h2> <!-- index:2:SH:1:10:Authentication -->
+    <p>
+     With the <em>check</em> parameter the verifier will accept all recipient addresses as
+     valid and just test whether the recipient address is local or not. This is
+     useful for outgoing traffic where local recipients can be delivered immediately
+     without being sent to the next-hop SMTP server.
+    </p>
+
+    <p>
+     Eg:
+    </p>
+      <div class="div-pre">
+       <pre>--address-verifier=account:check --domain=example.com --delivery-dir=@app/in
+</pre>
+      </div><!-- div-pre -->
+    <p>
+     The <em>remote</em> parameter means that all valid recipient addresses are treated
+     as remote so that the e-mail message will be available for forwarding rather
+     than delivery.
+    </p>
+   <h2><a class="a-header" name="SH_1_11">Authentication</a></h2> <!-- index:2:SH:1:11:Authentication -->
     <p>
      E-MailRelay can perform <em>client-side</em> authentication when connecting to remote
      SMTP servers, and <em>server-side</em> authentication when remote clients connect to
@@ -1279,7 +1290,7 @@ emailrelay --as-client=example.com:smtp --client-auth=/etc/emailrelay-server.aut
     </p>
 
     <p>
-     Lines have four white-space delimited fields:
+     Lines have at least four white-space delimited fields:
     </p>
 
     <ul>
@@ -1298,6 +1309,17 @@ emailrelay --as-client=example.com:smtp --client-auth=/etc/emailrelay-server.aut
     </p>
 
     <p>
+     For example:
+    </p>
+
+      <div class="div-pre">
+       <pre># emailrelay secrets file
+client plain bob password123
+server plain alice e+3Dmc2
+server plain carol my+20password
+</pre>
+      </div><!-- div-pre -->
+    <p>
      The <em>xtext</em> encoding scheme is defined properly in RFC-3461, but basically it
      says that non-alphanumeric characters (including space, <em>+</em>, <em>#</em> and <em>=</em>) should
      be represented in uppercase hexadecimal ASCII as <em>+XX</em>. So a space should be
@@ -1306,12 +1328,28 @@ emailrelay --as-client=example.com:smtp --client-auth=/etc/emailrelay-server.aut
 
     <p>
      Base64 encoding can be used instead of xtext encoding by replacing <em>plain</em> by
-     <em>plain:b</em>.
+     <em>plain:b</em>:
     </p>
 
+      <div class="div-pre">
+       <pre># emailrelay secrets file
+client plain:b Ym9i cGFzc3dvcmQxMjM= # bob
+server plain:b YWxpY2U= ZT1tYzI= # alice
+server plain:b Y2Fyb2w= bXkgcGFzc3dvcmQ= # carol
+</pre>
+      </div><!-- div-pre -->
     <p>
      Note that modern email services will expect user-ids and passwords containing
      non-ASCII characters to use UTF-8 encoding with RFC-4013 normalisation applied.
+    </p>
+
+    <p>
+     Multiple client accounts can be defined in the secrets file by using a fifth
+     field as an account selector. When a message is forwarded the authentication
+     account is chosen by matching the client account selector in the message
+     envelope file with the account selector in the secrets file. A filter program
+     is normally used to set the appropriate <em>ClientAccountSelector</em> field in the
+     envelope file.
     </p>
 
     <p>
@@ -1340,47 +1378,22 @@ emailrelay --as-client=example.com:smtp --client-auth=/etc/emailrelay-server.aut
     </p>
 
     <p>
-     The XOAUTH2 mechanism can be used for client-side authentication using tokens
-     that have been recently obtained from a third-party authentication server and
-     added to the secrets file with a password-type of <em>oauth</em>.
-    </p>
-
-    <p>
-     In the following example <em>bob</em> is the username that E-MailRelay uses when
-     it authenticates with a remote SMTP server, and two usernames (<em>alice</em> and
-     <em>carol</em>) can be used by remote clients when they authenticate with the
-     E-MailRelay server:
+     Using <em>MD5</em> hashes the example secrets file would look like this:
     </p>
 
       <div class="div-pre">
-       <pre>#
-# emailrelay secrets file
-#
-client plain bob password123
-server plain alice e+3Dmc2
-server plain carol my+20password
-</pre>
-      </div><!-- div-pre -->
-    <p>
-     Note that the <em>=</em> and space characters in alice's and carol's passwords have
-     been written using xtext encoding; the <em>=</em> character appears in the standard
-     ASCII table on row 3 and column D so it is written as <em>+3D</em>. Spaces and <em>+</em>
-     characters should be written as <em>+20</em> and <em>+2B</em>.
-    </p>
-
-    <p>
-     Using <em>MD5</em> hashes the same users would look like this:
-    </p>
-
-      <div class="div-pre">
-       <pre>#
-# emailrelay secrets file
-#
+       <pre># emailrelay secrets file
 client md5 bob 9N2IRYVXqu7SkOW1Xat+wpR9NbA2R6fb61XlmqW+46E=
 server md5 alice v1HOpuLIbbvgoJjhueeoqwfvtIp2C+gMA285ke+xxow=
 server md5 carol x6UJKQF9f7HfhS1M+PW4s8rXIoT+L+WoqLz+rBwSKbw=
 </pre>
       </div><!-- div-pre -->
+    <p>
+     The XOAUTH2 mechanism can be used for client-side authentication using tokens
+     that have been recently obtained from a third-party authentication server and
+     added to the secrets file with a password-type of <em>oauth</em>.
+    </p>
+
     <p>
      When the <em>--server-auth</em> option is used clients must authenticate with the
      E-MailRelay server before they can send e-mail, but it is possible to configure
@@ -1405,9 +1418,7 @@ server md5 carol x6UJKQF9f7HfhS1M+PW4s8rXIoT+L+WoqLz+rBwSKbw=
     </p>
 
       <div class="div-pre">
-       <pre>#
-# emailrelay secrets file
-#
+       <pre># emailrelay secrets file
 server none 192.168.0.* localipv4
 server none fe80::/64 localipv6
 server plain alice e+3Dmc2
@@ -1437,7 +1448,7 @@ server plain carol my+20password
      The TLS layer can also be used for authentication, independently of SMTP, as
      described below.
     </p>
-   <h2><a class="a-header" name="SH_1_11">TLS encryption</a></h2> <!-- index:2:SH:1:11:TLS encryption -->
+   <h2><a class="a-header" name="SH_1_12">TLS encryption</a></h2> <!-- index:2:SH:1:12:TLS encryption -->
     <p>
      E-MailRelay can use negotiated TLS to encrypt SMTP and POP sessions: use the
      <em>--client-tls</em> command-line option to enable client-side TLS encryption when
@@ -1484,7 +1495,7 @@ server plain carol my+20password
      expect all connections to be using TLS from the start, so the whole SMTP
      dialogue is encrypted, without the need for <em>STARTTLS</em>.
     </p>
-   <h2><a class="a-header" name="SH_1_12">PAM authentication</a></h2> <!-- index:2:SH:1:12:PAM authentication -->
+   <h2><a class="a-header" name="SH_1_13">PAM authentication</a></h2> <!-- index:2:SH:1:13:PAM authentication -->
     <p>
      E-MailRelay on Linux supports the use of PAM (Pluggable Authentication Modules)
      for authentication if it has been built with the <em>--with-pam</em> configure option.
@@ -1521,7 +1532,7 @@ server plain carol my+20password
      <em>--user=root</em> command-line option to make sure that the process's effective
      user-id stays as <em>root</em> while it accesses the PAM system.
     </p>
-   <h2><a class="a-header" name="SH_1_13">Routing</a></h2> <!-- index:2:SH:1:13:Routing -->
+   <h2><a class="a-header" name="SH_1_14">Routing</a></h2> <!-- index:2:SH:1:14:Routing -->
     <p>
      E-MailRelay is often used to store-and-forward e-mail messages, with the
      forwarded messages going to a <em>smarthost</em> for onward routing. (The smarthost
@@ -1530,48 +1541,73 @@ server plain carol my+20password
 
     <p>
      However, E-MailRelay can also be used to route outgoing e-mail messages directly
-     to their final destinations without needing a smarthost. This works by using
-     <em>forward-to</em> and <em>forward-to-address</em> fields in the message envelope files: if
-     E-MailRelay sees an IP address in the <em>forward-to-address</em> field when a message
-     is being forwarded then it will connect to that address rather than the
-     <em>--forward-to</em> default.
+     to their final destinations without needing a smarthost.
     </p>
 
     <p>
-     In fact E-MailRelay will always connect to the <em>--forward-to</em> address first and
-     then make one-off connections for any messages that have a <em>forward-to-address</em>
-     defined. If every message has a <em>forward-to-address</em> then the default
+     The <em>ForwardToAddress</em> field in every message envelope file is normally empty
+     but it can be populated by a filter script to activate message routing. If
+     E-MailRelay sees a transport address in the <em>ForwardToAddress</em> field when a
+     message is being forwarded then it will connect to that address rather than the
+     default <em>--forward-to</em> address from the command-line or configuration
+     file. And if every message is given a <em>ForwardToAddress</em> then the command-line
      <em>--forward-to</em> address will not be used at all so it can be a dummy server on
      the local machine.
     </p>
 
     <p>
-     Normally a filter program should be used to fill in the <em>forward-to</em> field with
-     the message recipient's domain name; and if there are multiple recipients with
-     different domains then the filter should split the message up into independent
-     copies.
+     The <em>ForwardToAddress</em> should normally be an IP address and port number obtained
+     from a MX DNS query but it can also be a domain name and port number, in which
+     case a normal A or AAAA DNS lookup is used to determine the network address.
+    </p>
+
+    <p>
+     Normal e-mail routing is done according to the domain names in the message
+     recipient addresses (so a message to <em>alice@example.com</em> gets routed to
+     <em>example.com:25</em>) and using MX DNS lookups. But if there are multiple recipients
+     with different domain names then the message will have to be split up into
+     independent copies. This means that normal e-mail routing is best done in two
+     stages: first use a filter to split the message into independent copies grouped
+     by domain, and then use a client filter to do MX DNS lookups on those domain
+     names to populate the <em>ForwardToAddress</em>.
+    </p>
+
+    <p>
+     The client filter can be made to run early, before the forwarding connection is
+     established, by populating the <em>ForwardTo</em> field in the message envelope files.
     </p>
 
     <p>
      (The built-in <em>split:</em> filter can be used to split messages by recipient domain
-     and fill in the <em>forward-to</em> envelope fields.)
+     and store the domain name in the <em>ForwardTo</em> envelope field.)
     </p>
 
     <p>
-     If E-MailRelay sees a <em>forward-to</em> value in the envelope file when it is
+     If E-MailRelay sees a <em>ForwardTo</em> value in the envelope file when it is
      forwarding a message and if there is a defined <em>--client-filter</em> then the filter
-     will be run early so that it can populate a <em>forward-to-address</em> before talking
-     to the remote server. This early run of the client filter will typically do a
-     DNS MX lookup on the <em>forward-to</em> domain name and put the result into the
-     envelope file's <em>forward-to-address</em>. The client filter is run again as normal
-     once the connection is made.
+     will be run early so that it can populate a <em>ForwardToAddress</em> before connecting
+     to the remote server. Note that the contents of the <em>ForwardTo</em> field is not
+     interpreted by E-MailRelay itself; it causes the client filter to run early but
+     then it is up to the filter to make use its value.
     </p>
 
     <p>
-     (The built-in <em>mx:</em> filter can be used to do a DNS MX lookup on the <em>forward-to</em>
-     domain and fill in the <em>forward-to-address</em>.)
+     (The built-in <em>mx:</em> filter can be used to do a MX DNS lookup on the <em>ForwardTo</em>
+     domain and fill in the <em>ForwardToAddress</em>.)
     </p>
-   <h2><a class="a-header" name="SH_1_14">Delivery</a></h2> <!-- index:2:SH:1:14:Delivery -->
+
+    <p>
+     Connection failures do not cause messages to fail so any messages routed to
+     unavailable addresses will stay in the spool directory.
+    </p>
+
+    <p>
+     If routed SMTP connections need to authenticate using different client account
+     details then the filter should also populate the <em>ClientAccountSelector</em> field
+     in the message envelope file. The value in the envelope is used to select one of
+     the <em>client</em> rows in the client secrets file having a matching fifth field.
+    </p>
+   <h2><a class="a-header" name="SH_1_15">Delivery</a></h2> <!-- index:2:SH:1:15:Delivery -->
     <p>
      When running in store-and-forward applications E-MailRelay does not concern
      itself with message delivery; every e-mail message ends up in the main spool
@@ -1584,14 +1620,14 @@ server plain carol my+20password
     <p>
      A <em>mailbox</em> is normally just a sub-directory of the main spool directory with a
      name derived from the first part of the recipient address. It is traditional to
-     have a catch-all mailbox called <em>postmaster</em> for unrecognised addresses.
+     have a catch-all mailbox called <em>postmaster</em> for unrecognised names.
     </p>
 
     <p>
      Deriving a suitable mailbox name from the recipient address is best done by an
-     address verifier. The address verifier checks the recipient address and maps it
-     to a mailbox name which gets written into the envelope file in the <em>to-local</em>
-     list. Then the delivery filter just has to copy the message files into the
+     address verifier. The address verifier can check each recipient address, mapping
+     it to a mailbox name which then gets written to the envelope file's <em>To-Local</em>
+     list. After that the delivery filter just has to copy the message files into the
      designated mailbox.
     </p>
 
@@ -1624,7 +1660,7 @@ server plain carol my+20password
      Eg:
     </p>
       <div class="div-pre">
-       <pre>--address-verifier=strict: --filter=deliver:
+       <pre>--address-verifier=account: --filter=deliver:
 </pre>
       </div><!-- div-pre -->
     <p>
@@ -1637,10 +1673,10 @@ server plain carol my+20password
 
     <p>
      Mailboxes are normally sub-directories of the spool directory, but the
-     <em>--delivery-dir</em> command-line option can be used to provide a different base
-     directory.
+     <em>--delivery-dir</em> command-line option can be used to provide the <em>deliver:</em>
+     filter with a different base directory.
     </p>
-   <h2><a class="a-header" name="SH_1_15">IP addresses</a></h2> <!-- index:2:SH:1:15:IP addresses -->
+   <h2><a class="a-header" name="SH_1_16">IP addresses</a></h2> <!-- index:2:SH:1:16:IP addresses -->
     <p>
      By default the E-MailRelay server listens for connections on the wildcard IPv4
      and IPv6 addresses, and when making outgoing connections it does not explicitly
@@ -1763,7 +1799,7 @@ server plain carol my+20password
        <pre>--as-client ipv4or6.example.com:25 --client-interface 0.0.0.0
 --as-client ipv4or6.example.com:25 --client-interface ::</pre>
       </div><!-- div-pre -->
-   <h2><a class="a-header" name="SH_1_16">Socket activation</a></h2> <!-- index:2:SH:1:16:Socket activation -->
+   <h2><a class="a-header" name="SH_1_17">Socket activation</a></h2> <!-- index:2:SH:1:17:Socket activation -->
     <p>
      On Linux/Unix systems E-MailRelay can be passed open listening file descriptors
      at start-up by using the <em>--interface</em> option with a value like #fd3. This
@@ -1779,7 +1815,7 @@ server plain carol my+20password
        <pre>--interface=fd#4
 --interface=smtp=fd#5,pop=fd#6</pre>
       </div><!-- div-pre -->
-   <h2><a class="a-header" name="SH_1_17">Unix domain sockets</a></h2> <!-- index:2:SH:1:17:Unix domain sockets -->
+   <h2><a class="a-header" name="SH_1_18">Unix domain sockets</a></h2> <!-- index:2:SH:1:18:Unix domain sockets -->
     <p>
      E-MailRelay on Linux/Unix will listen on unix-domain sockets instead of IPv4 or
      IPv6 if the <em>--interface</em> option is given with an absolute file-system path:
@@ -1828,7 +1864,7 @@ server plain carol my+20password
 --filter=spam:/run/spamd.s
 --filter=spam-edit:/run/spamd.s</pre>
       </div><!-- div-pre -->
-   <h2><a class="a-header" name="SH_1_18">SOCKS</a></h2> <!-- index:2:SH:1:18:SOCKS -->
+   <h2><a class="a-header" name="SH_1_19">SOCKS</a></h2> <!-- index:2:SH:1:19:SOCKS -->
     <p>
      E-MailRelay can use a SOCKS 4a proxy for establishing outgoing SMTP connections;
      just append the SOCKS proxy address to the SMTP server's address, separated by
@@ -1849,7 +1885,7 @@ server plain carol my+20password
      establish the connection. The target SMTP server will see a connection coming
      from the Tor exit node rather than from the E-MailRelay server.
     </p>
-   <h2><a class="a-header" name="SH_1_19">SMTP extensions</a></h2> <!-- index:2:SH:1:19:SMTP extensions -->
+   <h2><a class="a-header" name="SH_1_20">SMTP extensions</a></h2> <!-- index:2:SH:1:20:SMTP extensions -->
     <p>
      Some standard extensions of the SMTP protocol can be enabled by using the
      <em>--server-smtp-config</em> and <em>--client-smtp-config</em> command-line options.
@@ -1859,7 +1895,7 @@ server plain carol my+20password
      there is a risk that any mail messages that require those extensions will fail
      to be forwarded.
     </p>
-   <h2><a class="a-header" name="SH_1_20">Administration interface</a></h2> <!-- index:2:SH:1:20:Administration interface -->
+   <h2><a class="a-header" name="SH_1_21">Administration interface</a></h2> <!-- index:2:SH:1:21:Administration interface -->
     <p>
      If enabled with the <em>--admin</em> command-line option, the E-MailRelay server will
      provide a network interface for performing administration tasks. This is a
@@ -1893,7 +1929,7 @@ E-MailRelay&gt; quit
      network status information and activity statistics, and <em>notify</em> enables
      asynchronous event notification.
     </p>
-   <h2><a class="a-header" name="SH_1_21">Connection blocking</a></h2> <!-- index:2:SH:1:21:Connection blocking -->
+   <h2><a class="a-header" name="SH_1_22">Connection blocking</a></h2> <!-- index:2:SH:1:22:Connection blocking -->
     <p>
      All incoming connections from remote network addresses are blocked by default,
      but can be allowed by using the <em>--remote-clients</em> or <em>-r</em> option. This is to
@@ -1933,7 +1969,7 @@ E-MailRelay&gt; quit
      Connections from loopback and private (RFC-1918) network addresses are never
      checked.
     </p>
-   <h2><a class="a-header" name="SH_1_22">POP server</a></h2> <!-- index:2:SH:1:22:POP server -->
+   <h2><a class="a-header" name="SH_1_23">POP server</a></h2> <!-- index:2:SH:1:23:POP server -->
     <p>
      The POP protocol is designed to allow e-mail user agents to retrieve and delete
      e-mail messages that have arrived at their final destination.
@@ -1999,7 +2035,7 @@ E-MailRelay&gt; quit
      to interpret message recipient addresses as belonging to local users or not. See
      <em>Delivery</em> above for more information.
     </p>
-   <h2><a class="a-header" name="SH_1_23">Run-time environment</a></h2> <!-- index:2:SH:1:23:Run-time environment -->
+   <h2><a class="a-header" name="SH_1_24">Run-time environment</a></h2> <!-- index:2:SH:1:24:Run-time environment -->
     <p>
      On Linux/Unix systems an E-MailRelay server started as <em>root</em> runs mostly with an
      unprivileged effective user-id and group-id given by the <em>--user</em> command-line
@@ -2042,7 +2078,7 @@ E-MailRelay&gt; quit
      On Windows all files are opened with the _SH_DENYNO option so they can be
      accessed without sharing violations.
     </p>
-   <h2><a class="a-header" name="SH_1_24">Files and directories</a></h2> <!-- index:2:SH:1:24:Files and directories -->
+   <h2><a class="a-header" name="SH_1_25">Files and directories</a></h2> <!-- index:2:SH:1:25:Files and directories -->
     <p>
      On Linux/Unix systems E-MailRelay installs by default under <em>/usr/local</em>, but
      binary distributions will probably have been built to install elsewhere.

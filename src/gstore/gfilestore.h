@@ -139,8 +139,8 @@ private: // overrides
 	std::unique_ptr<MessageStore::Iterator> iterator( bool lock ) override ;
 	std::unique_ptr<NewMessage> newMessage( const std::string & , const MessageStore::SmtpInfo & , const std::string & ) override ;
 	void updated() override ;
-	G::Slot::Signal<> & messageStoreUpdateSignal() override ;
-	G::Slot::Signal<> & messageStoreRescanSignal() override ;
+	G::Slot::Signal<> & messageStoreUpdateSignal() noexcept override ;
+	G::Slot::Signal<> & messageStoreRescanSignal() noexcept override ;
 	std::vector<MessageId> ids() override ;
 	std::vector<MessageId> failures() override ;
 	void unfailAll() override ;

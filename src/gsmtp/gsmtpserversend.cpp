@@ -109,6 +109,11 @@ void GSmtp::ServerSend::sendVerified( const std::string & user )
 	send( "250 " + user ) ;
 }
 
+void GSmtp::ServerSend::sendCannotVerify()
+{
+	send( "252 cannot vrfy" ) ; // RFC-5321 7.3
+}
+
 void GSmtp::ServerSend::sendNotVerified( const std::string & response , bool temporary )
 {
 	send( (temporary?"450":"550") + std::string(1U,' ') + response ) ;

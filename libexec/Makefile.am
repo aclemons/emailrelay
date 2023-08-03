@@ -30,6 +30,7 @@ work_scripts = \
 	AutoMakeParser.pm \
 	CompilationDatabase.pm \
 	ConfigStatus.pm \
+	Functions.pm \
 	Reduce.pm
 
 EXTRA_DIST = \

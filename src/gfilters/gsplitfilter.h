@@ -47,15 +47,16 @@ private: // overrides
 
 private:
 	G::StringArray matching( const G::StringArray & , const std::string & ) const ;
+	std::string forwardTo( const std::string & ) const ;
 	static bool match( const std::string & , const std::string & , bool raw ) ;
 	static void normalise( std::string & , bool raw ) ;
 
 private:
 	using FileOp = GStore::FileStore::FileOp ;
 	GStore::FileStore & m_store ;
-	Filter::Type m_filter_type ;
 	Filter::Config m_filter_config ;
 	bool m_raw {false} ;
+	std::string m_port ;
 } ;
 
 #endif

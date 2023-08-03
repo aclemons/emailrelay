@@ -475,7 +475,7 @@ Created by potrace 1.16, written by Peter Selinger 2001-2019
            sodipodi:role="line"
            x="-45.23877"
            y="-396.46777"
-           style="font-size:15.1328px;line-height:1.25;stroke-width:0.315267">--address-verifier=strict:</tspan></text>
+           style="font-size:15.1328px;line-height:1.25;stroke-width:0.315267">--address-verifier=account:</tspan></text>
     </g>
   </g>
 </svg>

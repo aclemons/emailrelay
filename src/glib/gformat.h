@@ -68,7 +68,7 @@ public:
 
 private:
 	void apply( const std::string & ) ;
-	static bool isdigit( char ) ;
+	static bool isdigit( char ) noexcept ;
 
 private:
 	std::string m_fmt ;

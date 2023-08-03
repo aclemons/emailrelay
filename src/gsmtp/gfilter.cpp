@@ -49,7 +49,7 @@ std::string GSmtp::Filter::str( Filter::Type type ) const
 G::string_view GSmtp::Filter::strtype( Filter::Type type ) noexcept
 {
 	return type == Type::server ? "filter"_sv :
-		( type == Type::client ? "client filter"_sv : "routing filter"_sv ) ;
+		( type == Type::client ? "client-filter"_sv : "routing-filter"_sv ) ;
 }
 
 GSmtp::Filter::Exit::Exit( int exit_code , Filter::Type type ) :
@@ -122,8 +122,10 @@ bool GSmtp::Filter::Exit::abandon() const
 	return result == Result::abandon ;
 }
 
+#ifndef G_LIB_SMALL
 bool GSmtp::Filter::Exit::fail() const
 {
 	return result == Result::fail ;
 }
+#endif
 

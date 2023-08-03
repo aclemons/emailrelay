@@ -66,9 +66,6 @@ GSmtp::ServerProtocol::ServerProtocol( ServerSender & sender , Verifier & verifi
 		m_bdat_arg(0U) ,
 		m_bdat_sum(0U)
 {
-	m_message.doneSignal().connect( G::Slot::slot(*this,&ServerProtocol::processDone) ) ;
-	m_verifier.doneSignal().connect( G::Slot::slot(*this,&ServerProtocol::verifyDone) ) ;
-
 	m_fsm( Event::Quit , State::s_Any , State::End , &ServerProtocol::doQuit ) ;
 	m_fsm( Event::Unknown , State::Processing , State::s_Same , &ServerProtocol::doIgnore ) ;
 	m_fsm( Event::Unknown , State::s_Any , State::s_Same , &ServerProtocol::doUnknown ) ;
@@ -126,6 +123,8 @@ GSmtp::ServerProtocol::ServerProtocol( ServerSender & sender , Verifier & verifi
 		m_fsm.reset( State::StartingTls ) ;
 		m_fsm( Event::Secure , State::StartingTls , State::Start , &ServerProtocol::doSecureGreeting ) ;
 	}
+	m_verifier.doneSignal().connect( G::Slot::slot(*this,&ServerProtocol::verifyDone) ) ;
+	m_message.doneSignal().connect( G::Slot::slot(*this,&ServerProtocol::processDone) ) ;
 }
 
 GSmtp::ServerProtocol::~ServerProtocol()
@@ -134,7 +133,7 @@ GSmtp::ServerProtocol::~ServerProtocol()
 	m_verifier.doneSignal().disconnect() ;
 }
 
-G::Slot::Signal<> & GSmtp::ServerProtocol::changeSignal()
+G::Slot::Signal<> & GSmtp::ServerProtocol::changeSignal() noexcept
 {
 	return m_change_signal ;
 }
@@ -599,8 +598,12 @@ void GSmtp::ServerProtocol::doHelp( EventData , bool & )
 
 void GSmtp::ServerProtocol::doVrfy( EventData event_data , bool & predicate )
 {
-	G_ASSERT( m_config.with_vrfy ) ;
-	if( m_config.mail_requires_authentication &&
+	if( !m_config.with_vrfy )
+	{
+		predicate = false ;
+		sendCannotVerify() ;
+	}
+	else if( m_config.mail_requires_authentication &&
 		!m_sasl->authenticated() &&
 		!m_sasl->trusted(m_peer_address.wildcards(),m_peer_address.hostPartString()) )
 	{
@@ -679,8 +682,8 @@ void GSmtp::ServerProtocol::doEhlo( EventData event_data , bool & predicate )
 		m_session_esmtp = true ;
 		m_session_peer_name = smtp_peer_name ;
 		m_sasl->reset() ;
-		G_ASSERT( !m_sasl->authenticated() ) ;
 		clear() ;
+		G_ASSERT( !m_sasl->authenticated() ) ;
 
 		ServerSend::Advertise advertise ;
 		advertise.hello = m_text.hello( m_session_peer_name ) ;
@@ -919,7 +922,7 @@ void GSmtp::ServerProtocol::clear()
 void GSmtp::ServerProtocol::doRset( EventData , bool & )
 {
 	clear() ;
-	m_message.reset() ; // drop forwarding client connection (moot)
+	m_message.reset() ; // drop any ProtocolMessage forwarding client connection (moot)
 
 	sendRsetReply() ;
 }
@@ -967,7 +970,7 @@ GSmtp::ServerProtocol::Event GSmtp::ServerProtocol::commandEvent( G::string_view
 	if( G::Str::imatch(word,"DATA"_sv) ) return dataEvent(line) ;
 	if( G::Str::imatch(word,"RCPT"_sv) ) return Event::Rcpt ;
 	if( G::Str::imatch(word,"MAIL"_sv) ) return Event::Mail ;
-	if( G::Str::imatch(word,"VRFY"_sv) && m_config.with_vrfy ) return Event::Vrfy ;
+	if( G::Str::imatch(word,"VRFY"_sv) ) return Event::Vrfy ;
 	if( G::Str::imatch(word,"NOOP"_sv) ) return Event::Noop ;
 	if( G::Str::imatch(word,"EXPN"_sv) ) return Event::Expn ;
 	if( G::Str::imatch(word,"HELP"_sv) ) return Event::Help ;

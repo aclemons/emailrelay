@@ -84,8 +84,11 @@ void GSmtp::ClientProtocol::start( std::weak_ptr<GStore::StoredMessage> message_
 	G_DEBUG( "GSmtp::ClientProtocol::start" ) ;
 
 	// reinitialise for the new message
-	m_message = MessageState() ;
-	m_message.ptr = message_in ; // NOLINT performance-unnecessary-value-param
+	m_message_state = MessageState() ;
+	m_message_state.ptr = message_in ;
+	m_message_p = message_in.lock().get() ;
+	m_message_state.selector = m_message_p->clientAccountSelector() ;
+	m_message_state.id = m_message_p->id().str() ;
 
 	// (re)start the protocol
 	m_done_signal.reset() ;
@@ -120,12 +123,12 @@ void GSmtp::ClientProtocol::sendComplete()
 	}
 }
 
-G::Slot::Signal<int,const std::string&,const std::string&,const G::StringArray&> & GSmtp::ClientProtocol::doneSignal()
+G::Slot::Signal<int,const std::string&,const std::string&,const G::StringArray&> & GSmtp::ClientProtocol::doneSignal() noexcept
 {
 	return m_done_signal ;
 }
 
-G::Slot::Signal<> & GSmtp::ClientProtocol::filterSignal()
+G::Slot::Signal<> & GSmtp::ClientProtocol::filterSignal() noexcept
 {
 	return m_filter_signal ;
 }
@@ -196,11 +199,20 @@ bool GSmtp::ClientProtocol::applyEvent( const ClientReply & reply )
 		m_protocol.state = State::SentEhlo ;
 		sendEhlo() ;
 	}
-	else if( m_protocol.state == State::MessageDone && is_start_event )
+	else if( m_protocol.state == State::MessageDone && is_start_event && m_session.ok(m_message_state.selector) )
 	{
 		// new message within the current session, start the client filter
 		m_protocol.state = State::Filtering ;
 		startFiltering() ;
+	}
+	else if( m_protocol.state == State::MessageDone && is_start_event )
+	{
+		// new message with changed client account selector -- start a new session
+		G_DEBUG( "GSmtp::ClientProtocol::applyEvent: new account selector [" << m_message_state.selector << "]" ) ;
+		if( !m_config.try_reauthentication )
+			throw SmtpError( "cannot switch client account" ) ;
+		m_protocol.state = m_session.secure ? State::SentTlsEhlo : State::SentEhlo ;
+		sendEhlo() ;
 	}
 	else if( m_protocol.state == State::SentEhlo && (
 		reply.is(ClientReply::Value::SyntaxError_500) ||
@@ -236,10 +248,15 @@ bool GSmtp::ClientProtocol::applyEvent( const ClientReply & reply )
 		}
 
 		// choose the authentication mechanism
-		m_session.auth_mechanism = m_sasl->mechanism( m_session.server.auth_mechanisms ) ;
+		m_session.auth_mechanism = m_sasl->mechanism( m_session.server.auth_mechanisms , m_message_state.selector ) ;
 
 		// start encryption, authentication or client-filtering
-		if( !m_session.secure && m_config.must_use_tls )
+		if( !m_sasl->active() && !m_message_state.selector.empty() )
+		{
+			G_ASSERT( m_session.auth_mechanism.empty() ) ;
+			throw BadSelector( std::string("selector [").append(m_message_state.selector).append(1U,']') ) ;
+		}
+		else if( !m_session.secure && m_config.must_use_tls )
 		{
 			if( !m_session.server.has_starttls )
 				throw SmtpError( "tls is mandated but the server cannot do starttls" ) ;
@@ -252,16 +269,17 @@ bool GSmtp::ClientProtocol::applyEvent( const ClientReply & reply )
 			send( "STARTTLS\r\n"_sv ) ;
 		}
 		else if( m_sasl->active() && m_session.server.has_auth && m_session.auth_mechanism.empty() &&
-			m_config.must_authenticate/*new*/ )
+			m_config.must_authenticate )
 		{
-			throw SmtpError( "cannot do authentication required by remote server "
-				"(" + G::Str::printable(G::Str::join(",",m_session.server.auth_mechanisms)) + "): "
-				"check for a compatible client secret" ) ;
+			std::string e = "cannot do authentication: check for a compatible client secret" ;
+			if( !m_message_state.selector.empty() )
+				e.append(" with selector [").append(G::Str::printable(m_message_state.selector)).append(1U,']') ;
+			throw SmtpError( e ) ;
 		}
 		else if( m_sasl->active() && m_session.server.has_auth && !m_session.auth_mechanism.empty() )
 		{
 			m_protocol.state = State::Auth ;
-			GAuth::SaslClient::Response rsp = initialResponse( *m_sasl ) ;
+			GAuth::SaslClient::Response rsp = initialResponse( *m_sasl , m_message_state.selector ) ;
 			std::string rsp_data = rsp.data.empty() ? std::string() : std::string(1U,' ').append(G::Base64::encode(rsp.data)) ;
 			send( "AUTH "_sv , m_session.auth_mechanism , rsp_data , "\r\n"_sv , rsp.sensitive ) ;
 		}
@@ -297,7 +315,7 @@ bool GSmtp::ClientProtocol::applyEvent( const ClientReply & reply )
 	{
 		// authentication challenge -- send the response
 		std::string challenge = G::Base64::valid(reply.text()) ? G::Base64::decode(reply.text()) : std::string() ;
-		GAuth::SaslClient::Response rsp = m_sasl->response( m_session.auth_mechanism , challenge ) ;
+		GAuth::SaslClient::Response rsp = m_sasl->response( m_session.auth_mechanism , challenge , m_message_state.selector ) ;
 		if( rsp.error )
 			send( "*\r\n"_sv ) ; // expect 501
 		else
@@ -311,7 +329,8 @@ bool GSmtp::ClientProtocol::applyEvent( const ClientReply & reply )
 	else if( m_protocol.state == State::Auth && reply.positive()/*235*/ )
 	{
 		// authenticated -- proceed to first message
-		m_session.authenticated_with_server = true ;
+		m_session.authenticated = true ;
+		m_session.auth_selector = m_message_state.selector ;
 		G_LOG( "GSmtp::ClientProtocol::applyEvent: successful authentication with remote server "
 			<< (m_session.secure?"over tls ":"") << m_sasl->info() ) ;
 		m_protocol.state = State::Filtering ;
@@ -323,7 +342,7 @@ bool GSmtp::ClientProtocol::applyEvent( const ClientReply & reply )
 		G_LOG( "GSmtp::ClientProtocol::applyEvent: " << AuthError(*m_sasl,reply).str()
 			<< ": trying [" << G::Str::lower(m_sasl->mechanism()) << "]" ) ;
 		m_session.auth_mechanism = m_sasl->mechanism() ;
-		GAuth::SaslClient::Response rsp = initialResponse( *m_sasl ) ;
+		GAuth::SaslClient::Response rsp = initialResponse( *m_sasl , m_message_state.selector ) ;
 		std::string rsp_data = rsp.data.empty() ? std::string() : std::string(1U,' ').append(G::Base64::encode(rsp.data)) ;
 		send( "AUTH "_sv , m_session.auth_mechanism , rsp_data , "\r\n"_sv , rsp.sensitive ) ;
 	}
@@ -335,7 +354,7 @@ bool GSmtp::ClientProtocol::applyEvent( const ClientReply & reply )
 	else if( m_protocol.state == State::Auth && !reply.positive() )
 	{
 		// authentication failed, but optional -- continue and expect submission errors
-		G_ASSERT( !m_session.authenticated_with_server ) ;
+		G_ASSERT( !m_session.authenticated ) ;
 		G_WARNING( "GSmtp::ClientProtocol::applyEvent: " << AuthError(*m_sasl,reply).str() << ": continuing" ) ;
 		m_protocol.state = State::Filtering ;
 		startFiltering() ;
@@ -373,14 +392,14 @@ bool GSmtp::ClientProtocol::applyEvent( const ClientReply & reply )
 		m_protocol.state = State::SentRcpt ;
 		sendRcptTo() ;
 	}
-	else if( m_protocol.state == State::SentRcpt && m_message.to_index < message()->toCount() )
+	else if( m_protocol.state == State::SentRcpt && m_message_state.to_index < message().toCount() )
 	{
 		// got reponse to RCTP-TO and more recipients to go -- send next RCPT-TO
 		bool accepted = reply.positive() ;
 		if( accepted )
-			m_message.to_accepted++ ;
+			m_message_state.to_accepted++ ;
 		else
-			m_message.to_rejected.push_back( message()->to(m_message.to_index-1U) ) ;
+			m_message_state.to_rejected.push_back( message().to(m_message_state.to_index-1U) ) ;
 		sendRcptTo() ;
 	}
 	else if( m_protocol.state == State::SentRcpt )
@@ -389,36 +408,36 @@ bool GSmtp::ClientProtocol::applyEvent( const ClientReply & reply )
 
 		bool accepted = reply.positive() ;
 		if( accepted )
-			m_message.to_accepted++ ;
+			m_message_state.to_accepted++ ;
 		else
-			m_message.to_rejected.push_back( message()->to(m_message.to_index-1U) ) ;
+			m_message_state.to_rejected.push_back( message().to(m_message_state.to_index-1U) ) ;
 
-		if( ( m_config.must_accept_all_recipients && m_message.to_accepted < message()->toCount() ) || m_message.to_accepted == 0U )
+		if( ( m_config.must_accept_all_recipients && m_message_state.to_accepted < message().toCount() ) || m_message_state.to_accepted == 0U )
 		{
 			m_protocol.state = State::SentDataStub ;
 			send( "RSET\r\n"_sv ) ;
 		}
-		else if( ( message()->bodyType() == BodyType::BinaryMime || G::Test::enabled("smtp-client-prefer-bdat") ) &&
+		else if( ( message().bodyType() == BodyType::BinaryMime || G::Test::enabled("smtp-client-prefer-bdat") ) &&
 			m_session.server.has_binarymime && m_session.server.has_chunking )
 		{
 			// RFC-3030
-			m_message.content_size = message()->contentSize() ;
-			std::string content_size_str = std::to_string( m_message.content_size ) ;
+			m_message_state.content_size = message().contentSize() ;
+			std::string content_size_str = std::to_string( m_message_state.content_size ) ;
 
-			bool one_chunk = (m_message.content_size+5U) <= m_config.bdat_chunk_size ; // 5 for " LAST"
+			bool one_chunk = (m_message_state.content_size+5U) <= m_config.bdat_chunk_size ; // 5 for " LAST"
 			if( one_chunk )
 			{
 				m_protocol.state = State::SentBdatLast ;
-				sendBdatAndChunk( m_message.content_size , content_size_str , true ) ;
+				sendBdatAndChunk( m_message_state.content_size , content_size_str , true ) ;
 			}
 			else
 			{
 				m_protocol.state = State::SentBdatMore ;
 
-				m_message.chunk_data_size = m_config.bdat_chunk_size ;
-				m_message.chunk_data_size_str = std::to_string(m_message.chunk_data_size) ;
+				m_message_state.chunk_data_size = m_config.bdat_chunk_size ;
+				m_message_state.chunk_data_size_str = std::to_string(m_message_state.chunk_data_size) ;
 
-				bool last = sendBdatAndChunk( m_message.chunk_data_size , m_message.chunk_data_size_str , false ) ;
+				bool last = sendBdatAndChunk( m_message_state.chunk_data_size , m_message_state.chunk_data_size_str , false ) ;
 				if( last )
 					m_protocol.state = State::SentBdatLast ;
 			}
@@ -453,7 +472,7 @@ bool GSmtp::ClientProtocol::applyEvent( const ClientReply & reply )
 		// got response to BDAT chunk -- send the next chunk
 		if( reply.positive() )
 		{
-			bool last = sendBdatAndChunk( m_message.chunk_data_size , m_message.chunk_data_size_str , false ) ;
+			bool last = sendBdatAndChunk( m_message_state.chunk_data_size , m_message_state.chunk_data_size_str , false ) ;
 			if( last )
 				m_protocol.state = State::SentBdatLast ;
 		}
@@ -468,7 +487,7 @@ bool GSmtp::ClientProtocol::applyEvent( const ClientReply & reply )
 		m_protocol.state = State::MessageDone ;
 		m_message_line.clear() ;
 		m_message_buffer.clear() ;
-		if( reply.positive() && m_message.to_accepted < message()->toCount() )
+		if( reply.positive() && m_message_state.to_accepted < message().toCount() )
 			raiseDoneSignal( 0 , "one or more recipients rejected" ) ;
 		else
 			raiseDoneSignal( reply.value() , reply.errorText() ) ;
@@ -492,18 +511,22 @@ bool GSmtp::ClientProtocol::applyEvent( const ClientReply & reply )
 	return protocol_done ;
 }
 
-std::shared_ptr<GStore::StoredMessage> GSmtp::ClientProtocol::message()
+GStore::StoredMessage & GSmtp::ClientProtocol::message()
 {
-	G_ASSERT( !m_message.ptr.expired() ) ;
-	if( m_message.ptr.expired() )
-		return std::make_shared<GStore::StoredMessageStub>() ;
+	// the state machine ensures that message() is not used while in the
+	// MessageDone/Init/ServiceReady states, so we can assert that the
+	// current message is valid
+	G_ASSERT( !m_message_state.ptr.expired() ) ;
+	G_ASSERT( m_message_p != nullptr ) ;
+	if( m_message_state.ptr.expired() || m_message_p == nullptr )
+		throw SmtpError( "invalid internal state" ) ;
 
-	return m_message.ptr.lock() ;
+	return *m_message_p ;
 }
 
-GAuth::SaslClient::Response GSmtp::ClientProtocol::initialResponse( const GAuth::SaslClient & sasl )
+GAuth::SaslClient::Response GSmtp::ClientProtocol::initialResponse( const GAuth::SaslClient & sasl , G::string_view selector )
 {
-	return sasl.initialResponse( 450U ) ; // RFC-2821 total command line length of 512
+	return sasl.initialResponse( selector , 450U ) ; // RFC-2821 total command line length of 512
 }
 
 void GSmtp::ClientProtocol::onTimeout()
@@ -561,27 +584,29 @@ void GSmtp::ClientProtocol::raiseDoneSignal( int response_code , const std::stri
 	if( !response.empty() && response_code == 0 )
 		G_WARNING( "GSmtp::ClientProtocol: smtp client protocol: " << response ) ;
 
+	m_message_p = nullptr ;
 	cancelTimer() ;
-	m_done_signal.emit( response_code , std::string(response) , std::string(reason) , G::StringArray(m_message.to_rejected) ) ;
+
+	m_done_signal.emit( response_code , std::string(response) , std::string(reason) , G::StringArray(m_message_state.to_rejected) ) ;
 }
 
 bool GSmtp::ClientProtocol::endOfContent()
 {
-	return !message()->contentStream().good() ;
+	return !message().contentStream().good() ;
 }
 
 std::string GSmtp::ClientProtocol::checkSendable()
 {
 	const bool eightbitmime_mismatch =
-		message()->bodyType() == BodyType::EightBitMime &&
+		message().bodyType() == BodyType::EightBitMime &&
 		!m_session.server.has_8bitmime ;
 
 	const bool utf8_mismatch =
-		message()->utf8Mailboxes() &&
+		message().utf8Mailboxes() &&
 		!m_session.server.has_smtputf8 ;
 
 	const bool binarymime_mismatch =
-		message()->bodyType() == BodyType::BinaryMime &&
+		message().bodyType() == BodyType::BinaryMime &&
 		!( m_session.server.has_binarymime && m_session.server.has_chunking ) ;
 
 	if( eightbitmime_mismatch && m_config.eightbit_strict )
@@ -626,20 +651,20 @@ std::string GSmtp::ClientProtocol::checkSendable()
 bool GSmtp::ClientProtocol::sendMailFrom()
 {
 	bool use_bdat = false ;
-	std::string mail_from_tail = message()->from() ;
+	std::string mail_from_tail = message().from() ;
 	mail_from_tail.append( 1U , '>' ) ;
 
-	if( message()->bodyType() == BodyType::SevenBit )
+	if( message().bodyType() == BodyType::SevenBit )
 	{
 		if( m_session.server.has_8bitmime )
 			mail_from_tail.append( " BODY=7BIT" ) ; // RFC-6152
 	}
-	else if( message()->bodyType() == BodyType::EightBitMime )
+	else if( message().bodyType() == BodyType::EightBitMime )
 	{
 		if( m_session.server.has_8bitmime )
 			mail_from_tail.append( " BODY=8BITMIME" ) ; // RFC-6152
 	}
-	else if( message()->bodyType() == BodyType::BinaryMime )
+	else if( message().bodyType() == BodyType::BinaryMime )
 	{
 		if( m_session.server.has_binarymime && m_session.server.has_chunking )
 		{
@@ -648,28 +673,28 @@ bool GSmtp::ClientProtocol::sendMailFrom()
 		}
 	}
 
-	if( m_session.server.has_smtputf8 && message()->utf8Mailboxes() )
+	if( m_session.server.has_smtputf8 && message().utf8Mailboxes() )
 	{
 		mail_from_tail.append( " SMTPUTF8" ) ; // RFC-6531 3.4
 	}
 
-	if( m_session.authenticated_with_server )
+	if( m_session.authenticated )
 	{
 		if( m_config.anonymous )
 		{
 			mail_from_tail.append( " AUTH=<>" ) ;
 		}
-		else if( message()->fromAuthOut().empty() && !m_sasl->id().empty() )
+		else if( message().fromAuthOut().empty() && !m_sasl->id().empty() )
 		{
 			// default policy is to use the session authentication id, although
 			// this is not strictly conforming with RFC-2554/RFC-4954
 			mail_from_tail.append( " AUTH=" ) ;
 			mail_from_tail.append( G::Xtext::encode(m_sasl->id()) ) ;
 		}
-		else if( m_session.authenticated_with_server && G::Xtext::valid(message()->fromAuthOut()) )
+		else if( m_session.authenticated && G::Xtext::valid(message().fromAuthOut()) )
 		{
 			mail_from_tail.append( " AUTH=" ) ;
-			mail_from_tail.append( message()->fromAuthOut() ) ;
+			mail_from_tail.append( message().fromAuthOut() ) ;
 		}
 		else
 		{
@@ -689,10 +714,10 @@ bool GSmtp::ClientProtocol::sendMailFrom()
 		std::string commands ;
 		commands.reserve( 2000U ) ;
 		commands.append("MAIL FROM:<").append(mail_from_tail).append("\r\n",2U) ;
-		const std::size_t n = message()->toCount() ;
+		const std::size_t n = message().toCount() ;
 		for( std::size_t i = 0U ; i < n ; i++ )
-			commands.append("RCPT TO:<").append(message()->to(i)).append(">\r\n",3U) ;
-		m_message.to_index = 0 ;
+			commands.append("RCPT TO:<").append(message().to(i)).append(">\r\n",3U) ;
+		m_message_state.to_index = 0 ;
 		sendCommandLines( commands ) ;
 	}
 	else
@@ -706,12 +731,12 @@ void GSmtp::ClientProtocol::sendRcptTo()
 {
 	if( m_config.pipelining && m_session.server.has_pipelining )
 	{
-		m_message.to_index++ ;
+		m_message_state.to_index++ ;
 	}
 	else
 	{
-		G_ASSERT( m_message.to_index < message()->toCount() ) ;
-		std::string to = message()->to( m_message.to_index++ ) ;
+		G_ASSERT( m_message_state.to_index < message().toCount() ) ;
+		std::string to = message().to( m_message_state.to_index++ ) ;
 		send( "RCPT TO:<"_sv , to , ">\r\n"_sv ) ;
 	}
 }
@@ -743,7 +768,7 @@ bool GSmtp::ClientProtocol::sendNextContentLine( std::string & line )
 	G_ASSERT( !line.empty() && line.at(0) == '.' ) ;
 	bool ok = false ;
 	line.erase( 1U ) ; // leave "."
-	if( G::Str::readLine( message()->contentStream() , line ,
+	if( G::Str::readLine( message().contentStream() , line ,
 		m_config.crlf_only ? G::Str::Eol::CrLf : G::Str::Eol::Cr_Lf_CrLf ,
 		/*pre_erase_result=*/false ) )
 	{
@@ -765,29 +790,29 @@ void GSmtp::ClientProtocol::sendHelo()
 
 void GSmtp::ClientProtocol::sendEot()
 {
-	sendImp( ".\r\n"_sv , false ) ;
+	sendImp( ".\r\n"_sv ) ;
 }
 
 void GSmtp::ClientProtocol::sendRsp( const GAuth::SaslClient::Response & rsp )
 {
 	std::string s = G::Base64::encode(rsp.data).append("\r\n",2U) ;
-	sendImp( s , rsp.sensitive ) ;
+	sendImp( s , rsp.sensitive ? 0U : std::string::npos ) ;
 }
 
 void GSmtp::ClientProtocol::sendCommandLines( const std::string & lines )
 {
-	sendImp( lines.data() , false ) ;
+	sendImp( lines.data() ) ;
 }
 
 void GSmtp::ClientProtocol::send( G::string_view s )
 {
-	sendImp( s , false ) ;
+	sendImp( s ) ;
 }
 
-void GSmtp::ClientProtocol::send( G::string_view s0 , G::string_view s1 , G::string_view s2 , G::string_view s3 , bool sensitive )
+void GSmtp::ClientProtocol::send( G::string_view s0 , G::string_view s1 , G::string_view s2 , G::string_view s3 , bool s2_sensitive )
 {
 	std::string line = std::string(s0.data(),s0.size()).append(s1.data(),s1.size()).append(s2.data(),s2.size()).append(s3.data(),s3.size()) ;
-	sendImp( line , sensitive ) ;
+	sendImp( line , ( s2_sensitive && !s2.empty() ) ? (s0.size()+s1.size()) : std::string::npos ) ;
 }
 
 bool GSmtp::ClientProtocol::sendBdatAndChunk( std::size_t size , const std::string & size_str , bool last )
@@ -816,8 +841,8 @@ bool GSmtp::ClientProtocol::sendBdatAndChunk( std::size_t size , const std::stri
 
 	G_ASSERT( buffer_size > datapos ) ;
 	G_ASSERT( (out+datapos) < (&m_message_buffer[0]+m_message_buffer.size()) ) ;
-	message()->contentStream().read( out+datapos , buffer_size-datapos ) ;
-	std::streamsize gcount = message()->contentStream().gcount() ;
+	message().contentStream().read( out+datapos , buffer_size-datapos ) ;
+	std::streamsize gcount = message().contentStream().gcount() ;
 
 	G_ASSERT( gcount >= 0 ) ;
 	//static_assert( sizeof(std::streamsize) == sizeof(std::size_t) , "" ) ; // not msvc
@@ -853,7 +878,7 @@ void GSmtp::ClientProtocol::sendChunkImp( const char * p , std::size_t n )
 	if( m_config.response_timeout != 0U )
 		startTimer( m_config.response_timeout ) ; // response timer on every bdat block
 
-	if( G::LogOutput::instance() && G::LogOutput::instance()->at(G::Log::Severity::InfoVerbose) )
+	if( G::Log::atVerbose() )
 	{
 		std::size_t pos = sv.find( "\r\n"_sv ) ;
 		G::string_view cmd = G::Str::headView( sv , pos , {p,std::size_t(0U)} ) ;
@@ -874,31 +899,26 @@ bool GSmtp::ClientProtocol::sendContentLineImp( const std::string & line , std::
 	return all_sent ;
 }
 
-bool GSmtp::ClientProtocol::sendImp( G::string_view line , bool sensitive )
+bool GSmtp::ClientProtocol::sendImp( G::string_view line , std::size_t sensitive_from )
 {
+	G_ASSERT( line.size() > 2U && line.rfind('\n') == (line.size()-1U) ) ;
+
 	if( m_protocol.state == State::Quitting )
 		startTimer( 1U ) ;
 	else if( m_config.response_timeout != 0U )
 		startTimer( m_config.response_timeout ) ; // response timer on every smtp command
 
-	if( G::LogOutput::instance() && G::LogOutput::instance()->at(G::Log::Severity::InfoVerbose) )
+	std::size_t pos = 0U ;
+	for( G::StringFieldT<G::string_view> f(line,"\r\n",2U) ; f && !f.last() ; pos += (f.size()+2U) , ++f )
 	{
-		if( sensitive )
-		{
+		if( sensitive_from == std::string::npos || (pos+f.size()) < sensitive_from )
+			G_LOG( "GSmtp::ClientProtocol: tx>>: "
+				"\"" << G::Str::printable(f()) << "\"" ) ;
+		else if( pos >= sensitive_from )
 			G_LOG( "GSmtp::ClientProtocol: tx>>: [response not logged]" ) ;
-		}
-		else if( line.find("\r\n",0U,2U) != std::string::npos )
-		{
-			for( G::StringFieldT<G::string_view> f(line,"\r\n",2U) ; f && !f.last() ; ++f )
-			{
-				G_LOG( "GSmtp::ClientProtocol: tx>>: "
-					"\"" << G::Str::printable(G::string_view(f.data(),f.size())) << "\"" ) ;
-			}
-		}
 		else
-		{
-			G_LOG( "GSmtp::ClientProtocol: tx>>: \"" << G::Str::printable(line) << "\"" ) ;
-		}
+			G_LOG( "GSmtp::ClientProtocol: tx>>: "
+				"\"" << G::Str::printable(f().substr(0U,sensitive_from-pos)) << " [not logged]\"" ) ;
 	}
 
 	return m_sender.protocolSend( line , 0U , false ) ;

@@ -26,7 +26,7 @@
 
 namespace G
 {
-	namespace XtextImp
+	namespace XtextImp /// An implementation namespace for G::Xtext.
 	{
 		inline char hex( unsigned int n )
 		{

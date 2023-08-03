@@ -333,7 +333,7 @@ std::string G::MapFile::expand( string_view value_in ) const
 
 namespace G
 {
-	namespace MapFileImp
+	namespace MapFileImp /// An implementation namespace for G::MapFile.
 	{
 		std::size_t find_single( std::string & s , char c , std::size_t start_pos )
 		{

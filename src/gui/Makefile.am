@@ -192,5 +192,5 @@ payload: $(top_srcdir)/libexec/make-setup.sh
 
 .PHONY: lrelease
 lrelease:
-	$(QT_LRELEASE) emailrelay_tr.no_NO.ts -qm emailrelay.no.qm
+	"$(QT_LRELEASE)" emailrelay_tr.no_NO.ts -qm emailrelay.no.qm
 

@@ -70,11 +70,13 @@ public:
 private:
 	void clientEvent( const std::string & , const std::string & , const std::string & ) ;
 	void clientDeleted( const std::string & ) ;
-	void emit( bool ) ;
+	void done() ;
+	void onDoneTimeout() ;
 
 private:
-	G::Slot::Signal<int> m_done_signal ;
 	GNet::ExceptionSink m_es ;
+	GNet::Timer<SpamFilter> m_done_timer ;
+	G::Slot::Signal<int> m_done_signal ;
 	GStore::FileStore & m_file_store ;
 	GNet::Location m_location ;
 	bool m_read_only ;

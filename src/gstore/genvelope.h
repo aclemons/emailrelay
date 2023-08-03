@@ -85,6 +85,7 @@ public:
 	std::string from_auth_out ;
 	std::string forward_to ;
 	std::string forward_to_address ;
+	std::string client_account_selector ;
 	std::size_t endpos {0U} ;
 } ;
 

@@ -141,11 +141,11 @@ public:
 		///< store has changed. Implementations must cause the
 		///< messageStoreUpdateSignal() signal to be emitted.
 
-	virtual G::Slot::Signal<> & messageStoreUpdateSignal() = 0 ;
+	virtual G::Slot::Signal<> & messageStoreUpdateSignal() noexcept = 0 ;
 		///< Provides a signal which is emitted when something might
 		///< have changed in the store.
 
-	virtual G::Slot::Signal<> & messageStoreRescanSignal() = 0 ;
+	virtual G::Slot::Signal<> & messageStoreRescanSignal() noexcept = 0 ;
 		///< Provides a signal which is emitted when rescan()
 		///< is called.
 } ;

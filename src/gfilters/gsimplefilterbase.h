@@ -49,6 +49,9 @@ public:
 		GStore::FileStore::State ) = 0 ;
 			///< Runs the filter synchronously and returns the result.
 
+	std::string prefix() const ;
+		///< Returns a logging prefix derived from Filter::Type and filter id.
+
 private: // overrides
 	bool quiet() const final ;
 	void start( const GStore::MessageId & ) final ;

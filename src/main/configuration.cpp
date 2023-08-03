@@ -751,14 +751,6 @@ GSmtp::Client::Config Main::Configuration::smtpClientConfig( const std::string &
 	return
 		GSmtp::Client::Config()
 			.set_stream_socket_config( _netSocketConfig(_clientSocketLinger()) )
-			.set_filter_config(
-				GSmtp::Filter::Config()
-					.set_domain( domain )
-					.set_timeout( filterTimeout() ) )
-			.set_filter_spec( _clientFilter() )
-			.set_bind_local_address( !local_address_str.empty() )
-			.set_local_address( local_address )
-			.set_client_tls_profile( client_tls_profile )
 			.set_client_protocol_config(
 				GSmtp::ClientProtocol::Config()
 					.set_thishost_name( GNet::Local::canonicalName() )
@@ -766,17 +758,25 @@ GSmtp::Client::Config Main::Configuration::smtpClientConfig( const std::string &
 					.set_ready_timeout( _promptTimeout() )
 					.set_use_starttls_if_possible( clientTls() && !clientOverTls() )
 					.set_must_use_tls( contains("client-tls-required") && !clientOverTls() )
-					.set_must_authenticate( true ) // since free to have no client secret
+					.set_must_authenticate( true ) // if --client-auth
 					.set_anonymous( anonymous("client") )
 					.set_must_accept_all_recipients( !contains("forward-to-some") )
 					.set_pipelining( smtp_client_switches("pipelining"_sv,false) )
 					.set_smtputf8_strict( smtp_client_switches("smtputf8strict"_sv,true) )
 					.set_eightbit_strict( smtp_client_switches("eightbitstrict"_sv,false) )
 					.set_binarymime_strict( smtp_client_switches("binarymimestrict"_sv,true) ) )
+			.set_filter_config(
+				GSmtp::Filter::Config()
+					.set_domain( domain )
+					.set_timeout( filterTimeout() ) )
+			.set_filter_spec( _clientFilter() )
+			.set_bind_local_address( !local_address_str.empty() )
+			.set_local_address( local_address )
 			.set_connection_timeout( _connectionTimeout() )
 			.set_secure_connection_timeout( _secureConnectionTimeout() )
 			.set_secure_tunnel( clientOverTls() )
-			.set_sasl_client_config( _smtpSaslClientConfig() ) ;
+			.set_sasl_client_config( _smtpSaslClientConfig() )
+			.set_client_tls_profile( client_tls_profile ) ;
 }
 
 GSmtp::AdminServer::Config Main::Configuration::adminServerConfig( const G::StringMap & info_map ,

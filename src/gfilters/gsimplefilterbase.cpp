@@ -89,3 +89,8 @@ void GFilters::SimpleFilterBase::onTimeout()
 	m_done_signal.emit( static_cast<int>(m_result) ) ;
 }
 
+std::string GFilters::SimpleFilterBase::prefix() const
+{
+	return G::sv_to_string(strtype(m_filter_type)).append(" [").append(id()).append(1U,']') ;
+}
+

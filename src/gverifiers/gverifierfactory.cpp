@@ -53,14 +53,9 @@ GVerifiers::VerifierFactory::Spec GVerifiers::VerifierFactory::parse( const std:
 		result = Spec( "net" , tail ) ;
 		checkNet( result ) ;
 	}
-	else if( G::Str::headMatch( spec_in , "strict:" ) )
+	else if( G::Str::headMatch( spec_in , "account:" ) )
 	{
-		result = Spec( "strict" , tail ) ;
-		checkRange( result ) ;
-	}
-	else if( G::Str::headMatch( spec_in , "local:" ) )
-	{
-		result = Spec( "local" , tail ) ;
+		result = Spec( "account" , tail ) ;
 		checkRange( result ) ;
 	}
 	else if( G::Str::headMatch( spec_in , "file:" ) )
@@ -89,15 +84,9 @@ std::unique_ptr<GSmtp::Verifier> GVerifiers::VerifierFactory::newVerifier( GNet:
 	{
 		return std::make_unique<NetworkVerifier>( es , config , spec.second ) ;
 	}
-	else if( spec.first == "strict" )
+	else if( spec.first == "account" )
 	{
-		bool strict = true ;
-		return std::make_unique<UserVerifier>( es , strict , config , spec.second ) ;
-	}
-	else if( spec.first == "local" )
-	{
-		bool strict = false ;
-		return std::make_unique<UserVerifier>( es , strict , config , spec.second ) ;
+		return std::make_unique<UserVerifier>( es , config , spec.second ) ;
 	}
 	else if( spec.first == "file" )
 	{

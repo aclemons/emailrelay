@@ -66,7 +66,7 @@ GSmtp::ServerPeer::ServerPeer( GNet::ExceptionSinkUnbound esu ,
 
 GSmtp::ServerPeer::~ServerPeer()
 {
-	m_protocol.changeSignal().disconnect() ;
+	m_input_buffer.flowSignal().disconnect() ;
 }
 
 void GSmtp::ServerPeer::onDelete( const std::string & reason )
@@ -206,7 +206,7 @@ GSmtp::Server::Config & GSmtp::Server::config()
 }
 #endif
 
-G::Slot::Signal<const std::string&,const std::string&> & GSmtp::Server::eventSignal()
+G::Slot::Signal<const std::string&,const std::string&> & GSmtp::Server::eventSignal() noexcept
 {
 	return m_event_signal ;
 }
@@ -269,7 +269,7 @@ std::unique_ptr<GSmtp::ServerProtocol::Text> GSmtp::Server::newProtocolText( boo
 std::unique_ptr<GSmtp::Filter> GSmtp::Server::newFilter( GNet::ExceptionSink es ) const
 {
 	return m_ff.newFilter( es , Filter::Type::server , m_server_config.filter_config ,
-		m_server_config.filter_spec , {} ) ;
+		m_server_config.filter_spec ) ;
 }
 
 std::unique_ptr<GSmtp::ProtocolMessage> GSmtp::Server::newProtocolMessageStore( std::unique_ptr<Filter> filter )

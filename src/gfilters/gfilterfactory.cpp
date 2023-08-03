@@ -111,19 +111,17 @@ GFilters::FilterFactory::Spec GFilters::FilterFactory::parse( const std::string 
 		fixFile( result , base_dir , app_dir ) ;
 		checkFile( result , warnings_p ) ;
 	}
-
-	G_ASSERT( !result.first.empty() ) ;
 	return result ;
 }
 
 std::unique_ptr<GSmtp::Filter> GFilters::FilterFactory::newFilter( GNet::ExceptionSink es ,
 	GSmtp::Filter::Type filter_type , const GSmtp::Filter::Config & filter_config ,
-	const FilterFactory::Spec & spec , const std::string & log_prefix )
+	const FilterFactory::Spec & spec )
 {
 	if( spec.first == "chain" )
 	{
 		// (one level of recursion -- FilterChain::ctor calls newFilter())
-		return std::make_unique<FilterChain>( es , *this , filter_type , filter_config , spec , log_prefix ) ;
+		return std::make_unique<FilterChain>( es , *this , filter_type , filter_config , spec ) ;
 	}
 	else if( spec.first == "spam" )
 	{
@@ -149,7 +147,7 @@ std::unique_ptr<GSmtp::Filter> GFilters::FilterFactory::newFilter( GNet::Excepti
 	}
 	else if( spec.first == "file" )
 	{
-		return std::make_unique<ExecutableFilter>( es , m_file_store , filter_type , filter_config , spec.second , log_prefix ) ;
+		return std::make_unique<ExecutableFilter>( es , m_file_store , filter_type , filter_config , spec.second ) ;
 	}
 	else if( spec.first == "deliver" )
 	{

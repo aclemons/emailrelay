@@ -176,7 +176,7 @@ namespace GNet
 
 namespace GNet
 {
-	namespace LineStoreImp
+	namespace LineStoreImp /// An implementation namespace for GNet::LineStore.
 	{
 		template <typename T1, typename T2> bool std_equal( T1 p1 , T1 end1 , T2 p2 , T2 end2 )
 		{

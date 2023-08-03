@@ -27,23 +27,25 @@
 #include "glog.h"
 #include <sstream>
 
-GVerifiers::UserVerifier::UserVerifier( GNet::ExceptionSink es , bool strict ,
+GVerifiers::UserVerifier::UserVerifier( GNet::ExceptionSink es ,
 	const GSmtp::Verifier::Config & config , const std::string & spec ) :
 		m_command(Command::RCPT) ,
-		m_strict(strict) ,
-		m_force_remote(false) ,
 		m_config(config) ,
 		m_timer(*this,&UserVerifier::onTimeout,es) ,
 		m_result(GSmtp::VerifierStatus::invalid({})) ,
-		m_range(G::Range::range(1000,32767)) ,
-		m_lowercase(false)
+		m_range(G::Range::range(1000,32767))
 {
 	G::string_view spec_view( spec ) ;
 	for( G::StringTokenView t( spec_view , ";" , 1U ) ; t ; ++t )
 	{
-		if( t() == "lc"_sv || t() == "lowercase"_sv ) m_lowercase = true ;
-		if( t() == "r"_sv || t() == "remote"_sv ) m_force_remote = true ;
-		if( !t().empty() && G::Str::isNumeric(t().substr(0U,1U)) ) m_range = G::Range::range( t() ) ;
+		if( !t().empty() && G::Str::isNumeric(t().substr(0U,1U)) )
+			m_range = G::Range::range( t() ) ;
+		else if( ( t().size() <= 3U && t().find('l') != std::string::npos ) || t() == "lowercase"_sv )
+			m_config_lc = true ;
+		else if( ( t().size() <= 3U && t().find('r') != std::string::npos ) || t() == "remote"_sv )
+			m_config_remote = true ;
+		else if( ( t().size() <= 3U && t().find('c') != std::string::npos ) || t() == "check"_sv )
+			m_config_check = true ;
 	}
 	G_DEBUG( "GVerifiers::UserVerifier: uid range " << G::Range::str(m_range) ) ;
 }
@@ -63,13 +65,13 @@ void GVerifiers::UserVerifier::verify( Command command , const std::string & rcp
 		m_result = GSmtp::VerifierStatus::local( rcpt_to_parameter , {} , "postmaster" ) ;
 	else if( lookup(user,domain,&reason,&mailbox) )
 		m_result =
-			m_force_remote ?
+			m_config_remote ?
 				GSmtp::VerifierStatus::remote( rcpt_to_parameter ) :
-				GSmtp::VerifierStatus::local( rcpt_to_parameter , {} , m_lowercase?G::Str::lower(mailbox):mailbox ) ;
-	else if( m_strict )
-		m_result = GSmtp::VerifierStatus::invalid( rcpt_to_parameter , false , "rejected" , reason ) ;
-	else
+				GSmtp::VerifierStatus::local( rcpt_to_parameter , {} , m_config_lc?G::Str::lower(mailbox):mailbox ) ;
+	else if( m_config_check )
 		m_result = GSmtp::VerifierStatus::remote( rcpt_to_parameter ) ;
+	else
+		m_result = GSmtp::VerifierStatus::invalid( rcpt_to_parameter , false , "rejected" , reason ) ;
 
 	m_timer.startTimer( 0U ) ;
 }

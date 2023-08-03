@@ -28,7 +28,7 @@
 
 namespace GStore
 {
-	namespace EnvelopeImp
+	namespace EnvelopeImp /// An implementation namespace for GStore::Envelope.
 	{
 		std::string folded( const std::string & ) ;
 		std::string xnormalise( const std::string & ) ;
@@ -43,6 +43,7 @@ namespace GStore
 		void readFromAuthOut( std::istream & , Envelope & ) ;
 		void readForwardTo( std::istream & , Envelope & ) ;
 		void readForwardToAddress( std::istream & , Envelope & ) ;
+		void readClientAccountSelector( std::istream & , Envelope & ) ;
 		void readToList( std::istream & , Envelope & ) ;
 		void readAuthentication( std::istream & , Envelope & ) ;
 		void readClientSocketAddress( std::istream & , Envelope & ) ;
@@ -88,6 +89,7 @@ std::size_t GStore::Envelope::write( std::ostream & stream , const GStore::Envel
 	stream << x << "MailFromAuthOut: " << imp::xnormalise(e.from_auth_out) << crlf ;
 	stream << x << "ForwardTo: " << imp::xnormalise(e.forward_to) << crlf ;
 	stream << x << "ForwardToAddress: " << e.forward_to_address << crlf ;
+	stream << x << "ClientAccountSelector: " << e.client_account_selector << crlf ;
 	stream << x << "Utf8MailboxNames: " << (e.utf8_mailboxes?"1":"0") << crlf ;
 	stream << x << "End: 1" << crlf ;
 	stream.flush() ;
@@ -125,7 +127,8 @@ void GStore::Envelope::read( std::istream & stream , GStore::Envelope & e )
 		imp::readFromAuthOut( stream , e ) ;
 		imp::readForwardTo( stream , e ) ; // 2.4
 		imp::readForwardToAddress( stream , e ) ; // 2.4
-		imp::readUtf8Mailboxes( stream , e ) ; // 2.5
+		imp::readClientAccountSelector( stream , e ) ; // 2.5
+		imp::readUtf8Mailboxes( stream , e ) ; // 2.5rc
 	}
 	else if( format == GStore::FileStore::format(-1) )
 	{
@@ -134,14 +137,23 @@ void GStore::Envelope::read( std::istream & stream , GStore::Envelope & e )
 		imp::readFromAuthOut( stream , e ) ;
 		imp::readForwardTo( stream , e ) ; // 2.4
 		imp::readForwardToAddress( stream , e ) ; // 2.4
+		imp::readUtf8Mailboxes( stream , e ) ; // 2.5rc
 	}
 	else if( format == GStore::FileStore::format(-2) )
 	{
 		imp::readClientCertificate( stream , e ) ;
 		imp::readFromAuthIn( stream , e ) ;
 		imp::readFromAuthOut( stream , e ) ;
+		imp::readForwardTo( stream , e ) ; // 2.4
+		imp::readForwardToAddress( stream , e ) ; // 2.4
 	}
 	else if( format == GStore::FileStore::format(-3) )
+	{
+		imp::readClientCertificate( stream , e ) ;
+		imp::readFromAuthIn( stream , e ) ;
+		imp::readFromAuthOut( stream , e ) ;
+	}
+	else if( format == GStore::FileStore::format(-4) )
 	{
 		imp::readClientSocketName( stream , e ) ;
 		imp::readClientCertificate( stream , e ) ;
@@ -270,6 +282,11 @@ void GStore::EnvelopeImp::readToList( std::istream & stream , Envelope & e )
 void GStore::EnvelopeImp::readAuthentication( std::istream & stream , Envelope & e )
 {
 	e.authentication = G::Xtext::decode( readValue(stream,"Authentication") ) ;
+}
+
+void GStore::EnvelopeImp::readClientAccountSelector( std::istream & stream , Envelope & e )
+{
+	e.client_account_selector = readValue( stream , "ClientAccountSelector" ) ;
 }
 
 void GStore::EnvelopeImp::readClientSocketAddress( std::istream & stream , Envelope & e )

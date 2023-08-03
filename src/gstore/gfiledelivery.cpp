@@ -99,14 +99,7 @@ void GStore::FileDelivery::deliverTo( FileStore & /*store*/ , G::string_view pre
 	const G::Path & dst_dir , const G::Path & envelope_path , const G::Path & content_path ,
 	bool hardlink , bool pop_by_name )
 {
-	if( pop_by_name ) // envelope only
-	{
-		std::string new_filename = content_path.withoutExtension().basename() ;
-		G::Path new_envelope_path = dst_dir + (new_filename+".envelope") ;
-		if( !FileOp::copy( envelope_path , new_envelope_path ) )
-			throw EnvelopeWriteError( prefix , new_envelope_path.str() , G::Process::strerror(FileOp::errno_()) ) ;
-	}
-	else if( FileOp::isdir( dst_dir+"tmp" , dst_dir+"cur" , dst_dir+"new" ) )
+	if( FileOp::isdir( dst_dir+"tmp" , dst_dir+"cur" , dst_dir+"new" ) )
 	{
 		// copy content to maildir's "new" sub-directory via "tmp"
 		static int seq {} ;
@@ -119,6 +112,14 @@ void GStore::FileDelivery::deliverTo( FileStore & /*store*/ , G::string_view pre
 		if( !FileOp::rename( tmp_content_path , new_content_path ) )
 			throw MaildirMoveError( prefix , new_content_path.str() , G::Process::strerror(FileOp::errno_()) ) ;
 		G_DEBUG( "GStore::FileDelivery::deliverTo: delivery: delivered " << id(envelope_path) << " as maildir " << ss.str() ) ;
+	}
+	else if( pop_by_name )
+	{
+		// envelope only
+		std::string new_filename = content_path.withoutExtension().basename() ;
+		G::Path new_envelope_path = dst_dir + (new_filename+".envelope") ;
+		if( !FileOp::copy( envelope_path , new_envelope_path ) )
+			throw EnvelopeWriteError( prefix , new_envelope_path.str() , G::Process::strerror(FileOp::errno_()) ) ;
 	}
 	else
 	{

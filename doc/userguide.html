@@ -135,7 +135,7 @@
     </p>
 
       <div class="div-pre">
-       <pre>emailrelay --as-server -v -r --domain=example.com --address-verifier=strict:
+       <pre>emailrelay --as-server -v -r --domain=example.com --address-verifier=account:
 </pre>
       </div><!-- div-pre -->
     <p>
@@ -253,11 +253,11 @@
     <p>
      A good first step in limiting abuse is to use an address verifier that checks
      that e-mails are correctly addressed to you. You can use the built-in address
-     verifier called <em>strict:</em> to do this or you can write your own verifier script.
+     verifier called <em>account:</em> to do this or you can write your own verifier script.
     </p>
 
       <div class="div-pre">
-       <pre>emailrelay --as-server --remote-clients --address-verifier=strict: --domain=mydomain.com
+       <pre>emailrelay --as-server --remote-clients --address-verifier=account: --domain=mydomain.com
 </pre>
       </div><!-- div-pre -->
     <p>
@@ -562,7 +562,7 @@ client-auth C:/ProgramData/E-MailRelay/emailrelay.auth</pre>
 --in-spool-dir @app/in
 --in-port 25
 --in-domain example.com
---in-address-verifier strict:pm
+--in-address-verifier account:
 --in-dnsbl 1.1.1.1:53,500,1,dnsbl.example.com
 --in-filter spam-edit:127.0.0.1:783
 --in-filter deliver:
@@ -578,7 +578,7 @@ client-auth C:/ProgramData/E-MailRelay/emailrelay.auth</pre>
 --out-forward-on-disconnect
 --out-forward-to-some
 --out-poll 60
---out-address-verifier local:
+--out-address-verifier account:check
 --out-delivery-dir @app/in
 --out-filter deliver:
 --out-filter split:
@@ -602,7 +602,7 @@ client-auth C:/ProgramData/E-MailRelay/emailrelay.auth</pre>
 
     <p>
      The <em>in</em> server is an internet-facing e-mail server with delivery to individual
-     mailboxes that can be accessed via POP. The <em>strict:</em> verifier checks the
+     mailboxes that can be accessed via POP. The <em>account:</em> verifier checks the
      addressees in the incoming e-mails against the list of accounts on the local
      machine and against the given domain name; the IP address of the network
      connection is checked against a DNSBL database; SpamAssassin is used to

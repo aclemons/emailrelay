@@ -91,7 +91,7 @@ public:
 
 private: // overrides
 	bool valid() const override ;
-	Secret clientSecret( G::string_view type ) const override ;
+	Secret clientSecret( G::string_view type , G::string_view selector ) const override ;
 
 private:
 	bool m_id_pwd ; // first

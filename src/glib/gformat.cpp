@@ -54,7 +54,7 @@ G::format & G::format::parse( const char * fmt )
 }
 #endif
 
-bool G::format::isdigit( char c )
+bool G::format::isdigit( char c ) noexcept
 {
 	// std::isdigit( static_cast<unsigned char>(c) )
 	return c >= '0' && c <= '9' ;

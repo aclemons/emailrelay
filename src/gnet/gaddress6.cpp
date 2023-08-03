@@ -36,7 +36,7 @@
 
 namespace GNet
 {
-	namespace Address6Imp
+	namespace Address6Imp /// An implementation namespace for GNet::Address6.
 	{
 		const char * port_separators = ":." ;
 		char port_separator = '.' ;

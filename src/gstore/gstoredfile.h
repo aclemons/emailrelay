@@ -45,7 +45,8 @@ namespace GStore
 /// for separate envelope and content files in a spool directory.
 /// The GStore::MessageStore::Iterator interface is normally used to
 /// retrieve StoredFile instances.
-/// \see GStore::FileStore, GStore::MessageStore::Iterator
+///
+/// \see GStore::FileStore, GStore::MessageStore::Iterator, GPop::Store
 ///
 class GStore::StoredFile : public StoredMessage
 {
@@ -95,6 +96,7 @@ private: // overrides
 	std::string fromAuthOut() const override ; // GStore::StoredMessage
 	std::string forwardTo() const override ; // GStore::StoredMessage
 	std::string forwardToAddress() const override ; // GStore::StoredMessage
+	std::string clientAccountSelector() const override ; // GStore::StoredMessage
 	bool utf8Mailboxes() const override ; // GStore::StoredMessage
 	void close() override ; // GStore::StoredMessage
 	std::string reopen() override ; // GStore::StoredMessage

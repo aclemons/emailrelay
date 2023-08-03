@@ -1699,12 +1699,10 @@ StartupPage::StartupPage( Gui::Dialog & dialog , const G::MapFile & config , con
 		Gui::Page(dialog,name,next_1,next_2) ,
 		m_is_mac(is_mac)
 {
-	m_on_boot_checkbox = new QCheckBox( tr("At system startup") ) ;
+	m_on_boot_checkbox = new QCheckBox( tr("At system startup, running as a service") ) ;
 	m_at_login_checkbox = new QCheckBox( tr("When logging in") ) ;
 	m_add_menu_item_checkbox = new QCheckBox( tr("Add to start menu") ) ;
 	m_add_desktop_item_checkbox = new QCheckBox( tr("Add to desktop") ) ;
-
-	tip( m_on_boot_checkbox , tr("System service") ) ;
 
 	auto * auto_layout = new QVBoxLayout ;
 	auto * manual_layout = new QVBoxLayout ;

@@ -201,7 +201,7 @@ public:
 		///< To be called when the transport protocol successfully
 		///< goes into secure mode. See ServerSender::protocolSend().
 
-	G::Slot::Signal<> & changeSignal() ;
+	G::Slot::Signal<> & changeSignal() noexcept ;
 		///< A signal that is emitted at the end of apply() or whenever
 		///< the protocol state might have changed by some other
 		///< mechanism (eg. GSmtp::Verifier).

@@ -35,19 +35,18 @@ GFilters::SplitFilter::SplitFilter( GNet::ExceptionSink es , GStore::FileStore &
 	Filter::Type filter_type , const Filter::Config & filter_config , const std::string & spec ) :
 		SimpleFilterBase(es,filter_type,"split:") ,
 		m_store(store) ,
-		m_filter_type(filter_type) ,
 		m_filter_config(filter_config)
 {
 	G::string_view spec_sv = spec ;
 	for( G::StringTokenView t(spec_sv,";",1U) ; t ; ++t )
 	{
-		if( t() == "raw"_sv )
-			m_raw = true ;
+		if( t() == "raw"_sv ) m_raw = true ; // case-sensitive domain names
+		if( G::Str::isNumeric(t()) ) m_port = G::sv_to_string(t()) ;
 	}
 }
 
 GSmtp::Filter::Result GFilters::SplitFilter::run( const GStore::MessageId & message_id ,
-	bool & rescan_out , GStore::FileStore::State e_state )
+	bool & , GStore::FileStore::State e_state )
 {
 	G::Path content_path = m_store.contentPath( message_id ) ;
 	G::Path envelope_path = m_store.envelopePath( message_id , e_state ) ;
@@ -64,7 +63,7 @@ GSmtp::Filter::Result GFilters::SplitFilter::run( const GStore::MessageId & mess
 	domains.erase( std::unique(domains.begin(),domains.end()) , domains.end() ) ;
 	if( domains.empty() )
 	{
-		G_LOG( "GFilters::SplitFilter::start: split: no remote domains: nothing to do" ) ;
+		G_LOG( "GFilters::SplitFilter::start: " << prefix() << ": no remote domains: nothing to do" ) ;
 		return Result::ok ;
 	}
 
@@ -95,13 +94,13 @@ GSmtp::Filter::Result GFilters::SplitFilter::run( const GStore::MessageId & mess
 		G::Path new_content_path = m_store.contentPath( new_id ) ;
 		G::Path new_envelope_path = m_store.envelopePath( new_id ) ;
 
-		G_LOG( "GFilters::SplitFilter::start: split: creating message "
-			<< new_id.str() << ": forward-to [" << domain << "]" ) ;
+		G_LOG( "GFilters::SplitFilter::start: " << prefix() << " creating "
+			<< "[" << new_id.str() << "]: forward-to=[" << domain << "]" ) ;
 
 		GStore::Envelope new_envelope = envelope ;
 		new_envelope.to_local.clear() ;
 		new_envelope.to_remote = recipients ;
-		new_envelope.forward_to = G::Str::tail( recipients.at(0) , "@" ) ; // case-preserving -- moot
+		new_envelope.forward_to = forwardTo( recipients.at(0U) ) ;
 
 		if( !FileOp::hardlink( content_path , new_content_path ) )
 			throw G::Exception( "split: cannot copy content file" ,
@@ -124,20 +123,18 @@ GSmtp::Filter::Result GFilters::SplitFilter::run( const GStore::MessageId & mess
 	}
 
 	// update the original message
-	G_LOG( "GFilters::SplitFilter::start: split: updating message "
-		<< message_id.str() << ": forward-to [" << domains[0] << "]" ) ;
+	G_LOG( "GFilters::SplitFilter::start: " << prefix() << " updating "
+		<< "[" << message_id.str() << "]: forward-to=[" << domains[0] << "]" ) ;
 	G_ASSERT( !domains.empty() ) ;
 	G::StringArray recipients = matching( envelope.to_remote , domains.at(0) ) ;
 	G_ASSERT( !recipients.empty() ) ;
-	std::string forward_to = G::Str::tail( recipients.at(0) , "@" ) ; // case-preserving
+	std::string forward_to = forwardTo( recipients.at(0U) ) ;
 	GStore::StoredFile msg( m_store , message_id , GStore::StoredFile::State::New ) ;
 	msg.editEnvelope( [forward_to,&recipients](GStore::Envelope &env_){
 			env_.to_remote = recipients ;
 			env_.forward_to = forward_to ;
 		} , &extra_headers ) ;
 
-	if( m_filter_type == Filter::Type::server && domains.size() >= 2U )
-		rescan_out = true ;
 	return Result::ok ;
 }
 
@@ -161,3 +158,8 @@ void GFilters::SplitFilter::normalise( std::string & domain , bool raw )
 		G::Str::toLower( domain ) ;
 }
 
+std::string GFilters::SplitFilter::forwardTo( const std::string & recipient ) const
+{
+	// user@example.com -> example.com:25
+	return G::Str::tail(recipient,"@").append(m_port.empty()?0U:1U,':').append(m_port) ;
+}

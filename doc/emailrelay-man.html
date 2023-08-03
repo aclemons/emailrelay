@@ -167,7 +167,7 @@ Allows incoming connections from addresses that are not local. The default behav
 <DT><B>--address-verifier </B><I>&lt;program&gt;</I>
 
 <DD>
-Runs the specified external program to verify a message recipient's e-mail address. A network verifier can be specified as <I>net:&lt;tcp-address&gt;</I>. The <I>strict:</I> and <I>local:</I> built-in address verifiers can be used to check recipient addresses against the list of local system account names.
+Runs the specified external program to verify a message recipient's e-mail address. A network verifier can be specified as <I>net:&lt;tcp-address&gt;</I>. The <I>account:</I> built-in address verifier can be used to check recipient addresses against the list of local system account names.
 <DT><B>-A, --anonymous, --anonymous=</B><I>&lt;scope&gt;</I>
 
 <DD>
@@ -220,7 +220,7 @@ Enables the POP server, listening by default on port 110, providing access to sp
 <DT><B>-J, --pop-by-name</B>
 
 <DD>
-Modifies the POP server's spool directory to be the sub-directory with the same name as the user-id used for POP authentication. This  allows POP clients to see only their own messages after they have  been moved into separate sub-directories typically by the built-in  <I>deliver:</I> or <I>copy:</I> filters. Content files can remain in the  main spool directory to save disk space; they will be deleted by
+Modifies the POP server's spool directory to be the sub-directory with the same name as the user-id used for POP authentication. This  allows POP clients to see only their own messages after they have  been moved into separate sub-directories typically by the built-in  <I>deliver:</I> or <I>copy:</I> filters. Content files can remain in the  main spool directory to save disk space; they will be deleted by  the POP server when it deletes the last matching envelope file.
 <DT><B>-G, --pop-no-delete</B>
 
 <DD>

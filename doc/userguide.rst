@@ -102,7 +102,7 @@ a first line of defense against spammers:
 
 ::
 
-    emailrelay --as-server -v -r --domain=example.com --address-verifier=strict:
+    emailrelay --as-server -v -r --domain=example.com --address-verifier=account:
 
 Then enable POP access to the incoming e-mails with *--pop*, *--pop-port* and
 \ *--pop-auth*\ :
@@ -193,11 +193,11 @@ scope.
 
 A good first step in limiting abuse is to use an address verifier that checks
 that e-mails are correctly addressed to you. You can use the built-in address
-verifier called *strict:* to do this or you can write your own verifier script.
+verifier called *account:* to do this or you can write your own verifier script.
 
 ::
 
-    emailrelay --as-server --remote-clients --address-verifier=strict: --domain=mydomain.com
+    emailrelay --as-server --remote-clients --address-verifier=account: --domain=mydomain.com
 
 Refer to the *Address verifiers* section in the E-MailRelay reference document
 for more details.
@@ -440,7 +440,7 @@ command-line, split onto multiple lines for readability:
     --in-spool-dir @app/in
     --in-port 25
     --in-domain example.com
-    --in-address-verifier strict:pm
+    --in-address-verifier account:
     --in-dnsbl 1.1.1.1:53,500,1,dnsbl.example.com
     --in-filter spam-edit:127.0.0.1:783
     --in-filter deliver:
@@ -456,7 +456,7 @@ command-line, split onto multiple lines for readability:
     --out-forward-on-disconnect
     --out-forward-to-some
     --out-poll 60
-    --out-address-verifier local:
+    --out-address-verifier account:check
     --out-delivery-dir @app/in
     --out-filter deliver:
     --out-filter split:
@@ -476,7 +476,7 @@ This is a three-in-one configuration so there are effectively three E-MailRelay
 servers running in one process, named *in*, *out* and *other*.
 
 The *in* server is an internet-facing e-mail server with delivery to individual
-mailboxes that can be accessed via POP. The *strict:* verifier checks the
+mailboxes that can be accessed via POP. The *account:* verifier checks the
 addressees in the incoming e-mails against the list of accounts on the local
 machine and against the given domain name; the IP address of the network
 connection is checked against a DNSBL database; SpamAssassin is used to

@@ -85,6 +85,7 @@ sub new
 
 	return bless {
 		m_exe => $exe ,
+		m_interface => "127.0.0.1" ,
 		m_smtp_port => $smtp_port ,
 		m_pop_port => $pop_port ,
 		m_admin_port => $admin_port ,
@@ -118,6 +119,7 @@ sub new
 
 sub exe { return shift->{m_exe} }
 sub set_exe { $_[0]->{m_exe} = $_[1] }
+sub interface { return shift->{m_interface} }
 sub smtpPort { return shift->{m_smtp_port} }
 sub adminPort { return shift->{m_admin_port} }
 sub scannerAddress { return shift->{m_scanner_address} }
@@ -139,6 +141,7 @@ sub stderr { return shift->{m_stderr} }
 sub pidFile { return shift->{m_pidfile} }
 sub pid { return shift->{m_pid} }
 sub forwardTo { return shift->{m_forward_to} }
+sub set_forwardTo{ $_[0]->{m_forward_to} = $_[1] }
 sub set_forwardToPort { $_[0]->{m_forward_to} = $System::localhost . ":" . $_[1] }
 sub spoolDir { return shift->{m_spool_dir} }
 sub set_spoolDir { $_[0]->{m_spool_dir} = $_[1] }
@@ -182,6 +185,7 @@ sub _switches
 		( exists($sw{AsServer}) ? "--as-server " : "" ) .
 		( exists($sw{Log}) ? "--log --log-time --log-address --no-syslog " : "" ) .
 		( exists($sw{LogFile}) ? "--log-file __LOG_FILE__ " : "" ) .
+		( exists($sw{Interface}) ? "--interface __INTERFACE__ " : "" ) .
 		( exists($sw{Port}) ? "--port __SMTP_PORT__ " : "" ) .
 		( exists($sw{Admin}) ? "--admin __ADMIN_PORT__ " : "" ) .
 		( exists($sw{Pop}) ? "--pop " : "" ) .
@@ -192,7 +196,7 @@ sub _switches
 		( exists($sw{Syslog}) ? "--syslog " : "" ) .
 		( exists($sw{AdminTerminate}) ? "--admin-terminate " : "" ) .
 		( exists($sw{Help}) ? "--help " : "" ) .
-		( exists($sw{Verbose}) ? "--verbose -v " : "" ) .
+		( exists($sw{Verbose}) ? "--verbose " : "" ) .
 		( exists($sw{Forward}) ? "--forward " : "" ) .
 		( exists($sw{ForwardTo}) ? "--forward-to __FORWARD_TO__ " : "" ) .
 		( exists($sw{ForwardToSome}) ? "--forward-to-some " : "" ) .
@@ -213,7 +217,7 @@ sub _switches
 		( exists($sw{DontServe}) ? "--dont-serve " : "" ) .
 		( exists($sw{ClientAuth}) ? "--client-auth __CLIENT_SECRETS__ " : "" ) .
 		( exists($sw{MaxSize}) ? "--size __MAX_SIZE__ " : "" ) .
-		( exists($sw{ServerSecrets}) ? "--server-auth __SERVER_SECRETS__ " : "" ) .
+		( exists($sw{ServerAuth}) ? "--server-auth __SERVER_SECRETS__ " : "" ) .
 		( exists($sw{Domain}) ? "--domain test.localnet " : "" ) .
 		( exists($sw{ServerTls}) ? "--server-tls " : "" ) .
 		( exists($sw{ServerTlsRequired}) ? "--server-tls-required " : "" ) .
@@ -234,6 +238,7 @@ sub _set_all
 	# Substitutes the value markers like __LOG_FILE__ with values from methods like $this->log().
 	my ( $this , $command_tail ) = @_ ;
 
+	_set( \$command_tail , "__INTERFACE__" , $this->interface() ) ;
 	_set( \$command_tail , "__SMTP_PORT__" , $this->smtpPort() ) ;
 	_set( \$command_tail , "__ADMIN_PORT__" , $this->adminPort() ) ;
 	_set( \$command_tail , "__POP_PORT__" , $this->popPort() ) ;

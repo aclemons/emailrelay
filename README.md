@@ -72,7 +72,7 @@ Use `--remote-clients` (`-r`) to allow connections from outside the local
 network, define your domain name with `--domain` and use an address verifier as
 a first line of defense against spammers:
 
-        emailrelay --as-server -v -r --domain=example.com --address-verifier=strict:
+        emailrelay --as-server -v -r --domain=example.com --address-verifier=account:
 
 Then enable POP access to the incoming e-mails with `--pop`, `--pop-port` and
 `--pop-auth`:
@@ -142,6 +142,10 @@ The following documentation is provided:
 Source code documentation will be generated when building from source if
 `doxygen` is available.
 
+Feedback
+--------
+To give feedback, including reviews, bug reports and feature requests, please
+use the SourceForge project website at https://sourceforge.net/p/emailrelay
 
 [DNSBL]: https://en.wikipedia.org/wiki/DNSBL
 [POP]: https://en.wikipedia.org/wiki/Post_Office_Protocol

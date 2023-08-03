@@ -276,6 +276,9 @@
 /* Define true for a windows build */
 #undef GCONFIG_WINDOWS
 
+/* Define to enable debug messages at compile-time */
+#undef G_WITH_DEBUG
+
 /* define if the compiler supports basic C++11 syntax */
 #undef HAVE_CXX11
 
@@ -335,6 +338,3 @@
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
-
-/* Define to enable debug messages at compile-time */
-#undef _DEBUG

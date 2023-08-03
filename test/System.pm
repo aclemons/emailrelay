@@ -238,6 +238,7 @@ sub commandline
 			( $args{background} ? "start /D. " : "" ) .
 			$command .
 			( $args{stdout} ? " >$args{stdout} " : "" ) .
+			( $args{stderr} ? "2>$stderr " : "" ) .
 			"\"" ;
 	}
 }
@@ -282,10 +283,20 @@ sub tempfile
 
 sub createFile
 {
-	# Creates a file, optionally containing one line of text.
+	# Creates a file, optionally containing one or more lines of text.
 	my ( $path , $line ) = @_ ;
 	my $fh = new FileHandle( $path , "w" ) or die "cannot create [$path]" ;
-	if( defined($line) ) { print $fh $line , unix() ? "\n" : "\r\n" }
+	if( defined($line) && ref($line) )
+	{
+		for my $s ( @{$line} )
+		{
+			print $fh $s , unix() ? "\n" : "\r\n"
+		}
+	}
+	elsif( defined($line) )
+	{
+		print $fh $line , unix() ? "\n" : "\r\n"
+	}
 	$fh->close() or die "cannot write to [$path]" ;
 }
 
@@ -371,15 +382,15 @@ sub waitpid
 	} , "process [$pid] to terminate" ) ;
 }
 
-sub createSmallMessageFile
+sub createSmallMessageContentFile
 {
-	# Creates a small message file and returns its path.
-	return _createMessageFile( tempfile("message") , 10 ) ;
+	# Creates a small message content file and returns its path.
+	return _createMessageContent( tempfile("message") , 10 ) ;
 }
 
-sub _createMessageFile
+sub _createMessageContent
 {
-	# Creates a message file containing 'n' lines of text.
+	# Creates a message content file containing 'n' lines of text.
 	my ( $path , $n ) = @_ ;
 	$n = defined($n) ? $n : 10 ;
 	my $fh = new FileHandle( $path , "w" ) or die ;
@@ -508,13 +519,13 @@ sub submitMessage
     # Submits a message of 'n' lines using the "emailrelay-submit" utility.
 	my ( $spool_dir , $n , @to ) = @_ ;
 	push @to , "me\@there.localnet" if( scalar(@to) == 0 ) ;
-	my $path = _createMessageFile( tempfile("message") , $n ) ;
+	my $content_path = _createMessageContent( tempfile("message") , $n ) ;
 	my $cmd = sanepath(exe($bin_dir,"emailrelay-submit")) . " --from me\@here.localnet " .
 		"--spool-dir $spool_dir " . join(" ",@to) ;
 	log_( "submit: [$cmd]" ) ;
-	my $rc = system( "$cmd < $path" ) ;
+	my $rc = system( "$cmd < $content_path" ) ;
 	Check::that( $rc == 0 , "failed to submit" ) ;
-	System::unlink( $path ) ;
+	System::unlink( $content_path ) ;
 }
 
 {
@@ -558,6 +569,47 @@ sub submitMessages
 	{
 		submitMessage( $spool_dir , $m ) ;
 	}
+}
+
+sub submitMessageSequence
+{
+	# Submits 'n' messages of 'm' lines having sequential filenames.
+	# Uses the "emailrelay-submit" utility to create the template message
+	# of 'm' lines and then copies it 'n' times and deletes the original.
+	# Filenames are like "emailrelay.001.(content|envelope)". The spool
+	# directory must be empty to start with.
+	my ( $spool_dir , $n , $m , @to ) = @_ ;
+	submitMessage( $spool_dir , $m , @to ) ;
+	my ( $content ) = System::glob_( $spool_dir."/*.content" ) ;
+	my ( $envelope ) = System::glob_( $spool_dir."/*.envelope" ) ;
+	for my $i ( 1 .. $n )
+	{
+		my $x = sprintf( "%03d" , $i ) ;
+		File::Copy::copy( $content , $spool_dir."/emailrelay.$x.content" ) or die ;
+		File::Copy::copy( $envelope , $spool_dir."/emailrelay.$x.envelope" ) or die ;
+	}
+	unlink( $content ) or die ;
+	unlink( $envelope ) or die ;
+}
+
+sub editEnvelope
+{
+	# Sets one field of an envelope file.
+	my ( $path , $key , $value ) = @_ ;
+	my $fh_in = new FileHandle( $path ) or die "cannot edit envelope [$path]" ;
+	my $fh_out = new FileHandle( "$path.tmp" , "w" ) or die ;
+	while(<$fh_in>)
+	{
+		( my $line = $_ ) =~ s/\r?\n$// ;
+		if( $line =~ m/^X-MailRelay-[^:]*$key:/ )
+		{
+			$line =~ s/: .*/: $value/ ;
+		}
+		print $fh_out $line , "\r\n" ;
+	}
+	$fh_in->close() ;
+	$fh_out->close() or die ;
+	rename( "$path.tmp" , $path ) or die ;
 }
 
 sub _pstatus
@@ -813,6 +865,31 @@ sub nextPort
 	$fh->print( "$port\n" ) or die ;
 	$fh->close() or die ;
 	return $port ;
+}
+
+sub edit
+{
+	# Edits one or more files by applying a text substitution line by line.
+	my ( $glob , $re_from , $to ) = @_ ;
+	for my $path ( glob_($glob) )
+	{
+		my $tmp = $path . "." . time() . ".tmp" ;
+		my $fh_in = new FileHandle( $path , "r" ) or die "cannot open $path" ;
+		my $fh_out = new FileHandle( $tmp , "w" ) or die "cannot open $tmp" ;
+		while(<$fh_in>)
+		{
+			my $line = $_ ;
+			my $nl = ( $line =~ m/\n$/ ) ? "\n" : "" ;
+			chop( $line ) if $nl ;
+			my $cr = ( $line =~ m/\r$/ ) ? "\r" : "" ;
+			chop( $line ) if $cr ;
+			$line =~ s/$re_from/$to/ ;
+			print $fh_out $line , $cr , $nl ;
+		}
+		$fh_in->close() ;
+		$fh_out->close() or die ;
+		rename( $tmp , $path ) or die ;
+	}
 }
 
 1 ;

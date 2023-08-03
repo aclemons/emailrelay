@@ -21,9 +21,5 @@
 #include "gdef.h"
 #include "gstoredmessage.h"
 
-GStore::StoredMessageStub::StoredMessageStub()
-= default;
-
-GStore::StoredMessageStub::~StoredMessageStub()
-= default;
+// empty
 

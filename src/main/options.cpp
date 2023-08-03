@@ -751,8 +751,8 @@ G::Options Main::Options::spec( bool is_windows )
 				//example: C:/ProgramData/E-MailRelay/verifier.js
 				// Runs the specified external program to verify a message recipient's e-mail
 				// address. A network verifier can be specified as "net:<tcp-address>". The
-				// "strict:" and "local:" built-in address verifiers can be used to check
-				// recipient addresses against the list of local system account names.
+				// "account:" built-in address verifier can be used to check recipient
+				// addresses against the list of local system account names.
 
 		G::Options::add( opt , 'Y' , "client-filter" ,
 			tx("specifies an external program to process messages when they are forwarded") , "" ,
@@ -836,6 +836,7 @@ G::Options Main::Options::spec( bool is_windows )
 				// been moved into separate sub-directories typically by the built-in
 				// "deliver:" or "copy:" filters. Content files can remain in the
 				// main spool directory to save disk space; they will be deleted by
+				// the POP server when it deletes the last matching envelope file.
 
 		G::Options::add( opt , 'M' , "size" ,
 			tx("limits the size of submitted messages") , "" ,

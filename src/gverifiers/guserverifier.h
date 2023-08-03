@@ -43,20 +43,19 @@ namespace GVerifiers
 /// via the 'spec' string. This has a sensible default that excludes
 /// system accounts. The domain name match is case insensitive.
 ///
-/// In local mode the matching addresses are returned as valid local
-/// mailboxes and non-matching addresses are returned as valid remote
-/// addresses. The returned mailbox names are the account names as read
-/// from the password database, optionally with seven-bit uppercase
-/// letters converted to lowercase.
+/// By default the matching addresses are returned as valid local
+/// mailboxes and non-matching addresses are rejected. With "remote"
+/// the matching addresses are returned as remote. With "check" the
+/// non-matching addresses are returned as valid and remote.
 ///
-/// If not in local mode then the matching addresses are returned as
-/// valid remote addresses and non-matching addresses are returned as
-/// invalid.
+/// The returned mailbox names are the account names as read from the
+/// password database, optionally with seven-bit uppercase letters
+/// converted to lowercase.
 ///
 class GVerifiers::UserVerifier : public GSmtp::Verifier
 {
 public:
-	UserVerifier( GNet::ExceptionSink es , bool strict ,
+	UserVerifier( GNet::ExceptionSink es ,
 		const GSmtp::Verifier::Config & config , const std::string & spec ) ;
 			///< Constructor. The spec string is semi-colon separated list
 			///< of values including a uid range and "lc"/"lowercase"
@@ -75,14 +74,14 @@ private:
 private:
 	using Signal = G::Slot::Signal<GSmtp::Verifier::Command,const GSmtp::VerifierStatus&> ;
 	Command m_command ;
-	bool m_strict ;
-	bool m_force_remote ;
 	GSmtp::Verifier::Config m_config ;
 	GNet::Timer<UserVerifier> m_timer ;
 	GSmtp::VerifierStatus m_result ;
 	Signal m_done_signal ;
 	std::pair<int,int> m_range ;
-	bool m_lowercase ;
+	bool m_config_lc {false} ;
+	bool m_config_check {false} ;
+	bool m_config_remote {false} ;
 } ;
 
 #endif

@@ -133,7 +133,7 @@ GAuth::SecretsFile::Contents GAuth::SecretsFile::readContents( std::istream & fi
 			G::string_view w3 = (++t)() ;
 			G::string_view w4 = (++t)() ;
 			if( t.valid() )
-				processLine( contents , line_number , w1 , w2 , w3 , w4 ) ;
+				processLine( contents , line_number , w1 , w2 , w3 , w4 , (++t)() ) ;
 			else
 				addWarning( contents , line_number , "too few fields"_sv ) ;
 		}
@@ -142,7 +142,8 @@ GAuth::SecretsFile::Contents GAuth::SecretsFile::readContents( std::istream & fi
 }
 
 void GAuth::SecretsFile::processLine( Contents & contents , unsigned int line_number ,
-	G::string_view side , G::string_view type_in , G::string_view id , G::string_view secret )
+	G::string_view side , G::string_view type_in , G::string_view id ,
+	G::string_view secret , G::string_view selector )
 {
 	G::string_view type = canonicalView( G::Str::headView( type_in , ":" , false ) ) ;
 	G::string_view type_decoration = G::Str::tailView( type_in , ":" ) ;
@@ -193,7 +194,7 @@ void GAuth::SecretsFile::processLine( Contents & contents , unsigned int line_nu
 		}
 		else if( is_client_side )
 		{
-			std::string key = clientKey( type ) ;
+			std::string key = clientKey( type , selector ) ;
 			Secret secret_obj( {id,id_encoding} , {secret,secret_encoding} , hash_function , lineContext(line_number) ) ;
 			bool inserted = contents.m_map.insert( {key,secret_obj} ).second ;
 			if( !inserted )
@@ -238,29 +239,29 @@ G::string_view GAuth::SecretsFile::canonicalView( G::string_view type )
 	return type ;
 }
 
-std::string GAuth::SecretsFile::serverKey( const std::string & type , const std::string & id_decoded )
-{
-	return std::string("server ",7U).append(G::Str::lower(type)).append(1U,' ').append(id_decoded) ;
-}
-
 std::string GAuth::SecretsFile::serverKey( G::string_view type , G::string_view id_decoded )
 {
 	return serverKey( G::sv_to_string(type) , G::sv_to_string(id_decoded) ) ;
 }
 
-std::string GAuth::SecretsFile::clientKey( G::string_view type )
+std::string GAuth::SecretsFile::serverKey( const std::string & type , const std::string & id_decoded )
 {
-	return std::string("client ",7U).append(G::Str::lower(type)) ;
+	return std::string("server ",7U).append(G::Str::lower(type)).append(1U,' ').append(id_decoded) ;
 }
 
-GAuth::Secret GAuth::SecretsFile::clientSecret( G::string_view type ) const
+std::string GAuth::SecretsFile::clientKey( G::string_view type , G::string_view selector )
+{
+	return std::string("client ",7U).append(G::Str::lower(type)).append(selector.empty()?0U:1U,' ').append(selector.data(),selector.size()) ;
+}
+
+GAuth::Secret GAuth::SecretsFile::clientSecret( G::string_view type , G::string_view selector ) const
 {
 	if( !m_valid )
 		return Secret::none() ;
 
 	reread() ;
 
-	auto p = m_contents.m_map.find( clientKey(type) ) ;
+	auto p = m_contents.m_map.find( clientKey(type,selector) ) ;
 	if( p == m_contents.m_map.end() )
 		return Secret::none() ;
 	else

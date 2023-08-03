@@ -26,6 +26,7 @@
 #include "gtime.h"
 #include "ggettext.h"
 #include "gconvert.h"
+#include "gassert.h"
 #include "run.h"
 #include "winform.h"
 #include "news.h"
@@ -145,37 +146,45 @@ bool Main::WinForm::onApply()
 	return m_allow_apply ;
 }
 
-void Main::WinForm::setStatus( const std::string & category , const std::string & s1 ,
+void Main::WinForm::setStatus( const std::string & s0 , const std::string & s1 ,
 	const std::string & s2 , const std::string & s3 )
 {
-	G_DEBUG( "Main::WinForm::setStatus: [" << category << "] [" << s1 << "] [" << s2 << "]" ) ;
+	G_ASSERT( s0 == "client" || s0 == "network" ) ;
+	G_ASSERT( ( s0 == "client" && ( s1 == "forward" || s1 == "resolving" || s1 == "connecting" || s1 == "connected" || s1 == "sending" || s1 == "sent" ) ) ||
+		( s0 == "network" && ( s1 == "in" || s1 == "out" || s1 == "listen" ) ) ) ;
+	G_DEBUG( "Main::WinForm::setStatus: [" << s0 << "] [" << s1 << "] [" << s2 << "] [" << s3 << "]" ) ;
 	G_DEBUG( "Main::WinForm::setStatus: time=[" << G::Time(G::Time::LocalTime()).hhmmss(":") << "]" ) ;
 
-	// forward {start|end <error>}
-	// client {connecting|resolving|connected|sending|sent <msg> <error>}
-	// network {in|out} {start|end}
+	// client forward {start|end <error>}
+	// client {connecting|resolving|connected|sending|sent} {<address>|<msgid>}
+	// network {in|out|listen} {start|stop}
+	// store update
 	//
-	if( category == "forward" && s1 == "start" )
+	if( s0 == "client" )
 	{
-		m_status_map["Forwarding"] = std::make_pair( timestamp() , "started" ) ;
-	}
-	else if( category == "forward" && s1 == "end" )
-	{
-		std::string reason = G::Str::printable( s2 ) ;
-		m_status_map["Forwarding"] = std::make_pair( timestamp() ,
-			reason.empty() ? std::string("finished") : reason ) ;
-	}
-	else if( category == "client" && s1 == "sending" )
-	{
-		const std::string & message_id = s2 ;
-		m_status_map["Message"] = std::make_pair( timestamp() , "sending: " + message_id ) ;
-	}
-	else if( category == "client" && s1 == "sent" )
-	{
-		const std::string & message_id = s2 ;
-		std::string reason = G::Str::printable( s3 ) ;
-		m_status_map["Message"] = std::make_pair( timestamp() ,
-			(reason.empty()?std::string("sent"):reason) + ": " + message_id ) ;
+		if( s1 == "forward" && s2 == "start" )
+		{
+			m_status_map["Forwarding"] = std::make_pair( timestamp() , "started" ) ;
+		}
+		else if( s1 == "forward" && s2 == "end" )
+		{
+			std::string reason = G::Str::printable( s3 ) ;
+			m_status_map["Forwarding"] = std::make_pair( timestamp() ,
+				reason.empty() ? std::string("finished") : reason ) ;
+		}
+		else if( s1 == "sending" )
+		{
+			const std::string & message_id = s2 ;
+			m_status_map["Message"] = std::make_pair( timestamp() ,
+				message_id + " (sending)" ) ;
+		}
+		else if( s1 == "sent" )
+		{
+			const std::string & message_id = s2 ;
+			std::string reason = G::Str::printable( s3 ) ;
+			m_status_map["Message"] = std::make_pair( timestamp() ,
+				message_id + " (" + (reason.empty()?std::string("sent"):reason) + ")" ) ;
+		}
 	}
 
 	// update the gui

@@ -182,9 +182,9 @@
 # Format: address-verifier <program>
 # Description: Runs the specified external program to verify a message
 # recipient's e-mail address. A network verifier can be specified as
-# "net:<tcp-address>". The "strict:" and "local:" built-in address verifiers
-# can be used to check recipient addresses against the list of local system
-# account names.
+# "net:<tcp-address>". The "account:" built-in address verifier can be used
+# to check recipient addresses against the list of local system account
+# names.
 #
 #address-verifier /usr/local/sbin/emailrelay-verifier.sh
 
@@ -305,7 +305,8 @@
 # authentication. This	allows POP clients to see only their own messages
 # after they have  been moved into separate sub-directories typically by the
 # built-in  "deliver:" or "copy:" filters. Content files can remain in the
-# main spool directory to save disk space; they will be deleted by
+# main spool directory to save disk space; they will be deleted by  the POP
+# server when it deletes the last matching envelope file.
 #
 #pop-by-name
 

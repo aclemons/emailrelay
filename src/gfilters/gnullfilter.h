@@ -77,6 +77,7 @@ private:
 private:
 	std::string m_id ;
 	Filter::Exit m_exit ;
+	bool m_quiet ;
 	G::TimeInterval m_timeout ;
 	GNet::Timer<NullFilter> m_timer ;
 	G::Slot::Signal<int> m_done_signal ;

@@ -28,7 +28,7 @@
 
 namespace G
 {
-	namespace StringListImp
+	namespace StringListImp /// An implementation namespace for G::StringList.
 	{
 		bool inList( StringArray::const_iterator begin , StringArray::const_iterator end ,
 			const std::string & s , bool i ) ;

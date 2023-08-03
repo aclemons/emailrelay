@@ -44,10 +44,12 @@ public:
 	virtual bool valid() const = 0 ;
 		///< Returns true if the secrets are valid.
 
-	virtual Secret clientSecret( G::string_view type ) const = 0 ;
-		///< Returns the client secret for the given type.
-		///< The type is "plain" or the CRAM hash algorithm or "oauth".
-		///< Returns an invalid secret if none.
+	virtual Secret clientSecret( G::string_view type , G::string_view selector ) const = 0 ;
+		///< Returns the client secret for the given type. The
+		///< type is "plain" or the CRAM hash algorithm or "oauth".
+		///< The optional selector is used to choose between
+		///< available client accounts. Returns an invalid secret
+		///< if none.
 } ;
 
 #endif

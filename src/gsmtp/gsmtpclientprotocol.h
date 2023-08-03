@@ -51,6 +51,7 @@ class GSmtp::ClientProtocol : private GNet::TimerBase
 public:
 	G_EXCEPTION( NotReady , tx("not ready") ) ;
 	G_EXCEPTION( TlsError , tx("tls/ssl error") ) ;
+	G_EXCEPTION( BadSelector , tx("no client authentication account") ) ;
 	G_EXCEPTION_CLASS( SmtpError , tx("smtp error") ) ;
 
 	class Sender /// An interface used by ClientProtocol to send protocol messages.
@@ -90,6 +91,7 @@ public:
 		std::size_t reply_size_limit {G::Limits<>::net_buffer} ; // sanity check
 		std::size_t bdat_chunk_size {1000000} ; // n, TPDU size N=n+7+ndigits, ndigits=(int(log10(n))+1)
 		bool crlf_only {false} ; // CR-LF line endings, not as loose as RFC-2821 2.3.7
+		bool try_reauthentication {false} ; // try a new EHLO and AUTH if the client account changes
 		Config() ;
 		Config & set_thishost_name( const std::string & ) ;
 		Config & set_response_timeout( unsigned int ) noexcept ;
@@ -105,6 +107,7 @@ public:
 		Config & set_pipelining( bool = true ) noexcept ;
 		Config & set_reply_size_limit( std::size_t ) noexcept ;
 		Config & set_crlf_only( bool = true ) noexcept ;
+		Config & set_try_reauthentication( bool = true ) noexcept ;
 	} ;
 
 	ClientProtocol( GNet::ExceptionSink , Sender & sender ,
@@ -113,16 +116,19 @@ public:
 			///< Constructor. The Sender interface is used to send protocol
 			///< messages to the peer. The references are kept.
 
-	G::Slot::Signal<int,const std::string&,const std::string&,const G::StringArray&> & doneSignal() ;
+	G::Slot::Signal<int,const std::string&,const std::string&,const G::StringArray&> & doneSignal() noexcept ;
 		///< Returns a signal that is raised once the protocol has finished
 		///< with a given message. The first signal parameter is the SMTP response
 		///< value, or 0 for an internal non-SMTP error, or -1 for filter-abandon,
 		///< or -2 for a filter-fail. The second parameter is the empty string on
 		///< success or a non-empty response string. The third parameter contains
 		///< any additional error reason text. The fourth parameter is a list
-		///< of failed addressees (see 'must_accept_all_recipients').
+		///< of rejected addressees. If 'must_accept_all_recipients' is false
+		///< and the message was successfully sent to only some of the
+		///< recipients then this is signalled as an error with a non-empty
+		///< reject list.
 
-	G::Slot::Signal<> & filterSignal() ;
+	G::Slot::Signal<> & filterSignal() noexcept ;
 		///< Returns a signal that is raised when the protocol needs
 		///< to do message filtering. The signal callee must call
 		///< filterDone() when the filter has finished.
@@ -205,6 +211,8 @@ private:
 	struct MessageState
 	{
 		std::weak_ptr<GStore::StoredMessage> ptr ;
+		std::string id ;
+		std::string selector ;
 		std::size_t content_size {0U} ;
 		std::size_t to_index {0U} ;
 		std::size_t to_accepted {0U} ;
@@ -216,8 +224,13 @@ private:
 	{
 		ServerInfo server ;
 		bool secure {false} ;
-		bool authenticated_with_server {false} ;
+		bool authenticated {false} ;
+		std::string auth_selector ;
 		std::string auth_mechanism ;
+		bool ok( const std::string & s ) const
+		{
+			return !authenticated || auth_selector == s ;
+		}
 	} ;
 	struct Protocol
 	{
@@ -228,13 +241,13 @@ private:
 
 private:
 	using BodyType = GStore::MessageStore::BodyType ;
-	std::shared_ptr<GStore::StoredMessage> message() ;
+	GStore::StoredMessage & message() ;
 	std::string checkSendable() ;
 	bool endOfContent() ;
 	bool applyEvent( const ClientReply & event ) ;
 	void raiseDoneSignal( int , const std::string & , const std::string & = {} ) ;
 	void startFiltering() ;
-	static GAuth::SaslClient::Response initialResponse( const GAuth::SaslClient & ) ;
+	static GAuth::SaslClient::Response initialResponse( const GAuth::SaslClient & , G::string_view ) ;
 	//
 	void sendEot() ;
 	void sendCommandLines( const std::string & ) ;
@@ -251,7 +264,7 @@ private:
 	//
 	bool sendContentLineImp( const std::string & , std::size_t ) ;
 	void sendChunkImp( const char * , std::size_t ) ;
-	bool sendImp( G::string_view , bool sensitive = false ) ;
+	bool sendImp( G::string_view , std::size_t sensitive_from = std::string::npos ) ;
 
 private:
 	Sender & m_sender ;
@@ -264,7 +277,8 @@ private:
 	G::Slot::Signal<int,const std::string&,const std::string&,const G::StringArray&> m_done_signal ;
 	G::Slot::Signal<> m_filter_signal ;
 	Protocol m_protocol ;
-	MessageState m_message ;
+	MessageState m_message_state ;
+	GStore::StoredMessage * m_message_p ;
 	std::vector<char> m_message_buffer ;
 	std::string m_message_line ;
 	SessionState m_session ;
@@ -284,5 +298,6 @@ inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_smtput
 inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_pipelining( bool b ) noexcept { pipelining = b ; return *this ; }
 inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_reply_size_limit( std::size_t n ) noexcept { reply_size_limit = n ; return *this ; }
 inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_crlf_only( bool b ) noexcept { crlf_only = b ; return *this ; }
+inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_try_reauthentication( bool b ) noexcept { try_reauthentication = b ; return *this ; }
 
 #endif

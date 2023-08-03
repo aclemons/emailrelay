@@ -28,6 +28,7 @@
 #include "gstoredfile.h"
 #include "gtimer.h"
 #include "gexceptionsink.h"
+#include <utility>
 
 namespace GFilters
 {
@@ -72,8 +73,12 @@ private:
 	void onTimeout() ;
 	void lookupDone( GStore::MessageId , std::string , std::string ) ;
 	GStore::FileStore::State storestate() const ;
+	std::string prefix() const ;
 	static MxLookup::Config mxconfig( const std::string & spec ) ;
 	static std::vector<GNet::Address> mxnameservers( const std::string & spec ) ;
+	static std::string parseForwardToDomain( const std::string & ) ;
+	static unsigned int parseForwardToPort( const std::string & ) ;
+	static std::pair<std::string,unsigned int> parseForwardTo( const std::string & ) ;
 
 private:
 	using FileOp = GStore::FileStore::FileOp ;

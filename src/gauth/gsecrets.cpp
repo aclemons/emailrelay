@@ -27,7 +27,7 @@
 
 namespace GAuth
 {
-	namespace SecretsImp
+	namespace SecretsImp /// An implementation namespace for GAuth::Secrets.
 	{
 		bool pam( const std::string & s )
 		{
@@ -99,7 +99,7 @@ bool GAuth::SecretsFileClient::valid() const
 	return m_id_pwd || m_file.valid() ;
 }
 
-GAuth::Secret GAuth::SecretsFileClient::clientSecret( G::string_view type ) const
+GAuth::Secret GAuth::SecretsFileClient::clientSecret( G::string_view type , G::string_view selector ) const
 {
 	if( m_id_pwd && type == "plain"_sv )
 	{
@@ -111,7 +111,7 @@ GAuth::Secret GAuth::SecretsFileClient::clientSecret( G::string_view type ) cons
 	}
 	else
 	{
-		return m_file.clientSecret( type ) ;
+		return m_file.clientSecret( type , selector ) ;
 	}
 }
 

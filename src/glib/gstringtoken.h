@@ -114,7 +114,7 @@ private:
 
 namespace G
 {
-	namespace StringTokenImp
+	namespace StringTokenImp /// An implementation namespace for G::StringToken.
 	{
 		template <typename T> inline T substr( const T & s ,
 			std::size_t pos , std::size_t len ) noexcept(std::is_same<T,string_view>::value)

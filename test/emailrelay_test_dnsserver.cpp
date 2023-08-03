@@ -21,6 +21,17 @@
 //
 // usage: emailrelay_test_dnsserver [--port <port>] [--address <ipv4-address>]
 //
+// Default mappings:
+//    MX(*zero*) -> A(smtp.*zero*) -> 0.0.0.0
+//    MX(*localhost*) -> A(smtp.*localhost*) -> 127.0.0.1
+//    MX(*one*) -> A(smtp.*one*) -> 127.0.1.1
+//    MX(*two*) -> A(smtp.*two*) -> 127.0.2.1
+//    MX(*) -> A(smtp.*) -> 127.0.0.1
+//
+// Testing:
+//    $ dig @127.0.0.1 -p 10053 +short -t MX -q foo.zero.net
+//    $ nslookup -type=MX -port=10053 foo.zero.net 127.0.0.1
+//
 
 #include "gdef.h"
 #include "gfile.h"
@@ -61,8 +72,8 @@ public:
 	struct Config
 	{
 		unsigned int port {53U} ;
-		std::string answer_a {"127.0.0.1"} ;
-		std::string answer_mx {"smtp.@"} ; // by default prepend "smtp." to the question domain
+		std::string answer_a ;
+		std::string answer_mx ;
 		GNet::Address::Family family {GNet::Address::Family::ipv4} ;
 		GNet::DatagramSocket::Config socket_config ;
 		Config & set_port( unsigned int n ) { port = n ; return *this ; }
@@ -122,33 +133,31 @@ void Server::sendResponse( const GNet::Address & address , GNet::DnsMessage m )
 	GNet::DnsMessage response = GNet::DnsMessage::rejection( m , 4 ) ; // RCODE
 	if( m.valid() && m.QDCOUNT() == 1U )
 	{
-		if( m.question(0U).qtype() == 1U ) // QTYPE "A"
-		{
-			std::string qname = m.question(0U).qname() ;
-			std::string answer ;
-			if( qname.size() >= 8U && qname.find("zero.net") == (qname.size()-8U) ) // ends_with
-			{
-				answer = "0.0.0.0:0" ;
-			}
-			else
-			{
-				// allow substitution variable '@' for qname hash (1..254)
-				answer = m_config.answer_a + ":0" ;
-				unsigned int hash = static_cast<unsigned int>(std::hash<std::string>()(qname)) & 0xFFU ;
-				hash = hash == 0U ? 1U : ( hash == 255U ? 254U : hash ) ;
-				G::Str::replace( answer , "@" , std::to_string(hash) ) ;
-			}
-			GNet::Address a = GNet::Address::parse( answer ) ;
-			log_message = "answer TYPE=A NAME=" + a.displayString() ;
-			response = GNet::DnsMessageBuilder::response( m , a , 10U ) ;
-		}
-		else if( m.question(0U).qtype() == 15U ) // QTYPE "MX"
+		if( m.question(0U).qtype() == 15U ) // QTYPE "MX"
 		{
 			// allow substitution variable '@' for qname
 			std::string answer = m_config.answer_mx ;
 			G::Str::replace( answer , "@" , m.question(0U).qname() ) ;
 			log_message = "answer TYPE=MX EXCHANGE=" + answer ;
 			response = GNet::DnsMessageBuilder::response( m , answer ) ;
+		}
+		else if( m.question(0U).qtype() == 1U ) // QTYPE "A"
+		{
+			std::string qname = m.question(0U).qname() ;
+			std::string answer = m_config.answer_a + ":0" ;
+			const char * replacement = "0" ;
+			if( qname.find("one") != std::string::npos ) replacement = "1" ;
+			if( qname.find("two") != std::string::npos ) replacement = "2" ;
+			if( qname.find("three") != std::string::npos ) replacement = "3" ;
+			if( qname.find("four") != std::string::npos ) replacement = "4" ;
+			if( qname.find("five") != std::string::npos ) replacement = "5" ;
+			G::Str::replace( answer , "@" , replacement ) ;
+			if( qname.find("zero") != std::string::npos ) answer = "0.0.0.0:0" ;
+			if( qname.find("localhost") != std::string::npos ) answer = "127.0.0.1:0" ;
+
+			GNet::Address a = GNet::Address::parse( answer ) ;
+			log_message = "answer TYPE=A NAME=" + a.displayString() ;
+			response = GNet::DnsMessageBuilder::response( m , a , 10U ) ;
 		}
 	}
 	G_LOG( "Server::readEvent: response: " << response.n() << " bytes: " << log_message ) ;
@@ -260,11 +269,13 @@ int main( int argc , char * argv [] )
 
 		G::Path argv0 = G::Path(arg.v(0)).withoutExtension().basename() ;
 
+		Server::Config config ;
+		config.port = opt.contains("port") ? G::Str::toUInt(opt.value("port")) : 10053U ;
+		config.answer_a = opt.value( "address" , "127.0.@.1" ) ;
+		config.answer_mx = "smtp.@" ;
 		bool debug = opt.contains( "debug" ) ;
-		unsigned int port = opt.contains("port") ? G::Str::toUInt(opt.value("port")) : 10053U ;
 		std::string pid_file_name = opt.value( "pid-file" , "."+argv0.str()+".pid" ) ;
 		std::string log_file = opt.value( "log-file" , "" ) ;
-		std::string address = opt.value( "address" , "127.0.0.1" ) ;
 
 		G::LogOutput log( "" ,
 			G::LogOutput::Config()
@@ -279,7 +290,7 @@ int main( int argc , char * argv [] )
 
 		G_LOG_S( "pid=[" << G::Process::Id() << "]" ) ;
 		G_LOG_S( "pidfile=[" << pid_file_name << "]" ) ;
-		G_LOG_S( "port=[" << port << "]" ) ;
+		G_LOG_S( "port=[" << config.port << "]" ) ;
 
 		{
 			std::ofstream pid_file ;
@@ -290,9 +301,7 @@ int main( int argc , char * argv [] )
 		std::unique_ptr<GNet::EventLoop> event_loop = GNet::EventLoop::create() ;
 		GNet::ExceptionSink es ;
 		GNet::TimerList timer_list ;
-		Server server( es , Server::Config()
-			.set_port(port)
-			.set_answer_a(address) ) ;
+		Server server( es , config ) ;
 
 		event_loop->run() ;
 

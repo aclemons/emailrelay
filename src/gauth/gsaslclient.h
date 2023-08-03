@@ -49,7 +49,7 @@ public:
 		std::string data ;
 	} ;
 
-	explicit SaslClient( const SaslClientSecrets & secrets , const std::string & config ) ;
+	SaslClient( const SaslClientSecrets & secrets , const std::string & config ) ;
 		///< Constructor. The secrets reference is kept.
 
 	~SaslClient() ;
@@ -58,18 +58,18 @@ public:
 	bool active() const ;
 		///< Returns true if the constructor's secrets object is valid.
 
-	Response response( G::string_view mechanism , G::string_view challenge ) const ;
+	Response response( G::string_view mechanism , G::string_view challenge , G::string_view selector ) const ;
 		///< Returns a response to the given challenge. The mechanism is
 		///< used to choose the appropriate entry in the secrets file.
 
-	Response initialResponse( std::size_t limit = 0U ) const ;
+	Response initialResponse( G::string_view selector , std::size_t limit = 0U ) const ;
 		///< Returns an optional initial response. Always returns the empty
 		///< string if the mechanism is 'server-first'. Returns the empty
 		///< string, with no side-effects, if the initial response is longer
 		///< than the specified limit. Zero-length initial-responses are not
 		///< distinguishable from absent initial-responses.
 
-	std::string mechanism( const G::StringArray & mechanisms ) const ;
+	std::string mechanism( const G::StringArray & mechanisms , G::string_view selector ) const ;
 		///< Returns the name of the preferred mechanism taken from the given
 		///< set, taking into account what client secrets are available.
 		///< Returns the empty string if none is supported or if not active().

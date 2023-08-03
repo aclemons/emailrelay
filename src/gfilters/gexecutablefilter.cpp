@@ -32,10 +32,9 @@
 GFilters::ExecutableFilter::ExecutableFilter( GNet::ExceptionSink es ,
 	GStore::FileStore & file_store , Filter::Type filter_type ,
 	const Filter::Config & filter_config ,
-	const std::string & path , const std::string & log_prefix ) :
+	const std::string & path ) :
 		m_file_store(file_store) ,
 		m_filter_type(filter_type) ,
-		m_prefix(log_prefix.empty()?G::sv_to_string(Filter::strtype(filter_type)):log_prefix) ,
 		m_exit(0,filter_type) ,
 		m_path(path) ,
 		m_timeout(filter_config.timeout) ,
@@ -96,7 +95,7 @@ void GFilters::ExecutableFilter::start( const GStore::MessageId & message_id )
 	args.push_back( cpath.str() ) ;
 	args.push_back( epath.str() ) ;
 	G::ExecutableCommand commandline( m_path.str() , args ) ;
-	G_LOG( "GFilters::ExecutableFilter::start: " << m_prefix << ": running " << commandline.displayString() ) ;
+	G_LOG( "GFilters::ExecutableFilter::start: " << prefix() << ": [" << message_id.str() << "]: running " << m_path ) ;
 	m_task.start( commandline ) ;
 
 	if( m_timeout )
@@ -105,7 +104,7 @@ void GFilters::ExecutableFilter::start( const GStore::MessageId & message_id )
 
 void GFilters::ExecutableFilter::onTimeout()
 {
-	G_WARNING( "GFilters::ExecutableFilter::onTimeout: " << m_prefix << " [" << m_path.basename() << "] timed out after " << m_timeout << "s" ) ;
+	G_WARNING( "GFilters::ExecutableFilter::onTimeout: " << prefix() << " timed out after " << m_timeout << "s" ) ;
 	m_task.stop() ;
 	m_exit = Exit( 1 , m_filter_type ) ;
 	G_ASSERT( m_exit.fail() ) ;
@@ -129,7 +128,7 @@ void GFilters::ExecutableFilter::onTaskDone( int exit_code , const std::string &
 	m_exit = Exit( exit_code , m_filter_type ) ;
 	if( !m_exit.ok() )
 	{
-		G_WARNING( "GFilters::ExecutableFilter::onTaskDone: " << m_prefix << " failed: "
+		G_WARNING( "GFilters::ExecutableFilter::onTaskDone: " << prefix() << " failed: "
 			<< "exit code " << exit_code << ": [" << m_response << "]" ) ;
 	}
 
@@ -188,5 +187,10 @@ void GFilters::ExecutableFilter::cancel()
 {
 	m_task.stop() ;
 	m_timer.cancelTimer() ;
+}
+
+std::string GFilters::ExecutableFilter::prefix() const
+{
+	return G::sv_to_string(strtype(m_filter_type)).append(" [").append(id()).append(1U,']') ;
 }
 

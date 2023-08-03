@@ -114,7 +114,7 @@ public:
 	void report( const std::string & group = {} ) const ;
 		///< Generates helpful diagnostics after construction.
 
-	G::Slot::Signal<const std::string&,const std::string&> & eventSignal() ;
+	G::Slot::Signal<const std::string&,const std::string&> & eventSignal() noexcept ;
 		///< Returns a signal that indicates that something has happened.
 
 	std::unique_ptr<ProtocolMessage> newProtocolMessage( GNet::ExceptionSink ) ;

@@ -219,7 +219,7 @@ When run in configure mode the GUI normally ends up simply editing the
 
 When run in install mode the GUI expects to unpack all the E-MailRelay files
 from the payload into target directories. The payload is a simple directory
-tree that lives alongside the GUI exectuable or inside the Mac application
+tree that lives alongside the GUI executable or inside the Mac application
 bundle, and it contains a configuration file to tell the installer where
 to copy its files.
 

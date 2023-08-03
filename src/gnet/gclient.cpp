@@ -84,12 +84,10 @@ G::Slot::Signal<const std::string&,const std::string&,const std::string&> & GNet
 	return m_event_signal ;
 }
 
-#ifndef G_LIB_SMALL
 GNet::Location GNet::Client::remoteLocation() const
 {
 	return m_remote_location ;
 }
-#endif
 
 GNet::StreamSocket & GNet::Client::socket()
 {

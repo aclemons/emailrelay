@@ -114,11 +114,11 @@ am_libgsmtp_a_OBJECTS = gadminserver.$(OBJEXT) \
 	gprotocolmessage.$(OBJEXT) gprotocolmessageforward.$(OBJEXT) \
 	gprotocolmessagestore.$(OBJEXT) gsmtpclient.$(OBJEXT) \
 	gsmtpclientprotocol.$(OBJEXT) gsmtpclientreply.$(OBJEXT) \
-	gsmtpserver.$(OBJEXT) gsmtpserverbufferin.$(OBJEXT) \
-	gsmtpserverparser.$(OBJEXT) gsmtpserverprotocol.$(OBJEXT) \
-	gsmtpserversend.$(OBJEXT) gsmtpservertext.$(OBJEXT) \
-	gverifier.$(OBJEXT) gverifierfactorybase.$(OBJEXT) \
-	gverifierstatus.$(OBJEXT)
+	gsmtpforward.$(OBJEXT) gsmtpserver.$(OBJEXT) \
+	gsmtpserverbufferin.$(OBJEXT) gsmtpserverparser.$(OBJEXT) \
+	gsmtpserverprotocol.$(OBJEXT) gsmtpserversend.$(OBJEXT) \
+	gsmtpservertext.$(OBJEXT) gverifier.$(OBJEXT) \
+	gverifierfactorybase.$(OBJEXT) gverifierstatus.$(OBJEXT)
 libgsmtp_a_OBJECTS = $(am_libgsmtp_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -142,8 +142,8 @@ am__depfiles_remade = ./$(DEPDIR)/gadminserver.Po \
 	./$(DEPDIR)/gprotocolmessagestore.Po \
 	./$(DEPDIR)/grequestclient.Po ./$(DEPDIR)/gsmtpclient.Po \
 	./$(DEPDIR)/gsmtpclientprotocol.Po \
-	./$(DEPDIR)/gsmtpclientreply.Po ./$(DEPDIR)/gsmtpserver.Po \
-	./$(DEPDIR)/gsmtpserverbufferin.Po \
+	./$(DEPDIR)/gsmtpclientreply.Po ./$(DEPDIR)/gsmtpforward.Po \
+	./$(DEPDIR)/gsmtpserver.Po ./$(DEPDIR)/gsmtpserverbufferin.Po \
 	./$(DEPDIR)/gsmtpserverparser.Po \
 	./$(DEPDIR)/gsmtpserverprotocol.Po \
 	./$(DEPDIR)/gsmtpserversend.Po ./$(DEPDIR)/gsmtpservertext.Po \
@@ -365,6 +365,8 @@ libgsmtp_a_SOURCES = \
 	gsmtpclientprotocol.h \
 	gsmtpclientreply.cpp \
 	gsmtpclientreply.h \
+	gsmtpforward.cpp \
+	gsmtpforward.h \
 	gsmtpserver.cpp \
 	gsmtpserver.h \
 	gsmtpserverbufferin.cpp \
@@ -444,6 +446,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsmtpclient.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsmtpclientprotocol.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsmtpclientreply.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsmtpforward.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsmtpserver.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsmtpserverbufferin.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsmtpserverparser.Po@am__quote@ # am--include-marker
@@ -610,6 +613,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/gsmtpclient.Po
 	-rm -f ./$(DEPDIR)/gsmtpclientprotocol.Po
 	-rm -f ./$(DEPDIR)/gsmtpclientreply.Po
+	-rm -f ./$(DEPDIR)/gsmtpforward.Po
 	-rm -f ./$(DEPDIR)/gsmtpserver.Po
 	-rm -f ./$(DEPDIR)/gsmtpserverbufferin.Po
 	-rm -f ./$(DEPDIR)/gsmtpserverparser.Po
@@ -679,6 +683,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/gsmtpclient.Po
 	-rm -f ./$(DEPDIR)/gsmtpclientprotocol.Po
 	-rm -f ./$(DEPDIR)/gsmtpclientreply.Po
+	-rm -f ./$(DEPDIR)/gsmtpforward.Po
 	-rm -f ./$(DEPDIR)/gsmtpserver.Po
 	-rm -f ./$(DEPDIR)/gsmtpserverbufferin.Po
 	-rm -f ./$(DEPDIR)/gsmtpserverparser.Po

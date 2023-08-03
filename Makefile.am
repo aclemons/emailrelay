@@ -120,8 +120,8 @@ deb-src: dist
 tidy:
 	$(MAKE) -C unity tidy
 
-.PHONY: unitybuild
-unitybuild:
+.PHONY: unity
+unity:
 	$(MAKE) -C unity programs
 
 .PHONY: format

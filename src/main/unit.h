@@ -28,7 +28,7 @@
 #include "gsecrets.h"
 #include "gfilestore.h"
 #include "gfiledelivery.h"
-#include "gsmtpclient.h"
+#include "gsmtpforward.h"
 #include "gsmtpserver.h"
 #include "gadminserver.h"
 #include "gpopserver.h"
@@ -143,7 +143,8 @@ private:
 	bool m_quit_when_sent {false} ;
 	bool m_forwarding_pending {false} ;
 	std::string m_forwarding_reason ;
-	GNet::ExceptionSink m_es ;
+	GNet::ExceptionSink m_es_log_only ;
+	GNet::ExceptionSink m_es_rethrow ;
 	G::Slot::Signal<unsigned,std::string,bool> m_client_done_signal ;
 	G::Slot::Signal<unsigned,std::string,std::string,std::string> m_event_signal ;
 	std::unique_ptr<GNet::Timer<Unit>> m_forwarding_timer ;
@@ -159,7 +160,7 @@ private:
 	std::unique_ptr<GPop::Store> m_pop_store ;
 	std::unique_ptr<GPop::Server> m_pop_server ;
 	std::unique_ptr<GSmtp::AdminServer> m_admin_server ;
-	GNet::ClientPtr<GSmtp::Client> m_client_ptr ;
+	GNet::ClientPtr<GSmtp::Forward> m_client_ptr ;
 } ;
 
 #endif

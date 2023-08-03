@@ -182,7 +182,8 @@ public:
 
 	void doOnDelete( const std::string & reason , bool done ) ;
 		///< This should be called by the Client owner (typically
-		///< ClientPtr) just before this Client object is deleted.
+		///< ClientPtr) just before this Client object is deleted
+		///< as the result of an exception.
 		///<
 		///< A Client onDelete() call only ever comes from
 		///< something external calling doOnDelete().

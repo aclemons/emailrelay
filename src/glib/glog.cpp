@@ -21,6 +21,7 @@
 #include "gdef.h"
 #include "glog.h"
 #include "glogoutput.h"
+#include "gformat.h"
 
 G::Log::Log( Severity severity , const char * file , int line ) noexcept :
 	m_severity(severity) ,
@@ -58,6 +59,13 @@ G::LogStream & G::Log::operator<<( const std::string & s ) noexcept
 {
 	static_assert( noexcept(m_logstream <<s) , "" ) ;
 	return m_logstream << s ;
+}
+#endif
+
+#ifndef G_LIB_SMALL
+G::LogStream & G::Log::operator<<( const format & f )
+{
+	return m_logstream << f.str() ;
 }
 #endif
 

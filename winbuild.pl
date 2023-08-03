@@ -57,6 +57,7 @@ my $cfg_x64 = 1 ;
 my $cfg_x86 = 0 ;
 die unless ($cfg_x64 || $cfg_x86) ;
 my $cfg_debug = 0 ;
+my $cfg_add_runtime = 1 ;
 
 # cmake command-line options
 my $cmake_args = {
@@ -258,8 +259,8 @@ for my $part ( @run_parts )
 	{
 		my $with_gui = $switches{GCONFIG_GUI} ;
 		my $with_mbedtls = $switches{GCONFIG_TLS_USE_MBEDTLS} || $switches{GCONFIG_TLS_USE_BOTH} ;
-		install( $install_x64 , "x64" , $qt_info , $with_gui , $with_mbedtls ) if $cfg_x64 ;
-		install( $install_x86 , "x86" , $qt_info , $with_gui , $with_mbedtls ) if $cfg_x86 ;
+		install( $install_x64 , "x64" , $qt_info , $with_gui , $with_mbedtls , $cfg_add_runtime ) if $cfg_x64 ;
+		install( $install_x86 , "x86" , $qt_info , $with_gui , $with_mbedtls , $cfg_add_runtime ) if $cfg_x86 ;
 	}
 	elsif( $part eq "mingw" )
 	{
@@ -623,49 +624,59 @@ sub clean_mbedtls_files
 
 sub install
 {
-	my ( $install , $arch , $qt_info , $with_gui , $with_mbedtls ) = @_ ;
+	my ( $install , $arch , $qt_info , $with_gui , $with_mbedtls , $add_runtime ) = @_ ;
 
 	my $msvc_base = winbuild::find_msvc_base( $arch ) ;
 	print "msvc-base=[$msvc_base]\n" ;
 
-	my $runtime = winbuild::find_runtime( $msvc_base , $arch , "vcruntime140.dll" , "msvcp140.dll" ) ;
-	if( scalar(keys %$runtime) != 2 )
+	my $runtime = $add_runtime ? winbuild::find_runtime( $msvc_base , $arch , "vcruntime140.dll" , "msvcp140.dll" ) : undef ;
+	if( $add_runtime && scalar(keys %$runtime) != 2 )
 	{
 		die "error: install: cannot find msvc [$arch] runtime dlls under [$msvc_base]\n" ;
 	}
 
+	# copy the core files -- the main programs are always statically linked so they
+	# can go into a "programs" sub-directory -- the gui/setup executable may be
+	# dynamically linked so it must go alongside the run-time dlls
+	#
 	install_core( "$arch/src/main/Release" , $install ) ;
 
 	if( $with_gui )
 	{
 		install_copy( "$arch/src/gui/Release/emailrelay-gui.exe" , "$install/emailrelay-setup.exe" ) ;
-		install_copy( "$arch/src/main/Release/emailrelay-keygen.exe" , "$install" ) if $with_mbedtls ;
 
-		install_mkdir( "$install/payload" ) ;
+		install_copy( "$arch/src/main/Release/emailrelay-keygen.exe" , "$install/programs/" ) if $with_mbedtls ;
+
 		install_payload_cfg( "$install/payload/payload.cfg" ) ;
-		install_core( "$arch/src/main/Release" , "$install/payload/files" ) ;
+		install_core( "$arch/src/main/Release" , "$install/payload/files" , 1 ) ;
 
-		install_copy( "$arch/src/gui/Release/emailrelay-gui.exe" , "$install/payload/files" ) ;
-		install_copy( "$arch/src/main/Release/emailrelay-keygen.exe" , "$install/payload/files" ) if $with_mbedtls ;
+		install_copy( "$arch/src/gui/Release/emailrelay-gui.exe" , "$install/payload/files/gui/" ) ;
+		install_copy( "$arch/src/main/Release/emailrelay-keygen.exe" , "$install/payload/files/programs/" ) if $with_mbedtls ;
 
-		install_gui_dependencies( $msvc_base , $arch , $qt_info->{v} ,
-			{ exe => "$install/emailrelay-setup.exe" } ,
-			{ exe => "$install/payload/files/emailrelay-gui.exe" } ) ;
+		if( $add_runtime )
+		{
+			install_gui_dependencies( $msvc_base , $arch , $qt_info->{v} ,
+				{ exe => "$install/emailrelay-setup.exe" } ,
+				{ exe => "$install/payload/files/gui/emailrelay-gui.exe" } ) ;
+		}
 
 		winbuild::translate( $arch , $qt_info , "no_NO" , "no" ) ;
-		install_copy( "src/gui/emailrelay.no.qm" , "$install/translations" ) ;
-		install_copy( "src/gui/emailrelay.no.qm" , "$install/payload/files/translations" ) ;
+		install_copy( "src/gui/emailrelay.no.qm" , "$install/gui/translations/" ) ;
+		install_copy( "src/gui/emailrelay.no.qm" , "$install/payload/files/gui/translations/" ) ;
 	}
 
-	install_runtime( $runtime , $arch , $install ) ;
-	install_runtime( $runtime , $arch , "$install/payload/files" ) if $with_gui ;
+	if( $add_runtime )
+	{
+		install_runtime( $runtime , $arch , $install ) ;
+		install_runtime( $runtime , $arch , "$install/payload/files/gui" ) if $with_gui ;
+	}
 
 	print "$arch distribution in [$install]\n" ;
 }
 
 sub install_mingw
 {
-	install_core( "src/main" , $install_mingw ) ;
+	install_core( "src/main" , $install_mingw , 0 , "." ) ;
 	{
 		my $fh = new FileHandle( "$install_mingw/emailrelay-start.bat" , "w" ) or die ;
 		print $fh "start \"emailrelay\" emailrelay.exe \@app/config.txt\r\n" ;
@@ -674,9 +685,10 @@ sub install_mingw
 	{
 		my $fh = new FileHandle( "$install_mingw/config.txt" , "w" ) or die ;
 		print $fh "#\r\n# config.txt\r\n#\r\n\r\n" ;
-		print $fh "# For demo purposes this does loopback forwarding on startup\r\n" ;
-		print $fh "# only. Change 'forward' to 'forward-on-disconnect' when you\r\n" ;
-		print $fh "# have set the 'forward-to' address.\r\n" ;
+		print $fh "# Use emailrelay-start.bat to run emailrelay with this config.\r\n" ;
+		print $fh "# For demo purposes this only does forwarding once on startup.\r\n" ;
+		print $fh "# Change 'forward' to 'forward-on-disconnect' once you\r\n" ;
+		print $fh "# have set a valid 'forward-to' address.\r\n" ;
 		for my $item ( qw(
 			show=window,tray
 			log
@@ -791,64 +803,65 @@ sub cache_value_qt_core
 sub install_payload_cfg
 {
 	my ( $file ) = @_ ;
-	my $fh = new FileHandle( $file , "w" ) or die ;
-	print $fh 'files/= %dir-install%/' , "\n" ;
+	File::Path::make_path( File::Basename::dirname($file) ) ;
+	my $fh = new FileHandle( $file , "w" ) or die "error: install: cannot create [$file]\n" ;
+	print $fh "files/programs/=\%dir-install\%/\n" ;
+	print $fh "files/examples/=\%dir-install\%/examples/\n" ;
+	print $fh "files/doc/=\%dir-install\%/doc/\n" ;
+	print $fh "files/txt/=\%dir-install\%/\n" ;
+	print $fh "files/gui/=\%dir-install\%/\n" ;
 	$fh->close() or die ;
 }
 
 sub install_core
 {
-	my ( $main_bin_dir , $root ) = @_ ;
+	my ( $src_main_bin_dir , $root , $is_payload , $programs ) = @_ ;
 
-	install_mkdir( $root ) ;
-
-	my @tree = qw(
-		doc
-		doc/doxygen
-		examples
-	) ;
-	map { install_mkdir("$root/$_") } @tree ;
-
+	$programs ||= "programs" ;
+	my $txt = $is_payload ? "txt" : "." ;
 	my %copy = qw(
-		README readme.txt
-		COPYING copying.txt
-		AUTHORS authors.txt
-		LICENSE license.txt
-		NEWS news.txt
-		ChangeLog changelog.txt
+		README __txt__/readme.txt
+		COPYING __txt__/copying.txt
+		AUTHORS __txt__/authors.txt
+		LICENSE __txt__/license.txt
+		NEWS __txt__/news.txt
+		ChangeLog __txt__/changelog.txt
 		doc/doxygen-missing.html doc/doxygen/index.html
-		__main_bin_dir__/emailrelay-service.exe .
-		__main_bin_dir__/emailrelay.exe .
-		__main_bin_dir__/emailrelay-submit.exe .
-		__main_bin_dir__/emailrelay-passwd.exe .
-		__main_bin_dir__/emailrelay-textmode.exe .
-		bin/emailrelay-bcc-check.pl examples
-		bin/emailrelay-service-install.js .
-		bin/emailrelay-edit-content.js examples
-		bin/emailrelay-edit-envelope.js examples
-		bin/emailrelay-resubmit.js examples
-		bin/emailrelay-set-from.pl examples
-		bin/emailrelay-set-from.js examples
-		doc/authentication.png doc
-		doc/forwardto.png doc
-		doc/whatisit.png doc
-		doc/serverclient.png doc
-		doc/*.html doc
-		doc/developer.txt doc
-		doc/reference.txt doc
-		doc/userguide.txt doc
-		doc/windows.txt doc
-		doc/windows.txt readme-windows.txt
+		__src_main_bin_dir__/emailrelay-service.exe __programs__/
+		__src_main_bin_dir__/emailrelay.exe __programs__/
+		__src_main_bin_dir__/emailrelay-submit.exe __programs__/
+		__src_main_bin_dir__/emailrelay-passwd.exe __programs__/
+		__src_main_bin_dir__/emailrelay-textmode.exe __programs__/
+		bin/emailrelay-service-install.js __programs__/
+		bin/emailrelay-bcc-check.pl examples/
+		bin/emailrelay-edit-content.js examples/
+		bin/emailrelay-edit-envelope.js examples/
+		bin/emailrelay-resubmit.js examples/
+		bin/emailrelay-set-from.pl examples/
+		bin/emailrelay-set-from.js examples/
+		doc/authentication.png doc/
+		doc/forwardto.png doc/
+		doc/whatisit.png doc/
+		doc/serverclient.png doc/
+		doc/*.html doc/
+		doc/developer.txt doc/
+		doc/reference.txt doc/
+		doc/userguide.txt doc/
+		doc/windows.txt doc/
+		doc/windows.txt __txt__/readme-windows.txt
 		doc/doxygen-missing.html doc/doxygen/index.html
 	) ;
 	while( my ($src,$dst) = each %copy )
 	{
 		$dst = "" if $dst eq "." ;
-		$src =~ s:__main_bin_dir__:$main_bin_dir:g ;
+		$src =~ s:__src_main_bin_dir__:$src_main_bin_dir:g ;
+		$dst =~ s:__programs__:$programs:g ;
+		$dst =~ s:__txt__:$txt:g ;
 		map { install_copy( $_ , "$root/$dst" ) } glob( $src ) ;
 	}
+	# fix up inter-document references in readme.txt and license.txt
 	winbuild::fixup( $root ,
-		[ "readme.txt" , "license.txt" ] ,
+		[ "$txt/readme.txt" , "$txt/license.txt" ] ,
 		{
 			README => 'readme.txt' ,
 			COPYING => 'copying.txt' ,

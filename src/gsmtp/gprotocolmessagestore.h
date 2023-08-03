@@ -51,7 +51,7 @@ public:
 		///< Destructor.
 
 private: // overrides
-	ProtocolMessage::DoneSignal & doneSignal() override ; // GSmtp::ProtocolMessage
+	ProtocolMessage::DoneSignal & doneSignal() noexcept override ; // GSmtp::ProtocolMessage
 	void reset() override ; // GSmtp::ProtocolMessage
 	void clear() override ; // GSmtp::ProtocolMessage
 	GStore::MessageId setFrom( const std::string & , const FromInfo & ) override ; // GSmtp::ProtocolMessage

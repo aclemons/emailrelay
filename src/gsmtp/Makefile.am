@@ -49,6 +49,8 @@ libgsmtp_a_SOURCES = \
 	gsmtpclientprotocol.h \
 	gsmtpclientreply.cpp \
 	gsmtpclientreply.h \
+	gsmtpforward.cpp \
+	gsmtpforward.h \
 	gsmtpserver.cpp \
 	gsmtpserver.h \
 	gsmtpserverbufferin.cpp \

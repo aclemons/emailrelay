@@ -139,8 +139,8 @@ The `emailrelay` program supports the following command-line usage:
 
     Runs the specified external program to verify a message recipient's e-mail
     address. A network verifier can be specified as `net:<tcp-address>`. The
-    `strict:` and `local:` built-in address verifiers can be used to check
-    recipient addresses against the list of local system account names.
+    `account:` built-in address verifier can be used to check recipient
+    addresses against the list of local system account names.
 
 *   \-\-anonymous[=&lt;scope&gt;] (-A)
 
@@ -234,7 +234,8 @@ The `emailrelay` program supports the following command-line usage:
     clients to see only their own messages after they have  been moved into
     separate sub-directories typically by the built-in  `deliver:` or `copy:`
     filters. Content files can remain in the  main spool directory to save disk
-    space; they will be deleted by
+    space; they will be deleted by  the POP server when it deletes the last
+    matching envelope file.
 
 *   \-\-pop-no-delete (-G)
 
@@ -508,10 +509,15 @@ The `emailrelay` program supports the following command-line usage:
     useful when operating as a background daemon and it is therefore implied by
     `--as-server` and `--as-proxy`.
 
-A configuration file can be used to provide additional options; put each
-option on a separate line, use the long option names but without the double
-dash, and separate the option name from the option value with spaces. For
-example:
+
+Configuration
+-------------
+E-MailRelay is configured with command-line options and/or a configuration file.
+The configuration filename is given as the last command-line parameter.
+
+A configuration file should contain command-line options without double dashes,
+with each option on a separate line. The option name and the option value should
+be separated with a space. For example:
 
         # emailrelay.conf
         log
@@ -519,9 +525,9 @@ example:
         spool-dir /tmp/spool
         port 10025
 
-All command-line options that specify a filename can use a special `@app`
-substitution variable that is interpreted as the directory that contains
-the `emailrelay` executable or MacOS application bundle.
+All options that specify a filename can use a special `@app` substitution
+variable that is interpreted as the directory that contains the `emailrelay`
+executable or MacOS application bundle.
 
 It is possible to run multiple E-MailRelay instances in one process by prefixing
 the `--spool-dir` option with an arbitrary name like `in` or `out`, ie.
@@ -538,7 +544,7 @@ take effect if unprefixed or prefixed by the first instance name. For example:
         in-spool-dir /var/spool/in
         in-port 25
         in-remote-clients
-        in-filter strict:
+        in-filter account:
         in-domain example.com
         # out...
         out-spool-dir /var/spool/out
@@ -552,6 +558,10 @@ E-mail messages are stored as text files in the configured spool directory; each
 message is represented as an envelope file and a content file. The envelope file
 contains parameters relevant to the SMTP dialogue, and the content file contains
 the [RFC-822][] headers and body text.
+
+Envelope files can be modified by external filter scripts as long as the basic
+structure is retained, and some E-MailRelay features such as routing and client
+account selection can only be accessed in this way.
 
 The filenames used in the message store have a prefix of `emailrelay`, followed
 by a process-id, timestamp and sequence number, and then `envelope` or
@@ -588,16 +598,16 @@ When using `--as-client`, or `--dont-serve` with `--forward`, the spooled
 messages begin to be forwarded as soon as the program starts up, and the
 program terminates once they have all been sent.
 
-All recipient e-mail addresses must be accepted by the remote server when
-E-MailRelay forwards an e-mail message. If any one recipient is rejected then
-the message will be left in the spool directory with a `.bad` suffix on the
-envelope file.
+Normally all recipient e-mail addresses must be accepted by the remote server
+when E-MailRelay forwards an e-mail message (`--forward-to-all`). If any one
+recipient is rejected then the message will be left in the spool directory with
+a `.bad` suffix on the envelope file.
 
-This `--forward-to-all` behaviour is currently the default. However, if the
-`--forward-to-some` option is used then forwarding will succeed for the valid
-recipients and the failed message will contain just the invalid ones.
+However, if the `--forward-to-some` option is used then forwarding will succeed
+for the valid recipients and the failed message will contain just the invalid
+ones.
 
-Future E-MailRelay releases will switch to `--forward-to-some` as the default,
+Future E-MailRelay releases might switch to `--forward-to-some` as the default,
 so use `--forward-to-all` if that is what is required.
 
 Filters
@@ -612,8 +622,7 @@ For example, the following command will start E-MailRelay as a proxy server
 on port 587 that processes mail using the specified filter program, and then
 forwards it on to the local system's default [MTA][] on port 25:
 
-        emailrelay --as-proxy=localhost:smtp --port=587 --no-syslog \
-          --filter=$HOME/myfilter --spool-dir=$HOME/spool
+        emailrelay --as-proxy=127.0.0.1:25 --port=587 --filter=@app/myfilter --spool-dir=@app/spool
 
 The filter program should terminate with an exit code of zero to indicate
 success, or a value between 1 and 99 to indicate failure.
@@ -636,7 +645,8 @@ the filter program has created.
 The filter program can edit any part of the e-mail message's envelope file or
 content file: E-MailRelay remembers nothing about the e-mail message while the
 filter is running except the filename. However, if the message is deleted by
-the filter program then it should use an exit code of 100.
+the filter program then it should use an exit code of 100 to avoid spurious
+warning messages.
 
 As an example of a simple filter program processor this shell script examines
 the message envelope and deletes the e-mail message if it has come from a
@@ -683,19 +693,18 @@ Either forward-slashes or back-slashes can be used.
 
 E-MailRelay also has a `--client-filter` option that enables processing of
 e-mail messages just before they are forwarded, rather than after they are
-stored. The disadvantage is that by then it is too late to notify the
-submitting SMTP client of any processing failures, so in many store-and-forward
-applications using `--filter` is more useful. The special exit code of 100 can
-be used to ignore the current message, and 102 to stop scanning for more
-spooled messages after processing the current one (eg. for simple
-rate-limiting).
+stored. The disadvantage is that by then it is too late to notify the submitting
+SMTP client of any processing failures so in many store-and-forward applications
+using `--filter` is more useful. The special exit code of 100 can be used to
+ignore the current message, and 102 to stop scanning for more spooled messages
+after processing the current one (eg. for simple rate-limiting).
 
 Bear in mind the following points when writing `--filter` programs:
 
 * The standard input and output are not used; the message filenames are passed on the command-line.
 * Programs are run with a reduced set of environment variables.
 * Message files use CR-LF line terminators.
-* Envelope files will have a file extension of `.new` or `.busy` when the program runs.
+* Envelope files will have a file extension of `.new` or `.busy` when the filter runs.
 * Content files on Linux/Unix might be hard-linked if using `--filter=split:`.
 * On Linux/Unix the filter runs as an unprivileged user unless using `--user=root`.
 
@@ -732,7 +741,7 @@ Eg:
         --filter=spam-edit:127.0.0.1:783
 
 Using `spam:` means that the e-mail message will be rejected outright if it
-fails the SpamAssissin tests, whereas with `spam-edit:` the message content is
+fails the SpamAssassin tests, whereas with `spam-edit:` the message content is
 edited by SpamAssassin to hide the spam content within an attachment.
 
 Built-in filters
@@ -747,7 +756,7 @@ immediately with a specific exit code:
         --filter=exit:103
 
 This is useful for the special exit codes, such as exit code 103 which requests
-a rescan of the spool directory.
+a rescan of the spool directory for forwarding.
 
 ### copy: ###
 
@@ -799,24 +808,23 @@ to different next-hop servers according to the recipient addresses. The filter
 examines the domain part of the recipient addresses in the SMTP envelope file
 and if there is more than one domain then the message is copied so that each
 copy relates to a single domain. It then copies the recipient address's domain
-name into the `forward-to` field within the envelope file.
+name into the `ForwardTo` field within the envelope file.
 
 Note that if new messages are created by the `split:` filter then they will not
-be processed by any other filters. However, the `split:` filter does trigger
-immediate forwarding similar to a 103 exit code if it creates new messages, so
-the new messages will be processed almost immediately by a client filter.
+be processed by any other server filters.
 
 Domain name comparisons are case-insensitive by default. For exact comparisons
 use `split:raw`. This might be useful if an address verifier has already
 sanitised the recipient addresses.
 
-On Linux/Unix the content file copies might be hard links.
+On Linux/Unix the content file copies will be hard links where possible.
 
 ### mx: ###
 
-The `mx:` filter performs a DNS MX lookup on any `forward-to` domain given in
+The `mx:` filter performs a DNS MX lookup on any `ForwardTo` domain given in
 the envelope file and stores the resulting IP address in the
-`forward-to-address` field.
+`ForwardToAddress` field. The `ForwardTo` field can optionally have a colon
+separated numeric port number.
 
 The `mx:` filter should normally be run as a client filter (`--client-filter`)
 so that the IP address is up-to-date when the forwarding connection is made.
@@ -828,14 +836,13 @@ The `split:` and `mx:` filters work together to implement message routing:
 By running as a client filter the `mx:` filter will pick up any new messages
 created by `split:`.
 
-The filter can be configured with optional semi-colon separated parameters after
-the `mx:` string. The first optional parameter is the address of the DNS server
-and the second is the port number for the `forward-to` address:
+The filter can be configured with optional address for the DNS server after
+the `mx:` string:
 
-        --client-filter="mx:127.0.0.1:10053;10025"
+        --client-filter="mx:127.0.0.1:53"
 
 If the DNS server responds with a forwarding address of `0.0.0.0` then the
-`forward-to-address` will be cleared and the message will be forwarded to the
+`ForwardToAddress` will be cleared and the message will be forwarded to the
 default `--forward-to` address.
 
 See `Routing` below for more details.
@@ -993,43 +1000,41 @@ so the server should not normally disconnect after responding.
 
 Built-in address verifiers
 --------------------------
-There are two built-in address verifiers: `strict:` and `local:`.
+There is one built-in address verifier called `account:`.
 
-### strict: ###
+### account: ###
 
-The `strict:` verifier does strict validation of recipient address against system
+The `account:` verifier does validation of recipient address against system
 account names and the network domain or `--domain` value. For example, it will
-accept `alice@example.com` as a valid local recipient address only if there is a
-system account called `alice` and the local fully-qualified domain name is
-`example.com`. This verifier is intended to be used for e-mail messages coming
-in from the public internet.
+accept `alice@example.com` only if there is a local system account called
+`alice` and the local fully-qualified domain name is `example.com`.
 
 Eg:
 
-        --address-verifier=strict: --domain=example.com --port=25 --remote-clients
+        --address-verifier=account: --domain=example.com
 
-### local: ###
-
-The `local:` verifier tests whether a recipient address is for a local user but
-still allows other address. A recipient address where the first part matches
-a system account name and the second part matches the network domain or
-`--domain` value is treated as local and the mailbox name is just the account
-name. If there is no match then the recipient address is treated as valid and
-not local. This verifier is intended to be used for outgoing e-mail messages.
-
-Eg:
-
-        --address-verifier=local: --forward-to=smarthost.example.com:587
-
-Both verifiers can have one or more semi-colon separated configuration
+The `account:` verifier can have one or more semi-colon separated configuration
 parameters following the verifier name, including a user-id range (defaulting to
-1000-32767) that is used to obtain the list of system account names, `remote` to
-verifiy local system account addresses as remote, and `lc` to convert the
-mailbox name derived from the system account name to lower-case.
+1000-32767) that is used to obtain the list of system account names and
+`lowercase` to convert upper-case 7-bit characters in the system account name to
+lower-case, `check` and `remote`.
 
 Eg:
 
-        --address-verifier="strict:1000-1002;lc" --domain=example.com --port=25 --remote-clients
+        --address-verifier="account:1000-1002;lc" --domain=example.com
+
+With the `check` parameter the verifier will accept all recipient addresses as
+valid and just test whether the recipient address is local or not. This is
+useful for outgoing traffic where local recipients can be delivered immediately
+without being sent to the next-hop SMTP server.
+
+Eg:
+
+        --address-verifier=account:check --domain=example.com --delivery-dir=@app/in
+
+The `remote` parameter means that all valid recipient addresses are treated
+as remote so that the e-mail message will be available for forwarding rather
+than delivery.
 
 Authentication
 --------------
@@ -1065,7 +1070,7 @@ The same secrets file may be specified for both `--client-auth` and
 The secrets file has a line-based format: blank lines are ignored and the hash
 character (#) is used for comments.
 
-Lines have four white-space delimited fields:
+Lines have at least four white-space delimited fields:
 
 * `client-or-server`
 * `password-type`
@@ -1078,16 +1083,35 @@ user identifier; and the `password` field is the xtext-encoded plain password
 or a base64-encoded `HMAC-MD5` state from `emailrelay-passwd`. For `client`
 lines the password-type can also be `oauth`.
 
+For example:
+
+        # emailrelay secrets file
+        client plain bob password123
+        server plain alice e+3Dmc2
+        server plain carol my+20password
+
 The `xtext` encoding scheme is defined properly in [RFC-3461][], but basically it
 says that non-alphanumeric characters (including space, `+`, `#` and `=`) should
 be represented in uppercase hexadecimal ASCII as `+XX`. So a space should be
 written as `+20`; `+` as `+2B`; `#` as `+23`; and `=` as `+3D`.
 
 Base64 encoding can be used instead of xtext encoding by replacing `plain` by
-`plain:b`.
+`plain:b`:
+
+        # emailrelay secrets file
+        client plain:b Ym9i cGFzc3dvcmQxMjM= # bob
+        server plain:b YWxpY2U= ZT1tYzI= # alice
+        server plain:b Y2Fyb2w= bXkgcGFzc3dvcmQ= # carol
 
 Note that modern email services will expect user-ids and passwords containing
 non-ASCII characters to use UTF-8 encoding with [RFC-4013][] normalisation applied.
+
+Multiple client accounts can be defined in the secrets file by using a fifth
+field as an account selector. When a message is forwarded the authentication
+account is chosen by matching the client account selector in the message
+envelope file with the account selector in the secrets file. A filter program
+is normally used to set the appropriate `ClientAccountSelector` field in the
+envelope file.
 
 Authentication proceeds according to an authentication 'mechanism' that is
 advertised by the server and selected by the client. Many authentication
@@ -1108,35 +1132,16 @@ which might be used on other accounts is not easily recovered. However, hashed
 passwords can only be used for HMAC authentication mechanisms that are based on
 the same hash function.
 
-The XOAUTH2 mechanism can be used for client-side authentication using tokens
-that have been recently obtained from a third-party authentication server and
-added to the secrets file with a password-type of `oauth`.
+Using `MD5` hashes the example secrets file would look like this:
 
-In the following example `bob` is the username that E-MailRelay uses when
-it authenticates with a remote SMTP server, and two usernames (`alice` and
-`carol`) can be used by remote clients when they authenticate with the
-E-MailRelay server:
-
-        #
         # emailrelay secrets file
-        #
-        client plain bob password123
-        server plain alice e+3Dmc2
-        server plain carol my+20password
-
-Note that the `=` and space characters in alice's and carol's passwords have
-been written using xtext encoding; the `=` character appears in the standard
-ASCII table on row 3 and column D so it is written as `+3D`. Spaces and `+`
-characters should be written as `+20` and `+2B`.
-
-Using `MD5` hashes the same users would look like this:
-
-        #
-        # emailrelay secrets file
-        #
         client md5 bob 9N2IRYVXqu7SkOW1Xat+wpR9NbA2R6fb61XlmqW+46E=
         server md5 alice v1HOpuLIbbvgoJjhueeoqwfvtIp2C+gMA285ke+xxow=
         server md5 carol x6UJKQF9f7HfhS1M+PW4s8rXIoT+L+WoqLz+rBwSKbw=
+
+The XOAUTH2 mechanism can be used for client-side authentication using tokens
+that have been recently obtained from a third-party authentication server and
+added to the secrets file with a password-type of `oauth`.
 
 When the `--server-auth` option is used clients must authenticate with the
 E-MailRelay server before they can send e-mail, but it is possible to configure
@@ -1155,9 +1160,7 @@ For example, this secrets file allows any client connecting over IPv4 from the
 192.168.0.0/24 address range, or over IPv6 from the fe80::/64 or fc00::/7
 ranges, to submit mail without requiring authentication:
 
-        #
         # emailrelay secrets file
-        #
         server none 192.168.0.* localipv4
         server none fe80::/64 localipv6
         server plain alice e+3Dmc2
@@ -1250,36 +1253,53 @@ forwarded messages going to a `smarthost` for onward routing. (The smarthost
 address is given by the `--forward-to` or `--as-client` command-line option.)
 
 However, E-MailRelay can also be used to route outgoing e-mail messages directly
-to their final destinations without needing a smarthost. This works by using
-`forward-to` and `forward-to-address` fields in the message envelope files: if
-E-MailRelay sees an IP address in the `forward-to-address` field when a message
-is being forwarded then it will connect to that address rather than the
-`--forward-to` default.
+to their final destinations without needing a smarthost.
 
-In fact E-MailRelay will always connect to the `--forward-to` address first and
-then make one-off connections for any messages that have a `forward-to-address`
-defined. If every message has a `forward-to-address` then the default
+The `ForwardToAddress` field in every message envelope file is normally empty
+but it can be populated by a filter script to activate message routing. If
+E-MailRelay sees a transport address in the `ForwardToAddress` field when a
+message is being forwarded then it will connect to that address rather than the
+default `--forward-to` address from the command-line or configuration
+file. And if every message is given a `ForwardToAddress` then the command-line
 `--forward-to` address will not be used at all so it can be a dummy server on
 the local machine.
 
-Normally a filter program should be used to fill in the `forward-to` field with
-the message recipient's domain name; and if there are multiple recipients with
-different domains then the filter should split the message up into independent
-copies.
+The `ForwardToAddress` should normally be an IP address and port number obtained
+from a MX DNS query but it can also be a domain name and port number, in which
+case a normal A or AAAA DNS lookup is used to determine the network address.
+
+Normal e-mail routing is done according to the domain names in the message
+recipient addresses (so a message to `alice@example.com` gets routed to
+`example.com:25`) and using MX DNS lookups. But if there are multiple recipients
+with different domain names then the message will have to be split up into
+independent copies. This means that normal e-mail routing is best done in two
+stages: first use a filter to split the message into independent copies grouped
+by domain, and then use a client filter to do MX DNS lookups on those domain
+names to populate the `ForwardToAddress`.
+
+The client filter can be made to run early, before the forwarding connection is
+established, by populating the `ForwardTo` field in the message envelope files.
 
 (The built-in `split:` filter can be used to split messages by recipient domain
-and fill in the `forward-to` envelope fields.)
+and store the domain name in the `ForwardTo` envelope field.)
 
-If E-MailRelay sees a `forward-to` value in the envelope file when it is
+If E-MailRelay sees a `ForwardTo` value in the envelope file when it is
 forwarding a message and if there is a defined `--client-filter` then the filter
-will be run early so that it can populate a `forward-to-address` before talking
-to the remote server. This early run of the client filter will typically do a
-DNS MX lookup on the `forward-to` domain name and put the result into the
-envelope file's `forward-to-address`. The client filter is run again as normal
-once the connection is made.
+will be run early so that it can populate a `ForwardToAddress` before connecting
+to the remote server. Note that the contents of the `ForwardTo` field is not
+interpreted by E-MailRelay itself; it causes the client filter to run early but
+then it is up to the filter to make use its value.
 
-(The built-in `mx:` filter can be used to do a DNS MX lookup on the `forward-to`
-domain and fill in the `forward-to-address`.)
+(The built-in `mx:` filter can be used to do a MX DNS lookup on the `ForwardTo`
+domain and fill in the `ForwardToAddress`.)
+
+Connection failures do not cause messages to fail so any messages routed to
+unavailable addresses will stay in the spool directory.
+
+If routed SMTP connections need to authenticate using different client account
+details then the filter should also populate the `ClientAccountSelector` field
+in the message envelope file. The value in the envelope is used to select one of
+the `client` rows in the client secrets file having a matching fifth field.
 
 Delivery
 --------
@@ -1292,12 +1312,12 @@ for each recipient.
 
 A `mailbox` is normally just a sub-directory of the main spool directory with a
 name derived from the first part of the recipient address. It is traditional to
-have a catch-all mailbox called `postmaster` for unrecognised addresses.
+have a catch-all mailbox called `postmaster` for unrecognised names.
 
 Deriving a suitable mailbox name from the recipient address is best done by an
-address verifier. The address verifier checks the recipient address and maps it
-to a mailbox name which gets written into the envelope file in the `to-local`
-list. Then the delivery filter just has to copy the message files into the
+address verifier. The address verifier can check each recipient address, mapping
+it to a mailbox name which then gets written to the envelope file's `To-Local`
+list. After that the delivery filter just has to copy the message files into the
 designated mailbox.
 
 Once e-mail messages have been delivered into separate mailboxes they can be
@@ -1323,7 +1343,7 @@ the filter deletes the original message from the spool directory.
 
 Eg:
 
-        --address-verifier=strict: --filter=deliver:
+        --address-verifier=account: --filter=deliver:
 
 The `deliver:` filter creates mailbox directories as necessary, but if the
 mailbox directory already exists and has `new`, `tmp` and `cur` sub-directories
@@ -1332,8 +1352,8 @@ file (only) is copied into the `cur` sub-directory. This can be useful for
 serving up messages with an [IMAP][] server such as [dovecot][].
 
 Mailboxes are normally sub-directories of the spool directory, but the
-`--delivery-dir` command-line option can be used to provide a different base
-directory.
+`--delivery-dir` command-line option can be used to provide the `deliver:`
+filter with a different base directory.
 
 IP addresses
 ------------

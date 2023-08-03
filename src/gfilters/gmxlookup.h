@@ -48,10 +48,9 @@ namespace GFilters
 class GFilters::MxLookup : private GNet::EventHandler
 {
 public:
-	struct Config
+	struct Config /// A configuration structure for GFilters::MxLookup
 	{
 		Config() ;
-		unsigned int port {25U} ;
 		G::TimeInterval ns_timeout {1U,0} ;
 		G::TimeInterval restart_timeout {15U,0} ;
 	} ;
@@ -66,7 +65,7 @@ public:
 		///< Constructor taking a list of nameservers.
 		/// \see GNet::nameservers()
 
-	void start( const GStore::MessageId & , const std::string & question_domain ) ;
+	void start( const GStore::MessageId & , const std::string & question_domain , unsigned int port ) ;
 		///< Starts the lookup.
 
 	G::Slot::Signal<GStore::MessageId,std::string,std::string> & doneSignal() noexcept ;
@@ -98,6 +97,7 @@ private:
 	Config m_config ;
 	GStore::MessageId m_message_id ;
 	std::string m_question ;
+	unsigned int m_port {0U} ;
 	std::string m_error ;
 	std::size_t m_ns_index ;
 	std::size_t m_ns_failures ;

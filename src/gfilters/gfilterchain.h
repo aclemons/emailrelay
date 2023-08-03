@@ -43,8 +43,7 @@ class GFilters::FilterChain : public GSmtp::Filter
 {
 public:
 	FilterChain( GNet::ExceptionSink , GSmtp::FilterFactoryBase & , Filter::Type ,
-		const Filter::Config & , const GSmtp::FilterFactoryBase::Spec & spec ,
-		const std::string & log_prefix ) ;
+		const Filter::Config & , const GSmtp::FilterFactoryBase::Spec & spec ) ;
 			///< Constructor.
 
 	~FilterChain() override ;
@@ -69,8 +68,7 @@ private: // overrides
 
 private:
 	void add( GNet::ExceptionSink , GSmtp::FilterFactoryBase & , Filter::Type ,
-		const Filter::Config & , const GSmtp::FilterFactoryBase::Spec & ,
-		const std::string & ) ;
+		const Filter::Config & , const GSmtp::FilterFactoryBase::Spec & ) ;
 	void onFilterDone( int ) ;
 
 private:

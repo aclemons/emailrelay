@@ -430,7 +430,7 @@ sub fixup
 	my ( $base , $fnames , $fixes ) = @_ ;
 	for my $fname ( @$fnames )
 	{
-		my $fh_in = new FileHandle( "$base/$fname" , "r" ) or die ;
+		my $fh_in = new FileHandle( "$base/$fname" , "r" ) or die "error install: cannot read [$base/$fname]\n" ;
 		my $fh_out = new FileHandle( "$base/$fname.$$.tmp" , "w" ) or die ;
 		while(<$fh_in>)
 		{
@@ -462,10 +462,28 @@ sub file_copy
 {
 	my ( $src , $dst ) = @_ ;
 
+	if( $dst =~ m:/$: )
+	{
+		$dst =~ s:/$:: ;
+		File::Path::make_path( $dst ) ;
+		-d $dst or die "error: failed to create target directory [$dst]" ;
+	}
+	elsif( ! -d File::Basename::dirname($dst) )
+	{
+		File::Path::make_path( File::Basename::dirname($dst) ) ;
+	}
+
 	my $to_crlf = undef ;
 	for my $ext ( "txt" , "js" , "pl" , "pm" )
 	{
-		$to_crlf = 1 if( ( ! -d $dst && ( $dst =~ m/$ext$/ ) ) || ( -d $dst && ( $src =~ m/$ext$/ ) ) ) ;
+		if( -d $dst )
+		{
+			$to_crlf = 1 if ( $src =~ m/\.${ext}$/ ) ;
+		}
+		else
+		{
+			$to_crlf = 1 if( $dst =~ m/\.${ext}$/ ) ;
+		}
 	}
 
 	if( $to_crlf )

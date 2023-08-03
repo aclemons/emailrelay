@@ -172,7 +172,7 @@ namespace G
 		///
 		struct SignalImp
 		{
-			G_EXCEPTION_CLASS( AlreadyConnected , tx("already connected") ) ;
+			G_EXCEPTION_CLASS( AlreadyConnected , tx("signal already connected") ) ;
 			SignalImp() = delete ;
 		} ;
 

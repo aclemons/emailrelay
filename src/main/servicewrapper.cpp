@@ -482,8 +482,8 @@ G::Path Service::bat( const std::string & prefix )
 		config_map = G::MapFile( config_file , "service config" ) ;
 
 	std::string dir_config = config_map.value( "dir-config" ) ;
-	if( dir_config == "@app" )
-		dir_config = this_exe.dirname().str() ;
+	if( dir_config.find("@app") == 0U )
+		G::Str::replace( dir_config , "@app" , this_exe.dirname().str() ) ;
 
 	G::Path dir = dir_config.empty() ? this_exe.dirname() : G::Path(dir_config) ;
 

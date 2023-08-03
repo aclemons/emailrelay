@@ -623,7 +623,7 @@ void GPop::ServerProtocol::sendLines( std::ostringstream & ss )
 {
 	ss << "\r\n" ;
 	const std::string s = ss.str() ;
-	if( G::LogOutput::instance() && G::LogOutput::instance()->at(G::Log::Severity::InfoVerbose) )
+	if( G::Log::atVerbose() )
 	{
 		std::size_t lines = std::count( s.begin() , s.end() , '\n' ) ;
 		const std::size_t npos = std::string::npos ;

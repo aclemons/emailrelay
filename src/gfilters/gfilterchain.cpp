@@ -29,8 +29,7 @@
 
 GFilters::FilterChain::FilterChain( GNet::ExceptionSink es , GSmtp::FilterFactoryBase & ff ,
 	Filter::Type filter_type , const Filter::Config & filter_config ,
-	const GSmtp::FilterFactoryBase::Spec & spec ,
-	const std::string & log_prefix ) :
+	const GSmtp::FilterFactoryBase::Spec & spec ) :
 		m_filter_index(0U) ,
 		m_filter(nullptr) ,
 		m_running(false) ,
@@ -42,19 +41,18 @@ GFilters::FilterChain::FilterChain( GNet::ExceptionSink es , GSmtp::FilterFactor
 	{
 		std::string first = G::Str::head( t() , ":"_sv , false ) ;
 		std::string second = G::Str::tail( t() , ":"_sv ) ;
-		add( es , ff , filter_type , filter_config , Spec(first,second) , log_prefix ) ;
+		add( es , ff , filter_type , filter_config , Spec(first,second) ) ;
 	}
 
 	if( m_filters.empty() )
-		add( es , ff , filter_type , filter_config , {"exit","0"} , log_prefix ) ;
+		add( es , ff , filter_type , filter_config , {"exit","0"} ) ;
 }
 
 void GFilters::FilterChain::add( GNet::ExceptionSink es , GSmtp::FilterFactoryBase & ff ,
 	Filter::Type filter_type , const Filter::Config & filter_config ,
-	const GSmtp::FilterFactoryBase::Spec & spec ,
-	const std::string & log_prefix )
+	const GSmtp::FilterFactoryBase::Spec & spec )
 {
-	m_filters.push_back( ff.newFilter( es , filter_type , filter_config , spec , log_prefix ) ) ;
+	m_filters.push_back( ff.newFilter( es , filter_type , filter_config , spec ) ) ;
 	m_filter_id.append(m_filter_id.empty()?0U:1U,',').append( m_filters.back()->id() ) ;
 }
 

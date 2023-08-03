@@ -22,7 +22,7 @@
 
 namespace G
 {
-	namespace ThreadImp
+	namespace ThreadImp /// An implementation namespace for G::threading.
 	{
 		void test_fn() {}
 	}

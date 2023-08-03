@@ -43,7 +43,7 @@ class GFilters::ExecutableFilter : public GSmtp::Filter, private GNet::TaskCallb
 {
 public:
 	ExecutableFilter( GNet::ExceptionSink , GStore::FileStore & , Filter::Type ,
-		const Filter::Config & , const std::string & path , const std::string & log_prefix ) ;
+		const Filter::Config & , const std::string & path ) ;
 			///< Constructor.
 
 	~ExecutableFilter() override ;
@@ -70,12 +70,12 @@ public:
 private:
 	std::pair<std::string,std::string> parseOutput( std::string , const std::string & ) const ;
 	void onTimeout() ;
+	std::string prefix() const ;
 
 private:
 	GStore::FileStore & m_file_store ;
 	G::Slot::Signal<int> m_done_signal ;
 	Filter::Type m_filter_type ;
-	std::string m_prefix ;
 	Exit m_exit ;
 	G::Path m_path ;
 	unsigned int m_timeout ;

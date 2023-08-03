@@ -60,7 +60,7 @@ public:
 	bool valid() const ;
 		///< Returns true if the file path was supplied in the ctor.
 
-	Secret clientSecret( G::string_view type ) const ;
+	Secret clientSecret( G::string_view type , G::string_view selector = {} ) const ;
 		///< Returns the client id and secret for the given type.
 		///< Returns the empty string if none.
 
@@ -102,13 +102,14 @@ private:
 	static Contents readContents( const G::Path & ) ;
 	static Contents readContents( std::istream & ) ;
 	static void processLine( Contents & ,
-		unsigned int , G::string_view side , G::string_view , G::string_view , G::string_view ) ;
+		unsigned int , G::string_view side , G::string_view , G::string_view ,
+		G::string_view , G::string_view ) ;
 	static void showWarnings( const Warnings & warnings , const G::Path & path , const std::string & debug_name = {} ) ;
 	static void addWarning( Contents & , unsigned int , G::string_view , G::string_view = {} ) ;
 	static G::string_view canonicalView( G::string_view encoding_type ) ;
 	static std::string serverKey( const std::string & , const std::string & ) ;
 	static std::string serverKey( G::string_view , G::string_view ) ;
-	static std::string clientKey( G::string_view ) ;
+	static std::string clientKey( G::string_view , G::string_view ) ;
 	static G::SystemTime readFileTime( const G::Path & ) ;
 	static std::string lineContext( unsigned int ) ;
 
