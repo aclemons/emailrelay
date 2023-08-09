@@ -114,6 +114,7 @@ test_names = \
 	testSplitFilterRaw.test \
 	testSplitFilterWithVerifier.test \
 	testRouting.test \
+	testRoutingWithClientAccountSelection.test \
 	testRoutingWithSplitAndMxFilters.test \
 	testClientFilterPass.test \
 	testClientFilterBlock.test \

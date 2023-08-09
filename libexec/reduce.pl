@@ -26,7 +26,7 @@
 # See also "Reduce.pm" and "reduce".
 #
 # usage:
-#     reduce.pl [--out <results-file> [--apend]] [--] <src> <make-command> [<make-command> ...]
+#     reduce.pl [--out <results-file> [--append]] [--] <src> <make-command> [<make-command> ...]
 #     reduce.pl --in <results-file>
 #     reduce.pl --undo <src-base-dir>
 #     reduce.pl --sources <makefile-dir>

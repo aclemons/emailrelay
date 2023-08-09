@@ -251,9 +251,8 @@ bool GSmtp::ClientProtocol::applyEvent( const ClientReply & reply )
 		m_session.auth_mechanism = m_sasl->mechanism( m_session.server.auth_mechanisms , m_message_state.selector ) ;
 
 		// start encryption, authentication or client-filtering
-		if( !m_sasl->active() && !m_message_state.selector.empty() )
+		if( !m_sasl->validSelector( m_message_state.selector ) )
 		{
-			G_ASSERT( m_session.auth_mechanism.empty() ) ;
 			throw BadSelector( std::string("selector [").append(m_message_state.selector).append(1U,']') ) ;
 		}
 		else if( !m_session.secure && m_config.must_use_tls )
@@ -268,28 +267,26 @@ bool GSmtp::ClientProtocol::applyEvent( const ClientReply & reply )
 			m_protocol.state = State::StartTls ;
 			send( "STARTTLS\r\n"_sv ) ;
 		}
-		else if( m_sasl->active() && m_session.server.has_auth && m_session.auth_mechanism.empty() &&
-			m_config.must_authenticate )
+		else if( m_sasl->mustAuthenticate(m_message_state.selector) && m_session.server.has_auth && m_session.auth_mechanism.empty() )
 		{
 			std::string e = "cannot do authentication: check for a compatible client secret" ;
 			if( !m_message_state.selector.empty() )
 				e.append(" with selector [").append(G::Str::printable(m_message_state.selector)).append(1U,']') ;
 			throw SmtpError( e ) ;
 		}
-		else if( m_sasl->active() && m_session.server.has_auth && !m_session.auth_mechanism.empty() )
+		else if( m_sasl->mustAuthenticate(m_message_state.selector) && !m_session.server.has_auth )
+		{
+			throw SmtpError( "authentication is not supported by the remote smtp server" ) ;
+		}
+		else if( m_sasl->mustAuthenticate(m_message_state.selector) )
 		{
 			m_protocol.state = State::Auth ;
 			GAuth::SaslClient::Response rsp = initialResponse( *m_sasl , m_message_state.selector ) ;
 			std::string rsp_data = rsp.data.empty() ? std::string() : std::string(1U,' ').append(G::Base64::encode(rsp.data)) ;
 			send( "AUTH "_sv , m_session.auth_mechanism , rsp_data , "\r\n"_sv , rsp.sensitive ) ;
 		}
-		else if( m_sasl->active() && m_config.must_authenticate )
-		{
-			throw SmtpError( "authentication is not supported by the remote smtp server" ) ;
-		}
 		else
 		{
-			G_ASSERT( !m_sasl->active() || !m_config.must_authenticate ) ;
 			m_protocol.state = State::Filtering ;
 			startFiltering() ;
 		}
@@ -346,14 +343,14 @@ bool GSmtp::ClientProtocol::applyEvent( const ClientReply & reply )
 		std::string rsp_data = rsp.data.empty() ? std::string() : std::string(1U,' ').append(G::Base64::encode(rsp.data)) ;
 		send( "AUTH "_sv , m_session.auth_mechanism , rsp_data , "\r\n"_sv , rsp.sensitive ) ;
 	}
-	else if( m_protocol.state == State::Auth && !reply.positive() && m_config.must_authenticate )
+	else if( m_protocol.state == State::Auth && !reply.positive() && !m_config.authentication_fallthrough )
 	{
-		// authentication failed and mandatory and no more mechanisms -- abort
+		// authentication failed and no more mechanisms and no fallthrough -- abort
 		throw AuthError( *m_sasl , reply ) ;
 	}
 	else if( m_protocol.state == State::Auth && !reply.positive() )
 	{
-		// authentication failed, but optional -- continue and expect submission errors
+		// authentication failed, but fallthrough enabled -- continue and expect submission errors
 		G_ASSERT( !m_session.authenticated ) ;
 		G_WARNING( "GSmtp::ClientProtocol::applyEvent: " << AuthError(*m_sasl,reply).str() << ": continuing" ) ;
 		m_protocol.state = State::Filtering ;

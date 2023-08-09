@@ -1072,10 +1072,10 @@ exit 0
 </pre>
       </div><!-- div-pre -->
     <p>
-     Messages with recipient addresses that have been identified as local should
-     be delivered to the relevant mailbox by a filter such as the built-in <em>deliver:</em>
-     filter. Note that local recipient addresses are ignored when a message is
-     forwarded by the SMTP client.
+     Messages with recipient addresses that have been identified as local can be
+     delivered to the relevant mailbox by a filter such as the built-in <em>deliver:</em>
+     filter. Local recipient addresses are ignored when a message is forwarded by the
+     SMTP client.
     </p>
 
     <p>
@@ -1221,10 +1221,10 @@ catch( e )
 </pre>
       </div><!-- div-pre -->
     <p>
-     With the <em>check</em> parameter the verifier will accept all recipient addresses as
-     valid and just test whether the recipient address is local or not. This is
-     useful for outgoing traffic where local recipients can be delivered immediately
-     without being sent to the next-hop SMTP server.
+     With the <em>check</em> parameter the verifier will test whether the recipient address
+     is a local account but always accept the address as valid, whether it is a local
+     account or not. This is useful for outgoing traffic where local recipients can be
+     delivered immediately without being sent to the next-hop SMTP server.
     </p>
 
     <p>
@@ -1235,14 +1235,14 @@ catch( e )
 </pre>
       </div><!-- div-pre -->
     <p>
-     The <em>remote</em> parameter means that all valid recipient addresses are treated
-     as remote so that the e-mail message will be available for forwarding rather
-     than delivery.
+     With the <em>remote</em> parameter the recipient address is valid only if it is a local
+     account but it is treated as not local so that the e-mail message will be
+     available for forwarding rather than delivery.
     </p>
    <h2><a class="a-header" name="SH_1_11">Authentication</a></h2> <!-- index:2:SH:1:11:Authentication -->
     <p>
-     E-MailRelay can perform <em>client-side</em> authentication when connecting to remote
-     SMTP servers, and <em>server-side</em> authentication when remote clients connect to
+     E-MailRelay can perform 'client-side' authentication when connecting to remote
+     SMTP servers, and 'server-side' authentication when remote clients connect to
      the E-MailRelay server.
     </p>
 
@@ -1290,7 +1290,7 @@ emailrelay --as-client=example.com:smtp --client-auth=/etc/emailrelay-server.aut
     </p>
 
     <p>
-     Lines have at least four white-space delimited fields:
+     Lines have four or five white-space delimited fields:
     </p>
 
     <ul>
@@ -1298,6 +1298,7 @@ emailrelay --as-client=example.com:smtp --client-auth=/etc/emailrelay-server.aut
      <li><em>password-type</em></li>
      <li><em>userid</em></li>
      <li><em>password</em></li>
+     <li><em>client-account-selector</em> (client-side, optional)</li>
     </ul>
 
     <p>
@@ -1345,13 +1346,19 @@ server plain:b Y2Fyb2w= bXkgcGFzc3dvcmQ= # carol
 
     <p>
      Multiple client accounts can be defined in the secrets file by using a fifth
-     field as an account selector. When a message is forwarded the authentication
-     account is chosen by matching the client account selector in the message
-     envelope file with the account selector in the secrets file. A filter program
-     is normally used to set the appropriate <em>ClientAccountSelector</em> field in the
-     envelope file.
+     field as an account selector. When an e-mail message is forwarded the
+     authentication account is chosen by matching the <em>ClientAccountSelector</em> in the
+     message envelope file (as set by a filter) with the account selector in the
+     secrets file:
     </p>
 
+      <div class="div-pre">
+       <pre># emailrelay secrets file
+client plain bob password123 # no selector, authenticate as bob
+client plain alice e+3Dmc2 use_alice # selector 'use_alice'
+client plain:b = = noauth # selector 'noauth', no authentication
+</pre>
+      </div><!-- div-pre -->
     <p>
      Authentication proceeds according to an authentication 'mechanism' that is
      advertised by the server and selected by the client. Many authentication
@@ -1430,8 +1437,7 @@ server plain carol my+20password
      server that implements the SMTP AUTH extension with one of the supported
      mechanisms. If client-side authentication is required but the remote server
      does not support the AUTH extension, or does not support mechanisms for which
-     E-MailRelay has secrets, then an error will be logged and no messages will be
-     forwarded.
+     E-MailRelay has secrets, then forwarding will fail.
     </p>
 
     <p>
@@ -1586,9 +1592,9 @@ server plain carol my+20password
      If E-MailRelay sees a <em>ForwardTo</em> value in the envelope file when it is
      forwarding a message and if there is a defined <em>--client-filter</em> then the filter
      will be run early so that it can populate a <em>ForwardToAddress</em> before connecting
-     to the remote server. Note that the contents of the <em>ForwardTo</em> field is not
-     interpreted by E-MailRelay itself; it causes the client filter to run early but
-     then it is up to the filter to make use its value.
+     to the remote server. The contents of the <em>ForwardTo</em> field is not interpreted
+     by E-MailRelay itself; it causes the client filter to run early but then it is
+     up to the filter to make use its value.
     </p>
 
     <p>
@@ -1598,14 +1604,17 @@ server plain carol my+20password
 
     <p>
      Connection failures do not cause messages to fail so any messages routed to
-     unavailable addresses will stay in the spool directory.
+     unavailable addresses will stay in the spool directory. Use <em>--poll</em> to make
+     sure that these messages are retried and check the spool directory for old
+     messages files from time to time.
     </p>
 
     <p>
      If routed SMTP connections need to authenticate using different client account
-     details then the filter should also populate the <em>ClientAccountSelector</em> field
-     in the message envelope file. The value in the envelope is used to select one of
-     the <em>client</em> rows in the client secrets file having a matching fifth field.
+     details then the filter that sets the <em>ForwardToAddress</em> in the message envelope
+     file should also populate the <em>ClientAccountSelector</em> field. The selector value
+     in the envelope is used to pick one of the <em>client</em> rows in the client secrets
+     file having a matching fifth field.
     </p>
    <h2><a class="a-header" name="SH_1_15">Delivery</a></h2> <!-- index:2:SH:1:15:Delivery -->
     <p>
@@ -1802,7 +1811,7 @@ server plain carol my+20password
    <h2><a class="a-header" name="SH_1_17">Socket activation</a></h2> <!-- index:2:SH:1:17:Socket activation -->
     <p>
      On Linux/Unix systems E-MailRelay can be passed open listening file descriptors
-     at start-up by using the <em>--interface</em> option with a value like #fd3. This
+     at start-up by using the <em>--interface</em> option with a value like fd#3. This
      allows a service management system to do the initial listening and only start up
      the E-MailRelay server when a connection comes in. Systemd calls this "socket
      activation".
@@ -1945,26 +1954,54 @@ E-MailRelay&gt; quit
     </p>
 
     <p>
-     The <em>--dnsbl</em> configuration starts with the DNS server transport address and a
-     millisecond timeout, followed by the threshold and list of servers:
+     The <em>--dnsbl</em> configuration is a comma-separated list starting with a list of
+     DNSBL servers, optionally followed by the threshold, millisecond timeout and DNS
+     server transport address:
     </p>
 
       <div class="div-pre">
-       <pre>emailrelay -r --dnsbl 1.1.1.1:53,500,1,spam.example.com,block.example.com ...
+       <pre>emailrelay -r --dnsbl spam.example.com,block.example.com,1,500,1.1.1.1:53 ...
+</pre>
+      </div><!-- div-pre -->
+    <p>
+     The threshold defaults to 1, the timeout defaults to a small number of seconds,
+     and the DNS server defaults to the first of the local system's configured
+     nameservers, so a simple list of DNSBL servers is sufficient:
+    </p>
+
+      <div class="div-pre">
+       <pre>emailrelay -r --dnsbl spam.example.com,block.example.com ...
+</pre>
+      </div><!-- div-pre -->
+    <p>
+     For backwards compatibility the comma-separated fields can be reversed:
+    </p>
+
+      <div class="div-pre">
+       <pre>emailrelay -r --dnsbl 1.1.1.1:53,500,1,spam.example.com,block.example.com
 </pre>
       </div><!-- div-pre -->
     <p>
      A threshold of zero means that the DNSBL servers are consulted but connections
-     are always allowed. This can be combined with verbose logging (<em>--log -v</em>)
-     for initial testing.
+     are always allowed. This can be combined with verbose logging (<em>--log -v</em>) for
+     initial testing:
     </p>
 
+      <div class="div-pre">
+       <pre>emailrelay --log -v -r --dnsbl spam.example.com,block.example.com,0 ...
+</pre>
+      </div><!-- div-pre -->
     <p>
      If the timeout period expires before a collective decision is reached then the
-     connection is allowed by default. This default behaviour can be changed by
-     using a negative timeout, but for finer control use a DNSBL proxy.
+     connection is allowed by default. This default behaviour can be changed by using
+     a negative timeout, so then unresponsive DNSBL servers might result in all
+     incoming connections being blocked:
     </p>
 
+      <div class="div-pre">
+       <pre>emailrelay -r --dnsbl spam.example.com,block.example.com,1,-5000 ...
+</pre>
+      </div><!-- div-pre -->
     <p>
      Connections from loopback and private (RFC-1918) network addresses are never
      checked.

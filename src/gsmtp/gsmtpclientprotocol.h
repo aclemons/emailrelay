@@ -81,7 +81,7 @@ public:
 		unsigned int ready_timeout {0U} ;
 		bool use_starttls_if_possible {false} ;
 		bool must_use_tls {false} ;
-		bool must_authenticate {false} ;
+		bool authentication_fallthrough {false} ; // try MAIL FROM even if authentication failed
 		bool anonymous{false} ; // MAIL..AUTH=
 		bool must_accept_all_recipients {false} ;
 		bool eightbit_strict {false} ; // fail 8bit messages to non-8bitmime server
@@ -98,7 +98,7 @@ public:
 		Config & set_ready_timeout( unsigned int ) noexcept ;
 		Config & set_use_starttls_if_possible( bool = true ) noexcept ;
 		Config & set_must_use_tls( bool = true ) noexcept ;
-		Config & set_must_authenticate( bool = true ) noexcept ;
+		Config & set_authentication_fallthrough( bool = true ) noexcept ;
 		Config & set_anonymous( bool = true ) noexcept ;
 		Config & set_must_accept_all_recipients( bool = true ) noexcept ;
 		Config & set_eightbit_strict( bool = true ) noexcept ;
@@ -278,7 +278,7 @@ private:
 	G::Slot::Signal<> m_filter_signal ;
 	Protocol m_protocol ;
 	MessageState m_message_state ;
-	GStore::StoredMessage * m_message_p ;
+	GStore::StoredMessage * m_message_p {nullptr} ;
 	std::vector<char> m_message_buffer ;
 	std::string m_message_line ;
 	SessionState m_session ;
@@ -289,7 +289,7 @@ inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_respon
 inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_ready_timeout( unsigned int t ) noexcept { ready_timeout = t ; return *this ; }
 inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_use_starttls_if_possible( bool b ) noexcept { use_starttls_if_possible = b ; return *this ; }
 inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_must_use_tls( bool b ) noexcept { must_use_tls = b ; return *this ; }
-inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_must_authenticate( bool b ) noexcept { must_authenticate = b ; return *this ; }
+inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_authentication_fallthrough( bool b ) noexcept { authentication_fallthrough = b ; return *this ; }
 inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_anonymous( bool b ) noexcept { anonymous = b ; return *this ; }
 inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_must_accept_all_recipients( bool b ) noexcept { must_accept_all_recipients = b ; return *this ; }
 inline GSmtp::ClientProtocol::Config & GSmtp::ClientProtocol::Config::set_eightbit_strict( bool b ) noexcept { eightbit_strict = b ; return *this ; }

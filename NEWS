@@ -52,14 +52,26 @@ Refer to the reference document for more details.
 Client account selection
 ------------------------
 This release allows for multiple client accounts to be used for SMTP
-authentication when forwarding. A new 'client-account-selector' field in the
+authentication when forwarding. A new "ClientAccountSelector" field in the
 envelope file must match against the fifth field of a "client" line in the
 secrets file. A filter should be used to fill in the selector field in the
 envelope, typically based on the message addressing.
 
 When the account changes from one message to the next the SMTP connection is
-dropped and re-connected. This is necessary because some common SMTP servers
-do not allow re-authentication within an SMTP connection.
+dropped and re-connected. It is necessary to drop the connection because some
+common SMTP servers do not allow re-authentication within an existing SMTP
+connection.
+
+Client rows in the client secrets file can now have a fifth field for the
+selector, but this raises a backwards compatibility issue because in previous
+releases the fifth column (and beyond) in a client secrets file is ignored and
+might be a comment without a leading '#' character. In upgrading, the first word
+of the comment would be treated as a selector and the "client" row would be
+effectively disabled resulting in a failure of message forwarding. Therefore,
+fifth fields in the secrets file that start with '#' are treated as comments
+(extending to the end of the line) and lines in the secrets file with six or
+more fields result in a warning. It follows that filters should not generate
+selectors starting with a '#' character.
 
 Local files
 -----------
@@ -74,7 +86,7 @@ easy enough to write a filter to separate out these messages.
 Previous versions of E-MailRelay test message content when a message is received
 and populate the "Content" field of the envelope file as either "7bit" or
 "8bit". However, the SMTP client code has always largely ignored this field and
-it will attempt to forward 8-bit messages to a remote server that does not
+it would attempt to forward 8-bit messages to a remote server that did not
 advertise 8BITMIME, albeit with a warning in the log.
 
 In this release E-MailRelay no longer tests messages for eight-bit content,

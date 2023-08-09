@@ -90,7 +90,8 @@ public:
 	SecretsFileClient & operator=( SecretsFileClient && ) = delete ;
 
 private: // overrides
-	bool valid() const override ;
+	bool validSelector( G::string_view selector ) const override ;
+	bool mustAuthenticate( G::string_view selector ) const override ;
 	Secret clientSecret( G::string_view type , G::string_view selector ) const override ;
 
 private:

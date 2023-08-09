@@ -515,8 +515,15 @@ client-auth C:/ProgramData/E-MailRelay/emailrelay.auth</pre>
    <h2><a class="a-header" name="SH_1_14">Blocklists and dynamic firewalls</a></h2> <!-- index:2:SH:1:14:Blocklists and dynamic firewalls -->
     <p>
      E-MailRelay can consult with remote DNSBL blocklist servers in order to block
-     incoming connections from known spammers. Refer to the documentation of the
-     <em>--dnsbl</em> option for more details.
+     incoming connections from known spammers. For example:
+    </p>
+
+      <div class="div-pre">
+       <pre>emailrelay -r --dnsbl=zen.spamhaus.org,bl.mailspike.net ...
+</pre>
+      </div><!-- div-pre -->
+    <p>
+     Refer to the documentation of the <em>--dnsbl</em> option for more details.
     </p>
 
     <p>

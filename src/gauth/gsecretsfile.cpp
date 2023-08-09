@@ -44,13 +44,13 @@ GAuth::SecretsFile::SecretsFile( const G::Path & path , bool auto_reread , const
 		read( path ) ;
 }
 
-void GAuth::SecretsFile::check( const std::string & path )
+void GAuth::SecretsFile::check( const std::string & path , bool with_warnings )
 {
 	if( !path.empty() )
 	{
 		Contents contents = readContents( path ) ;
-		showWarnings( contents.m_warnings , path ) ;
-		if( !contents.m_warnings.empty() )
+		showDiagnostics( contents , path , {} , with_warnings ) ;
+		if( contents.m_errors != 0U )
 			throw Error() ;
 	}
 }
@@ -89,7 +89,7 @@ void GAuth::SecretsFile::read( const G::Path & path )
 {
 	m_file_time = readFileTime( path ) ;
 	m_contents = readContents( path ) ;
-	showWarnings( m_contents.m_warnings , path , m_debug_name ) ;
+	showDiagnostics( m_contents , path , m_debug_name , false ) ;
 }
 
 G::SystemTime GAuth::SecretsFile::readFileTime( const G::Path & path )
@@ -132,10 +132,19 @@ GAuth::SecretsFile::Contents GAuth::SecretsFile::readContents( std::istream & fi
 			G::string_view w2 = (++t)() ;
 			G::string_view w3 = (++t)() ;
 			G::string_view w4 = (++t)() ;
-			if( t.valid() )
-				processLine( contents , line_number , w1 , w2 , w3 , w4 , (++t)() ) ;
+			bool sufficient = t.valid() ;
+			G::string_view w5 = (++t)() ;
+			bool excess = (++t).valid() ;
+			if( !w5.empty() && w5.at(0) == '#' )
+				w5 = G::string_view() , excess = false ;
+
+			if( excess )
+				addWarning( contents , line_number , "too many fields"_sv ) ;
+
+			if( sufficient )
+				processLine( contents , line_number , w1 , w2 , w3 , w4 , w5 ) ;
 			else
-				addWarning( contents , line_number , "too few fields"_sv ) ;
+				addError( contents , line_number , "too few fields"_sv ) ;
 		}
 	}
 	return contents ;
@@ -156,7 +165,11 @@ void GAuth::SecretsFile::processLine( Contents & contents , unsigned int line_nu
 		G::string_view keyword = secret ;
 		bool inserted = contents.m_trust_map.insert( {G::sv_to_string(ip_range),{G::sv_to_string(keyword),line_number}} ).second ;
 		if( !inserted )
-			addWarning( contents , line_number , "duplicate server trust address"_sv ) ;
+			addError( contents , line_number , "duplicate server trust address"_sv ) ;
+	}
+	else if( is_client_side && G::Str::imatch(type_in,"plain:b") && id == "="_sv && secret == "="_sv )
+	{
+		contents.m_selectors.insert( {G::sv_to_string(selector),0U} ) ;
 	}
 	else
 	{
@@ -190,43 +203,62 @@ void GAuth::SecretsFile::processLine( Contents & contents , unsigned int line_nu
 			if( inserted )
 				contents.m_types.insert( G::Str::lower(type) ) ;
 			else
-				addWarning( contents , line_number , "duplicate server secret"_sv ) ;
+				addError( contents , line_number , "duplicate server secret"_sv ) ;
 		}
 		else if( is_client_side )
 		{
 			std::string key = clientKey( type , selector ) ;
 			Secret secret_obj( {id,id_encoding} , {secret,secret_encoding} , hash_function , lineContext(line_number) ) ;
 			bool inserted = contents.m_map.insert( {key,secret_obj} ).second ;
-			if( !inserted )
-				addWarning( contents , line_number , "duplicate client secret"_sv ) ;
+			if( inserted )
+				((*(contents.m_selectors.insert( {G::sv_to_string(selector),0U} ).first)).second)++ ;
+			else
+				addError( contents , line_number , "duplicate client secret"_sv ) ;
 		}
 		else
 		{
-			addWarning( contents , line_number , "invalid value in first field"_sv , side ) ;
+			addError( contents , line_number , "invalid value in first field"_sv , side ) ;
 		}
 	}
 }
 
-void GAuth::SecretsFile::addWarning( Contents & contents , unsigned int line_number , G::string_view message_in , G::string_view more )
+void GAuth::SecretsFile::addWarning( Contents & contents , unsigned int line_number , G::string_view message , G::string_view more )
+{
+	contents.m_diagnostics.emplace_back( false , line_number , join(message,more) ) ;
+}
+
+void GAuth::SecretsFile::addError( Contents & contents , unsigned int line_number , G::string_view message , G::string_view more )
+{
+	contents.m_diagnostics.emplace_back( true , line_number , join(message,more) ) ;
+	contents.m_errors++ ;
+}
+
+std::string GAuth::SecretsFile::join( G::string_view message_in , G::string_view more )
 {
 	std::string message( message_in.data() , message_in.size() ) ;
 	if( !more.empty() )
 		message.append(": [",3U).append(G::Str::printable(more)).append(1U,']') ;
-	contents.m_warnings.push_back( Warnings::value_type(line_number,message) ) ;
+	return message ;
 }
 
-void GAuth::SecretsFile::showWarnings( const Warnings & warnings , const G::Path & path , const std::string & debug_name )
+void GAuth::SecretsFile::showDiagnostics( const Contents & c , const G::Path & path , const std::string & debug_name , bool with_warnings )
 {
-	if( !warnings.empty() )
-	{
-		G_WARNING( "GAuth::SecretsFile::read: problems reading" << (debug_name.empty()?"":" ") << debug_name << " "
-			"secrets file [" << path.str() << "]..." ) ;
+	if( c.m_diagnostics.empty() )
+		return ;
 
-		std::string prefix = path.basename() ;
-		for( const auto & warning : warnings )
-		{
-			G_WARNING( "GAuth::SecretsFile::read: " << prefix << "(" << warning.first << "): " << warning.second ) ;
-		}
+	if( !with_warnings && c.m_errors == 0U )
+		return ;
+
+	G_WARNING( "GAuth::SecretsFile::read: problems reading" << (debug_name.empty()?"":" ") << debug_name << " "
+		"secrets file [" << path.str() << "]..." ) ;
+
+	std::string prefix = path.basename() ;
+	for( const auto & d : c.m_diagnostics )
+	{
+		if( std::get<0>(d) )
+			G_ERROR( "GAuth::SecretsFile::read: " << prefix << "(" << std::get<1>(d) << "): " << std::get<2>(d) ) ;
+		else if( with_warnings )
+			G_WARNING( "GAuth::SecretsFile::read: " << prefix << "(" << std::get<1>(d) << "): " << std::get<2>(d) ) ;
 	}
 }
 
@@ -254,6 +286,31 @@ std::string GAuth::SecretsFile::clientKey( G::string_view type , G::string_view 
 	return std::string("client ",7U).append(G::Str::lower(type)).append(selector.empty()?0U:1U,' ').append(selector.data(),selector.size()) ;
 }
 
+bool GAuth::SecretsFile::containsClientSelector( G::string_view selector ) const
+{
+	return containsClientSecretImp( selector , false ) ;
+}
+
+bool GAuth::SecretsFile::containsClientSecret( G::string_view selector ) const
+{
+	return containsClientSecretImp( selector , true ) ;
+}
+
+bool GAuth::SecretsFile::containsClientSecretImp( G::string_view selector , bool with_id ) const
+{
+	if( !m_valid )
+		return false ;
+
+	reread() ;
+
+	auto p = m_contents.m_selectors.find( G::sv_to_string(selector) ) ;
+	auto end = m_contents.m_selectors.end() ;
+	if( with_id )
+		return p != end && (*p).second != 0U ;
+	else
+		return p != end ;
+}
+
 GAuth::Secret GAuth::SecretsFile::clientSecret( G::string_view type , G::string_view selector ) const
 {
 	if( !m_valid )
@@ -266,6 +323,18 @@ GAuth::Secret GAuth::SecretsFile::clientSecret( G::string_view type , G::string_
 		return Secret::none() ;
 	else
 		return (*p).second ;
+}
+
+bool GAuth::SecretsFile::containsServerSecret( G::string_view type , G::string_view id_decoded ) const
+{
+	if( !m_valid )
+		return false ;
+
+	reread() ;
+
+	return id_decoded.empty() ?
+		m_contents.m_types.find( G::Str::lower(type) ) != m_contents.m_types.end() :
+		m_contents.m_map.find( serverKey(type,id_decoded) ) != m_contents.m_map.end() ;
 }
 
 GAuth::Secret GAuth::SecretsFile::serverSecret( G::string_view type , G::string_view id ) const
@@ -302,14 +371,6 @@ std::pair<std::string,std::string> GAuth::SecretsFile::serverTrust( const std::s
 std::string GAuth::SecretsFile::path() const
 {
 	return m_path.str() ;
-}
-
-bool GAuth::SecretsFile::contains( G::string_view type , G::string_view id_decoded ) const
-{
-	if( !m_valid ) return false ;
-	return id_decoded.empty() ?
-		m_contents.m_types.find( G::Str::lower(type) ) != m_contents.m_types.end() :
-		m_contents.m_map.find( serverKey(type,id_decoded) ) != m_contents.m_map.end() ;
 }
 
 std::string GAuth::SecretsFile::lineContext( unsigned int line_number )

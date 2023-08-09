@@ -55,8 +55,11 @@ public:
 	~SaslClient() ;
 		///< Destructor.
 
-	bool active() const ;
-		///< Returns true if the constructor's secrets object is valid.
+	bool validSelector( G::string_view selector ) const ;
+		///< Returns true if the selector is valid.
+
+	bool mustAuthenticate( G::string_view selector ) const ;
+		///< Returns true if authentication is required.
 
 	Response response( G::string_view mechanism , G::string_view challenge , G::string_view selector ) const ;
 		///< Returns a response to the given challenge. The mechanism is

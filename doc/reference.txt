@@ -764,10 +764,10 @@ exit with a value of zero.
 	echo postmaster
 	exit 0
 
-Messages with recipient addresses that have been identified as local should
-be delivered to the relevant mailbox by a filter such as the built-in "deliver:"
-filter. Note that local recipient addresses are ignored when a message is
-forwarded by the SMTP client.
+Messages with recipient addresses that have been identified as local can be
+delivered to the relevant mailbox by a filter such as the built-in "deliver:"
+filter. Local recipient addresses are ignored when a message is forwarded by the
+SMTP client.
 
 For invalid addresses the verifier's exit value should be non-zero and the first
 line of output will be taken as the error response sent to the remote client. An
@@ -875,22 +875,22 @@ lower-case, "check" and "remote".
 Eg:
 	--address-verifier="account:1000-1002;lc" --domain=example.com
 
-With the "check" parameter the verifier will accept all recipient addresses as
-valid and just test whether the recipient address is local or not. This is
-useful for outgoing traffic where local recipients can be delivered immediately
-without being sent to the next-hop SMTP server.
+With the "check" parameter the verifier will test whether the recipient address
+is a local account but always accept the address as valid, whether it is a local
+account or not. This is useful for outgoing traffic where local recipients can be
+delivered immediately without being sent to the next-hop SMTP server.
 
 Eg:
 	--address-verifier=account:check --domain=example.com --delivery-dir=@app/in
 
-The "remote" parameter means that all valid recipient addresses are treated
-as remote so that the e-mail message will be available for forwarding rather
-than delivery.
+With the "remote" parameter the recipient address is valid only if it is a local
+account but it is treated as not local so that the e-mail message will be
+available for forwarding rather than delivery.
 
 Authentication
 --------------
-E-MailRelay can perform "client-side" authentication when connecting to remote
-SMTP servers, and "server-side" authentication when remote clients connect to
+E-MailRelay can perform 'client-side' authentication when connecting to remote
+SMTP servers, and 'server-side' authentication when remote clients connect to
 the E-MailRelay server.
 
 SMTP authentication is enabled with the "--client-auth" and "--server-auth"
@@ -921,12 +921,13 @@ The same secrets file may be specified for both "--client-auth" and
 The secrets file has a line-based format: blank lines are ignored and the hash
 character (#) is used for comments.
 
-Lines have at least four white-space delimited fields:
+Lines have four or five white-space delimited fields:
 
 * "client-or-server"
 * "password-type"
 * "userid"
 * "password"
+* "client-account-selector" (client-side, optional)
 
 The "client-or-server" field must be "client" or "server"; the "password-type"
 field should be "plain" or "md5"; the "userid" field is xtext-encoded
@@ -958,11 +959,15 @@ Note that modern email services will expect user-ids and passwords containing
 non-ASCII characters to use UTF-8 encoding with RFC-4013 normalisation applied.
 
 Multiple client accounts can be defined in the secrets file by using a fifth
-field as an account selector. When a message is forwarded the authentication
-account is chosen by matching the client account selector in the message
-envelope file with the account selector in the secrets file. A filter program
-is normally used to set the appropriate "ClientAccountSelector" field in the
-envelope file.
+field as an account selector. When an e-mail message is forwarded the
+authentication account is chosen by matching the "ClientAccountSelector" in the
+message envelope file (as set by a filter) with the account selector in the
+secrets file:
+
+	# emailrelay secrets file
+	client plain bob password123 # no selector, authenticate as bob
+	client plain alice e+3Dmc2 use_alice # selector 'use_alice'
+	client plain:b = = noauth # selector 'noauth', no authentication
 
 Authentication proceeds according to an authentication 'mechanism' that is
 advertised by the server and selected by the client. Many authentication
@@ -1021,8 +1026,7 @@ On the client side, authentication is performed when E-MailRelay connects to a
 server that implements the SMTP AUTH extension with one of the supported
 mechanisms. If client-side authentication is required but the remote server
 does not support the AUTH extension, or does not support mechanisms for which
-E-MailRelay has secrets, then an error will be logged and no messages will be
-forwarded.
+E-MailRelay has secrets, then forwarding will fail.
 
 When E-MailRelay successfully authenticates with the remote server the
 authentication name is passed as the AUTH parameter of the SMTP MAIL FROM
@@ -1137,20 +1141,23 @@ and store the domain name in the "ForwardTo" envelope field.)
 If E-MailRelay sees a "ForwardTo" value in the envelope file when it is
 forwarding a message and if there is a defined "--client-filter" then the filter
 will be run early so that it can populate a "ForwardToAddress" before connecting
-to the remote server. Note that the contents of the "ForwardTo" field is not
-interpreted by E-MailRelay itself; it causes the client filter to run early but
-then it is up to the filter to make use its value.
+to the remote server. The contents of the "ForwardTo" field is not interpreted
+by E-MailRelay itself; it causes the client filter to run early but then it is
+up to the filter to make use its value.
 
 (The built-in "mx:" filter can be used to do a MX DNS lookup on the "ForwardTo"
 domain and fill in the "ForwardToAddress".)
 
 Connection failures do not cause messages to fail so any messages routed to
-unavailable addresses will stay in the spool directory.
+unavailable addresses will stay in the spool directory. Use "--poll" to make
+sure that these messages are retried and check the spool directory for old
+messages files from time to time.
 
 If routed SMTP connections need to authenticate using different client account
-details then the filter should also populate the "ClientAccountSelector" field
-in the message envelope file. The value in the envelope is used to select one of
-the "client" rows in the client secrets file having a matching fifth field.
+details then the filter that sets the "ForwardToAddress" in the message envelope
+file should also populate the "ClientAccountSelector" field. The selector value
+in the envelope is used to pick one of the "client" rows in the client secrets
+file having a matching fifth field.
 
 Delivery
 --------
@@ -1279,7 +1286,7 @@ Eg:
 Socket activation
 -----------------
 On Linux/Unix systems E-MailRelay can be passed open listening file descriptors
-at start-up by using the "--interface" option with a value like #fd3. This
+at start-up by using the "--interface" option with a value like fd#3. This
 allows a service management system to do the initial listening and only start up
 the E-MailRelay server when a connection comes in. Systemd calls this "socket
 activation".
@@ -1376,18 +1383,34 @@ list of DNSBL servers, together with a rejection threshold. If the threshold
 number of servers 'deny' the incoming connection's network address then
 E-MailRelay will drop the connection immediately.
 
-The "--dnsbl" configuration starts with the DNS server transport address and a
-millisecond timeout, followed by the threshold and list of servers:
+The "--dnsbl" configuration is a comma-separated list starting with a list of
+DNSBL servers, optionally followed by the threshold, millisecond timeout and DNS
+server transport address:
 
-	emailrelay -r --dnsbl 1.1.1.1:53,500,1,spam.example.com,block.example.com ...
+	emailrelay -r --dnsbl spam.example.com,block.example.com,1,500,1.1.1.1:53 ...
+
+The threshold defaults to 1, the timeout defaults to a small number of seconds,
+and the DNS server defaults to the first of the local system's configured
+nameservers, so a simple list of DNSBL servers is sufficient:
+
+	emailrelay -r --dnsbl spam.example.com,block.example.com ...
+
+For backwards compatibility the comma-separated fields can be reversed:
+
+	emailrelay -r --dnsbl 1.1.1.1:53,500,1,spam.example.com,block.example.com
 
 A threshold of zero means that the DNSBL servers are consulted but connections
-are always allowed. This can be combined with verbose logging ("--log -v")
-for initial testing.
+are always allowed. This can be combined with verbose logging ("--log -v") for
+initial testing:
+
+	emailrelay --log -v -r --dnsbl spam.example.com,block.example.com,0 ...
 
 If the timeout period expires before a collective decision is reached then the
-connection is allowed by default. This default behaviour can be changed by
-using a negative timeout, but for finer control use a DNSBL proxy.
+connection is allowed by default. This default behaviour can be changed by using
+a negative timeout, so then unresponsive DNSBL servers might result in all
+incoming connections being blocked:
+
+	emailrelay -r --dnsbl spam.example.com,block.example.com,1,-5000 ...
 
 Connections from loopback and private (RFC-1918) network addresses are never
 checked.

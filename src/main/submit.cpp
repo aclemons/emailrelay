@@ -63,7 +63,7 @@
 
 std::string versionNumber()
 {
-	return "2.5rc6" ;
+	return "2.5rc7" ;
 }
 
 static std::pair<G::Path,G::Path> writeFiles( const G::Path & spool_dir ,

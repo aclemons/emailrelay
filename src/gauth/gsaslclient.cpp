@@ -40,7 +40,8 @@ class GAuth::SaslClientImp
 public:
 	using Response = SaslClient::Response ;
 	SaslClientImp( const SaslClientSecrets & , const std::string & ) ;
-	bool active() const ;
+	bool validSelector( G::string_view ) const ;
+	bool mustAuthenticate( G::string_view ) const ;
 	std::string mechanism( const G::StringArray & , G::string_view ) const ;
 	Response initialResponse( G::string_view selector , std::size_t ) const ;
 	Response response( G::string_view mechanism , G::string_view challenge , G::string_view selector ) const ;
@@ -78,10 +79,6 @@ GAuth::SaslClientImp::SaslClientImp( const SaslClientSecrets & secrets ,
 
 std::string GAuth::SaslClientImp::mechanism( const G::StringArray & server_mechanisms , G::string_view selector ) const
 {
-	// short-circuit if no secrets file
-	if( !active() )
-		return std::string() ;
-
 	// if we have a plaintext password then we can use any cram
 	// mechanism for which we have a hash function -- otherwise
 	// we can use cram mechanisms where we have a hashed password
@@ -259,9 +256,14 @@ std::string GAuth::SaslClientImp::info() const
 	return m_info ;
 }
 
-bool GAuth::SaslClientImp::active() const
+bool GAuth::SaslClientImp::validSelector( G::string_view selector ) const
 {
-	return m_secrets.valid() ;
+	return m_secrets.validSelector( selector ) ;
+}
+
+bool GAuth::SaslClientImp::mustAuthenticate( G::string_view selector ) const
+{
+	return m_secrets.mustAuthenticate( selector ) ;
 }
 
 bool GAuth::SaslClientImp::match( const G::StringArray & mechanisms , const std::string & mechanism )
@@ -279,9 +281,14 @@ GAuth::SaslClient::SaslClient( const SaslClientSecrets & secrets , const std::st
 GAuth::SaslClient::~SaslClient()
 = default;
 
-bool GAuth::SaslClient::active() const
+bool GAuth::SaslClient::validSelector( G::string_view selector ) const
 {
-	return m_imp->active() ;
+	return m_imp->validSelector( selector ) ;
+}
+
+bool GAuth::SaslClient::mustAuthenticate( G::string_view selector ) const
+{
+	return m_imp->mustAuthenticate( selector ) ;
 }
 
 GAuth::SaslClient::Response GAuth::SaslClient::response( G::string_view mechanism ,

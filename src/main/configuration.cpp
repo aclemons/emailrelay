@@ -758,7 +758,7 @@ GSmtp::Client::Config Main::Configuration::smtpClientConfig( const std::string &
 					.set_ready_timeout( _promptTimeout() )
 					.set_use_starttls_if_possible( clientTls() && !clientOverTls() )
 					.set_must_use_tls( contains("client-tls-required") && !clientOverTls() )
-					.set_must_authenticate( true ) // if --client-auth
+					.set_authentication_fallthrough( false )
 					.set_anonymous( anonymous("client") )
 					.set_must_accept_all_recipients( !contains("forward-to-some") )
 					.set_pipelining( smtp_client_switches("pipelining"_sv,false) )

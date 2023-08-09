@@ -338,8 +338,11 @@ local Tor server on port 9050 to the mail server at smtp.example.com:
 Blocklists and dynamic firewalls
 --------------------------------
 E-MailRelay can consult with remote DNSBL blocklist servers in order to block
-incoming connections from known spammers. Refer to the documentation of the
-`--dnsbl` option for more details.
+incoming connections from known spammers. For example:
+
+        emailrelay -r --dnsbl=zen.spamhaus.org,bl.mailspike.net ...
+
+Refer to the documentation of the `--dnsbl` option for more details.
 
 It is also possible to integrate E-MailRelay with intrusion detection systems
 such as `fail2ban` that monitor log files and dynamically modify your iptables

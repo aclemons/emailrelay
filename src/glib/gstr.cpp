@@ -423,12 +423,10 @@ bool G::Str::isPrintable( string_view s ) noexcept
 	return StrImp::allOf( s , StrImp::isPrintable ) ;
 }
 
-#ifndef G_LIB_SMALL
 bool G::Str::isSimple( string_view s ) noexcept
 {
 	return StrImp::allOf( s , StrImp::isSimple ) ;
 }
-#endif
 
 bool G::Str::isInt( string_view s ) noexcept
 {

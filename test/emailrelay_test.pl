@@ -900,19 +900,19 @@ sub testClientAccountSelection
 		System::editEnvelope( $server_src->spoolDir()."/emailrelay.".sprintf("%03d",$i).".envelope" , "Selector" , $selector ) ;
 	}
 	System::createFile( $server_src->clientSecrets() , [
-		"client plain id_default pwd_default" ,
-		"client plain id_one pwd_one one" ,
-		"client plain id_two pwd_two two" ,
-		"client plain id_three pwd_three three" ,
+		"client plain   id_default pwd_default" ,
+		"client plain   id_one     pwd_one     one" ,
+		"client plain  id_two     pwd_two     two" ,
+		"client plain id_three   pwd_three   three" ,
 	] ) ;
 	System::createFile( $server_src->serverSecrets() , "# empty" ) ;
 	my $server_dst = new Server() ;
 	System::createFile( $server_dst->serverSecrets() , [
 		"server plain id_default pwd_default" ,
-		"server plain id_one pwd_one" ,
-		"server plain id_two pwd_two" ,
-		"server plain id_three pwd_three" ,
-		"server plain id_bad pwd_bad" ,
+		"server plain id_one     pwd_one" ,
+		"server plain id_two     pwd_two" ,
+		"server plain id_three   pwd_three" ,
+		"server plain id_bad     pwd_bad" ,
 	] ) ;
 	System::createFile( $server_dst->clientSecrets() , "# empty" ) ;
 	$server_src->set_forwardToPort( $server_dst->smtpPort() ) ;
@@ -923,7 +923,7 @@ sub testClientAccountSelection
 	Check::running( $server_src->pid() , $server_src->message() ) ;
 	Check::running( $server_dst->pid() , $server_dst->message() ) ;
 
-	# test that forwarding proceeds with client account switching
+	# test that forwarding proceeds with client account switching but one fails with last one unsent
 	System::waitForFiles( $server_dst->spoolDir()."/*envelope*" , $good_messages ) ;
 	System::waitForFiles( $server_src->spoolDir()."/*.envelope.bad" , 1 ) ;
 	Check::fileContains( System::glob_($server_dst->spoolDir()."/*\.1.envelope") , "X-MailRelay-Authentication:.id_default" ) ;
@@ -1975,6 +1975,58 @@ sub testRouting
 	$test_server_1->cleanup() ;
 	$test_server_2->cleanup() ;
 }
+
+sub testRoutingWithClientAccountSelection
+{
+	# setup
+	my %args = (
+		Log => 1 ,
+		LogFile => 1 ,
+		Verbose => 1 ,
+		Port => 1 ,
+		SpoolDir => 1 ,
+		PidFile => 1 ,
+		Port => 1 ,
+		Forward => 1 ,
+		ForwardTo => 1 ,
+		ClientAuth => 1 ,
+	) ;
+	my $server = new Server() ;
+	my $test_server_1 = new TestServer( System::nextPort() ) ;
+	my $test_server_2 = new TestServer( System::nextPort() ) ;
+	$server->set_forwardToPort( $test_server_1->port() ) ;
+	System::submitMessageSequence( $server->spoolDir() , 4 ) ;
+	System::editEnvelope( $server->spoolDir()."/emailrelay.003.envelope" , "Selector" , "noauth" ) ;
+	System::editEnvelope( $server->spoolDir()."/emailrelay.003.envelope" , "ForwardToAddress" , $System::localhost.":".$test_server_2->port() ) ;
+	System::editEnvelope( $server->spoolDir()."/emailrelay.004.envelope" , "Selector" , "noauth" ) ;
+	System::editEnvelope( $server->spoolDir()."/emailrelay.004.envelope" , "ForwardToAddress" , $System::localhost.":".$test_server_2->port() ) ;
+	System::createFile( $server->clientSecrets() , [
+		"client plain   id_default pwd_default" ,
+		"client plain:b =          =            noauth" ,
+	] ) ;
+	$test_server_1->run( "--auth-plain --auth-ok" ) ;
+	$test_server_2->run( "--auth-plain" ) ; # advertise but dont require authentication
+	Check::running( $test_server_1->pid() ) ;
+	Check::running( $test_server_2->pid() ) ;
+
+	# test that the two routed messages go to test-server-2 with no authentication
+	Check::ok( $server->run(\%args) , "failed to run" , $server->message() ) ;
+	Check::running( $server->pid() , $server->message() ) ;
+	System::waitForFiles( $server->spoolDir()."/*envelope*" , 0 ) ;
+	Check::fileContains( $test_server_1->log() , "rx..: .AUTH PLAIN" , undef , 1 ) ;
+	Check::fileContains( $test_server_1->log() , "rx..: .MAIL FROM.*AUTH=id_default" , undef , 2 ) ;
+	Check::fileContains( $test_server_2->log() , "rx..: .AUTH PLAIN" , undef , 0 ) ;
+	Check::fileContains( $test_server_2->log() , "rx..: .MAIL FROM.*>]" , undef , 2 ) ;
+
+	# tear down
+	$server->kill() ;
+	$test_server_1->kill() ;
+	$test_server_2->kill() ;
+	$server->cleanup() ;
+	$test_server_1->cleanup() ;
+	$test_server_2->cleanup() ;
+}
+
 
 sub testRoutingWithSplitAndMxFilters
 {
