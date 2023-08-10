@@ -54,7 +54,7 @@ struct G::Limits<G::Scale::Normal> /// Normal specialisation of G::Limits.
 	static constexpr bool small = false ;
 	static constexpr int log = 1000 ; // log line limit
 	static constexpr int path_buffer = 1024 ; // getcwd() first-attempt buffer size
-	static constexpr int file_buffer = 102400 ; // read() buffer size for file copying
+	static constexpr int file_buffer = 8192 ; // read() buffer size for file copying (BUFSIZ)
 	static constexpr int net_buffer = 20000 ; // read() buffer size for network reads (>=16k is best for TLS)
 	static constexpr int net_listen_queue = 31 ; // listen(2) backlog parameter (cf. apache 511)
 	static constexpr int net_file_limit = 200000000 ; // DoS limit reading a file from the network

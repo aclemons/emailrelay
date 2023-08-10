@@ -194,6 +194,7 @@
 ./src/gfilters/gfilterchain.cpp
 ./src/gfilters/gsplitfilter.cpp
 ./src/gfilters/gmxlookup.cpp
+./src/gfilters/gmessageidfilter.cpp
 ./src/gfilters/gmxfilter.cpp
 ./src/gfilters/gcopyfilter.cpp
 ./src/gfilters/gfilterfactory.cpp

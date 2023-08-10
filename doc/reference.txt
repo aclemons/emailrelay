@@ -454,17 +454,19 @@ When using "--as-client", or "--dont-serve" with "--forward", the spooled
 messages begin to be forwarded as soon as the program starts up, and the
 program terminates once they have all been sent.
 
-Normally all recipient e-mail addresses must be accepted by the remote server
-when E-MailRelay forwards an e-mail message ("--forward-to-all"). If any one
-recipient is rejected then the message will be left in the spool directory with
-a ".bad" suffix on the envelope file.
+Normally when an e-mail message is forwarded all the remote recipient e-mail
+addresses must be accepted by the remote server ("--forward-to-all"). If any one
+recipient is rejected then the message will be failed and left in the spool
+directory with a ".bad" suffix on the envelope file.
 
 However, if the "--forward-to-some" option is used then forwarding will succeed
 for the valid recipients and the failed message will contain just the invalid
-ones.
+ones. (Future E-MailRelay releases might switch to "--forward-to-some" as the
+default, so use "--forward-to-all" if that is what is required.)
 
-Future E-MailRelay releases might switch to "--forward-to-some" as the default,
-so use "--forward-to-all" if that is what is required.
+If an address verifier has previously determined that all the recipient
+addresses in an e-mail message are local then it will be failed immediately when
+forwarding, before any interaction with the remote server.
 
 Filters
 -------
@@ -701,6 +703,11 @@ If the DNS server responds with a forwarding address of "0.0.0.0" then the
 default "--forward-to" address.
 
 See "Routing" below for more details.
+
+# msgid:
+
+The "msgid:" filter adds a RFC-822 "Message-ID" header to the content file if it
+does not have one already.
 
 Address verifiers
 -----------------
@@ -956,7 +963,7 @@ Base64 encoding can be used instead of xtext encoding by replacing "plain" by
 	server plain:b Y2Fyb2w= bXkgcGFzc3dvcmQ= # carol
 
 Note that modern email services will expect user-ids and passwords containing
-non-ASCII characters to use UTF-8 encoding with RFC-4013 normalisation applied.
+non-ASCII characters to use UTF-8 encoding with RFC-4013 normalisation.
 
 Multiple client accounts can be defined in the secrets file by using a fifth
 field as an account selector. When an e-mail message is forwarded the
@@ -974,8 +981,8 @@ advertised by the server and selected by the client. Many authentication
 mechanisms have been defined and standardised, and the simplest ones just
 exchange a username and plain-text password. E-MailRelay supports the PLAIN,
 LOGIN and CRAM-MD5 mechanisms for both client-side and server-side
-authentication as a minimum, but other mechanisms might be built in or
-available via PAM (see below).
+authentication as a minimum, with XOAUTH2 on for client-side authentication.
+Other mechanisms might be built in or available via PAM (see below).
 
 The PLAIN, LOGIN and CRAM-MD5 mechanisms can use plain-text passwords, stored
 in the secrets file using a password-type of "plain". In addition, the
@@ -1132,9 +1139,6 @@ stages: first use a filter to split the message into independent copies grouped
 by domain, and then use a client filter to do MX DNS lookups on those domain
 names to populate the "ForwardToAddress".
 
-The client filter can be made to run early, before the forwarding connection is
-established, by populating the "ForwardTo" field in the message envelope files.
-
 (The built-in "split:" filter can be used to split messages by recipient domain
 and store the domain name in the "ForwardTo" envelope field.)
 
@@ -1143,7 +1147,7 @@ forwarding a message and if there is a defined "--client-filter" then the filter
 will be run early so that it can populate a "ForwardToAddress" before connecting
 to the remote server. The contents of the "ForwardTo" field is not interpreted
 by E-MailRelay itself; it causes the client filter to run early but then it is
-up to the filter to make use its value.
+up to the filter to make use of its value.
 
 (The built-in "mx:" filter can be used to do a MX DNS lookup on the "ForwardTo"
 domain and fill in the "ForwardToAddress".)
@@ -1391,7 +1395,7 @@ server transport address:
 
 The threshold defaults to 1, the timeout defaults to a small number of seconds,
 and the DNS server defaults to the first of the local system's configured
-nameservers, so a simple list of DNSBL servers is sufficient:
+nameservers, so a simple list of DNSBL servers can be used:
 
 	emailrelay -r --dnsbl spam.example.com,block.example.com ...
 
@@ -1454,7 +1458,7 @@ hard links in order to save disk space.
 
 The built-in "copy:" filter can be used to support "--pop-by-name". It copies
 message files into all sub-directories (whether they have a matching POP account
-or not) and by default it deletes the original message files. To keep the
+or not) and by default it then deletes the original message files. To keep the
 original files in the main spool directory so they can be forwarded use
 "copy:nodelete"; to copy just the envelope file and leave the content file alone
 use "copy:pop"; and to copy content files with hard links use "copy:hardlink".

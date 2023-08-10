@@ -15,48 +15,49 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
-/// \file gcopyfilter.h
+/// \file gmessageidfilter.h
 ///
 
-#ifndef G_COPY_FILTER_H
-#define G_COPY_FILTER_H
+#ifndef G_MESSAGE_ID_FILTER_H
+#define G_MESSAGE_ID_FILTER_H
 
 #include "gdef.h"
 #include "gsimplefilterbase.h"
 #include "gfilestore.h"
-#include "genvelope.h"
 #include "gexception.h"
 
 namespace GFilters
 {
-	class CopyFilter ;
+	class MessageIdFilter ;
 }
 
-//| \class GFilters::CopyFilter
-/// A concrete GSmtp::Filter class that copies the message to all
-/// pre-existing sub-directories of the spool directory. This is
-/// similar to the 'emailrelay-filter-copy' utility.
+//| \class GFilters::MessageIdFilter
+/// A filter that adds a RFC-822 Message-ID to the message content if
+/// it does not have one already.
 ///
-class GFilters::CopyFilter : public SimpleFilterBase
+class GFilters::MessageIdFilter : public SimpleFilterBase
 {
 public:
-	G_EXCEPTION( Error , tx("copy filter failed to copy message files into sub-directory") ) ;
+	G_EXCEPTION( Error , tx("failed to add message id to content file") ) ;
 
-	CopyFilter( GNet::ExceptionSink es , GStore::FileStore & ,
+	MessageIdFilter( GNet::ExceptionSink , GStore::FileStore & ,
 		Filter::Type , const Filter::Config & , const std::string & spec ) ;
 			///< Constructor.
+
+	static std::string process( const G::Path & , const std::string & domain ) ;
+		///< Edits a content file by adding a message-id if necessary.
+		///< Returns an error message on error.
 
 private: // overrides
 	Result run( const GStore::MessageId & , bool & , GStore::FileStore::State ) override ;
 
 private:
-	using FileOp = GStore::FileStore::FileOp ;
+	static bool isId( G::string_view ) noexcept ;
+	static std::string newId( const std::string & ) ;
+
+private:
 	GStore::FileStore & m_store ;
-	Filter::Config m_filter_config ;
-	std::string m_spec ;
-	bool m_pop_by_name {false} ;
-	bool m_hardlink {false} ;
-	bool m_no_delete {false} ;
+	std::string m_domain ;
 } ;
 
 #endif

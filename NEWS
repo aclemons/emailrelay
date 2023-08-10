@@ -26,8 +26,8 @@ options like "--filter=exit:99" and "--filter=spam:localhost:783", with a
 small number of special prefixes like "exit:", "net:", "file:" and "spam:".
 
 In this release there are more built-in filters and address verifiers, including
-"deliver:", "split:", "mx:", and "copy:" filters and the "account:" address
-verifier.
+"deliver:", "split:", "mx:", "copy:" and "msgid:" filters and the "account:"
+address verifier.
 
 Refer to the reference document for more details.
 
@@ -42,10 +42,6 @@ to the spool directory. So Alice's mailbox might be the "alice" sub-directory
 can have its own "maildir" structure, "/var/spool/emailrelay/alice/new,cur,tmp",
 in which case the content file will be delivered to the "cur" directory and
 there will be no envelope file.
-
-The delivery base directory can be specified with the "--delivery-dir" option.
-This can be useful if outgoing messages need to be delivered straight to
-incoming mailboxes without going via the smarthost.
 
 Refer to the reference document for more details.
 

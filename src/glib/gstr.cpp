@@ -971,7 +971,7 @@ std::istream & G::Str::readLine( std::istream & stream , std::string & line , st
 	if( pre_erase )
 		line.clear() ;
 
-	if( line.empty() && ( eol.empty() || eol.size() == 1U ) )
+	if( line.empty() && ( eol.empty() || eol.size() == 1U ) && limit == 0U )
 	{
 		std::getline( stream , line , eol.empty() ? '\n' : eol[0] ) ;
 	}

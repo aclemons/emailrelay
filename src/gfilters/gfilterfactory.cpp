@@ -29,6 +29,7 @@
 #include "gexecutablefilter.h"
 #include "gspamfilter.h"
 #include "gdeliveryfilter.h"
+#include "gmessageidfilter.h"
 #include "gcopyfilter.h"
 #include "gmxfilter.h"
 #include "gsplitfilter.h"
@@ -99,6 +100,10 @@ GFilters::FilterFactory::Spec GFilters::FilterFactory::parse( const std::string 
 	{
 		result = Spec( "mx" , tail ) ;
 	}
+	else if( G::Str::headMatch( spec_in , "msgid:" ) )
+	{
+		result = Spec( "msgid" , tail ) ;
+	}
 	else if( G::Str::headMatch( spec_in , "file:" ) )
 	{
 		result = Spec( "file" , tail ) ;
@@ -164,6 +169,10 @@ std::unique_ptr<GSmtp::Filter> GFilters::FilterFactory::newFilter( GNet::Excepti
 	else if( spec.first == "mx" )
 	{
 		return std::make_unique<MxFilter>( es , m_file_store , filter_type , filter_config , spec.second ) ;
+	}
+	else if( spec.first == "msgid" )
+	{
+		return std::make_unique<MessageIdFilter>( es , m_file_store , filter_type , filter_config , spec.second ) ;
 	}
 	else
 	{

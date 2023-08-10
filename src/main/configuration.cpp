@@ -776,7 +776,8 @@ GSmtp::Client::Config Main::Configuration::smtpClientConfig( const std::string &
 			.set_secure_connection_timeout( _secureConnectionTimeout() )
 			.set_secure_tunnel( clientOverTls() )
 			.set_sasl_client_config( _smtpSaslClientConfig() )
-			.set_client_tls_profile( client_tls_profile ) ;
+			.set_client_tls_profile( client_tls_profile )
+			.set_fail_if_no_remote_recipients() ;
 }
 
 GSmtp::AdminServer::Config Main::Configuration::adminServerConfig( const G::StringMap & info_map ,

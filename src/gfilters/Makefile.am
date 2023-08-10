@@ -37,6 +37,8 @@ libgfilters_a_SOURCES = \
 	gfilterchain.h \
 	gfilterfactory.cpp \
 	gfilterfactory.h \
+	gmessageidfilter.cpp \
+	gmessageidfilter.h \
 	gmxfilter.cpp \
 	gmxfilter.h \
 	gmxlookup.cpp \

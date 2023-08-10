@@ -32,16 +32,11 @@
 #include "glog.h"
 #include <utility>
 
-GSmtp::Client::Client( GNet::ExceptionSink es ,
-	FilterFactoryBase & ff , const GNet::Location & remote ,
-	const GAuth::SaslClientSecrets & secrets ,
-	const Config & config ) :
+GSmtp::Client::Client( GNet::ExceptionSink es , FilterFactoryBase & ff , const GNet::Location & remote ,
+	const GAuth::SaslClientSecrets & secrets , const Config & config ) :
 		GNet::Client(es,remote,netConfig(config)) ,
-		m_es(es) ,
-		m_ff(ff) ,
 		m_config(config) ,
-		m_secrets(secrets) ,
-		m_nofilter_timer(*this,&Client::onNoFilterTimeout,m_es) ,
+		m_nofilter_timer(*this,&Client::onNoFilterTimeout,es) ,
 		m_filter(ff.newFilter(es,Filter::Type::client,config.filter_config,config.filter_spec)) ,
 		m_protocol(es,*this,secrets,config.sasl_client_config,config.client_protocol_config,config.secure_tunnel) ,
 		m_secure(false) ,

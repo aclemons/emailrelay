@@ -111,10 +111,10 @@ libgfilters_a_LIBADD =
 am_libgfilters_a_OBJECTS = gcopyfilter.$(OBJEXT) \
 	gdeliveryfilter.$(OBJEXT) gexecutablefilter.$(OBJEXT) \
 	gfilterchain.$(OBJEXT) gfilterfactory.$(OBJEXT) \
-	gmxfilter.$(OBJEXT) gmxlookup.$(OBJEXT) \
-	gnetworkfilter.$(OBJEXT) gnullfilter.$(OBJEXT) \
-	gsimplefilterbase.$(OBJEXT) gspamfilter.$(OBJEXT) \
-	gsplitfilter.$(OBJEXT)
+	gmessageidfilter.$(OBJEXT) gmxfilter.$(OBJEXT) \
+	gmxlookup.$(OBJEXT) gnetworkfilter.$(OBJEXT) \
+	gnullfilter.$(OBJEXT) gsimplefilterbase.$(OBJEXT) \
+	gspamfilter.$(OBJEXT) gsplitfilter.$(OBJEXT)
 libgfilters_a_OBJECTS = $(am_libgfilters_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -134,10 +134,11 @@ am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/gcopyfilter.Po \
 	./$(DEPDIR)/gdeliveryfilter.Po \
 	./$(DEPDIR)/gexecutablefilter.Po ./$(DEPDIR)/gfilterchain.Po \
-	./$(DEPDIR)/gfilterfactory.Po ./$(DEPDIR)/gmxfilter.Po \
-	./$(DEPDIR)/gmxlookup.Po ./$(DEPDIR)/gnetworkfilter.Po \
-	./$(DEPDIR)/gnullfilter.Po ./$(DEPDIR)/gsimplefilterbase.Po \
-	./$(DEPDIR)/gspamfilter.Po ./$(DEPDIR)/gsplitfilter.Po
+	./$(DEPDIR)/gfilterfactory.Po ./$(DEPDIR)/gmessageidfilter.Po \
+	./$(DEPDIR)/gmxfilter.Po ./$(DEPDIR)/gmxlookup.Po \
+	./$(DEPDIR)/gnetworkfilter.Po ./$(DEPDIR)/gnullfilter.Po \
+	./$(DEPDIR)/gsimplefilterbase.Po ./$(DEPDIR)/gspamfilter.Po \
+	./$(DEPDIR)/gsplitfilter.Po
 am__mv = mv -f
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -341,6 +342,8 @@ libgfilters_a_SOURCES = \
 	gfilterchain.h \
 	gfilterfactory.cpp \
 	gfilterfactory.h \
+	gmessageidfilter.cpp \
+	gmessageidfilter.h \
 	gmxfilter.cpp \
 	gmxfilter.h \
 	gmxlookup.cpp \
@@ -409,6 +412,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gexecutablefilter.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfilterchain.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfilterfactory.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmessageidfilter.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmxfilter.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmxlookup.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnetworkfilter.Po@am__quote@ # am--include-marker
@@ -567,6 +571,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/gexecutablefilter.Po
 	-rm -f ./$(DEPDIR)/gfilterchain.Po
 	-rm -f ./$(DEPDIR)/gfilterfactory.Po
+	-rm -f ./$(DEPDIR)/gmessageidfilter.Po
 	-rm -f ./$(DEPDIR)/gmxfilter.Po
 	-rm -f ./$(DEPDIR)/gmxlookup.Po
 	-rm -f ./$(DEPDIR)/gnetworkfilter.Po
@@ -628,6 +633,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/gexecutablefilter.Po
 	-rm -f ./$(DEPDIR)/gfilterchain.Po
 	-rm -f ./$(DEPDIR)/gfilterfactory.Po
+	-rm -f ./$(DEPDIR)/gmessageidfilter.Po
 	-rm -f ./$(DEPDIR)/gmxfilter.Po
 	-rm -f ./$(DEPDIR)/gmxlookup.Po
 	-rm -f ./$(DEPDIR)/gnetworkfilter.Po

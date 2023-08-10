@@ -10,7 +10,7 @@ Change Log
 * SMTP CHUNKING/8BITMIME 'BDAT' extension (RFC-3030_), disabled by default.
 * SMTP SMTPUTF8 extension (RFC-6531_), disabled by default.
 * No 7-bit/8-bit check on received message content (see NEWS file).
-* New built-in filters: *deliver:*, *split:*, *copy:*, *mx:*.
+* New built-in filters: *deliver:*, *split:*, *copy:*, *mx:*, *msgid:*.
 * New built-in address verifier: *account:*
 * No *.local* files (see NEWS file).
 * PAM_ authentication is now enabled with *--server-auth=pam:* not */pam*.

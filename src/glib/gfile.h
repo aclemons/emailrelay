@@ -109,7 +109,7 @@ public:
 		///< Copies a file.
 
 	static void copy( std::istream & from , std::ostream & to ,
-		std::streamsize limit = 0U , std::string::size_type block = 0U ) ;
+		std::streamsize limit = 0U , std::size_t block = 0U ) ;
 			///< Copies a stream with an optional size limit.
 
 	static bool copyInto( const Path & from , const Path & to_dir , std::nothrow_t ) ;

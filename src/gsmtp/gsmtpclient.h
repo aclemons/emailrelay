@@ -73,6 +73,7 @@ public:
 		bool secure_tunnel {false} ;
 		std::string sasl_client_config ;
 		std::string client_tls_profile ;
+		bool fail_if_no_remote_recipients {true} ; // used by GSmtp::Forward
 
 		Config() ;
 		Config & set_stream_socket_config( const GNet::StreamSocket::Config & ) ;
@@ -86,7 +87,7 @@ public:
 		Config & set_secure_tunnel( bool = true ) noexcept ;
 		Config & set_sasl_client_config( const std::string & ) ;
 		Config & set_client_tls_profile( const std::string & ) ;
-		Config & set_fail_if_no_recipients( bool = true ) noexcept ;
+		Config & set_fail_if_no_remote_recipients( bool = true ) noexcept ;
 	} ;
 
 	Client( GNet::ExceptionSink ,
@@ -151,10 +152,7 @@ private:
 	static GNet::Client::Config netConfig( const Config & smtp_config ) ;
 
 private:
-	GNet::ExceptionSink m_es ;
-	FilterFactoryBase & m_ff ;
 	Config m_config ;
-	const GAuth::SaslClientSecrets & m_secrets ;
 	GNet::Timer<Client> m_nofilter_timer ;
 	std::shared_ptr<GStore::StoredMessage> m_message ;
 	std::unique_ptr<Filter> m_filter ;
@@ -176,5 +174,6 @@ inline GSmtp::Client::Config & GSmtp::Client::Config::set_secure_connection_time
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_secure_tunnel( bool b ) noexcept { secure_tunnel = b ; return *this ; }
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_sasl_client_config( const std::string & s ) { sasl_client_config = s ; return *this ; }
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_client_tls_profile( const std::string & s ) { client_tls_profile = s ; return *this ; }
+inline GSmtp::Client::Config & GSmtp::Client::Config::set_fail_if_no_remote_recipients( bool b ) noexcept { fail_if_no_remote_recipients = b ; return *this ; }
 
 #endif
