@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -22,20 +22,24 @@ else
 endif
 
 EXTRA_DIST = \
-	emailrelay.conf.template \
-	emailrelay.auth.template \
-	emailrelay-fail2ban-jail \
-	emailrelay-fail2ban-filter \
+	emailrelay.auth.in \
+	emailrelay.conf.in \
+	emailrelay.pam \
 	emailrelay.service.in \
-	emailrelay.pam
-
-e_sysconf_DATA = \
-	emailrelay.conf.template \
-	emailrelay.auth.template
-
-e_examples_DATA = \
 	emailrelay-fail2ban-jail \
 	emailrelay-fail2ban-filter
+
+noinst_DATA = \
+	emailrelay.auth \
+	emailrelay.conf
+
+e_lib_DATA = \
+	emailrelay.auth.in \
+	emailrelay.conf.in
+
+e_examples_DATA = \
+	emailrelay-fail2ban-filter \
+	emailrelay-fail2ban-jail
 
 e_systemd_DATA = \
 	emailrelay.service
@@ -48,34 +52,32 @@ do_sed = sed -e "s:__INIT_DIR__:$(e_initdir):g" -e "s:__RUN_DIR__:$(e_rundir):g"
 emailrelay.service: emailrelay.service.in
 	$(do_sed) < $(srcdir)/emailrelay.service.in > emailrelay.service
 
+do_sed2 = sed -e "s:^.spool-dir .*:spool-dir $(e_spooldir):g" -e "s:/var/spool/emailrelay:$(e_spooldir):g" -e "s:/etc:$(e_sysconfdir):g" -e "s:/usr/local/sbin:$(sbindir):g"
+
+emailrelay.conf: emailrelay.conf.in
+	$(do_sed2) < $(srcdir)/emailrelay.conf.in > emailrelay.conf
+
+emailrelay.auth: emailrelay.auth.in
+	$(do_sed2) < $(srcdir)/emailrelay.auth.in > emailrelay.auth
+
 CLEANFILES = \
 	emailrelay \
+	emailrelay.auth \
+	emailrelay.conf \
 	emailrelay.service
 
 if GCONFIG_INSTALL_HOOK
 
-# disable this section when running configure for a .deb or .rpm
-# package by using 'configure --disable-install-hook'
-#
-# creates the .conf file from .conf.template with directory edits
-#
+# don't clobber user's auth and conf files -- disable with 'configure --disable-install-hook'
+
 install-data-hook:
-	if test -f "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; then : ; else sed -e "s:^#spool-dir .*:spool-dir $(e_spooldir):g" -e 's:"/var/spool/emailrelay":"'"$(e_spooldir)"'":g' -e "s:/etc:$(e_sysconfdir):g" -e "s:/usr/local/bin:$(e_libexecdir):g" < "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf.template" > "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; fi
-	cp "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf.makeinstall"
+	-$(MKDIR_P) "$(DESTDIR)$(e_sysconfdir)/" || true
+	if test -f "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; then : ; else $(INSTALL_DATA) "emailrelay.conf" "$(DESTDIR)$(e_sysconfdir)/" ; fi
+	if test -f "$(DESTDIR)$(e_sysconfdir)/emailrelay.auth" ; then : ; else $(INSTALL_DATA) "emailrelay.auth" "$(DESTDIR)$(e_sysconfdir)/" ; fi
 
-# remove the .conf file if it has not been edited
 uninstall-hook:
-	if diff -q "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf.makeinstall" ; then rm "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" ; fi
-	-rm "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf.makeinstall"
-
-else
-
-# if there is no .conf file then copy it from .conf.template
-install-data-hook:
-	test -f "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" || cp "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf.template" "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf"
-
-# remove the .conf file - the .conf.template has been deleted when this runs
-uninstall-hook:
-	-rm "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf"
+	-cp "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" /tmp/emailrelay.conf.uninstall || true
+	-rm "$(DESTDIR)$(e_sysconfdir)/emailrelay.conf" || true
+	-rm "$(DESTDIR)$(e_sysconfdir)/emailrelay.auth" || true
 
 endif

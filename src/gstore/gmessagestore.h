@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -141,11 +141,11 @@ public:
 		///< store has changed. Implementations must cause the
 		///< messageStoreUpdateSignal() signal to be emitted.
 
-	virtual G::Slot::Signal<> & messageStoreUpdateSignal() = 0 ;
+	virtual G::Slot::Signal<> & messageStoreUpdateSignal() noexcept = 0 ;
 		///< Provides a signal which is emitted when something might
 		///< have changed in the store.
 
-	virtual G::Slot::Signal<> & messageStoreRescanSignal() = 0 ;
+	virtual G::Slot::Signal<> & messageStoreRescanSignal() noexcept = 0 ;
 		///< Provides a signal which is emitted when rescan()
 		///< is called.
 } ;

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -99,7 +99,7 @@ std::unique_ptr<GStore::StoredMessage> GStore::FileIterator::next()
 			continue ;
 		}
 
-		return std::unique_ptr<StoredMessage>( message_ptr.release() ) ; // up-cast
+		return message_ptr ;
 	}
 	return {} ;
 }
@@ -133,16 +133,18 @@ std::string GStore::FileStore::x()
 std::string GStore::FileStore::format( int generation )
 {
 	// use a weird prefix to help with file(1) and magic(5)
-	if( generation == -4 )
+	if( generation == -5 )
 		return "#2821.3" ; // original
-	else if( generation == -3 )
+	else if( generation == -4 )
 		return "#2821.4" ; // new for 1.9
-	else if( generation == -2 )
+	else if( generation == -3 )
 		return "#2821.5" ; // new for 2.0
-	else if( generation == -1 )
+	else if( generation == -2 )
 		return "#2821.6" ; // new for 2.4
+	else if( generation == -1 )
+		return "#2821.7" ; // new for 2.5rc
 	else
-		return "#2821.7" ; // new for 2.5
+		return "#2821.8" ; // new for 2.5
 }
 
 bool GStore::FileStore::knownFormat( const std::string & format_in )
@@ -152,7 +154,8 @@ bool GStore::FileStore::knownFormat( const std::string & format_in )
 		format_in == format(-1) ||
 		format_in == format(-2) ||
 		format_in == format(-3) ||
-		format_in == format(-4) ;
+		format_in == format(-4) ||
+		format_in == format(-5) ;
 }
 
 void GStore::FileStore::checkPath( const G::Path & directory_path )
@@ -299,7 +302,7 @@ std::unique_ptr<GStore::StoredMessage> GStore::FileStore::get( const MessageId &
 	if( !message->openContent( reason ) )
 		throw GetError( id.str().append(": cannot read the content: ").append(reason) ) ;
 
-	return std::unique_ptr<StoredMessage>( message.release() ) ; // up-cast
+	return message ;
 }
 
 GStore::Envelope GStore::FileStore::readEnvelope( const G::Path & envelope_path , std::ifstream * stream_p )
@@ -326,12 +329,12 @@ void GStore::FileStore::updated()
 	m_update_signal.emit() ;
 }
 
-G::Slot::Signal<> & GStore::FileStore::messageStoreUpdateSignal()
+G::Slot::Signal<> & GStore::FileStore::messageStoreUpdateSignal() noexcept
 {
 	return m_update_signal ;
 }
 
-G::Slot::Signal<> & GStore::FileStore::messageStoreRescanSignal()
+G::Slot::Signal<> & GStore::FileStore::messageStoreRescanSignal() noexcept
 {
 	return m_rescan_signal ;
 }
@@ -459,11 +462,21 @@ bool GStore::FileStore::FileOp::hardlink( const G::Path & src , const G::Path & 
 {
 	FileWriter claim_writer ;
 	errno_() = 0 ;
-	bool ok =
-		G::File::hardlink( src , dst , std::nothrow ) ||
-		G::File::copy( src , dst , std::nothrow ) ;
+	bool copied = false ;
+	bool linked = G::File::hardlink( src , dst , std::nothrow ) ;
+	if( !linked )
+		copied = G::File::copy( src , dst , std::nothrow ) ;
 	errno_() = G::Process::errno_() ;
-	return ok ;
+
+	// fix up group ownership if hard-linked into a set-group-id directory
+	if( linked )
+	{
+		auto dir_stat = G::File::stat( dst.simple() ? G::Path(".") : dst.dirname() ) ;
+		if( !dir_stat.error && dir_stat.inherit )
+			G::File::chgrp( dst , dir_stat.gid , std::nothrow ) ;
+	}
+
+	return linked || copied ;
 }
 
 bool GStore::FileStore::FileOp::copy( const G::Path & src , const G::Path & dst , bool use_hardlink )

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -60,13 +60,9 @@ public:
 	MonitorImp & operator=( MonitorImp && ) = delete ;
 
 private:
-	static std::string join( const std::string & , const std::string & ) ;
-	static void add( G::StringArray & , const std::string & , unsigned int , const std::string & ,
-		unsigned int , const std::string & ) ;
-	static void add( G::StringArray & , const std::string & , const std::string & , const std::string & ,
-		const std::string & , const std::string & ) ;
-	static void add( G::StringArray & , const std::string & , const std::string & , const std::string & ) ;
+	static void add( G::StringArray & , const std::string & , unsigned int , const std::string & , unsigned int , const std::string & ) ;
 	static void add( G::StringArray & , const std::string & , const std::string & ) ;
+	static void add( G::StringArray & , const std::string & , const std::string & , const std::string & ) ;
 
 private:
 	ConnectionMap m_connections ;
@@ -278,15 +274,17 @@ void GNet::MonitorImp::report( G::StringArray & out ) const
 	{
 		if( connection.second.is_client )
 		{
-			add( out , txt("Outgoing connection") , connection.first->localAddress().displayString() , "-->" ,
-				connection.first->connectionState() , "" ) ;
+			add( out , txt("Outgoing connection") ,
+				connection.first->localAddress().displayString() ,
+				connection.first->connectionState() ) ;
 		}
 	}
 	for( const auto & connection : m_connections )
 	{
 		if( !connection.second.is_client )
-			add( out , txt("Incoming connection") , connection.first->localAddress().displayString() , "<--" ,
-				connection.first->peerAddress().displayString() , "" ) ;
+			add( out , txt("Incoming connection") ,
+				connection.first->localAddress().displayString() ,
+				connection.first->peerAddress().displayString() ) ;
 	}
 }
 
@@ -294,14 +292,9 @@ void GNet::MonitorImp::add( G::StringArray & out , const std::string & key ,
 	unsigned int value_1 , const std::string & suffix_1 ,
 	unsigned int value_2 , const std::string & suffix_2 )
 {
-	add( out , key , G::Str::fromUInt(value_1) , suffix_1 , G::Str::fromUInt(value_2) , suffix_2 ) ;
-}
-
-void GNet::MonitorImp::add( G::StringArray & out , const std::string & key ,
-	const std::string & value_1 , const std::string & suffix_1 ,
-	const std::string & value_2 , const std::string & suffix_2 )
-{
-	add( out , key , join(value_1,suffix_1) , join(value_2,suffix_2) ) ;
+	add( out , key ,
+		G::Str::fromUInt(value_1).append(1U,' ').append(suffix_1) ,
+		G::Str::fromUInt(value_2).append(1U,' ').append(suffix_2) ) ;
 }
 
 void GNet::MonitorImp::add( G::StringArray & out , const std::string & key , const std::string & value )
@@ -315,10 +308,5 @@ void GNet::MonitorImp::add( G::StringArray & out , const std::string & key , con
 	out.push_back( key ) ;
 	out.push_back( value_1 ) ;
 	out.push_back( value_2 ) ;
-}
-
-std::string GNet::MonitorImp::join( const std::string & s1 , const std::string & s2 )
-{
-	return s2.empty() ? s1 : ( s1 + " " + s2 ) ;
 }
 

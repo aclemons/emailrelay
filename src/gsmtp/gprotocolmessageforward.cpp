@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -54,13 +54,13 @@ GSmtp::ProtocolMessageForward::~ProtocolMessageForward()
 }
 
 #ifndef G_LIB_SMALL
-GSmtp::ProtocolMessage::DoneSignal & GSmtp::ProtocolMessageForward::storageDoneSignal()
+GSmtp::ProtocolMessage::DoneSignal & GSmtp::ProtocolMessageForward::storageDoneSignal() noexcept
 {
 	return m_pm->doneSignal() ;
 }
 #endif
 
-GSmtp::ProtocolMessage::DoneSignal & GSmtp::ProtocolMessageForward::doneSignal()
+GSmtp::ProtocolMessage::DoneSignal & GSmtp::ProtocolMessageForward::doneSignal() noexcept
 {
 	return m_done_signal ;
 }
@@ -137,10 +137,15 @@ void GSmtp::ProtocolMessageForward::processDone( bool success , const GStore::Me
 		bool nothing_to_do = false ;
 		std::string error = forward( id , nothing_to_do ) ;
 		if( this_.deleted() ) return ; // just in case
-		if( !error.empty() || nothing_to_do )
+		if( nothing_to_do )
 		{
-			// immediate failure or no recipients
-			m_done_signal.emit( success , id , "forwarding failed" , error ) ;
+			// no remote recipients
+			m_done_signal.emit( true , id , std::string() , std::string() ) ;
+		}
+		else if( !error.empty() )
+		{
+			// immediate failure or no recipients etc
+			m_done_signal.emit( false , id , "forwarding failed" , error ) ;
 		}
 	}
 	else
@@ -158,20 +163,17 @@ std::string GSmtp::ProtocolMessageForward::forward( const GStore::MessageId & id
 		G_DEBUG( "GSmtp::ProtocolMessageForward::forward: forwarding message " << id.str() ) ;
 
 		std::unique_ptr<GStore::StoredMessage> message = m_store.get( id ) ;
-		G_LOG( "GSmtp::ProtocolMessageForward::forward: processing message \"" << message->location() << "\"" ) ;
-
 		if( message->toCount() == 0U )
 		{
-			// use our local delivery mechanism, not the downstream server's
 			nothing_to_do = true ;
-			message->destroy() ; // (already copied to "*.local")
 		}
 		else
 		{
 			if( m_client_ptr.get() == nullptr )
 			{
-				m_client_ptr.reset( std::make_unique<Client>( GNet::ExceptionSink(m_client_ptr,m_es.esrc()),
+				m_client_ptr.reset( std::make_unique<Forward>( GNet::ExceptionSink(m_client_ptr,m_es.esrc()),
 					m_ff , m_client_location , m_client_secrets , m_client_config ) ) ;
+
 				m_client_ptr->messageDoneSignal().connect( G::Slot::slot( *this ,
 					&GSmtp::ProtocolMessageForward::messageDone ) ) ;
 			}
@@ -189,7 +191,7 @@ std::string GSmtp::ProtocolMessageForward::forward( const GStore::MessageId & id
 	}
 }
 
-void GSmtp::ProtocolMessageForward::messageDone( const std::string & reason )
+void GSmtp::ProtocolMessageForward::messageDone( const std::string & reason , bool )
 {
 	G_DEBUG( "GSmtp::ProtocolMessageForward::messageDone: \"" << reason << "\"" ) ;
 	const bool ok = reason.empty() ;

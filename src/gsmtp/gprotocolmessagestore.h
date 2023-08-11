@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -51,7 +51,7 @@ public:
 		///< Destructor.
 
 private: // overrides
-	ProtocolMessage::DoneSignal & doneSignal() override ; // GSmtp::ProtocolMessage
+	ProtocolMessage::DoneSignal & doneSignal() noexcept override ; // GSmtp::ProtocolMessage
 	void reset() override ; // GSmtp::ProtocolMessage
 	void clear() override ; // GSmtp::ProtocolMessage
 	GStore::MessageId setFrom( const std::string & , const FromInfo & ) override ; // GSmtp::ProtocolMessage

@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -427,17 +427,18 @@ sub fixup_mainpage
 		if( $line =~ m;^<li><p class="startli">--[-a-z]+.*</p>$; )
 		{
 			$line =~ s;--([a-z][-a-z]+);<span class="anchor" id="__$1">--$1; ;
-			$line =~ s/id="__([a-z][-a-z]+)-([-a-z]+)"/id="__$1_$2"/g ;
-			$line =~ s/id="__([a-z][-a-z]+)-([-a-z]+)"/id="__$1_$2"/g ;
-			$line =~ s/id="__([a-z][-a-z]+)-([-a-z]+)"/id="__$1_$2"/g ;
+
+			$line =~ s/id="__([a-z]+)-([a-z]+)-([a-z]+)"/id="__$1_$2_$3"/g ;
+			$line =~ s/id="__([a-z]+)-([a-z]+)"/id="__$1_$2"/g ;
+
 			$line =~ s;</p>;</span></p>; ;
 		}
 		elsif( $line =~ m/--[a-z][-a-z]+/ )
 		{
-			$line =~ s;([^!])--([a-z][-a-z]+);$1<a href="#__$2">--$2</a>;g ;
-			$line =~ s/href="#__([a-z][-a-z]+)-([-a-z]+)"/href="#__$1_$2"/g ;
-			$line =~ s/href="#__([a-z][-a-z]+)-([-a-z]+)"/href="#__$1_$2"/g ;
-			$line =~ s/href="#__([a-z][-a-z]+)-([-a-z]+)"/href="#__$1_$2"/g ;
+			$line =~ s;([^!])--([a-z][-a-z]+);$1<a class="option" href="#__$2">--$2</a>;g ;
+
+			$line =~ s/href="#__([a-z]+)-([a-z]+)-([a-z]+)"/href="#__$1_$2_$3"/g ;
+			$line =~ s/href="#__([a-z]+)-([a-z]+)"/href="#__$1_$2"/g ;
 		}
 
 		print $fh_out $line , "\n" ;

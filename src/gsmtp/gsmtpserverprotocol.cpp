@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -66,9 +66,6 @@ GSmtp::ServerProtocol::ServerProtocol( ServerSender & sender , Verifier & verifi
 		m_bdat_arg(0U) ,
 		m_bdat_sum(0U)
 {
-	m_message.doneSignal().connect( G::Slot::slot(*this,&ServerProtocol::processDone) ) ;
-	m_verifier.doneSignal().connect( G::Slot::slot(*this,&ServerProtocol::verifyDone) ) ;
-
 	m_fsm( Event::Quit , State::s_Any , State::End , &ServerProtocol::doQuit ) ;
 	m_fsm( Event::Unknown , State::Processing , State::s_Same , &ServerProtocol::doIgnore ) ;
 	m_fsm( Event::Unknown , State::s_Any , State::s_Same , &ServerProtocol::doUnknown ) ;
@@ -126,6 +123,8 @@ GSmtp::ServerProtocol::ServerProtocol( ServerSender & sender , Verifier & verifi
 		m_fsm.reset( State::StartingTls ) ;
 		m_fsm( Event::Secure , State::StartingTls , State::Start , &ServerProtocol::doSecureGreeting ) ;
 	}
+	m_verifier.doneSignal().connect( G::Slot::slot(*this,&ServerProtocol::verifyDone) ) ;
+	m_message.doneSignal().connect( G::Slot::slot(*this,&ServerProtocol::processDone) ) ;
 }
 
 GSmtp::ServerProtocol::~ServerProtocol()
@@ -134,7 +133,7 @@ GSmtp::ServerProtocol::~ServerProtocol()
 	m_verifier.doneSignal().disconnect() ;
 }
 
-G::Slot::Signal<> & GSmtp::ServerProtocol::changeSignal()
+G::Slot::Signal<> & GSmtp::ServerProtocol::changeSignal() noexcept
 {
 	return m_change_signal ;
 }
@@ -166,6 +165,8 @@ bool GSmtp::ServerProtocol::rcptState() const
 
 bool GSmtp::ServerProtocol::sendFlush() const
 {
+	// the return value is currently ignored by GSmtp::ServerPeer::protocolSend() ...
+
 	// always flush if no pipelining
 	if( !m_session_esmtp || !m_config.with_pipelining )
 		return true ;
@@ -597,17 +598,22 @@ void GSmtp::ServerProtocol::doHelp( EventData , bool & )
 
 void GSmtp::ServerProtocol::doVrfy( EventData event_data , bool & predicate )
 {
-	G_ASSERT( m_config.with_vrfy ) ;
-	if( m_config.mail_requires_authentication &&
-		!m_sasl->authenticated() && !m_sasl->trusted(m_peer_address.wildcards(),m_peer_address.hostPartString()) )
+	if( !m_config.with_vrfy )
 	{
 		predicate = false ;
-		sendAuthRequired() ;
+		sendCannotVerify() ;
+	}
+	else if( m_config.mail_requires_authentication &&
+		!m_sasl->authenticated() &&
+		!m_sasl->trusted(m_peer_address.wildcards(),m_peer_address.hostPartString()) )
+	{
+		predicate = false ;
+		sendAuthRequired( m_config.mail_requires_encryption && !m_secure && m_with_starttls ) ;
 	}
 	else if( m_config.mail_requires_encryption && !m_secure )
 	{
 		predicate = false ;
-		sendEncryptionRequired() ;
+		sendEncryptionRequired( m_with_starttls ) ;
 	}
 	else
 	{
@@ -676,8 +682,8 @@ void GSmtp::ServerProtocol::doEhlo( EventData event_data , bool & predicate )
 		m_session_esmtp = true ;
 		m_session_peer_name = smtp_peer_name ;
 		m_sasl->reset() ;
-		G_ASSERT( !m_sasl->authenticated() ) ;
 		clear() ;
+		G_ASSERT( !m_sasl->authenticated() ) ;
 
 		ServerSend::Advertise advertise ;
 		advertise.hello = m_text.hello( m_session_peer_name ) ;
@@ -728,7 +734,7 @@ void GSmtp::ServerProtocol::doAuth( EventData event_data , bool & predicate )
 	{
 		G_WARNING( "GSmtp::ServerProtocol: rejecting authentication attempt without encryption" ) ;
 		predicate = false ; // => idle
-		sendInsecureAuth() ;
+		sendInsecureAuth( m_with_starttls ) ;
 	}
 	else if( mechanisms().empty() )
 	{
@@ -809,17 +815,19 @@ void GSmtp::ServerProtocol::doMail( EventData event_data , bool & predicate )
 {
 	G::string_view mail_line = event_data ;
 	m_message.clear() ;
-	if( m_config.mail_requires_authentication && !m_sasl->authenticated() && !m_sasl->trusted(m_peer_address.wildcards(),m_peer_address.hostPartString()) )
+	if( m_config.mail_requires_authentication &&
+		!m_sasl->authenticated() &&
+		!m_sasl->trusted(m_peer_address.wildcards(),m_peer_address.hostPartString()) )
 	{
 		G_LOG( "GSmtp::ServerProtocol::doMail: server authentication enabled "
 			"but not a trusted address: " << m_peer_address.hostPartString() ) ;
 		predicate = false ;
-		sendAuthRequired() ;
+		sendAuthRequired( m_config.mail_requires_encryption && !m_secure && m_with_starttls ) ;
 	}
 	else if( m_config.mail_requires_encryption && !m_secure )
 	{
 		predicate = false ;
-		sendEncryptionRequired() ;
+		sendEncryptionRequired( m_with_starttls ) ;
 	}
 	else
 	{
@@ -914,7 +922,7 @@ void GSmtp::ServerProtocol::clear()
 void GSmtp::ServerProtocol::doRset( EventData , bool & )
 {
 	clear() ;
-	m_message.reset() ; // drop forwarding client connection (moot)
+	m_message.reset() ; // drop any ProtocolMessage forwarding client connection (moot)
 
 	sendRsetReply() ;
 }
@@ -962,7 +970,7 @@ GSmtp::ServerProtocol::Event GSmtp::ServerProtocol::commandEvent( G::string_view
 	if( G::Str::imatch(word,"DATA"_sv) ) return dataEvent(line) ;
 	if( G::Str::imatch(word,"RCPT"_sv) ) return Event::Rcpt ;
 	if( G::Str::imatch(word,"MAIL"_sv) ) return Event::Mail ;
-	if( G::Str::imatch(word,"VRFY"_sv) && m_config.with_vrfy ) return Event::Vrfy ;
+	if( G::Str::imatch(word,"VRFY"_sv) ) return Event::Vrfy ;
 	if( G::Str::imatch(word,"NOOP"_sv) ) return Event::Noop ;
 	if( G::Str::imatch(word,"EXPN"_sv) ) return Event::Expn ;
 	if( G::Str::imatch(word,"HELP"_sv) ) return Event::Help ;
@@ -1017,11 +1025,6 @@ G::StringArray GSmtp::ServerProtocol::mechanisms() const
 G::StringArray GSmtp::ServerProtocol::mechanisms( bool secure ) const
 {
 	return m_sasl->mechanisms( secure ) ;
-}
-
-std::string GSmtp::ServerProtocol::sendUseStartTls() const
-{
-	return !m_secure && m_with_starttls ? ": use starttls" : "" ;
 }
 
 // ===

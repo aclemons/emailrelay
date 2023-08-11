@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@
 
 GFilters::MxFilter::MxFilter( GNet::ExceptionSink es , GStore::FileStore & store ,
 	Filter::Type filter_type , const Filter::Config & filter_config , const std::string & spec ) :
+		m_es(es) ,
 		m_store(store) ,
 		m_filter_type(filter_type) ,
 		m_filter_config(filter_config) ,
@@ -40,13 +41,8 @@ GFilters::MxFilter::MxFilter( GNet::ExceptionSink es , GStore::FileStore & store
 		m_special(false) ,
 		m_timer(*this,&MxFilter::onTimeout,es)
 {
-	if( filter_type != Filter::Type::client )
-	{
-		if( !MxLookup::enabled() )
-			throw G::Exception( "mx: dns mx routing not enabled at build time" ) ;
-		m_lookup = std::make_unique<MxLookup>( es , mxconfig(m_spec) , mxnameservers(m_spec) ) ;
-		m_lookup->doneSignal().connect( G::Slot::slot(*this,&MxFilter::lookupDone) ) ;
-	}
+	if( !MxLookup::enabled() )
+		throw G::Exception( "mx: not enabled at build time" ) ;
 }
 
 GFilters::MxFilter::~MxFilter()
@@ -57,29 +53,28 @@ GFilters::MxFilter::~MxFilter()
 
 void GFilters::MxFilter::start( const GStore::MessageId & message_id )
 {
-	m_timer.cancelTimer() ;
-	if( m_filter_type == Filter::Type::client )
+	G::Path envelope_path = m_store.envelopePath( message_id , storestate() ) ;
+	GStore::Envelope envelope = m_store.readEnvelope( envelope_path ) ;
+	unsigned int port = parseForwardToPort( envelope.forward_to ) ;
+	std::string domain = parseForwardToDomain( envelope.forward_to ) ;
+	if( domain.empty() )
 	{
 		m_timer.startTimer( 0U ) ;
 		m_result = Result::ok ;
 	}
 	else
 	{
-		G::Path envelope_path = m_store.envelopePath( message_id , storestate() ) ;
-		GStore::Envelope envelope = m_store.readEnvelope( envelope_path ) ;
-		std::string domain = G::Str::tail( envelope.forward_to , "@" , false ) ;
-		if( domain.empty() )
-		{
-			m_timer.startTimer( 0U ) ;
-			m_result = Result::ok ;
-		}
+		G_LOG( "GFilters::MxFilter::start: " << prefix() << " looking up [" << domain << "]" ) ;
+
+		if( m_lookup ) m_lookup->doneSignal().disconnect() ;
+		m_lookup = std::make_unique<MxLookup>( m_es , mxconfig(m_spec) , mxnameservers(m_spec) ) ;
+		m_lookup->doneSignal().connect( G::Slot::slot(*this,&MxFilter::lookupDone) ) ;
+
+		m_lookup->start( message_id , domain , port ) ;
+		if( m_filter_config.timeout )
+			m_timer.startTimer( m_filter_config.timeout ) ;
 		else
-		{
-			G_LOG( "GFilters::MxFilter::start: mx: " << message_id.str() << ": looking up [" << domain << "]" ) ;
-			m_lookup->start( message_id , domain ) ;
-			if( m_filter_config.timeout )
-				m_timer.startTimer( m_filter_config.timeout ) ;
-		}
+			m_timer.cancelTimer() ;
 	}
 }
 
@@ -126,6 +121,7 @@ void GFilters::MxFilter::cancel()
 
 void GFilters::MxFilter::onTimeout()
 {
+	G_DEBUG( "GFilters::MxFilter::onTimeout: response=[" << response() << "] special=" << m_special ) ;
 	m_done_signal.emit( static_cast<int>(m_result) ) ;
 }
 
@@ -137,9 +133,9 @@ void GFilters::MxFilter::lookupDone( GStore::MessageId message_id , std::string 
 	if( G::Str::headMatch(address,"0.0.0.0:") && GNet::Address::validString(address) )
 		address.clear() ;
 
-	G_LOG( "GFilters::MxFilter::start: mx: " << message_id.str() << ": "
+	G_LOG( "GFilters::MxFilter::start: " << prefix() << ": [" << message_id.str() << "]: "
 		<< "setting forward-to-address [" << address << "]"
-		<< (error.empty()?"":": ") << error ) ;
+		<< (error.empty()?"":" (") << error << (error.empty()?"":")") ) ;
 
 	// update the envelope forward-to-address
 	GStore::StoredFile msg( m_store , message_id , storestate() ) ;
@@ -159,14 +155,16 @@ GStore::FileStore::State GFilters::MxFilter::storestate() const
 
 GFilters::MxLookup::Config GFilters::MxFilter::mxconfig( const std::string & spec )
 {
-	MxLookup::Config result ;
+	MxLookup::Config config ;
 	G::string_view spec_sv = spec ;
 	for( G::StringTokenView t(spec_sv,";",1U) ; t ; ++t )
 	{
-		if( G::Str::isUInt(t()) )
-			result.port = G::Str::toUInt( t() ) ;
+		if( t().find("nst=") == 0U && t().size() > 4U )
+			config.ns_timeout = G::TimeInterval( G::Str::toUInt(t().substr(4U),"1") ) ;
+		else if( t().find("rt=") == 0U && t().size() > 3U )
+			config.restart_timeout = G::TimeInterval( G::Str::toUInt(t().substr(3U),"15") ) ;
 	}
-	return result ;
+	return config ;
 }
 
 std::vector<GNet::Address> GFilters::MxFilter::mxnameservers( const std::string & spec )
@@ -179,5 +177,37 @@ std::vector<GNet::Address> GFilters::MxFilter::mxnameservers( const std::string 
 			result.push_back( GNet::Address::parse( G::sv_to_string(t()) ) ) ;
 	}
 	return result.empty() ? GNet::nameservers(53U) : result ;
+}
+
+std::string GFilters::MxFilter::parseForwardToDomain( const std::string & forward_to )
+{
+	return parseForwardTo(forward_to).first ;
+}
+
+unsigned int GFilters::MxFilter::parseForwardToPort( const std::string & forward_to )
+{
+	return parseForwardTo(forward_to).second ;
+}
+
+std::pair<std::string,unsigned int> GFilters::MxFilter::parseForwardTo( const std::string & forward_to )
+{
+	// "example.com:<port>"
+	// "example.com"
+	// "user@example.com:<port>"
+	// "user@example.com"
+	//
+	auto no_user = G::Str::tailView( forward_to , "@" , false ) ;
+	std::size_t pos = no_user.rfind( ':' ) ;
+	auto head = G::Str::headView( no_user , pos , no_user ) ;
+	auto tail = G::Str::tailView( no_user , pos , {} ) ;
+	bool with_port = !tail.empty() && G::Str::isNumeric( tail ) ;
+	auto first = with_port ? head : no_user ;
+	auto second = with_port ? G::Str::toUInt(tail) : 0U ;
+	return { G::sv_to_string(first) , second } ;
+}
+
+std::string GFilters::MxFilter::prefix() const
+{
+	return G::sv_to_string(strtype(m_filter_type)).append(" [").append(id()).append(1U,']') ;
 }
 

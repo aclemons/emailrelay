@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 #include "gclientptr.h"
 #include "gprotocolmessage.h"
 #include "gprotocolmessagestore.h"
-#include "gsmtpclient.h"
+#include "gsmtpforward.h"
 #include "gsaslclientsecrets.h"
 #include "gmessagestore.h"
 #include "gnewmessage.h"
@@ -67,7 +67,7 @@ public:
 		///< Destructor.
 
 protected:
-	ProtocolMessage::DoneSignal & storageDoneSignal() ;
+	ProtocolMessage::DoneSignal & storageDoneSignal() noexcept ;
 		///< Returns the signal which is used to signal that the storage
 		///< is complete. Derived classes can use this to
 		///< intercept the storage-done signal emit()ed by
@@ -80,7 +80,7 @@ protected:
 			///< processing is complete.
 
 private: // overrides
-	ProtocolMessage::DoneSignal & doneSignal() override ; // GSmtp::ProtocolMessage
+	ProtocolMessage::DoneSignal & doneSignal() noexcept override ; // GSmtp::ProtocolMessage
 	void reset() override ; // GSmtp::ProtocolMessage
 	void clear() override ; // GSmtp::ProtocolMessage
 	GStore::MessageId setFrom( const std::string & from_user , const FromInfo & ) override ; // GSmtp::ProtocolMessage
@@ -102,7 +102,7 @@ public:
 
 private:
 	void clientDone( const std::string & ) ; // GNet::Client::doneSignal()
-	void messageDone( const std::string & ) ; // GSmtp::Client::messageDoneSignal()
+	void messageDone( const std::string & , bool ) ; // GSmtp::Client::messageDoneSignal()
 	std::string forward( const GStore::MessageId & , bool & ) ;
 
 private:
@@ -114,7 +114,7 @@ private:
 	Client::Config m_client_config ;
 	const GAuth::SaslClientSecrets & m_client_secrets ;
 	std::unique_ptr<ProtocolMessage> m_pm ;
-	GNet::ClientPtr<GSmtp::Client> m_client_ptr ;
+	GNet::ClientPtr<GSmtp::Forward> m_client_ptr ;
 	GStore::MessageId m_id ;
 	ProtocolMessage::DoneSignal m_done_signal ;
 } ;

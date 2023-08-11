@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # Copying and distribution of this file, with or without modification,
 # are permitted in any medium without royalty provided the copyright
@@ -77,7 +77,7 @@ SOURCES += \
 	guimain.cpp \
 	guidialog.cpp \
 	guipage.cpp \
-	pages.cpp \
+	guipages.cpp \
 	installer.cpp \
 	guidir.cpp \
 	glibsources.cpp \
@@ -87,7 +87,7 @@ SOURCES += \
 HEADERS += \
 	guidialog.h \
 	guipage.h \
-	pages.h
+	guipages.h
 
 INCLUDEPATH += \
 	.. \

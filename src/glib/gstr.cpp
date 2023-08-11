@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -423,12 +423,10 @@ bool G::Str::isPrintable( string_view s ) noexcept
 	return StrImp::allOf( s , StrImp::isPrintable ) ;
 }
 
-#ifndef G_LIB_SMALL
 bool G::Str::isSimple( string_view s ) noexcept
 {
 	return StrImp::allOf( s , StrImp::isSimple ) ;
 }
-#endif
 
 bool G::Str::isInt( string_view s ) noexcept
 {
@@ -963,17 +961,25 @@ std::string G::Str::readLineFrom( std::istream & stream , string_view eol )
 std::istream & G::Str::readLine( std::istream & stream , std::string & line , string_view eol ,
 	bool pre_erase , std::size_t limit )
 {
-	if( pre_erase && stream.good() ) // cf. std::getline()
+	if( !stream.good() ) // (new)
+	{
+		// don't pre-erase -- surprising but cf. std::getline()
+		stream.setstate( std::ios_base::failbit ) ;
+		return stream ;
+	}
+
+	if( pre_erase )
 		line.clear() ;
 
-	if( line.empty() && ( eol.empty() || eol.size() == 1U ) )
+	if( line.empty() && ( eol.empty() || eol.size() == 1U ) && limit == 0U )
 	{
 		std::getline( stream , line , eol.empty() ? '\n' : eol[0] ) ;
 	}
 	else
 	{
+		if( eol.empty() ) eol = string_view( "\n" , 1U ) ; // new
+		const char eol_last = eol.at( eol.size()-1U ) ;
 		const std::size_t eol_size = eol.size() ;
-		const char eol_last = eol.at( eol_size - 1U ) ;
 		bool got_eol = StrImp::readLine( stream , line , nullptr , limit ? limit : line.max_size() ,
 			[eol,eol_size,eol_last](std::string &s,char c)
 			{
@@ -1040,11 +1046,11 @@ bool G::StrImp::readLine( std::istream & stream , Tstring & line , char * next_p
 		got_some = count > 0U ;
 		if( count == limit )
 		{
-			stream.clear( stream.rdstate() | std::ios_base::failbit ) ;
+			stream.setstate( std::ios_base::failbit ) ;
 		}
 		else if( c == traits::eof() )
 		{
-			stream.clear( stream.rdstate() | std::ios_base::eofbit ) ;
+			stream.setstate( std::ios_base::eofbit ) ;
 		}
 		else
 		{

@@ -9,9 +9,6 @@
 /* Define true to enable submission-tool functionality */
 #undef GCONFIG_ENABLE_SUBMISSION
 
-/* Bitmask of built-in filters */
-#undef GCONFIG_FILTER_MASK
-
 /* Define true if arpa/inet.h is available */
 #undef GCONFIG_HAVE_ARPA_INET_H
 
@@ -276,11 +273,11 @@
 /* Define true if the PAM API uses const */
 #undef GCONFIG_PAM_CONST
 
-/* Bitmask of built-in address-verifiers */
-#undef GCONFIG_VERIFIER_MASK
-
 /* Define true for a windows build */
 #undef GCONFIG_WINDOWS
+
+/* Define to enable debug messages at compile-time */
+#undef G_WITH_DEBUG
 
 /* define if the compiler supports basic C++11 syntax */
 #undef HAVE_CXX11
@@ -341,6 +338,3 @@
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
-
-/* Define to enable debug messages at compile-time */
-#undef _DEBUG

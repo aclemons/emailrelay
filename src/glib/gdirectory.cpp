@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -40,10 +40,12 @@ G::Directory::Directory( const Path & path ) :
 {
 }
 
+#ifndef G_LIB_SMALL
 G::Directory::Directory( const std::string & path ) :
 	m_path(path)
 {
 }
+#endif
 
 G::Path G::Directory::path() const
 {
@@ -77,19 +79,22 @@ void G::DirectoryList::readAll( const G::Path & dir , std::vector<G::DirectoryLi
 }
 #endif
 
-void G::DirectoryList::readAll( const G::Path & dir )
+std::size_t G::DirectoryList::readAll( const G::Path & dir )
 {
 	readType( dir , {} ) ;
+	return m_list.size() ;
 }
 
-void G::DirectoryList::readDirectories( const G::Path & dir , unsigned int limit )
+std::size_t G::DirectoryList::readDirectories( const G::Path & dir , unsigned int limit )
 {
 	readImp( dir , true , {} , limit ) ;
+	return m_list.size() ;
 }
 
-void G::DirectoryList::readType( const G::Path & dir , G::string_view suffix , unsigned int limit )
+std::size_t G::DirectoryList::readType( const G::Path & dir , G::string_view suffix , unsigned int limit )
 {
 	readImp( dir , false , suffix , limit ) ;
+	return m_list.size() ;
 }
 
 void G::DirectoryList::readImp( const G::Path & dir , bool sub_dirs , G::string_view suffix , unsigned int limit )

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -137,14 +137,10 @@ GSsl::MbedTls::Config GSsl::MbedTls::LibraryImp::config() const
 	return m_config ;
 }
 
-std::string GSsl::MbedTls::LibraryImp::credit( const std::string & prefix , const std::string & eol , const std::string & eot )
+std::string GSsl::MbedTls::LibraryImp::credit( const std::string & /*prefix*/ , const std::string & /*eol*/ , const std::string & /*eot*/ )
 {
-	// echo "..." | perl -e 'chomp(my $x=<>);print join("",map{chr(ord($_)+1)} split("",$x)),"\n"'
-	std::array<char,100> text { "ncfe!UMT;!Dpqzsjhiu!)D*!3117.3129-!BSN!Mjnjufe!)ps!jut!bggjmjbuft*\0" } ;
-	for( char & c : text ) { if(c) c-- ; }
-	std::ostringstream ss ;
-	ss << prefix << G::Str::printable(std::string(&text[0])) << eol << eot ;
-	return ss.str() ;
+	// "Mbed TLS is Copyright The Mbed TLS Contributors"
+	return {} ;
 }
 
 G::StringArray GSsl::MbedTls::LibraryImp::digesters( bool ) const

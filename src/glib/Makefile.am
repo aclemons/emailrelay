@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -15,13 +15,15 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+noinst_LIBRARIES = libglib.a
+
+EXTRA_LIBRARIES = libglibextra.a
+
 if GCONFIG_WINDOWS
 AM_CPPFLAGS =
 else
 AM_CPPFLAGS = -DG_LIB_SMALL
 endif
-
-noinst_LIBRARIES = libglib.a
 
 UNIX_SOURCES = \
 	gcleanup_unix.cpp \
@@ -36,6 +38,10 @@ UNIX_SOURCES = \
 	gprocess_unix.cpp
 
 WINDOWS_SOURCES = \
+	gbatchfile.cpp \
+	gbatchfile.h \
+	gmapfile.cpp \
+	gmapfile.h \
 	gcleanup_win32.cpp \
 	gconvert.h \
 	gconvert.cpp \
@@ -57,8 +63,6 @@ COMMON_SOURCES = \
 	gbase64.h \
 	gbase64.cpp \
 	gbasicaddress.h \
-	gbatchfile.cpp \
-	gbatchfile.h \
 	gbuffer.h \
 	gcall.h \
 	gcleanup.h \
@@ -97,8 +101,6 @@ COMMON_SOURCES = \
 	glogoutput.h \
 	glogoutput.cpp \
 	gstrmacros.h \
-	gmapfile.cpp \
-	gmapfile.h \
 	gmd5.h \
 	gmd5.cpp \
 	gmsg.h \
@@ -163,6 +165,7 @@ if GCONFIG_WINDOWS
 GMSG_SOURCES = \
 	gmsg.h \
 	gmsg_win32.cpp
+GMSG_EXTRA_SOURCES =
 GMSG_EXTRA_DIST = \
 	gmsg_unix.cpp \
 	gmsg_mac.cpp
@@ -171,6 +174,7 @@ if GCONFIG_MAC
 GMSG_SOURCES = \
 	gmsg.h \
 	gmsg_mac.cpp
+GMSG_EXTRA_SOURCES =
 GMSG_EXTRA_DIST = \
 	gmsg_unix.cpp \
 	gmsg_win32.cpp
@@ -178,6 +182,7 @@ else
 GMSG_SOURCES = \
 	gmsg.h \
 	gmsg_unix.cpp
+GMSG_EXTRA_SOURCES =
 GMSG_EXTRA_DIST = \
 	gmsg_mac.cpp \
 	gmsg_win32.cpp
@@ -197,6 +202,8 @@ else
 PAM_SOURCES = \
 	gpam.h \
 	gpam_linux.cpp
+PAM_EXTRA_SOURCES = \
+	gpam_none.cpp
 PAM_EXTRA_DIST = \
 	gpam_none.cpp
 endif
@@ -204,6 +211,8 @@ else
 PAM_SOURCES = \
 	gpam.h \
 	gpam_none.cpp
+PAM_EXTRA_SOURCES = \
+	gpam_linux.cpp
 PAM_EXTRA_DIST = \
 	gpam_linux.cpp
 endif
@@ -222,6 +231,8 @@ else
 GETTEXT_SOURCES = \
 	ggettext.h \
 	ggettext_unix.cpp
+GETTEXT_EXTRA_SOURCES = \
+	ggettext_none.cpp
 GETTEXT_EXTRA_DIST = \
 	ggettext_none.cpp \
 	ggettext_win32.cpp
@@ -230,9 +241,11 @@ else
 GETTEXT_SOURCES = \
 	ggettext_none.cpp \
 	ggettext.h
-GETTEXT_EXTRA_DIST = \
-	ggettext_win32.cpp \
+GETTEXT_EXTRA_SOURCES = \
 	ggettext_unix.cpp
+GETTEXT_EXTRA_DIST = \
+	ggettext_unix.cpp \
+	ggettext_win32.cpp
 endif
 
 # -- OS
@@ -241,12 +254,14 @@ if GCONFIG_WINDOWS
 OS_SOURCES = \
 	$(COMMON_SOURCES) \
 	$(WINDOWS_SOURCES)
+OS_EXTRA_SOURCES =
 OS_EXTRA_DIST = \
 	$(UNIX_SOURCES)
 else
 OS_SOURCES = \
 	$(COMMON_SOURCES) \
 	$(UNIX_SOURCES)
+OS_EXTRA_SOURCES =
 OS_EXTRA_DIST = \
 	$(WINDOWS_SOURCES)
 endif
@@ -264,4 +279,12 @@ EXTRA_DIST = \
 	$(GETTEXT_EXTRA_DIST) \
 	$(OS_EXTRA_DIST) \
 	$(PAM_EXTRA_DIST)
+
+libglibextra_a_SOURCES = \
+	$(GMSG_EXTRA_SOURCES) \
+	$(GETTEXT_EXTRA_SOURCES) \
+	$(OS_EXTRA_SOURCES) \
+	$(PAM_EXTRA_SOURCES)
+
+extra-local: libglibextra.a
 

@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -49,6 +49,8 @@ libgsmtp_a_SOURCES = \
 	gsmtpclientprotocol.h \
 	gsmtpclientreply.cpp \
 	gsmtpclientreply.h \
+	gsmtpforward.cpp \
+	gsmtpforward.h \
 	gsmtpserver.cpp \
 	gsmtpserver.h \
 	gsmtpserverbufferin.cpp \

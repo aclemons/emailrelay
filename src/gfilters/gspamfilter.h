@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -70,11 +70,13 @@ public:
 private:
 	void clientEvent( const std::string & , const std::string & , const std::string & ) ;
 	void clientDeleted( const std::string & ) ;
-	void emit( bool ) ;
+	void done() ;
+	void onDoneTimeout() ;
 
 private:
-	G::Slot::Signal<int> m_done_signal ;
 	GNet::ExceptionSink m_es ;
+	GNet::Timer<SpamFilter> m_done_timer ;
+	G::Slot::Signal<int> m_done_signal ;
 	GStore::FileStore & m_file_store ;
 	GNet::Location m_location ;
 	bool m_read_only ;

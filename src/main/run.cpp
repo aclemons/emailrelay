@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@ namespace Main { std::string localedir() { return std::string() ; } }
 
 std::string Main::Run::versionNumber()
 {
-	return "2.5rc3" ;
+	return "2.5" ;
 }
 
 Main::Run::Run( Main::Output & output , const G::Arg & arg , bool has_gui ) :
@@ -388,11 +388,13 @@ void Main::Run::onUnitDone( unsigned int unit_id , std::string reason , bool qui
 
 void Main::Run::onUnitEvent( unsigned int /*unit_id*/ , std::string s1 , std::string s2 , std::string s3 )
 {
+	G_ASSERT( s1 == "forward" || s1 == "resolving" || s1 == "connecting" || s1 == "connected" || s1 == "sending" || s1 == "sent" ) ;
 	addToSignalQueue( "client" , s1 , s2 , s3 ) ; // eg. client,connecting,127.0.0.1:25
 }
 
 void Main::Run::onNetworkEvent( const std::string & s1 , const std::string & s2 )
 {
+	G_ASSERT( s1 == "in" || s1 == "out" || s1 == "listen" ) ;
 	addToSignalQueue( "network" , s1 , s2 ) ; // eg. network,out,start
 }
 
@@ -402,7 +404,7 @@ void Main::Run::addToSignalQueue( const std::string & s0 , const std::string & s
 	// emit events via an asynchronous queue to avoid side-effects from callbacks
 
 	bool to_gui = m_has_gui ;
-	bool to_admin = m_units.at(0U) && m_units[0]->adminNotification() ;
+	bool to_admin = !m_units.empty() && m_units.at(0U) && m_units[0]->adminNotification() ;
 
 	if( to_gui )
 		m_queue.emplace_back( 1 , s0 , s1 , s2 , s3 ) ;
@@ -433,9 +435,9 @@ void Main::Run::onQueueTimeout()
 		G::ScopeExit _( [&](){m_queue.pop_front();} ) ;
 		const QueueItem & item = m_queue.front() ;
 		if( item.target == 1 )
-			m_signal.emit( item.s0 , item.s1 , item.s2 , item.s3 ) ;
-		else if( item.target == 2 )
-			m_units.at(0U)->adminNotify( item.s0 , item.s1 , item.s2 , item.s3 ) ;
+			m_signal.emit( item.s0 , item.s1 , item.s2 , item.s3 ) ; // see Main::WinForm::setStatus()
+		else if( item.target == 2 && !m_units.empty() )
+			m_units.at(0U)->adminNotify( item.s0 , item.s1 , item.s2 , item.s3 ) ; // see GSmtp::AdminServerPeer::notify()
 	}
 }
 
@@ -459,7 +461,7 @@ G::Path Main::Run::appDir() const
 		return this_exe.dirname() ;
 }
 
-G::Slot::Signal<std::string,std::string,std::string,std::string> & Main::Run::signal()
+G::Slot::Signal<std::string,std::string,std::string,std::string> & Main::Run::signal() noexcept
 {
 	return m_signal ;
 }

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -398,9 +398,9 @@ public:
 		///<
 		///< The side-effects on the stream state follow std::getline():
 		///< reading an unterminated line at the end of the stream sets
-		///< eof, but a fully-terminated line does not; the next read
-		///< will set failbit; if no characters are read (including
-		///< terminators) (eg. already eof) then failbit is set.
+		///< eof, but a fully-terminated line does not; if no characters
+		///< are read (including terminators) (eg. already eof) then
+		///< failbit is set.
 		///<
 		///< A read loop that processes even incomplete lines at the end
 		///< of the stream should do:

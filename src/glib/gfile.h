@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -77,6 +77,9 @@ public:
 		unsigned long mode {0} ;
 		unsigned long long size {0} ;
 		unsigned long long blocks {0} ;
+		uid_t uid {0} ; // unix
+		gid_t gid {0} ; // unix
+		bool inherit {false} ; // unix, directory group ownership passed on to new files
 	} ;
 
 	static bool remove( const Path & path , std::nothrow_t ) noexcept ;
@@ -106,7 +109,7 @@ public:
 		///< Copies a file.
 
 	static void copy( std::istream & from , std::ostream & to ,
-		std::streamsize limit = 0U , std::string::size_type block = 0U ) ;
+		std::streamsize limit = 0U , std::size_t block = 0U ) ;
 			///< Copies a stream with an optional size limit.
 
 	static bool copyInto( const Path & from , const Path & to_dir , std::nothrow_t ) ;
@@ -167,6 +170,11 @@ public:
 		///< Returns true if the path exists() and is a directory.
 		///< Symlinks are followed. Returns false on error.
 
+	static Stat stat( const Path & path , bool read_symlink = false ) ;
+		///< Returns a file status structure. Returns with
+		///< the 'error' field set on error. Always fails if
+		///< 'read-link' on Windows.
+
 	static SystemTime time( const Path & file ) ;
 		///< Returns the file's timestamp. Throws on error.
 
@@ -189,6 +197,9 @@ public:
 		///< Sets the file group ownership. Throws on error.
 
 	static bool chgrp( const Path & file , const std::string & group , std::nothrow_t ) ;
+		///< Sets the file group ownership. Returns false on error.
+
+	static bool chgrp( const Path & file , gid_t group_id , std::nothrow_t ) ;
 		///< Sets the file group ownership. Returns false on error.
 
 	static G::Path readlink( const Path & link ) ;

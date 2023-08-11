@@ -1,13 +1,21 @@
 News
 ====
 
+Overview
+--------
+The E-MailRelay 2.5 release is no longer just a store-and-forward SMTP relay or
+proxy; it can do routing (improved from 2.4), client account selection and
+message delivery, making it more useful as a general-purpose MTA. Routing and
+client account selection are activated by having an external filter script to
+edit e-mail message envelope files.
+
 Multiple configurations
 -----------------------
 In previous releases E-MailRelay runs with one spool directory and typically
 one SMTP server and one SMTP client doing store-and-forward. In this release
 one E-MailRelay process can have multiple configurations, each with their own
 independent spool directory, SMTP server and SMTP client. Everything still
-runs single-threaded, except as documented in "developer.txt".
+runs single-threaded (except as documented in "developer.txt").
 
 Refer to the reference document for more details.
 
@@ -18,8 +26,8 @@ options like "--filter=exit:99" and "--filter=spam:localhost:783", with a
 small number of special prefixes like "exit:", "net:", "file:" and "spam:".
 
 In this release there are more built-in filters and address verifiers, including
-"deliver:", "split:", "mx:", and "copy:" filters and "strict:" and "local:"
-address verifiers.
+"deliver:", "split:", "mx:", "copy:" and "msgid:" filters and the "account:"
+address verifier.
 
 Refer to the reference document for more details.
 
@@ -35,11 +43,31 @@ can have its own "maildir" structure, "/var/spool/emailrelay/alice/new,cur,tmp",
 in which case the content file will be delivered to the "cur" directory and
 there will be no envelope file.
 
-The delivery base directory can be specified with the "--delivery-dir" option.
-This can be useful if outgoing messages need to be delivered straight to
-incoming mailboxes without going via the smarthost.
-
 Refer to the reference document for more details.
+
+Client account selection
+------------------------
+This release allows for multiple client accounts to be used for SMTP
+authentication when forwarding. A new "ClientAccountSelector" field in the
+envelope file must match against the fifth field of a "client" line in the
+secrets file. A filter should be used to fill in the selector field in the
+envelope, typically based on the message addressing.
+
+When the account changes from one message to the next the SMTP connection is
+dropped and re-connected. It is necessary to drop the connection because some
+common SMTP servers do not allow re-authentication within an existing SMTP
+connection.
+
+Client rows in the client secrets file can now have a fifth field for the
+selector, but this raises a backwards compatibility issue because in previous
+releases the fifth column (and beyond) in a client secrets file is ignored and
+might be a comment without a leading '#' character. In upgrading, the first word
+of the comment would be treated as a selector and the "client" row would be
+effectively disabled resulting in a failure of message forwarding. Therefore,
+fifth fields in the secrets file that start with '#' are treated as comments
+(extending to the end of the line) and lines in the secrets file with six or
+more fields result in a warning. It follows that filters should not generate
+selectors starting with a '#' character.
 
 Local files
 -----------
@@ -54,7 +82,7 @@ easy enough to write a filter to separate out these messages.
 Previous versions of E-MailRelay test message content when a message is received
 and populate the "Content" field of the envelope file as either "7bit" or
 "8bit". However, the SMTP client code has always largely ignored this field and
-it will attempt to forward 8-bit messages to a remote server that does not
+it would attempt to forward 8-bit messages to a remote server that did not
 advertise 8BITMIME, albeit with a warning in the log.
 
 In this release E-MailRelay no longer tests messages for eight-bit content,
@@ -62,21 +90,19 @@ so the envelope "Content" field will always be "8bit". If this is not the
 desired behaviour then a filter script should be used to test for seven-bit or
 eight-bit content and edit the "Content" value in the envelope file accordingly.
 
-The SMTP client can now be made to behave more strictly (see
-"--client-smtp-config") so that it no longer tries to forward eight-bit messages
-to seven-bit servers; eight-bit messages are failed immediately by marking the
-envelope as ".bad". Enabling this behaviour will also require a filter script to
-identify seven-bit messages.
+If necessary the SMTP client can now be made to behave more strictly so that it
+does not try to forward eight-bit messages to seven-bit servers (see
+"--client-smtp-config").
 
 PIPELINING
 ----------
 This release adds support for the PIPELINING SMTP extension.
 
 Previous releases allow pipelining of the SMTP QUIT command but otherwise
-require SMTP requests and responses in turn. In this release the SMTP server
-code allows all SMTP commands to be pipelined, whether or not the PIPELINING
-extension is advertised. The PIPELINING advertisement can be disabled with the
-new "--server-smtp-config" command-line option.
+require SMTP requests and responses in turn (as per RFC-5321 2.1). In this
+release the SMTP server code allows all SMTP commands to be pipelined, whether
+or not the PIPELINING extension is advertised. The PIPELINING advertisement can
+be disabled with the new "--server-smtp-config" command-line option.
 
 The response batching behaviour described by RFC-2920 is not implemented.
 
@@ -117,9 +143,9 @@ is reasonably easy in ASCII but might be more tricky with UTF-8.
 
 Another corner case with SMTPUTF8 is that the remote client might use the VRFY
 SMTP command without the optional SMTPUTF8 parameter. In principle a UTF-8
-address verifier script should not then return UTF-8 results, but in practice it
-has no way of knowning whether the SMTPUTF8 parameter was used. If necessary the
-VRFY command can be disabled by using "--anonymous".
+address verifier script should not then return UTF-8 results, but in practice
+the script has no way of knowning whether the SMTPUTF8 parameter was used. If
+necessary the VRFY command can be disabled by using "--anonymous".
 
 Hashed passwords
 ----------------
@@ -142,9 +168,11 @@ necessary by running:
 
 	libexec/reduce.sh --undo
 
-MTA operation
--------------
-E-MailRelay can now be run as a complete MTA performing message routing and
-delivery, with no need for an external "smarthost" to do the routing.
+Filter-copy utility
+-------------------
+The emailrelay-filter-copy utility was included in previous releases as a
+set-user-id file program to copy e-mail message files into sub-directories for
+"--pop-by-name" access. This can now be done by the built-in "copy:pop" filter,
+albeit with minor differences in behaviour, so emailrelay-filter-copy has been
+removed.
 
-Refer to the user guide for a worked example.

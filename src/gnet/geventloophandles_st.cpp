@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,17 +22,15 @@
 #include "geventloophandles.h"
 
 // stubs for no multi-threading...
-bool GNet::EventLoopHandlesMt::enabled() noexcept { return false ; }
-GNet::EventLoopHandles::EventLoopHandles() = default ;
-GNet::EventLoopHandles::~EventLoopHandles() = default ;
-GNet::WaitThread::~WaitThread() = default ;
-GNet::EventLoopHandlesMt::EventLoopHandlesMt() = default ;
-GNet::EventLoopHandlesMt::~EventLoopHandlesMt() = default ;
-GNet::EventLoopHandles::Rc GNet::EventLoopHandlesMt::wait( DWORD ) { return {RcType::other} ; }
-GNet::EventLoopHandlesMt::HandlePtr GNet::EventLoopHandlesMt::handles() noexcept { return HandlePtr(nullptr) ; }
-void GNet::EventLoopHandlesMt::init() {}
-void GNet::EventLoopHandlesMt::update( bool , std::size_t ) {}
-std::size_t GNet::EventLoopHandlesMt::shuffle( Rc ) { return 0U ; }
-bool GNet::EventLoopHandlesMt::overflow( std::size_t ) const noexcept { return false ; }
-std::string GNet::EventLoopHandlesMt::help( bool on_add , std::size_t ) const { return {} ; }
+
+bool GNet::EventLoopHandlesMt::enabled() noexcept
+{
+	return false ;
+}
+
+GNet::EventLoopHandles::EventLoopHandles()
+= default ;
+
+GNet::EventLoopHandles::~EventLoopHandles()
+= default ;
 

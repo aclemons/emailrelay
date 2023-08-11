@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -113,9 +113,6 @@ public:
 	void report( const std::string & group = {} ) const ;
 		///< Generates helpful diagnostics after construction.
 
-	constexpr static bool enabled() ;
-		///< Returns true.
-
 private: // overrides
 	std::unique_ptr<GNet::ServerPeer> newPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo && , GNet::MultiServer::ServerInfo ) override ;
 
@@ -141,6 +138,5 @@ inline GPop::Server::Config & GPop::Server::Config::set_net_server_peer_config( 
 inline GPop::Server::Config & GPop::Server::Config::set_net_server_config( const GNet::Server::Config & c ) { net_server_config = c ; return *this ; }
 inline GPop::Server::Config & GPop::Server::Config::set_sasl_server_config( const std::string & s ) { sasl_server_config = s ; return *this ; }
 inline GPop::Server::Config & GPop::Server::Config::set_sasl_server_challenge_domain( const std::string & s ) { sasl_server_challenge_domain = s ; return *this ; }
-constexpr bool GPop::Server::enabled() { return true ; }
 
 #endif

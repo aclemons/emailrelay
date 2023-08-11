@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -104,13 +104,13 @@ public:
 		///< determined. Used as a default for the configured domain
 		///< name.
 
-	G::Slot::Signal<std::string,std::string,std::string,std::string> & signal() ;
+	G::Slot::Signal<std::string,std::string,std::string,std::string> & signal() noexcept ;
 		///< Provides a signal which is activated when something changes.
 
 private:
 	struct QueueItem
 	{
-		int target ;
+		int target ; // 1=gui, 2=admin
 		std::string s0 ;
 		std::string s1 ;
 		std::string s2 ;

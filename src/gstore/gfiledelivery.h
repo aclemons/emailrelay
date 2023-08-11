@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@
 #include "gfilestore.h"
 #include "genvelope.h"
 #include "gexception.h"
+#include "gstringview.h"
 #include "gpath.h"
 #include <fstream>
 #include <utility>
@@ -57,21 +58,32 @@ public:
 	{
 		bool hardlink {false} ; // copy the content by hard-linking
 		bool no_delete {false} ; // don't delete the original message
+		bool pop_by_name {false} ; // copy only the envelope file
 	} ;
 
 	FileDelivery( FileStore & , const Config & ) ;
 		///< Constructor. The delivery base directory is an attribute of
 		///< the FileStore.
 
-	static void deliverTo( FileStore & , const G::Path & delivery_dir ,
-		const G::Path & envelope_path , const G::Path & content_path ,
-		bool hardlink = false ) ;
-			///< Low-level function to copy a message into a mailbox.
+	static void deliverTo( FileStore & , G::string_view prefix ,
+		const G::Path & dst_dir , const G::Path & envelope_path , const G::Path & content_path ,
+		bool hardlink = false , bool pop_by_name = false ) ;
+			///< Low-level function to copy a single message into a mailbox
+			///< sub-directory or a pop-by-name sub-directory. Throws
+			///< on error (incorporating the given prefix).
+			///<
+			///< If pop-by-name then only the envelope is copied and the
+			///< given destination directory is expected to be an immediate
+			///< sub-directory of the content file's directory.
 			///<
 			///< Does "maildir" delivery if the mailbox directory contains
-			///< tmp/new/cur sub-directories.
+			///< tmp/new/cur sub-directories (if not pop-by-name).
 			///<
 			///< The content file is optionally hard-linked.
+			///<
+			///< The process umask is modified when creating files so that
+			///< the new files have full group access. The destination
+			///< directory should normally have sticky group ownership.
 
 private: // overrides
 	bool deliver( const MessageId & , bool ) override ; // GStore::MessageDelivery

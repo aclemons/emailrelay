@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -587,7 +587,7 @@ PopPage::PopPage( Gui::Dialog & dialog , const G::MapFile & config , const std::
 	tip( m_no_delete_checkbox , tr("--pop-no-delete") ) ;
 	//: copy incoming email messages to all pop clients
 	m_pop_filter_copy_checkbox = new QCheckBox( tr("Copy SMTP messages to all") ) ;
-	tip( m_pop_filter_copy_checkbox , tr("--filter=copy:") ) ;
+	tip( m_pop_filter_copy_checkbox , tr("--filter=copy:pop") ) ;
 
 	auto * type_layout = new QGridLayout ;
 	type_layout->addWidget( m_one , 0 , 0 ) ;
@@ -1093,7 +1093,7 @@ void FilterPage::onShow( bool )
 	G::Path exe_dir = m_is_windows ? dir_page.installDir() : ( dir_page.installDir() + "lib" + "emailrelay" ) ;
 
 	m_server_filter_script_path_default = script_dir + ("emailrelay-filter"+m_dot_script) ;
-	m_server_filter_copy_default = "copy:" ;
+	m_server_filter_copy_default = "copy:pop" ;
 	m_client_filter_script_path_default = script_dir + ("emailrelay-client-filter"+m_dot_script) ;
 	m_pop_page_with_filter_copy = do_what_page.pop() && pop_page.withFilterCopy() ;
 
@@ -1699,31 +1699,27 @@ StartupPage::StartupPage( Gui::Dialog & dialog , const G::MapFile & config , con
 		Gui::Page(dialog,name,next_1,next_2) ,
 		m_is_mac(is_mac)
 {
-	m_on_boot_checkbox = new QCheckBox( tr("At system startup") ) ;
+	m_on_boot_checkbox = new QCheckBox( tr("At system startup, running as a service") ) ;
 	m_at_login_checkbox = new QCheckBox( tr("When logging in") ) ;
-	auto * auto_layout = new QVBoxLayout ;
-	auto_layout->addWidget( m_on_boot_checkbox ) ;
-	auto_layout->addWidget( m_at_login_checkbox ) ;
-
 	m_add_menu_item_checkbox = new QCheckBox( tr("Add to start menu") ) ;
 	m_add_desktop_item_checkbox = new QCheckBox( tr("Add to desktop") ) ;
 
+	auto * auto_layout = new QVBoxLayout ;
 	auto * manual_layout = new QVBoxLayout ;
+	auto_layout->addWidget( m_on_boot_checkbox ) ;
+	auto_layout->addWidget( m_at_login_checkbox ) ;
 	manual_layout->addWidget( m_add_menu_item_checkbox ) ;
 	manual_layout->addWidget( m_add_desktop_item_checkbox ) ;
 
-	if( m_is_mac )
-	{
-		m_add_menu_item_checkbox->setEnabled( false ) ;
-		m_add_desktop_item_checkbox->setEnabled( false ) ;
-	}
-	m_at_login_checkbox->setEnabled( !Gui::Dir::autostart().str().empty() ) ;
 	m_on_boot_checkbox->setEnabled( config.booleanValue("=dir-boot-enabled",false) ) ;
+	m_at_login_checkbox->setEnabled( config.booleanValue("=dir-autostart-enabled",false) ) ;
+	m_add_menu_item_checkbox->setEnabled( config.booleanValue("=dir-menu-enabled",false) ) ;
+	m_add_desktop_item_checkbox->setEnabled( config.booleanValue("=dir-desktop-enabled",false) ) ;
 
-	m_at_login_checkbox->setChecked( !Gui::Dir::autostart().str().empty() && config.booleanValue("start-at-login",false) ) ;
-	m_add_menu_item_checkbox->setChecked( !m_is_mac && config.booleanValue("start-link-menu",true) ) ;
-	m_add_desktop_item_checkbox->setChecked( !m_is_mac && config.booleanValue("start-link-desktop",false) ) ;
 	m_on_boot_checkbox->setChecked( config.booleanValue("start-on-boot",false) ) ;
+	m_at_login_checkbox->setChecked( config.booleanValue("start-at-login",false) ) ;
+	m_add_menu_item_checkbox->setChecked( config.booleanValue("start-link-menu",false) ) ;
+	m_add_desktop_item_checkbox->setChecked( config.booleanValue("start-link-desktop",false) ) ;
 
 	QGroupBox * auto_group = new QGroupBox( tr("Automatic") ) ;
 	auto_group->setLayout( auto_layout ) ;

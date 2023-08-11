@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -51,8 +51,7 @@ public:
 	} ;
 
 	virtual std::unique_ptr<Filter> newFilter( GNet::ExceptionSink ,
-		Filter::Type , const Filter::Config & , const Spec & spec ,
-		const std::string & log_prefix ) = 0 ;
+		Filter::Type , const Filter::Config & , const Spec & spec ) = 0 ;
 			///< Returns a Filter on the heap. Optionally throws if
 			///< an invalid or unsupported filter specification.
 

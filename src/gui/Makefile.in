@@ -126,7 +126,6 @@ CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(e_trdir)"
 PROGRAMS = $(sbin_PROGRAMS)
 LIBRARIES = $(noinst_LIBRARIES)
-ARFLAGS = cru
 AM_V_AR = $(am__v_AR_@AM_V@)
 am__v_AR_ = $(am__v_AR_@AM_DEFAULT_V@)
 am__v_AR_0 = @echo "  AR      " $@;
@@ -265,6 +264,7 @@ am__uninstall_files_from_dir = { \
          $(am__cd) "$$dir" && rm -f $$files; }; \
   }
 DATA = $(e_tr_DATA)
+am__extra_recursive_targets = extra-recursive
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 # Read a list of newline-separated strings from the standard input,
 # and print each of them once, without duplicates.  Input order is
@@ -290,6 +290,7 @@ ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
+ARFLAGS = @ARFLAGS@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
@@ -379,7 +380,7 @@ e_docdir = @e_docdir@
 e_examplesdir = @e_examplesdir@
 e_icondir = @e_icondir@
 e_initdir = @e_initdir@
-e_libexecdir = @e_libexecdir@
+e_libdir = @e_libdir@
 e_pamdir = @e_pamdir@
 e_rundir = @e_rundir@
 e_spooldir = @e_spooldir@
@@ -443,12 +444,12 @@ LIB_SOURCES = \
 TS_FILES = emailrelay_tr.no_NO.ts
 QM_IN_FILES = emailrelay.no.qm_in
 QM_FILES = emailrelay.no.qm
-@GCONFIG_MAC_FALSE@@GCONFIG_WINDOWS_FALSE@OS_EXTRA_DIST = $(MAC_SOURCES) $(WIN32_SOURCES)
-@GCONFIG_MAC_TRUE@@GCONFIG_WINDOWS_FALSE@OS_EXTRA_DIST = $(UNIX_SOURCES) $(WIN32_SOURCES)
-@GCONFIG_WINDOWS_TRUE@OS_EXTRA_DIST = $(MAC_SOURCES) $(UNIX_SOURCES)
 @GCONFIG_MAC_FALSE@@GCONFIG_WINDOWS_FALSE@OS_SOURCES = $(UNIX_SOURCES)
 @GCONFIG_MAC_TRUE@@GCONFIG_WINDOWS_FALSE@OS_SOURCES = $(MAC_SOURCES)
 @GCONFIG_WINDOWS_TRUE@OS_SOURCES = $(WIN32_SOURCES)
+@GCONFIG_MAC_FALSE@@GCONFIG_WINDOWS_FALSE@OS_EXTRA_DIST = $(MAC_SOURCES) $(WIN32_SOURCES)
+@GCONFIG_MAC_TRUE@@GCONFIG_WINDOWS_FALSE@OS_EXTRA_DIST = $(UNIX_SOURCES) $(WIN32_SOURCES)
+@GCONFIG_WINDOWS_TRUE@OS_EXTRA_DIST = $(MAC_SOURCES) $(UNIX_SOURCES)
 @GCONFIG_MAC_FALSE@@GCONFIG_WINDOWS_FALSE@OS_NOINST = 
 @GCONFIG_MAC_TRUE@@GCONFIG_WINDOWS_FALSE@OS_NOINST = 
 @GCONFIG_WINDOWS_TRUE@OS_NOINST = 
@@ -480,7 +481,7 @@ AM_CPPFLAGS = \
 	-D "G_INITDIR=$(e_initdir)" \
 	-D "G_SYSCONFDIR=$(e_sysconfdir)" \
 	-D "G_ICONDIR=$(e_icondir)" \
-	-D "G_LIBEXECDIR=$(e_libexecdir)" \
+	-D "G_LIBDIR=$(e_libdir)" \
 	-D "G_MANDIR=$(mandir)" \
 	-D "G_DOCDIR=$(e_docdir)" \
 	-D "G_EXAMPLESDIR=$(e_examplesdir)" \
@@ -662,6 +663,7 @@ uninstall-e_trDATA:
 	@list='$(e_tr_DATA)'; test -n "$(e_trdir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(e_trdir)'; $(am__uninstall_files_from_dir)
+extra-local: 
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique
@@ -823,6 +825,10 @@ dvi: dvi-am
 
 dvi-am:
 
+extra: extra-am
+
+extra-am: extra-local
+
 html: html-am
 
 html-am:
@@ -906,9 +912,9 @@ uninstall-am: uninstall-e_trDATA uninstall-sbinPROGRAMS
 	clean-generic clean-local clean-noinstLIBRARIES \
 	clean-sbinPROGRAMS cscopelist-am ctags ctags-am distclean \
 	distclean-compile distclean-generic distclean-tags distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-dvi install-dvi-am \
-	install-e_trDATA install-exec install-exec-am \
+	dvi-am extra-am extra-local html html-am info info-am install \
+	install-am install-data install-data-am install-dvi \
+	install-dvi-am install-e_trDATA install-exec install-exec-am \
 	install-exec-hook install-html install-html-am install-info \
 	install-info-am install-man install-pdf install-pdf-am \
 	install-ps install-ps-am install-sbinPROGRAMS install-strip \
@@ -957,14 +963,14 @@ emailrelay.no.qm: emailrelay.no.qm_in
 
 @GCONFIG_GUI_FALSE@uninstall-hook:
 
-payload: $(top_srcdir)/bin/make-setup.sh
+payload: $(top_srcdir)/libexec/make-setup.sh
 	-mkdir payload 2>/dev/null
-	-@chmod +x $(top_srcdir)/bin/make-setup.sh
-	$(top_srcdir)/bin/make-setup.sh $(MAKE_SETUP_DEBUG) $@ "$(top_srcdir)/src/gui/emailrelay-icon.png"
+	-@chmod +x $(top_srcdir)/libexec/make-setup.sh
+	$(top_srcdir)/libexec/make-setup.sh $(MAKE_SETUP_DEBUG) $@
 
 .PHONY: lrelease
 lrelease:
-	$(QT_LRELEASE) emailrelay_tr.no_NO.ts -qm emailrelay.no.qm
+	"$(QT_LRELEASE)" emailrelay_tr.no_NO.ts -qm emailrelay.no.qm
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

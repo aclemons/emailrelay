@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -84,12 +84,10 @@ G::Slot::Signal<const std::string&,const std::string&,const std::string&> & GNet
 	return m_event_signal ;
 }
 
-#ifndef G_LIB_SMALL
 GNet::Location GNet::Client::remoteLocation() const
 {
 	return m_remote_location ;
 }
-#endif
 
 GNet::StreamSocket & GNet::Client::socket()
 {

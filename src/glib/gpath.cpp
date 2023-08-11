@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -479,18 +479,26 @@ G::Path G::Path::collapsed() const
 
 	while( start != end )
 	{
+		// step over leading dots -- cannot collapse
 		while( start != end && *start == dots )
 			++start ;
 
+		// find collapsable dots
 		auto p_dots = std::find( start , end , dots ) ;
 		if( p_dots == end )
-			break ;
+			break ; // no collapsable dots remaining
 
 		G_ASSERT( p_dots != a.begin() ) ;
 		G_ASSERT( a.size() >= 2U ) ;
 
-		a.erase( a.erase(--p_dots) ) ;
+		// remove the preceding element and then the dots
+		bool at_start = std::next(start) == p_dots ;
+		auto p = a.erase( a.erase(--p_dots) ) ;
+
+		// re-initialise where invalidated
 		end = a.end() ;
+		if( at_start )
+			start = p ;
 	}
 
 	return join( a ) ;

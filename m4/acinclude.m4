@@ -1,4 +1,4 @@
-dnl Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+dnl Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 dnl 
 dnl This program is free software: you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
@@ -13,6 +13,24 @@ dnl
 dnl You should have received a copy of the GNU General Public License
 dnl along with this program.  If not, see <http://www.gnu.org/licenses/>.
 dnl ===
+dnl GCONFIG_FN_ARFLAGS
+dnl ------------------
+dnl Does AC_SUBST to set ARFLAGS to "cr", depending on the output from
+dnl "ar --version".
+dnl
+AC_DEFUN([GCONFIG_FN_ARFLAGS],
+[
+	gconfig_arflags="${ARFLAGS-cru}"
+	if test "`uname 2>/dev/null`" = "Linux"
+	then
+		if "${AR}" --version | grep "GNU ar" > /dev/null
+		then
+			gconfig_arflags="cr"
+		fi
+	fi
+	AC_SUBST([ARFLAGS],["$gconfig_arflags"])
+])
+
 dnl GCONFIG_FN_CHECK_CXX
 dnl ----------------------
 dnl Checks c++ language features.
@@ -224,6 +242,38 @@ AC_DEFUN([GCONFIG_FN_CXX_MAKE_UNIQUE],
 	fi
 ])
 
+dnl GCONFIG_FN_CXX_STD_THREAD
+dnl -------------------------
+dnl Calls GCONFIG_FN_CXX_STD_THREAD_IMP with a suitable warning message.
+dnl
+AC_DEFUN([GCONFIG_FN_CXX_STD_THREAD],
+[
+	GCONFIG_FN_CXX_STD_THREAD_IMP([std::thread_asynchronous_script_execution])
+])
+
+dnl GCONFIG_FN_CXX_STD_THREAD_IMP
+dnl -----------------------------
+dnl Tests for a viable c++ std::thread class under the current compile and link options
+dnl and adds '-pthread' as necessary. The first parameter is a warning message added to
+dnl gconfig_warnings, something like 'std::thread_multithreading'.
+dnl
+AC_DEFUN([GCONFIG_FN_CXX_STD_THREAD_IMP],
+[
+	if test "$enable_std_thread" = "no"
+	then
+		AC_DEFINE(GCONFIG_HAVE_CXX_STD_THREAD,0,[Define true if compiler has std::thread])
+	else
+		GCONFIG_FN_CXX_STD_THREAD_PTHREAD
+
+		if test "$gconfig_cxx_std_thread" = "yes" ; then
+			AC_DEFINE(GCONFIG_HAVE_CXX_STD_THREAD,1,[Define true if compiler has std::thread])
+		else
+			AC_DEFINE(GCONFIG_HAVE_CXX_STD_THREAD,0,[Define true if compiler has std::thread])
+			gconfig_warnings="$gconfig_warnings $1"
+		fi
+	fi
+])
+
 dnl GCONFIG_FN_CXX_STD_THREAD_PTHREAD
 dnl ---------------------------------
 dnl Tests for a viable c++ std::thread class under the current compile and link options,
@@ -286,38 +336,6 @@ AC_DEFUN([GCONFIG_FN_CXX_STD_THREAD_PTHREAD],
 	fi
 ])
 
-dnl GCONFIG_FN_CXX_STD_THREAD_IMP
-dnl -----------------------------
-dnl Tests for a viable c++ std::thread class under the current compile and link options
-dnl and adds '-pthread' as necessary. The first parameter is a warning message added to
-dnl gconfig_warnings, something like 'std::thread_multithreading'.
-dnl
-AC_DEFUN([GCONFIG_FN_CXX_STD_THREAD_IMP],
-[
-	if test "$enable_std_thread" = "no"
-	then
-		AC_DEFINE(GCONFIG_HAVE_CXX_STD_THREAD,0,[Define true if compiler has std::thread])
-	else
-		GCONFIG_FN_CXX_STD_THREAD_PTHREAD
-
-		if test "$gconfig_cxx_std_thread" = "yes" ; then
-			AC_DEFINE(GCONFIG_HAVE_CXX_STD_THREAD,1,[Define true if compiler has std::thread])
-		else
-			AC_DEFINE(GCONFIG_HAVE_CXX_STD_THREAD,0,[Define true if compiler has std::thread])
-			gconfig_warnings="$gconfig_warnings $1"
-		fi
-	fi
-])
-
-dnl GCONFIG_FN_CXX_STD_THREAD
-dnl -------------------------
-dnl Calls GCONFIG_FN_CXX_STD_THREAD_IMP with a suitable warning message.
-dnl
-AC_DEFUN([GCONFIG_FN_CXX_STD_THREAD],
-[
-	GCONFIG_FN_CXX_STD_THREAD_IMP([std::thread_asynchronous_script_execution])
-])
-
 dnl GCONFIG_FN_CXX_STRING_VIEW
 dnl --------------------------
 dnl Tests for std::string_view.
@@ -342,38 +360,6 @@ AC_DEFUN([GCONFIG_FN_CXX_STRING_VIEW],
 	fi
 ])
 
-dnl GCONFIG_FN_ENABLE_EXTRA_FILTERS
-dnl -------------------------------
-dnl Enables extra built-in filters.
-dnl
-AC_DEFUN([GCONFIG_FN_ENABLE_EXTRA_FILTERS],
-[
-	if test "$enable_all_filters" = "yes"
-	then
-		AC_DEFINE(GCONFIG_FILTER_MASK,65535,[Bitmask of built-in filters])
-		AM_CONDITIONAL([GCONFIG_EXTRA_FILTERS],[true])
-	else
-		AC_DEFINE(GCONFIG_FILTER_MASK,0,[Bitmask of built-in filters])
-		AM_CONDITIONAL([GCONFIG_EXTRA_FILTERS],[false])
-	fi
-])
-
-dnl GCONFIG_FN_ENABLE_EXTRA_VERIFIERS
-dnl ---------------------------------
-dnl Enables extra built-in address verifiers.
-dnl
-AC_DEFUN([GCONFIG_FN_ENABLE_EXTRA_VERIFIERS],
-[
-	if test "$enable_all_verifiers" = "yes"
-	then
-		AC_DEFINE(GCONFIG_VERIFIER_MASK,65535,[Bitmask of built-in address-verifiers])
-		AM_CONDITIONAL([GCONFIG_EXTRA_VERIFIERS],[true])
-	else
-		AC_DEFINE(GCONFIG_VERIFIER_MASK,0,[Bitmask of built-in address-verifiers])
-		AM_CONDITIONAL([GCONFIG_EXTRA_VERIFIERS],[false])
-	fi
-])
-
 dnl GCONFIG_FN_ENABLE_BSD
 dnl ---------------------
 dnl Enables bsd tweaks if "--enable-bsd" is used. Typically used after
@@ -387,7 +373,7 @@ AC_DEFUN([GCONFIG_FN_ENABLE_BSD],
 
 dnl GCONFIG_FN_ENABLE_DEBUG
 dnl -----------------------
-dnl Defines _DEBUG if "--enable-debug". Defaults to "no" but allows
+dnl Defines G_WITH_DEBUG if "--enable-debug". Defaults to "no" but allows
 dnl "--enable-debug=full" as per kdevelop. Typically used after
 dnl AC_ARG_ENABLE(debug).
 dnl
@@ -397,7 +383,7 @@ AC_DEFUN([GCONFIG_FN_ENABLE_DEBUG],
 	then
 		:
 	else
-		AC_DEFINE(_DEBUG,1,[Define to enable debug messages at compile-time])
+		AC_DEFINE(G_WITH_DEBUG,1,[Define to enable debug messages at compile-time])
 	fi
 ])
 
@@ -602,6 +588,27 @@ AC_DEFUN([GCONFIG_FN_ENABLE_TESTING],
 	AM_CONDITIONAL([GCONFIG_TESTING],test "$enable_testing" != "no")
 ])
 
+dnl GCONFIG_FN_ENABLE_UDS
+dnl ---------------------
+dnl Enables unix domain sockets if detected unless "--disable-uds" is
+dnl used. Requires GCONFIG_FN_UDS to set gconfig_cv_uds.
+dnl Typically used after AC_ARG_ENABLE(uds).
+dnl
+AC_DEFUN([GCONFIG_FN_ENABLE_UDS],
+[
+	AC_REQUIRE([GCONFIG_FN_UDS])
+	if test "$enable_uds" = "no"
+	then
+		AM_CONDITIONAL([GCONFIG_UDS],[false])
+	else
+		if test "$enable_uds" = "yes" -a "$gconfig_cv_uds" = "no"
+		then
+			AC_MSG_WARN([forcing use of unix domain sockets even though not detected])
+		fi
+		AM_CONDITIONAL([GCONFIG_UDS],[true])
+	fi
+])
+
 dnl GCONFIG_FN_ENABLE_VERBOSE
 dnl -------------------------
 dnl Defines "GCONFIG_NO_LOG" if "--disable-verbose". Typically used after
@@ -634,27 +641,6 @@ AC_DEFUN([GCONFIG_FN_ENABLE_WINDOWS],
 		AC_DEFINE(GCONFIG_MINGW,0,[Define true for a windows build using the mingw tool chain])
 	fi
 	AM_CONDITIONAL([GCONFIG_WINDOWS],test "$enable_windows" = "yes" -o "`uname -o 2>/dev/null`" = "Msys")
-])
-
-dnl GCONFIG_FN_ENABLE_UDS
-dnl ---------------------
-dnl Enables unix domain sockets if detected unless "--disable-uds" is
-dnl used. Requires GCONFIG_FN_UDS to set gconfig_cv_uds.
-dnl Typically used after AC_ARG_ENABLE(uds).
-dnl
-AC_DEFUN([GCONFIG_FN_ENABLE_UDS],
-[
-	AC_REQUIRE([GCONFIG_FN_UDS])
-	if test "$enable_uds" = "no"
-	then
-		AM_CONDITIONAL([GCONFIG_UDS],[false])
-	else
-		if test "$enable_uds" = "yes" -a "$gconfig_cv_uds" = "no"
-		then
-			AC_MSG_WARN([forcing use of unix domain sockets even though not detected])
-		fi
-		AM_CONDITIONAL([GCONFIG_UDS],[true])
-	fi
 ])
 
 dnl GCONFIG_FN_EPOLL
@@ -736,32 +722,6 @@ AC_DEFUN([GCONFIG_FN_EXTENDED_OPEN],
 	fi
 ])
 
-dnl GCONFIG_FN_FSOPEN
-dnl -----------------
-dnl Defines GCONFIG_HAVE_FSOPEN if _fsopen() is available.
-dnl
-AC_DEFUN([GCONFIG_FN_FSOPEN],
-[AC_CACHE_CHECK([for _fsopen()],[gconfig_cv_fsopen],
-[
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-		[
-			[#include <stdio.h>]
-			[#include <share.h>]
-			[FILE * fp = 0 ;]
-		],
-		[
-			[fp = _fsopen("foo","w",_SH_DENYNO) ;]
-		])],
-		gconfig_cv_fsopen=yes ,
-		gconfig_cv_fsopen=no )
-])
-	if test "$gconfig_cv_fsopen" = "yes" ; then
-		AC_DEFINE(GCONFIG_HAVE_FSOPEN,1,[Define true if _fsopen() is available])
-	else
-		AC_DEFINE(GCONFIG_HAVE_FSOPEN,0,[Define true if _fsopen() is available])
-	fi
-])
-
 dnl GCONFIG_FN_FOPEN_S
 dnl ------------------
 dnl Defines GCONFIG_HAVE_FSOPEN if fopen_s() is available.
@@ -786,6 +746,32 @@ AC_DEFUN([GCONFIG_FN_FOPEN_S],
 		AC_DEFINE(GCONFIG_HAVE_FOPEN_S,1,[Define true if fopen_s() is available])
 	else
 		AC_DEFINE(GCONFIG_HAVE_FOPEN_S,0,[Define true if fopen_s() is available])
+	fi
+])
+
+dnl GCONFIG_FN_FSOPEN
+dnl -----------------
+dnl Defines GCONFIG_HAVE_FSOPEN if _fsopen() is available.
+dnl
+AC_DEFUN([GCONFIG_FN_FSOPEN],
+[AC_CACHE_CHECK([for _fsopen()],[gconfig_cv_fsopen],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#include <stdio.h>]
+			[#include <share.h>]
+			[FILE * fp = 0 ;]
+		],
+		[
+			[fp = _fsopen("foo","w",_SH_DENYNO) ;]
+		])],
+		gconfig_cv_fsopen=yes ,
+		gconfig_cv_fsopen=no )
+])
+	if test "$gconfig_cv_fsopen" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_FSOPEN,1,[Define true if _fsopen() is available])
+	else
+		AC_DEFINE(GCONFIG_HAVE_FSOPEN,0,[Define true if _fsopen() is available])
 	fi
 ])
 
@@ -854,60 +840,6 @@ AC_DEFUN([GCONFIG_FN_GETENV_S],
 	fi
 ])
 
-dnl GCONFIG_FN_GETPWNAM
-dnl -------------------
-dnl Tests for getpwnam().
-dnl
-AC_DEFUN([GCONFIG_FN_GETPWNAM],
-[AC_CACHE_CHECK([for getpwnam],[gconfig_cv_getpwnam],
-[
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-		[
-			[#include <sys/types.h>]
-			[#include <pwd.h>]
-			[struct passwd * p = 0 ;]
-		],
-		[
-			[p = getpwnam( "x" ) ;]
-		])],
-		gconfig_cv_getpwnam=yes ,
-		gconfig_cv_getpwnam=no )
-])
-	if test "$gconfig_cv_getpwnam" = "yes" ; then
-		AC_DEFINE(GCONFIG_HAVE_GETPWNAM,1,[Define true if getpwnam in pwd.h])
-	else
-		AC_DEFINE(GCONFIG_HAVE_GETPWNAM,0,[Define true if getpwnam in pwd.h])
-	fi
-])
-
-dnl GCONFIG_FN_GETPWNAM_R
-dnl ---------------------
-dnl Tests for getpwnam_r().
-dnl
-AC_DEFUN([GCONFIG_FN_GETPWNAM_R],
-[AC_CACHE_CHECK([for getpwnam_r],[gconfig_cv_getpwnam_r],
-[
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-		[
-			[#include <sys/types.h>]
-			[#include <pwd.h>]
-			[char buf[100] ;]
-			[struct passwd p ;]
-			[struct passwd * p_out = 0 ;]
-		],
-		[
-			[getpwnam_r( "x" , &p , buf , 100U , &p_out ) ;]
-		])],
-		gconfig_cv_getpwnam_r=yes ,
-		gconfig_cv_getpwnam_r=no )
-])
-	if test "$gconfig_cv_getpwnam_r" = "yes" ; then
-		AC_DEFINE(GCONFIG_HAVE_GETPWNAM_R,1,[Define true if getpwnam_r in pwd.h])
-	else
-		AC_DEFINE(GCONFIG_HAVE_GETPWNAM_R,0,[Define true if getpwnam_r in pwd.h])
-	fi
-])
-
 dnl GCONFIG_FN_GETGRNAM
 dnl -------------------
 dnl Tests for getgrnam().
@@ -959,6 +891,60 @@ AC_DEFUN([GCONFIG_FN_GETGRNAM_R],
 		AC_DEFINE(GCONFIG_HAVE_GETGRNAM_R,1,[Define true if getgrnam_r in pwd.h])
 	else
 		AC_DEFINE(GCONFIG_HAVE_GETGRNAM_R,0,[Define true if getgrnam_r in pwd.h])
+	fi
+])
+
+dnl GCONFIG_FN_GETPWNAM
+dnl -------------------
+dnl Tests for getpwnam().
+dnl
+AC_DEFUN([GCONFIG_FN_GETPWNAM],
+[AC_CACHE_CHECK([for getpwnam],[gconfig_cv_getpwnam],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#include <sys/types.h>]
+			[#include <pwd.h>]
+			[struct passwd * p = 0 ;]
+		],
+		[
+			[p = getpwnam( "x" ) ;]
+		])],
+		gconfig_cv_getpwnam=yes ,
+		gconfig_cv_getpwnam=no )
+])
+	if test "$gconfig_cv_getpwnam" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_GETPWNAM,1,[Define true if getpwnam in pwd.h])
+	else
+		AC_DEFINE(GCONFIG_HAVE_GETPWNAM,0,[Define true if getpwnam in pwd.h])
+	fi
+])
+
+dnl GCONFIG_FN_GETPWNAM_R
+dnl ---------------------
+dnl Tests for getpwnam_r().
+dnl
+AC_DEFUN([GCONFIG_FN_GETPWNAM_R],
+[AC_CACHE_CHECK([for getpwnam_r],[gconfig_cv_getpwnam_r],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#include <sys/types.h>]
+			[#include <pwd.h>]
+			[char buf[100] ;]
+			[struct passwd p ;]
+			[struct passwd * p_out = 0 ;]
+		],
+		[
+			[getpwnam_r( "x" , &p , buf , 100U , &p_out ) ;]
+		])],
+		gconfig_cv_getpwnam_r=yes ,
+		gconfig_cv_getpwnam_r=no )
+])
+	if test "$gconfig_cv_getpwnam_r" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_GETPWNAM_R,1,[Define true if getpwnam_r in pwd.h])
+	else
+		AC_DEFINE(GCONFIG_HAVE_GETPWNAM_R,0,[Define true if getpwnam_r in pwd.h])
 	fi
 ])
 
@@ -1050,22 +1036,6 @@ AC_DEFUN([GCONFIG_FN_GMTIME_S],
 	fi
 ])
 
-dnl GCONFIG_FN_ICONV
-dnl ----------------
-dnl Tests for iconv.
-dnl
-AC_DEFUN([GCONFIG_FN_ICONV],
-[
-	AC_REQUIRE([GCONFIG_FN_ICONV_LIBC])
-	AC_REQUIRE([GCONFIG_FN_ICONV_LIBICONV])
-	if test "$gconfig_cv_iconv_libc" = "yes" -o "$gconfig_cv_iconv_libiconv" = "yes" ; then
-		AC_DEFINE(GCONFIG_HAVE_ICONV,1,[Define true to enable use of iconv])
-	else
-		AC_DEFINE(GCONFIG_HAVE_ICONV,0,[Define true to enable use of iconv])
-	fi
-	AM_CONDITIONAL([GCONFIG_ICONV],[test "$gconfig_cv_iconv_libc" = "yes" -o "$gconfig_cv_iconv_libiconv" = "yes"])
-])
-
 dnl GCONFIG_FN_ICONV_LIBC
 dnl ---------------------
 dnl Tests for iconv in libc.
@@ -1120,6 +1090,60 @@ AC_DEFUN([GCONFIG_FN_ICONV_LIBICONV],
 		LIBS="$gconfig_save_LIBS"
 	fi
 ])
+])
+
+dnl GCONFIG_FN_ICONV
+dnl ----------------
+dnl Tests for iconv.
+dnl
+AC_DEFUN([GCONFIG_FN_ICONV],
+[
+	AC_REQUIRE([GCONFIG_FN_ICONV_LIBC])
+	AC_REQUIRE([GCONFIG_FN_ICONV_LIBICONV])
+	if test "$gconfig_cv_iconv_libc" = "yes" -o "$gconfig_cv_iconv_libiconv" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_ICONV,1,[Define true to enable use of iconv])
+	else
+		AC_DEFINE(GCONFIG_HAVE_ICONV,0,[Define true to enable use of iconv])
+	fi
+	AM_CONDITIONAL([GCONFIG_ICONV],[test "$gconfig_cv_iconv_libc" = "yes" -o "$gconfig_cv_iconv_libiconv" = "yes"])
+])
+
+dnl GCONFIG_FN_IFINDEX
+dnl ------------------
+dnl Tests for struct ifreq ifr_ifindex and SIOCGIFINDEX.
+dnl
+AC_DEFUN([GCONFIG_FN_IFINDEX],
+[AC_CACHE_CHECK([for ifreq ifr_index],[gconfig_cv_ifindex],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#ifdef _WIN32]
+				[#include <winsock2.h>]
+				[#include <windows.h>]
+				[#include <ws2tcpip.h>]
+				[#include <iphlpapi.h>]
+			[#else]
+				[#include <sys/types.h>]
+				[#include <sys/socket.h>]
+				[#include <arpa/inet.h>]
+				[#include <net/if.h>]
+				[#include <sys/ioctl.h>]
+			[#endif]
+			[struct ifreq req ;]
+			[int i = 0 ;]
+		],
+		[
+			[(void) ioctl( i , SIOCGIFINDEX , &req , sizeof(req) );]
+			[i = req.ifr_ifindex ;]
+		])],
+		gconfig_cv_ifindex=yes ,
+		gconfig_cv_ifindex=no )
+])
+	if test "$gconfig_cv_ifindex" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_IFINDEX,1,[Define true if struct ifreq has ifr_ifindex])
+	else
+		AC_DEFINE(GCONFIG_HAVE_IFINDEX,0,[Define true if struct ifreq has ifr_ifindex])
+	fi
 ])
 
 dnl GCONFIG_FN_IFNAMETOINDEX
@@ -1184,44 +1208,6 @@ AC_DEFUN([GCONFIG_FN_IFNAMETOLUID],
 		AC_DEFINE(GCONFIG_HAVE_IFNAMETOLUID,1,[Define true if ConvertInterfaceNameToLuid() is available])
 	else
 		AC_DEFINE(GCONFIG_HAVE_IFNAMETOLUID,0,[Define true if ConvertInterfaceNameToLuid() is available])
-	fi
-])
-
-dnl GCONFIG_FN_IFINDEX
-dnl ------------------
-dnl Tests for struct ifreq ifr_ifindex and SIOCGIFINDEX.
-dnl
-AC_DEFUN([GCONFIG_FN_IFINDEX],
-[AC_CACHE_CHECK([for ifreq ifr_index],[gconfig_cv_ifindex],
-[
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-		[
-			[#ifdef _WIN32]
-				[#include <winsock2.h>]
-				[#include <windows.h>]
-				[#include <ws2tcpip.h>]
-				[#include <iphlpapi.h>]
-			[#else]
-				[#include <sys/types.h>]
-				[#include <sys/socket.h>]
-				[#include <arpa/inet.h>]
-				[#include <net/if.h>]
-				[#include <sys/ioctl.h>]
-			[#endif]
-			[struct ifreq req ;]
-			[int i = 0 ;]
-		],
-		[
-			[(void) ioctl( i , SIOCGIFINDEX , &req , sizeof(req) );]
-			[i = req.ifr_ifindex ;]
-		])],
-		gconfig_cv_ifindex=yes ,
-		gconfig_cv_ifindex=no )
-])
-	if test "$gconfig_cv_ifindex" = "yes" ; then
-		AC_DEFINE(GCONFIG_HAVE_IFINDEX,1,[Define true if struct ifreq has ifr_ifindex])
-	else
-		AC_DEFINE(GCONFIG_HAVE_IFINDEX,0,[Define true if struct ifreq has ifr_ifindex])
 	fi
 ])
 
@@ -1459,32 +1445,56 @@ AC_DEFUN([GCONFIG_FN_NETROUTE],
 	fi
 ])
 
-dnl GCONFIG_FN_PAM
-dnl --------------
-dnl Tests for pam headers.
+dnl GCONFIG_FN_PAM_CONST
+dnl --------------------
+dnl Tests for constness of the PAM API. Use after GCONFIG_FN_PAM.
 dnl
-AC_DEFUN([GCONFIG_FN_PAM],
+AC_DEFUN([GCONFIG_FN_PAM_CONST],
+[AC_CACHE_CHECK([for pam constness],[gconfig_cv_pam_const],
 [
-	AC_REQUIRE([GCONFIG_FN_PAM_IN_SECURITY])
-	AC_REQUIRE([GCONFIG_FN_PAM_IN_PAM])
-	AC_REQUIRE([GCONFIG_FN_PAM_IN_INCLUDE])
-
-	if test "$gconfig_cv_pam_in_security" = "yes" ; then
-		AC_DEFINE(GCONFIG_HAVE_PAM_IN_SECURITY,1,[Define true to include pam_appl.h from security])
+	if test "$gconfig_cv_pam_in_security" = "yes"
+	then
+		AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+			[
+				[#include <security/pam_appl.h>]
+				[const void * vp = 0; pam_handle_t * pam = 0; int rc = 0;]
+			],
+			[
+				[rc = pam_get_item( pam , PAM_USER , &vp )]
+			])],
+			gconfig_cv_pam_const=yes ,
+			gconfig_cv_pam_const=no )
 	else
-		AC_DEFINE(GCONFIG_HAVE_PAM_IN_SECURITY,0,[Define true to include pam_appl.h from security])
+		if test "$gconfig_cv_pam_in_pam" = "yes"
+		then
+			AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+				[
+					[#include <pam/pam_appl.h>]
+					[const void * vp = 0; pam_handle_t * pam = 0; int rc = 0;]
+				],
+				[
+					[rc = pam_get_item( pam , PAM_USER , &vp )]
+				])],
+				gconfig_cv_pam_const=yes ,
+				gconfig_cv_pam_const=no )
+		else
+			AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+				[
+					[#include <pam_appl.h>]
+					[const void * vp = 0; pam_handle_t * pam = 0; int rc = 0;]
+				],
+				[
+					[rc = pam_get_item( pam , PAM_USER , &vp )]
+				])],
+				gconfig_cv_pam_const=yes ,
+				gconfig_cv_pam_const=no )
+		fi
 	fi
-
-	if test "$gconfig_cv_pam_in_pam" = "yes" ; then
-		AC_DEFINE(GCONFIG_HAVE_PAM_IN_PAM,1,[Define true to include pam_appl.h from pam])
+])
+	if test "$gconfig_cv_pam_const" = "yes" ; then
+		AC_DEFINE(GCONFIG_PAM_CONST,1,[Define true if the PAM API uses const])
 	else
-		AC_DEFINE(GCONFIG_HAVE_PAM_IN_PAM,0,[Define true to include pam_appl.h from pam])
-	fi
-
-	if test "$gconfig_cv_pam_in_include" = "yes" ; then
-		AC_DEFINE(GCONFIG_HAVE_PAM_IN_INCLUDE,1,[Define true to include pam_appl.h as-is])
-	else
-		AC_DEFINE(GCONFIG_HAVE_PAM_IN_INCLUDE,0,[Define true to include pam_appl.h as-is])
+		AC_DEFINE(GCONFIG_PAM_CONST,0,[Define true if the PAM API uses const])
 	fi
 ])
 
@@ -1539,56 +1549,32 @@ AC_DEFUN([GCONFIG_FN_PAM_IN_INCLUDE],
 ])
 ])
 
-dnl GCONFIG_FN_PAM_CONST
-dnl --------------------
-dnl Tests for constness of the PAM API. Use after GCONFIG_FN_PAM.
+dnl GCONFIG_FN_PAM
+dnl --------------
+dnl Tests for pam headers.
 dnl
-AC_DEFUN([GCONFIG_FN_PAM_CONST],
-[AC_CACHE_CHECK([for pam constness],[gconfig_cv_pam_const],
+AC_DEFUN([GCONFIG_FN_PAM],
 [
-	if test "$gconfig_cv_pam_in_security" = "yes"
-	then
-		AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-			[
-				[#include <security/pam_appl.h>]
-				[const void * vp = 0; pam_handle_t * pam = 0; int rc = 0;]
-			],
-			[
-				[rc = pam_get_item( pam , PAM_USER , &vp )]
-			])],
-			gconfig_cv_pam_const=yes ,
-			gconfig_cv_pam_const=no )
+	AC_REQUIRE([GCONFIG_FN_PAM_IN_SECURITY])
+	AC_REQUIRE([GCONFIG_FN_PAM_IN_PAM])
+	AC_REQUIRE([GCONFIG_FN_PAM_IN_INCLUDE])
+
+	if test "$gconfig_cv_pam_in_security" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_PAM_IN_SECURITY,1,[Define true to include pam_appl.h from security])
 	else
-		if test "$gconfig_cv_pam_in_pam" = "yes"
-		then
-			AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-				[
-					[#include <pam/pam_appl.h>]
-					[const void * vp = 0; pam_handle_t * pam = 0; int rc = 0;]
-				],
-				[
-					[rc = pam_get_item( pam , PAM_USER , &vp )]
-				])],
-				gconfig_cv_pam_const=yes ,
-				gconfig_cv_pam_const=no )
-		else
-			AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-				[
-					[#include <pam_appl.h>]
-					[const void * vp = 0; pam_handle_t * pam = 0; int rc = 0;]
-				],
-				[
-					[rc = pam_get_item( pam , PAM_USER , &vp )]
-				])],
-				gconfig_cv_pam_const=yes ,
-				gconfig_cv_pam_const=no )
-		fi
+		AC_DEFINE(GCONFIG_HAVE_PAM_IN_SECURITY,0,[Define true to include pam_appl.h from security])
 	fi
-])
-	if test "$gconfig_cv_pam_const" = "yes" ; then
-		AC_DEFINE(GCONFIG_PAM_CONST,1,[Define true if the PAM API uses const])
+
+	if test "$gconfig_cv_pam_in_pam" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_PAM_IN_PAM,1,[Define true to include pam_appl.h from pam])
 	else
-		AC_DEFINE(GCONFIG_PAM_CONST,0,[Define true if the PAM API uses const])
+		AC_DEFINE(GCONFIG_HAVE_PAM_IN_PAM,0,[Define true to include pam_appl.h from pam])
+	fi
+
+	if test "$gconfig_cv_pam_in_include" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_PAM_IN_INCLUDE,1,[Define true to include pam_appl.h as-is])
+	else
+		AC_DEFINE(GCONFIG_HAVE_PAM_IN_INCLUDE,0,[Define true to include pam_appl.h as-is])
 	fi
 ])
 
@@ -1717,104 +1703,6 @@ AC_DEFUN([GCONFIG_FN_PUTENV_S],
 	fi
 ])
 
-dnl GCONFIG_FN_QT
-dnl -------------
-dnl Tests for Qt5. Sets gconfig_have_qt, QT_MOC, QT_LRELEASE, QT_LIBS and
-dnl QT_CFLAGS. A fallback copy of "pkg.m4" should be included in the
-dnl distribution.
-dnl
-AC_DEFUN([GCONFIG_FN_QT],
-[
-	# try pkg-config -- this says 'checking for QT'
-	PKG_CHECK_MODULES([QT],[Qt5Widgets > 5],
-		[
-			gconfig_pkgconfig_qt=yes
-		],
-		[
-			gconfig_pkgconfig_qt=no
-			AC_MSG_NOTICE([no QT 5 pkg-config])
-		]
-	)
-
-	# allow the moc command to be defined with QT_MOC on the configure
-	# command-line, typically also with CXXFLAGS and LIBS pointing to Qt
-	# headers and libraries
-	AC_ARG_VAR([QT_MOC],[moc command for QT])
-
-	if echo "$QT_MOC" | grep -q /
-	then
-		QT_LRELEASE="`dirname \"$QT_MOC\"`/lrelease"
-	else
-		QT_LRELEASE="lrelease"
-	fi
-
-	# or build the moc command using pkg-config results
-	if test "$QT_MOC" = ""
-	then
-		if test "$gconfig_pkgconfig_qt" = "yes"
-		then
-			QT_MOC="`$PKG_CONFIG --variable=host_bins Qt5Core`/moc"
-			QT_LRELEASE="`$PKG_CONFIG --variable=host_bins Qt5Core`/lrelease"
-			QT_CHOOSER="`$PKG_CONFIG --variable=exec_prefix Qt5Core`/bin/qtchooser"
-			if test -x "$QT_MOC" ; then : ; else QT_MOC="" ; fi
-			if test -x "$QT_LRELEASE" ; then : ; else QT_LRELEASE="" ; fi
-			if test -x "$QT_CHOOSER" ; then : ; else QT_CHOOSER="" ; fi
-			if test "$QT_MOC" = "" -a "$QT_CHOOSER" != ""
-			then
-				QT_MOC="$QT_CHOOSER -run-tool=moc -qt=qt5"
-			fi
-			if test "$QT_LRELEASE" = "" -a "$QT_CHOOSER" != ""
-			then
-				QT_LRELEASE="$QT_CHOOSER -run-tool=lrelease -qt=qt5"
-			fi
-		fi
-	fi
-
-	# or find moc on the path
-	if test "$QT_MOC" = ""
-	then
-		AC_PATH_PROG([QT_MOC],[moc])
-	fi
-
-	if test "$QT_LRELEASE" = ""
-	then
-		AC_PATH_PROG([QT_LRELEASE],[lrelease])
-		if test "$QT_LRELEASE" = ""
-		then
-			QT_LRELEASE=false
-		fi
-	fi
-
-	if test "$QT_MOC" != ""
-	then
-		AC_MSG_NOTICE([QT moc command: $QT_MOC])
-	fi
-
-	# set gconfig_have_qt, QT_CFLAGS and QT_LIBS iff we have a moc command
-	if test "$QT_MOC" != ""
-	then
-		gconfig_have_qt="yes"
-		if test "$gconfig_pkgconfig_qt" = "yes"
-		then
-			QT_CFLAGS="-fPIC `$PKG_CONFIG --cflags Qt5Widgets`"
-			QT_LIBS="`$PKG_CONFIG --libs Qt5Widgets`"
-		else
-			QT_CFLAGS="-fPIC"
-			QT_LIBS=""
-		fi
-	else
-		gconfig_have_qt="no"
-	fi
-
-	# mac modifications
-	if test "$QT_MOC" != "" -a "`uname`" = "Darwin"
-	then
-		QT_DIR="`dirname $QT_MOC`/.."
-		QT_CFLAGS="-F $QT_DIR/lib"
-		QT_LIBS="-F $QT_DIR/lib -framework QtWidgets -framework QtGui -framework QtCore"
-	fi
-])
-
 dnl GCONFIG_FN_QT_BUILD
 dnl -------------------
 dnl Tests for successful Qt5 compilation if GCONFIG_FN_QT
@@ -1852,6 +1740,119 @@ AC_DEFUN([GCONFIG_FN_QT_BUILD],
 	fi
 ])
 	gconfig_qt_build="$gconfig_cv_qt_build"
+])
+
+dnl GCONFIG_FN_QT
+dnl -------------
+dnl Tests for Qt5. Sets gconfig_have_qt, QT_MOC, QT_LRELEASE, QT_LIBS and
+dnl QT_CFLAGS. A fallback copy of "pkg.m4" should be included in the
+dnl distribution.
+dnl
+AC_DEFUN([GCONFIG_FN_QT],
+[
+	# skip the madness if the user has specified everything we need
+	if test "$QT_MOC" != "" -a "$QT_CFLAGS" != "" -a "$QT_LIBS" != ""
+	then
+		if echo "$QT_MOC" | grep -q /
+		then
+			QT_LRELEASE="`dirname \"$QT_MOC\"`/lrelease"
+		else
+			QT_LRELEASE="lrelease"
+		fi
+		AC_MSG_CHECKING([for QT])
+		AC_MSG_RESULT([overridden])
+		gconfig_have_qt=yes
+	else
+
+		# try pkg-config -- this says 'checking for QT'
+		PKG_CHECK_MODULES([QT],[Qt5Widgets > 5],
+			[
+				gconfig_pkgconfig_qt=yes
+			],
+			[
+				gconfig_pkgconfig_qt=no
+				AC_MSG_NOTICE([no QT 5 pkg-config])
+			]
+		)
+
+		# allow the moc command to be defined with QT_MOC on the configure
+		# command-line, typically also with CXXFLAGS and LIBS pointing to Qt
+		# headers and libraries
+		AC_ARG_VAR([QT_MOC],[moc command for QT])
+
+		if echo "$QT_MOC" | grep -q /
+		then
+			QT_LRELEASE="`dirname \"$QT_MOC\"`/lrelease"
+		else
+			QT_LRELEASE="lrelease"
+		fi
+
+		# or build the moc command using pkg-config results
+		if test "$QT_MOC" = ""
+		then
+			if test "$gconfig_pkgconfig_qt" = "yes"
+			then
+				QT_MOC="`$PKG_CONFIG --variable=host_bins Qt5Core`/moc"
+				QT_LRELEASE="`$PKG_CONFIG --variable=host_bins Qt5Core`/lrelease"
+				QT_CHOOSER="`$PKG_CONFIG --variable=exec_prefix Qt5Core`/bin/qtchooser"
+				if test -x "$QT_MOC" ; then : ; else QT_MOC="" ; fi
+				if test -x "$QT_LRELEASE" ; then : ; else QT_LRELEASE="" ; fi
+				if test -x "$QT_CHOOSER" ; then : ; else QT_CHOOSER="" ; fi
+				if test "$QT_MOC" = "" -a "$QT_CHOOSER" != ""
+				then
+					QT_MOC="$QT_CHOOSER -run-tool=moc -qt=qt5"
+				fi
+				if test "$QT_LRELEASE" = "" -a "$QT_CHOOSER" != ""
+				then
+					QT_LRELEASE="$QT_CHOOSER -run-tool=lrelease -qt=qt5"
+				fi
+			fi
+		fi
+
+		# or find moc on the path
+		if test "$QT_MOC" = ""
+		then
+			AC_PATH_PROG([QT_MOC],[moc])
+		fi
+
+		if test "$QT_LRELEASE" = ""
+		then
+			AC_PATH_PROG([QT_LRELEASE],[lrelease])
+			if test "$QT_LRELEASE" = ""
+			then
+				QT_LRELEASE=false
+			fi
+		fi
+
+		if test "$QT_MOC" != ""
+		then
+			AC_MSG_NOTICE([QT moc command: $QT_MOC])
+		fi
+
+		# set gconfig_have_qt, QT_CFLAGS and QT_LIBS iff we have a moc command
+		if test "$QT_MOC" != ""
+		then
+			gconfig_have_qt="yes"
+			if test "$gconfig_pkgconfig_qt" = "yes"
+			then
+				QT_CFLAGS="-fPIC `$PKG_CONFIG --cflags Qt5Widgets`"
+				QT_LIBS="`$PKG_CONFIG --libs Qt5Widgets`"
+			else
+				QT_CFLAGS="-fPIC"
+				QT_LIBS=""
+			fi
+		else
+			gconfig_have_qt="no"
+		fi
+
+		# mac modifications
+		if test "$QT_MOC" != "" -a "`uname`" = "Darwin"
+		then
+			QT_DIR="`dirname $QT_MOC`/.."
+			QT_CFLAGS="-F $QT_DIR/lib"
+			QT_LIBS="-F $QT_DIR/lib -framework QtWidgets -framework QtGui -framework QtCore"
+		fi
+	fi
 ])
 
 dnl GCONFIG_FN_READLINK
@@ -1939,13 +1940,13 @@ dnl such as e_sysconf_DATA, are also magically meaningful.
 dnl
 AC_DEFUN([GCONFIG_FN_SET_DIRECTORIES_E],
 [
-	if test "$e_libexecdir" = ""
+	if test "$e_libdir" = ""
 	then
-		e_libexecdir="$libexecdir/$PACKAGE"
+		e_libdir="$libexecdir/$PACKAGE"
 	fi
 	if test "$e_examplesdir" = ""
 	then
-		e_examplesdir="$libexecdir/$PACKAGE/examples"
+		e_examplesdir="$e_libdir/examples"
 	fi
 	if test "$e_sysconfdir" = ""
 	then
@@ -1969,7 +1970,7 @@ AC_DEFUN([GCONFIG_FN_SET_DIRECTORIES_E],
 	fi
 	if test "$e_initdir" = ""
 	then
-		e_initdir="$libexecdir/$PACKAGE/init"
+		e_initdir="$e_libdir/init"
 	fi
 	if test "$e_bsdinitdir" = ""
 	then
@@ -1977,7 +1978,7 @@ AC_DEFUN([GCONFIG_FN_SET_DIRECTORIES_E],
 		then
 			e_bsdinitdir="$sysconfdir/rc.d"
 		else
-			e_bsdinitdir="$libexecdir/$PACKAGE/init/bsd"
+			e_bsdinitdir="$e_libdir/init/bsd"
 		fi
 	fi
 	if test "$e_icondir" = ""
@@ -2007,7 +2008,7 @@ AC_DEFUN([GCONFIG_FN_SET_DIRECTORIES_E],
 	AC_SUBST([e_trdir])
 	AC_SUBST([e_spooldir])
 	AC_SUBST([e_examplesdir])
-	AC_SUBST([e_libexecdir])
+	AC_SUBST([e_libdir])
 	AC_SUBST([e_pamdir])
 	AC_SUBST([e_sysconfdir])
 	AC_SUBST([e_rundir])
@@ -2183,6 +2184,41 @@ AC_DEFUN([GCONFIG_FN_SOPEN_S],
 	fi
 ])
 
+dnl GCONFIG_FN_STATBUF_NSEC
+dnl -----------------------
+dnl Tests whether stat provides nanosecond file times.
+dnl
+AC_DEFUN([GCONFIG_FN_STATBUF_NSEC],
+[AC_CACHE_CHECK([for statbuf nanoseconds],[gconfig_cv_statbuf_nsec],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#ifdef _WIN32]
+				[#include <winsock2.h>]
+				[#include <windows.h>]
+				[#include <ws2tcpip.h>]
+				[#include <sys/types.h>]
+				[#include <sys/stat.h>]
+			[#else]
+				[#include <sys/types.h>]
+				[#include <sys/stat.h>]
+				[#include <unistd.h>]
+			[#endif]
+			[struct stat statbuf ;]
+		],
+		[
+			[statbuf.st_atim.tv_nsec = 0 ;]
+		])],
+		gconfig_cv_statbuf_nsec=yes ,
+		gconfig_cv_statbuf_nsec=no )
+])
+	if test "$gconfig_cv_statbuf_nsec" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_STATBUF_NSEC,1,[Define true if statbuf has a st_atim.tv_nsec member])
+	else
+		AC_DEFINE(GCONFIG_HAVE_STATBUF_NSEC,0,[Define true if statbuf has a st_atim.tv_nsec member])
+	fi
+])
+
 dnl GCONFIG_FN_STATBUF_TIMESPEC
 dnl ---------------------------
 dnl Tests whether stat uses _timespec substructures (eg. MacOS).
@@ -2219,41 +2255,6 @@ AC_DEFUN([GCONFIG_FN_STATBUF_TIMESPEC],
 	fi
 ])
 
-dnl GCONFIG_FN_STATBUF_NSEC
-dnl -----------------------
-dnl Tests whether stat provides nanosecond file times.
-dnl
-AC_DEFUN([GCONFIG_FN_STATBUF_NSEC],
-[AC_CACHE_CHECK([for statbuf nanoseconds],[gconfig_cv_statbuf_nsec],
-[
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-		[
-			[#ifdef _WIN32]
-				[#include <winsock2.h>]
-				[#include <windows.h>]
-				[#include <ws2tcpip.h>]
-				[#include <sys/types.h>]
-				[#include <sys/stat.h>]
-			[#else]
-				[#include <sys/types.h>]
-				[#include <sys/stat.h>]
-				[#include <unistd.h>]
-			[#endif]
-			[struct stat statbuf ;]
-		],
-		[
-			[statbuf.st_atim.tv_nsec = 0 ;]
-		])],
-		gconfig_cv_statbuf_nsec=yes ,
-		gconfig_cv_statbuf_nsec=no )
-])
-	if test "$gconfig_cv_statbuf_nsec" = "yes" ; then
-		AC_DEFINE(GCONFIG_HAVE_STATBUF_NSEC,1,[Define true if statbuf has a st_atim.tv_nsec member])
-	else
-		AC_DEFINE(GCONFIG_HAVE_STATBUF_NSEC,0,[Define true if statbuf has a st_atim.tv_nsec member])
-	fi
-])
-
 dnl GCONFIG_FN_STRNCPY_S
 dnl --------------------
 dnl Tests for strncpy_s().
@@ -2281,94 +2282,6 @@ AC_DEFUN([GCONFIG_FN_STRNCPY_S],
 		AC_DEFINE(GCONFIG_HAVE_STRNCPY_S,1,[Define true if strncpy_s in string.h])
 	else
 		AC_DEFINE(GCONFIG_HAVE_STRNCPY_S,0,[Define true if strncpy_s in string.h])
-	fi
-])
-
-dnl GCONFIG_FN_WINDOWS_CREATE_EVENT_EX
-dnl -------------------------------------------
-dnl Tests for CreateEventEx().
-dnl
-AC_DEFUN([GCONFIG_FN_WINDOWS_CREATE_EVENT_EX],
-[AC_CACHE_CHECK([for windows CreateEventEx],[gconfig_cv_win_ce_ex],
-[
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-		[
-			[#ifdef _WIN32]
-				[#include <winsock2.h>]
-				[#include <windows.h>]
-				[#include <synchapi.h>]
-			[#endif]
-			[HANDLE h = 0 ;]
-		],
-		[
-			[h = CreateEventEx( NULL , NULL , 0 , 0 ) ;]
-		])],
-		gconfig_cv_win_ce_ex=yes,
-		gconfig_cv_win_ce_ex=no )
-])
-	if test "$gconfig_cv_win_ce_ex" = "yes" ; then
-		AC_DEFINE(GCONFIG_HAVE_WINDOWS_CREATE_EVENT_EX,1,[Define true if windows CreateEventEx is available])
-	else
-		AC_DEFINE(GCONFIG_HAVE_WINDOWS_CREATE_EVENT_EX,0,[Define true if windows CreateEventEx is available])
-	fi
-])
-
-dnl GCONFIG_FN_WINDOWS_CREATE_WAITABLE_TIMER_EX
-dnl -------------------------------------------
-dnl Tests for CreateWaitableTimerEx().
-dnl
-AC_DEFUN([GCONFIG_FN_WINDOWS_CREATE_WAITABLE_TIMER_EX],
-[AC_CACHE_CHECK([for windows CreateWaitableTimerEx],[gconfig_cv_win_cwt_ex],
-[
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-		[
-			[#ifdef _WIN32]
-				[#include <winsock2.h>]
-				[#include <windows.h>]
-				[#include <ws2tcpip.h>]
-			[#endif]
-			[HANDLE h = 0 ;]
-		],
-		[
-			[h = CreateWaitableTimerEx( NULL , NULL , 0 , 0 ) ;]
-		])],
-		gconfig_cv_win_cwt_ex=yes,
-		gconfig_cv_win_cwt_ex=no )
-])
-	if test "$gconfig_cv_win_cwt_ex" = "yes" ; then
-		AC_DEFINE(GCONFIG_HAVE_WINDOWS_CREATE_WAITABLE_TIMER_EX,1,[Define true if windows CreateWaitableTimerEx is available])
-	else
-		AC_DEFINE(GCONFIG_HAVE_WINDOWS_CREATE_WAITABLE_TIMER_EX,0,[Define true if windows CreateWaitableTimerEx is available])
-	fi
-])
-
-dnl GCONFIG_FN_WINDOWS_INIT_COMMON_CONTROLS_EX
-dnl ------------------------------------------
-dnl Tests for InitCommonControlsEx().
-dnl
-AC_DEFUN([GCONFIG_FN_WINDOWS_INIT_COMMON_CONTROLS_EX],
-[AC_CACHE_CHECK([for windows InitCommonControlsEx],[gconfig_cv_win_icc_ex],
-[
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-		[
-			[#ifdef _WIN32]
-				[#include <winsock2.h>]
-				[#include <windows.h>]
-				[#include <commctrl.h>]
-			[#endif]
-			[INITCOMMONCONTROLSEX x ;]
-			[BOOL rc = 0;]
-		],
-		[
-			[rc = InitCommonControlsEx( &x ) ;]
-		])],
-		gconfig_cv_win_icc_ex=yes,
-		gconfig_cv_win_icc_ex=no )
-])
-	if test "$gconfig_cv_win_icc_ex" = "yes" ; then
-		AC_DEFINE(GCONFIG_HAVE_WINDOWS_INIT_COMMON_CONTROLS_EX,1,[Define true if windows InitCommonControlsEx is available])
-	else
-		AC_DEFINE(GCONFIG_HAVE_WINDOWS_INIT_COMMON_CONTROLS_EX,0,[Define true if windows InitCommonControlsEx is available])
 	fi
 ])
 
@@ -2762,35 +2675,6 @@ AC_DEFUN([GCONFIG_FN_TYPE_UINTPTR_T],
 	fi
 ])
 
-dnl GCONFIG_FN_UDS
-dnl --------------
-dnl Tests for unix domain socket support.
-dnl
-AC_DEFUN([GCONFIG_FN_UDS],
-[AC_CACHE_CHECK([for unix domain sockets],[gconfig_cv_uds],
-[
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-		[
-			[#include <sys/types.h>]
-			[#include <sys/socket.h>]
-			[#include <sys/un.h>]
-			[struct sockaddr_un a ;]
-		] ,
-		[
-			[a.sun_family = AF_UNIX | PF_UNIX ;]
-			[a.sun_path[0] = '\0' ;]
-		])] ,
-		[gconfig_cv_uds=yes],
-		[gconfig_cv_uds=no])
-])
-	if test "$gconfig_cv_uds" = "yes"
-	then
-		AC_DEFINE(GCONFIG_HAVE_UDS,1,[Define true to use unix domain sockets])
-	else
-		AC_DEFINE(GCONFIG_HAVE_UDS,0,[Define true to use unix domain sockets])
-	fi
-])
-
 dnl GCONFIG_FN_UDS_LEN
 dnl ------------------
 dnl Tests for BSD's 'sun_len' in 'sockaddr_un'.
@@ -2821,6 +2705,35 @@ AC_DEFUN([GCONFIG_FN_UDS_LEN],
 	fi
 ])
 
+dnl GCONFIG_FN_UDS
+dnl --------------
+dnl Tests for unix domain socket support.
+dnl
+AC_DEFUN([GCONFIG_FN_UDS],
+[AC_CACHE_CHECK([for unix domain sockets],[gconfig_cv_uds],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#include <sys/types.h>]
+			[#include <sys/socket.h>]
+			[#include <sys/un.h>]
+			[struct sockaddr_un a ;]
+		] ,
+		[
+			[a.sun_family = AF_UNIX | PF_UNIX ;]
+			[a.sun_path[0] = '\0' ;]
+		])] ,
+		[gconfig_cv_uds=yes],
+		[gconfig_cv_uds=no])
+])
+	if test "$gconfig_cv_uds" = "yes"
+	then
+		AC_DEFINE(GCONFIG_HAVE_UDS,1,[Define true to use unix domain sockets])
+	else
+		AC_DEFINE(GCONFIG_HAVE_UDS,0,[Define true to use unix domain sockets])
+	fi
+])
+
 dnl GCONFIG_FN_WARNINGS
 dnl -------------------
 dnl Displays a summary warning.
@@ -2837,6 +2750,94 @@ AC_DEFUN([GCONFIG_FN_WARNINGS],
 			done
 		fi
 	done
+])
+
+dnl GCONFIG_FN_WINDOWS_CREATE_EVENT_EX
+dnl -------------------------------------------
+dnl Tests for CreateEventEx().
+dnl
+AC_DEFUN([GCONFIG_FN_WINDOWS_CREATE_EVENT_EX],
+[AC_CACHE_CHECK([for windows CreateEventEx],[gconfig_cv_win_ce_ex],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#ifdef _WIN32]
+				[#include <winsock2.h>]
+				[#include <windows.h>]
+				[#include <synchapi.h>]
+			[#endif]
+			[HANDLE h = 0 ;]
+		],
+		[
+			[h = CreateEventEx( NULL , NULL , 0 , 0 ) ;]
+		])],
+		gconfig_cv_win_ce_ex=yes,
+		gconfig_cv_win_ce_ex=no )
+])
+	if test "$gconfig_cv_win_ce_ex" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_WINDOWS_CREATE_EVENT_EX,1,[Define true if windows CreateEventEx is available])
+	else
+		AC_DEFINE(GCONFIG_HAVE_WINDOWS_CREATE_EVENT_EX,0,[Define true if windows CreateEventEx is available])
+	fi
+])
+
+dnl GCONFIG_FN_WINDOWS_CREATE_WAITABLE_TIMER_EX
+dnl -------------------------------------------
+dnl Tests for CreateWaitableTimerEx().
+dnl
+AC_DEFUN([GCONFIG_FN_WINDOWS_CREATE_WAITABLE_TIMER_EX],
+[AC_CACHE_CHECK([for windows CreateWaitableTimerEx],[gconfig_cv_win_cwt_ex],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#ifdef _WIN32]
+				[#include <winsock2.h>]
+				[#include <windows.h>]
+				[#include <ws2tcpip.h>]
+			[#endif]
+			[HANDLE h = 0 ;]
+		],
+		[
+			[h = CreateWaitableTimerEx( NULL , NULL , 0 , 0 ) ;]
+		])],
+		gconfig_cv_win_cwt_ex=yes,
+		gconfig_cv_win_cwt_ex=no )
+])
+	if test "$gconfig_cv_win_cwt_ex" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_WINDOWS_CREATE_WAITABLE_TIMER_EX,1,[Define true if windows CreateWaitableTimerEx is available])
+	else
+		AC_DEFINE(GCONFIG_HAVE_WINDOWS_CREATE_WAITABLE_TIMER_EX,0,[Define true if windows CreateWaitableTimerEx is available])
+	fi
+])
+
+dnl GCONFIG_FN_WINDOWS_INIT_COMMON_CONTROLS_EX
+dnl ------------------------------------------
+dnl Tests for InitCommonControlsEx().
+dnl
+AC_DEFUN([GCONFIG_FN_WINDOWS_INIT_COMMON_CONTROLS_EX],
+[AC_CACHE_CHECK([for windows InitCommonControlsEx],[gconfig_cv_win_icc_ex],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#ifdef _WIN32]
+				[#include <winsock2.h>]
+				[#include <windows.h>]
+				[#include <commctrl.h>]
+			[#endif]
+			[INITCOMMONCONTROLSEX x ;]
+			[BOOL rc = 0;]
+		],
+		[
+			[rc = InitCommonControlsEx( &x ) ;]
+		])],
+		gconfig_cv_win_icc_ex=yes,
+		gconfig_cv_win_icc_ex=no )
+])
+	if test "$gconfig_cv_win_icc_ex" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_WINDOWS_INIT_COMMON_CONTROLS_EX,1,[Define true if windows InitCommonControlsEx is available])
+	else
+		AC_DEFINE(GCONFIG_HAVE_WINDOWS_INIT_COMMON_CONTROLS_EX,0,[Define true if windows InitCommonControlsEx is available])
+	fi
 ])
 
 dnl GCONFIG_FN_WITH_DOXYGEN

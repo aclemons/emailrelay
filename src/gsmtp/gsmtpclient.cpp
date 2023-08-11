@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -32,57 +32,27 @@
 #include "glog.h"
 #include <utility>
 
-GSmtp::Client::Client( GNet::ExceptionSink es , GStore::MessageStore & store ,
-	FilterFactoryBase & ff , const GNet::Location & remote ,
-	const GAuth::SaslClientSecrets & secrets ,
-	const Config & config ) :
+GSmtp::Client::Client( GNet::ExceptionSink es , FilterFactoryBase & ff , const GNet::Location & remote ,
+	const GAuth::SaslClientSecrets & secrets , const Config & config ) :
 		GNet::Client(es,remote,netConfig(config)) ,
-		m_es(es) ,
-		m_ff(ff) ,
 		m_config(config) ,
-		m_secrets(secrets) ,
-		m_store(&store) ,
-		m_filter(ff.newFilter(es,Filter::Type::client,config.filter_config,config.filter_spec,{})) ,
-		m_routing_filter(ff.newFilter(es,Filter::Type::routing,config.filter_config,config.filter_spec,"routing-filter")) ,
+		m_nofilter_timer(*this,&Client::onNoFilterTimeout,es) ,
+		m_filter(ff.newFilter(es,Filter::Type::client,config.filter_config,config.filter_spec)) ,
 		m_protocol(es,*this,secrets,config.sasl_client_config,config.client_protocol_config,config.secure_tunnel) ,
-		m_message_count(0U)
-{
-	G_ASSERT( m_filter.get() != nullptr ) ;
-	m_iter = m_store->iterator( true ) ;
-	m_protocol.doneSignal().connect( G::Slot::slot(*this,&Client::protocolDone) ) ;
-	m_protocol.filterSignal().connect( G::Slot::slot(*this,&Client::filterStart) ) ;
-	m_filter->doneSignal().connect( G::Slot::slot(*this,&Client::filterDone) ) ;
-	m_routing_filter->doneSignal().connect( G::Slot::slot(*this,&Client::routingFilterDone) ) ;
-}
-
-GSmtp::Client::Client( GNet::ExceptionSink es ,
-	FilterFactoryBase & ff , const GNet::Location & remote ,
-	const GAuth::SaslClientSecrets & secrets ,
-	const Config & config ) :
-		GNet::Client(es,remote,netConfig(config)) ,
-		m_es(es) ,
-		m_ff(ff) ,
-		m_config(config) ,
-		m_secrets(secrets) ,
-		m_store(nullptr) ,
-		m_filter(ff.newFilter(es,Filter::Type::client,config.filter_config,config.filter_spec,{})) ,
-		m_routing_filter(ff.newFilter(es,Filter::Type::routing,config.filter_config,config.filter_spec,"routing-filter")) ,
-		m_protocol(es,*this,secrets,config.sasl_client_config,config.client_protocol_config,config.secure_tunnel) ,
-		m_message_count(0U)
+		m_secure(false) ,
+		m_filter_special(false)
 {
 	G_ASSERT( m_filter.get() != nullptr ) ;
 	m_protocol.doneSignal().connect( G::Slot::slot(*this,&Client::protocolDone) ) ;
 	m_protocol.filterSignal().connect( G::Slot::slot(*this,&Client::filterStart) ) ;
 	m_filter->doneSignal().connect( G::Slot::slot(*this,&Client::filterDone) ) ;
-	m_routing_filter->doneSignal().connect( G::Slot::slot(*this,&Client::routingFilterDone) ) ;
 }
 
 GSmtp::Client::~Client()
 {
-	m_protocol.doneSignal().disconnect() ;
-	m_protocol.filterSignal().disconnect() ;
 	m_filter->doneSignal().disconnect() ;
-	m_routing_filter->doneSignal().disconnect() ;
+	m_protocol.filterSignal().disconnect() ;
+	m_protocol.doneSignal().disconnect() ;
 }
 
 GNet::Client::Config GSmtp::Client::netConfig( const Config & smtp_config )
@@ -102,7 +72,7 @@ GNet::Client::Config GSmtp::Client::netConfig( const Config & smtp_config )
 			//.set_idle_timeout = 0U ; // not needed
 }
 
-G::Slot::Signal<const std::string&> & GSmtp::Client::messageDoneSignal()
+G::Slot::Signal<const std::string&,bool> & GSmtp::Client::messageDoneSignal() noexcept
 {
 	return m_message_done_signal ;
 }
@@ -111,16 +81,13 @@ void GSmtp::Client::sendMessage( std::unique_ptr<GStore::StoredMessage> message 
 {
 	G_ASSERT( message.get() != nullptr ) ;
 	m_message = std::move( message ) ;
-	if( connected() )
+	if( ready() )
 		start() ;
 }
 
-void GSmtp::Client::sendMessage( std::shared_ptr<GStore::StoredMessage> message )
+bool GSmtp::Client::ready() const
 {
-	G_ASSERT( message.get() != nullptr ) ;
-	m_message = std::move( message ) ;
-	if( connected() )
-		start() ;
+	return m_config.secure_tunnel ? ( connected() && m_secure ) : connected() ;
 }
 
 void GSmtp::Client::onConnect()
@@ -128,75 +95,24 @@ void GSmtp::Client::onConnect()
 	if( m_config.secure_tunnel )
 		secureConnect() ; // GNet::SocketProtocol
 	else
-		startSending() ;
+		start() ;
 }
 
 void GSmtp::Client::onSecure( const std::string & , const std::string & , const std::string & )
 {
+	m_secure = true ;
 	if( m_config.secure_tunnel )
-		startSending() ;
+		start() ;
 	else
 		m_protocol.secure() ; // tell the protocol that STARTTLS is done
 }
 
-void GSmtp::Client::startSending()
-{
-	G_LOG_S( "GSmtp::Client::startSending: smtp connection to " << peerAddress().displayString() ) ;
-	if( m_store != nullptr && m_message.get() == nullptr )
-	{
-		// start sending the first message
-		bool started = sendNext() ;
-		if( !started )
-		{
-			G_DEBUG( "GSmtp::Client::startSending: nothing to send" ) ;
-			quitAndFinish() ;
-			throw GNet::Done() ;
-		}
-	}
-	else
-	{
-		start() ;
-	}
-}
-
-bool GSmtp::Client::sendNext()
-{
-	// fetch the next message from the store, or return false if none
-	m_message.reset() ;
-	for(;;)
-	{
-		std::unique_ptr<GStore::StoredMessage> message( ++m_iter ) ;
-		if( message == nullptr )
-		{
-			if( m_message_count != 0U )
-				G_LOG( "GSmtp::Client: no more messages to send" ) ;
-			m_message_count = 0U ;
-			return false ;
-		}
-		else
-		{
-			m_message = std::move( message ) ;
-			break ;
-		}
-	}
-	start() ;
-	return true ;
-}
-
 void GSmtp::Client::start()
 {
-	m_message_count++ ;
-
-	// basic routing if forward-to is defined in the envelope
-	if( m_config.with_routing && !message()->forwardTo().empty() )
-	{
-		message()->close() ;
-		m_routing_filter->start( message()->id() ) ;
-		return ;
-	}
+	G_LOG_S( "GSmtp::Client::start: smtp connection to " << peerAddress().displayString() ) ;
 
 	G::CallFrame this_( m_stack ) ;
-	eventSignal().emit( "sending" , message()->location() , std::string() ) ;
+	eventSignal().emit( "sending" , std::string(message()->id().str()) , std::string() ) ;
 	if( this_.deleted() ) return ;
 
 	m_protocol.start( std::weak_ptr<GStore::StoredMessage>(message()) ) ;
@@ -220,10 +136,23 @@ bool GSmtp::Client::protocolSend( G::string_view line , std::size_t offset , boo
 
 void GSmtp::Client::filterStart()
 {
-	if( !m_filter->quiet() )
-		G_LOG( "GSmtp::Client::filterStart: client-filter: start [" << m_filter->id() << "]" ) ;
-	message()->close() ; // allow external editing
-	m_filter->start( message()->id() ) ;
+	if( !message()->forwardTo().empty() )
+	{
+		// no client filter if "ForwardTo" is populated -- see GSmtp::Forward
+		m_nofilter_timer.startTimer( 0U ) ;
+	}
+	else
+	{
+		G_LOG_MORE( "GSmtp::Client::filterStart: client-filter [" << m_filter->id() << "]: [" << message()->id().str() << "]" ) ;
+		message()->close() ; // allow external editing
+		m_filter_special = false ;
+		m_filter->start( message()->id() ) ;
+	}
+}
+
+void GSmtp::Client::onNoFilterTimeout()
+{
+	m_protocol.filterDone( Filter::Result::ok , {} , {} ) ;
 }
 
 void GSmtp::Client::filterDone( int filter_result )
@@ -232,17 +161,13 @@ void GSmtp::Client::filterDone( int filter_result )
 
 	const bool ok = filter_result == 0 ;
 	const bool abandon = filter_result == 1 ;
-	const bool stop_scanning = m_filter->special() ;
+	m_filter_special = m_filter->special() ;
 
-	if( stop_scanning )
-	{
-		G_DEBUG( "GSmtp::Client::filterDone: making this the last message" ) ;
-		m_iter.reset() ; // so next iterNext() returns nothing
-	}
+	G_LOG_IF( !m_filter->quiet() , "GSmtp::Client::filterDone: client-filter "
+		"[" << m_filter->id() << "]: [" << message()->id().str() << "]: "
+		<< m_filter->str(Filter::Type::client) ) ;
 
 	std::string reopen_error ;
-	if( !m_filter->quiet() )
-		G_LOG( "GSmtp::Client::filterDone: client-filter: done: " << m_filter->str(Filter::Type::client) ) ;
 	if( ok && !abandon )
 		reopen_error = message()->reopen() ;
 
@@ -273,7 +198,7 @@ void GSmtp::Client::protocolDone( int response_code , const std::string & respon
 	std::string response = response_in.empty() ? std::string() : ( "smtp client failure: " + response_in ) ;
 	std::string reason = reason_in.empty() ? response : reason_in ;
 	std::string short_reason = ( response_in.empty() || reason_in.empty() ) ? response_in : reason_in ;
-	std::string message_location = message()->location() ;
+	std::string message_id = message()->id().str() ;
 
 	if( response_code == -1 ) // filter abandon
 	{
@@ -306,23 +231,11 @@ void GSmtp::Client::protocolDone( int response_code , const std::string & respon
 	}
 
 	G::CallFrame this_( m_stack ) ;
-	eventSignal().emit( "sent" , message_location , short_reason ) ;
+	eventSignal().emit( "sent" , message_id , short_reason ) ;
 	if( this_.deleted() ) return ; // just in case
 
-	if( m_store != nullptr )
-	{
-		if( !sendNext() )
-		{
-			G_DEBUG( "GSmtp::Client::protocolDone: all sent" ) ;
-			quitAndFinish() ;
-			throw GNet::Done() ;
-		}
-	}
-	else
-	{
-		m_message.reset() ;
-		messageDoneSignal().emit( response ) ;
-	}
+	m_message.reset() ;
+	messageDoneSignal().emit( response , m_filter_special ) ;
 }
 
 void GSmtp::Client::quitAndFinish()
@@ -364,10 +277,9 @@ bool GSmtp::Client::onReceive( const char * line_data , std::size_t line_size , 
 void GSmtp::Client::onDelete( const std::string & error )
 {
 	G_DEBUG( "GSmtp::Client::onDelete: error [" << error << "]" ) ;
-	if( ! error.empty() )
+	if( !error.empty() )
 	{
-		G_LOG( "GSmtp::Client: smtp client error: " << error ) ;
-		if( m_message )
+		if( m_message && hasConnected() )
 			messageFail( 0 , error ) ; // if not already failed or destroyed
 	}
 	m_message.reset() ;
@@ -376,81 +288,6 @@ void GSmtp::Client::onDelete( const std::string & error )
 void GSmtp::Client::onSendComplete()
 {
 	m_protocol.sendComplete() ;
-}
-
-void GSmtp::Client::routingFilterDone( int filter_result )
-{
-	G_ASSERT( static_cast<int>(m_routing_filter->result()) == filter_result ) ;
-	G_ASSERT( m_config.with_routing ) ;
-
-	const bool ok = filter_result == 0 ;
-	const bool abandon = filter_result == 1 ;
-	const bool fail = filter_result == 2 ;
-	std::string reopen_error = ok ? message()->reopen() : std::string() ;
-
-	bool move_on = false ;
-	if( abandon )
-	{
-		move_on  = true ;
-	}
-	else if( fail )
-	{
-		messageFail( 550 , "routing filter failed" ) ;
-		move_on = true ;
-	}
-	else if( !reopen_error.empty() ) // ok but cannot open
-	{
-		messageFail( 550 , "routing filter error" ) ;
-		move_on = true ;
-	}
-
-	G_LOG_IF( !m_routing_filter->quiet() , "GSmtp::Client::routingFilterDone: "
-		"routing: routing-filter: done: "
-		<< m_routing_filter->str(Filter::Type::client)
-		<< (reopen_error.empty()?std::string():(": "+reopen_error))
-		<< (move_on?": moving on":"") ) ;
-
-	if( move_on )
-	{
-		G_ASSERT( m_store != nullptr ) ;
-		if( !sendNext() )
-		{
-			quitAndFinish() ;
-			throw GNet::Done() ;
-		}
-	}
-	else // ok and reopened
-	{
-		std::string forward_to_address = message()->forwardToAddress() ;
-		G_LOG_IF( !m_routing_filter->quiet() , "GSmtp::Client::routingFilterDone: "
-			"routing: forward-to-address from envelope: [" << forward_to_address << "]" ) ;
-
-		G::CallFrame this_( m_stack ) ;
-		eventSignal().emit( "sending" , message()->location() , std::string() ) ;
-		if( this_.deleted() ) return ;
-
-		if( forward_to_address.empty() )
-		{
-			// no special routing -- send to the default smarthost
-			m_protocol.start( std::weak_ptr<GStore::StoredMessage>(message()) ) ;
-		}
-		else
-		{
-			m_routing_client.reset( new Client( m_es , m_ff , GNet::Location(forward_to_address) ,
-				m_secrets , Config(m_config).set_with_routing(false) ) ) ;
-			m_routing_client->messageDoneSignal().connect( G::Slot::slot( *this , &GSmtp::Client::routedMessageDone ) ) ;
-			m_routing_client->sendMessage( message() ) ;
-		}
-	}
-}
-
-void GSmtp::Client::routedMessageDone( const std::string & )
-{
-	if( !sendNext() )
-	{
-		quitAndFinish() ;
-		throw GNet::Done() ;
-	}
 }
 
 // ==

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -70,6 +70,9 @@ public:
 	static bool exists( const G::Path & link_path ) ;
 		///< Returns true if the link exists.
 
+	static bool exists( const G::Path & dir , const std::string & link_name ) ;
+		///< Returns true if the link exists.
+
 public:
 	Link( const Link & ) = delete ;
 	Link( Link && ) = delete ;
@@ -79,5 +82,11 @@ public:
 private:
 	std::unique_ptr<LinkImp> m_imp ;
 } ;
+
+inline
+bool Gui::Link::exists( const G::Path & dir , const std::string & link_name )
+{
+	return !dir.empty() && !link_name.empty() && exists( dir + link_name ) ;
+}
 
 #endif

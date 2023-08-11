@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -53,13 +53,11 @@ struct G::Limits<G::Scale::Normal> /// Normal specialisation of G::Limits.
 {
 	static constexpr bool small = false ;
 	static constexpr int log = 1000 ; // log line limit
-	static constexpr int path_buffer = 1024 ; // cf. PATH_MAX
-	static constexpr int file_buffer = 102400 ; // cf. BUFSIZ
-	static constexpr int file_slurp = 100000000 ;  // read file into contiguous memory
-	static constexpr int pipe_buffer = 4096 ; // one-off read from a pipe
-	static constexpr int net_buffer = 20000 ; // best if bigger than the TLS maximum block size of 16k
-	static constexpr int net_file_limit = 200000000 ; // d.o.s. network read file limit
+	static constexpr int path_buffer = 1024 ; // getcwd() first-attempt buffer size
+	static constexpr int file_buffer = 8192 ; // read() buffer size for file copying (BUFSIZ)
+	static constexpr int net_buffer = 20000 ; // read() buffer size for network reads (>=16k is best for TLS)
 	static constexpr int net_listen_queue = 31 ; // listen(2) backlog parameter (cf. apache 511)
+	static constexpr int net_file_limit = 200000000 ; // DoS limit reading a file from the network
 	Limits() = delete ;
 } ;
 
@@ -69,12 +67,10 @@ struct G::Limits<G::Scale::Small> /// Small-memory specialisation of G::Limits.
 	static constexpr bool small = true ;
 	static constexpr int log = 120 ;
 	static constexpr int path_buffer = 64 ;
-	static constexpr int file_buffer = 128 ;
-	static constexpr int file_slurp = 10000000 ;
-	static constexpr int pipe_buffer = 128 ;
-	static constexpr int net_buffer = 1024 ;
-	static constexpr int net_file_limit = 10000000 ;
+	static constexpr int file_buffer = 4096 ;
+	static constexpr int net_buffer = 4096 ;
 	static constexpr int net_listen_queue = 3 ;
+	static constexpr int net_file_limit = 10000000 ;
 	Limits() = delete ;
 } ;
 

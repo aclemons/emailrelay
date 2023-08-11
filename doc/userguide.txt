@@ -23,7 +23,9 @@ etc. through external scripts.
 
 Basic operation
 ---------------
-E-MailRelay can be run straight from the command-line.
+E-MailRelay can be run straight from the command-line, and on Windows you can
+run "emailrelay.exe" or "emailrelay-textmode.exe" from the zip file without
+going through the installation process.
 
 To use E-MailRelay in store-and-forward mode use the "--as-server" option to
 start the storage daemon in the background, and then do delivery of spooled
@@ -31,41 +33,45 @@ messages by running with "--as-client".
 
 <<serverclient.png>>
 
-For example, to start a storage daemon in the background listening on port 587
+For example, to start a storage daemon in the background listening on port 10025
 use a command like this:
 
-	emailrelay --as-server --syslog --port 587 --spool-dir /tmp
+	emailrelay --as-server --port 10025 --spool-dir /tmp
+
+On Windows use "c:/temp" for testing, rather than "/tmp".
 
 Or to run it in the foreground:
 
-	emailrelay --log --verbose --no-daemon --port 587 --spool-dir /tmp
+	emailrelay --log --no-daemon --port 10025 --spool-dir /tmp
 
 And then to forward the spooled mail to "smtp.example.com" run something
 like this:
 
 	emailrelay --as-client smtp.example.com:25 --spool-dir /tmp
 
-To get behaviour more like a proxy you can add the "--poll" and "--forward-to"
-options so that messages are forwarded continuously rather than on-demand.
+To forward continuously you can add the "--poll" and "--forward-to" options to
+the server command-line:
 
 <<forwardto.png>>
 
-This example starts a store-and-forward server that forwards spooled-up e-mail
-every minute:
+For example, this starts a server that also forwards spooled-up e-mail every
+minute:
 
 	emailrelay --as-server --poll 60 --forward-to smtp.example.com:25
 
-Or for a proxy server that forwards each message soon after it has been
-received, you can use "--as-proxy" or add "--forward-on-disconnect":
+Or for a server that forwards each message as soon as it has been received, you
+can use "--forward-on-disconnect":
 
 	emailrelay --as-server --forward-on-disconnect --forward-to smtp.example.com:25
 
-To edit or filter e-mail as it passes through the proxy specify your filter
+To edit or filter e-mail as it passes through the server specify your filter
 program with the "--filter" option, something like this:
 
-	emailrelay --as-proxy smtp.example.com:25 --filter=addsig.js
+	emailrelay --as-server --filter /tmp/set-from.js
 
-E-MailRelay can be used as a personal internet mail server:
+Look for example filter scripts in the "examples" directory.
+
+E-MailRelay can also be used as a personal internet mail server:
 
 <<mailserver.png>>
 
@@ -73,7 +79,7 @@ Use "--remote-clients" ("-r") to allow connections from outside the local
 network, define your domain name with "--domain" and use an address verifier as
 a first line of defense against spammers:
 
-	emailrelay --as-server -v -r --domain=example.com --address-verifier=allow:
+	emailrelay --as-server -v -r --domain=example.com --address-verifier=account:
 
 Then enable POP access to the incoming e-mails with "--pop", "--pop-port" and
 "--pop-auth":
@@ -103,7 +109,7 @@ configuration from the startup batch file "emailrelay-start.bat".
 
 You can change the E-MailRelay server configuration by editing the configuration
 file or startup batch file directly and then restarting the server. Or you can
-use the E-MailRelay configuration GUI if it is avaliable.
+use the E-MailRelay configuration GUI if it is available.
 
 In many cases E-MailRelay will need to be configured with user-ids and
 passwords. For example, if e-mail is being forwarded to a "smarthost" for onward
@@ -138,8 +144,8 @@ the ".bad" filename suffix. On Unix-like systems you can do this automatically
 with a cron job that runs the "emailrelay-resubmit.sh" script occasionally.
 
 Once a failed message has been renamed it will be forwarded along with all the
-others. It is generally a good idea to use regular polling (eg. "--poll=60") to
-make sure that this happens in a timely manner.
+others. It is a good idea to use regular polling (eg. "--poll=60") to make sure
+that this happens in a timely manner.
 
 Open mail servers
 -----------------
@@ -157,16 +163,16 @@ scope.
 
 A good first step in limiting abuse is to use an address verifier that checks
 that e-mails are correctly addressed to you. You can use the built-in address
-verifier called "strict:" to do this or you can write your own verifier script.
+verifier called "account:" to do this or you can write your own verifier script.
 
-	emailrelay --as-server --remote-clients --address-verifier=strict: --domain=mydomain.com
+	emailrelay --as-server --remote-clients --address-verifier=account: --domain=mydomain.com
 
 Refer to the "Address verifiers" section in the E-MailRelay reference document
 for more details.
 
 If you want to run an internet mail server that is not open to everyone then you
 can require that remote users authenticate themselves. Do this with a secrets
-file containing a user-id and password for every remote user, somthing like
+file containing a user-id and password for every remote user, something like
 this:
 
 	server plain user1 password1
@@ -198,10 +204,9 @@ copy the e-mail files into multiple sub-directories of the main spool directory
 and then use "--pop-by-name" so that each e-mail client accesses its own
 sub-directory according to which account name it used when authenticating.
 
-The filter can be an external program such as "emailrelay-filter-copy" or the
-built-in "copy:" filter:
+The filter can be an external program or the built-in "copy:" filter:
 
-	emailrelay --as-server --filter=copy: --pop --pop-by-name --pop-auth=/etc/pop.auth
+	emailrelay --as-server --filter=copy:pop --pop --pop-by-name --pop-auth=/etc/pop.auth
 
 Add the account for each e-mail client in the POP authentication secrets file
 and manually create the corresponding sub-directory.
@@ -216,13 +221,16 @@ the mailbox owner.
 Refer to the "Delivery" section in the E-MailRelay reference document for more
 information.
 
+If you are using POP to view a spool directory that is also being used for
+e-mail forwarding then you must use "--pop-no-delete".
+
 IMAP
 ----
 E-MailRelay does not support the IMAP protocol directly but a simple filter
 script can be used to move e-mails into a "maildir" directory and an IMAP server
 such as "dovecot" can be used to serve them from there.
 
-It is normally sufficient for the filter script to just move the E-MailRelay
+It is normally sufficient for a filter script to just move the E-MailRelay
 content file straight into the mailbox "cur" directory, delete the corresponding
 envelope file and then exit with an exit code of 100.
 
@@ -310,7 +318,7 @@ On Windows the E-MailRelay startup batch file should contain something like this
 
 	emailrelay --as-proxy=smtp.gmail.com:587 --client-tls --client-auth=C:/ProgramData/E-MailRelay/emailrelay.auth ...
 
-Or an equivalent configration file like this:
+Or an equivalent configuration file like this:
 
 	forward-to smtp.gmail.com:587
 	client-tls
@@ -330,8 +338,11 @@ local Tor server on port 9050 to the mail server at smtp.example.com:
 Blocklists and dynamic firewalls
 --------------------------------
 E-MailRelay can consult with remote DNSBL blocklist servers in order to block
-incoming connections from known spammers. Refer to the documentation of the
-"--dnsbl" option for more details.
+incoming connections from known spammers. For example:
+
+	emailrelay -r --dnsbl=zen.spamhaus.org,bl.mailspike.net ...
+
+Refer to the documentation of the "--dnsbl" option for more details.
 
 It is also possible to integrate E-MailRelay with intrusion detection systems
 such as "fail2ban" that monitor log files and dynamically modify your iptables
@@ -348,7 +359,7 @@ same "Bcc:" header when forwarded.
 It is normally the responsibility of the program that submits an e-mail message
 to submit it separately for each "Bcc" recipient, removing the "Bcc:" header
 from the message content or changing it to contain only the 'current' recipient.
-If this is not done, perhaps through mis-configuration of the e-mail user agent
+If this is not done, perhaps through misconfiguration of the e-mail user agent
 program, then "Bcc" recipients may be visible to the "To" and "Cc" message
 recipients.
 
@@ -369,7 +380,7 @@ command-line, split onto multiple lines for readability:
 	--in-spool-dir @app/in
 	--in-port 25
 	--in-domain example.com
-	--in-address-verifier strict:pm
+	--in-address-verifier account:
 	--in-dnsbl 1.1.1.1:53,500,1,dnsbl.example.com
 	--in-filter spam-edit:127.0.0.1:783
 	--in-filter deliver:
@@ -385,7 +396,7 @@ command-line, split onto multiple lines for readability:
 	--out-forward-on-disconnect
 	--out-forward-to-some
 	--out-poll 60
-	--out-address-verifier local:
+	--out-address-verifier account:check
 	--out-delivery-dir @app/in
 	--out-filter deliver:
 	--out-filter split:
@@ -405,25 +416,26 @@ This is a three-in-one configuration so there are effectively three E-MailRelay
 servers running in one process, named "in", "out" and "other".
 
 The "in" server is an internet-facing e-mail server with delivery to individual
-mailboxes that can be accessed via POP. The "strict:" verifier checks the
+mailboxes that can be accessed via POP. The "account:" verifier checks the
 addressees in the incoming e-mails against the list of accounts on the local
 machine and against the given domain name; the IP address of the network
 connection is checked against a DNSBL database; SpamAssassin is used to
 identify spam; and Linux PAM is used for POP authentication.
 
 The "out" server is a routing MTA that sends outgoing e-mail messages directly
-to destination servers. It uses DNS MX queries against the local system's
-default name servers to do the routing. If any e-mail messages are addressed to
-local users they are short-circuited and delivered directly to their "in"
-mailboxes.
+to destination servers. The filter makes copies so that eash e-mail message goes
+to just one domain. The client filter uses DNS MX queries against the local
+system's default name servers to do the routing. If any e-mail messages are
+addressed to local users they are short-circuited and delivered directly to
+their "in" mailboxes.
 
 The "other" server does store-and-forward to a gmail smarthost and acts as the
-default destination for the "out" server. Note that in this example the gmail
-password is given directly on the command-line but it is normally more secure to
-use a separate secrets file.
+default destination for the "out" server. In this example the gmail password is
+given directly on the command-line but it is normally more secure to use a
+separate secrets file.
 
 
 
 
 _____________________________________
-Copyright (C) 2001-2022 Graeme Walker
+Copyright (C) 2001-2023 Graeme Walker

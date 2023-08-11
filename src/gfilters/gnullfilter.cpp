@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@ GFilters::NullFilter::NullFilter( GNet::ExceptionSink es , GStore::FileStore & ,
 	Filter::Type filter_type , const Filter::Config & ) :
 		m_id("exit") ,
 		m_exit(0,filter_type) ,
+		m_quiet(true) ,
 		m_timeout(0) ,
 		m_timer(*this,&NullFilter::onTimeout,es)
 {
@@ -39,6 +40,7 @@ GFilters::NullFilter::NullFilter( GNet::ExceptionSink es , GStore::FileStore & ,
 	unsigned int exit_code ) :
 		m_id("exit:"+G::Str::fromUInt(exit_code)) ,
 		m_exit(static_cast<int>(exit_code),filter_type) ,
+		m_quiet(exit_code==0U) ,
 		m_timeout(0) ,
 		m_timer(*this,&NullFilter::onTimeout,es)
 {
@@ -48,6 +50,7 @@ GFilters::NullFilter::NullFilter( GNet::ExceptionSink es , GStore::FileStore & ,
 	Filter::Type filter_type , const Filter::Config & , G::TimeInterval sleep_time ) :
 		m_id("sleep") ,
 		m_exit(0,filter_type) ,
+		m_quiet(false) ,
 		m_timeout(sleep_time) ,
 		m_timer(*this,&NullFilter::onTimeout,es)
 {
@@ -61,7 +64,7 @@ std::string GFilters::NullFilter::id() const
 
 bool GFilters::NullFilter::quiet() const
 {
-	return true ;
+	return m_quiet ;
 }
 
 bool GFilters::NullFilter::special() const

@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -17,25 +17,29 @@
 
 example_scripts_static = \
 	emailrelay-bcc-check.pl \
-	emailrelay-check-ipaddress.js \
 	emailrelay-check-ipaddress.pl \
 	emailrelay-dkim-signer.pl \
 	emailrelay-ldap-verify.py \
 	emailrelay-multicast.sh \
 	emailrelay-rot13.pl \
-	emailrelay-sendmail.pl \
+	emailrelay-sendmail.pl
+
+example_scripts_js = \
+	emailrelay-check-ipaddress.js \
 	emailrelay-set-message-id.js \
 	emailrelay-set-from.js \
-	emailrelay-set-from.pl
+	emailrelay-set-from.pl \
+	emailrelay-edit-content.js \
+	emailrelay-edit-envelope.js \
+	emailrelay-resubmit.js \
+	emailrelay-service-install.js
 
 example_scripts_in = \
-	emailrelay-deliver.sh.in \
 	emailrelay-notify.sh.in \
 	emailrelay-resubmit.sh.in \
 	emailrelay-submit.sh.in
 
 example_scripts_out = \
-	emailrelay-deliver.sh \
 	emailrelay-notify.sh \
 	emailrelay-resubmit.sh \
 	emailrelay-submit.sh \
@@ -47,26 +51,18 @@ init_script_in = \
 init_script_out = \
 	emailrelay
 
-js_scripts = \
-	emailrelay-edit-content.js \
-	emailrelay-edit-envelope.js \
-	emailrelay-resubmit.js \
-	emailrelay-service-install.js
-
 EXTRA_DIST = \
 	$(example_scripts_static) \
+	$(example_scripts_js) \
 	$(example_scripts_in) \
-	$(init_script_in) \
-	$(js_scripts)
-
-noinst_SCRIPTS = \
-	$(js_scripts)
+	$(init_script_in)
 
 e_examples_DATA = \
-	$(example_scripts_static)
+	$(example_scripts_js)
 
 e_examples_SCRIPTS = \
-	$(example_scripts_out)
+	$(example_scripts_out) \
+	$(example_scripts_static)
 
 e_init_SCRIPTS = \
 	$(init_script_out)
@@ -74,11 +70,7 @@ e_init_SCRIPTS = \
 CLEANFILES = \
 	$(example_scripts_out)
 
-do_sed = sed -e "s%__SPOOL_DIR__%${e_spooldir}%g" -e "s%__SBIN_DIR__%${sbindir}%g" -e "s%__SYSCONF_DIR__%${e_sysconfdir}%g" -e "s%__LIBEXEC_DIR__%${e_libexecdir}%g" -e "s%__RUN_DIR__%${e_rundir}%g"
-
-emailrelay-deliver.sh: emailrelay-deliver.sh.in
-	$(do_sed) < $(srcdir)/emailrelay-deliver.sh.in > emailrelay-deliver.sh
-	chmod +x emailrelay-deliver.sh
+do_sed = sed -e "s%__SPOOL_DIR__%${e_spooldir}%g" -e "s%__SBIN_DIR__%${sbindir}%g" -e "s%__SYSCONF_DIR__%${e_sysconfdir}%g" -e "s%__LIB_DIR__%${e_libdir}%g" -e "s%__RUN_DIR__%${e_rundir}%g"
 
 emailrelay-notify.sh: emailrelay-notify.sh.in
 	$(do_sed) < $(srcdir)/emailrelay-notify.sh.in > emailrelay-notify.sh

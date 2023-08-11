@@ -131,7 +131,7 @@ am__uninstall_files_from_dir = { \
   }
 am__installdirs = "$(DESTDIR)$(e_examplesdir)" \
 	"$(DESTDIR)$(e_initdir)" "$(DESTDIR)$(e_examplesdir)"
-SCRIPTS = $(e_examples_SCRIPTS) $(e_init_SCRIPTS) $(noinst_SCRIPTS)
+SCRIPTS = $(e_examples_SCRIPTS) $(e_init_SCRIPTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -152,6 +152,7 @@ am__can_run_installinfo = \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
 DATA = $(e_examples_DATA)
+am__extra_recursive_targets = extra-recursive
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 am__DIST_COMMON = $(srcdir)/Makefile.in
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -159,6 +160,7 @@ ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
+ARFLAGS = @ARFLAGS@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
@@ -248,7 +250,7 @@ e_docdir = @e_docdir@
 e_examplesdir = @e_examplesdir@
 e_icondir = @e_icondir@
 e_initdir = @e_initdir@
-e_libexecdir = @e_libexecdir@
+e_libdir = @e_libdir@
 e_pamdir = @e_pamdir@
 e_rundir = @e_rundir@
 e_spooldir = @e_spooldir@
@@ -283,25 +285,29 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 example_scripts_static = \
 	emailrelay-bcc-check.pl \
-	emailrelay-check-ipaddress.js \
 	emailrelay-check-ipaddress.pl \
 	emailrelay-dkim-signer.pl \
 	emailrelay-ldap-verify.py \
 	emailrelay-multicast.sh \
 	emailrelay-rot13.pl \
-	emailrelay-sendmail.pl \
+	emailrelay-sendmail.pl
+
+example_scripts_js = \
+	emailrelay-check-ipaddress.js \
 	emailrelay-set-message-id.js \
 	emailrelay-set-from.js \
-	emailrelay-set-from.pl
+	emailrelay-set-from.pl \
+	emailrelay-edit-content.js \
+	emailrelay-edit-envelope.js \
+	emailrelay-resubmit.js \
+	emailrelay-service-install.js
 
 example_scripts_in = \
-	emailrelay-deliver.sh.in \
 	emailrelay-notify.sh.in \
 	emailrelay-resubmit.sh.in \
 	emailrelay-submit.sh.in
 
 example_scripts_out = \
-	emailrelay-deliver.sh \
 	emailrelay-notify.sh \
 	emailrelay-resubmit.sh \
 	emailrelay-submit.sh \
@@ -313,26 +319,18 @@ init_script_in = \
 init_script_out = \
 	emailrelay
 
-js_scripts = \
-	emailrelay-edit-content.js \
-	emailrelay-edit-envelope.js \
-	emailrelay-resubmit.js \
-	emailrelay-service-install.js
-
 EXTRA_DIST = \
 	$(example_scripts_static) \
+	$(example_scripts_js) \
 	$(example_scripts_in) \
-	$(init_script_in) \
-	$(js_scripts)
-
-noinst_SCRIPTS = \
-	$(js_scripts)
+	$(init_script_in)
 
 e_examples_DATA = \
-	$(example_scripts_static)
+	$(example_scripts_js)
 
 e_examples_SCRIPTS = \
-	$(example_scripts_out)
+	$(example_scripts_out) \
+	$(example_scripts_static)
 
 e_init_SCRIPTS = \
 	$(init_script_out)
@@ -340,7 +338,7 @@ e_init_SCRIPTS = \
 CLEANFILES = \
 	$(example_scripts_out)
 
-do_sed = sed -e "s%__SPOOL_DIR__%${e_spooldir}%g" -e "s%__SBIN_DIR__%${sbindir}%g" -e "s%__SYSCONF_DIR__%${e_sysconfdir}%g" -e "s%__LIBEXEC_DIR__%${e_libexecdir}%g" -e "s%__RUN_DIR__%${e_rundir}%g"
+do_sed = sed -e "s%__SPOOL_DIR__%${e_spooldir}%g" -e "s%__SBIN_DIR__%${sbindir}%g" -e "s%__SYSCONF_DIR__%${e_sysconfdir}%g" -e "s%__LIB_DIR__%${e_libdir}%g" -e "s%__RUN_DIR__%${e_rundir}%g"
 all: all-am
 
 .SUFFIXES:
@@ -464,6 +462,7 @@ uninstall-e_examplesDATA:
 	@list='$(e_examples_DATA)'; test -n "$(e_examplesdir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(e_examplesdir)'; $(am__uninstall_files_from_dir)
+extra-local: 
 tags TAGS:
 
 ctags CTAGS:
@@ -554,6 +553,10 @@ dvi: dvi-am
 
 dvi-am:
 
+extra: extra-am
+
+extra-am: extra-local
+
 html: html-am
 
 html-am:
@@ -613,25 +616,22 @@ uninstall-am: uninstall-e_examplesDATA uninstall-e_examplesSCRIPTS \
 .MAKE: install-am install-strip
 
 .PHONY: all all-am check check-am clean clean-generic cscopelist-am \
-	ctags-am distclean distclean-generic distdir dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-dvi install-dvi-am \
-	install-e_examplesDATA install-e_examplesSCRIPTS \
-	install-e_initSCRIPTS install-exec install-exec-am \
-	install-html install-html-am install-info install-info-am \
-	install-man install-pdf install-pdf-am install-ps \
-	install-ps-am install-strip installcheck installcheck-am \
-	installdirs maintainer-clean maintainer-clean-generic \
-	mostlyclean mostlyclean-generic pdf pdf-am ps ps-am tags-am \
-	uninstall uninstall-am uninstall-e_examplesDATA \
-	uninstall-e_examplesSCRIPTS uninstall-e_initSCRIPTS
+	ctags-am distclean distclean-generic distdir dvi dvi-am \
+	extra-am extra-local html html-am info info-am install \
+	install-am install-data install-data-am install-dvi \
+	install-dvi-am install-e_examplesDATA \
+	install-e_examplesSCRIPTS install-e_initSCRIPTS install-exec \
+	install-exec-am install-html install-html-am install-info \
+	install-info-am install-man install-pdf install-pdf-am \
+	install-ps install-ps-am install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-generic pdf \
+	pdf-am ps ps-am tags-am uninstall uninstall-am \
+	uninstall-e_examplesDATA uninstall-e_examplesSCRIPTS \
+	uninstall-e_initSCRIPTS
 
 .PRECIOUS: Makefile
 
-
-emailrelay-deliver.sh: emailrelay-deliver.sh.in
-	$(do_sed) < $(srcdir)/emailrelay-deliver.sh.in > emailrelay-deliver.sh
-	chmod +x emailrelay-deliver.sh
 
 emailrelay-notify.sh: emailrelay-notify.sh.in
 	$(do_sed) < $(srcdir)/emailrelay-notify.sh.in > emailrelay-notify.sh

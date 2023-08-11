@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,8 +18,8 @@
 /// \file gslot.h
 ///
 
-#ifndef G_SLOT_NEW_H
-#define G_SLOT_NEW_H
+#ifndef G_SLOT_H
+#define G_SLOT_H
 
 #include "gdef.h"
 #include "gexception.h"
@@ -172,7 +172,7 @@ namespace G
 		///
 		struct SignalImp
 		{
-			G_EXCEPTION_CLASS( AlreadyConnected , tx("already connected") ) ;
+			G_EXCEPTION_CLASS( AlreadyConnected , tx("signal already connected") ) ;
 			SignalImp() = delete ;
 		} ;
 

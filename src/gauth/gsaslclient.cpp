@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -40,10 +40,11 @@ class GAuth::SaslClientImp
 public:
 	using Response = SaslClient::Response ;
 	SaslClientImp( const SaslClientSecrets & , const std::string & ) ;
-	bool active() const ;
-	std::string mechanism( const G::StringArray & ) const ;
-	Response initialResponse( std::size_t limit ) const ;
-	Response response( G::string_view mechanism , G::string_view challenge ) const ;
+	bool validSelector( G::string_view ) const ;
+	bool mustAuthenticate( G::string_view ) const ;
+	std::string mechanism( const G::StringArray & , G::string_view ) const ;
+	Response initialResponse( G::string_view selector , std::size_t ) const ;
+	Response response( G::string_view mechanism , G::string_view challenge , G::string_view selector ) const ;
 	bool next() ;
 	std::string mechanism() const ;
 	std::string id() const ;
@@ -67,20 +68,17 @@ G::string_view GAuth::SaslClientImp::login_challenge_2 { "Password:" , 9U } ;
 
 // ===
 
-GAuth::SaslClientImp::SaslClientImp( const SaslClientSecrets & secrets , const std::string & sasl_client_config ) :
-	m_secrets(secrets) ,
-	m_config(sasl_client_config) ,
-	PLAIN("PLAIN") ,
-	LOGIN("LOGIN")
+GAuth::SaslClientImp::SaslClientImp( const SaslClientSecrets & secrets ,
+	const std::string & sasl_client_config ) :
+		m_secrets(secrets) ,
+		m_config(sasl_client_config) ,
+		PLAIN("PLAIN") ,
+		LOGIN("LOGIN")
 {
 }
 
-std::string GAuth::SaslClientImp::mechanism( const G::StringArray & server_mechanisms ) const
+std::string GAuth::SaslClientImp::mechanism( const G::StringArray & server_mechanisms , G::string_view selector ) const
 {
-	// short-circuit if no secrets file
-	if( !active() )
-		return std::string() ;
-
 	// if we have a plaintext password then we can use any cram
 	// mechanism for which we have a hash function -- otherwise
 	// we can use cram mechanisms where we have a hashed password
@@ -88,7 +86,7 @@ std::string GAuth::SaslClientImp::mechanism( const G::StringArray & server_mecha
 	// initialisation with an intermediate state
 	//
 	G::StringArray our_list ;
-	if( m_secrets.clientSecret("plain").valid() )
+	if( m_secrets.clientSecret("plain",selector).valid() )
 	{
 		our_list = Cram::hashTypes( "CRAM-" , false ) ;
 	}
@@ -98,17 +96,17 @@ std::string GAuth::SaslClientImp::mechanism( const G::StringArray & server_mecha
 		for( auto p = our_list.begin() ; p != our_list.end() ; )
 		{
 			std::string type = (*p).substr( 5U ) ;
-			if( m_secrets.clientSecret(type).valid() )
+			if( m_secrets.clientSecret(type,selector).valid() )
 				++p ;
 			else
 				p = our_list.erase( p ) ;
 		}
 	}
-	if( m_secrets.clientSecret("oauth").valid() )
+	if( m_secrets.clientSecret("oauth",selector).valid() )
 	{
 		our_list.push_back( "XOAUTH2" ) ;
 	}
-	if( m_secrets.clientSecret("plain").valid() )
+	if( m_secrets.clientSecret("plain",selector).valid() )
 	{
 		our_list.push_back( PLAIN ) ;
 		our_list.push_back( LOGIN ) ;
@@ -154,7 +152,7 @@ std::string GAuth::SaslClientImp::mechanism() const
 	return m_mechanisms.empty() ? std::string() : m_mechanisms.at(0U) ;
 }
 
-GAuth::SaslClient::Response GAuth::SaslClientImp::initialResponse( std::size_t limit ) const
+GAuth::SaslClient::Response GAuth::SaslClientImp::initialResponse( G::string_view selector , std::size_t limit ) const
 {
 	// (the implementation of response() is stateless because it can derive
 	// state from the challege, so we doesn't need to worry here about
@@ -164,14 +162,15 @@ GAuth::SaslClient::Response GAuth::SaslClientImp::initialResponse( std::size_t l
 		return {} ;
 
 	const std::string & m = m_mechanisms[0] ;
-	Response rsp = response( m , m == "LOGIN" ? login_challenge_1 : G::string_view() ) ;
+	Response rsp = response( m , m == "LOGIN" ? login_challenge_1 : G::string_view() , selector ) ;
 	if( rsp.error || rsp.data.size() > limit )
 		return {} ;
 	else
 		return rsp ;
 }
 
-GAuth::SaslClient::Response GAuth::SaslClientImp::response( G::string_view mechanism , G::string_view challenge ) const
+GAuth::SaslClient::Response GAuth::SaslClientImp::response( G::string_view mechanism ,
+	G::string_view challenge , G::string_view selector ) const
 {
 	Response rsp ;
 	rsp.sensitive = true ;
@@ -182,30 +181,30 @@ GAuth::SaslClient::Response GAuth::SaslClientImp::response( G::string_view mecha
 	if( mechanism.find("CRAM-") == 0U )
 	{
 		G::string_view hash_type = mechanism.substr( 5U ) ;
-		secret = m_secrets.clientSecret( hash_type ) ;
+		secret = m_secrets.clientSecret( hash_type , selector ) ;
 		if( !secret.valid() )
-			secret = m_secrets.clientSecret( "plain" ) ;
+			secret = m_secrets.clientSecret( "plain" , selector ) ;
 		rsp.data = Cram::response( hash_type , true , secret , challenge , secret.id() ) ;
 		rsp.error = rsp.data.empty() ;
 		rsp.final = true ;
 	}
 	else if( mechanism == "APOP"_sv )
 	{
-		secret = m_secrets.clientSecret( "MD5"_sv ) ;
+		secret = m_secrets.clientSecret( "MD5"_sv , selector ) ;
 		rsp.data = Cram::response( "MD5"_sv , false , secret , challenge , secret.id() ) ;
 		rsp.error = rsp.data.empty() ;
 		rsp.final = true ;
 	}
 	else if( mechanism == PLAIN )
 	{
-		secret = m_secrets.clientSecret( "plain"_sv ) ;
+		secret = m_secrets.clientSecret( "plain"_sv , selector ) ;
 		rsp.data = std::string(1U,'\0').append(secret.id()).append(1U,'\0').append(secret.secret()) ;
 		rsp.error = !secret.valid() ;
 		rsp.final = true ;
 	}
 	else if( mechanism == LOGIN && challenge == login_challenge_1 )
 	{
-		secret = m_secrets.clientSecret( "plain"_sv ) ;
+		secret = m_secrets.clientSecret( "plain"_sv , selector ) ;
 		rsp.data = secret.id() ;
 		rsp.error = !secret.valid() ;
 		rsp.final = false ;
@@ -213,21 +212,21 @@ GAuth::SaslClient::Response GAuth::SaslClientImp::response( G::string_view mecha
 	}
 	else if( mechanism == LOGIN && challenge == login_challenge_2 )
 	{
-		secret = m_secrets.clientSecret( "plain"_sv ) ;
+		secret = m_secrets.clientSecret( "plain"_sv , selector ) ;
 		rsp.data = secret.secret() ;
 		rsp.error = !secret.valid() ;
 		rsp.final = true ;
 	}
 	else if( mechanism == "XOAUTH2"_sv && challenge.empty() )
 	{
-		secret = m_secrets.clientSecret( "oauth"_sv ) ;
+		secret = m_secrets.clientSecret( "oauth"_sv , selector ) ;
 		rsp.data = secret.secret() ;
 		rsp.error = !secret.valid() ;
 		rsp.final = true ; // not always -- may get an informational challenge
 	}
 	else if( mechanism == "XOAUTH2"_sv )
 	{
-		secret = m_secrets.clientSecret( "oauth"_sv ) ;
+		secret = m_secrets.clientSecret( "oauth"_sv , selector ) ;
 		rsp.data.clear() ; // information-only challenge gets an empty response
 		rsp.error = false ;
 		rsp.final = true ;
@@ -257,9 +256,14 @@ std::string GAuth::SaslClientImp::info() const
 	return m_info ;
 }
 
-bool GAuth::SaslClientImp::active() const
+bool GAuth::SaslClientImp::validSelector( G::string_view selector ) const
 {
-	return m_secrets.valid() ;
+	return m_secrets.validSelector( selector ) ;
+}
+
+bool GAuth::SaslClientImp::mustAuthenticate( G::string_view selector ) const
+{
+	return m_secrets.mustAuthenticate( selector ) ;
 }
 
 bool GAuth::SaslClientImp::match( const G::StringArray & mechanisms , const std::string & mechanism )
@@ -277,24 +281,30 @@ GAuth::SaslClient::SaslClient( const SaslClientSecrets & secrets , const std::st
 GAuth::SaslClient::~SaslClient()
 = default;
 
-bool GAuth::SaslClient::active() const
+bool GAuth::SaslClient::validSelector( G::string_view selector ) const
 {
-	return m_imp->active() ;
+	return m_imp->validSelector( selector ) ;
 }
 
-GAuth::SaslClient::Response GAuth::SaslClient::response( G::string_view mechanism , G::string_view challenge ) const
+bool GAuth::SaslClient::mustAuthenticate( G::string_view selector ) const
 {
-	return m_imp->response( mechanism , challenge ) ;
+	return m_imp->mustAuthenticate( selector ) ;
 }
 
-GAuth::SaslClient::Response GAuth::SaslClient::initialResponse( std::size_t limit ) const
+GAuth::SaslClient::Response GAuth::SaslClient::response( G::string_view mechanism ,
+	G::string_view challenge , G::string_view selector ) const
 {
-	return m_imp->initialResponse( limit ) ;
+	return m_imp->response( mechanism , challenge , selector ) ;
 }
 
-std::string GAuth::SaslClient::mechanism( const G::StringArray & server_mechanisms ) const
+GAuth::SaslClient::Response GAuth::SaslClient::initialResponse( G::string_view selector , std::size_t limit ) const
 {
-	return m_imp->mechanism( server_mechanisms ) ;
+	return m_imp->initialResponse( selector , limit ) ;
+}
+
+std::string GAuth::SaslClient::mechanism( const G::StringArray & server_mechanisms , G::string_view selector ) const
+{
+	return m_imp->mechanism( server_mechanisms , selector ) ;
 }
 
 bool GAuth::SaslClient::next()

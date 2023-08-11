@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -61,10 +61,12 @@ void GFilters::NetworkFilter::start( const GStore::MessageId & message_id )
 	m_done_signal.reset() ;
 	if( m_client_ptr.get() == nullptr || m_client_ptr->busy() )
 	{
+		unsigned int idle_timeout = 0U ;
 		m_client_ptr.reset( std::make_unique<GSmtp::RequestClient>(
 			GNet::ExceptionSink(*this,&m_client_ptr),
 			"scanner" , "ok" ,
-			m_location , m_connection_timeout , m_response_timeout ) ) ;
+			m_location , m_connection_timeout , m_response_timeout ,
+			idle_timeout ) ) ;
 	}
 	m_client_ptr->request( m_file_store.contentPath(message_id).str() ) ; // (no need to wait for connection)
 }

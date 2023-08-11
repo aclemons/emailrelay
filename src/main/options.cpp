@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -302,9 +302,9 @@ G::Options Main::Options::spec( bool is_windows )
 				// Defines the TLS certificate file when acting as a SMTP or POP server.
 				// This file must contain the server's private key and certificate chain
 				// using the PEM file format. Alternatively, use this option twice
-				// with the first one specifying the key file and the second the
-				// certificate file. Keep the file permissions tight to avoid
-				// accidental exposure of the private key.
+				// with the first specifying the key file and the second the certificate
+				// file. Keep the file permissions tight to avoid accidental exposure
+				// of the private key.
 
 		G::Options::add( opt , '\0' , "server-tls-verify" ,
 			tx("enables verification of remote client's certificate! "
@@ -316,8 +316,9 @@ G::Options Main::Options::spec( bool is_windows )
 				// Enables verification of remote SMTP and POP clients' certificates
 				// against any of the trusted CA certificates in the specified file
 				// or directory. In many use cases this should be a file containing
-				// just your self-signed root certificate. Specify "<default>" for
-				// the TLS library's default set of trusted CAs.
+				// just your self-signed root certificate. Specify "<default>"
+				// (including the angle brackets) for the TLS library's default set
+				// of trusted CAs.
 
 		G::Options::add( opt , 'j' , "client-tls" ,
 			tx("enables negotiated TLS when acting as an SMTP client! "
@@ -358,8 +359,8 @@ G::Options Main::Options::spec( bool is_windows )
 				// Enables verification of the remote SMTP server's certificate against
 				// any of the trusted CA certificates in the specified file or directory.
 				// In many use cases this should be a file containing just your self-signed
-				// root certificate. Specify "<default>" for the TLS library's default
-				// set of trusted CAs.
+				// root certificate. Specify "<default>" (including the angle brackets)
+				// for the TLS library's default set of trusted CAs.
 
 		G::Options::add( opt , '\0' , "client-tls-verify-name" ,
 			tx("enables verification of the cname in the remote server's certificate! "
@@ -407,7 +408,7 @@ G::Options Main::Options::spec( bool is_windows )
 			t_logging ) ;
 				// Enables debug level logging, if built in. Debug messages are usually
 				// only useful when cross-referenced with the source code and they may
-				// expose plaintext passwords and mail message content.
+				// expose plain-text passwords and mail message content.
 
 		G::Options::add( opt , 'C' , "client-auth" ,
 			tx("enables SMTP authentication with the remote server, using the given client secrets file") , "" ,
@@ -417,15 +418,19 @@ G::Options Main::Options::spec( bool is_windows )
 				//example: C:/ProgramData/E-MailRelay/emailrelay.auth
 				//example: plain:bWU:c2VjcmV0
 				// Enables SMTP client authentication with the remote server, using the
-				// client account details taken from the specified secrets file, or if
-				// password security is not important then the user-id and password can
-				// be given directly as "plain:<base64-user-id>:<base64-password>". The
-				// secrets file should normally contain one line that starts with "client"
-				// and that line should have between four and five space-separated
-				// fields; the second field is the password type ("plain" or "md5"), the
+				// client account details taken from the specified secrets file.
+				// The secrets file should normally contain one line having between four
+				// and five space-separated fields. The first field must be "client",
+				// the second field is the password type ("plain" or "md5"), the
 				// third is the xtext-encoded user-id and the fourth is the xtext-encoded
-				// password. If the remote server does not support SMTP authentication
-				// then the SMTP connection will fail.
+				// password. Alternatively, the user-id and password fields can be
+				// Base64 encoded if the second field is "plain:b". It is also possible
+				// to do without a secrets file and give the Base64 encoded user-id and
+				// password directly on the command-line or in the configuration file
+				// formatted as "plain:<base64-user-id>:<base64-password>". Note that
+				// putting these account details on the command-line is not recommended
+				// because it will make the password easily visible to all users on the
+				// local machine.
 
 		G::Options::add( opt , '\0' , "client-auth-config" ,
 			tx("configures the client authentication module") , "" ,
@@ -472,7 +477,7 @@ G::Options Main::Options::spec( bool is_windows )
 			t_auth , t_smtpserver ) ;
 				//example: /etc/private/emailrelay.auth
 				//example: C:/ProgramData/E-MailRelay/emailrelay.auth
-				//example: /pam
+				//example: pam:
 				// Enables SMTP server authentication of remote SMTP clients. Account
 				// names and passwords are taken from the specified secrets file. The
 				// secrets file should contain lines that have four space-separated
@@ -480,8 +485,9 @@ G::Options Main::Options::spec( bool is_windows )
 				// is the password encoding ("plain" or "md5"), the third is the client
 				// user-id and the fourth is the password. The user-id is RFC-1891 xtext
 				// encoded, and the password is either xtext encoded or generated by
-				// "emailrelay-passwd". A special value of "/pam" can be used for
-				// authentication using linux PAM.
+				// "emailrelay-passwd". Alternatively, the username and password can be
+				// Base64 encoded if the second field is "plain:b". A special value of
+				// "pam:" can be used for authentication using linux PAM.
 
 		G::Options::add( opt , '\0' , "server-auth-config" ,
 			tx("configures the server authentication module") , "" ,
@@ -634,6 +640,14 @@ G::Options Main::Options::spec( bool is_windows )
 				// Allow forwarding to continue even if some recipient addresses on an
 				// e-mail envelope are rejected by the remote server.
 
+		G::Options::add( opt , '\0' , "forward-to-all" ,
+			tx("requires all addressees to be accepted when forwarding") , "" ,
+			M::zero , "" , 32 ,
+			t_smtpclient ) ;
+				// Requires all recipient addresses to be accepted by the remote
+				// server before forwarding. This is currently the default behaviour
+				// so this option is for forwards compatibility only.
+
 		G::Options::add( opt , 'T' , "response-timeout" ,
 			tx("sets the response timeout (in seconds) when talking to a remote server (default is 60)") , "" ,
 			M::one , "time" , 31 ,
@@ -712,7 +726,7 @@ G::Options Main::Options::spec( bool is_windows )
 
 		G::Options::add( opt , 'i' , "pid-file" ,
 			tx("defines a file for storing the daemon process-id") , "" ,
-			M::one , "path" , 30 ,
+			M::many , "path" , 30 ,
 			t_process ) ;
 				//example: /run/emailrelay/emailrelay.pid
 				//example: C:/ProgramData/E-MailRelay/pid.txt
@@ -735,8 +749,10 @@ G::Options Main::Options::spec( bool is_windows )
 			t_smtpserver ) ;
 				//example: /usr/local/sbin/emailrelay-verifier.sh
 				//example: C:/ProgramData/E-MailRelay/verifier.js
-				// Runs the specified external program to verify a message recipent's e-mail
-				// address. A network verifier can be specified as "net:<tcp-address>".
+				// Runs the specified external program to verify a message recipient's e-mail
+				// address. A network verifier can be specified as "net:<tcp-address>". The
+				// "account:" built-in address verifier can be used to check recipient
+				// addresses against the list of local system account names.
 
 		G::Options::add( opt , 'Y' , "client-filter" ,
 			tx("specifies an external program to process messages when they are forwarded") , "" ,
@@ -794,11 +810,11 @@ G::Options Main::Options::spec( bool is_windows )
 			t_auth , t_pop|t_smtpserver ) ;
 				//example: /etc/private/emailrelay-pop.auth
 				//example: C:/ProgramData/E-MailRelay/pop.auth
-				//example: /pam
+				//example: pam:
 				// Specifies a file containing valid POP account details. The file
 				// format is the same as for the SMTP server secrets file, ie. lines
 				// starting with "server", with user-id and password in the third
-				// and fourth fields. A special value of "/pam" can be used for
+				// and fourth fields. A special value of "pam:" can be used for
 				// authentication using linux PAM.
 
 		G::Options::add( opt , 'G' , "pop-no-delete" ,
@@ -815,13 +831,12 @@ G::Options Main::Options::spec( bool is_windows )
 			M::zero , "" , 30 ,
 			t_pop , t_smtpserver ) ;
 				// Modifies the POP server's spool directory to be the sub-directory
-				// named after the user-id used for POP authentication. This allows
-				// POP clients to see only their own messages after they have been
-				// delivered into separate mailboxes by the built-in "deliver:"
-				// filter or by the --local-delivery-dir mechanism; or it
-				// allows multiple POP clients the operate independently on copies
-				// of spooled messages as created by the built-in "copy:" filter
-				// or by the "emailrelay-filter-copy" utility.
+				// with the same name as the user-id used for POP authentication. This
+				// allows POP clients to see only their own messages after they have
+				// been moved into separate sub-directories typically by the built-in
+				// "deliver:" or "copy:" filters. Content files can remain in the
+				// main spool directory to save disk space; they will be deleted by
+				// the POP server when it deletes the last matching envelope file.
 
 		G::Options::add( opt , 'M' , "size" ,
 			tx("limits the size of submitted messages") , "" ,

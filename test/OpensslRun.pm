@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -91,7 +91,7 @@ sub runServer
 	###$cmd .= " </dev/tty" unless $windows ; # otherwise with "make -j" the s_server terminates immediately because stdin is eof
 
 	_log_run( "runServer" , $cmd , $logfile ) ;
-	_run( $cmd , $logfile , qr{^ERROR|^>>> TLS.*Handshake.*Finished} , undef , $on_completion ) ;
+	_run( $cmd , $logfile , qr{^ERROR|BIO_bind:unable.to.bind|^<<< TLS.*Alert.*fatal|^>>> TLS.*Handshake.*Finished} , undef , $on_completion ) ;
 }
 
 sub parseLog
@@ -160,17 +160,17 @@ sub _run_help_match
 {
 	my ( $openssl_s_whatever , $re ) = @_ ;
 
-	open( FH , "$openssl_s_whatever -help 2>&1 |" ) ;
-	while(<FH>)
+	open( my $fh , "$openssl_s_whatever -help 2>&1 |" ) ;
+	while(<$fh>)
 	{
 		chomp( my $line = $_ ) ;
 		if( $line =~ m/$re/ )
 		{
-			close( FH ) ;
+			close( $fh ) ;
 			return $line ;
 		}
 	}
-	close( FH ) ;
+	close( $fh ) ;
 	return undef ;
 }
 
@@ -187,13 +187,14 @@ sub _run
 	my ( $cmd , $log_file , $end_match_1 , $end_match_2 , $on_completion ) = @_ ;
 
 	my $fh_log = new FileHandle( $log_file , "w" ) or die ;
+	$fh_log->autoflush() ;
 
 	# run the command -- if the cmd has special shell operators we will trigger
 	# perl's use of "sh -c" -- that means that we get the shell's pid and not
-	# the s_server's -- duping stderr onto stdout seems to be okay
-	my $pid = open( FH , "$cmd 2>&1 |" ) ;
+	# the s_server's
+	my $pid = open( my $fh , "$cmd 2>&1 |" ) ;
 	my $ending ;
-	while(<FH>)
+	while(<$fh>)
 	{
 		chomp( my $line = $_ ) ;
 		print $fh_log $line , "\n" ;
@@ -206,7 +207,7 @@ sub _run
 	}
 	$fh_log->close() ;
 	&$on_completion($pid) if defined($on_completion) ;
-	close(FH) ; # may block until the peer goes away
+	close($fh) ; # may block until the peer goes away
 }
 
 sub _log_line

@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -18,9 +18,9 @@
 SUBDIRS = icon
 
 sbin_PROGRAMS = emailrelay emailrelay-submit emailrelay-passwd $(MAC_PROGS) $(WINDOWS_PROGS)
-e_libexec_PROGRAMS = emailrelay-filter-copy
 e_spool_DATA =
 noinst_LIBRARIES = libmain.a
+
 if GCONFIG_TLS_USE_MBEDTLS
  noinst_PROGRAMS = emailrelay-keygen
 else
@@ -30,6 +30,7 @@ else
  noinst_PROGRAMS =
 endif
 endif
+
 if GCONFIG_MAC
  MAC_PROGS = emailrelay-start
 else
@@ -171,7 +172,7 @@ if GCONFIG_WINDOWS
  $(top_builddir)/src/gauth/libgauth.a \
  $(top_builddir)/src/gnet/libgnet.a \
  $(top_builddir)/src/gssl/libgssl.a \
- $(top_builddir)/src/win32/libextra.a \
+ $(top_builddir)/src/win32/libwin32.a \
  $(top_builddir)/src/glib/libglib.a \
  $(RESOURCES) \
  $(GCONFIG_TLS_LIBS) \
@@ -206,7 +207,7 @@ if GCONFIG_WINDOWS
  $(top_builddir)/src/gauth/libgauth.a \
  $(top_builddir)/src/gnet/libgnet.a \
  $(top_builddir)/src/gssl/libgssl.a \
- $(top_builddir)/src/win32/libextra.a \
+ $(top_builddir)/src/win32/libwin32.a \
  $(top_builddir)/src/glib/libglib.a \
  $(GCONFIG_TLS_LIBS) \
  -lws2_32 -liphlpapi -lcomctl32
@@ -233,7 +234,7 @@ if GCONFIG_WINDOWS
  emailrelay_submit_LDFLAGS = -static
  emailrelay_submit_LDADD = \
  $(top_builddir)/src/gstore/libgstore.a \
- $(top_builddir)/src/win32/libextra.a \
+ $(top_builddir)/src/win32/libwin32.a \
  $(top_builddir)/src/glib/libglib.a \
  -lws2_32 -liphlpapi -lcomctl32
 else
@@ -263,18 +264,6 @@ emailrelay_keygen_LDADD = \
 endif
 endif
 
-emailrelay_filter_copy_SOURCES = filter.cpp legal.cpp legal.h
-if GCONFIG_WINDOWS
- emailrelay_filter_copy_LDFLAGS = -static
- emailrelay_filter_copy_LDADD = \
- $(top_builddir)/src/glib/libglib.a \
- -lws2_32 -liphlpapi -lcomctl32
-else
- emailrelay_filter_copy_LDFLAGS =
- emailrelay_filter_copy_LDADD = \
- $(top_builddir)/src/glib/libglib.a
-endif
-
 emailrelay_start_SOURCES = start.cpp
 if GCONFIG_WINDOWS
  emailrelay_start_LDFLAGS = -static
@@ -300,22 +289,19 @@ $(RESOURCES): emailrelay.rc MSG00001.bin messages.rc
 	$(GCONFIG_WINDRES) --preprocessor "$(CC) -E -xc-header -DRC_INVOKED" -D_WIN32=1 --include-dir . --include-dir icon --include-dir $(top_srcdir)/src/main/icon -i $(top_srcdir)/src/main/emailrelay.rc -o $(RESOURCES)
 endif
 
-install-data-local: install-sbinPROGRAMS install-e_spoolDATA install-e_libexecPROGRAMS
+install-data-local: install-sbinPROGRAMS install-e_spoolDATA
 	-mkdir -p "$(DESTDIR)$(e_spooldir)"
 	-chgrp daemon "$(DESTDIR)$(e_spooldir)"
 	-chmod 775 "$(DESTDIR)$(e_spooldir)"
 	-chmod g+s "$(DESTDIR)$(e_spooldir)"
 	-chgrp daemon "$(DESTDIR)$(sbindir)/emailrelay-submit"
 	-chmod g+s "$(DESTDIR)$(sbindir)/emailrelay-submit"
-	-chgrp daemon "$(DESTDIR)$(e_libexecdir)/emailrelay-filter-copy"
-	-chmod g+s "$(DESTDIR)$(e_libexecdir)/emailrelay-filter-copy"
 
 install-exec-local:
 	-mkdir -p "$(DESTDIR)$(sbindir)"
 
 uninstall-local:
 	-rmdir "$(DESTDIR)$(e_spooldir)" 2>/dev/null
-	-rmdir "$(DESTDIR)$(e_libexecdir)" 2>/dev/null
 
 MSG00001.bin messages.rc: fakemc.exe messages.mc
 	$(GCONFIG_WINDMC) $(top_srcdir)/src/main/messages.mc
@@ -325,7 +311,7 @@ fakemc.exe: $(top_srcdir)/src/main/fakemc.c
 
 .PHONY: strip
 strip:
-	$(STRIP) $(sbin_PROGRAMS) $(e_libexec_PROGRAMS)
+	"$(STRIP)" $(sbin_PROGRAMS)
 
 .PHONY: map
 map:

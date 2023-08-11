@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -33,7 +33,6 @@
 namespace GStore
 {
 	class StoredMessage ;
-	class StoredMessageStub ;
 }
 
 //| \class GStore::StoredMessage
@@ -98,6 +97,9 @@ public:
 	virtual std::string forwardToAddress() const = 0 ;
 		///< Returns the forwardTo() address or the empty string.
 
+	virtual std::string clientAccountSelector() const = 0 ;
+		///< Returns the client account selector or the empty string.
+
 	virtual bool utf8Mailboxes() const = 0 ;
 		///< Returns true if the mail-from command should
 		///< have SMTPUTF8 (RFC-6531).
@@ -109,70 +111,5 @@ public:
 	virtual ~StoredMessage() = default ;
 		///< Destructor.
 } ;
-
-//| \class GStore::StoredMessageStub
-/// A StoredMessage class that does nothing and can be used as
-/// a placeholder.
-///
-class GStore::StoredMessageStub : public StoredMessage
-{
-public:
-	StoredMessageStub() ;
-		///< Constructor.
-
-	~StoredMessageStub() override ;
-		///< Destructor.
-
-private: // overrides
-	MessageId id() const override ;
-	std::string location() const override ;
-	std::string from() const override ;
-	std::string to( std::size_t ) const override ;
-	std::size_t toCount() const override ;
-	std::size_t contentSize() const override ;
-	std::istream & contentStream() override ;
-	void close() override ;
-	std::string reopen() override ;
-	void destroy() override ;
-	void fail( const std::string & reason , int reason_code ) override ;
-	MessageStore::BodyType bodyType() const override ;
-	std::string authentication() const override ;
-	std::string fromAuthIn() const override ;
-	std::string fromAuthOut() const override ;
-	std::string forwardTo() const override ;
-	std::string forwardToAddress() const override ;
-	bool utf8Mailboxes() const override ;
-	void editRecipients( const G::StringArray & ) override ;
-
-public:
-	StoredMessageStub( const StoredMessageStub & ) = delete ;
-	StoredMessageStub( StoredMessageStub && ) = delete ;
-	StoredMessageStub & operator=( const StoredMessageStub & ) = delete ;
-	StoredMessageStub & operator=( StoredMessageStub && ) = delete ;
-
-private:
-	G::StringArray m_to_list ;
-	std::ifstream m_content_stream ;
-} ;
-
-inline GStore::MessageId GStore::StoredMessageStub::id() const { return MessageId::none() ; }
-inline std::string GStore::StoredMessageStub::location() const { return {} ; }
-inline std::string GStore::StoredMessageStub::from() const { return {} ; }
-inline std::string GStore::StoredMessageStub::to( std::size_t ) const { return {} ; }
-inline std::size_t GStore::StoredMessageStub::toCount() const { return 0U ; }
-inline std::size_t GStore::StoredMessageStub::contentSize() const { return 0U ; }
-inline std::istream & GStore::StoredMessageStub::contentStream() { return m_content_stream ; }
-inline void GStore::StoredMessageStub::close() {}
-inline std::string GStore::StoredMessageStub::reopen() { return {} ; }
-inline void GStore::StoredMessageStub::destroy() {}
-inline void GStore::StoredMessageStub::fail( const std::string & , int ) {}
-inline GStore::MessageStore::BodyType GStore::StoredMessageStub::bodyType() const { return MessageStore::BodyType::Unknown ; }
-inline std::string GStore::StoredMessageStub::authentication() const { return {} ; }
-inline std::string GStore::StoredMessageStub::fromAuthIn() const { return {} ; }
-inline std::string GStore::StoredMessageStub::fromAuthOut() const { return {} ; }
-inline std::string GStore::StoredMessageStub::forwardTo() const { return {} ; }
-inline std::string GStore::StoredMessageStub::forwardToAddress() const { return {} ; }
-inline bool GStore::StoredMessageStub::utf8Mailboxes() const { return false ; }
-inline void GStore::StoredMessageStub::editRecipients( const G::StringArray & ) {}
 
 #endif

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -114,7 +114,7 @@ public:
 	void report( const std::string & group = {} ) const ;
 		///< Generates helpful diagnostics after construction.
 
-	G::Slot::Signal<const std::string&,const std::string&> & eventSignal() ;
+	G::Slot::Signal<const std::string&,const std::string&> & eventSignal() noexcept ;
 		///< Returns a signal that indicates that something has happened.
 
 	std::unique_ptr<ProtocolMessage> newProtocolMessage( GNet::ExceptionSink ) ;

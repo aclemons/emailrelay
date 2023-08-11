@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -144,9 +144,7 @@ void GSmtp::ProtocolMessageStore::process( const std::string & session_auth_id ,
 		m_new_msg->prepare( session_auth_id , peer_socket_address , peer_certificate ) ;
 
 		// start filtering
-		if( !m_filter->quiet() )
-			G_LOG( "GSmtp::ProtocolMessageStore::process: filter: start [" << m_filter->id() << "] "
-				<< "[" << m_new_msg->location() << "]" ) ;
+		G_LOG_MORE( "GSmtp::ProtocolMessageStore::process: filter [" << m_filter->id() << "]: [" << m_new_msg->id().str() << "]" ) ;
 		m_filter->start( m_new_msg->id() ) ;
 	}
 	catch( std::exception & e ) // catch filtering errors, size-limit errors, and file i/o errors
@@ -172,8 +170,9 @@ void GSmtp::ProtocolMessageStore::filterDone( int filter_result )
 		std::string filter_response = (ok||abandon) ? std::string() : m_filter->response() ;
 		std::string filter_reason = (ok||abandon) ? std::string() : m_filter->reason() ;
 
-		if( !m_filter->quiet() )
-			G_LOG( "GSmtp::ProtocolMessageStore::filterDone: filter: done: " << m_filter->str(Filter::Type::server) ) ;
+		G_LOG_IF( !m_filter->quiet() , "GSmtp::ProtocolMessageStore::filterDone: "
+			"filter [" << m_filter->id() << "]: [" << m_new_msg->id().str() << "]: "
+			<< m_filter->str(Filter::Type::server) ) ;
 
 		GStore::MessageId message_id = GStore::MessageId::none() ;
 		if( ok )
@@ -210,7 +209,7 @@ void GSmtp::ProtocolMessageStore::filterDone( int filter_result )
 	}
 }
 
-GSmtp::ProtocolMessage::DoneSignal & GSmtp::ProtocolMessageStore::doneSignal()
+GSmtp::ProtocolMessage::DoneSignal & GSmtp::ProtocolMessageStore::doneSignal() noexcept
 {
 	return m_done_signal ;
 }

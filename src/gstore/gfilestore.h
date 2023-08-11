@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -139,8 +139,8 @@ private: // overrides
 	std::unique_ptr<MessageStore::Iterator> iterator( bool lock ) override ;
 	std::unique_ptr<NewMessage> newMessage( const std::string & , const MessageStore::SmtpInfo & , const std::string & ) override ;
 	void updated() override ;
-	G::Slot::Signal<> & messageStoreUpdateSignal() override ;
-	G::Slot::Signal<> & messageStoreRescanSignal() override ;
+	G::Slot::Signal<> & messageStoreUpdateSignal() noexcept override ;
+	G::Slot::Signal<> & messageStoreRescanSignal() noexcept override ;
 	std::vector<MessageId> ids() override ;
 	std::vector<MessageId> failures() override ;
 	void unfailAll() override ;

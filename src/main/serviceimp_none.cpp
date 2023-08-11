@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,15 +26,13 @@
 #include "servicecontrol.h"
 #include <iostream>
 
-// from winsvc.h
-static constexpr DWORD SERVICE_STOPPED = 1 ;
-static constexpr DWORD SERVICE_START_PENDING = 2 ;
-static constexpr DWORD SERVICE_STOP_PENDING = 3 ;
-static constexpr DWORD SERVICE_RUNNING = 4 ;
-
 namespace ServiceImp
 {
 	std::string name_ ;
+	constexpr DWORD SERVICE_STOPPED = 1 ; // see winsvc.h
+	constexpr DWORD SERVICE_START_PENDING = 2 ;
+	constexpr DWORD SERVICE_STOP_PENDING = 3 ;
+	constexpr DWORD SERVICE_RUNNING = 4 ;
 }
 
 std::string ServiceImp::install( const std::string & , const std::string & name , const std::string & ,

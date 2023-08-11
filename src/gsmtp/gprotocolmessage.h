@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -86,11 +86,10 @@ public:
 		///< Returns a signal which is raised once process() has
 		///< completed.
 		///<
-		///< The signal parameters are 'success', 'id', 'with-local',
-		///< 'short-response' and 'full-reason'. As a special case,
-		///< if success is true and id is invalid then the message
-		///< processing was either abandoned or it had only local
-		///< recipients.
+		///< The signal parameters are 'success', 'id', 'short-response'
+		///< and 'full-reason'. As a special case, if success is true and
+		///< id is invalid then the message processing was abandoned
+		///< by the filter.
 
 	virtual void reset() = 0 ;
 		///< Clears the message state, terminates any asynchronous message

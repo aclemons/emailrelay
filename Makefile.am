@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -59,7 +59,8 @@ EXTRA_DIST = \
 	autogen.sh \
 	winbuild.bat \
 	winbuild.pl \
-	runperl.bat
+	runperl.bat \
+	.readthedocs.yaml
 
 SUBDIRS = libexec bin src etc doc debian test m4 bsd po unity
 
@@ -104,7 +105,7 @@ deb: $(DEB)
 $(DEB): dist
 	-mv emailrelay-$(VERSION) emailrelay-$(VERSION).old.$$$$ || true
 	tar -xzf $(TAR)
-	cd emailrelay-$(VERSION) && fakeroot debian/rules binary
+	cd emailrelay-$(VERSION) && fakeroot debian/rules binary # or dpkg-buildpackage -b --jobs=10
 	mkdir emailrelay-$(VERSION)/debian/source
 
 .PHONY: deb-src
@@ -119,8 +120,8 @@ deb-src: dist
 tidy:
 	$(MAKE) -C unity tidy
 
-.PHONY: unitybuild
-unitybuild:
+.PHONY: unity
+unity:
 	$(MAKE) -C unity programs
 
 .PHONY: format

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -87,5 +87,10 @@ bool GFilters::SimpleFilterBase::special() const
 void GFilters::SimpleFilterBase::onTimeout()
 {
 	m_done_signal.emit( static_cast<int>(m_result) ) ;
+}
+
+std::string GFilters::SimpleFilterBase::prefix() const
+{
+	return G::sv_to_string(strtype(m_filter_type)).append(" [").append(id()).append(1U,']') ;
 }
 

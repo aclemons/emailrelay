@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,6 +27,8 @@ GFilters::SpamFilter::SpamFilter( GNet::ExceptionSink es , GStore::FileStore & f
 	Filter::Type , const Filter::Config & config , const std::string & server ,
 	bool read_only , bool always_pass ) :
 		m_es(es) ,
+		m_done_timer(*this,&SpamFilter::onDoneTimeout,m_es) ,
+		m_done_signal(true) ,
 		m_file_store(file_store) ,
 		m_location(server) ,
 		m_read_only(read_only) ,
@@ -61,18 +63,19 @@ void GFilters::SpamFilter::start( const GStore::MessageId & message_id )
 	m_client_ptr.reset( std::make_unique<GSmtp::SpamClient>( GNet::ExceptionSink(m_client_ptr,m_es.esrc()) ,
 		m_location , m_read_only , m_connection_timeout , m_response_timeout ) ) ;
 
+	m_done_signal.emitted( false ) ;
 	m_text.erase() ;
 	m_client_ptr->request( m_file_store.contentPath(message_id).str() ) ; // (no need to wait for connection)
 }
 
 void GFilters::SpamFilter::clientDeleted( const std::string & reason )
 {
-	if( !reason.empty() )
+	if( !reason.empty() && !m_done_signal.emitted() )
 	{
 		G_WARNING( "GFilters::SpamFilter::clientDeleted: spamd interaction failed: " << reason ) ;
-		m_text = reason ;
-		emit( false ) ;
 	}
+	m_text = reason ;
+	done() ;
 }
 
 void GFilters::SpamFilter::clientEvent( const std::string & s1 , const std::string & s2 , const std::string & )
@@ -81,12 +84,12 @@ void GFilters::SpamFilter::clientEvent( const std::string & s1 , const std::stri
 	if( s1 == "spam" )
 	{
 		m_text = ( s2.empty() || m_always_pass ) ? std::string() : std::string("spam: ").append(G::Str::printable(s2)) ;
-		emit( m_text.empty() ) ;
+		done() ;
 	}
 	else if( s1 == "failed" )
 	{
 		m_text = G::Str::printable( s2 ) ;
-		emit( m_text.empty() ) ;
+		done() ;
 	}
 }
 
@@ -95,9 +98,14 @@ bool GFilters::SpamFilter::special() const
 	return false ;
 }
 
-void GFilters::SpamFilter::emit( bool ok )
+void GFilters::SpamFilter::done()
 {
-	m_result = ok ? Result::ok : Result::fail ;
+	m_done_timer.startTimer( 0U ) ;
+}
+
+void GFilters::SpamFilter::onDoneTimeout()
+{
+	m_result = m_text.empty() ? Result::ok : Result::fail ;
 	m_done_signal.emit( static_cast<int>(m_result) ) ;
 }
 
@@ -124,9 +132,9 @@ G::Slot::Signal<int> & GFilters::SpamFilter::doneSignal() noexcept
 void GFilters::SpamFilter::cancel()
 {
 	G_DEBUG( "GFilters::SpamFilter::cancel: cancelled" ) ;
+	m_done_timer.cancelTimer() ;
 	m_text.erase() ;
 	if( m_client_ptr.get() != nullptr && m_client_ptr->busy() )
 		m_client_ptr.reset() ;
 }
-
 

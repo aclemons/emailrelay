@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -47,8 +47,9 @@ GStore::StoredFile::~StoredFile()
 	{
 		if( m_unlock && m_state == State::Locked )
 		{
-			G_DEBUG( "GStore::StoredFile::dtor: envelope: unlocking [" << epath(State::Locked).basename() << "]" ) ;
+			G_DEBUG( "GStore::StoredFile::dtor: unlocking envelope [" << epath(State::Locked).basename() << "]" ) ;
 			FileOp::rename( epath(State::Locked) , epath(State::Normal) ) ;
+			static_cast<MessageStore&>(m_store).updated() ;
 		}
 	}
 	catch(...) // dtor
@@ -118,7 +119,7 @@ bool GStore::StoredFile::openContent( std::string & reason )
 {
 	try
 	{
-		G_DEBUG( "GStore::FileStore::openContent: content: reading [" << cpath().basename() << "]" ) ;
+		G_DEBUG( "GStore::FileStore::openContent: reading content [" << cpath().basename() << "]" ) ;
 		auto stream = std::make_unique<Stream>( cpath() ) ;
 		if( !stream )
 		{
@@ -146,7 +147,7 @@ const std::string & GStore::StoredFile::eol() const
 
 bool GStore::StoredFile::lock()
 {
-	G_DEBUG( "GStore::StoredFile::lock: envelope: locking [" << epath(m_state).basename() << "]" ) ;
+	G_DEBUG( "GStore::StoredFile::lock: locking envelope [" << epath(m_state).basename() << "]" ) ;
 	const G::Path src = epath( m_state ) ;
 	const G::Path dst = epath( State::Locked ) ;
 	bool ok = FileOp::rename( src , dst ) ;
@@ -157,7 +158,7 @@ bool GStore::StoredFile::lock()
 	}
 	else
 	{
-		G_DEBUG( "GStore::StoredFile::lock: envelope: failed to lock "
+		G_DEBUG( "GStore::StoredFile::lock: failed to lock envelope "
 			"[" << src.basename() << "] (" << G::Process::strerror(FileOp::errno_()) << ")" ) ;
 	}
 	static_cast<MessageStore&>(m_store).updated() ;
@@ -204,11 +205,12 @@ void GStore::StoredFile::editEnvelope( std::function<void(Envelope&)> edit_fn , 
 	replaceEnvelope( envelope_path , envelope_path_tmp ) ;
 	file_cleanup.release() ;
 	m_env = envelope ;
+	static_cast<MessageStore&>(m_store).updated() ;
 }
 
 void GStore::StoredFile::replaceEnvelope( const G::Path & envelope_path , const G::Path & envelope_path_tmp )
 {
-	G_DEBUG( "GStore::StoredFile::replaceEnvelope: envelope: renaming "
+	G_DEBUG( "GStore::StoredFile::replaceEnvelope: renaming envelope "
 		"[" << envelope_path.basename() << "] -> [" << envelope_path_tmp.basename() << "]" ) ;
 
 	if( !FileOp::renameOnto( envelope_path_tmp , envelope_path ) )
@@ -233,7 +235,7 @@ void GStore::StoredFile::fail( const std::string & reason , int reason_code )
 		addReason( epath(m_state) , reason , reason_code ) ;
 
 		G::Path bad_path = epath( State::Bad ) ;
-		G_LOG_S( "GStore::StoredFile::fail: envelope: failing [" << epath(m_state).basename() << "] "
+		G_LOG_S( "GStore::StoredFile::fail: failing envelope [" << epath(m_state).basename() << "] "
 			<< "-> [" << bad_path.basename() << "]" ) ;
 
 		FileOp::rename( epath(m_state) , bad_path ) ;
@@ -241,9 +243,10 @@ void GStore::StoredFile::fail( const std::string & reason , int reason_code )
 	}
 	else
 	{
-		G_DEBUG( "GStore::StoredFile::fail: envelope: cannot fail [" << epath(m_state).basename() << "]" ) ;
+		G_DEBUG( "GStore::StoredFile::fail: cannot fail envelope [" << epath(m_state).basename() << "]" ) ;
 	}
 	m_unlock = false ;
+	static_cast<MessageStore&>(m_store).updated() ;
 }
 
 void GStore::StoredFile::addReason( const G::Path & path , const std::string & reason , int reason_code ) const
@@ -259,18 +262,19 @@ void GStore::StoredFile::addReason( const G::Path & path , const std::string & r
 
 void GStore::StoredFile::destroy()
 {
-	G_LOG( "GStore::StoredFile::destroy: envelope: deleting [" << epath(m_state).basename() << "]" ) ;
+	G_LOG( "GStore::StoredFile::destroy: deleting envelope [" << epath(m_state).basename() << "]" ) ;
 	if( !FileOp::remove( epath(m_state) ) )
 		G_WARNING( "GStore::StoredFile::destroy: failed to delete envelope file "
 			<< "[" << epath(m_state).basename() << "] (" << G::Process::strerror(FileOp::errno_()) << ")" ) ;
 
-	G_LOG( "GStore::StoredFile::destroy: content: deleting [" << cpath().basename() << "]" ) ;
+	G_LOG( "GStore::StoredFile::destroy: deleting content [" << cpath().basename() << "]" ) ;
 	m_content.reset() ; // close it before deleting
 	if( !FileOp::remove( cpath() ) )
 		G_WARNING( "GStore::StoredFile::destroy: failed to delete content file "
 			<< "[" << cpath().basename() << "] (" << G::Process::strerror(FileOp::errno_()) << "]" ) ;
 
 	m_unlock = false ;
+	static_cast<MessageStore&>(m_store).updated() ;
 }
 
 std::string GStore::StoredFile::from() const
@@ -321,6 +325,11 @@ std::string GStore::StoredFile::forwardTo() const
 std::string GStore::StoredFile::forwardToAddress() const
 {
 	return m_env.forward_to_address ;
+}
+
+std::string GStore::StoredFile::clientAccountSelector() const
+{
+	return m_env.client_account_selector ;
 }
 
 bool GStore::StoredFile::utf8Mailboxes() const

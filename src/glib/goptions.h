@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -93,6 +93,10 @@ public:
 	bool valid( const std::string & ) const ;
 		///< Returns true if the long-form option name is valid.
 
+	const Option * find( const std::string & ) const ;
+		///< Returns a pointer to the option with a matching
+		///< long-form name. Returns nullptr if none.
+
 	bool visible( const std::string & name , unsigned int level , bool level_exact = false ) const ;
 		///< Returns true if the option is visible at the given level.
 		///< Deliberately hidden options at level zero are never
@@ -133,11 +137,14 @@ public:
 		///< taking its default (empty) value followed by a separate
 		///< argument 'bar'.
 
+	bool defaulting( char ) const ;
+		///< Returns defaulting(lookup()) even though defaulting options
+		///< can never take a value when short-form.
+
 private:
 	using List = std::vector<Option> ;
 	void parseSpec( const std::string & spec , char , char , char ) ;
 	void addOption( Option , char , char ) ;
-	List::const_iterator find( const std::string & ) const ;
 
 private:
 	List m_list ;

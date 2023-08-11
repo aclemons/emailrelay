@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -236,7 +236,14 @@ sub fcache_write
 	my $fh = new FileHandle( $path , "w" ) or die "error: install: cannot create [$path]\n" ;
 	for my $k ( sort keys %fcache )
 	{
-		print $fh "$k $fcache{$k}\n" ;
+		if( $fcache{$k} )
+		{
+			print $fh "$k $fcache{$k}\n" ;
+		}
+		else
+		{
+			print $fh "$k # not found -- edit here\n" ;
+		}
 	}
 	$fh->close() or die ;
 }
@@ -259,6 +266,7 @@ sub _find_bypass
 	while(<$fh>)
 	{
 		chomp( my $line = $_ ) ;
+		$line =~ s/#.*// ;
 		my ( $k , $v ) = ( $line =~ m/(\S+)\s+(.*)/ ) ;
 		if( $k eq $key )
 		{
@@ -422,7 +430,7 @@ sub fixup
 	my ( $base , $fnames , $fixes ) = @_ ;
 	for my $fname ( @$fnames )
 	{
-		my $fh_in = new FileHandle( "$base/$fname" , "r" ) or die ;
+		my $fh_in = new FileHandle( "$base/$fname" , "r" ) or die "error install: cannot read [$base/$fname]\n" ;
 		my $fh_out = new FileHandle( "$base/$fname.$$.tmp" , "w" ) or die ;
 		while(<$fh_in>)
 		{
@@ -454,10 +462,28 @@ sub file_copy
 {
 	my ( $src , $dst ) = @_ ;
 
+	if( $dst =~ m:/$: )
+	{
+		$dst =~ s:/$:: ;
+		File::Path::make_path( $dst ) ;
+		-d $dst or die "error: failed to create target directory [$dst]" ;
+	}
+	elsif( ! -d File::Basename::dirname($dst) )
+	{
+		File::Path::make_path( File::Basename::dirname($dst) ) ;
+	}
+
 	my $to_crlf = undef ;
 	for my $ext ( "txt" , "js" , "pl" , "pm" )
 	{
-		$to_crlf = 1 if( ( ! -d $dst && ( $dst =~ m/$ext$/ ) ) || ( -d $dst && ( $src =~ m/$ext$/ ) ) ) ;
+		if( -d $dst )
+		{
+			$to_crlf = 1 if ( $src =~ m/\.${ext}$/ ) ;
+		}
+		else
+		{
+			$to_crlf = 1 if( $dst =~ m/\.${ext}$/ ) ;
+		}
 	}
 
 	if( $to_crlf )

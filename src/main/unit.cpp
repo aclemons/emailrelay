@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -36,16 +36,11 @@ Main::Unit::Unit( Run & run , unsigned int unit_id , const std::string & version
 	m_configuration(run.configuration(unit_id)) ,
 	m_version_number(version_number) ,
 	m_unit_id(unit_id) ,
-	m_es(GNet::ExceptionSink::logOnly())
+	m_es_log_only(GNet::ExceptionSink::logOnly())
 {
 	G_ASSERT( GSsl::Library::instance() != nullptr ) ;
 	using G::format ;
 	using G::txt ;
-
-	// connect signals so that we know what the ClientPtr is doing
-	//
-	m_client_ptr.deletedSignal().connect( G::Slot::slot(*this,&Unit::onClientDone) ) ;
-	m_client_ptr.eventSignal().connect( G::Slot::slot(*this,&Unit::onClientEvent) ) ;
 
 	// cache the forwarding address's address family
 	//
@@ -90,12 +85,12 @@ Main::Unit::Unit( Run & run , unsigned int unit_id , const std::string & version
 	// do forwarding via a timer
 	//
 	m_forwarding_timer = std::make_unique<GNet::Timer<Unit>>( *this ,
-		&Unit::onRequestForwardingTimeout , m_es ) ;
+		&Unit::onRequestForwardingTimeout , m_es_log_only ) ;
 
 	// create the polling timer
 	//
 	m_poll_timer = std::make_unique<GNet::Timer<Unit>>( *this ,
-		&Unit::onPollTimeout , m_es ) ;
+		&Unit::onPollTimeout , m_es_log_only ) ;
 
 	// figure out what we're doing
 	//
@@ -116,7 +111,6 @@ Main::Unit::Unit( Run & run , unsigned int unit_id , const std::string & version
 	m_file_store = std::make_unique<GStore::FileStore>( m_configuration.spoolDir() , m_configuration.deliveryDir() , m_configuration.fileStoreConfig() ) ;
 	m_filter_factory = std::make_unique<GFilters::FilterFactory>( *m_file_store ) ;
 	m_verifier_factory = std::make_unique<GVerifiers::VerifierFactory>() ;
-	store().messageStoreRescanSignal().connect( G::Slot::slot(*this,&Unit::onStoreRescanEvent) ) ;
 	if( do_pop )
 	{
 		m_pop_store = GPop::newStore( m_configuration.spoolDir() ,
@@ -143,7 +137,7 @@ Main::Unit::Unit( Run & run , unsigned int unit_id , const std::string & version
 		G_ASSERT( m_client_secrets != nullptr ) ;
 		G_ASSERT( m_server_secrets != nullptr ) ;
 		m_smtp_server = std::make_unique<GSmtp::Server>(
-			GNet::ExceptionSink() ,
+			m_es_rethrow ,
 			*m_file_store ,
 			*m_filter_factory ,
 			*m_verifier_factory ,
@@ -153,8 +147,6 @@ Main::Unit::Unit( Run & run , unsigned int unit_id , const std::string & version
 			m_configuration.immediate() ? m_configuration.serverAddress() : std::string() ,
 			m_resolver_family ,
 			m_configuration.smtpClientConfig( clientTlsProfile() , domain() ) ) ;
-
-		m_smtp_server->eventSignal().connect( G::Slot::slot(*this,&Main::Unit::onServerEvent) ) ;
 	}
 
 	// create the pop server
@@ -164,7 +156,7 @@ Main::Unit::Unit( Run & run , unsigned int unit_id , const std::string & version
 		G_ASSERT( m_pop_store != nullptr ) ;
 		G_ASSERT( m_pop_secrets != nullptr ) ;
 		m_pop_server = GPop::newServer(
-			GNet::ExceptionSink() ,
+			m_es_rethrow ,
 			*m_pop_store ,
 			*m_pop_secrets ,
 			m_configuration.popServerConfig( serverTlsProfile() , domain() ) ) ;
@@ -184,21 +176,29 @@ Main::Unit::Unit( Run & run , unsigned int unit_id , const std::string & version
 		info_map["copyright"] = Legal::copyright() ;
 
 		m_admin_server = std::make_unique<GSmtp::AdminServer>(
-			GNet::ExceptionSink() ,
+			m_es_rethrow ,
 			*m_file_store ,
 			*m_filter_factory ,
 			*m_client_secrets ,
 			m_configuration.listeningNames("admin") ,
 			m_configuration.adminServerConfig( info_map , clientTlsProfile() , domain() ) ) ;
 
-		m_admin_server->commandSignal().connect( G::Slot::slot(*this,&Unit::onAdminCommand) ) ;
 	}
+
+	if( m_admin_server ) m_admin_server->commandSignal().connect( G::Slot::slot(*this,&Unit::onAdminCommand) ) ;
+	if( m_smtp_server ) m_smtp_server->eventSignal().connect( G::Slot::slot(*this,&Main::Unit::onServerEvent) ) ;
+	store().messageStoreRescanSignal().connect( G::Slot::slot(*this,&Unit::onStoreRescanEvent) ) ;
+	m_client_ptr.deletedSignal().connect( G::Slot::slot(*this,&Unit::onClientDone) ) ;
+	m_client_ptr.eventSignal().connect( G::Slot::slot(*this,&Unit::onClientEvent) ) ;
 }
 
 Main::Unit::~Unit()
 {
-	if( m_admin_server )
-		m_admin_server->commandSignal().disconnect() ;
+	m_client_ptr.eventSignal().disconnect() ;
+	m_client_ptr.deletedSignal().disconnect() ;
+	store().messageStoreRescanSignal().disconnect() ;
+	if( m_smtp_server ) m_smtp_server->eventSignal().disconnect() ;
+	if( m_admin_server ) m_admin_server->commandSignal().disconnect() ;
 }
 
 unsigned int Main::Unit::id() const
@@ -295,8 +295,7 @@ void Main::Unit::onRequestForwardingTimeout()
 
 bool Main::Unit::logForwarding() const
 {
-	return m_forwarding_reason != "poll" || m_configuration.pollingLog() ||
-		( G::LogOutput::instance() && G::LogOutput::instance()->at( G::Log::Severity::Debug ) ) ;
+	return m_forwarding_reason != "poll" || m_configuration.pollingLog() || G::Log::atDebug() ;
 }
 
 std::string Main::Unit::startForwarding()
@@ -305,7 +304,7 @@ std::string Main::Unit::startForwarding()
 	try
 	{
 		G_ASSERT( m_client_secrets != nullptr ) ;
-		m_client_ptr.reset( std::make_unique<GSmtp::Client>(
+		m_client_ptr.reset( std::make_unique<GSmtp::Forward>(
 			GNet::ExceptionSink(m_client_ptr,nullptr) ,
 			*m_file_store ,
 			*m_filter_factory ,

@@ -1,6 +1,6 @@
-***************************
-E-MailRelay Developer Guide
-***************************
+***************
+Developer Guide
+***************
 
 Principles
 ==========
@@ -53,7 +53,7 @@ At higher levels the C++ slot/signal design pattern is used to propagate events
 between objects (not to be confused with operating system signals). The
 slot/signal implementation has been simplified compared to Qt or boost by not
 supporting signal multicasting, so each signal connects to no more than one
-slot.
+slot. The implementation now uses std::function.
 
 The synchronous slot/signal pattern needs some care when when the signalling
 object gets destructed as a side-effect of raising a signal, and that situation
@@ -186,12 +186,13 @@ relevant EventHandler/ExceptionHandler code via the *EventEmitter* class.
 
 Multi-threading
 ===============
-Multi-threading can be used as a build-time option to make DNS lookup and
-external program asynchronous; if enabled then std::thread is used in a
-future/promise pattern to wrap up *getaddrinfo()* and *waitpid()* system calls.
-The shared state comprises only the parameters and return results from these
-system calls, and synchronisation back to the main thread uses the event loop
-(see *GNet::FutureEvent*).
+Multi-threading is used to make DNS lookup and external program asynchronous so
+unless disabled at build-time std::thread is used in a future/promise pattern to
+wrap up *getaddrinfo()* and *waitpid()* system calls. The shared state comprises
+only the parameters and return results from these system calls, and
+synchronisation back to the main thread uses the main event loop (see
+\ *GNet::FutureEvent*\ ). Threading is not used elsewhere so the C/C++ run-time
+library does not need to be thread-safe.
 
 E-MailRelay GUI
 ===============
@@ -219,7 +220,7 @@ When run in configure mode the GUI normally ends up simply editing the
 
 When run in install mode the GUI expects to unpack all the E-MailRelay files
 from the payload into target directories. The payload is a simple directory
-tree that lives alongside the GUI exectuable or inside the Mac application
+tree that lives alongside the GUI executable or inside the Mac application
 bundle, and it contains a configuration file to tell the installer where
 to copy its files.
 
@@ -328,4 +329,4 @@ Use *./configure --help* to see a complete list of options.
 .. _SMTP: https://en.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol
 .. _TLS: https://en.wikipedia.org/wiki/Transport_Layer_Security
 
-.. footer:: Copyright (C) 2001-2022 Graeme Walker
+.. footer:: Copyright (C) 2001-2023 Graeme Walker

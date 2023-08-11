@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -48,8 +48,14 @@ namespace GSmtp
 }
 
 //| \class GSmtp::Client
-/// A class which acts as an SMTP client, extracting messages from a
-/// message store and forwarding them to a remote SMTP server.
+/// A class which acts as an SMTP client, sending messages to a remote
+/// SMTP server.
+///
+/// A GSmtp::Client is-a GNet::Client so when it is destroyed as the
+/// result of an exception the owner should call GNet::Client::doOnDelete()
+/// (like GNet::ClientPtr does). The onDelete() implementation in this
+/// class fails the current message if the GNet::Client was not
+/// finish()ed (see quitAndFinish()) and the exception was not GNet::Done.
 ///
 class GSmtp::Client : public GNet::Client , private ClientProtocol::Sender
 {
@@ -67,7 +73,7 @@ public:
 		bool secure_tunnel {false} ;
 		std::string sasl_client_config ;
 		std::string client_tls_profile ;
-		bool with_routing {true} ;
+		bool fail_if_no_remote_recipients {true} ; // used by GSmtp::Forward
 
 		Config() ;
 		Config & set_stream_socket_config( const GNet::StreamSocket::Config & ) ;
@@ -81,26 +87,14 @@ public:
 		Config & set_secure_tunnel( bool = true ) noexcept ;
 		Config & set_sasl_client_config( const std::string & ) ;
 		Config & set_client_tls_profile( const std::string & ) ;
-		Config & set_with_routing( bool = true ) noexcept ;
+		Config & set_fail_if_no_remote_recipients( bool = true ) noexcept ;
 	} ;
-
-	Client( GNet::ExceptionSink , GStore::MessageStore & ,
-		FilterFactoryBase & , const GNet::Location & remote ,
-		const GAuth::SaslClientSecrets & , const Config & config ) ;
-			///< Constructor. Starts connecting immediately and
-			///< sends messages from the store once connected.
-			///<
-			///< Once all messages have been sent the client will
-			///< throw GNet::Done. See GNet::ClientPtr.
-			///<
-			///< Do not use sendMessage(). The messageDoneSignal()
-			///< is not emitted.
 
 	Client( GNet::ExceptionSink ,
 		FilterFactoryBase & , const GNet::Location & remote ,
 		const GAuth::SaslClientSecrets & , const Config & config ) ;
-			///< Constructor. Starts connecting immediately and
-			///< expects sendMessage() immediately after construction.
+			///< Constructor. Expects sendMessage() immediately after
+			///< construction.
 			///<
 			///< A messageDoneSignal() is emitted when the message
 			///< has been sent, allowing the next sendMessage().
@@ -123,19 +117,21 @@ public:
 		///< Does nothing if there are no message recipients.
 
 	void quitAndFinish() ;
-		///< Finishes a sendMessage() sequence.
+		///< Finishes a sendMessage() sequence. Sends a QUIT command and
+		///< finish()es the GNet::Client.
 
-	G::Slot::Signal<const std::string&> & messageDoneSignal() ;
+	G::Slot::Signal<const std::string&,bool> & messageDoneSignal() noexcept ;
 		///< Returns a signal that indicates that sendMessage()
-		///< has completed or failed.
+		///< has completed or failed. The boolean value is set
+		///< if the filter completed with its special value.
 
 private: // overrides
-	void onConnect() override ; // Override from GNet::Client.
-	bool onReceive( const char * , std::size_t , std::size_t , std::size_t , char ) override ; // Override from GNet::Client.
-	void onDelete( const std::string & ) override ; // Override from GNet::HeapClient.
-	void onSendComplete() override ; // Override from GNet::BufferedClient.
-	void onSecure( const std::string & , const std::string & , const std::string & ) override ; // Override from GNet::SocketProtocol.
-	bool protocolSend( G::string_view , std::size_t , bool ) override ; // Override from ClientProtocol::Sender.
+	void onConnect() override ; // GNet::Client
+	bool onReceive( const char * , std::size_t , std::size_t , std::size_t , char ) override ; // GNet::Client
+	void onDelete( const std::string & ) override ; // GNet::Client
+	void onSendComplete() override ; // GNet::Client
+	void onSecure( const std::string & , const std::string & , const std::string & ) override ; // GNet::SocketProtocol
+	bool protocolSend( G::string_view , std::size_t , bool ) override ; // ClientProtocol::Sender
 
 public:
 	Client( const Client & ) = delete ;
@@ -148,30 +144,22 @@ private:
 	void protocolDone( int , const std::string & , const std::string & , const G::StringArray & ) ; // see ClientProtocol::doneSignal()
 	void filterStart() ;
 	void filterDone( int ) ;
-	bool sendNext() ;
+	bool ready() const ;
 	void start() ;
 	void messageFail( int = 0 , const std::string & = {} ) ;
 	void messageDestroy() ;
-	void startSending() ;
-	void routingFilterDone( int ) ;
-	void routedMessageDone( const std::string & ) ;
-	void sendMessage( std::shared_ptr<GStore::StoredMessage> message ) ;
+	void onNoFilterTimeout() ;
 	static GNet::Client::Config netConfig( const Config & smtp_config ) ;
 
 private:
-	GNet::ExceptionSink m_es ;
-	FilterFactoryBase & m_ff ;
 	Config m_config ;
-	const GAuth::SaslClientSecrets & m_secrets ;
-	GStore::MessageStore * m_store ;
+	GNet::Timer<Client> m_nofilter_timer ;
 	std::shared_ptr<GStore::StoredMessage> m_message ;
 	std::unique_ptr<Filter> m_filter ;
-	std::unique_ptr<Filter> m_routing_filter ;
-	std::shared_ptr<GStore::MessageStore::Iterator> m_iter ;
 	ClientProtocol m_protocol ;
-	GNet::ClientPtr<Client> m_routing_client ;
-	G::Slot::Signal<const std::string&> m_message_done_signal ;
-	unsigned int m_message_count ;
+	G::Slot::Signal<const std::string&,bool> m_message_done_signal ;
+	bool m_secure ;
+	bool m_filter_special ;
 	G::CallStack m_stack ;
 } ;
 
@@ -186,6 +174,6 @@ inline GSmtp::Client::Config & GSmtp::Client::Config::set_secure_connection_time
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_secure_tunnel( bool b ) noexcept { secure_tunnel = b ; return *this ; }
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_sasl_client_config( const std::string & s ) { sasl_client_config = s ; return *this ; }
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_client_tls_profile( const std::string & s ) { client_tls_profile = s ; return *this ; }
-inline GSmtp::Client::Config & GSmtp::Client::Config::set_with_routing( bool b ) noexcept { with_routing = b ; return *this ; }
+inline GSmtp::Client::Config & GSmtp::Client::Config::set_fail_if_no_remote_recipients( bool b ) noexcept { fail_if_no_remote_recipients = b ; return *this ; }
 
 #endif

@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -51,7 +51,7 @@ sub new
 	my %me = (
 		m_port => $port ,
 		m_server => $server ,
-		m_s => undef ,
+		m_nc => undef ,
 		m_connect_timeout => 3 ,
 		m_timeout => 3 ,
 		m_prompt => qr/250 [^\n]*\n/ ,
@@ -68,9 +68,9 @@ sub open
 	my ( $this , $wait ) = @_ ;
 	$wait = defined($wait) ? $wait : 1 ;
 
-	$this->{m_s} = NetClient::newSocket( $this ) ;
-	return undef if !$this->{m_s} ;
-	NetClient::read( $this , qr/220 [^\n]+\n/ , -1 ) if $wait ;
+	$this->{m_nc} = new NetClient( $this->{m_port} , $this->{m_server} , $this->{m_timeout} , $this->{m_prompt} ) ;
+	return undef if !$this->{m_nc} ;
+	$this->{m_nc}->read( qr/220 [^\n]+\n/ , -1 ) if $wait ;
 	return 1 ;
 }
 
@@ -78,15 +78,14 @@ sub close
 {
 	# Drops the connection.
 	my ( $this ) = @_ ;
-	$this->{m_s}->close() ;
-	$this->{m_s} = undef ;
+	$this->{m_nc}->close() ;
 }
 
 sub ehlo
 {
 	# Says ehlo.
 	my ( $this ) = @_ ;
-	NetClient::cmd( $this , "EHLO here" ) ;
+	$this->{m_nc}->cmd( "EHLO here" ) ;
 }
 
 sub mail
@@ -96,11 +95,11 @@ sub mail
 	my ( $this , $expect_mail_from_to_fail ) = @_ ;
 	if( $expect_mail_from_to_fail )
 	{
-		NetClient::send( $this , "mail from:<me\@here>\r\n" , qr/530 authentication required[^\n]*\n/ ) ;
+		$this->{m_nc}->send( "mail from:<me\@here>\r\n" , qr/530 authentication required[^\n]*\n/ ) ;
 	}
 	else
 	{
-		NetClient::send( $this , "mail from:<me\@here>\r\n" ) ;
+		$this->{m_nc}->send( "mail from:<me\@here>\r\n" ) ;
 	}
 }
 
@@ -112,41 +111,40 @@ sub submit_start
 	if( !defined($to) ) { $to = 'you@there' }
 	my @to_list = ref($to) ? @$to : ($to) ;
 	$expect_rcpt_to_to_fail ||= 0 ;
-	NetClient::cmd( $this , "ehlo here" ) ;
-	NetClient::cmd( $this , 'mail from:<me@here>' ) ;
+	$this->{m_nc}->cmd( "ehlo here" ) ;
+	$this->{m_nc}->cmd( 'mail from:<me@here>' ) ;
 	if( $expect_rcpt_to_to_fail )
 	{
 		my $rcpt_to = $to_list[0] ;
-		NetClient::cmd( $this , "rcpt to:<$rcpt_to>" , qr/550 [^\n]+\n/ ) ;
+		$this->{m_nc}->cmd( "rcpt to:<$rcpt_to>" , qr/550 [^\n]+\n/ ) ;
 	}
 	else
 	{
 		for my $rcpt_to ( @to_list )
 		{
-			NetClient::cmd( $this , "rcpt to:<$rcpt_to>" ) ;
+			$this->{m_nc}->cmd( "rcpt to:<$rcpt_to>" ) ;
 		}
-		NetClient::cmd( $this , "data" , qr/354 [^\n]+\n/ ) ;
-		NetClient::send( $this , "From: me\@here\r\n" ) ;
-		NetClient::send( $this , "To: you\@there\r\n" ) ;
-		NetClient::send( $this , "Subject: test message\r\n" ) ;
-		NetClient::send( $this , "\r\n" ) ;
+		$this->{m_nc}->cmd( "data" , qr/354 [^\n]+\n/ ) ;
+		$this->{m_nc}->send( "From: me\@here\r\n" ) ;
+		$this->{m_nc}->send( "To: you\@there\r\n" ) ;
+		$this->{m_nc}->send( "Subject: test message\r\n" ) ;
+		$this->{m_nc}->send( "\r\n" ) ;
 	}
+	return $this ;
 }
 
 sub submit_end
 {
 	# Ends message submission by sending a dot.
-	my ( $this , $expect_452 , $expect_552 ) = @_ ;
-	my $prompt = undef ;
-	if( $expect_452 ) { $prompt = qr/452 [^\n]+\n/ }
-	if( $expect_552 ) { $prompt = qr/552 [^\n]+\n/ }
-	return NetClient::cmd( $this , "." , $prompt ) ;
+	# Returns the SMTP response line or undef on error.
+	my ( $this ) = @_ ;
+	return $this->{m_nc}->cmd( "." , qr/[^\n]*\n/ ) ;
 }
 
 sub submit_end_nowait
 {
 	my ( $this , $with_quit ) = @_ ;
-	NetClient::send( $this , $with_quit ? ".\r\nQUIT\r\n" : ".\r\n" ) ;
+	$this->{m_nc}->send( $with_quit ? ".\r\nQUIT\r\n" : ".\r\n" ) ;
 }
 
 sub submit_line
@@ -154,23 +152,24 @@ sub submit_line
 	# Sends a body line for a submit_start()ed message.
 	my ( $this , $line ) = @_ ;
 	$line = "this is a test" if !defined $line ;
-	NetClient::send( $this , "$line\r\n" ) ;
+	$this->{m_nc}->send( "$line\r\n" ) ;
+	return $this ;
 }
 
 sub submit
 {
 	# Submits a whole test message.
-	my ( $this , $expect_dot_to_fail ) = @_ ;
-	$this->submit_start() ;
+	my ( $this , $to ) = @_ ;
+	$this->submit_start( $to ) ;
 	$this->submit_line( "This is a test." ) ;
-	$this->submit_end( $expect_dot_to_fail )
+	return $this->submit_end() ;
 }
 
 sub doBadHelo
 {
 	# Sends an invalid helo, expecing 501.
 	my ( $this ) = @_ ;
-	NetClient::cmd( $this , "HELO" , qr/501 parameter [^\n]+\n/ ) ;
+	$this->{m_nc}->cmd( "HELO" , qr/501 parameter [^\n]+\n/ ) ;
 }
 
 sub doBadCommand
@@ -178,7 +177,7 @@ sub doBadCommand
 	# Sends an invalid 'foo' command, expecting 500.
 	# Returns any 'peer disconnected' error message.
 	my ( $this ) = @_ ;
-	eval { NetClient::cmd( $this , "FOO" , qr/500 command [^\n]+\n/ ) } ;
+	eval { $this->{m_nc}->cmd( "FOO" , qr/500 command [^\n]+\n/ ) } ;
 	my $error = $@ =~ s/\n//gr =~ s/\r//gr ;
 	return $error ;
 }

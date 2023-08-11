@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,9 +23,11 @@
 #
 # Synopsis:
 #  use ConfigStatus ;
-#  my $cs = new ConfigStatus() ;
-#  my $cs = new ConfigStatus( "./config.status" ) ;
-#  my $cs = new ConfigStatus("") ; $cs->parse( "/tmp/config.status" ) ;
+#  my $cs = new ConfigStatus( "./config.status" ) ; # parse "./config.status"
+#  my $cs = new ConfigStatus() ; # search up from "." and parse
+#  my $cs = new ConfigStatus({dir=>"/tmp/src"}) ; # search up from "/tmp/src" and parse
+#  my $cs = new ConfigStatus("") ; # use separate parse() call
+#  $cs->parse( "/tmp/config.status" ) ;
 #  my %vars = $cs->vars() ;
 #  my %switches = $cs->switches() ;
 #
@@ -39,25 +41,49 @@ package ConfigStatus ;
 
 sub new
 {
-	my ( $classname , $filename ) = @_ ;
+	my ( $classname , $path ) = @_ ;
 	my $this = bless {
 		m_vars => {} ,
 		m_switches => {} ,
+		m_path => $path ,
 	} , $classname ;
-	if( !defined($filename) )
+
+	# optionally search the file-system for "config.status"
+	my $start_dir = undef ;
+	if( !defined($path) )
 	{
-		for my $dir ( "." , ".." , "../.." )
+		$start_dir = "."
+	}
+	elsif( ref($path) && exists($path->{dir}) )
+	{
+		$start_dir = $path->{dir} ;
+	}
+	if( defined($start_dir) )
+	{
+		for my $subdir ( "." , ".." , "../.." , "../../.." )
 		{
-			if( -e "$dir/config.status" )
+			if( -e "$start_dir/$subdir/config.status" )
 			{
-				$filename = "$dir/config.status" ;
+				$path = "$start_dir/$subdir/config.status" ;
 				last ;
 			}
 		}
-		$filename or die ;
+		$path or die "no config.status file up from $start_dir" ;
+		$this->{m_path} = $path ;
 	}
-	$this->parse( $filename ) if $filename ;
+
+	if( $path )
+	{
+		$this->parse( $path ) ;
+	}
+
 	return $this ;
+}
+
+sub path
+{
+	my ( $this ) = @_ ;
+	return $this->{m_path} ;
 }
 
 sub vars
@@ -66,10 +92,22 @@ sub vars
 	return %{$this->{m_vars}} ;
 }
 
+sub varsref
+{
+	my ( $this ) = @_ ;
+	return $this->{m_vars} ;
+}
+
 sub switches
 {
 	my ( $this ) = @_ ;
 	return %{$this->{m_switches}} ;
+}
+
+sub switchesref
+{
+	my ( $this ) = @_ ;
+	return $this->{m_switches} ;
 }
 
 sub parse

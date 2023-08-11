@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -81,44 +81,93 @@ Main::CommandLine::CommandLine( Output & output , const G::Arg & args_in ,
 		m_arg_prefix(args_in.prefix())
 {
 	const bool multiconfig = !G::Test::enabled("main-commandline-simple") ;
-
-	G::StringArray config_names = multiconfig ? configNames(args_in) : G::StringArray() ;
-	if( config_names.empty() )
-		config_names.push_back( "" ) ;
-
-	for( std::size_t i = 0U ; i < config_names.size() ; i++ )
-	{
-		m_config_names.push_back( config_names[i] ) ;
-		m_option_maps.emplace_back() ;
-
-		std::function<std::string(std::string,bool)> parser_callback ;
-		if( multiconfig )
-			parser_callback = [&config_names,i]( const std::string & name_ , bool sf_ ){ return onParse(config_names,i,name_,sf_) ; } ;
-
-		G::StringArray args = G::OptionParser::parse( args_in.array() ,
-			options_spec , m_option_maps.back() , &m_errors , 1U , 0U ,
-			parser_callback ) ;
-
-		if( !args.empty() )
-		{
-			std::string config_file = configFile( args[0] ) ;
-			G::OptionParser::parse( G::OptionReader::read(config_file) ,
-				options_spec , m_option_maps.back() , &m_errors , 0U , 0U ,
-				parser_callback ) ;
-		}
-
-		if( args.size() > 1U )
-			m_argc_error = true ;
-		if( m_option_maps.back().contains("verbose") )
-			m_verbose = true ;
-	}
-
 	if( multiconfig )
 	{
+		// basic parse just to see if there is a config file
+		std::string config_file ;
+		{
+			G::StringArray errors ;
+			G::OptionMap option_map ;
+			G::StringArray args = G::OptionParser::parse( args_in.array() ,
+				options_spec , option_map , &errors , 1U , 0U ,
+					[options_spec](const std::string & s_,bool){
+						auto option_p = parserFind( options_spec , s_ ) ;
+						return option_p ? ("-"+option_p->name) : s_ ;
+					} ) ;
+			if( errors.empty() && !args.empty() )
+				config_file = args[0] ;
+		}
+
+		// assemble all args, including from any config file
+		G::StringArray args = args_in.array( 1U ) ;
+		if( !config_file.empty() )
+		{
+			args.pop_back() ;
+			G::OptionReader::add( args , configFile(config_file) ) ;
+		}
+
+		// parse again looking for config names
+		G::StringArray config_names ;
+		{
+			G::StringArray errors ;
+			G::OptionMap option_map ;
+			G::OptionParser::parse( args ,
+				options_spec , option_map , &errors , 0U , 0U ,
+					[&config_names,options_spec](const std::string & s_,bool){
+						auto option_p = parserFind( options_spec , s_ ) ;
+						if( option_p && option_p->name == "spool-dir" )
+							config_names.push_back( s_.substr(0U,s_.size()-9U) ) ;
+						return option_p ? ("-"+option_p->name) : s_ ;
+					} ) ;
+			if( !errors.empty() )
+				config_names.clear() ;
+		}
+		if( config_names.empty() )
+			config_names.emplace_back() ;
+
+		// parse each config name
+		for( std::size_t i = 0U ; i < config_names.size() ; i++ )
+		{
+			m_config_names.push_back( config_names[i] ) ;
+			m_option_maps.emplace_back() ;
+
+			G::StringArray new_args = G::OptionParser::parse( args ,
+				options_spec , m_option_maps.back() , &m_errors , 0U , 0U ,
+				[&config_names,options_spec,i](const std::string & s_,bool){
+					std::string prefix ;
+					auto option_p = parserFind( options_spec , s_ , &prefix ) ;
+					if( option_p == nullptr )
+						return s_ ;
+					else if( s_ == option_p->name && i == 0U )
+						return option_p->name ; // no prefix, first config
+					else if( s_ == option_p->name )
+						return "-"+option_p->name ; // no prefix, not first config
+					else if( s_ == (config_names[i]+option_p->name) )
+						return option_p->name ; // our prefix
+					else if( std::find(config_names.begin(),config_names.end(),prefix+"-") != config_names.end() )
+						return "-"+option_p->name ; // valid prefix but not ours
+					else
+						return s_ ; // invalid, fail as normal
+				} ) ;
+
+			if( !new_args.empty() )
+				m_argc_error = true ;
+			if( m_option_maps.back().contains("verbose") )
+				m_verbose = true ;
+		}
+
+		std::for_each( m_config_names.begin() , m_config_names.end() , [](std::string &s_){G::Str::trimRight(s_,"-",1U);} ) ;
 		std::sort( m_errors.begin() , m_errors.end() ) ;
 		m_errors.erase( std::unique( m_errors.begin() , m_errors.end() ) , m_errors.end() ) ;
 	}
-
+	else
+	{
+		m_config_names.emplace_back() ;
+		m_option_maps.emplace_back() ;
+		G::StringArray args = G::OptionParser::parse( args_in.array() , m_options_spec , m_option_maps[0] , &m_errors ) ;
+		if( m_errors.empty() && !args.empty() )
+			G::OptionParser::parse( G::OptionReader::read(configFile(args[0])) , m_options_spec , m_option_maps[0] , &m_errors , 0U ) ;
+	}
 	if( G::Test::enabled("main-commandline-dump") )
 		dump() ;
 }
@@ -133,21 +182,6 @@ std::string Main::CommandLine::configFile( const std::string & arg )
 	return path ;
 }
 
-G::StringArray Main::CommandLine::configNames( const G::Arg & args_in )
-{
-	// look for special config names eg. "in" from "--in-spool-dir"
-	G::StringArray config_names ;
-	for( std::size_t i = 1U ; i < args_in.c() ; i++ )
-	{
-		std::string arg = args_in.v( i ) ;
-		std::size_t keypos = arg.find( "-spool-dir" ) ;
-		std::size_t eqpos = arg.find( '=' ) ;
-		if( G::Str::headMatch(arg,"--") && keypos > 2U && keypos < eqpos )
-			config_names.push_back( arg.substr(2U,keypos-2U) ) ;
-	}
-	return config_names ;
-}
-
 void Main::CommandLine::dump() const
 {
 	for( std::size_t i = 0U ; i < m_config_names.size() ; i++ )
@@ -160,41 +194,21 @@ void Main::CommandLine::dump() const
 	}
 }
 
-std::string Main::CommandLine::onParse( const G::StringArray & config_names , std::size_t i ,
-	const std::string & parser_name , bool short_form )
+const G::Option * Main::CommandLine::parserFind( const G::Options & options_spec ,
+	const std::string & parser_name , std::string * prefix_p )
 {
-	// we want parser names like "in-port" (where "in" is the current (i'th) config-name)
-	// to be parsed as if "port", but we want to ignore "out-port" where "out" is
-	// some other (non-i'th) config name -- also plain "port" should be discarded if
-	// not the zero'th name
+	// exact match
+	const G::Option * option_p = options_spec.find( parser_name ) ;
+	if( option_p )
+		return option_p ;
 
-	std::string result = parser_name ;
-	if( short_form )
-	{
-		bool discard = i != 0U ;
-		result = std::string(1U,discard).append(parser_name) ;
-	}
-	else if( G::Str::headMatch( parser_name , config_names.at(i)+"-" ) ) // "in-port" and "in-"
-	{
-		result = parser_name.substr( config_names[i].size()+1U ) ; // "port"
-	}
-	else
-	{
-		for( const auto & config_name : config_names )
-		{
-			if( G::Str::headMatch( parser_name , config_name+"-" ) ) // "out-port" and "out"
-			{
-				result = parser_name.substr( config_name.size() ) ; // "-port"
-				break ;
-			}
-			if( i != 0U )
-			{
-				const char discard = '-' ; // see OptionParser::parse()
-				result = std::string(1U,discard).append(parser_name) ;
-			}
-		}
-	}
-	return result ;
+	// tail match
+	std::string tail = G::Str::tail( parser_name , "-" ) ;
+	if( tail.empty() )
+		return nullptr ;
+	if( prefix_p )
+		*prefix_p = G::Str::head( parser_name , "-" ) ;
+	return options_spec.find( tail ) ;
 }
 
 std::size_t Main::CommandLine::configurations() const

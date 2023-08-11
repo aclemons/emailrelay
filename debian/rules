@@ -6,9 +6,9 @@
 #
 
 %:
-	dh $@ --with autotools_dev
+	dh $@ --parallel --no-start
 
 override_dh_auto_configure:
-	# (the init script goes to one side under /usr/lib since we have debian/emailrelay.init)
-	dh_auto_configure -- --libexecdir=/usr/lib e_initdir=/usr/lib/emailrelay/init e_rundir=/run/emailrelay --without-doxygen --without-man2html --with-openssl --without-mbedtls --with-pam --disable-gui --disable-install-hook --disable-testing
+	# (the init script and pam file go to one side under /usr/lib since we have .init and .pam files in debian/)
+	dh_auto_configure -- e_libdir=/usr/lib/emailrelay e_initdir=/usr/lib/emailrelay/init e_rundir=/run/emailrelay e_pamdir=/usr/lib/emailrelay/pam --without-doxygen --without-man2html --with-openssl --without-mbedtls --with-pam --disable-gui --disable-testing
 

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -182,7 +182,8 @@ public:
 
 	void doOnDelete( const std::string & reason , bool done ) ;
 		///< This should be called by the Client owner (typically
-		///< ClientPtr) just before this Client object is deleted.
+		///< ClientPtr) just before this Client object is deleted
+		///< as the result of an exception.
 		///<
 		///< A Client onDelete() call only ever comes from
 		///< something external calling doOnDelete().

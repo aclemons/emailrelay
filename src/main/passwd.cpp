@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -98,7 +98,7 @@ static G::Options options()
 	G::Options::add( opt , 'b' , "base64" ,
 		tx("interpret the password as base64-encoded") , "" ,
 		M::zero , "" , 2 , t_undef ) ;
-			// The input password is interpreted as being base-64 encoded.
+			// The input password is interpreted as being Base64 encoded.
 
 	G::Options::add( opt , 'd' , "dotted" ,
 		tx("use a dotted decimal format! for backwards compatibility") , "" ,

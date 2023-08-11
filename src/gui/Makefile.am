@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -70,17 +70,17 @@ emailrelay.no.qm: emailrelay.no.qm_in
 	@test -s $(QM_FILES)
 
 if GCONFIG_WINDOWS
-OS_EXTRA_DIST = $(MAC_SOURCES) $(UNIX_SOURCES)
 OS_SOURCES = $(WIN32_SOURCES)
+OS_EXTRA_DIST = $(MAC_SOURCES) $(UNIX_SOURCES)
 OS_NOINST =
 else
 if GCONFIG_MAC
-OS_EXTRA_DIST = $(UNIX_SOURCES) $(WIN32_SOURCES)
 OS_SOURCES = $(MAC_SOURCES)
+OS_EXTRA_DIST = $(UNIX_SOURCES) $(WIN32_SOURCES)
 OS_NOINST =
 else
-OS_EXTRA_DIST = $(MAC_SOURCES) $(WIN32_SOURCES)
 OS_SOURCES = $(UNIX_SOURCES)
+OS_EXTRA_DIST = $(MAC_SOURCES) $(WIN32_SOURCES)
 OS_NOINST =
 endif
 endif
@@ -114,7 +114,7 @@ AM_CPPFLAGS=\
 	-D "G_INITDIR=$(e_initdir)" \
 	-D "G_SYSCONFDIR=$(e_sysconfdir)" \
 	-D "G_ICONDIR=$(e_icondir)" \
-	-D "G_LIBEXECDIR=$(e_libexecdir)" \
+	-D "G_LIBDIR=$(e_libdir)" \
 	-D "G_MANDIR=$(mandir)" \
 	-D "G_DOCDIR=$(e_docdir)" \
 	-D "G_EXAMPLESDIR=$(e_examplesdir)" \
@@ -185,12 +185,12 @@ uninstall-hook:
 
 endif
 
-payload: $(top_srcdir)/bin/make-setup.sh
+payload: $(top_srcdir)/libexec/make-setup.sh
 	-mkdir payload 2>/dev/null
-	-@chmod +x $(top_srcdir)/bin/make-setup.sh
-	$(top_srcdir)/bin/make-setup.sh $(MAKE_SETUP_DEBUG) $@ "$(top_srcdir)/src/gui/emailrelay-icon.png"
+	-@chmod +x $(top_srcdir)/libexec/make-setup.sh
+	$(top_srcdir)/libexec/make-setup.sh $(MAKE_SETUP_DEBUG) $@
 
 .PHONY: lrelease
 lrelease:
-	$(QT_LRELEASE) emailrelay_tr.no_NO.ts -qm emailrelay.no.qm
+	"$(QT_LRELEASE)" emailrelay_tr.no_NO.ts -qm emailrelay.no.qm
 

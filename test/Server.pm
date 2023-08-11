@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -85,6 +85,7 @@ sub new
 
 	return bless {
 		m_exe => $exe ,
+		m_interface => "127.0.0.1" ,
 		m_smtp_port => $smtp_port ,
 		m_pop_port => $pop_port ,
 		m_admin_port => $admin_port ,
@@ -103,7 +104,7 @@ sub new
 		m_tls_verify => $tls_verify ,
 		m_tls_config => $tls_config ,
 		m_poll_timeout => 1 ,
-		m_dst => "dummy3450930958349:25" ,
+		m_forward_to => "dummy3450930958349:25" ,
 		m_spool_dir => $spool_dir ,
 		m_user => "nobody" ,
 		m_full_command => undef ,
@@ -118,6 +119,7 @@ sub new
 
 sub exe { return shift->{m_exe} }
 sub set_exe { $_[0]->{m_exe} = $_[1] }
+sub interface { return shift->{m_interface} }
 sub smtpPort { return shift->{m_smtp_port} }
 sub adminPort { return shift->{m_admin_port} }
 sub scannerAddress { return shift->{m_scanner_address} }
@@ -138,8 +140,9 @@ sub stdout { return shift->{m_stdout} }
 sub stderr { return shift->{m_stderr} }
 sub pidFile { return shift->{m_pidfile} }
 sub pid { return shift->{m_pid} }
-sub dst { return shift->{m_dst} }
-sub set_dst { $_[0]->{m_dst} = $System::localhost . ":" . $_[1] }
+sub forwardTo { return shift->{m_forward_to} }
+sub set_forwardTo{ $_[0]->{m_forward_to} = $_[1] }
+sub set_forwardToPort { $_[0]->{m_forward_to} = $System::localhost . ":" . $_[1] }
 sub spoolDir { return shift->{m_spool_dir} }
 sub set_spoolDir { $_[0]->{m_spool_dir} = $_[1] }
 sub user { return shift->{m_user} }
@@ -147,6 +150,7 @@ sub command { return shift->{m_full_command} }
 sub filter { return shift->{m_filter} }
 sub set_filter { $_[0]->{m_filter} = $_[1] }
 sub clientFilter { return shift->{m_client_filter} }
+sub set_clientFilter { $_[0]->{m_client_filter} = $_[1] }
 sub maxSize { return shift->{m_max_size} }
 sub rc { return shift->{m_rc} }
 sub log { return shift->{m_log_file} }
@@ -181,6 +185,7 @@ sub _switches
 		( exists($sw{AsServer}) ? "--as-server " : "" ) .
 		( exists($sw{Log}) ? "--log --log-time --log-address --no-syslog " : "" ) .
 		( exists($sw{LogFile}) ? "--log-file __LOG_FILE__ " : "" ) .
+		( exists($sw{Interface}) ? "--interface __INTERFACE__ " : "" ) .
 		( exists($sw{Port}) ? "--port __SMTP_PORT__ " : "" ) .
 		( exists($sw{Admin}) ? "--admin __ADMIN_PORT__ " : "" ) .
 		( exists($sw{Pop}) ? "--pop " : "" ) .
@@ -212,7 +217,7 @@ sub _switches
 		( exists($sw{DontServe}) ? "--dont-serve " : "" ) .
 		( exists($sw{ClientAuth}) ? "--client-auth __CLIENT_SECRETS__ " : "" ) .
 		( exists($sw{MaxSize}) ? "--size __MAX_SIZE__ " : "" ) .
-		( exists($sw{ServerSecrets}) ? "--server-auth __SERVER_SECRETS__ " : "" ) .
+		( exists($sw{ServerAuth}) ? "--server-auth __SERVER_SECRETS__ " : "" ) .
 		( exists($sw{Domain}) ? "--domain test.localnet " : "" ) .
 		( exists($sw{ServerTls}) ? "--server-tls " : "" ) .
 		( exists($sw{ServerTlsRequired}) ? "--server-tls-required " : "" ) .
@@ -233,12 +238,13 @@ sub _set_all
 	# Substitutes the value markers like __LOG_FILE__ with values from methods like $this->log().
 	my ( $this , $command_tail ) = @_ ;
 
+	_set( \$command_tail , "__INTERFACE__" , $this->interface() ) ;
 	_set( \$command_tail , "__SMTP_PORT__" , $this->smtpPort() ) ;
 	_set( \$command_tail , "__ADMIN_PORT__" , $this->adminPort() ) ;
 	_set( \$command_tail , "__POP_PORT__" , $this->popPort() ) ;
 	_set( \$command_tail , "__POP_SECRETS__" , $this->popSecrets() ) ;
 	_set( \$command_tail , "__PID_FILE__" , $this->pidFile() ) ;
-	_set( \$command_tail , "__FORWARD_TO__" , $this->dst() ) ;
+	_set( \$command_tail , "__FORWARD_TO__" , $this->forwardTo() ) ;
 	_set( \$command_tail , "__LOG_FILE__" , $this->log() ) ;
 	_set( \$command_tail , "__SPOOL_DIR__" , $this->spoolDir() ) ;
 	_set( \$command_tail , "__USER__" , $this->user() ) ;
@@ -271,7 +277,7 @@ sub _run_command
 	my ( $this , $switches_ref , $sudo_prefix , $gtest , $background ) = @_ ;
 
 	my $command =
-		( $with_valgrind ? "valgrind -q " : "" ) .
+		( $with_valgrind ? "valgrind -q --error-exitcode=33 --exit-on-first-error=yes " : "" ) .
 		$this->exe() . " " .
 		$this->_run_command_tail( $switches_ref ) ;
 
@@ -389,13 +395,21 @@ sub cleanup
 	System::rmdir_( $this->{m_piddir} ) ;
 }
 
+sub _textmode
+{
+	my ( $this ) = @_ ;
+	my $exe = $this->exe() ;
+	$exe =~ s/\.exe$/-textmode.exe/ if ( !System::unix() && $exe !~ m/textmode/ ) ;
+	return $exe ;
+}
+
 sub hasDebug
 {
 	# Returns true if the executable has debugging code
 	# and extra test features built in.
 
 	my ( $this ) = @_ ;
-	my $exe = $this->exe() ;
+	my $exe = $this->_textmode() ;
 	if( System::unix() )
 	{
 		my $rc = system( "strings \"$exe\" | fgrep -q 'G_TEST'" ) ;
@@ -419,7 +433,7 @@ sub hasThreads
 	my ( $this ) = @_ ;
 	if( System::unix() )
 	{
-		my $exe = $this->exe() ;
+		my $exe = $this->_textmode() ;
 		my $rc = system( "$exe --version --verbose | grep -qi threading:.*enabled" ) ;
 		return $rc == 0 ;
 	}
@@ -433,7 +447,7 @@ sub hasUnixDomainSockets
 {
 	my ( $this ) = @_ ;
 	return undef if !System::unix() ;
-	my $exe = $this->exe() ;
+	my $exe = $this->_textmode() ;
 	my $fh = new FileHandle( "$exe --version --verbose |" ) ;
 	while(<$fh>)
 	{
@@ -446,8 +460,7 @@ sub hasUnixDomainSockets
 sub hasPop
 {
 	my ( $this ) = @_ ;
-	return undef if !System::unix() ;
-	my $exe = $this->exe() ;
+	my $exe = $this->_textmode() ;
 	my $fh = new FileHandle( "$exe --version --verbose |" ) ;
 	while(<$fh>)
 	{
@@ -462,8 +475,7 @@ sub hasTls
 	# Returns true if the executable has tls support.
 
 	my ( $this ) = @_ ;
-	my $exe = $this->exe() ;
-	$exe =~ s/\.exe$/-textmode.exe/ if !System::unix() ;
+	my $exe = $this->_textmode() ;
 	my $fh = new FileHandle( "$exe --version --verbose |" ) ;
 	while(<$fh>)
 	{

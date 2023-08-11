@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@
 #include "gstoredfile.h"
 #include "gtimer.h"
 #include "gexceptionsink.h"
+#include <utility>
 
 namespace GFilters
 {
@@ -72,11 +73,16 @@ private:
 	void onTimeout() ;
 	void lookupDone( GStore::MessageId , std::string , std::string ) ;
 	GStore::FileStore::State storestate() const ;
+	std::string prefix() const ;
 	static MxLookup::Config mxconfig( const std::string & spec ) ;
 	static std::vector<GNet::Address> mxnameservers( const std::string & spec ) ;
+	static std::string parseForwardToDomain( const std::string & ) ;
+	static unsigned int parseForwardToPort( const std::string & ) ;
+	static std::pair<std::string,unsigned int> parseForwardTo( const std::string & ) ;
 
 private:
 	using FileOp = GStore::FileStore::FileOp ;
+	GNet::ExceptionSink m_es ;
 	GStore::FileStore & m_store ;
 	Filter::Type m_filter_type ;
 	Filter::Config m_filter_config ;

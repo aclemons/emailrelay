@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -74,7 +74,8 @@ bool Gui::Boot::installable()
 void Gui::Boot::install( const std::string & name , const G::Path & startstop_src , const G::Path & )
 {
 	using namespace BootImp ;
-	G::File::copy( startstop_src , dir_boot()+name ) ;
+	if( startstop_src != (dir_boot()+name) )
+		G::File::copy( startstop_src , dir_boot()+name ) ;
 	G::File::chmodx( dir_boot()+name , std::nothrow ) ;
 	bool ok = run( "update-rc.d" , {name,"defaults"} ) == 0 || run( "rc-update" , {"add",name} ) == 0 ;
 	if( !ok )

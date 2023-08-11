@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -49,7 +49,7 @@ std::string GSmtp::Filter::str( Filter::Type type ) const
 G::string_view GSmtp::Filter::strtype( Filter::Type type ) noexcept
 {
 	return type == Type::server ? "filter"_sv :
-		( type == Type::client ? "client filter"_sv : "routing filter"_sv ) ;
+		( type == Type::client ? "client-filter"_sv : "routing-filter"_sv ) ;
 }
 
 GSmtp::Filter::Exit::Exit( int exit_code , Filter::Type type ) :
@@ -122,8 +122,10 @@ bool GSmtp::Filter::Exit::abandon() const
 	return result == Result::abandon ;
 }
 
+#ifndef G_LIB_SMALL
 bool GSmtp::Filter::Exit::fail() const
 {
 	return result == Result::fail ;
 }
+#endif
 

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -86,6 +86,9 @@ public:
 	ServerBufferIn( GNet::ExceptionSink , ServerProtocol & , const Config & ) ;
 		///< Constructor.
 
+	~ServerBufferIn() ;
+		///< Destructor.
+
 	void apply( const char * , std::size_t ) ;
 		///< Called when raw data is received from the peer. Line
 		///< buffering is performed and complete lines are
@@ -101,14 +104,13 @@ public:
 	std::string head() const ;
 		///< Returns GNet::LineBufferState::head().
 
-	G::Slot::Signal<bool> & flowSignal() ;
+	G::Slot::Signal<bool> & flowSignal() noexcept ;
 		///< Returns a signal that should be connected to a function
 		///< that controls network flow control, typically by adding
 		///< and removing the socket file descriptor from the event
 		///< loop.
 
 public:
-	~ServerBufferIn() = default ;
 	ServerBufferIn( const ServerBufferIn & ) = delete ;
 	ServerBufferIn( ServerBufferIn && ) = delete ;
 	ServerBufferIn & operator=( const ServerBufferIn & ) = delete ;

@@ -102,21 +102,19 @@ CONFIG_HEADER = $(top_builddir)/src/gconfig_defs.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
-ARFLAGS = cru
 AM_V_AR = $(am__v_AR_@AM_V@)
 am__v_AR_ = $(am__v_AR_@AM_DEFAULT_V@)
 am__v_AR_0 = @echo "  AR      " $@;
 am__v_AR_1 = 
 libgfilters_a_AR = $(AR) $(ARFLAGS)
 libgfilters_a_LIBADD =
-am__objects_1 =
-am_libgfilters_a_OBJECTS = $(am__objects_1) gcopyfilter.$(OBJEXT) \
+am_libgfilters_a_OBJECTS = gcopyfilter.$(OBJEXT) \
 	gdeliveryfilter.$(OBJEXT) gexecutablefilter.$(OBJEXT) \
 	gfilterchain.$(OBJEXT) gfilterfactory.$(OBJEXT) \
-	gmxfilter.$(OBJEXT) gmxlookup.$(OBJEXT) \
-	gnetworkfilter.$(OBJEXT) gnullfilter.$(OBJEXT) \
-	gsimplefilterbase.$(OBJEXT) gspamfilter.$(OBJEXT) \
-	gsplitfilter.$(OBJEXT)
+	gmessageidfilter.$(OBJEXT) gmxfilter.$(OBJEXT) \
+	gmxlookup.$(OBJEXT) gnetworkfilter.$(OBJEXT) \
+	gnullfilter.$(OBJEXT) gsimplefilterbase.$(OBJEXT) \
+	gspamfilter.$(OBJEXT) gsplitfilter.$(OBJEXT)
 libgfilters_a_OBJECTS = $(am_libgfilters_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -136,10 +134,11 @@ am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/gcopyfilter.Po \
 	./$(DEPDIR)/gdeliveryfilter.Po \
 	./$(DEPDIR)/gexecutablefilter.Po ./$(DEPDIR)/gfilterchain.Po \
-	./$(DEPDIR)/gfilterfactory.Po ./$(DEPDIR)/gmxfilter.Po \
-	./$(DEPDIR)/gmxlookup.Po ./$(DEPDIR)/gnetworkfilter.Po \
-	./$(DEPDIR)/gnullfilter.Po ./$(DEPDIR)/gsimplefilterbase.Po \
-	./$(DEPDIR)/gspamfilter.Po ./$(DEPDIR)/gsplitfilter.Po
+	./$(DEPDIR)/gfilterfactory.Po ./$(DEPDIR)/gmessageidfilter.Po \
+	./$(DEPDIR)/gmxfilter.Po ./$(DEPDIR)/gmxlookup.Po \
+	./$(DEPDIR)/gnetworkfilter.Po ./$(DEPDIR)/gnullfilter.Po \
+	./$(DEPDIR)/gsimplefilterbase.Po ./$(DEPDIR)/gspamfilter.Po \
+	./$(DEPDIR)/gsplitfilter.Po
 am__mv = mv -f
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -173,6 +172,7 @@ am__can_run_installinfo = \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
+am__extra_recursive_targets = extra-recursive
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 # Read a list of newline-separated strings from the standard input,
 # and print each of them once, without duplicates.  Input order is
@@ -198,6 +198,7 @@ ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
+ARFLAGS = @ARFLAGS@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
@@ -287,7 +288,7 @@ e_docdir = @e_docdir@
 e_examplesdir = @e_examplesdir@
 e_icondir = @e_icondir@
 e_initdir = @e_initdir@
-e_libexecdir = @e_libexecdir@
+e_libdir = @e_libdir@
 e_pamdir = @e_pamdir@
 e_rundir = @e_rundir@
 e_spooldir = @e_spooldir@
@@ -321,10 +322,6 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 noinst_LIBRARIES = libgfilters.a
-@GCONFIG_EXTRA_FILTERS_FALSE@FILTER_SOURCES = 
-@GCONFIG_EXTRA_FILTERS_TRUE@FILTER_SOURCES = # gextrafilter.cpp gextrafilter.h
-@GCONFIG_EXTRA_FILTERS_FALSE@FILTER_EXTRA_DIST = # gextrafilter.cpp gextrafilter.h
-@GCONFIG_EXTRA_FILTERS_TRUE@FILTER_EXTRA_DIST = 
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/glib \
 	-I$(top_srcdir)/src/gssl \
@@ -335,7 +332,6 @@ AM_CPPFLAGS = \
 	-DG_LIB_SMALL
 
 libgfilters_a_SOURCES = \
-	$(FILTER_SOURCES) \
 	gcopyfilter.cpp \
 	gcopyfilter.h \
 	gdeliveryfilter.cpp \
@@ -346,6 +342,8 @@ libgfilters_a_SOURCES = \
 	gfilterchain.h \
 	gfilterfactory.cpp \
 	gfilterfactory.h \
+	gmessageidfilter.cpp \
+	gmessageidfilter.h \
 	gmxfilter.cpp \
 	gmxfilter.h \
 	gmxlookup.cpp \
@@ -360,9 +358,6 @@ libgfilters_a_SOURCES = \
 	gspamfilter.h \
 	gsplitfilter.cpp \
 	gsplitfilter.h
-
-EXTRA_DIST = \
-	$(FILTER_EXTRA_DIST)
 
 all: all-am
 
@@ -417,6 +412,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gexecutablefilter.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfilterchain.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfilterfactory.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmessageidfilter.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmxfilter.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmxlookup.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnetworkfilter.Po@am__quote@ # am--include-marker
@@ -444,6 +440,7 @@ am--depfiles: $(am__depfiles_remade)
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+extra-local: 
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique
@@ -574,6 +571,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/gexecutablefilter.Po
 	-rm -f ./$(DEPDIR)/gfilterchain.Po
 	-rm -f ./$(DEPDIR)/gfilterfactory.Po
+	-rm -f ./$(DEPDIR)/gmessageidfilter.Po
 	-rm -f ./$(DEPDIR)/gmxfilter.Po
 	-rm -f ./$(DEPDIR)/gmxlookup.Po
 	-rm -f ./$(DEPDIR)/gnetworkfilter.Po
@@ -588,6 +586,10 @@ distclean-am: clean-am distclean-compile distclean-generic \
 dvi: dvi-am
 
 dvi-am:
+
+extra: extra-am
+
+extra-am: extra-local
 
 html: html-am
 
@@ -631,6 +633,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/gexecutablefilter.Po
 	-rm -f ./$(DEPDIR)/gfilterchain.Po
 	-rm -f ./$(DEPDIR)/gfilterfactory.Po
+	-rm -f ./$(DEPDIR)/gmessageidfilter.Po
 	-rm -f ./$(DEPDIR)/gmxfilter.Po
 	-rm -f ./$(DEPDIR)/gmxlookup.Po
 	-rm -f ./$(DEPDIR)/gnetworkfilter.Po
@@ -660,15 +663,16 @@ uninstall-am:
 .PHONY: CTAGS GTAGS TAGS all all-am am--depfiles check check-am clean \
 	clean-generic clean-noinstLIBRARIES cscopelist-am ctags \
 	ctags-am distclean distclean-compile distclean-generic \
-	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am install-man \
-	install-pdf install-pdf-am install-ps install-ps-am \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
-	tags tags-am uninstall uninstall-am
+	distclean-tags distdir dvi dvi-am extra-am extra-local html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-dvi install-dvi-am install-exec \
+	install-exec-am install-html install-html-am install-info \
+	install-info-am install-man install-pdf install-pdf-am \
+	install-ps install-ps-am install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic pdf pdf-am ps ps-am tags tags-am uninstall \
+	uninstall-am
 
 .PRECIOUS: Makefile
 

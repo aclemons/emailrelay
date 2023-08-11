@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@
 
 namespace G
 {
-	namespace DateTimeImp
+	namespace DateTimeImp /// An implementation namespace for G::DateTime.
 	{
 		static constexpr const char * good_format = "%ntYyCGgmUWVjdwuHIMSDFRT" ;
 		static constexpr unsigned int million = 1000000U ;
@@ -384,12 +384,14 @@ std::time_t G::SystemTime::s() const noexcept
 	return system_clock::to_time_t( m_tp ) ;
 }
 
+#ifndef G_LIB_SMALL
 G::SystemTime G::SystemTime::zero()
 {
 	duration_type zero{0} ;
 	G_ASSERT( SystemTime(time_point_type(zero)).s() == 0 )  ; // assert 1970 epoch as per c++17
 	return SystemTime( time_point_type(zero) ) ;
 }
+#endif
 
 #ifndef G_LIB_SMALL
 bool G::SystemTime::isZero() const

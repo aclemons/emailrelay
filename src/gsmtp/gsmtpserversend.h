@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -45,11 +45,6 @@ public:
 	void setSender( ServerSender * ) ;
 		///< Sets the sender interface pointer.
 
-	virtual std::string sendUseStartTls() const = 0 ;
-		///< Returns a helpful string that is appended to some responses to
-		///< indicate the STARTTLS command should be used. Returns the empty
-		///< string if already using TLS or if TLS is not supported.
-
 	virtual bool sendFlush() const = 0 ;
 		///< Returns a 'flush' value for GSmtp::ServerSender::protocolSend().
 
@@ -77,8 +72,8 @@ protected:
 	void send( std::string , bool = false ) ;
 	void send( const std::ostringstream & ) ;
 	void sendReadyForTls() ;
-	void sendInsecureAuth() ;
-	void sendEncryptionRequired() ;
+	void sendInsecureAuth( bool = false ) ;
+	void sendEncryptionRequired( bool = false ) ;
 	void sendBadMechanism( const std::string & = {} ) ;
 	void sendBadFrom( const std::string & ) ;
 	void sendTooBig() ;
@@ -100,10 +95,11 @@ protected:
 	void sendFailed() ;
 	void sendInvalidArgument() ;
 	void sendAuthenticationCancelled() ;
-	void sendAuthRequired() ;
+	void sendAuthRequired( bool = false ) ;
 	void sendNoRecipients() ;
 	void sendMissingParameter() ;
 	void sendVerified( const std::string & ) ;
+	void sendCannotVerify() ;
 	void sendNotVerified( const std::string & , bool ) ;
 	void sendWillAccept( const std::string & ) ;
 	void sendAuthDone( bool ok ) ;

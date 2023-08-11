@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -119,14 +119,12 @@ std::string G::File::copy( const Path & from , const Path & to , int )
 	return {} ;
 }
 
-#ifndef G_LIB_SMALL
-void G::File::copy( std::istream & in , std::ostream & out , std::streamsize limit , std::string::size_type block )
+void G::File::copy( std::istream & in , std::ostream & out , std::streamsize limit , std::size_t block )
 {
 	std::ios_base::iostate in_state = in.rdstate() ;
 
 	block = block ? block : static_cast<std::string::size_type>(Limits<>::file_buffer) ;
-	std::vector<char> buffer ;
-	buffer.reserve( block ) ;
+	std::vector<char> buffer( block ) ;
 
 	const auto b = static_cast<std::streamsize>(block) ;
 	std::streamsize size = 0U ;
@@ -146,7 +144,6 @@ void G::File::copy( std::istream & in , std::ostream & out , std::streamsize lim
 	// restore the input failbit because it might have been set by us reading an incomplete block at eof
 	in.clear( (in.rdstate() & ~std::ios_base::failbit) | (in_state & std::ios_base::failbit) ) ;
 }
-#endif
 
 bool G::File::exists( const Path & path )
 {
@@ -182,6 +179,11 @@ bool G::File::isLink( const Path & path , std::nothrow_t )
 {
 	Stat s = statImp( path.cstr() , true ) ;
 	return 0 == s.error && s.is_link ;
+}
+
+G::File::Stat G::File::stat( const Path & path , bool read_symlink )
+{
+	return statImp( path.cstr() , read_symlink ) ;
 }
 
 bool G::File::isDirectory( const Path & path , std::nothrow_t )

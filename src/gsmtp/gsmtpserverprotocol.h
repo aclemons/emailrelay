@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -201,7 +201,7 @@ public:
 		///< To be called when the transport protocol successfully
 		///< goes into secure mode. See ServerSender::protocolSend().
 
-	G::Slot::Signal<> & changeSignal() ;
+	G::Slot::Signal<> & changeSignal() noexcept ;
 		///< A signal that is emitted at the end of apply() or whenever
 		///< the protocol state might have changed by some other
 		///< mechanism (eg. GSmtp::Verifier).
@@ -273,7 +273,6 @@ private:
 	using Fsm = G::StateMachine<ServerProtocol,State,Event,EventData> ;
 
 private: // overrides
-	std::string sendUseStartTls() const override ; // GSmtp::ServerSend
 	bool sendFlush() const override ; // GSmtp::ServerSend
 
 private:

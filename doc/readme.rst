@@ -1,9 +1,9 @@
-******************
-E-MailRelay Readme
-******************
+******
+Readme
+******
 
-Abstract
-========
+Introduction
+============
 E-MailRelay is a lightweight SMTP_ store-and-forward mail server with POP_ access
 to spooled messages. It can be used as a personal internet mail server with
 SpamAssassin spam filtering and DNSBL_ connection blocking. Forwarding can be
@@ -19,7 +19,9 @@ Squid and nginx giving excellent scalability and resource usage.
 
 Quick start
 ===========
-E-MailRelay can be run straight from the command-line.
+E-MailRelay can be run straight from the command-line, and on Windows you can
+run *emailrelay.exe* or *emailrelay-textmode.exe* from the zip file without
+going through the installation process.
 
 To use E-MailRelay in store-and-forward mode use the *--as-server* option to
 start the storage daemon in the background, and then do delivery of spooled
@@ -29,18 +31,20 @@ messages by running with *--as-client*.
    :alt: serverclient.png
 
 
-For example, to start a storage daemon in the background listening on port 587
+For example, to start a storage daemon in the background listening on port 10025
 use a command like this:
 
 ::
 
-    emailrelay --as-server --syslog --port 587 --spool-dir /tmp
+    emailrelay --as-server --port 10025 --spool-dir /tmp
+
+On Windows use *c:/temp* for testing, rather than */tmp*.
 
 Or to run it in the foreground:
 
 ::
 
-    emailrelay --log --verbose --no-daemon --port 587 --spool-dir /tmp
+    emailrelay --log --no-daemon --port 10025 --spool-dir /tmp
 
 And then to forward the spooled mail to *smtp.example.com* run something
 like this:
@@ -49,35 +53,37 @@ like this:
 
     emailrelay --as-client smtp.example.com:25 --spool-dir /tmp
 
-To get behaviour more like a proxy you can add the *--poll* and *--forward-to*
-options so that messages are forwarded continuously rather than on-demand.
+To forward continuously you can add the *--poll* and *--forward-to* options to
+the server command-line:
 
 .. image:: forwardto.png
    :alt: forwardto.png
 
 
-This example starts a store-and-forward server that forwards spooled-up e-mail
-every minute:
+For example, this starts a server that also forwards spooled-up e-mail every
+minute:
 
 ::
 
     emailrelay --as-server --poll 60 --forward-to smtp.example.com:25
 
-Or for a proxy server that forwards each message soon after it has been
-received, you can use *--as-proxy* or add *--forward-on-disconnect*:
+Or for a server that forwards each message as soon as it has been received, you
+can use *--forward-on-disconnect*:
 
 ::
 
     emailrelay --as-server --forward-on-disconnect --forward-to smtp.example.com:25
 
-To edit or filter e-mail as it passes through the proxy specify your filter
+To edit or filter e-mail as it passes through the server specify your filter
 program with the *--filter* option, something like this:
 
 ::
 
-    emailrelay --as-proxy smtp.example.com:25 --filter=addsig.js
+    emailrelay --as-server --filter /tmp/set-from.js
 
-E-MailRelay can be used as a personal internet mail server:
+Look for example filter scripts in the *examples* directory.
+
+E-MailRelay can also be used as a personal internet mail server:
 
 .. image:: mailserver.png
    :alt: mailserver.png
@@ -89,7 +95,7 @@ a first line of defense against spammers:
 
 ::
 
-    emailrelay --as-server -v -r --domain=example.com --address-verifier=allow:
+    emailrelay --as-server -v -r --domain=example.com --address-verifier=account:
 
 Then enable POP access to the incoming e-mails with *--pop*, *--pop-port* and
 \ *--pop-auth*\ :
@@ -116,7 +122,9 @@ or run:
 Autostart
 =========
 To install E-MailRelay on Windows run the *emailrelay-setup* program and choose
-the automatic startup option so that E-MailRelay runs as a Windows service.
+the automatic startup option on the last page so that E-MailRelay runs as a
+Windows service. Use the Windows *Services* utility to configure the E-MailRelay
+service as automatic or manual startup.
 
 To install E-MailRelay on Linux from a RPM package:
 
@@ -140,8 +148,8 @@ following commands to activate the *systemd* service:
     systemctl start emailrelay
     systemctl status emailrelay
 
-On other systems try some combination of these commands to set up and activate
-the E-MailRelay service:
+On other Linux systems try some combination of these commands to set up and
+activate the E-MailRelay service:
 
 ::
 
@@ -152,6 +160,12 @@ the E-MailRelay service:
     service emailrelay start
     tail /var/log/messages
     tail /var/log/syslog
+
+On BSD systems add this line to /etc/rc.conf:
+
+::
+
+    emailrelay_enable="YES"
 
 
 Documentation
@@ -169,6 +183,10 @@ The following documentation is provided:
 Source code documentation will be generated when building from source if
 *doxygen* is available.
 
+Feedback
+========
+To give feedback, including reviews, bug reports and feature requests, please
+use the SourceForge project website at https://sourceforge.net/p/emailrelay
 
 .. _DNSBL: https://en.wikipedia.org/wiki/DNSBL
 .. _POP: https://en.wikipedia.org/wiki/Post_Office_Protocol

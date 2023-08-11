@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,8 +29,7 @@
 
 GFilters::FilterChain::FilterChain( GNet::ExceptionSink es , GSmtp::FilterFactoryBase & ff ,
 	Filter::Type filter_type , const Filter::Config & filter_config ,
-	const GSmtp::FilterFactoryBase::Spec & spec ,
-	const std::string & log_prefix ) :
+	const GSmtp::FilterFactoryBase::Spec & spec ) :
 		m_filter_index(0U) ,
 		m_filter(nullptr) ,
 		m_running(false) ,
@@ -42,19 +41,18 @@ GFilters::FilterChain::FilterChain( GNet::ExceptionSink es , GSmtp::FilterFactor
 	{
 		std::string first = G::Str::head( t() , ":"_sv , false ) ;
 		std::string second = G::Str::tail( t() , ":"_sv ) ;
-		add( es , ff , filter_type , filter_config , Spec(first,second) , log_prefix ) ;
+		add( es , ff , filter_type , filter_config , Spec(first,second) ) ;
 	}
 
 	if( m_filters.empty() )
-		add( es , ff , filter_type , filter_config , {"exit","0"} , log_prefix ) ;
+		add( es , ff , filter_type , filter_config , {"exit","0"} ) ;
 }
 
 void GFilters::FilterChain::add( GNet::ExceptionSink es , GSmtp::FilterFactoryBase & ff ,
 	Filter::Type filter_type , const Filter::Config & filter_config ,
-	const GSmtp::FilterFactoryBase::Spec & spec ,
-	const std::string & log_prefix )
+	const GSmtp::FilterFactoryBase::Spec & spec )
 {
-	m_filters.push_back( ff.newFilter( es , filter_type , filter_config , spec , log_prefix ) ) ;
+	m_filters.push_back( ff.newFilter( es , filter_type , filter_config , spec ) ) ;
 	m_filter_id.append(m_filter_id.empty()?0U:1U,',').append( m_filters.back()->id() ) ;
 }
 
@@ -97,10 +95,10 @@ void GFilters::FilterChain::start( const GStore::MessageId & id )
 
 void GFilters::FilterChain::onFilterDone( int ok_abandon_fail )
 {
+	m_filter_index++ ;
 	m_filter->doneSignal().disconnect() ;
 	if( ok_abandon_fail == 0 ) // ok
 	{
-		m_filter_index++ ;
 		G_ASSERT( m_filter_index <= m_filters.size() ) ;
 		if( m_filter_index >= m_filters.size() )
 		{
@@ -116,7 +114,6 @@ void GFilters::FilterChain::onFilterDone( int ok_abandon_fail )
 	}
 	else // abandon/fail
 	{
-		G_DEBUG_IF( ((m_filter_index+1U)<m_filters.size()) , "GFilters::FilterChain::onFilterDone: some chained filters not run" ) ;
 		m_running = false ;
 		m_done_signal.emit( ok_abandon_fail ) ;
 	}
@@ -149,6 +146,11 @@ std::string GFilters::FilterChain::reason() const
 
 bool GFilters::FilterChain::special() const
 {
-	return m_filter->special() ;
+	for( std::size_t i = 0U ; i < m_filter_index ; i++ ) // (new)
+	{
+		if( m_filters.at(i)->special() )
+			return true ;
+	}
+	return false ;
 }
 

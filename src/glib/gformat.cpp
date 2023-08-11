@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -54,7 +54,7 @@ G::format & G::format::parse( const char * fmt )
 }
 #endif
 
-bool G::format::isdigit( char c )
+bool G::format::isdigit( char c ) noexcept
 {
 	// std::isdigit( static_cast<unsigned char>(c) )
 	return c >= '0' && c <= '9' ;

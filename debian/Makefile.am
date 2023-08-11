@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -19,9 +19,10 @@ EXTRA_DIST = \
 	emailrelay.init \
 	emailrelay.default \
 	emailrelay.service \
+	emailrelay.pam \
 	changelog \
+	conffiles \
 	control \
-	compat \
 	copyright \
 	preinst \
 	postinst \

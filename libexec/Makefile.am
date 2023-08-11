@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -24,10 +24,14 @@ work_scripts = \
 	make2cmake \
 	make2cdb \
 	make2unity \
+	reduce \
+	reduce.pl \
+	winbuild.pm \
 	AutoMakeParser.pm \
 	CompilationDatabase.pm \
 	ConfigStatus.pm \
-	winbuild.pm
+	Functions.pm \
+	Reduce.pm
 
 EXTRA_DIST = \
 	$(work_scripts)

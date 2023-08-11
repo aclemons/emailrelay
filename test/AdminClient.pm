@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -49,29 +49,29 @@ sub new
 		m_server => $server ,
 		m_prompt => qr/E-MailRelay> / ,
 		m_timeout => 3 ,
-		m_s => undef ,
+		m_nc => undef ,
 	) ;
 	return bless \%me , $classname ;
 }
 
 sub port { return shift->{m_port} }
 sub server { return shift->{m_server} }
-sub doHelp { return NetClient::cmd( $_[0] , "help" ) }
-sub doTerminate { NetClient::send( $_[0] , "terminate\r\n" ) }
-sub doFlush { NetClient::send( $_[0] , "flush\r\n") }
+sub doHelp { return $_[0]->{m_nc}->cmd( "help" ) }
+sub doTerminate { $_[0]->{m_nc}->send( "terminate\r\n" ) }
+sub doFlush { $_[0]->{m_nc}->send( "flush\r\n") }
+sub doForward { $_[0]->{m_nc}->cmd( "forward") }
 
 sub open
 {
 	my ( $this ) = @_ ;
-	$this->{m_s} = NetClient::newSocket( $this ) ;
-	return !! $this->{m_s} ;
+	$this->{m_nc} = new NetClient( $this->{m_port} , $this->{m_server} , $this->{m_timeout} , $this->{m_prompt} ) ;
+	return defined($this->{m_nc}) ;
 }
 
 sub getline
 {
 	my ( $this , $timeout ) = @_ ;
-	$timeout ||= $this->{m_timeout} ;
-	my $line = NetClient::read( $this , qr/\n/ , $timeout ) ;
+	my $line = $this->{m_nc}->read( qr/\n/ , $timeout ) ;
 	$line = "" if !defined($line) ;
 	$line =~ s/\r//g ;
 	$line =~ s/\n$// ;

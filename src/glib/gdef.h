@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+   Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
    
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -844,16 +844,14 @@
 		#ifdef alignas
 			#undef alignas
 		#endif
-		#ifdef G_WINDOWS
-			#ifdef stdin
-				#undef stdin
-			#endif
-			#ifdef stdout
-				#undef stdout
-			#endif
-			#ifdef stderr
-				#undef stderr
-			#endif
+		#ifdef stdin
+			#undef stdin
+		#endif
+		#ifdef stdout
+			#undef stdout
+		#endif
+		#ifdef stderr
+			#undef stderr
 		#endif
 
 		/* Define a few Windows-style types under unix

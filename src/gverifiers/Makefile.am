@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -17,14 +17,6 @@
 
 noinst_LIBRARIES = libgverifiers.a
 
-if GCONFIG_EXTRA_VERIFIERS
- VERIFIER_SOURCES = # gextraverifier.cpp gextraverifier.h
- VERIFIER_EXTRA_DIST =
-else
- VERIFIER_SOURCES =
- VERIFIER_EXTRA_DIST = # gextraverifier.cpp gextraverifier.h
-endif
-
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/glib \
 	-I$(top_srcdir)/src/gssl \
@@ -35,7 +27,6 @@ AM_CPPFLAGS = \
 	-DG_LIB_SMALL
 
 libgverifiers_a_SOURCES = \
-	$(VERIFIER_SOURCES) \
 	gexecutableverifier.cpp \
 	gexecutableverifier.h \
 	gnetworkverifier.cpp \
@@ -46,7 +37,4 @@ libgverifiers_a_SOURCES = \
 	guserverifier.h \
 	gverifierfactory.cpp \
 	gverifierfactory.h
-
-EXTRA_DIST = \
-	$(VERIFIER_EXTRA_DIST)
 

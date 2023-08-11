@@ -127,6 +127,7 @@ CONFIG_CLEAN_VPATH_FILES =
 am__EXEEXT_1 = emailrelay_test_scanner$(EXEEXT) \
 	emailrelay_test_client$(EXEEXT) \
 	emailrelay_test_server$(EXEEXT) \
+	emailrelay_test_dnsserver$(EXEEXT) \
 	emailrelay_test_verifier$(EXEEXT)
 @GCONFIG_TESTING_TRUE@am__EXEEXT_2 = $(am__EXEEXT_1)
 am_emailrelay_test_client_OBJECTS = emailrelay_test_client.$(OBJEXT)
@@ -135,6 +136,17 @@ am__DEPENDENCIES_1 =
 emailrelay_test_client_DEPENDENCIES = $(am__DEPENDENCIES_1)
 emailrelay_test_client_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(emailrelay_test_client_LDFLAGS) $(LDFLAGS) -o $@
+am_emailrelay_test_dnsserver_OBJECTS =  \
+	emailrelay_test_dnsserver.$(OBJEXT)
+emailrelay_test_dnsserver_OBJECTS =  \
+	$(am_emailrelay_test_dnsserver_OBJECTS)
+emailrelay_test_dnsserver_DEPENDENCIES =  \
+	$(top_builddir)/src/gnet/libgnet.a \
+	$(top_builddir)/src/gssl/libgssl.a \
+	$(top_builddir)/src/win32/libwin32.a $(COMMON_LDADD) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+emailrelay_test_dnsserver_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
+	$(emailrelay_test_dnsserver_LDFLAGS) $(LDFLAGS) -o $@
 am_emailrelay_test_scanner_OBJECTS =  \
 	emailrelay_test_scanner.$(OBJEXT)
 emailrelay_test_scanner_OBJECTS =  \
@@ -142,7 +154,7 @@ emailrelay_test_scanner_OBJECTS =  \
 emailrelay_test_scanner_DEPENDENCIES =  \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gssl/libgssl.a \
-	$(top_builddir)/src/win32/libextra.a $(COMMON_LDADD) \
+	$(top_builddir)/src/win32/libwin32.a $(COMMON_LDADD) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 emailrelay_test_scanner_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(emailrelay_test_scanner_LDFLAGS) $(LDFLAGS) -o $@
@@ -151,7 +163,7 @@ emailrelay_test_server_OBJECTS = $(am_emailrelay_test_server_OBJECTS)
 emailrelay_test_server_DEPENDENCIES =  \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gssl/libgssl.a \
-	$(top_builddir)/src/win32/libextra.a $(COMMON_LDADD) \
+	$(top_builddir)/src/win32/libwin32.a $(COMMON_LDADD) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 emailrelay_test_server_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(emailrelay_test_server_LDFLAGS) $(LDFLAGS) -o $@
@@ -162,7 +174,7 @@ emailrelay_test_verifier_OBJECTS =  \
 emailrelay_test_verifier_DEPENDENCIES =  \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gssl/libgssl.a \
-	$(top_builddir)/src/win32/libextra.a $(COMMON_LDADD) \
+	$(top_builddir)/src/win32/libwin32.a $(COMMON_LDADD) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 emailrelay_test_verifier_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(emailrelay_test_verifier_LDFLAGS) $(LDFLAGS) -o $@
@@ -182,6 +194,7 @@ DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/emailrelay_test_client.Po \
+	./$(DEPDIR)/emailrelay_test_dnsserver.Po \
 	./$(DEPDIR)/emailrelay_test_scanner.Po \
 	./$(DEPDIR)/emailrelay_test_server.Po \
 	./$(DEPDIR)/emailrelay_test_verifier.Po
@@ -200,10 +213,12 @@ am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
 SOURCES = $(emailrelay_test_client_SOURCES) \
+	$(emailrelay_test_dnsserver_SOURCES) \
 	$(emailrelay_test_scanner_SOURCES) \
 	$(emailrelay_test_server_SOURCES) \
 	$(emailrelay_test_verifier_SOURCES)
 DIST_SOURCES = $(emailrelay_test_client_SOURCES) \
+	$(emailrelay_test_dnsserver_SOURCES) \
 	$(emailrelay_test_scanner_SOURCES) \
 	$(emailrelay_test_server_SOURCES) \
 	$(emailrelay_test_verifier_SOURCES)
@@ -228,6 +243,7 @@ am__recursive_targets = \
   $(am__extra_recursive_targets)
 AM_RECURSIVE_TARGETS = $(am__recursive_targets:-recursive=) TAGS CTAGS \
 	check recheck distdir distdir-am
+am__extra_recursive_targets = extra-recursive
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 # Read a list of newline-separated strings from the standard input,
 # and print each of them once, without duplicates.  Input order is
@@ -485,6 +501,7 @@ ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
+ARFLAGS = @ARFLAGS@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
@@ -574,7 +591,7 @@ e_docdir = @e_docdir@
 e_examplesdir = @e_examplesdir@
 e_icondir = @e_icondir@
 e_initdir = @e_initdir@
-e_libexecdir = @e_libexecdir@
+e_libdir = @e_libdir@
 e_pamdir = @e_pamdir@
 e_rundir = @e_rundir@
 e_spooldir = @e_spooldir@
@@ -611,13 +628,22 @@ helper_programs = \
 	emailrelay_test_scanner \
 	emailrelay_test_client \
 	emailrelay_test_server \
+	emailrelay_test_dnsserver \
 	emailrelay_test_verifier
+
+helper_programs_win32 = \
+	emailrelay_test_scanner.exe \
+	emailrelay_test_client.exe \
+	emailrelay_test_server.exe \
+	emailrelay_test_dnsserver.exe \
+	emailrelay_test_verifier.exe
 
 helper_sources = \
 	emailrelay_test_keygen.cpp \
 	emailrelay_test_scanner.cpp \
 	emailrelay_test_client.cpp \
 	emailrelay_test_server.cpp \
+	emailrelay_test_dnsserver.cpp \
 	emailrelay_test_verifier.cpp
 
 other_scripts = \
@@ -649,6 +675,7 @@ test_names = \
 	testServerPolling.test \
 	testServerWithBadClient.test \
 	testServerSizeLimit.test \
+	testClientAccountSelection.test \
 	testClientContinuesIfNoSecrets.test \
 	testClientSavesReasonCode.test \
 	testFilter.test \
@@ -666,7 +693,16 @@ test_names = \
 	testNetworkVerifierPass.test \
 	testNetworkVerifierFail.test \
 	testProxyConnectsOnce.test \
+	testProxyServerRejection.test \
+	testProxyClientFilterFails.test \
+	testProxyRoutingFilterFails.test \
 	testDelivery.test \
+	testSplitFilter.test \
+	testSplitFilterRaw.test \
+	testSplitFilterWithVerifier.test \
+	testRouting.test \
+	testRoutingWithClientAccountSelection.test \
+	testRoutingWithSplitAndMxFilters.test \
 	testClientFilterPass.test \
 	testClientFilterBlock.test \
 	testClientNetworkFilter.test \
@@ -675,6 +711,7 @@ test_names = \
 	testClientMessageFailure.test \
 	testClientInvalidRecipients.test \
 	testClientInvalidRecipientsWithForwardToSome.test \
+	testClientFailsMessagesWithNoRemoteRecipients.test \
 	testTlsServerNoClientCertificateNoVerifyAccepted.test \
 	testTlsServerNoClientCertificateVerifyRejected.test \
 	testTlsServerNoCaAccepted.test \
@@ -696,6 +733,7 @@ test_names = \
 modules = \
 	AdminClient.pm \
 	Check.pm \
+	DnsServer.pm \
 	Filter.pm \
 	Helper.pm \
 	NetClient.pm \
@@ -749,7 +787,7 @@ emailrelay_test_scanner_SOURCES = emailrelay_test_scanner.cpp
 emailrelay_test_scanner_LDADD = \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gssl/libgssl.a \
-	$(top_builddir)/src/win32/libextra.a \
+	$(top_builddir)/src/win32/libwin32.a \
 	$(COMMON_LDADD) \
 	$(GCONFIG_TLS_LIBS) \
 	$(SYS_LIBS)
@@ -759,7 +797,17 @@ emailrelay_test_server_SOURCES = emailrelay_test_server.cpp
 emailrelay_test_server_LDADD = \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gssl/libgssl.a \
-	$(top_builddir)/src/win32/libextra.a \
+	$(top_builddir)/src/win32/libwin32.a \
+	$(COMMON_LDADD) \
+	$(GCONFIG_TLS_LIBS) \
+	$(SYS_LIBS)
+
+emailrelay_test_dnsserver_SOURCES = emailrelay_test_dnsserver.cpp
+@GCONFIG_WINDOWS_TRUE@emailrelay_test_dnsserver_LDFLAGS = -static
+emailrelay_test_dnsserver_LDADD = \
+	$(top_builddir)/src/gnet/libgnet.a \
+	$(top_builddir)/src/gssl/libgssl.a \
+	$(top_builddir)/src/win32/libwin32.a \
 	$(COMMON_LDADD) \
 	$(GCONFIG_TLS_LIBS) \
 	$(SYS_LIBS)
@@ -774,7 +822,7 @@ emailrelay_test_verifier_SOURCES = emailrelay_test_verifier.cpp
 emailrelay_test_verifier_LDADD = \
 	$(top_builddir)/src/gnet/libgnet.a \
 	$(top_builddir)/src/gssl/libgssl.a \
-	$(top_builddir)/src/win32/libextra.a \
+	$(top_builddir)/src/win32/libwin32.a \
 	$(COMMON_LDADD) \
 	$(GCONFIG_TLS_LIBS) \
 	$(SYS_LIBS)
@@ -820,6 +868,10 @@ emailrelay_test_client$(EXEEXT): $(emailrelay_test_client_OBJECTS) $(emailrelay_
 	@rm -f emailrelay_test_client$(EXEEXT)
 	$(AM_V_CXXLD)$(emailrelay_test_client_LINK) $(emailrelay_test_client_OBJECTS) $(emailrelay_test_client_LDADD) $(LIBS)
 
+emailrelay_test_dnsserver$(EXEEXT): $(emailrelay_test_dnsserver_OBJECTS) $(emailrelay_test_dnsserver_DEPENDENCIES) $(EXTRA_emailrelay_test_dnsserver_DEPENDENCIES) 
+	@rm -f emailrelay_test_dnsserver$(EXEEXT)
+	$(AM_V_CXXLD)$(emailrelay_test_dnsserver_LINK) $(emailrelay_test_dnsserver_OBJECTS) $(emailrelay_test_dnsserver_LDADD) $(LIBS)
+
 emailrelay_test_scanner$(EXEEXT): $(emailrelay_test_scanner_OBJECTS) $(emailrelay_test_scanner_DEPENDENCIES) $(EXTRA_emailrelay_test_scanner_DEPENDENCIES) 
 	@rm -f emailrelay_test_scanner$(EXEEXT)
 	$(AM_V_CXXLD)$(emailrelay_test_scanner_LINK) $(emailrelay_test_scanner_OBJECTS) $(emailrelay_test_scanner_LDADD) $(LIBS)
@@ -839,6 +891,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emailrelay_test_client.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emailrelay_test_dnsserver.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emailrelay_test_scanner.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emailrelay_test_server.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emailrelay_test_verifier.Po@am__quote@ # am--include-marker
@@ -896,6 +949,7 @@ $(am__recursive_targets):
 	if test "$$dot_seen" = "no"; then \
 	  $(MAKE) $(AM_MAKEFLAGS) "$$target-am" || exit 1; \
 	fi; test -z "$$fail"
+extra-local: 
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique
@@ -1237,6 +1291,7 @@ clean-am: clean-checkPROGRAMS clean-generic mostlyclean-am
 
 distclean: distclean-recursive
 		-rm -f ./$(DEPDIR)/emailrelay_test_client.Po
+	-rm -f ./$(DEPDIR)/emailrelay_test_dnsserver.Po
 	-rm -f ./$(DEPDIR)/emailrelay_test_scanner.Po
 	-rm -f ./$(DEPDIR)/emailrelay_test_server.Po
 	-rm -f ./$(DEPDIR)/emailrelay_test_verifier.Po
@@ -1247,6 +1302,10 @@ distclean-am: clean-am distclean-compile distclean-generic \
 dvi: dvi-recursive
 
 dvi-am:
+
+extra: extra-recursive
+
+extra-am: extra-local
 
 html: html-recursive
 
@@ -1286,6 +1345,7 @@ installcheck-am:
 
 maintainer-clean: maintainer-clean-recursive
 		-rm -f ./$(DEPDIR)/emailrelay_test_client.Po
+	-rm -f ./$(DEPDIR)/emailrelay_test_dnsserver.Po
 	-rm -f ./$(DEPDIR)/emailrelay_test_scanner.Po
 	-rm -f ./$(DEPDIR)/emailrelay_test_server.Po
 	-rm -f ./$(DEPDIR)/emailrelay_test_verifier.Po
@@ -1312,22 +1372,23 @@ uninstall-am:
 	am--depfiles check check-TESTS check-am clean \
 	clean-checkPROGRAMS clean-generic cscopelist-am ctags ctags-am \
 	distclean distclean-compile distclean-generic distclean-tags \
-	distdir dvi dvi-am html html-am info info-am install \
-	install-am install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am install-man \
-	install-pdf install-pdf-am install-ps install-ps-am \
-	install-strip installcheck installcheck-am installdirs \
-	installdirs-am maintainer-clean maintainer-clean-generic \
-	mostlyclean mostlyclean-compile mostlyclean-generic pdf pdf-am \
-	ps ps-am recheck tags tags-am uninstall uninstall-am
+	distdir dvi dvi-am extra-am extra-local html html-am info \
+	info-am install install-am install-data install-data-am \
+	install-dvi install-dvi-am install-exec install-exec-am \
+	install-html install-html-am install-info install-info-am \
+	install-man install-pdf install-pdf-am install-ps \
+	install-ps-am install-strip installcheck installcheck-am \
+	installdirs installdirs-am maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic pdf pdf-am ps ps-am recheck tags tags-am \
+	uninstall uninstall-am
 
 .PRECIOUS: Makefile
 
 
 .PHONY: programs
-@GCONFIG_WINDOWS_TRUE@programs: emailrelay_test_keygen.exe emailrelay_test_scanner.exe emailrelay_test_client.exe emailrelay_test_server.exe emailrelay_test_verifier.exe
-@GCONFIG_WINDOWS_FALSE@programs: $(utility_programs) $(helper_programs)
+@GCONFIG_WINDOWS_TRUE@programs: $(helper_programs_win32) emailrelay_test_keygen.exe
+@GCONFIG_WINDOWS_FALSE@programs: $(helper_programs)
 
 # the .test files are empty files passed to emailrelay_test.sh
 $(test_names):

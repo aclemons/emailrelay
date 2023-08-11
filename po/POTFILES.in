@@ -8,7 +8,6 @@
 ./src/gauth/gsecretsfile.cpp
 ./src/gauth/gsaslclient.cpp
 ./src/gauth/gsaslclientsecrets.cpp
-./src/gauth/gvalid.cpp
 ./src/gauth/gsaslserverfactory_basic.cpp
 ./src/gauth/gsaslserverfactory_pam.cpp
 ./src/gauth/gsecrets.cpp
@@ -40,11 +39,9 @@
 ./src/main/run.cpp
 ./src/main/commandline.cpp
 ./src/main/licence.cpp
-./src/main/filter.cpp
 ./src/main/winmain.cpp
 ./src/main/legal.cpp
 ./src/main/output.cpp
-./src/main/verifierfactory.cpp
 ./src/main/winmenu.cpp
 ./src/gsmtp/gsmtpserverprotocol.cpp
 ./src/gsmtp/gsmtpclientreply.cpp
@@ -53,6 +50,7 @@
 ./src/gsmtp/gsmtpserver.cpp
 ./src/gsmtp/gprotocolmessageforward.cpp
 ./src/gsmtp/gsmtpclientprotocol.cpp
+./src/gsmtp/gsmtpforward.cpp
 ./src/gsmtp/gfilter.cpp
 ./src/gsmtp/gsmtpservertext.cpp
 ./src/gsmtp/gsmtpclient.cpp
@@ -196,6 +194,7 @@
 ./src/gfilters/gfilterchain.cpp
 ./src/gfilters/gsplitfilter.cpp
 ./src/gfilters/gmxlookup.cpp
+./src/gfilters/gmessageidfilter.cpp
 ./src/gfilters/gmxfilter.cpp
 ./src/gfilters/gcopyfilter.cpp
 ./src/gfilters/gfilterfactory.cpp

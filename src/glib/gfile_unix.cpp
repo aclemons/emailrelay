@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -166,11 +166,11 @@ int G::File::mkdirImp( const Path & dir ) noexcept
 	}
 }
 
-G::File::Stat G::File::statImp( const char * path , bool link ) noexcept
+G::File::Stat G::File::statImp( const char * path , bool read_symlink ) noexcept
 {
 	Stat s ;
 	struct stat statbuf {} ;
-	if( 0 == ( link ? (::lstat(path,&statbuf)) : (::stat(path,&statbuf)) ) )
+	if( 0 == ( read_symlink ? (::lstat(path,&statbuf)) : (::stat(path,&statbuf)) ) )
 	{
 		s.error = 0 ;
 		s.enoent = false ;
@@ -184,6 +184,9 @@ G::File::Stat G::File::statImp( const char * path , bool link ) noexcept
 		s.mode = static_cast<unsigned long>( statbuf.st_mode & mode_t(07777) ) ; // NOLINT
 		s.size = static_cast<unsigned long long>( statbuf.st_size ) ;
 		s.blocks = static_cast<unsigned long long>(statbuf.st_size) >> 24U ;
+		s.uid = statbuf.st_uid ;
+		s.gid = statbuf.st_gid ;
+		s.inherit = s.is_dir && ( G::is_bsd() || ( statbuf.st_mode & S_ISGID ) ) ;
 	}
 	else
 	{
@@ -338,6 +341,11 @@ bool G::File::chgrp( const Path & path , const std::string & group , std::nothro
 	return 0 == ::chown( path.cstr() , -1 , Identity::lookupGroup(group) ) ;
 }
 #endif
+
+bool G::File::chgrp( const Path & path , gid_t group_id , std::nothrow_t )
+{
+	return 0 == ::chown( path.cstr() , -1 , group_id ) ;
+}
 
 bool G::File::hardlink( const Path & src , const Path & dst , std::nothrow_t )
 {

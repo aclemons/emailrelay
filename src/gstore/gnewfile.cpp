@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -51,7 +51,7 @@ GStore::NewFile::NewFile( FileStore & store , const std::string & from ,
 	m_env.utf8_mailboxes = smtp_info.utf8address ;
 
 	// ask the store for a content stream
-	G_LOG( "GStore::NewFile: content: new file [" << cpath().basename() << "]" ) ;
+	G_LOG( "GStore::NewFile: new content file [" << cpath().basename() << "]" ) ;
 	m_content = m_store.stream( cpath() ) ;
 }
 
@@ -71,11 +71,13 @@ void GStore::NewFile::cleanup()
 	m_content.reset() ;
 	if( !m_committed )
 	{
-		G_DEBUG( "GStore::NewFile::cleanup: envelope: deleting [" << epath(State::New).basename() << "]" ) ;
+		G_DEBUG( "GStore::NewFile::cleanup: deleting envelope [" << epath(State::New).basename() << "]" ) ;
 		FileOp::remove( epath(State::New) ) ;
 
-		G_DEBUG( "GStore::NewFile::cleanup: content: deleting [" << cpath().basename() << "]" ) ;
+		G_DEBUG( "GStore::NewFile::cleanup: deleting content [" << cpath().basename() << "]" ) ;
 		FileOp::remove( cpath() ) ;
+
+		static_cast<MessageStore&>(m_store).updated() ;
 	}
 }
 
@@ -104,8 +106,7 @@ void GStore::NewFile::commit( bool throw_on_error )
 	m_saved = FileOp::rename( epath(State::New) , epath(State::Normal) ) ;
 	if( !m_saved && throw_on_error )
 		throw FileError( "cannot rename envelope file to " + epath(State::Normal).str() ) ;
-	if( m_saved )
-		static_cast<MessageStore&>(m_store).updated() ;
+	static_cast<MessageStore&>(m_store).updated() ;
 }
 
 void GStore::NewFile::addTo( const std::string & to , bool local , bool utf8address )
@@ -157,7 +158,7 @@ std::size_t GStore::NewFile::contentSize() const
 
 void GStore::NewFile::saveEnvelope( Envelope & env , const G::Path & path )
 {
-	G_LOG( "GStore::NewFile: envelope: new file [" << path.basename() << "]" ) ;
+	G_LOG( "GStore::NewFile: new envelope file [" << path.basename() << "]" ) ;
 	std::unique_ptr<std::ofstream> envelope_stream = m_store.stream( path ) ;
 	env.endpos = GStore::Envelope::write( *envelope_stream , env ) ;
 	env.crlf = true ;

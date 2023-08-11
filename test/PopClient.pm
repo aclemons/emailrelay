@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@ sub new
 		m_server => $server ,
 		m_prompt => qr/\+OK[^\n]*\n/ ,
 		m_timeout => 10 ,
-		m_s => undef ,
+		m_nc => undef ,
 	) ;
 	return bless \%me , $classname ;
 }
@@ -61,25 +61,25 @@ sub open
 	my ( $this , $wait ) = @_ ;
 	$wait = defined($wait) ? $wait : 1 ;
 
-	$this->{m_s} = NetClient::newSocket( $this ) ;
-	return undef if !$this->{m_s} ;
-	NetClient::read( $this , undef , -1 ) if $wait ;
+	$this->{m_nc} = new NetClient( $this->{m_port} , $this->{m_server} , $this->{m_timeout} , $this->{m_prompt} ) ;
+	$this->{m_nc}->read( undef , -1 ) if $wait ;
 	return 1 ;
 }
 
 sub login
 {
 	my ( $this , $name , $pwd ) = @_ ;
-	NetClient::cmd( $this , "user $name" ) ;
-	NetClient::cmd( $this , "pass $pwd" ) ;
+	$this->{m_nc}->cmd( "user $name" ) ;
+	$this->{m_nc}->cmd( "pass $pwd" ) ;
 	return 1 ;
 }
 
 sub list
 {
 	my ( $this , $read_slowly__not_used ) = @_ ;
-	my $s = NetClient::cmd( $this , "list" , qr/\.\r\n/ ) ;
-	$s =~ s/$$this{m_prompt}// ;
+	my $s = $this->{m_nc}->cmd( "list" , qr/\.\r\n/ ) ;
+	$s =~ s/^$$this{m_prompt}// ;
+	$s =~ s/\.\r\n$// ;
 	$s =~ s/\r//g ;
 	return split( /\n/ , $s ) ;
 }
@@ -87,8 +87,7 @@ sub list
 sub disconnect
 {
 	my ( $this ) = @_ ;
-	$this->{m_s}->close() ;
-	$this->{m_s} = undef ;
+	$this->{m_nc} = undef ;
 }
 
 1 ;

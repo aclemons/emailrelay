@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -77,6 +77,7 @@ private:
 private:
 	std::string m_id ;
 	Filter::Exit m_exit ;
+	bool m_quiet ;
 	G::TimeInterval m_timeout ;
 	GNet::Timer<NullFilter> m_timer ;
 	G::Slot::Signal<int> m_done_signal ;

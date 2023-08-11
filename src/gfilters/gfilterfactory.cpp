@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@
 #include "gexecutablefilter.h"
 #include "gspamfilter.h"
 #include "gdeliveryfilter.h"
+#include "gmessageidfilter.h"
 #include "gcopyfilter.h"
 #include "gmxfilter.h"
 #include "gsplitfilter.h"
@@ -99,6 +100,10 @@ GFilters::FilterFactory::Spec GFilters::FilterFactory::parse( const std::string 
 	{
 		result = Spec( "mx" , tail ) ;
 	}
+	else if( G::Str::headMatch( spec_in , "msgid:" ) )
+	{
+		result = Spec( "msgid" , tail ) ;
+	}
 	else if( G::Str::headMatch( spec_in , "file:" ) )
 	{
 		result = Spec( "file" , tail ) ;
@@ -111,19 +116,17 @@ GFilters::FilterFactory::Spec GFilters::FilterFactory::parse( const std::string 
 		fixFile( result , base_dir , app_dir ) ;
 		checkFile( result , warnings_p ) ;
 	}
-
-	G_ASSERT( !result.first.empty() ) ;
 	return result ;
 }
 
 std::unique_ptr<GSmtp::Filter> GFilters::FilterFactory::newFilter( GNet::ExceptionSink es ,
 	GSmtp::Filter::Type filter_type , const GSmtp::Filter::Config & filter_config ,
-	const FilterFactory::Spec & spec , const std::string & log_prefix )
+	const FilterFactory::Spec & spec )
 {
 	if( spec.first == "chain" )
 	{
 		// (one level of recursion -- FilterChain::ctor calls newFilter())
-		return std::make_unique<FilterChain>( es , *this , filter_type , filter_config , spec , log_prefix ) ;
+		return std::make_unique<FilterChain>( es , *this , filter_type , filter_config , spec ) ;
 	}
 	else if( spec.first == "spam" )
 	{
@@ -149,7 +152,7 @@ std::unique_ptr<GSmtp::Filter> GFilters::FilterFactory::newFilter( GNet::Excepti
 	}
 	else if( spec.first == "file" )
 	{
-		return std::make_unique<ExecutableFilter>( es , m_file_store , filter_type , filter_config , spec.second , log_prefix ) ;
+		return std::make_unique<ExecutableFilter>( es , m_file_store , filter_type , filter_config , spec.second ) ;
 	}
 	else if( spec.first == "deliver" )
 	{
@@ -166,6 +169,10 @@ std::unique_ptr<GSmtp::Filter> GFilters::FilterFactory::newFilter( GNet::Excepti
 	else if( spec.first == "mx" )
 	{
 		return std::make_unique<MxFilter>( es , m_file_store , filter_type , filter_config , spec.second ) ;
+	}
+	else if( spec.first == "msgid" )
+	{
+		return std::make_unique<MessageIdFilter>( es , m_file_store , filter_type , filter_config , spec.second ) ;
 	}
 	else
 	{

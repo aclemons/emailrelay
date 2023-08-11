@@ -102,7 +102,6 @@ CONFIG_HEADER = $(top_builddir)/src/gconfig_defs.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
-ARFLAGS = cru
 AM_V_AR = $(am__v_AR_@AM_V@)
 am__v_AR_ = $(am__v_AR_@AM_DEFAULT_V@)
 am__v_AR_0 = @echo "  AR      " $@;
@@ -118,6 +117,16 @@ am__libgpop_a_SOURCES_DIST = gpop_disabled.cpp gpop.h gpop_enabled.cpp \
 @GCONFIG_POP_TRUE@	gpopserverprotocol.$(OBJEXT)
 am_libgpop_a_OBJECTS = $(am__objects_1)
 libgpop_a_OBJECTS = $(am_libgpop_a_OBJECTS)
+libgpopextra_a_AR = $(AR) $(ARFLAGS)
+libgpopextra_a_LIBADD =
+am__libgpopextra_a_SOURCES_DIST = gpop_enabled.cpp gpopserver.cpp \
+	gpopstore.cpp gpopserverprotocol.cpp gpop_disabled.cpp
+@GCONFIG_POP_FALSE@am__objects_2 = gpop_enabled.$(OBJEXT) \
+@GCONFIG_POP_FALSE@	gpopserver.$(OBJEXT) gpopstore.$(OBJEXT) \
+@GCONFIG_POP_FALSE@	gpopserverprotocol.$(OBJEXT)
+@GCONFIG_POP_TRUE@am__objects_2 = gpop_disabled.$(OBJEXT)
+am_libgpopextra_a_OBJECTS = $(am__objects_2)
+libgpopextra_a_OBJECTS = $(am_libgpopextra_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -162,13 +171,15 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(libgpop_a_SOURCES)
-DIST_SOURCES = $(am__libgpop_a_SOURCES_DIST)
+SOURCES = $(libgpop_a_SOURCES) $(libgpopextra_a_SOURCES)
+DIST_SOURCES = $(am__libgpop_a_SOURCES_DIST) \
+	$(am__libgpopextra_a_SOURCES_DIST)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
+am__extra_recursive_targets = extra-recursive
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 # Read a list of newline-separated strings from the standard input,
 # and print each of them once, without duplicates.  Input order is
@@ -194,6 +205,7 @@ ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
+ARFLAGS = @ARFLAGS@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
@@ -283,7 +295,7 @@ e_docdir = @e_docdir@
 e_examplesdir = @e_examplesdir@
 e_icondir = @e_icondir@
 e_initdir = @e_initdir@
-e_libexecdir = @e_libexecdir@
+e_libdir = @e_libdir@
 e_pamdir = @e_pamdir@
 e_rundir = @e_rundir@
 e_spooldir = @e_spooldir@
@@ -316,17 +328,16 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-@GCONFIG_POP_FALSE@EXTRA_DIST = \
-@GCONFIG_POP_FALSE@	gpop_enabled.cpp \
-@GCONFIG_POP_FALSE@	gpopserver.cpp \
-@GCONFIG_POP_FALSE@	gpopserver.h \
-@GCONFIG_POP_FALSE@	gpopstore.cpp \
-@GCONFIG_POP_FALSE@	gpopstore.h \
-@GCONFIG_POP_FALSE@	gpopserverprotocol.cpp \
-@GCONFIG_POP_FALSE@	gpopserverprotocol.h
-
-@GCONFIG_POP_TRUE@EXTRA_DIST = \
-@GCONFIG_POP_TRUE@	gpop_disabled.cpp
+noinst_LIBRARIES = libgpop.a
+EXTRA_LIBRARIES = libgpopextra.a
+AM_CPPFLAGS = \
+	-I$(top_srcdir)/src/glib \
+	-I$(top_srcdir)/src/gssl \
+	-I$(top_srcdir)/src/gnet \
+	-I$(top_srcdir)/src/gauth \
+	-D "G_SPOOLDIR=$(e_spooldir)" \
+	-D "G_SYSCONFDIR=$(e_sysconfdir)" \
+	-D G_LIB_SMALL
 
 @GCONFIG_POP_FALSE@POP_SOURCES = \
 @GCONFIG_POP_FALSE@	gpop_disabled.cpp \
@@ -342,17 +353,36 @@ top_srcdir = @top_srcdir@
 @GCONFIG_POP_TRUE@	gpopserverprotocol.cpp \
 @GCONFIG_POP_TRUE@	gpopserverprotocol.h
 
-AM_CPPFLAGS = \
-	-I$(top_srcdir)/src/glib \
-	-I$(top_srcdir)/src/gssl \
-	-I$(top_srcdir)/src/gnet \
-	-I$(top_srcdir)/src/gauth \
-	-D "G_SPOOLDIR=$(e_spooldir)" \
-	-D "G_SYSCONFDIR=$(e_sysconfdir)" \
-	-D G_LIB_SMALL
+@GCONFIG_POP_FALSE@POP_EXTRA_SOURCES = \
+@GCONFIG_POP_FALSE@	gpop_enabled.cpp \
+@GCONFIG_POP_FALSE@	gpopserver.cpp \
+@GCONFIG_POP_FALSE@	gpopstore.cpp \
+@GCONFIG_POP_FALSE@	gpopserverprotocol.cpp
 
-noinst_LIBRARIES = libgpop.a
-libgpop_a_SOURCES = $(POP_SOURCES)
+@GCONFIG_POP_TRUE@POP_EXTRA_SOURCES = \
+@GCONFIG_POP_TRUE@	gpop_disabled.cpp
+
+@GCONFIG_POP_FALSE@POP_EXTRA_DIST = \
+@GCONFIG_POP_FALSE@	gpop_enabled.cpp \
+@GCONFIG_POP_FALSE@	gpopserver.cpp \
+@GCONFIG_POP_FALSE@	gpopserver.h \
+@GCONFIG_POP_FALSE@	gpopstore.cpp \
+@GCONFIG_POP_FALSE@	gpopstore.h \
+@GCONFIG_POP_FALSE@	gpopserverprotocol.cpp \
+@GCONFIG_POP_FALSE@	gpopserverprotocol.h
+
+@GCONFIG_POP_TRUE@POP_EXTRA_DIST = \
+@GCONFIG_POP_TRUE@	gpop_disabled.cpp
+
+EXTRA_DIST = \
+	$(POP_EXTRA_DIST)
+
+libgpop_a_SOURCES = \
+	$(POP_SOURCES)
+
+libgpopextra_a_SOURCES = \
+	$(POP_EXTRA_SOURCES)
+
 all: all-am
 
 .SUFFIXES:
@@ -395,6 +425,11 @@ libgpop.a: $(libgpop_a_OBJECTS) $(libgpop_a_DEPENDENCIES) $(EXTRA_libgpop_a_DEPE
 	$(AM_V_AR)$(libgpop_a_AR) libgpop.a $(libgpop_a_OBJECTS) $(libgpop_a_LIBADD)
 	$(AM_V_at)$(RANLIB) libgpop.a
 
+libgpopextra.a: $(libgpopextra_a_OBJECTS) $(libgpopextra_a_DEPENDENCIES) $(EXTRA_libgpopextra_a_DEPENDENCIES) 
+	$(AM_V_at)-rm -f libgpopextra.a
+	$(AM_V_AR)$(libgpopextra_a_AR) libgpopextra.a $(libgpopextra_a_OBJECTS) $(libgpopextra_a_LIBADD)
+	$(AM_V_at)$(RANLIB) libgpopextra.a
+
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 
@@ -426,6 +461,7 @@ am--depfiles: $(am__depfiles_remade)
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+extra-local: 
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique
@@ -564,6 +600,10 @@ dvi: dvi-am
 
 dvi-am:
 
+extra: extra-am
+
+extra-am: extra-local
+
 html: html-am
 
 html-am:
@@ -628,18 +668,21 @@ uninstall-am:
 .PHONY: CTAGS GTAGS TAGS all all-am am--depfiles check check-am clean \
 	clean-generic clean-noinstLIBRARIES cscopelist-am ctags \
 	ctags-am distclean distclean-compile distclean-generic \
-	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am install-man \
-	install-pdf install-pdf-am install-ps install-ps-am \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
-	tags tags-am uninstall uninstall-am
+	distclean-tags distdir dvi dvi-am extra-am extra-local html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-dvi install-dvi-am install-exec \
+	install-exec-am install-html install-html-am install-info \
+	install-info-am install-man install-pdf install-pdf-am \
+	install-ps install-ps-am install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic pdf pdf-am ps ps-am tags tags-am uninstall \
+	uninstall-am
 
 .PRECIOUS: Makefile
 
+
+extra-local: libgpopextra.a
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

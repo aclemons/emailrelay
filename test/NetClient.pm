@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,11 +22,11 @@
 #
 # Synopsis:
 #
-#	$client = { m_timeout=>... , m_port=>... , m_server->... , m_prompt=>... , m_s=>... } ;
-#	$client->m_s = NetClient::newSocket( $client ) ;
-#	NetClient::send( $client , $tx ) ;
-#	$rx = NetClient::read( $client , $prompt , $timeout ) ;
-#	$rsp = NetClient::cmd( $client , $req ) ;
+#	$nc = new NetClient( "25" , "localhost" , 10 , "OK>" ) ;
+#	$nc->send( $tx ) ;
+#	$rx = $nc->read() ;
+#	$rsp = $nc->cmd( $req ) ;
+#   $nc->close() ;
 #
 
 use strict ;
@@ -37,17 +37,32 @@ use Carp ;
 package NetClient ;
 our $verbose = 0 ;
 
+sub new
+{
+	my ( $classname , $port , $server , $timeout , $prompt ) = @_ ;
+	$prompt ||= "\n" ;
+	my $s = newSocket( $port , $server , $timeout ) ;
+	return undef if !defined($s) ;
+	return bless {
+		m_prompt => $prompt ,
+		m_port => $port ,
+		m_server => $server ,
+		m_timeout => $timeout ,
+		m_s => $s ,
+	} , $classname ;
+}
+
 sub newSocket
 {
-	my ( $this ) = @_ ;
+	my ( $port , $server , $connection_timeout ) = @_ ;
 	return new IO::Socket(
 		Domain => IO::Socket::AF_INET ,
 		Type => IO::Socket::SOCK_STREAM ,
 		Proto => 'tcp' ,
 		Blocking => 0 , # but blocking connect
-		Timeout => $this->{m_timeout} , # connect timeout
-		PeerPort => $this->{m_port} ,
-		PeerHost => $this->{m_server} ,
+		Timeout => $connection_timeout ,
+		PeerPort => $port ,
+		PeerHost => $server ,
 	) ;
 }
 
@@ -66,7 +81,8 @@ sub read
 {
 	my ( $this , $prompt , $timeout ) = @_ ;
 
-	$prompt = "\n" if !defined($prompt) ;
+	$prompt = $this->{m_prompt} if !defined($prompt) ;
+	$timeout = $this->{m_timeout} if !defined($timeout) ;
 	$timeout = 99999 if $timeout < 0 ;
 
 	my $loop = new IO::Select or die ;
@@ -88,7 +104,7 @@ sub read
 			_log( $buffer , $prompt ) if $verbose ;
 			if( $buffer =~ m/$prompt/ )
 			{
-				$buffer =~ s/$prompt// ;
+				# (used to strip $prompt from end of $buffer here)
 				return $buffer ;
 			}
 		}
@@ -105,6 +121,13 @@ sub cmd
 	$timeout = $this->{m_timeout} if !defined($timeout) ;
 	NetClient::send( $this , "$tx\r\n" ) ;
 	return NetClient::read( $this , $prompt , $timeout ) ;
+}
+
+sub close
+{
+	my ( $this ) = @_ ;
+	$this->{m_s}->close() ;
+	$this->{m_s} = undef ;
 }
 
 sub _log

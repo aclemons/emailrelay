@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@
 #include "glinebuffer.h"
 #include "gsmtpserverprotocol.h"
 #include "gclientptr.h"
-#include "gsmtpclient.h"
+#include "gsmtpforward.h"
 #include "gstringview.h"
 #include "gstringarray.h"
 #include "gstringmap.h"
@@ -66,10 +66,9 @@ public:
 	bool notifying() const ;
 		///< Returns true if the remote user has asked for notifications.
 
-	void notify( const std::string & s0 , const std::string & s1 ,
-		const std::string & s2 , const std::string & s4 ) ;
-			///< Called when something happens which the remote admin
-			///< user might be interested in.
+	void notify( const std::string & s0 , const std::string & s1 , const std::string & s2 , const std::string & s3 ) ;
+		///< Called when something happens which the remote admin
+		///< user might be interested in.
 
 private: // overrides
 	void onSendComplete() override ; // GNet::BufferedServerPeer
@@ -107,7 +106,7 @@ private:
 	std::string m_prompt ;
 	bool m_blocked ;
 	std::string m_remote_address ;
-	GNet::ClientPtr<GSmtp::Client> m_client_ptr ;
+	GNet::ClientPtr<GSmtp::Forward> m_client_ptr ;
 	bool m_notifying ;
 	G::StringMap m_info_commands ;
 	bool m_with_terminate ;
@@ -185,10 +184,9 @@ public:
 	bool notifying() const ;
 		///< Returns true if the remote user has asked for notifications.
 
-	void notify( const std::string & s0 , const std::string & s1 ,
-		const std::string & s2 , const std::string & s3 ) ;
-			///< Called when something happens which the admin
-			///< users might be interested in.
+	void notify( const std::string & s0 , const std::string & s1 , const std::string & s2 , const std::string & s3 ) ;
+		///< Called when something happens which the admin
+		///< users might be interested in.
 
 protected:
 	std::unique_ptr<GNet::ServerPeer> newPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo && , GNet::MultiServer::ServerInfo ) override ;

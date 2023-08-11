@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -192,7 +192,7 @@ private:
 	void sendLine( G::string_view , bool has_crlf = false ) ;
 	void sendLine( std::string && ) ;
 	void sendLines( std::ostringstream & ) ;
-	void lockStore() ;
+	void readStore( const std::string & ) ;
 	std::string mechanisms() const ;
 	bool mechanismsIncludePlain() const ;
 
@@ -202,7 +202,8 @@ private:
 	Security & m_security ;
 	Store & m_store ;
 	Config m_config ;
-	StoreLock m_store_lock ;
+	std::unique_ptr<StoreUser> m_store_user ;
+	StoreList m_store_list ;
 	std::unique_ptr<GAuth::SaslServer> m_sasl ;
 	GNet::Address m_peer_address ;
 	Fsm m_fsm ;

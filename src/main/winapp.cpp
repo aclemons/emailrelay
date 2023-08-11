@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -302,10 +302,10 @@ bool Main::WinApp::onClose()
 	}
 }
 
-void Main::WinApp::onRunEvent( std::string category , std::string s1 , std::string s2 , std::string s3 )
+void Main::WinApp::onRunEvent( std::string s0 , std::string s1 , std::string s2 , std::string s3 )
 {
 	if( m_form.get() )
-		m_form->setStatus( category , s1 , s2 , s3 ) ;
+		m_form->setStatus( s0 , s1 , s2 , s3 ) ;
 }
 
 void Main::WinApp::onWindowException( std::exception & e )

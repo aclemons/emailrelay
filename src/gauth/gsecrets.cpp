@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
 
 namespace GAuth
 {
-	namespace SecretsImp
+	namespace SecretsImp /// An implementation namespace for GAuth::Secrets.
 	{
 		bool pam( const std::string & s )
 		{
@@ -46,7 +46,7 @@ namespace GAuth
 		}
 		void check( const std::string & s )
 		{
-			if( plain(s) )
+			if( plain(s) ) // account on the command-line, no secrets file
 			{
 				std::string id ;
 				std::string pwd ;
@@ -55,7 +55,7 @@ namespace GAuth
 			}
 			else
 			{
-				SecretsFile::check( s ) ;
+				SecretsFile::check( s , true ) ;
 			}
 		}
 	}
@@ -65,8 +65,8 @@ void GAuth::Secrets::check( const std::string & c , const std::string & s , cons
 {
 	namespace imp = SecretsImp ;
 	if( !c.empty() ) imp::check( c ) ;
-	if( !s.empty() && !imp::pam(s) && s != c ) SecretsFile::check( s ) ;
-	if( !p.empty() && !imp::pam(p) && p != s && p != c ) SecretsFile::check( p ) ;
+	if( !s.empty() && !imp::pam(s) && s != c ) SecretsFile::check( s , true ) ;
+	if( !p.empty() && !imp::pam(p) && p != s && p != c ) SecretsFile::check( p , true ) ;
 }
 
 std::unique_ptr<GAuth::SaslServerSecrets> GAuth::Secrets::newServerSecrets( const std::string & path ,
@@ -94,12 +94,27 @@ GAuth::SecretsFileClient::SecretsFileClient( const std::string & path , const st
 GAuth::SecretsFileClient::~SecretsFileClient()
 = default ;
 
-bool GAuth::SecretsFileClient::valid() const
+bool GAuth::SecretsFileClient::validSelector( G::string_view selector ) const
 {
-	return m_id_pwd || m_file.valid() ;
+	if( m_id_pwd )
+		return selector.empty() ;
+	else if( !m_file.valid() )
+		return selector.empty() ;
+	else
+		return m_file.containsClientSelector( selector ) ;
 }
 
-GAuth::Secret GAuth::SecretsFileClient::clientSecret( G::string_view type ) const
+bool GAuth::SecretsFileClient::mustAuthenticate( G::string_view selector ) const
+{
+	if( m_id_pwd )
+		return true ;
+	else if( !m_file.valid() )
+		return false ;
+	else
+		return m_file.containsClientSecret( selector ) ;
+}
+
+GAuth::Secret GAuth::SecretsFileClient::clientSecret( G::string_view type , G::string_view selector ) const
 {
 	if( m_id_pwd && type == "plain"_sv )
 	{
@@ -111,7 +126,7 @@ GAuth::Secret GAuth::SecretsFileClient::clientSecret( G::string_view type ) cons
 	}
 	else
 	{
-		return m_file.clientSecret( type ) ;
+		return m_file.clientSecret( type , selector ) ;
 	}
 }
 
@@ -151,6 +166,6 @@ std::pair<std::string,std::string> GAuth::SecretsFileServer::serverTrust( const 
 bool GAuth::SecretsFileServer::contains( G::string_view type , G::string_view id ) const
 {
 	G_ASSERT( !m_pam ) ;
-	return m_file.contains( type , id ) ;
+	return m_file.containsServerSecret( type , id ) ;
 }
 

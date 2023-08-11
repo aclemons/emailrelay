@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -115,9 +115,9 @@ log_end_msg()
 #
 setup_config()
 {
-	if test ! -f "$CONFIG" -a -f "$CONFIG.template"
+	if test ! -e "$CONFIG"
 	then
-		cp -p "$CONFIG.template" "$CONFIG"
+		echo "# emailrelay.conf" > "$CONFIG"
 	fi
 }
 root_root()
@@ -179,7 +179,6 @@ setup_sgid()
 setup_tools()
 {
 	setup_sgid "/usr/sbin/emailrelay-submit"
-	setup_sgid "/usr/lib/emailrelay/emailrelay-filter-copy"
 }
 setup_openrc()
 {
@@ -200,19 +199,6 @@ if test "$1" = "setup" ; then setup ; exit 0 ; fi
 # ever returning to this script.
 #
 test -f /lib/lsb/init-functions && . /lib/lsb/init-functions
-
-# Ignore /etc/default 'enabled' switch if running from systemd.
-#
-# (The 'enabled' mechanism is needed on non-systemd debian distros
-# because the dpkg postinstall script starts the server, whereas
-# on systemd systems the dpkg postinstall script's call to update-rc.d
-# does nothing. On rpm or 'make install' systems the /etc/default file
-# is not installed at all.)
-#
-if test -d /run/systemd/system -a "$PPID" -eq 1
-then
-	EMAILRELAY_ENABLED="1"
-fi
 
 case "$1" in
 

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -61,9 +61,10 @@ bool GStore::FileDelivery::deliver( const MessageId & message_id , bool is_new )
 bool GStore::FileDelivery::deliverToMailboxes( const G::Path & delivery_dir , const Envelope & envelope ,
 	const G::Path & envelope_path , const G::Path & content_path )
 {
+	G_ASSERT( !envelope.to_local.empty() ) ;
+
 	// map recipient addresses to mailbox names
 	G::StringArray mailbox_list = mailboxes( m_config , envelope ) ;
-	G_ASSERT( !mailbox_list.empty() ) ;
 
 	// process each mailbox
 	for( const auto & mailbox : mailbox_list )
@@ -78,7 +79,7 @@ bool GStore::FileDelivery::deliverToMailboxes( const G::Path & delivery_dir , co
 		}
 
 		// copy files
-		deliverTo( m_store , mbox_dir , envelope_path , content_path , m_config.hardlink ) ;
+		deliverTo( m_store , "deliver" , mbox_dir , envelope_path , content_path , m_config.hardlink ) ;
 	}
 
 	// delete the original files if no remote recipients
@@ -94,49 +95,56 @@ bool GStore::FileDelivery::deliverToMailboxes( const G::Path & delivery_dir , co
 	}
 }
 
-void GStore::FileDelivery::deliverTo( FileStore & /*store*/ , const G::Path & mbox_dir ,
-	const G::Path & envelope_path , const G::Path & content_path , bool hardlink )
+void GStore::FileDelivery::deliverTo( FileStore & /*store*/ , G::string_view prefix ,
+	const G::Path & dst_dir , const G::Path & envelope_path , const G::Path & content_path ,
+	bool hardlink , bool pop_by_name )
 {
-	if( FileOp::isdir( mbox_dir+"tmp" , mbox_dir+"cur" , mbox_dir+"new" ) )
+	if( FileOp::isdir( dst_dir+"tmp" , dst_dir+"cur" , dst_dir+"new" ) )
 	{
 		// copy content to maildir's "new" sub-directory via "tmp"
 		static int seq {} ;
 		std::ostringstream ss ;
 		ss << G::SystemTime::now() << "." << G::Process::Id().str() << "." << G::hostname() << "." << seq++ ;
-		G::Path tmp_content_path = mbox_dir + "tmp" + ss.str() ;
-		G::Path new_content_path = mbox_dir + "new" + ss.str() ;
+		G::Path tmp_content_path = dst_dir + "tmp" + ss.str() ;
+		G::Path new_content_path = dst_dir + "new" + ss.str() ;
 		if( !FileOp::copy( content_path , tmp_content_path , hardlink ) )
-			throw MaildirCopyError( tmp_content_path.str() , G::Process::strerror(FileOp::errno_()) ) ;
+			throw MaildirCopyError( prefix , tmp_content_path.str() , G::Process::strerror(FileOp::errno_()) ) ;
 		if( !FileOp::rename( tmp_content_path , new_content_path ) )
-			throw MaildirMoveError( new_content_path.str() , G::Process::strerror(FileOp::errno_()) ) ;
+			throw MaildirMoveError( prefix , new_content_path.str() , G::Process::strerror(FileOp::errno_()) ) ;
 		G_DEBUG( "GStore::FileDelivery::deliverTo: delivery: delivered " << id(envelope_path) << " as maildir " << ss.str() ) ;
+	}
+	else if( pop_by_name )
+	{
+		// envelope only
+		std::string new_filename = content_path.withoutExtension().basename() ;
+		G::Path new_envelope_path = dst_dir + (new_filename+".envelope") ;
+		if( !FileOp::copy( envelope_path , new_envelope_path ) )
+			throw EnvelopeWriteError( prefix , new_envelope_path.str() , G::Process::strerror(FileOp::errno_()) ) ;
 	}
 	else
 	{
-		std::string new_filename = content_path.extension() == "local" ?
-			content_path.withoutExtension().withoutExtension().basename() :
-			content_path.withoutExtension().basename() ;
-		G::Path new_content_path = mbox_dir + (new_filename+".content") ;
-		G::Path new_envelope_path = mbox_dir + (new_filename+".envelope") ;
+		std::string new_filename = content_path.withoutExtension().basename() ;
+		G::Path new_content_path = dst_dir + (new_filename+".content") ;
+		G::Path new_envelope_path = dst_dir + (new_filename+".envelope") ;
 		G::ScopeExit clean_up_content( [new_content_path](){FileOp::remove(new_content_path);} ) ;
 
 		// copy or link the content -- maybe edit to add "Delivered-To" etc?
 		bool ok = FileOp::copy( content_path , new_content_path , hardlink ) ;
 		if( !ok )
-			throw ContentWriteError( new_content_path.str() , G::Process::strerror(FileOp::errno_()) ) ;
+			throw ContentWriteError( prefix , new_content_path.str() , G::Process::strerror(FileOp::errno_()) ) ;
 
 		// copy the envelope -- maybe remove other recipients, but no need
 		if( !FileOp::copy( envelope_path , new_envelope_path ) )
-			throw EnvelopeWriteError( new_envelope_path.str() , G::Process::strerror(FileOp::errno_()) ) ;
+			throw EnvelopeWriteError( prefix , new_envelope_path.str() , G::Process::strerror(FileOp::errno_()) ) ;
 
 		clean_up_content.release() ;
-		G_DEBUG( "GStore::FileDelivery::deliver: delivery: delivered " << id(envelope_path) << " to mailbox " << mbox_dir.basename() ) ;
+		G_DEBUG( "GStore::FileDelivery::deliver: " << prefix << ": delivered " << id(envelope_path) << " to mailbox " << dst_dir.basename() ) ;
 	}
 }
 
 G::StringArray GStore::FileDelivery::mailboxes( const Config & config , const GStore::Envelope & envelope )
 {
-	G_ASSERT( (envelope.to_remote.size() + envelope.to_local.size()) != 0U ) ;
+	G_ASSERT( !envelope.to_local.empty() ) ;
 	using namespace std::placeholders ;
 	G::StringArray list ;
 	std::transform( envelope.to_local.begin() , envelope.to_local.end() ,

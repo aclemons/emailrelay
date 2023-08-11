@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
 
 namespace G
 {
-	namespace Base64Imp
+	namespace Base64Imp /// An implementation namespace for G::Base64.
 	{
 		#ifdef G_WINDOWS
 		using uint32_type = volatile g_uint32_t ; // volatile as workround for compiler bug: MSVC 2019 16.6.2 /02 /Ob2

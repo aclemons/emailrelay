@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ public:
 
 	RequestClient( GNet::ExceptionSink , const std::string & key , const std::string & ok ,
 		const GNet::Location & host_and_service , unsigned int connect_timeout ,
-		unsigned int response_timeout ) ;
+		unsigned int response_timeout , unsigned int idle_timeout ) ;
 			///< Constructor.  The 'key' parameter is used in the callback
 			///< signal. The 'ok' parameter is a response string that is
 			///< converted to the empty string.
@@ -95,7 +95,7 @@ private:
 	void onTimeout() ;
 	std::string requestLine( const std::string & ) const ;
 	std::string result( std::string ) const ;
-	static GNet::Client::Config netConfig( unsigned int connection_timeout , unsigned int response_timeout ) ;
+	static GNet::Client::Config netConfig( unsigned int , unsigned int , unsigned int ) ;
 
 private:
 	std::string m_eol ;

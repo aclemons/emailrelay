@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2022 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -46,14 +46,17 @@ private: // overrides
 	Result run( const GStore::MessageId & , bool & , GStore::FileStore::State ) override ; // GFilters::SimpleFilterBase
 
 private:
-	static G::StringArray match( const G::StringArray & , const std::string & ) ;
+	G::StringArray matching( const G::StringArray & , const std::string & ) const ;
+	std::string forwardTo( const std::string & ) const ;
+	static bool match( const std::string & , const std::string & , bool raw ) ;
+	static void normalise( std::string & , bool raw ) ;
 
 private:
 	using FileOp = GStore::FileStore::FileOp ;
 	GStore::FileStore & m_store ;
-	Filter::Type m_filter_type ;
 	Filter::Config m_filter_config ;
-	std::string m_spec ;
+	bool m_raw {false} ;
+	std::string m_port ;
 } ;
 
 #endif
