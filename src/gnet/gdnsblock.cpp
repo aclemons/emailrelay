@@ -170,7 +170,7 @@ GNet::Address GNet::DnsBlock::nameServerAddress( const std::string & s )
 bool GNet::DnsBlock::isDomain( G::string_view s ) noexcept
 {
 	if( G::Str::isNumeric(s,true) ) return false ;
-	G::string_view tld = G::Str::tailView( s , "."_sv ) ;
+	G::string_view tld = G::Str::tailView( s , s.rfind('.') ) ;
 	return tld.empty() || ( G::Str::isSimple(tld) && !G::Str::isNumeric(tld) ) ;
 }
 
