@@ -74,9 +74,9 @@ G::StringArray G::OptionParser::parse( const StringArray & args_in , std::size_t
 		else if( isOldOption(arg) ) // eg. "-v"
 		{
 			char c = arg.at(1U) ;
-			if( m_spec.valued(c) && (i+1U) >= args_in.size() )
+			if( m_spec.valued(c) && !m_spec.defaulting(c) && (i+1U) >= args_in.size() )
 				errorNoValue( c ) ;
-			else if( m_spec.valued(c) )
+			else if( m_spec.valued(c) && !m_spec.defaulting(c) )
 				processOption( c , args_in.at(++i) ) ;
 			else
 				processOptionOn( c ) ;
@@ -121,7 +121,7 @@ void G::OptionParser::processOptionOn( const std::string & name )
 {
 	if( !m_spec.valid(name) )
 		errorUnknownOption( name ) ;
-	else if( m_spec.valued(name) )
+	else if( m_spec.valued(name) && !m_spec.defaulting(name) )
 		errorNoValue( name ) ;
 	else if( haveSeenOff(name) )
 		errorConflict( name ) ;
@@ -169,7 +169,7 @@ void G::OptionParser::processOptionOn( char c )
 	std::string name = m_spec.lookup( c ) ;
 	if( !m_spec.valid(name) )
 		errorUnknownOption( c ) ;
-	else if( m_spec.valued(name) )
+	else if( m_spec.valued(name) && !m_spec.defaulting(name) )
 		errorNoValue( c ) ;
 	else if( haveSeenOff(name) )
 		errorConflict( name ) ;

@@ -108,6 +108,11 @@ void G::Options::addOption( Option opt , char sep , char escape )
 	m_list.insert( range.first , opt ) ;
 }
 
+bool G::Options::defaulting( char c ) const
+{
+	return defaulting( lookup(c) ) ;
+}
+
 bool G::Options::defaulting( const std::string & name ) const
 {
 	auto p = find( name ) ;

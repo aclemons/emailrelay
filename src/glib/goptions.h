@@ -128,6 +128,10 @@ public:
 		///< taking its default (empty) value followed by a separate
 		///< argument 'bar'.
 
+bool defaulting( char ) const ;
+		///< Returns defaulting(lookup()) even though defaulting options
+		///< can never take a value when short-form.
+
 private:
 	using List = std::vector<Option> ;
 	void parseSpec( const std::string & spec , char , char , char ) ;

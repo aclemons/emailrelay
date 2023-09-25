@@ -128,7 +128,7 @@ if GCONFIG_WINDOWS
 UDS_SOURCES = \
 	gaddresslocal_none.cpp
 
-UDS_EXTRA_DIST =
+UDS_EXTRA_DIST = \
 	gaddresslocal_unix.cpp
 
 else
@@ -136,7 +136,7 @@ else
 UDS_SOURCES = \
 	gaddresslocal_unix.cpp
 
-UDS_EXTRA_DIST =
+UDS_EXTRA_DIST = \
 	gaddresslocal_none.cpp
 
 endif
@@ -146,7 +146,7 @@ else
 UDS_SOURCES = \
 	gaddresslocal_none.cpp
 
-UDS_EXTRA_DIST =
+UDS_EXTRA_DIST = \
 	gaddresslocal_unix.cpp
 
 endif
@@ -183,7 +183,7 @@ EVENTLOOP_EXTRA_DIST = \
 	geventloop_win32.cpp \
 	geventloophandles.cpp \
 	geventloophandles.h \
-	geventloop_select.cpp
+	geventloop_epoll.cpp
 
 EVENTLOOP_SOURCES = \
 	geventloop_select.cpp
