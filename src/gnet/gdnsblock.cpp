@@ -169,6 +169,8 @@ GNet::Address GNet::DnsBlock::nameServerAddress( const std::string & s )
 
 bool GNet::DnsBlock::isDomain( G::string_view s ) noexcept
 {
+	// we need to distinguish between eg. "127.0.0.1" as an IP address and
+	// "127.0.0.com" as a domain -- all top-level domains are non-numeric
 	if( G::Str::isNumeric(s,true) ) return false ;
 	G::string_view tld = G::Str::tailView( s , s.rfind('.') ) ;
 	return tld.empty() || ( G::Str::isSimple(tld) && !G::Str::isNumeric(tld) ) ;

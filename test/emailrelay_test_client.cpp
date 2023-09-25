@@ -89,7 +89,7 @@ struct Address
 		specific.sin_addr.s_addr = inet_addr( address ) ;
 		if( specific.sin_addr.s_addr == INADDR_NONE )
 			throw std::runtime_error( std::string("invalid ipv4 address: ") + address ) ;
-		specific.sin_port = htons( port ) ;
+		specific.sin_port = htons( static_cast<g_port_t>(port) ) ;
 	}
 	explicit Address( int port )
 	{
@@ -97,7 +97,7 @@ struct Address
 		specific = zero ;
 		specific.sin_family = AF_INET ;
 		specific.sin_addr.s_addr = htonl( INADDR_LOOPBACK ) ;
-		specific.sin_port = htons( port ) ;
+		specific.sin_port = htons( static_cast<g_port_t>(port) ) ;
 	}
 	sockaddr * ptr() { return &generic ; }
 	const sockaddr * ptr() const { return &generic ; }

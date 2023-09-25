@@ -40,8 +40,9 @@
 
 namespace GSmtp
 {
-	class AdminServerPeer ;
 	class AdminServer ;
+	class AdminServerImp ;
+	class AdminServerPeer ;
 }
 
 //| \class GSmtp::AdminServerPeer
@@ -55,7 +56,7 @@ namespace GSmtp
 class GSmtp::AdminServerPeer : public GNet::ServerPeer
 {
 public:
-	AdminServerPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo && , AdminServer & ,
+	AdminServerPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo && , AdminServerImp & ,
 		const std::string & remote , const G::StringMap & info_commands ,
 		bool with_terminate ) ;
 			///< Constructor.
@@ -102,7 +103,7 @@ private:
 
 private:
 	GNet::ExceptionSink m_es ;
-	AdminServer & m_server ;
+	AdminServerImp & m_server_imp ;
 	std::string m_prompt ;
 	bool m_blocked ;
 	std::string m_remote_address ;
@@ -117,9 +118,10 @@ private:
 //| \class GSmtp::AdminServer
 /// A server class which implements the emailrelay administration interface.
 ///
-class GSmtp::AdminServer : public GNet::MultiServer
+class GSmtp::AdminServer
 {
 public:
+	G_EXCEPTION( NotImplemented , tx("admin server not implemented") ) ;
 	struct Config /// A configuration structure for GSmtp::AdminServer.
 	{
 		unsigned int port {10026U} ;
@@ -143,18 +145,22 @@ public:
 	enum class Command
 	{
 		forward ,
-		dnsbl
+		dnsbl ,
+		smtp_enable
 	} ;
+
+	static bool enabled() ;
+		///< Returns true if the server is enabled.
 
 	AdminServer( GNet::ExceptionSink , GStore::MessageStore & store , FilterFactoryBase & ,
 		const GAuth::SaslClientSecrets & client_secrets , const G::StringArray & interfaces ,
 		const Config & config ) ;
 			///< Constructor.
 
-	~AdminServer() override ;
+	~AdminServer() ;
 		///< Destructor.
 
-	G::Slot::Signal<Command,unsigned int> & commandSignal() noexcept ;
+	G::Slot::Signal<Command,unsigned int> & commandSignal() ;
 		///< Returns a reference to a signal that is emit()ted when the
 		///< remote user makes a request.
 
@@ -174,9 +180,6 @@ public:
 		///< in to the constructor. This is a client-side secrets file,
 		///< used to authenticate ourselves with a remote server.
 
-	GSmtp::Client::Config clientConfig() const ;
-		///< Returns the client configuration.
-
 	void emitCommand( Command , unsigned int ) ;
 		///< Emits an asynchronous event on the commandSignal().
 		///< Used by AdminServerPeer.
@@ -188,10 +191,6 @@ public:
 		///< Called when something happens which the admin
 		///< users might be interested in.
 
-protected:
-	std::unique_ptr<GNet::ServerPeer> newPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo && , GNet::MultiServer::ServerInfo ) override ;
-		///< Override from GNet::MultiServer.
-
 public:
 	AdminServer( const AdminServer & ) = delete ;
 	AdminServer( AdminServer && ) = delete ;
@@ -199,17 +198,7 @@ public:
 	AdminServer & operator=( AdminServer && ) = delete ;
 
 private:
-	void onCommandTimeout() ;
-
-private:
-	GStore::MessageStore & m_store ;
-	FilterFactoryBase & m_ff ;
-	const GAuth::SaslClientSecrets & m_client_secrets ;
-	Config m_config ;
-	GNet::Timer<AdminServer> m_command_timer ;
-	G::Slot::Signal<Command,unsigned int> m_command_signal ;
-	Command m_command ;
-	unsigned int m_command_arg ;
+	std::unique_ptr<AdminServerImp> m_imp ;
 } ;
 
 inline GSmtp::AdminServer::Config & GSmtp::AdminServer::Config::set_port( unsigned int n ) noexcept { port = n ; return *this ; }

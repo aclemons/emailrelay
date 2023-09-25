@@ -236,8 +236,7 @@ CreateMessages()
 
 CreateAuth()
 {
-
-	# encrypted version "carols_password" provided by emailrelay-passwd
+	# encrypted version of "carols_password" provided by emailrelay-passwd
 	local dotted_key="4001433821.398427562.3259251711.3361837303.2461660504.3615007459.2556666290.2918439953"
 	local base64_key="3QiB7qqFvxf/O0TC95BhyFj1uZLjonjXsqFjmBHc860="
 
@@ -352,6 +351,12 @@ Main()
 	ReportResults "${success}"
 	test "${success}" -ne 0
 }
+
+if "$cfg_main_exe" --version --verbose | grep -q -i "admin.*disabled"
+then
+	echo `basename $0`: skipped: no admin interface >&2
+	exit 77
+fi
 
 Main
 

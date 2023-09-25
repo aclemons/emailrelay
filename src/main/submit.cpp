@@ -63,7 +63,7 @@
 
 std::string versionNumber()
 {
-	return "2.5" ;
+	return "2.5.1rc1" ;
 }
 
 static std::pair<G::Path,G::Path> writeFiles( const G::Path & spool_dir ,
@@ -298,7 +298,7 @@ static void run( const G::Arg & arg )
 		// unpack the command-line options
 		bool opt_copy = opt.contains( "copy" ) ;
 		bool opt_no_stdin = opt.contains( "no-stdin" ) ;
-		std::string opt_spool_dir = opt.value( "spool-dir" , GStore::MessageStore::defaultDirectory().str() ) ;
+		std::string opt_spool_dir = opt.value( "spool-dir" , GStore::FileStore::defaultDirectory().str() ) ;
 		std::string opt_from = opt.value( "from" ) ;
 		G::StringArray opt_content = G::Str::splitIntoFields( opt.value("content") , ',' ) ;
 		bool opt_add_content_date = opt.contains( "content-date" ) ;

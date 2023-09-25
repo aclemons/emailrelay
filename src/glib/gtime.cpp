@@ -87,7 +87,7 @@ int G::Time::seconds() const
 
 std::string G::Time::xx( int n )
 {
-	return std::string(1U,'0'+n/10).append(1U,'0'+n%10) ;
+	return std::string(1U,char('0'+n/10)).append(1U,char('0'+n%10)) ;
 }
 
 std::string G::Time::hhmmss( const char * sep ) const

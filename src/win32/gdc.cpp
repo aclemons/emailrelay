@@ -59,7 +59,8 @@ HDC GGui::DeviceContext::operator()() const
 
 void GGui::DeviceContext::swapBuffers()
 {
-	GDEF_UNUSED BOOL ok = ::SwapBuffers( m_hdc ) ;
+	BOOL ok = ::SwapBuffers( m_hdc ) ;
+	GDEF_IGNORE_VARIABLE( ok ) ;
 }
 
 // ===

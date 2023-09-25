@@ -84,7 +84,7 @@ public:
 	struct Config /// A structure containing GNet::Client configuration parameters.
 	{
 		StreamSocket::Config stream_socket_config ;
-		LineBufferConfig line_buffer_config {LineBufferConfig::transparent()} ;
+		LineBuffer::Config line_buffer_config {LineBuffer::Config::transparent()} ;
 		SocketProtocol::Config socket_protocol_config ; // inc. secure_connection_timeout
 		Address local_address {Address::defaultAddress()} ;
 		bool sync_dns {false} ;
@@ -96,7 +96,7 @@ public:
 		bool no_throw_on_peer_disconnect {false} ; // see SocketProtocolSink::onPeerDisconnect()
 
 		Config & set_stream_socket_config( const StreamSocket::Config & ) ;
-		Config & set_line_buffer_config( const LineBufferConfig & ) ;
+		Config & set_line_buffer_config( const LineBuffer::Config & ) ;
 		Config & set_socket_protocol_config( const SocketProtocol::Config & ) ;
 		Config & set_sync_dns( bool = true ) noexcept ;
 		Config & set_auto_start( bool = true ) noexcept ;
@@ -316,7 +316,7 @@ private:
 } ;
 
 inline GNet::Client::Config & GNet::Client::Config::set_stream_socket_config( const StreamSocket::Config & cfg ) { stream_socket_config = cfg ; return *this ; }
-inline GNet::Client::Config & GNet::Client::Config::set_line_buffer_config( const LineBufferConfig & cfg ) { line_buffer_config = cfg ; return *this ; }
+inline GNet::Client::Config & GNet::Client::Config::set_line_buffer_config( const LineBuffer::Config & cfg ) { line_buffer_config = cfg ; return *this ; }
 inline GNet::Client::Config & GNet::Client::Config::set_socket_protocol_config( const SocketProtocol::Config & cfg ) { socket_protocol_config = cfg ; return *this ; }
 inline GNet::Client::Config & GNet::Client::Config::set_sync_dns( bool b ) noexcept { sync_dns = b ; return *this ; }
 inline GNet::Client::Config & GNet::Client::Config::set_auto_start( bool b ) noexcept { auto_start = b ; return *this ; }

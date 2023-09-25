@@ -26,9 +26,23 @@ AM_CPPFLAGS = \
 
 noinst_LIBRARIES = libgsmtp.a
 
+EXTRA_LIBRARIES = libgsmtpextra.a
+
+if GCONFIG_ADMIN
+ ADMIN_SOURCES = gadminserver.h gadminserver_enabled.cpp
+ ADMIN_EXTRA_DIST = gadminserver_disabled.cpp
+ ADMIN_EXTRA_SOURCES = gadminserver.h gadminserver_disabled.cpp
+else
+ ADMIN_SOURCES = gadminserver.h gadminserver_disabled.cpp
+ ADMIN_EXTRA_DIST = gadminserver_enabled.cpp
+ ADMIN_EXTRA_SOURCES = gadminserver.h gadminserver_enabled.cpp
+endif
+
+EXTRA_DIST = \
+	$(ADMIN_EXTRA_DIST)
+
 libgsmtp_a_SOURCES = \
-	gadminserver.cpp \
-	gadminserver.h \
+	$(ADMIN_SOURCES) \
 	grequestclient.cpp \
 	grequestclient.h \
 	gspamclient.cpp \
@@ -71,4 +85,9 @@ libgsmtp_a_SOURCES = \
 	gverifierfactorybase.h \
 	gverifierstatus.cpp \
 	gverifierstatus.h
+
+libgsmtpextra_a_SOURCES = \
+	$(ADMIN_EXTRA_SOURCES)
+
+extra-local: libgsmtpextra.a
 

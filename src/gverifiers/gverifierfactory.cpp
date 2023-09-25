@@ -94,7 +94,6 @@ std::unique_ptr<GSmtp::Verifier> GVerifiers::VerifierFactory::newVerifier( GNet:
 	}
 
 	throw G::Exception( "invalid verifier" , spec.second ) ;
-	return {} ;
 }
 
 void GVerifiers::VerifierFactory::checkExit( Spec & result )

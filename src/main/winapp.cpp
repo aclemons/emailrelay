@@ -140,7 +140,7 @@ bool Main::WinApp::onCreate()
 		catch( std::exception & e )
 		{
 			using G::txt ;
-			throw G::Exception( e.what() , txt("try using the --no-daemon option") ) ;
+			throw G::Exception( e.what() , txt("try using the --hidden option") ) ;
 		}
 	}
 	if( m_cfg.open_on_create )

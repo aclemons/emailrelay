@@ -25,7 +25,7 @@
 #include "commandline.h"
 #include "gfilterfactory.h"
 #include "gverifierfactory.h"
-#include "gmessagestore.h"
+#include "gfilestore.h"
 #include "gtest.h"
 #include "gpop.h"
 #include "gaddress.h"
@@ -148,7 +148,7 @@ bool Main::Configuration::show( const std::string & key ) const
 
 G::Path Main::Configuration::spoolDir() const
 {
-	return contains( "spool-dir" ) ? pathValue( "spool-dir" ) : GStore::MessageStore::defaultDirectory() ;
+	return contains( "spool-dir" ) ? pathValue( "spool-dir" ) : GStore::FileStore::defaultDirectory() ;
 }
 
 std::string Main::Configuration::serverAddress() const
@@ -238,6 +238,11 @@ const char * Main::Configuration::semanticError1() const
 	}
 
 	const bool contains_admin = contains( "admin" ) ;
+	if( contains_admin && !GSmtp::AdminServer::enabled() )
+	{
+		return tx("admin interface has been disabled in this build") ;
+	}
+
 	if( contains("admin-terminate") && !contains_admin )
 	{
 		return tx("the --admin-terminate option requires --admin") ;

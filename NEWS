@@ -171,7 +171,7 @@ necessary by running:
 Filter-copy utility
 -------------------
 The emailrelay-filter-copy utility was included in previous releases as a
-set-user-id file program to copy e-mail message files into sub-directories for
+set-user-id program to copy e-mail message files into sub-directories for
 "--pop-by-name" access. This can now be done by the built-in "copy:pop" filter,
 albeit with minor differences in behaviour, so emailrelay-filter-copy has been
 removed.

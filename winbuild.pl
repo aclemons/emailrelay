@@ -31,7 +31,7 @@
 # and expects mbedtls source to be in a sibling directory, and expects
 # Qt (libraries, headers and tools) to be in its default install location.
 # These components are found at run-time by the find_*() routines in
-# "bin/winbuild.pm". A configuration file "winbuild.cfg" can be used
+# "libexec/winbuild.pm". A configuration file "winbuild.cfg" can be used
 # to give explicit locations if necessary. The "find" sub-task, ie.
 # "winbuild-find.bat", can be used to run the find routines and create
 # a "winbuild.cfg" configuration file.
@@ -40,6 +40,11 @@
 # and their dependencies in a directory tree ready for zipping and
 # distribution. The dependencies for Qt are assembled by the Qt dependency
 # tool, "windeployqt".
+#
+# On linux the "install_winxp" sub-task can be used after a mingw cross
+# build to assemble an installation zip file, and the "mkbat" sub-task
+# can be used to create simple "mk.bat" batch files to do a native windows
+# build without needing mbedtls, qt, visual studio, msbuild, or nmake.
 #
 
 use strict ;
@@ -76,8 +81,12 @@ my $cmake_args = {
 	] ,
 } ;
 
-# version
-chomp( my $version = eval { FileHandle->new("VERSION")->gets() } || "2.5" ) ;
+# project version
+chomp( my $version = eval { FileHandle->new("VERSION")->gets() } || "2.5.1" ) ;
+my $project = "emailrelay" ;
+my $install_x64 = "$project-$version-w64" ;
+my $install_x86 = "$project-$version-w32" ;
+my $install_winxp = "$project-$version-winxp" ;
 
 # makefile conditionals
 my %switches = (
@@ -92,6 +101,7 @@ my %switches = (
 	GCONFIG_MAC => 0 ,
 	GCONFIG_PAM => 0 ,
 	GCONFIG_POP => 1 ,
+	GCONFIG_ADMIN => 1 ,
 	GCONFIG_TESTING => 1 ,
 	GCONFIG_TLS_USE_MBEDTLS => 1 , # << zero if no mbedtls source
 	GCONFIG_TLS_USE_OPENSSL => 0 ,
@@ -108,7 +118,7 @@ my %vars = (
 	sbindir => "." ,
 	mandir => "." ,
 	localedir => "." ,
-	e_spooldir => "c:/windows/spool/emailrelay" ,
+	e_spooldir => "c:/emailrelay" , # passed as -D but not used -- see src/gstore/gfilestore_win32.cpp
 	e_docdir => "c:/emailrelay" ,
 	e_initdir => "c:/emailrelay" ,
 	e_bsdinitdir => "c:/emailrelay" ,
@@ -147,47 +157,42 @@ winbuild::fcache_delete() if $ARGV[0] eq "find" ;
 
 # find stuff ...
 
-my $need_mbedtls = ( $switches{GCONFIG_TLS_USE_MBEDTLS} || $switches{GCONFIG_TLS_USE_BOTH} ) ;
-my $need_qt = $switches{GCONFIG_GUI} ;
+my $want_mbedtls = ( $switches{GCONFIG_TLS_USE_MBEDTLS} || $switches{GCONFIG_TLS_USE_BOTH} ) ;
+my $want_qt = $switches{GCONFIG_GUI} && $^O ne "linux" ;
 
 my $msbuild = winbuild::find_msbuild() ;
 my $cmake = winbuild::find_cmake( $msbuild ) ;
-my $qt_info = $need_qt ? winbuild::find_qt() : undef ;
-my $mbedtls = $need_mbedtls ? winbuild::find_mbedtls() : undef ;
+my $qt_info = $want_qt ? winbuild::find_qt() : undef ;
+my $mbedtls = $want_mbedtls ? winbuild::find_mbedtls() : undef ;
 
-my $no_cmake = !$cmake ;
-my $no_msbuild = !$msbuild ;
-my $no_qt = ( $need_qt && $cfg_x86 && !$qt_info->{x86} ) || ( $need_qt && $cfg_x64 && !$qt_info->{x64} ) ;
-my $no_mbedtls = ( $need_mbedtls && !$mbedtls ) ;
+my $missing_cmake = !$cmake ;
+my $missing_msbuild = !$msbuild ;
+my $missing_qt = ( $want_qt && $cfg_x86 && !$qt_info->{x86} ) || ( $want_qt && $cfg_x64 && !$qt_info->{x64} ) ;
+my $missing_mbedtls = ( $want_mbedtls && !$mbedtls ) ;
 
-warn "error: cannot find cmake.exe: please download from cmake.org\n" if $no_cmake ;
-warn "error: cannot find msbuild.exe: please install visual studio\n" if $no_msbuild ;
-warn "error: cannot find qt libraries: please download from wwww.qt.io or unset GCONFIG_GUI\n" if $no_qt ;
+warn "error: cannot find cmake.exe: please download from cmake.org\n" if $missing_cmake ;
+warn "error: cannot find msbuild.exe: please install visual studio\n" if $missing_msbuild ;
+warn "error: cannot find qt libraries: please download from wwww.qt.io or unset GCONFIG_GUI\n" if $missing_qt ;
 warn "error: cannot find mbedtls source: please download from tls.mbed.org " .
-	"or unset GCONFIG_TLS_USE_MBEDTLS\n" if $no_mbedtls ;
+	"or unset GCONFIG_TLS_USE_MBEDTLS\n" if $missing_mbedtls ;
 
-if( $no_cmake || $no_msbuild || $no_qt || $no_mbedtls )
+if( $missing_cmake || $missing_msbuild || $missing_qt || $missing_mbedtls )
 {
 	winbuild::fcache_write() if $ARGV[0] eq "find" ;
 	warn "error: missing prerequisites: please install the missing components " ,
 		"or " . (-f "winbuild.cfg"?"edit the":"use a") . " winbuild.cfg configuration file" ,
-		( ($no_qt||$no_mbedtls) ? " or unset configuration items in winbuild.pl\n" : "\n" ) ;
-	die "error: missing prerequisites\n" unless ( scalar(@ARGV) > 0 && $ARGV[0] eq "mingw" ) ;
+		( ($missing_qt||$missing_mbedtls) ? " or unset configuration items in winbuild.pl\n" : "\n" ) ;
+	die "error: missing prerequisites\n" ;
 }
 
 # choose what to run ...
 
 my @default_parts =
-	$need_mbedtls ?
+	$^O eq "linux" ? qw( install_winxp mkbat ) : ( $want_mbedtls ?
 		qw( batchfiles generate mbedtls cmake build ) :
-		qw( batchfiles generate cmake build ) ;
+		qw( batchfiles generate cmake build ) ) ;
 
 # run stuff ...
-
-my $project = "emailrelay" ;
-my $install_x64 = "$project-$version-w64" ;
-my $install_x86 = "$project-$version-w32" ;
-my $install_mingw = "$project-$version-winxp" ;
 
 my @run_parts = scalar(@ARGV) ? @ARGV : @default_parts ;
 for my $part ( @run_parts )
@@ -262,9 +267,17 @@ for my $part ( @run_parts )
 		install( $install_x64 , "x64" , $qt_info , $with_gui , $with_mbedtls , $cfg_add_runtime ) if $cfg_x64 ;
 		install( $install_x86 , "x86" , $qt_info , $with_gui , $with_mbedtls , $cfg_add_runtime ) if $cfg_x86 ;
 	}
-	elsif( $part eq "mingw" )
+	elsif( $part eq "install_winxp" )
 	{
-		install_mingw() ;
+		run_install_winxp() ;
+	}
+	elsif( $part eq "mkbat" )
+	{
+		$switches{GCONFIG_TLS_USE_MBEDTLS} = 0 ;
+		$switches{GCONFIG_TLS_USE_NONE} = 1 ;
+		$switches{GCONFIG_TLS_USE_OPENSSL} = 0 ;
+		$switches{GCONFIG_TLS_USE_BOTH} = 0 ;
+		run_mkbat( \%switches , \%vars ) ;
 	}
 	elsif( $part eq "debug-test" )
 	{
@@ -303,7 +316,7 @@ sub create_cmake_file
 	print $fh "# $path -- generated by $0\n" ;
 	if( $project )
 	{
-		print $fh "cmake_minimum_required(VERSION 3.1.0)\n" ; # was 2.8.11
+		print $fh "cmake_minimum_required(VERSION 3.1.0)\n" ;
 		print $fh "project($project)\n" ;
 		if( $switches{GCONFIG_GUI} && $qt_info->{v} == 5 )
 		{
@@ -674,16 +687,16 @@ sub install
 	print "$arch distribution in [$install]\n" ;
 }
 
-sub install_mingw
+sub run_install_winxp
 {
-	install_core( "src/main" , $install_mingw , 0 , "." ) ;
+	install_core( "src/main" , $install_winxp , 0 , "." ) ;
 	{
-		my $fh = new FileHandle( "$install_mingw/emailrelay-start.bat" , "w" ) or die ;
+		my $fh = new FileHandle( "$install_winxp/emailrelay-start.bat" , "w" ) or die ;
 		print $fh "start \"emailrelay\" emailrelay.exe \@app/config.txt\r\n" ;
 		$fh->close() or die ;
 	}
 	{
-		my $fh = new FileHandle( "$install_mingw/config.txt" , "w" ) or die ;
+		my $fh = new FileHandle( "$install_winxp/config.txt" , "w" ) or die ;
 		print $fh "#\r\n# config.txt\r\n#\r\n\r\n" ;
 		print $fh "# Use emailrelay-start.bat to run emailrelay with this config.\r\n" ;
 		print $fh "# For demo purposes this only does forwarding once on startup.\r\n" ;
@@ -713,18 +726,18 @@ sub install_mingw
 		$fh->close() or die ;
 	}
 	{
-		my $fh = new FileHandle( "$install_mingw/popauth.txt" , "w" ) or die ;
+		my $fh = new FileHandle( "$install_winxp/popauth.txt" , "w" ) or die ;
 		print $fh "#\r\n# popauth.txt\r\n#\r\n" ;
 		print $fh "server plain postmaster postmaster\r\n" ;
 		$fh->close() or die ;
 	}
 	{
-		my $fh = new FileHandle( "$install_mingw/emailrelay-service.cfg" , "w" ) or die ;
+		my $fh = new FileHandle( "$install_winxp/emailrelay-service.cfg" , "w" ) or die ;
 		print $fh "dir-config=\"\@app\"\r\n" ;
 		$fh->close() or die ;
 	}
 	{
-		my $fh = new FileHandle( "$install_mingw/emailrelay-submit-test.bat" , "w" ) or die ;
+		my $fh = new FileHandle( "$install_winxp/emailrelay-submit-test.bat" , "w" ) or die ;
 		my $cmd = "\@echo off\r\n" ;
 		$cmd .= "emailrelay-submit.exe -N -n -s \@app --from postmaster " ;
 		$cmd .= "-C U3ViamVjdDogdGVzdA== " ; # subject
@@ -736,8 +749,108 @@ sub install_mingw
 		print $fh "pause\r\n" ;
 		$fh->close() or die ;
 	}
-	system( "zip -q -r $install_mingw.zip $install_mingw" ) == 0 or die ;
-	print "mingw distribution in [$install_mingw]\n" ;
+	system( "zip -q -r $install_winxp.zip $install_winxp" ) == 0 or die ;
+	print "winxp mingw distribution in [$install_winxp]\n" ;
+}
+
+sub run_mkbat
+{
+	my ( $switches , $vars ) = @_ ;
+
+	my @makefiles = winbuild::read_makefiles( $switches , $vars ) ;
+	my $files = "" ;
+	for my $m ( @makefiles )
+	{
+		my $file = create_mkbat_file( $m , $switches ) ;
+		$files .= " $file" if defined($file) ;
+	}
+	unlink( "mkbat.zip" ) ;
+	system( "zip -q mkbat.zip $files" ) ;
+}
+
+sub create_mkbat_file
+{
+	my ( $m , $switches ) = @_ ;
+
+	my $path = join( "/" , dirname($m->path()) , "mk.bat" ) ;
+
+	# prune the tree to root and src with no src/gui
+	my @subdirs = $path eq "./mk.bat" ? ("src") : ( grep { $_ ne "gui" } $m->subdirs() ) ;
+	return undef if ( $path ne "./mk.bat" && $path !~ "src/" ) ;
+
+	print "mkbat-file=[$path]\n" ;
+	my $fh = new FileHandle( $path , "w" ) or die ;
+
+	print $fh "\@echo off\r\n" ;
+	print $fh "rem\r\nrem $path -- generated by $0\r\nrem\r\n" ;
+	print $fh "\@echo on\r\n" ;
+	print $fh "\r\n" ;
+
+	if( $path eq "./mk.bat" )
+	{
+		print $fh "echo. >> src\\gconfig_defs.h\r\n\r\n" ;
+	}
+
+	if( @subdirs )
+	{
+		print $fh "rem subdirs...\r\n" ;
+		print $fh 'for /d %%i in ('.join(" ",@subdirs).') do cmd /c "cd %%i && .\mk.bat"' , "\r\n\r\n" ;
+	}
+
+	my @includes = ( "." , ".." , $m->includes($m->base()) ) ;
+	my $includes = join( " " , map { "/I$_" } @includes ) ;
+	my $cxxflags = "/nologo $includes /DG_WINDOWS=1 /MT /EHsc /W4" ;
+
+	my @libraries = $m->libraries() ;
+	for my $library ( @libraries )
+	{
+		next if $library =~ /extra\.a$/ ;
+		( my $lib = $library ) =~ s/\.a$/.lib/ ; $lib =~ s/^lib// ;
+		print $fh "rem library: $lib\r\n" ;
+		my @objects = () ;
+		for my $source ( $m->sources( $library ) )
+		{
+			( my $object = $source ) =~ s/\.cpp$/.obj/ ;
+			push @objects , $object ;
+			print $fh "cl $cxxflags /c $source\r\n" ;
+		}
+		print $fh "lib /OUT:$lib " , join(" ",@objects) , "\r\n" ;
+		print $fh "\r\n" ;
+	}
+
+	my @programs = $m->programs() ;
+	for my $program ( @programs )
+	{
+		print $fh "rem program: $program\r\n" ;
+		my $resources = "" ;
+		if( $program eq "emailrelay" )
+		{
+			print $fh "copy icon\\emailrelay-icon.ico .\r\n" ;
+			print $fh "mc messages.mc\r\n" ;
+			print $fh "rc emailrelay.rc\r\n" ;
+			$resources = "emailrelay.res" ;
+		}
+		my @libpath = map { my $x = $_ ; $x =~ s;/;\\;g ; $x } $m->libpath( $program , "../.." ) ;
+		( my $libpath = join( " /LIBPATH:" , "" , @libpath ) ) =~ s/^ // ;
+		my @objects = () ;
+		my $sources = join( " " , $m->sources( $program ) ) ;
+		my $our_libs = join( " " , map { "$_.lib" } $m->our_libs( $program ) ) ;
+		my $sys_libs = "kernel32.lib user32.lib gdi32.lib advapi32.lib comctl32.lib ws2_32.lib iphlpapi.lib shell32.lib" ;
+		my $tls_libs = $switches->{GCONFIG_TLS_USE_MBEDTLS} ? "mbedtls.lib mbedcrypto.lib mbedx509.lib" : "" ;
+		my $libs = join( " " , $resources , $our_libs , $tls_libs , $sys_libs ) ;
+		my $subsystem = $program eq "emailrelay" ? "windows" : "console" ;
+		my $linkflags = "/RELEASE /SUBSYSTEM:$subsystem" ;
+		for my $source ( $m->sources( $program ) )
+		{
+			( my $object = $source ) =~ s/\.cpp$/.obj/ ;
+			push @objects , $object ;
+			print $fh "cl $cxxflags /c $source\r\n" ;
+		}
+		print $fh "link $linkflags $libpath /OUT:${program}.exe " , join(" ",@objects) , " $libs\r\n" ;
+		print $fh "\r\n" ;
+	}
+	$fh->close() or die ;
+	return $path ;
 }
 
 sub install_runtime

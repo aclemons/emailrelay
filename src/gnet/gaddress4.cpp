@@ -401,7 +401,6 @@ unsigned int GNet::Address4::bits() const
 
 bool GNet::Address4::isLocal( std::string & reason ) const
 {
-	// see also GNet::Local::isLocal()
 	if( isLoopback() || isLinkLocal() || isUniqueLocal() )
 	{
 		return true ;

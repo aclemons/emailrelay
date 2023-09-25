@@ -255,7 +255,6 @@ endif
 if GCONFIG_WINDOWS
 
 EVENTLOOP_SOURCES = \
-	geventloop_win32.cpp \
 	geventloophandles.h \
 	geventloophandles_st.cpp
 
@@ -277,7 +276,6 @@ EVENTLOOP_EXTRA_SOURCES = \
 
 EVENTLOOP_EXTRA_DIST = \
 	geventloop_select.cpp \
-	geventloop_win32.cpp \
 	geventloophandles.h \
 	geventloophandles_st.cpp
 
@@ -291,7 +289,6 @@ EVENTLOOP_EXTRA_SOURCES = \
 
 EVENTLOOP_EXTRA_DIST = \
 	geventloop_epoll.cpp \
-	geventloop_win32.cpp \
 	geventloophandles.h \
 	geventloophandles_st.cpp
 

@@ -48,7 +48,7 @@ namespace GSmtp
 ///
 /// The implementation delegates to an instance of the ProtocolMessageStore
 /// class (ie. its sibling class) to do the storage, and to an instance
-/// of the GSmtp::Client class to do the forwarding.
+/// of the GSmtp::Forward class to do the forwarding.
 ///
 /// \see GSmtp::ProtocolMessageStore
 ///
@@ -65,19 +65,6 @@ public:
 
 	~ProtocolMessageForward() override ;
 		///< Destructor.
-
-protected:
-	ProtocolMessage::DoneSignal & storageDoneSignal() noexcept ;
-		///< Returns the signal which is used to signal that the storage
-		///< is complete. Derived classes can use this to
-		///< intercept the storage-done signal emit()ed by
-		///< the ProtocolMessageStore object.
-
-	void processDone( bool , const GStore::MessageId & , const std::string & ,
-		const std::string & ) ;
-			///< Called by derived classes that have intercepted
-			///< the storageDoneSignal() when their own post-storage
-			///< processing is complete.
 
 private: // overrides
 	ProtocolMessage::DoneSignal & doneSignal() noexcept override ; // GSmtp::ProtocolMessage
@@ -102,7 +89,8 @@ public:
 
 private:
 	void clientDone( const std::string & ) ; // GNet::Client::doneSignal()
-	void messageDone( const std::string & , bool ) ; // GSmtp::Client::messageDoneSignal()
+	void messageDone( const Client::MessageDoneInfo & ) ; // GSmtp::Client::messageDoneSignal()
+	void processDone( const ProtocolMessage::DoneInfo & ) ; // GSmtp::ProtocolMessage::doneSignal()
 	std::string forward( const GStore::MessageId & , bool & ) ;
 
 private:

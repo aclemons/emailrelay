@@ -42,18 +42,21 @@ namespace G
 	/// The buffer_cast() free function can be used to return a pointer
 	/// to the start of the buffer for some aggregate type, throwing if
 	/// the buffer is too small for a complete object:
+	///
 	/// \code
 	/// Buffer<char> buffer( 100 ) ;
 	/// auto n = fill( buffer ) ;
 	/// buffer.resize( n ) ;
 	/// Foo * foo_p = buffer_cast<Foo*>( buffer ) ;
+	/// ...
 	/// foo_p->~Foo() ;
 	/// \endcode
 	///
 	/// The implementation of buffer_cast uses placement-new in order to
-	/// avoid the undefined behaviour of a pointer cast. In some cases this
-	/// means that the destructor should be called explicitly through the
-	/// pointer.
+	/// avoid the undefined behaviour of a pointer cast. If the buffer_cast
+	/// type has a non-trivial destructor then the destructor should be
+	/// called explicitly through the pointer before the G::Buffer object
+	/// disappears.
 	///
 	template <typename T>
 	struct Buffer

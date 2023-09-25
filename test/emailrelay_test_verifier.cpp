@@ -73,7 +73,7 @@ private:
 } ;
 
 Main::VerifierPeer::VerifierPeer( GNet::ExceptionSinkUnbound ebu , GNet::ServerPeerInfo && peer_info ) :
-	GNet::ServerPeer( ebu.bind(this) , std::move(peer_info) , GNet::LineBufferConfig::autodetect() )
+	GNet::ServerPeer( ebu.bind(this) , std::move(peer_info) , GNet::LineBuffer::Config::autodetect() )
 {
 	G_LOG_S( "VerifierPeer::ctor: new connection from " << peerAddress().displayString() ) ;
 }

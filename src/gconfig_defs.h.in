@@ -261,6 +261,9 @@
 /* Define true if iphlpapi.h is available */
 #undef GCONFIG_HAVE_WINDOWS_IPHLPAPI_H
 
+/* Define true if windows STARTUPINFOEX is available */
+#undef GCONFIG_HAVE_WINDOWS_STARTUP_INFO_EX
+
 /* Define true if versionhelpers.h is available */
 #undef GCONFIG_HAVE_WINDOWS_VERSIONHELPERS_H
 

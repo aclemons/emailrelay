@@ -96,7 +96,7 @@ Main::Unit::Unit( Run & run , unsigned int unit_id , const std::string & version
 	//
 	bool do_smtp = m_configuration.doServing() && m_configuration.doSmtp() ;
 	bool do_pop = m_configuration.doServing() && GPop::enabled() && m_configuration.doPop() ;
-	bool do_admin = m_configuration.doServing() && m_configuration.doAdmin() ;
+	bool do_admin = GSmtp::AdminServer::enabled() && m_configuration.doServing() && m_configuration.doAdmin() ;
 	m_serving = do_smtp || do_pop || do_admin ;
 	bool admin_forwarding = do_admin && !m_configuration.serverAddress().empty() ;
 	m_forwarding = m_configuration.forwardOnStartup() || m_configuration.doPolling() || admin_forwarding ;
@@ -164,7 +164,7 @@ Main::Unit::Unit( Run & run , unsigned int unit_id , const std::string & version
 
 	// create the admin server
 	//
-	if( do_admin )
+	if( GSmtp::AdminServer::enabled() && do_admin )
 	{
 		G_ASSERT( m_file_store != nullptr ) ;
 		G_ASSERT( m_client_secrets != nullptr ) ;
@@ -182,10 +182,9 @@ Main::Unit::Unit( Run & run , unsigned int unit_id , const std::string & version
 			*m_client_secrets ,
 			m_configuration.listeningNames("admin") ,
 			m_configuration.adminServerConfig( info_map , clientTlsProfile() , domain() ) ) ;
-
 	}
 
-	if( m_admin_server ) m_admin_server->commandSignal().connect( G::Slot::slot(*this,&Unit::onAdminCommand) ) ;
+	if( GSmtp::AdminServer::enabled() && m_admin_server ) m_admin_server->commandSignal().connect( G::Slot::slot(*this,&Unit::onAdminCommand) ) ;
 	if( m_smtp_server ) m_smtp_server->eventSignal().connect( G::Slot::slot(*this,&Main::Unit::onServerEvent) ) ;
 	store().messageStoreRescanSignal().connect( G::Slot::slot(*this,&Unit::onStoreRescanEvent) ) ;
 	m_client_ptr.deletedSignal().connect( G::Slot::slot(*this,&Unit::onClientDone) ) ;
@@ -198,7 +197,7 @@ Main::Unit::~Unit()
 	m_client_ptr.deletedSignal().disconnect() ;
 	store().messageStoreRescanSignal().disconnect() ;
 	if( m_smtp_server ) m_smtp_server->eventSignal().disconnect() ;
-	if( m_admin_server ) m_admin_server->commandSignal().disconnect() ;
+	if( GSmtp::AdminServer::enabled() && m_admin_server ) m_admin_server->commandSignal().disconnect() ;
 }
 
 unsigned int Main::Unit::id() const
@@ -244,6 +243,8 @@ void Main::Unit::onAdminCommand( GSmtp::AdminServer::Command command , unsigned 
 {
 	if( command == GSmtp::AdminServer::Command::forward )
 		requestForwarding( "admin" ) ; // forward request from admin server's remote user
+	else if( m_smtp_server && command == GSmtp::AdminServer::Command::smtp_enable )
+		m_smtp_server->enable( !!arg ) ;
 	else if( m_smtp_server )
 		m_smtp_server->nodnsbl( arg ) ;
 }

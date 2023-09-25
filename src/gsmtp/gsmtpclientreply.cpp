@@ -22,163 +22,129 @@
 #include "gsmtpclientreply.h"
 #include "gstr.h"
 #include "gstringarray.h"
+#include "gexception.h"
 #include "glog.h"
 #include "gassert.h"
 
-GSmtp::ClientReply::ClientReply()
+GSmtp::ClientReply::ClientReply() :
+	m_value(0)
 {
-	G_ASSERT( !m_valid && !m_complete && m_value == 0 ) ;
 }
 
 #ifndef G_LIB_SMALL
 GSmtp::ClientReply GSmtp::ClientReply::ok()
 {
 	ClientReply reply ;
-	reply.m_valid = true ;
-	reply.m_complete = true ;
 	reply.m_value = 250 ;
+	reply.m_done_code = 250 ;
 	reply.m_text = "OK" ;
+	G_ASSERT( reply.positive() ) ;
 	return reply ;
 }
 #endif
 
-GSmtp::ClientReply GSmtp::ClientReply::error( Value v , const std::string & response ,
-	const std::string & reason )
+GSmtp::ClientReply GSmtp::ClientReply::internal( Value v , int done_code )
 {
-	int vv = static_cast<int>(v) ;
+	G_ASSERT( static_cast<int>(v) >= 1 && static_cast<int>(v) < 100 ) ;
 	ClientReply reply ;
-	reply.m_valid = true ;
-	reply.m_complete = true ;
-	reply.m_value = ( vv >= 500 && vv < 600 ) ? vv : 500 ;
-	reply.m_text = G::Str::printable( response ) ;
-	reply.m_reason = reason ;
+	reply.m_value = static_cast<int>( v ) ;
+	reply.m_done_code = done_code ;
 	return reply ;
+}
+
+GSmtp::ClientReply GSmtp::ClientReply::secure()
+{
+	return internal( Value::Internal_secure , 0 ) ;
 }
 
 GSmtp::ClientReply GSmtp::ClientReply::start()
 {
+	return internal( Value::Internal_start , 0 ) ;
+}
+
+GSmtp::ClientReply GSmtp::ClientReply::filterOk()
+{
+	return internal( Value::Internal_filter_ok , 0 ) ;
+}
+
+GSmtp::ClientReply GSmtp::ClientReply::filterAbandon()
+{
+	return internal( Value::Internal_filter_abandon , -1 ) ;
+}
+
+GSmtp::ClientReply GSmtp::ClientReply::filterError( const std::string & response ,
+	const std::string & filter_reason )
+{
 	ClientReply reply ;
-	reply.m_valid = true ;
-	reply.m_complete = true ;
-	reply.m_value = static_cast<int>(Value::Internal_start) ;
+	reply.m_value = static_cast<int>( Value::Internal_filter_error ) ;
+	reply.m_done_code = -2 ;
+	reply.m_text = response ;
+	reply.m_filter_reason = filter_reason ;
 	return reply ;
 }
 
-GSmtp::ClientReply GSmtp::ClientReply::ok( Value v , const std::string & text )
+GSmtp::ClientReply::ClientReply( const G::StringArray & lines , char sep )
 {
-	ClientReply reply ;
-	reply.m_valid = true ;
-	reply.m_complete = true ;
-	reply.m_value = static_cast<int>(v) ;
-	reply.m_text = text.empty() ? "OK" : ("OK\n"+text) ;
-	G_ASSERT( reply.positive() ) ;
-	return reply ;
-}
+	G_ASSERT( complete(lines) ) ;
+	if( !complete(lines) )
+		throw G::Exception( "invalid client response" ) ;
 
-GSmtp::ClientReply::ClientReply( const G::StringArray & lines )
-{
-	G_ASSERT( !m_valid && !m_complete && m_value == 0 ) ;
+	m_value = G::Str::toInt( lines.at(lines.size()-1U).substr(0U,3U) ) ;
+	m_done_code = m_value ;
+	G_ASSERT( m_value >= 100 && m_value < 600 ) ;
+
 	for( const auto & line : lines )
 	{
-		if( validLine(line) )
+		if( line.length() > 4U )
 		{
-			int n = G::Str::toInt( line.substr(0U,3U) ) ;
-			if( n >= 100 && n <= 599 && ( m_value == 0 || m_value == n ) )
-			{
-				m_valid = true ;
-				m_complete = line.length() == 3U || line.at(3U) == ' ' ;
-				m_value = n ;
-				if( line.length() > 4U )
-				{
-					std::string s = line.substr(4U) ;
-					G::Str::trimLeft( s , " \t" ) ;
-					G::Str::replaceAll( s , "\t" , " " ) ;
-					if( !m_text.empty() && !s.empty() ) m_text.append(1U,'\n') ;
-					m_text.append( s ) ;
-				}
-			}
-			else
-			{
-				m_valid = false ;
-				break ;
-			}
+			std::string s = line.substr( 4U ) ;
+			G::Str::trimLeft( s , " \t" ) ;
+			G::Str::replace( s , '\t' , ' ' ) ;
+			G::Str::replace( s , '\n' , ' ' ) ;
+			G::Str::removeAll( s , '\r' ) ;
+			if( !m_text.empty() && !s.empty() ) m_text.append(1U,sep) ;
+			m_text.append( s ) ;
 		}
-		else
-		{
-			m_valid = false ;
-			break ;
-		}
-	}
-	if( !m_valid )
-	{
-		m_complete = false ;
-		m_value = 0 ;
-		m_text.clear() ;
-		m_reason.clear() ;
 	}
 }
 
-bool GSmtp::ClientReply::validLine( const std::string & line )
+bool GSmtp::ClientReply::valid( const G::StringArray & lines )
 {
+	if( lines.empty() )
+		return false ;
+
+	std::string digits ;
+	for( std::size_t i = 0U ; i < lines.size() ; i++ )
+	{
+		if( !validLine(lines[i],digits,i,lines.size()) )
+			return false ;
+	}
+	return true ;
+}
+
+bool GSmtp::ClientReply::complete( const G::StringArray & lines )
+{
+	if( lines.empty() ) return false ;
+	const std::string & last = lines[lines.size()-1U] ;
+	return valid(lines) && ( last.size() == 3U || last.at(3U) == ' ' ) ;
+}
+
+bool GSmtp::ClientReply::validLine( const std::string & line , std::string & digits ,
+	std::size_t index , std::size_t )
+{
+	if( index == 0U && line.length() >= 3U )
+		digits = line.substr( 0U , 3U ) ;
+	else if( index == 0U )
+		return false ;
+
 	return
 		line.length() >= 3U &&
 		isDigit(line.at(0U)) &&
 		line.at(0U) >= '1' && line.at(0U) <= '5' &&
 		isDigit(line.at(1U)) &&
 		isDigit(line.at(2U)) &&
-		( line.length() == 3U || line.at(3U) == ' ' || line.at(3U) == '-' ) ;
-}
-
-bool GSmtp::ClientReply::valid() const
-{
-	return m_valid ;
-}
-
-bool GSmtp::ClientReply::complete() const
-{
-	return m_complete ;
-}
-
-#ifndef G_LIB_SMALL
-bool GSmtp::ClientReply::incomplete() const
-{
-	return !m_complete ;
-}
-#endif
-
-bool GSmtp::ClientReply::positive() const
-{
-	return m_valid && m_value < 400 ;
-}
-
-bool GSmtp::ClientReply::positiveCompletion() const
-{
-	return type() == Type::PositiveCompletion ;
-}
-
-int GSmtp::ClientReply::value() const
-{
-	return m_valid ? m_value : 0 ;
-}
-
-bool GSmtp::ClientReply::is( Value v ) const
-{
-	return value() == static_cast<int>(v) ;
-}
-
-std::string GSmtp::ClientReply::errorText() const
-{
-	return positiveCompletion() ? std::string() : ( m_text.empty() ? std::string("error") : m_text ) ;
-}
-
-std::string GSmtp::ClientReply::errorReason() const
-{
-	return m_reason ;
-}
-
-std::string GSmtp::ClientReply::text() const
-{
-	return m_text ;
+		digits == line.substr(0U,3U) &&
+		( line.length() == 3U || ( line.at(3U) == ' ' || line.at(3U) == '-' ) ) ;
 }
 
 bool GSmtp::ClientReply::isDigit( char c )
@@ -186,22 +152,43 @@ bool GSmtp::ClientReply::isDigit( char c )
 	return c >= '0' && c <= '9' ;
 }
 
-GSmtp::ClientReply::Type GSmtp::ClientReply::type() const
+bool GSmtp::ClientReply::positive() const
 {
-	G_ASSERT( m_valid && (m_value/100) >= 1 && (m_value/100) <= 5 ) ;
-	return static_cast<Type>( m_value / 100 ) ;
+	return m_value >= 100 && m_value < 400 ;
 }
 
-#ifndef G_LIB_SMALL
-GSmtp::ClientReply::SubType GSmtp::ClientReply::subType() const
+bool GSmtp::ClientReply::positiveCompletion() const
 {
-	G_ASSERT( m_valid && m_value >= 0 ) ;
-	int n = ( m_value / 10 ) % 10 ;
-	if( n < 4 )
-		return static_cast<SubType>( n ) ;
-	else
-		return SubType::Invalid_SubType ;
+	return m_value >= 200 && m_value < 300 ;
 }
-#endif
 
+int GSmtp::ClientReply::value() const
+{
+	return m_value ;
+}
+
+bool GSmtp::ClientReply::is( Value v ) const
+{
+	return m_value == static_cast<int>(v) ;
+}
+
+int GSmtp::ClientReply::doneCode() const
+{
+	return m_done_code ;
+}
+
+std::string GSmtp::ClientReply::errorText() const
+{
+	return positiveCompletion() ? std::string() : ( m_text.empty() ? std::string("error") : m_text ) ;
+}
+
+std::string GSmtp::ClientReply::reason() const
+{
+	return m_filter_reason ;
+}
+
+std::string GSmtp::ClientReply::text() const
+{
+	return m_text ;
+}
 

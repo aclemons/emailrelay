@@ -336,6 +336,7 @@ bool GGui::Dialog::runEnd( int rc )
 	{
 		DWORD error = GetLastError() ;
 		G_DEBUG( "GGui::Dialog::run: cannot create dialog box: " << error ) ;
+		GDEF_IGNORE_VARIABLE( error ) ;
 		return false ;
 	}
 	else if( rc == 0 )

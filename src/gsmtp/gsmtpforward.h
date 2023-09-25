@@ -98,10 +98,9 @@ public:
 	void quitAndFinish() ;
 		///< Finishes a sendMessage() sequence.
 
-	G::Slot::Signal<const std::string&,bool> & messageDoneSignal() noexcept ;
+	G::Slot::Signal<const Client::MessageDoneInfo&> & messageDoneSignal() noexcept ;
 		///< Returns a signal that indicates that sendMessage()
-		///< has completed or failed. The boolean value is set
-		///< if the filter completed with its special value.
+		///< has completed or failed.
 
 	G::Slot::Signal<const std::string&,const std::string&,const std::string&> & eventSignal() noexcept ;
 		///< See GNet::Client::eventSignal()
@@ -126,7 +125,7 @@ private:
 	void onContinueTimeout() ;
 	bool sendNext() ;
 	void start( std::unique_ptr<GStore::StoredMessage> ) ;
-	void onMessageDoneSignal( const std::string & , bool ) ;
+	void onMessageDoneSignal( const Client::MessageDoneInfo & ) ;
 	void onEventSignal( const std::string & , const std::string & , const std::string & ) ;
 	void onDelete( const std::string & reason ) ;
 	void onDeleteSignal( const std::string & ) ;
@@ -160,7 +159,7 @@ private:
 	std::string m_selector ;
 	bool m_has_connected ;
 	bool m_finished ;
-	G::Slot::Signal<const std::string&,bool> m_message_done_signal ;
+	G::Slot::Signal<const Client::MessageDoneInfo&> m_message_done_signal ;
 	G::Slot::Signal<const std::string&,const std::string&,const std::string&> m_event_signal ;
 } ;
 

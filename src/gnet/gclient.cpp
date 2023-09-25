@@ -376,7 +376,7 @@ void GNet::Client::readEvent()
 
 void GNet::Client::onData( const char * data , std::size_t size )
 {
-	if( m_config.response_timeout && m_line_buffer.transparent() ) // anything will do
+	if( m_config.response_timeout && m_line_buffer.transparent() ) // anything will do if transparent
 		m_response_timer.cancelTimer() ;
 
 	if( m_config.idle_timeout )

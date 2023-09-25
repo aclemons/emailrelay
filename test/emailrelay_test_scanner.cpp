@@ -70,7 +70,7 @@ private:
 } ;
 
 Main::ScannerPeer::ScannerPeer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo && peer_info ) :
-	ServerPeer(esu.bind(this),std::move(peer_info),GNet::LineBufferConfig::autodetect())
+	ServerPeer(esu.bind(this),std::move(peer_info),GNet::LineBuffer::Config::autodetect())
 {
 	G_LOG_S( "ScannerPeer::ctor: new connection from " << peerAddress().displayString() ) ;
 }

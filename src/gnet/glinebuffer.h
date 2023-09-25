@@ -32,7 +32,6 @@
 namespace GNet
 {
 	class LineBuffer ;
-	class LineBufferConfig ;
 	class LineBufferIterator ;
 	class LineBufferState ;
 }
@@ -46,7 +45,7 @@ namespace GNet
 /// Usage:
 /// \code
 /// {
-///   GNet::LineBuffer buffer( (GNet::LineBufferConfig()) ) ;
+///   GNet::LineBuffer buffer( (GNet::LineBuffer::Config()) ) ;
 ///   buffer.add("abc") ;
 ///   buffer.add("def\nABC\nDE") ;
 ///   buffer.add("F\n") ;
@@ -64,7 +63,7 @@ namespace GNet
 /// \code
 /// {
 ///   struct Callback { bool operator()( const char * , std::size_t size , std::size_t eolsize , std::size_t linesize , char c0 ) {...} } callback ;
-///   GNet::LineBuffer buffer( (GNet::LineBufferConfig()) ) ;
+///   GNet::LineBuffer buffer( (GNet::LineBuffer::Config()) ) ;
 ///   for( std::string s : std::vector<std::string> { "foo" , "bar\r" , "\n" } )
 ///     buffer.apply( s.data() , s.size() , callback , true ) ;
 /// }
@@ -88,7 +87,35 @@ public:
 	using SinkFn = std::function<bool(const SinkArgs&)> ;
 	using FragmentsFn = std::function<bool()> ;
 
-	explicit LineBuffer( const LineBufferConfig & ) ;
+	struct Config /// A configuration structure for GNet::LineBuffer.
+	{
+		static constexpr std::size_t inf = ~(std::size_t(0)) ;
+		static_assert( (inf+1U) == 0U , "" ) ;
+		std::string m_eol {'\n'} ; // eol or autodetect if empty
+		std::size_t m_warn {0U} ; // line-length warning level
+		std::size_t m_fmin {0U} ; // minimum fragment size
+		std::size_t m_expect {0U} ; // expected size of binary chunk
+
+		const std::string & eol() const noexcept ;
+		std::size_t warn() const noexcept ;
+		std::size_t fmin() const noexcept ;
+		std::size_t expect() const noexcept ;
+
+		Config & set_eol( const std::string & ) ;
+		Config & set_warn( std::size_t ) noexcept ;
+		Config & set_fmin( std::size_t ) noexcept ;
+		Config & set_expect( std::size_t ) noexcept ;
+
+		static Config transparent() ;
+		static Config http() ;
+		static Config smtp() ;
+		static Config pop() ;
+		static Config crlf() ;
+		static Config newline() ;
+		static Config autodetect() ;
+	} ;
+
+	explicit LineBuffer( const Config & ) ;
 		///< Constructor.
 
 	void clear() ;
@@ -306,69 +333,8 @@ private:
 	std::size_t m_pos ;
 } ;
 
-//| \class GNet::LineBufferConfig
-/// A configuration structure for GNet::LineBuffer.
-///
-class GNet::LineBufferConfig
-{
-public:
-	explicit LineBufferConfig( const std::string & eol = std::string(1U,'\n') ,
-		std::size_t warn = 0U , std::size_t fmin = 0U , std::size_t initial_expect = 0U ) ;
-			///< Constructor. An empty end-of-line string detects either
-			///< LF or CR-LF. The default end-of-line string is newline.
-			///< A non-zero warn-limit generates a one-shot warning when
-			///< breached. The fmin value can be used to prevent trivially
-			///< small line fragments from being returned. This is useful
-			///< for SMTP where a fragment containing a single dot character
-			///< and no end-of-line can cause confusion with respect to
-			///< the end-of-text marker. The initial-expect parameter
-			///< is useful for defining transparent operation.
-
-	const std::string & eol() const ;
-		///< Returns the end-of-line string as passed to the constructor.
-
-	std::size_t warn() const ;
-		///< Returns the warn-limit, as passed to the constructor.
-
-	std::size_t fmin() const ;
-		///< Returns the minimum fragment size, as passed to the constructor.
-
-	std::size_t expect() const ;
-		///< Returns the initial expect value, as passed to the constructor.
-
-	bool operator==( const LineBufferConfig & ) const ;
-		///< Equality operator.
-
-	static LineBufferConfig transparent() ;
-		///< Convenience factory function.
-
-	static LineBufferConfig http() ;
-		///< Convenience factory function.
-
-	static LineBufferConfig smtp() ;
-		///< Convenience factory function.
-
-	static LineBufferConfig pop() ;
-		///< Convenience factory function.
-
-	static LineBufferConfig crlf() ;
-		///< Convenience factory function.
-
-	static LineBufferConfig newline() ;
-		///< Convenience factory function.
-
-	static LineBufferConfig autodetect() ;
-		///< Convenience factory function.
-
-private:
-	std::string m_eol ;
-	std::size_t m_warn ;
-	std::size_t m_fmin ;
-	std::size_t m_expect ;
-} ;
-
 //| \class GNet::LineBufferState
-/// Provides information abount the state of a line buffer.
+/// Provides information about the state of a line buffer.
 ///
 class GNet::LineBufferState
 {
@@ -519,28 +485,20 @@ void GNet::LineBuffer::apply( const std::string & data , T sink , bool with_frag
 
 // ==
 
-inline
-const std::string & GNet::LineBufferConfig::eol() const
+inline const std::string & GNet::LineBuffer::Config::eol() const noexcept { return m_eol ; }
+inline std::size_t GNet::LineBuffer::Config::warn() const noexcept { return m_warn ; }
+inline std::size_t GNet::LineBuffer::Config::fmin() const noexcept { return m_fmin ; }
+inline std::size_t GNet::LineBuffer::Config::expect() const noexcept { return m_expect ; }
+inline GNet::LineBuffer::Config & GNet::LineBuffer::Config::set_eol( const std::string & s ) { m_eol = s ; return *this ; }
+inline GNet::LineBuffer::Config & GNet::LineBuffer::Config::set_warn( std::size_t n ) noexcept { m_warn = n ; return *this ; }
+inline GNet::LineBuffer::Config & GNet::LineBuffer::Config::set_fmin( std::size_t n ) noexcept { m_fmin = n ; return *this ; }
+inline GNet::LineBuffer::Config & GNet::LineBuffer::Config::set_expect( std::size_t n ) noexcept { m_expect = n ; return *this ; }
+namespace GNet
 {
-	return m_eol ;
-}
-
-inline
-std::size_t GNet::LineBufferConfig::warn() const
-{
-	return m_warn ;
-}
-
-inline
-std::size_t GNet::LineBufferConfig::fmin() const
-{
-	return m_fmin ;
-}
-
-inline
-std::size_t GNet::LineBufferConfig::expect() const
-{
-	return m_expect ;
+	inline bool operator==( const LineBuffer::Config & a , const LineBuffer::Config & b ) noexcept
+	{
+		return a.m_eol == b.m_eol && a.m_warn == b.m_warn && a.m_fmin == b.m_fmin && a.m_expect == b.m_expect ;
+	}
 }
 
 // ==

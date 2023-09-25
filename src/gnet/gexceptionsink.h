@@ -125,6 +125,9 @@ public:
 		///< code that might throw but should not terminate a
 		///< long-running server process.
 
+	static ExceptionSink rethrow() ;
+		///< A factory function for an exception handler that rethrows.
+
 	ExceptionHandler * eh() const noexcept ;
 		///< Returns the exception handler pointer.
 

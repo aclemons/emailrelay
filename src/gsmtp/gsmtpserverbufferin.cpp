@@ -27,7 +27,7 @@ GSmtp::ServerBufferIn::ServerBufferIn( GNet::ExceptionSink es , ServerProtocol &
 	const Config & config ) :
 		m_protocol(protocol) ,
 		m_config(config) ,
-		m_line_buffer(GNet::LineBufferConfig::smtp()) ,
+		m_line_buffer(GNet::LineBuffer::Config::smtp()) ,
 		m_timer(*this,&ServerBufferIn::onTimeout,es)
 {
 	m_protocol.changeSignal().connect( G::Slot::slot(*this,&ServerBufferIn::onProtocolChange) ) ;

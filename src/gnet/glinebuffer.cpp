@@ -25,7 +25,7 @@
 #include "gassert.h"
 #include <algorithm>
 
-GNet::LineBuffer::LineBuffer( const LineBufferConfig & config ) :
+GNet::LineBuffer::LineBuffer( const Config & config ) :
 	m_auto(config.eol().empty()) ,
 	m_eol(config.eol()) ,
 	m_warn_limit(config.warn()) ,
@@ -234,61 +234,40 @@ std::size_t GNet::LineBuffer::Output::set( LineStore & in , std::size_t pos , st
 
 // ==
 
-GNet::LineBufferConfig::LineBufferConfig( const std::string & eol , std::size_t warn ,
-	std::size_t fmin , std::size_t expect ) :
-		m_eol(eol) ,
-		m_warn(warn) ,
-		m_fmin(fmin) ,
-		m_expect(expect)
+GNet::LineBuffer::Config GNet::LineBuffer::Config::transparent()
 {
+	return Config().set_expect( inf ) ;
 }
 
-#ifndef G_LIB_SMALL
-bool GNet::LineBufferConfig::operator==( const LineBufferConfig & other ) const
+GNet::LineBuffer::Config GNet::LineBuffer::Config::newline()
 {
-	return
-		m_eol == other.m_eol &&
-		m_warn == other.m_warn &&
-		m_fmin == other.m_fmin &&
-		m_expect == other.m_expect ;
-}
-#endif
-
-GNet::LineBufferConfig GNet::LineBufferConfig::transparent()
-{
-	static constexpr std::size_t inf = ~(std::size_t(0)) ;
-	static_assert( (inf+1U) == 0U , "" ) ;
-	return LineBufferConfig( std::string(1U,'\n') , 0U , 0U , inf ) ;
+	return {} ;
 }
 
-GNet::LineBufferConfig GNet::LineBufferConfig::newline()
+GNet::LineBuffer::Config GNet::LineBuffer::Config::autodetect()
 {
-	return LineBufferConfig( std::string(1U,'\n') ) ;
+	return Config().set_eol( {} ) ;
 }
 
-GNet::LineBufferConfig GNet::LineBufferConfig::autodetect()
+GNet::LineBuffer::Config GNet::LineBuffer::Config::crlf()
 {
-	return LineBufferConfig( std::string() ) ;
+	return Config().set_eol( {"\r\n",2U} ) ;
 }
 
-GNet::LineBufferConfig GNet::LineBufferConfig::crlf()
+GNet::LineBuffer::Config GNet::LineBuffer::Config::smtp()
 {
-	return LineBufferConfig( std::string("\r\n",2U) ) ;
+	return Config().set_eol( {"\r\n",2U} ).set_warn( 998U+2U ).set_fmin( 2U ) ; // 998 in RFC-2822
 }
 
-GNet::LineBufferConfig GNet::LineBufferConfig::smtp()
-{
-	return LineBufferConfig( std::string("\r\n",2U) , 998U + 2U , /*fmin=*/2U ) ; // RFC-2822
-}
-
-GNet::LineBufferConfig GNet::LineBufferConfig::pop()
+GNet::LineBuffer::Config GNet::LineBuffer::Config::pop()
 {
 	return crlf() ;
 }
 
 #ifndef G_LIB_SMALL
-GNet::LineBufferConfig GNet::LineBufferConfig::http()
+GNet::LineBuffer::Config GNet::LineBuffer::Config::http()
 {
 	return crlf() ;
 }
 #endif
+

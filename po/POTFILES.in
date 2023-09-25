@@ -16,6 +16,7 @@
 ./src/gstore/gstoredmessage.cpp
 ./src/gstore/gnewfile.cpp
 ./src/gstore/gmessagedelivery.cpp
+./src/gstore/gfilestore_unix.cpp
 ./src/gstore/gmessagestore_unix.cpp
 ./src/gstore/genvelope.cpp
 ./src/gstore/gmessagestore.cpp
@@ -44,6 +45,7 @@
 ./src/main/output.cpp
 ./src/main/winmenu.cpp
 ./src/gsmtp/gsmtpserverprotocol.cpp
+./src/gsmtp/gadminserver_enabled.cpp
 ./src/gsmtp/gsmtpclientreply.cpp
 ./src/gsmtp/gverifier.cpp
 ./src/gsmtp/gprotocolmessage.cpp
@@ -52,6 +54,7 @@
 ./src/gsmtp/gsmtpclientprotocol.cpp
 ./src/gsmtp/gsmtpforward.cpp
 ./src/gsmtp/gfilter.cpp
+./src/gsmtp/gadminserver_disabled.cpp
 ./src/gsmtp/gsmtpservertext.cpp
 ./src/gsmtp/gsmtpclient.cpp
 ./src/gsmtp/gfilterfactorybase.cpp

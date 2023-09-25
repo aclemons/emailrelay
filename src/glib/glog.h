@@ -46,7 +46,7 @@ namespace G
 /// \endcode
 /// or
 /// \code
-/// G_LOG( format("%1% %2%") % a % b ) ;
+/// G_LOG( G::format("%1% %2%") % a % b ) ;
 /// \endcode
 ///
 /// \see G::LogOutput
@@ -134,9 +134,9 @@ inline bool G::Log::atMoreVerbose() noexcept
 // G::LogOutput) error conditions should be made visible by some other means
 // (such as stderr).
 
-#define G_LOG_IMP( expr , severity ) do { using G::format ; if(G::Log::at(severity)) G::Log((severity),__FILE__,__LINE__) << expr ; } while(0) /* NOLINT bugprone-macro-parentheses */
-#define G_LOG_IMP_IF( cond , expr , severity ) do { using G::format ; if(G::Log::at(severity)&&(cond)) G::Log((severity),__FILE__,__LINE__) << expr ; } while(0) /* NOLINT bugprone-macro-parentheses */
-#define G_LOG_IMP_ONCE( expr , severity ) do { using G::format ; static bool done__ = false ; if(!done__&&G::Log::at(severity)) { G::Log((severity),__FILE__,__LINE__) << expr ;  done__ = true ; } } while(0) /* NOLINT bugprone-macro-parentheses */
+#define G_LOG_IMP( expr , severity ) do { if(G::Log::at(severity)) G::Log((severity),__FILE__,__LINE__) << expr ; } while(0) /* NOLINT bugprone-macro-parentheses */
+#define G_LOG_IMP_IF( cond , expr , severity ) do { if(G::Log::at(severity)&&(cond)) G::Log((severity),__FILE__,__LINE__) << expr ; } while(0) /* NOLINT bugprone-macro-parentheses */
+#define G_LOG_IMP_ONCE( expr , severity ) do { static bool done__ = false ; if(!done__&&G::Log::at(severity)) { G::Log((severity),__FILE__,__LINE__) << expr ;  done__ = true ; } } while(0) /* NOLINT bugprone-macro-parentheses */
 
 #if defined(G_WITH_DEBUG) || ( defined(_DEBUG) && ! defined(G_NO_DEBUG) )
 #define G_DEBUG( expr ) G_LOG_IMP( expr , G::Log::Severity::Debug )

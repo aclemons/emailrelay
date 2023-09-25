@@ -270,8 +270,8 @@ G::IdentityImp::Account G::IdentityImp::lookup( const std::string & name , bool 
 		if( LookupAccountSidA( NULL , sid_p , NULL , &namebuffersize , NULL , &domainbuffersize , &type ) )
 			return error ;
 		std::vector<char> namebuffer( std::max(DWORD(1),namebuffersize) ) ;
-		std::vector<char> domainbuffer( std::max(DWORD(1),domainbuffersize) ) ; // not used
-		if( !LookupAccountSidA( NULL , sid_p , &namebuffer[0] , &namebuffersize , &domainbuffer[0] , &domainbuffersize , &type ) )
+		std::vector<char> domainbuffer2( std::max(DWORD(1),domainbuffersize) ) ; // not used
+		if( !LookupAccountSidA( NULL , sid_p , &namebuffer[0] , &namebuffersize , &domainbuffer2[0] , &domainbuffersize , &type ) )
 			return error ;
 		namebuffer[namebuffer.size()-1U] = '\0' ;
 		canonical_name = std::string( &namebuffer[0] ) ;
