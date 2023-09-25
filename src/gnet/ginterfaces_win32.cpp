@@ -90,7 +90,7 @@ void GNet::Interfaces::loadImp( ExceptionSink es , std::vector<Item> & list )
 	if( rc == ERROR_BUFFER_OVERFLOW )
 	{
 		buffer.resize( size ) ;
-		IP_ADAPTER_ADDRESSES * p = G::buffer_cast<IP_ADAPTER_ADDRESSES*>( buffer ) ;
+		p = G::buffer_cast<IP_ADAPTER_ADDRESSES*>( buffer ) ;
 		rc = GetAdaptersAddresses( AF_UNSPEC , flags , nullptr , p , &size ) ;
 	}
 
