@@ -633,10 +633,12 @@ When the filter program terminates with a non-zero exit code the envelope file
 is given a `.bad` filename suffix so that it will not get picked up for
 forwarding and the first few thousand characters of the filter's standard output
 stream are searched for a line like `<<error text>>` or `[[error text]]`. The
-text inside the double square or angle brackets is taken as a failure reason and
-passed back to the SMTP client and also written into the envelope file. A second
-error-text line can be used for additional diagnostics that will not be visible
-to the remote client.
+error text inside the double square or angle brackets is taken as a failure
+reason and passed back to the remote SMTP client and also written into the
+envelope file. If the error text starts with a three-digit number between 400
+and 599 followed by a space then that is used as the SMTP response code. A
+second error-text line can be used for additional diagnostics that will not be
+visible to the client.
 
 Filter exit codes between 100 and 115 are reserved for special processing: 100
 is used to abandon the current e-mail message so the filter can safely delete
@@ -703,7 +705,7 @@ after processing the current one (eg. for simple rate-limiting).
 
 Bear in mind the following points when writing `--filter` programs:
 
-* The standard input and output are not used; the message filenames are passed on the command-line.
+* The standard input and output are not used for message content; the message filenames are passed on the command-line.
 * Programs are run with a reduced set of environment variables.
 * Message files use CR-LF line terminators.
 * Envelope files will have a file extension of `.new` or `.busy` when the filter runs.

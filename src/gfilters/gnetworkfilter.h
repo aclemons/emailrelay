@@ -28,6 +28,7 @@
 #include "grequestclient.h"
 #include "geventhandler.h"
 #include "goptional.h"
+#include <utility>
 
 namespace GFilters
 {
@@ -57,6 +58,7 @@ private: // overrides
 	void cancel() override ; // GSmtp::Filter
 	Result result() const override ; // GSmtp::Filter
 	std::string response() const override ; // GSmtp::Filter
+	int responseCode() const override ; // GSmtp::Filter
 	std::string reason() const override ; // GSmtp::Filter
 	bool special() const override ; // GSmtp::Filter
 	void onException( GNet::ExceptionSource * , std::exception & , bool ) override ; // GNet::ExceptionHandler
@@ -71,6 +73,7 @@ private:
 	void clientEvent( const std::string & , const std::string & , const std::string & ) ;
 	void sendResult( const std::string & ) ;
 	void onTimeout() ;
+	std::pair<std::string,int> responsePair() const ;
 
 private:
 	GNet::ExceptionSink m_es ;

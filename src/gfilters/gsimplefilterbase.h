@@ -60,6 +60,7 @@ private: // overrides
 	void cancel() final ;
 	Result result() const final ;
 	std::string response() const final ;
+	int responseCode() const final ;
 	std::string reason() const final ;
 	bool special() const final ;
 

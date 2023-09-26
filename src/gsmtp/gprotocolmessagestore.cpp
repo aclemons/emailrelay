@@ -151,7 +151,7 @@ void GSmtp::ProtocolMessageStore::process( const std::string & session_auth_id ,
 	{
 		G_WARNING( "GSmtp::ProtocolMessageStore::process: message processing exception: " << e.what() ) ;
 		clear() ;
-		m_done_signal.emit( { false , GStore::MessageId::none() , 0 , "failed" , e.what() } ) ;
+		m_processed_signal.emit( { false , GStore::MessageId::none() , 0 , "failed" , e.what() } ) ;
 	}
 }
 
@@ -167,7 +167,8 @@ void GSmtp::ProtocolMessageStore::filterDone( int filter_result )
 		const bool abandon = filter_result == 1 ;
 		const bool rescan = m_filter->special() ;
 
-		std::string filter_response = (ok||abandon) ? std::string() : m_filter->response() ;
+		std::string filter_response = G::Str::replaced( (ok||abandon) ? std::string() : m_filter->response() , '\t' , ' ' ) ;
+		int filter_response_code = (ok||abandon) ? 0 : m_filter->responseCode() ;
 		std::string filter_reason = (ok||abandon) ? std::string() : m_filter->reason() ;
 
 		G_LOG_IF( !m_filter->quiet() , "GSmtp::ProtocolMessageStore::filterDone: "
@@ -199,18 +200,18 @@ void GSmtp::ProtocolMessageStore::filterDone( int filter_result )
 		}
 
 		clear() ;
-		m_done_signal.emit( { ok || abandon , message_id , 0 , filter_response , filter_reason } ) ;
+		m_processed_signal.emit( { ok || abandon , message_id , filter_response_code , filter_response , filter_reason } ) ;
 	}
 	catch( std::exception & e ) // catch filtering errors
 	{
 		G_WARNING( "GSmtp::ProtocolMessageStore::filterDone: filter exception: " << e.what() ) ;
 		clear() ;
-		m_done_signal.emit( { false , GStore::MessageId::none() , 0 , "rejected" , e.what() } ) ;
+		m_processed_signal.emit( { false , GStore::MessageId::none() , 0 , "rejected" , e.what() } ) ;
 	}
 }
 
-GSmtp::ProtocolMessage::DoneSignal & GSmtp::ProtocolMessageStore::doneSignal() noexcept
+GSmtp::ProtocolMessage::ProcessedSignal & GSmtp::ProtocolMessageStore::processedSignal() noexcept
 {
-	return m_done_signal ;
+	return m_processed_signal ;
 }
 

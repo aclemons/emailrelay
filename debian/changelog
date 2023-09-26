@@ -3,7 +3,7 @@ emailrelay (2.5.1) unstable; urgency=low
   * Configure option "--disable-admin" restored.
   * Fewer Windows handles inherited by filter programs [bug-id #55].
   * Fix for "--dnsbl" option parsing.
- -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Mon, 25 Sep 2023 00:00:00 +0000
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Tue, 26 Sep 2023 00:00:00 +0000
 
 emailrelay (2.5) unstable; urgency=low
   * Multiple configurations in one process.

@@ -987,10 +987,10 @@ $(TAR):
 zip: $(ZIP)
 
 $(ZIP): $(TAR)
-	-mkdir zip.d 2>/dev/null
-	-@rm -rf zip.d/* 2>/dev/null
-	tar -C zip.d --strip-components=1 -xzf $(TAR)
-	sh -c "cd zip.d && zip -r ../$(ZIP) ."
+	-mkdir makezip.tmp 2>/dev/null
+	-@rm -rf makezip.tmp/* 2>/dev/null
+	tar -C makezip.tmp --strip-components=1 -xzf $(TAR)
+	sh -c "cd makezip.tmp && zip -r ../$(ZIP) ."
 
 .PHONY: mbedtls
 mbedtls:

@@ -108,15 +108,15 @@ am__v_AR_0 = @echo "  AR      " $@;
 am__v_AR_1 = 
 libgstore_a_AR = $(AR) $(ARFLAGS)
 libgstore_a_LIBADD =
-am__libgstore_a_SOURCES_DIST = gmessagestore_unix.cpp \
-	gmessagestore_win32.cpp genvelope.cpp genvelope.h \
+am__libgstore_a_SOURCES_DIST = gfilestore_unix.cpp \
+	gfilestore_win32.cpp genvelope.cpp genvelope.h \
 	gfiledelivery.cpp gfiledelivery.h gfilestore.cpp gfilestore.h \
 	gmessagedelivery.cpp gmessagedelivery.h gmessagestore.cpp \
 	gmessagestore.h gnewfile.cpp gnewfile.h gnewmessage.cpp \
 	gnewmessage.h gstoredfile.cpp gstoredfile.h gstoredmessage.cpp \
 	gstoredmessage.h
-@GCONFIG_WINDOWS_FALSE@am__objects_1 = gmessagestore_unix.$(OBJEXT)
-@GCONFIG_WINDOWS_TRUE@am__objects_1 = gmessagestore_win32.$(OBJEXT)
+@GCONFIG_WINDOWS_FALSE@am__objects_1 = gfilestore_unix.$(OBJEXT)
+@GCONFIG_WINDOWS_TRUE@am__objects_1 = gfilestore_win32.$(OBJEXT)
 am_libgstore_a_OBJECTS = $(am__objects_1) genvelope.$(OBJEXT) \
 	gfiledelivery.$(OBJEXT) gfilestore.$(OBJEXT) \
 	gmessagedelivery.$(OBJEXT) gmessagestore.$(OBJEXT) \
@@ -140,11 +140,10 @@ depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/genvelope.Po \
 	./$(DEPDIR)/gfiledelivery.Po ./$(DEPDIR)/gfilestore.Po \
+	./$(DEPDIR)/gfilestore_unix.Po ./$(DEPDIR)/gfilestore_win32.Po \
 	./$(DEPDIR)/gmessagedelivery.Po ./$(DEPDIR)/gmessagestore.Po \
-	./$(DEPDIR)/gmessagestore_unix.Po \
-	./$(DEPDIR)/gmessagestore_win32.Po ./$(DEPDIR)/gnewfile.Po \
-	./$(DEPDIR)/gnewmessage.Po ./$(DEPDIR)/gstoredfile.Po \
-	./$(DEPDIR)/gstoredmessage.Po
+	./$(DEPDIR)/gnewfile.Po ./$(DEPDIR)/gnewmessage.Po \
+	./$(DEPDIR)/gstoredfile.Po ./$(DEPDIR)/gstoredmessage.Po
 am__mv = mv -f
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -327,10 +326,10 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-@GCONFIG_WINDOWS_FALSE@OS_SOURCES = gmessagestore_unix.cpp
-@GCONFIG_WINDOWS_TRUE@OS_SOURCES = gmessagestore_win32.cpp
-@GCONFIG_WINDOWS_FALSE@OS_SOURCES_EXTRA_DIST = gmessagestore_win32.cpp
-@GCONFIG_WINDOWS_TRUE@OS_SOURCES_EXTRA_DIST = gmessagestore_unix.cpp
+@GCONFIG_WINDOWS_FALSE@OS_SOURCES = gfilestore_unix.cpp
+@GCONFIG_WINDOWS_TRUE@OS_SOURCES = gfilestore_win32.cpp
+@GCONFIG_WINDOWS_FALSE@OS_SOURCES_EXTRA_DIST = gfilestore_win32.cpp
+@GCONFIG_WINDOWS_TRUE@OS_SOURCES_EXTRA_DIST = gfilestore_unix.cpp
 EXTRA_DIST = \
 	$(OS_SOURCES_EXTRA_DIST)
 
@@ -412,10 +411,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/genvelope.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfiledelivery.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfilestore.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfilestore_unix.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfilestore_win32.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmessagedelivery.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmessagestore.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmessagestore_unix.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gmessagestore_win32.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnewfile.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gnewmessage.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gstoredfile.Po@am__quote@ # am--include-marker
@@ -569,10 +568,10 @@ distclean: distclean-am
 		-rm -f ./$(DEPDIR)/genvelope.Po
 	-rm -f ./$(DEPDIR)/gfiledelivery.Po
 	-rm -f ./$(DEPDIR)/gfilestore.Po
+	-rm -f ./$(DEPDIR)/gfilestore_unix.Po
+	-rm -f ./$(DEPDIR)/gfilestore_win32.Po
 	-rm -f ./$(DEPDIR)/gmessagedelivery.Po
 	-rm -f ./$(DEPDIR)/gmessagestore.Po
-	-rm -f ./$(DEPDIR)/gmessagestore_unix.Po
-	-rm -f ./$(DEPDIR)/gmessagestore_win32.Po
 	-rm -f ./$(DEPDIR)/gnewfile.Po
 	-rm -f ./$(DEPDIR)/gnewmessage.Po
 	-rm -f ./$(DEPDIR)/gstoredfile.Po
@@ -629,10 +628,10 @@ maintainer-clean: maintainer-clean-am
 		-rm -f ./$(DEPDIR)/genvelope.Po
 	-rm -f ./$(DEPDIR)/gfiledelivery.Po
 	-rm -f ./$(DEPDIR)/gfilestore.Po
+	-rm -f ./$(DEPDIR)/gfilestore_unix.Po
+	-rm -f ./$(DEPDIR)/gfilestore_win32.Po
 	-rm -f ./$(DEPDIR)/gmessagedelivery.Po
 	-rm -f ./$(DEPDIR)/gmessagestore.Po
-	-rm -f ./$(DEPDIR)/gmessagestore_unix.Po
-	-rm -f ./$(DEPDIR)/gmessagestore_win32.Po
 	-rm -f ./$(DEPDIR)/gnewfile.Po
 	-rm -f ./$(DEPDIR)/gnewmessage.Po
 	-rm -f ./$(DEPDIR)/gstoredfile.Po

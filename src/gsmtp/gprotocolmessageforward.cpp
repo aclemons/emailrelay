@@ -38,24 +38,24 @@ GSmtp::ProtocolMessageForward::ProtocolMessageForward( GNet::ExceptionSink es ,
 		m_client_secrets(client_secrets) ,
 		m_pm(pm.release()) ,
 		m_id(GStore::MessageId::none()) ,
-		m_done_signal(true)
+		m_processed_signal(true)
 {
 	// signal plumbing to receive 'done' events
-	m_pm->doneSignal().connect( G::Slot::slot(*this,&ProtocolMessageForward::processDone) ) ;
+	m_pm->processedSignal().connect( G::Slot::slot(*this,&ProtocolMessageForward::protocolMessageProcessed) ) ;
 	m_client_ptr.deleteSignal().connect( G::Slot::slot(*this,&ProtocolMessageForward::clientDone) ) ;
 }
 
 GSmtp::ProtocolMessageForward::~ProtocolMessageForward()
 {
-	m_pm->doneSignal().disconnect() ;
+	m_pm->processedSignal().disconnect() ;
 	m_client_ptr.deleteSignal().disconnect() ;
 	if( m_client_ptr.get() != nullptr )
 		m_client_ptr->messageDoneSignal().disconnect() ;
 }
 
-GSmtp::ProtocolMessage::DoneSignal & GSmtp::ProtocolMessageForward::doneSignal() noexcept
+GSmtp::ProtocolMessage::ProcessedSignal & GSmtp::ProtocolMessageForward::processedSignal() noexcept
 {
-	return m_done_signal ;
+	return m_processed_signal ;
 }
 
 void GSmtp::ProtocolMessageForward::reset()
@@ -113,14 +113,16 @@ void GSmtp::ProtocolMessageForward::process( const std::string & auth_id , const
 	const std::string & peer_certificate )
 {
 	// commit to the store -- forward when the commit is complete
-	m_done_signal.reset() ; // one-shot reset
+	m_processed_signal.reset() ; // one-shot reset
 	m_pm->process( auth_id , peer_socket_address , peer_certificate ) ;
 }
 
-void GSmtp::ProtocolMessageForward::processDone( const ProtocolMessage::DoneInfo & info )
+void GSmtp::ProtocolMessageForward::protocolMessageProcessed( const ProtocolMessage::ProcessedInfo & info )
 {
-	G_DEBUG( "ProtocolMessageForward::processDone: " << (info.success?1:0) << " "
+	G_ASSERT( info.response.find('\t') == std::string::npos ) ;
+	G_DEBUG( "ProtocolMessageForward::protocolMessageProcessed: " << (info.success?1:0) << " "
 		<< info.id.str() << " [" << info.response << "] [" << info.reason << "]" ) ;
+
 	G::CallFrame this_( m_call_stack ) ;
 	if( info.success && info.id.valid() )
 	{
@@ -134,18 +136,18 @@ void GSmtp::ProtocolMessageForward::processDone( const ProtocolMessage::DoneInfo
 		if( nothing_to_do )
 		{
 			// no remote recipients
-			m_done_signal.emit( { true , info.id , 0 , std::string() , std::string() } ) ;
+			m_processed_signal.emit( { true , info.id , 0 , std::string() , std::string() } ) ;
 		}
 		else if( !error.empty() )
 		{
 			// immediate failure or no recipients etc
-			m_done_signal.emit( { false , info.id , 0 , "forwarding failed" , error } ) ;
+			m_processed_signal.emit( { false , info.id , 0 , "forwarding failed" , error } ) ;
 		}
 	}
 	else
 	{
 		// filter fail, or filter abandon, or message storage failed
-		m_done_signal.emit( info ) ;
+		m_processed_signal.emit( info ) ;
 	}
 }
 
@@ -189,13 +191,13 @@ void GSmtp::ProtocolMessageForward::messageDone( const Client::MessageDoneInfo &
 {
 	G_DEBUG( "GSmtp::ProtocolMessageForward::messageDone: \"" << info.response << "\"" ) ;
 	const bool ok = info.response.empty() ;
-	m_done_signal.emit( { ok , m_id , ok?0:info.response_code , info.response , std::string() } ) ;
+	m_processed_signal.emit( { ok , m_id , ok?0:info.response_code , info.response , std::string() } ) ;
 }
 
 void GSmtp::ProtocolMessageForward::clientDone( const std::string & reason )
 {
 	G_DEBUG( "GSmtp::ProtocolMessageForward::clientDone: \"" << reason << "\"" ) ;
 	const bool ok = reason.empty() ;
-	m_done_signal.emit( { ok , m_id , 0 , ok?"":"forwarding failed" , reason } ) ;
+	m_processed_signal.emit( { ok , m_id , 0 , ok?"":"forwarding failed" , reason } ) ;
 }
 
