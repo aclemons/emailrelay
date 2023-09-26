@@ -24,6 +24,7 @@
 #include "gstr.h"
 #include "gpath.h"
 #include "gtest.h"
+#include "gbuffer.h"
 #include "glog.h"
 #include <sstream>
 #include <sys/types.h>
@@ -34,11 +35,17 @@
 #include <utility> // std::swap()
 #include <array>
 
-//| \class G::Pipe
-/// A private implementation class used by G::NewProcess to manage a
-/// windows pipe.
-///
-class G::Pipe
+namespace G
+{
+	namespace NewProcessWindowsImp
+	{
+		class Pipe ;
+		class AttributeList ;
+		class StartupInfo ;
+	}
+}
+
+class G::NewProcessWindowsImp::Pipe
 {
 public:
 	Pipe() ;
@@ -63,12 +70,12 @@ private:
 	HANDLE m_write ;
 } ;
 
-//| \class G::NewProcessImp
-/// A pimple-pattern implementation class used by G::NewProcess.
-///
 class G::NewProcessImp
 {
 public:
+	using Pipe = NewProcessWindowsImp::Pipe ;
+	using AttributeList = NewProcessWindowsImp::AttributeList ;
+	using StartupInfo = NewProcessWindowsImp::StartupInfo ;
 	using Fd = NewProcess::Fd ;
 
 	NewProcessImp( const Path & , const StringArray & , const NewProcess::Config & ) ;
@@ -115,7 +122,61 @@ private:
 	NewProcessWaitable m_waitable ;
 } ;
 
-// ===
+#if GCONFIG_HAVE_WINDOWS_STARTUP_INFO_EX
+class G::NewProcessWindowsImp::AttributeList
+{
+public:
+	G_EXCEPTION( Error , tx("AttributeList error") ) ;
+	using pointer_type = LPPROC_THREAD_ATTRIBUTE_LIST ;
+	explicit AttributeList( HANDLE ) ;
+	~AttributeList() ;
+	pointer_type ptr() ;
+
+public:
+	AttributeList( const AttributeList & ) = delete ;
+	AttributeList( AttributeList && ) = delete ;
+	AttributeList & operator=( const AttributeList & ) = delete ;
+	AttributeList & operator=( AttributeList && ) = delete ;
+
+private:
+	void resize() ;
+	void init( DWORD ) ;
+	void add( HANDLE ) ;
+	void cleanup() noexcept ;
+
+private:
+	G::Buffer<char> m_buffer ; // (char since PROC_THREAD_ATTRIBUTE_LIST is not a defined type)
+	HANDLE m_handle {NULL} ;
+	pointer_type m_ptr {NULL} ;
+} ;
+#else
+class G::NewProcessWindowsImp::AttributeList
+{
+public:
+	using pointer_type = void* ;
+	explicit AttributeList( HANDLE ) {}
+	pointer_type ptr() { return nullptr ; }
+} ;
+#endif
+
+class G::NewProcessWindowsImp::StartupInfo
+{
+public:
+	StartupInfo( AttributeList & , HANDLE hstdout , HANDLE hstdin ) ;
+	LPSTARTUPINFOA ptr() ;
+	DWORD flags() const ;
+
+private:
+	#if GCONFIG_HAVE_WINDOWS_STARTUP_INFO_EX
+	STARTUPINFOEXA m_startup_info ;
+	#else
+	STARTUPINFOA m_startup_info ;
+	#endif
+	LPSTARTUPINFOA m_ptr ;
+	DWORD m_flags ;
+} ;
+
+// ==
 
 G::NewProcess::NewProcess( const Path & exe , const StringArray & args , const Config & config ) :
 	m_imp(std::make_unique<NewProcessImp>(exe,args,config))
@@ -123,8 +184,7 @@ G::NewProcess::NewProcess( const Path & exe , const StringArray & args , const C
 }
 
 G::NewProcess::~NewProcess()
-{
-}
+= default ;
 
 G::NewProcessWaitable & G::NewProcess::waitable() noexcept
 {
@@ -151,7 +211,7 @@ void G::NewProcess::kill( bool yield ) noexcept
 	}
 }
 
-// ===
+// ==
 
 G::NewProcessImp::NewProcessImp( const Path & exe , const StringArray & args , const NewProcess::Config & config ) :
 	m_hprocess(0) ,
@@ -210,15 +270,13 @@ std::pair<HANDLE,DWORD> G::NewProcessImp::createProcess( const std::string & exe
 	G_DEBUG( "G::NewProcessImp::createProcess: exe=[" << exe << "] command-line=[" << command_line << "]" ) ;
 
 	// redirect stdout or stderr onto the read end of our pipe
-	STARTUPINFOA start {} ;
-	start.cb = sizeof(start) ;
-	start.dwFlags = STARTF_USESTDHANDLES ;
-	start.hStdInput = INVALID_HANDLE_VALUE ;
-	start.hStdOutput = fd_stdout == Fd::pipe() ? hpipe : INVALID_HANDLE_VALUE ;
-	start.hStdError = fd_stderr == Fd::pipe() ? hpipe : INVALID_HANDLE_VALUE ;
+	AttributeList attribute_list( hpipe ) ;
+	StartupInfo startup_info( attribute_list ,
+		fd_stdout == Fd::pipe() ? hpipe : INVALID_HANDLE_VALUE ,
+		fd_stderr == Fd::pipe() ? hpipe : INVALID_HANDLE_VALUE ) ;
 
 	BOOL inherit = TRUE ;
-	DWORD flags = CREATE_NO_WINDOW ;
+	DWORD flags = startup_info.flags() ;
 	LPVOID envp = env.empty() ? nullptr : static_cast<LPVOID>(const_cast<char*>(env.ptr())) ;
 	LPCSTR cwd = cd ;
 	SECURITY_ATTRIBUTES * process_attributes = nullptr ;
@@ -229,7 +287,7 @@ std::pair<HANDLE,DWORD> G::NewProcessImp::createProcess( const std::string & exe
 	BOOL rc = CreateProcessA( exe.c_str() ,
 		const_cast<char*>(command_line.c_str()) ,
 		process_attributes , thread_attributes , inherit ,
-		flags , envp , cwd , &start , &info ) ;
+		flags , envp , cwd , startup_info.ptr() , &info ) ;
 
 	if( rc == 0 || !valid(info.hProcess) )
 	{
@@ -344,9 +402,111 @@ std::string G::NewProcessImp::cscript()
 	return windowsPath().append("\\system32\\cscript.exe") ;
 }
 
-// ===
+// ==
 
-G::Pipe::Pipe() :
+#if GCONFIG_HAVE_WINDOWS_STARTUP_INFO_EX
+G::NewProcessWindowsImp::AttributeList::AttributeList( HANDLE h )
+{
+	resize() ;
+	init( h ? 1 : 0 ) ;
+	add( h ) ;
+}
+
+G::NewProcessWindowsImp::AttributeList::~AttributeList()
+{
+	cleanup() ;
+}
+
+void G::NewProcessWindowsImp::AttributeList::resize()
+{
+	SIZE_T buffer_size = 0 ;
+	InitializeProcThreadAttributeList( NULL , 1 , 0 , &buffer_size ) ;
+	if( buffer_size == 0 || buffer_size > 100000 )
+		throw Error() ;
+	m_buffer.resize( buffer_size ) ;
+}
+
+void G::NewProcessWindowsImp::AttributeList::init( DWORD attribute_count )
+{
+	SIZE_T buffer_size = m_buffer.size() ;
+	auto ptr = reinterpret_cast<LPPROC_THREAD_ATTRIBUTE_LIST>(m_buffer.data()) ;
+	BOOL ok = InitializeProcThreadAttributeList( ptr , attribute_count , 0 , &buffer_size ) ;
+	if( !ok )
+		throw Error() ;
+	m_ptr = ptr ;
+	G_ASSERT( m_buffer.size() >= buffer_size ) ;
+}
+
+void G::NewProcessWindowsImp::AttributeList::add( HANDLE h )
+{
+	if( h )
+	{
+		m_handle = h ;
+		BOOL ok = UpdateProcThreadAttribute( m_ptr , 0 ,
+			PROC_THREAD_ATTRIBUTE_HANDLE_LIST , &m_handle , sizeof(m_handle) , NULL , NULL ) ;
+		if( !ok )
+		{
+			cleanup() ;
+			throw Error() ;
+		}
+	}
+}
+
+void G::NewProcessWindowsImp::AttributeList::cleanup() noexcept
+{
+	if( m_ptr )
+		DeleteProcThreadAttributeList( m_ptr ) ;
+	m_ptr = NULL ;
+}
+
+G::NewProcessWindowsImp::AttributeList::pointer_type G::NewProcessWindowsImp::AttributeList::ptr()
+{
+	return m_ptr ;
+}
+#endif
+
+// ==
+
+G::NewProcessWindowsImp::StartupInfo::StartupInfo( AttributeList & attribute_list , HANDLE hstdout , HANDLE hstderr )
+{
+	#if GCONFIG_HAVE_WINDOWS_STARTUP_INFO_EX
+	STARTUPINFOEXA zero {} ;
+	m_startup_info = zero ;
+	m_startup_info.StartupInfo.cb = sizeof( STARTUPINFOEXA ) ;
+	m_startup_info.StartupInfo.dwFlags = STARTF_USESTDHANDLES ;
+	m_startup_info.StartupInfo.hStdInput = INVALID_HANDLE_VALUE ;
+	m_startup_info.StartupInfo.hStdOutput = hstdout ;
+	m_startup_info.StartupInfo.hStdError = hstderr ;
+	m_startup_info.lpAttributeList = attribute_list.ptr() ;
+	m_ptr = reinterpret_cast<LPSTARTUPINFOA>(&m_startup_info) ;
+	m_flags = CREATE_NO_WINDOW | EXTENDED_STARTUPINFO_PRESENT ;
+	#else
+	GDEF_IGNORE_PARAMS( attribute_list ) ;
+	STARTUPINFOA zero {} ;
+	m_startup_info = zero ;
+	m_startup_info.cb = sizeof( STARTUPINFOA ) ;
+	m_startup_info.dwFlags = STARTF_USESTDHANDLES ;
+	m_startup_info.hStdInput = INVALID_HANDLE_VALUE ;
+	m_startup_info.hStdOutput = hstdout ;
+	m_startup_info.hStdError = hstderr ;
+	m_ptr = &m_startup_info ;
+	m_flags = CREATE_NO_WINDOW ;
+	#endif
+}
+
+LPSTARTUPINFOA G::NewProcessWindowsImp::StartupInfo::ptr()
+{
+	return m_ptr ;
+}
+
+DWORD G::NewProcessWindowsImp::StartupInfo::flags() const
+{
+	return m_flags ;
+}
+
+// ==
+
+G::NewProcessWindowsImp::Pipe::Pipe() :
 	m_read(HNULL) ,
 	m_write(HNULL)
 {
@@ -354,13 +514,13 @@ G::Pipe::Pipe() :
 	uninherited( m_read ) ;
 }
 
-G::Pipe::~Pipe()
+G::NewProcessWindowsImp::Pipe::~Pipe()
 {
 	if( m_read != HNULL ) CloseHandle( m_read ) ;
 	if( m_write != HNULL ) CloseHandle( m_write ) ;
 }
 
-void G::Pipe::create( HANDLE & h_read , HANDLE & h_write )
+void G::NewProcessWindowsImp::Pipe::create( HANDLE & h_read , HANDLE & h_write )
 {
 	SECURITY_ATTRIBUTES attributes {} ;
 	attributes.nLength = sizeof(attributes) ;
@@ -374,40 +534,40 @@ void G::Pipe::create( HANDLE & h_read , HANDLE & h_write )
 	if( rc == 0 )
 	{
 		DWORD error = GetLastError() ;
-		G_ERROR( "G::Pipe::create: pipe error: create: " << error ) ;
+		G_ERROR( "G::NewProcessWindowsImp::Pipe::create: pipe error: create: " << error ) ;
 		throw NewProcess::PipeError( "create" ) ;
 	}
 }
 
-void G::Pipe::uninherited( HANDLE h )
+void G::NewProcessWindowsImp::Pipe::uninherited( HANDLE h )
 {
 	if( ! SetHandleInformation( h , HANDLE_FLAG_INHERIT , 0 ) )
 	{
 		DWORD error = GetLastError() ;
 		CloseHandle( h ) ;
-		G_ERROR( "G::Pipe::uninherited: uninherited error " << error ) ;
+		G_ERROR( "G::NewProcessWindowsImp::Pipe::uninherited: uninherited error " << error ) ;
 		throw NewProcess::PipeError( "uninherited" ) ;
 	}
 }
 
-HANDLE G::Pipe::hwrite() const
+HANDLE G::NewProcessWindowsImp::Pipe::hwrite() const
 {
 	return m_write ;
 }
 
-HANDLE G::Pipe::hread() const
+HANDLE G::NewProcessWindowsImp::Pipe::hread() const
 {
 	return m_read ;
 }
 
-void G::Pipe::close()
+void G::NewProcessWindowsImp::Pipe::close()
 {
 	if( m_write != HNULL )
 		CloseHandle( m_write ) ;
 	m_write = HNULL ;
 }
 
-std::size_t G::Pipe::read( HANDLE hread , char * buffer , std::size_t buffer_size_in ) noexcept
+std::size_t G::NewProcessWindowsImp::Pipe::read( HANDLE hread , char * buffer , std::size_t buffer_size_in ) noexcept
 {
 	// (worker thread - keep it simple)
 	if( hread == HNULL ) return 0U ;
@@ -502,6 +662,7 @@ G::NewProcessWaitable & G::NewProcessWaitable::wait()
 		}
 		else if( h == m_hpipe && m_hpipe )
 		{
+			using Pipe = NewProcessWindowsImp::Pipe ;
 			std::size_t nread = Pipe::read( m_hpipe , space?read_p:discard , space?space:discard_size ) ;
 			if( space && nread <= space )
 			{

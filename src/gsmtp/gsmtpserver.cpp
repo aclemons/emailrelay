@@ -34,10 +34,10 @@
 #include <functional>
 
 GSmtp::ServerPeer::ServerPeer( GNet::ExceptionSinkUnbound esu ,
-	GNet::ServerPeerInfo && peer_info , Server & server , VerifierFactoryBase & vf ,
+	GNet::ServerPeerInfo && peer_info , Server & server , bool enabled , VerifierFactoryBase & vf ,
 	const GAuth::SaslServerSecrets & server_secrets , const Server::Config & server_config ,
 	std::unique_ptr<ServerProtocol::Text> ptext ) :
-		GNet::ServerPeer(esu.bind(this),std::move(peer_info),GNet::LineBufferConfig::transparent()) ,
+		GNet::ServerPeer(esu.bind(this),std::move(peer_info),GNet::LineBuffer::Config::transparent()) ,
 		m_server(server) ,
 		m_server_config(server_config) ,
 		m_block(std::bind(&ServerPeer::onDnsBlockResult,this,std::placeholders::_1),esu.bind(this),server_config.dnsbl_config) ,
@@ -47,7 +47,7 @@ GSmtp::ServerPeer::ServerPeer( GNet::ExceptionSinkUnbound esu ,
 		m_ptext(ptext.release()) ,
 		m_protocol(*this,*m_verifier,*m_pmessage,server_secrets,
 			*m_ptext,peerAddress(),
-			server_config.protocol_config) ,
+			server_config.protocol_config,enabled) ,
 		m_input_buffer(esu.bind(this),m_protocol,server_config.buffer_config) ,
 		m_output_blocked(false)
 {
@@ -190,7 +190,8 @@ GSmtp::Server::Server( GNet::ExceptionSink es , GStore::MessageStore & store , F
 		m_forward_to(forward_to) ,
 		m_forward_to_family(forward_to_family) ,
 		m_client_secrets(client_secrets) ,
-		m_dnsbl_suspend_time(G::TimerTime::zero())
+		m_dnsbl_suspend_time(G::TimerTime::zero()) ,
+		m_enabled(true)
 {
 }
 
@@ -234,7 +235,7 @@ std::unique_ptr<GNet::ServerPeer> GSmtp::Server::newPeer( GNet::ExceptionSinkUnb
 		{
 			GNet::Address peer_address = peer_info.m_address ;
 			ptr = std::make_unique<ServerPeer>( esu , std::move(peer_info) , *this ,
-				m_vf , m_server_secrets , serverConfig() ,
+				m_enabled , m_vf , m_server_secrets , serverConfig() ,
 				newProtocolText(m_server_config.anonymous_smtp,m_server_config.anonymous_content,peer_address,m_server_config.domain) ) ;
 		}
 	}
@@ -256,6 +257,11 @@ void GSmtp::Server::nodnsbl( unsigned int s )
 {
 	G_LOG( "GSmtp::Server::nodnsbl: dnsbl " << (s?"disabled":"enabled") << (s?(" for "+G::Str::fromUInt(s).append(1U,'s')):"") ) ;
 	m_dnsbl_suspend_time = G::TimerTime::now() + G::TimeInterval(s) ;
+}
+
+void GSmtp::Server::enable( bool b )
+{
+	m_enabled = b ;
 }
 
 std::unique_ptr<GSmtp::ServerProtocol::Text> GSmtp::Server::newProtocolText( bool anonymous_smtp ,

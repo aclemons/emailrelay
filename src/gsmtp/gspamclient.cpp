@@ -29,8 +29,12 @@
 std::string GSmtp::SpamClient::m_username ;
 
 GSmtp::SpamClient::SpamClient( GNet::ExceptionSink es , const GNet::Location & location , bool read_only ,
-	unsigned int connect_timeout , unsigned int response_timeout ) :
-		GNet::Client(es,location,netConfig(connect_timeout,response_timeout)) ,
+	unsigned int connection_timeout , unsigned int response_timeout ) :
+		GNet::Client(es,location,
+			GNet::Client::Config()
+				.set_line_buffer_config(GNet::LineBuffer::Config::newline())
+				.set_connection_timeout(connection_timeout)
+				.set_response_timeout(response_timeout)) ,
 		m_busy(false) ,
 		m_timer(*this,&SpamClient::onTimeout,es) ,
 		m_request(*this) ,
@@ -38,17 +42,8 @@ GSmtp::SpamClient::SpamClient( GNet::ExceptionSink es , const GNet::Location & l
 {
 	G_LOG( "GSmtp::SpamClient::ctor: spam connection to [" << location << "]" ) ;
 	G_DEBUG( "GSmtp::SpamClient::ctor: spam read/only=" << read_only ) ;
-	G_DEBUG( "GSmtp::SpamClient::ctor: spam connection timeout " << connect_timeout ) ;
+	G_DEBUG( "GSmtp::SpamClient::ctor: spam connection timeout " << connection_timeout ) ;
 	G_DEBUG( "GSmtp::SpamClient::ctor: spam response timeout " << response_timeout ) ;
-}
-
-GNet::Client::Config GSmtp::SpamClient::netConfig( unsigned int connect_timeout , unsigned int response_timeout )
-{
-	GNet::Client::Config net_config ;
-	net_config.line_buffer_config = GNet::LineBufferConfig::newline() ;
-	net_config.connection_timeout = connect_timeout ;
-	net_config.response_timeout = response_timeout ;
-	return net_config ;
 }
 
 #ifndef G_LIB_SMALL

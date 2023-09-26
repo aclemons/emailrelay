@@ -367,9 +367,9 @@ bool GPop::StoreList::shared( const StoreMessage & message ) const
 			G_DEBUG_IF( found , "GPop::StoreList::shared: content shared: envelope: " << epath ) ;
 		}
 		G_DEBUG_IF( !found , "GPop::StoreList::shared: content not shared: no matching envelope" ) ;
+
 		return found ;
 	}
-	return true ;
 }
 
 GPop::StoreImp::FileReader::FileReader() // NOLINT modernize-use-equals-default because of -Wunused

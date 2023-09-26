@@ -104,7 +104,7 @@ void GSmtp::ClientProtocol::finish()
 
 void GSmtp::ClientProtocol::secure()
 {
-	applyEvent( ClientReply::ok(ClientReply::Value::Internal_secure) ) ;
+	applyEvent( ClientReply::secure() ) ;
 }
 
 void GSmtp::ClientProtocol::sendComplete()
@@ -123,7 +123,7 @@ void GSmtp::ClientProtocol::sendComplete()
 	}
 }
 
-G::Slot::Signal<int,const std::string&,const std::string&,const G::StringArray&> & GSmtp::ClientProtocol::doneSignal() noexcept
+G::Slot::Signal<const GSmtp::ClientProtocol::DoneInfo &> & GSmtp::ClientProtocol::doneSignal() noexcept
 {
 	return m_done_signal ;
 }
@@ -138,18 +138,17 @@ bool GSmtp::ClientProtocol::apply( const std::string & rx )
 	G_LOG( "GSmtp::ClientProtocol: rx<<: \"" << G::Str::printable(rx) << "\"" ) ;
 
 	m_protocol.reply_lines.push_back( rx ) ;
-	ClientReply reply( m_protocol.reply_lines ) ;
 
-	G::StringArray save ;
-	std::swap( save , m_protocol.reply_lines ) ; // clear
+	G::StringArray lines ;
+	std::swap( lines , m_protocol.reply_lines ) ; // clear
 
-	if( !reply.valid() )
+	if( !ClientReply::valid(lines) )
 	{
-		throw SmtpError( "invalid response" ) ; // (new)
+		throw SmtpError( "invalid response" ) ;
 	}
-	else if( reply.complete() )
+	else if( ClientReply::complete(lines) )
 	{
-		bool done = applyEvent( reply ) ;
+		bool done = applyEvent( ClientReply(lines) ) ;
 		return done ;
 	}
 	else if( m_protocol.replySize() > m_config.reply_size_limit )
@@ -158,7 +157,7 @@ bool GSmtp::ClientProtocol::apply( const std::string & rx )
 	}
 	else
 	{
-		std::swap( save , m_protocol.reply_lines ) ; // restore
+		std::swap( lines , m_protocol.reply_lines ) ; // restore
 		return false ;
 	}
 }
@@ -171,7 +170,7 @@ bool GSmtp::ClientProtocol::applyEvent( const ClientReply & reply )
 	cancelTimer() ;
 
 	bool protocol_done = false ;
-	bool is_start_event = reply.is(ClientReply::Value::Internal_start) ;
+	bool is_start_event = reply.is( ClientReply::Value::Internal_start ) ;
 	if( m_protocol.state == State::Init && is_start_event )
 	{
 		// got start-event -- wait for 220 greeting
@@ -360,13 +359,13 @@ bool GSmtp::ClientProtocol::applyEvent( const ClientReply & reply )
 	{
 		// filter failed with 'abandon' -- finish
 		m_protocol.state = State::MessageDone ;
-		raiseDoneSignal( -1 , std::string() ) ;
+		raiseDoneSignal( reply.doneCode() , std::string() ) ;
 	}
 	else if( m_protocol.state == State::Filtering && reply.is(ClientReply::Value::Internal_filter_error) )
 	{
 		// filter failed with 'error' -- finish
 		m_protocol.state = State::MessageDone ;
-		raiseDoneSignal( -2 , reply.errorText() , reply.errorReason() ) ;
+		raiseDoneSignal( reply.doneCode() , reply.errorText() , reply.reason() ) ;
 	}
 	else if( m_protocol.state == State::Filtering && reply.is(ClientReply::Value::Internal_filter_ok) )
 	{
@@ -385,13 +384,19 @@ bool GSmtp::ClientProtocol::applyEvent( const ClientReply & reply )
 	}
 	else if( m_protocol.state == State::SentMail && reply.is(ClientReply::Value::Ok_250) )
 	{
-		// got reponse to MAIL-FROM -- send first RCPT-TO
+		// got ok response to MAIL-FROM -- send first RCPT-TO
 		m_protocol.state = State::SentRcpt ;
 		sendRcptTo() ;
 	}
+	else if( m_protocol.state == State::SentMail && !reply.positive() )
+	{
+		// got error response to MAIL-FROM (new)
+		m_protocol.state = State::MessageDone ;
+		raiseDoneSignal( reply.doneCode() , reply.errorText() ) ;
+	}
 	else if( m_protocol.state == State::SentRcpt && m_message_state.to_index < message().toCount() )
 	{
-		// got reponse to RCTP-TO and more recipients to go -- send next RCPT-TO
+		// got response to RCTP-TO and more recipients to go -- send next RCPT-TO
 		bool accepted = reply.positive() ;
 		if( accepted )
 			m_message_state.to_accepted++ ;
@@ -401,7 +406,7 @@ bool GSmtp::ClientProtocol::applyEvent( const ClientReply & reply )
 	}
 	else if( m_protocol.state == State::SentRcpt )
 	{
-		// got reponse to the last RCTP-TO -- send DATA or BDAT command
+		// got response to the last RCTP-TO -- send DATA or BDAT command
 
 		bool accepted = reply.positive() ;
 		if( accepted )
@@ -462,7 +467,7 @@ bool GSmtp::ClientProtocol::applyEvent( const ClientReply & reply )
 		// got response to RSET following rejection of recipients
 		m_protocol.state = State::MessageDone ;
 		std::string how_many = m_config.must_accept_all_recipients ? std::string("one or more") : std::string("all") ;
-		raiseDoneSignal( reply.value() , how_many + " recipients rejected" ) ;
+		raiseDoneSignal( reply.doneCode() , how_many + " recipients rejected" ) ;
 	}
 	else if( m_protocol.state == State::SentBdatMore )
 	{
@@ -475,7 +480,7 @@ bool GSmtp::ClientProtocol::applyEvent( const ClientReply & reply )
 		}
 		else
 		{
-			raiseDoneSignal( reply.value() , reply.errorText() ) ;
+			raiseDoneSignal( reply.doneCode() , reply.errorText() ) ;
 		}
 	}
 	else if( m_protocol.state == State::SentDot || m_protocol.state == State::SentBdatLast )
@@ -487,7 +492,7 @@ bool GSmtp::ClientProtocol::applyEvent( const ClientReply & reply )
 		if( reply.positive() && m_message_state.to_accepted < message().toCount() )
 			raiseDoneSignal( 0 , "one or more recipients rejected" ) ;
 		else
-			raiseDoneSignal( reply.value() , reply.errorText() ) ;
+			raiseDoneSignal( reply.doneCode() , reply.errorText() ) ;
 	}
 	else if( m_protocol.state == State::Quitting && reply.value() == 221 )
 	{
@@ -561,17 +566,17 @@ void GSmtp::ClientProtocol::filterDone( Filter::Result result , const std::strin
 	if( result == Filter::Result::ok )
 	{
 		// apply filter response event to continue with this message
-		applyEvent( ClientReply::ok(ClientReply::Value::Internal_filter_ok) ) ;
+		applyEvent( ClientReply::filterOk() ) ;
 	}
 	else if( result == Filter::Result::abandon )
 	{
 		// apply filter response event to abandon this message (done-code -1)
-		applyEvent( ClientReply::ok(ClientReply::Value::Internal_filter_abandon) ) ;
+		applyEvent( ClientReply::filterAbandon() ) ;
 	}
 	else
 	{
 		// apply filter response event to fail this message (done-code -2)
-		applyEvent( ClientReply::error(ClientReply::Value::Internal_filter_error,response,reason) ) ;
+		applyEvent( ClientReply::filterError(response,reason) ) ;
 	}
 }
 
@@ -584,7 +589,7 @@ void GSmtp::ClientProtocol::raiseDoneSignal( int response_code , const std::stri
 	m_message_p = nullptr ;
 	cancelTimer() ;
 
-	m_done_signal.emit( response_code , std::string(response) , std::string(reason) , G::StringArray(m_message_state.to_rejected) ) ;
+	m_done_signal.emit( { response_code , response , reason , G::StringArray(m_message_state.to_rejected) } ) ;
 }
 
 bool GSmtp::ClientProtocol::endOfContent()

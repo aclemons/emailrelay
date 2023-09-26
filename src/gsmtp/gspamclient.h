@@ -49,7 +49,7 @@ public:
 	G_EXCEPTION( Error , tx("spam client error") ) ;
 
 	SpamClient( GNet::ExceptionSink , const GNet::Location & host_and_service ,
-		bool read_only , unsigned int connect_timeout , unsigned int response_timeout ) ;
+		bool read_only , unsigned int connection_timeout , unsigned int response_timeout ) ;
 			///< Constructor.
 
 	void request( const std::string & file_path ) ;
@@ -88,7 +88,6 @@ public:
 private:
 	void onTimeout() ;
 	void start() ;
-	static GNet::Client::Config netConfig( unsigned int connect_timeout , unsigned int response_timeout ) ;
 
 private:
 	struct Request

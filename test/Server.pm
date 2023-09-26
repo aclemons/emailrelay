@@ -47,6 +47,20 @@ our $tls_config = "x" ;
 our $with_valgrind = undef ;
 my $exe_name = "emailrelay" ;
 
+sub _exe
+{
+	my $exe = System::exe( $bin_dir , $exe_name ) ;
+	if( !-x $exe ) { die "invalid server executable [$exe]" }
+	return $exe ;
+}
+
+sub _textmode
+{
+	my $exe = _exe() ;
+	$exe =~ s/\.exe$/-textmode.exe/ if ( !System::unix() && $exe !~ m/textmode/ ) ;
+	return $exe ;
+}
+
 sub new
 {
 	my ( $classname , $smtp_port , $pop_port , $admin_port , $spool_dir , $tls_certificate_in , $tls_verify ) = @_ ;
@@ -63,8 +77,6 @@ sub new
 
 	$spool_dir ||= System::createSpoolDir() ;
 	$smtp_port ||= System::nextPort() ;
-	my $exe = System::exe( $bin_dir , $exe_name ) ;
-	if( !-x $exe ) { die "invalid server executable [$exe]" }
 
 	$pop_port ||= System::nextPort() ;
 	$admin_port ||= System::nextPort() ;
@@ -84,7 +96,7 @@ sub new
 	$client_filter .= ".js" if System::windows() ;
 
 	return bless {
-		m_exe => $exe ,
+		m_exe => _exe() ,
 		m_interface => "127.0.0.1" ,
 		m_smtp_port => $smtp_port ,
 		m_pop_port => $pop_port ,
@@ -395,21 +407,12 @@ sub cleanup
 	System::rmdir_( $this->{m_piddir} ) ;
 }
 
-sub _textmode
-{
-	my ( $this ) = @_ ;
-	my $exe = $this->exe() ;
-	$exe =~ s/\.exe$/-textmode.exe/ if ( !System::unix() && $exe !~ m/textmode/ ) ;
-	return $exe ;
-}
-
 sub hasDebug
 {
 	# Returns true if the executable has debugging code
 	# and extra test features built in.
 
-	my ( $this ) = @_ ;
-	my $exe = $this->_textmode() ;
+	my $exe = _textmode() ;
 	if( System::unix() )
 	{
 		my $rc = system( "strings \"$exe\" | fgrep -q 'G_TEST'" ) ;
@@ -430,10 +433,9 @@ sub hasThreads
 {
 	# Returns true if the executable has multi-threading support.
 
-	my ( $this ) = @_ ;
 	if( System::unix() )
 	{
-		my $exe = $this->_textmode() ;
+		my $exe = _textmode() ;
 		my $rc = system( "$exe --version --verbose | grep -qi threading:.*enabled" ) ;
 		return $rc == 0 ;
 	}
@@ -445,9 +447,8 @@ sub hasThreads
 
 sub hasUnixDomainSockets
 {
-	my ( $this ) = @_ ;
 	return undef if !System::unix() ;
-	my $exe = $this->_textmode() ;
+	my $exe = _textmode() ;
 	my $fh = new FileHandle( "$exe --version --verbose |" ) ;
 	while(<$fh>)
 	{
@@ -459,8 +460,7 @@ sub hasUnixDomainSockets
 
 sub hasPop
 {
-	my ( $this ) = @_ ;
-	my $exe = $this->_textmode() ;
+	my $exe = _textmode() ;
 	my $fh = new FileHandle( "$exe --version --verbose |" ) ;
 	while(<$fh>)
 	{
@@ -470,12 +470,23 @@ sub hasPop
 	return undef ;
 }
 
+sub hasAdmin
+{
+	my $exe = _textmode() ;
+	my $fh = new FileHandle( "$exe --version --verbose |" ) ;
+	while(<$fh>)
+	{
+		chomp( my $line = $_ ) ;
+		return 1 if( $line =~ m/^ *Admin.*: enabled/i ) ;
+	}
+	return undef ;
+}
+
 sub hasTls
 {
 	# Returns true if the executable has tls support.
 
-	my ( $this ) = @_ ;
-	my $exe = $this->_textmode() ;
+	my $exe = _textmode() ;
 	my $fh = new FileHandle( "$exe --version --verbose |" ) ;
 	while(<$fh>)
 	{

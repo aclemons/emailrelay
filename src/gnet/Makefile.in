@@ -128,12 +128,12 @@ am__libgnet_a_SOURCES_DIST = gaddress.cpp gaddress.h gaddress4.h \
 	gtimer.cpp gtimer.h gtimerlist.cpp gtimerlist.h gdnsbl.h \
 	gdnsbl_disabled.cpp gdnsbl_enabled.cpp gdnsblock.h \
 	gdnsblock.cpp geventloop_select.cpp geventloop_epoll.cpp \
-	geventloop_win32.cpp geventloophandles.h \
-	geventloophandles_st.cpp ginterfaces_none.cpp \
-	ginterfaces_unix.cpp ginterfaces_common.cpp \
-	ginterfaces_win32.cpp gdescriptor_unix.cpp \
-	gfutureevent_unix.cpp gnameservers_unix.cpp gsocket_unix.cpp \
-	gdescriptor_win32.cpp gfutureevent_win32.cpp \
+	geventloophandles.h geventloophandles_st.cpp \
+	ginterfaces_none.cpp ginterfaces_unix.cpp \
+	ginterfaces_common.cpp ginterfaces_win32.cpp \
+	gdescriptor_unix.cpp gfutureevent_unix.cpp \
+	gnameservers_unix.cpp gsocket_unix.cpp gdescriptor_win32.cpp \
+	geventloop_win32.cpp gfutureevent_win32.cpp \
 	gnameservers_win32.cpp gsocket_win32.cpp \
 	gaddresslocal_none.cpp gaddresslocal_unix.cpp
 am__objects_1 = gaddress.$(OBJEXT) gaddress4.$(OBJEXT) \
@@ -154,8 +154,7 @@ am__objects_1 = gaddress.$(OBJEXT) gaddress4.$(OBJEXT) \
 @GCONFIG_DNSBL_TRUE@	gdnsblock.$(OBJEXT)
 @GCONFIG_EPOLL_FALSE@@GCONFIG_WINDOWS_FALSE@am__objects_3 = geventloop_select.$(OBJEXT)
 @GCONFIG_EPOLL_TRUE@@GCONFIG_WINDOWS_FALSE@am__objects_3 = geventloop_epoll.$(OBJEXT)
-@GCONFIG_WINDOWS_TRUE@am__objects_3 = geventloop_win32.$(OBJEXT) \
-@GCONFIG_WINDOWS_TRUE@	geventloophandles_st.$(OBJEXT)
+@GCONFIG_WINDOWS_TRUE@am__objects_3 = geventloophandles_st.$(OBJEXT)
 @GCONFIG_INTERFACE_NAMES_FALSE@am__objects_4 =  \
 @GCONFIG_INTERFACE_NAMES_FALSE@	ginterfaces_none.$(OBJEXT)
 @GCONFIG_INTERFACE_NAMES_TRUE@@GCONFIG_WINDOWS_FALSE@am__objects_4 = ginterfaces_unix.$(OBJEXT) \
@@ -632,7 +631,6 @@ COMMON_SOURCES = \
 
 # -- EVENTLOOP
 @GCONFIG_WINDOWS_TRUE@EVENTLOOP_SOURCES = \
-@GCONFIG_WINDOWS_TRUE@	geventloop_win32.cpp \
 @GCONFIG_WINDOWS_TRUE@	geventloophandles.h \
 @GCONFIG_WINDOWS_TRUE@	geventloophandles_st.cpp
 
@@ -645,13 +643,11 @@ COMMON_SOURCES = \
 @GCONFIG_WINDOWS_TRUE@EVENTLOOP_EXTRA_SOURCES = 
 @GCONFIG_EPOLL_FALSE@@GCONFIG_WINDOWS_FALSE@EVENTLOOP_EXTRA_DIST = \
 @GCONFIG_EPOLL_FALSE@@GCONFIG_WINDOWS_FALSE@	geventloop_epoll.cpp \
-@GCONFIG_EPOLL_FALSE@@GCONFIG_WINDOWS_FALSE@	geventloop_win32.cpp \
 @GCONFIG_EPOLL_FALSE@@GCONFIG_WINDOWS_FALSE@	geventloophandles.h \
 @GCONFIG_EPOLL_FALSE@@GCONFIG_WINDOWS_FALSE@	geventloophandles_st.cpp
 
 @GCONFIG_EPOLL_TRUE@@GCONFIG_WINDOWS_FALSE@EVENTLOOP_EXTRA_DIST = \
 @GCONFIG_EPOLL_TRUE@@GCONFIG_WINDOWS_FALSE@	geventloop_select.cpp \
-@GCONFIG_EPOLL_TRUE@@GCONFIG_WINDOWS_FALSE@	geventloop_win32.cpp \
 @GCONFIG_EPOLL_TRUE@@GCONFIG_WINDOWS_FALSE@	geventloophandles.h \
 @GCONFIG_EPOLL_TRUE@@GCONFIG_WINDOWS_FALSE@	geventloophandles_st.cpp
 

@@ -38,6 +38,7 @@
 #  $makefile->compile_options() ;
 #  $makefile->sources('foo') ;
 #  $makefile->our_libs('foo') ;
+#  $makefile->libpath('foo') ;
 #  $makefile->sys_libs('foo') ;
 #
 # Typical directories in a autoconf vpath build (see includes()):
@@ -172,6 +173,17 @@ sub our_libs
 	( my $prefix = $program ) =~ s/[-.]/_/g ;
 	return
 		map { my $x = File::Basename::basename($_) ; $x =~ s/^lib// ; $x =~ s/\.a$// ; $x }
+		grep { my $x = File::Basename::basename($_) ; $x =~ m/^lib.*\.a$/ }
+		$this->value( "${prefix}_LDADD" ) ;
+}
+
+sub libpath
+{
+	my ( $this , $program , $base ) = @_ ;
+	$base = "" if !defined($base) ;
+	( my $prefix = $program ) =~ s/[-.]/_/g ;
+	return
+		map { simplepath(File::Basename::dirname(join("/",$base,$_))) }
 		grep { my $x = File::Basename::basename($_) ; $x =~ m/^lib.*\.a$/ }
 		$this->value( "${prefix}_LDADD" ) ;
 }

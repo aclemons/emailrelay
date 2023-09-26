@@ -15,16 +15,23 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
-/// \file gmessagestore_win32.cpp
+/// \file gfilestore_unix.cpp
 ///
 
 #include "gdef.h"
-#include "gmessagestore.h"
+#include "gfilestore.h"
 #include "gpath.h"
-#include "genvironment.h"
+#include "gstrmacros.h"
 
-G::Path GStore::MessageStore::defaultDirectory()
+#ifndef G_SPOOLDIR
+	#define G_SPOOLDIR
+#endif
+
+G::Path GStore::FileStore::defaultDirectory()
 {
-	return G::Path(G::Environment::get("ProgramData","c:/ProgramData")) + "E-MailRelay" + "spool" ;
+	std::string spooldir = G_STR(G_SPOOLDIR) ; // NOLINT readability-redundant-string-init
+	if( spooldir.empty() )
+		spooldir = "/var/spool/emailrelay" ;
+	return G::Path( spooldir ) ;
 }
 

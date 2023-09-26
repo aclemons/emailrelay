@@ -357,43 +357,43 @@ std::string GNet::EventLoopHandles::help( const TList & list , bool on_add ) con
 // ==
 
 template <typename TList>
-void GNet::EventLoopHandles::init_MT( const TList & list , bool (*fn)(const typename TList::value_type&) )
+void GNet::EventLoopHandles::init_MT( const TList & /*list*/ , bool (*)(const typename TList::value_type&) )
 {
 	///< not implemented
 }
 
 template <typename TList>
-void GNet::EventLoopHandles::update_MT( const TList & list , bool updated , std::size_t thread_index )
+void GNet::EventLoopHandles::update_MT( const TList & /*list*/ , bool /*updated*/ , std::size_t /*thread_index*/ )
 {
 	///< not implemented
 }
 
 template <typename TList>
-bool GNet::EventLoopHandles::overflow_MT( TList & list , bool (*fn)(const typename TList::value_type&) )
+bool GNet::EventLoopHandles::overflow_MT( TList & /*list*/ , bool (*)(const typename TList::value_type&) )
 {
 	return false ; // not implemented
 }
 
 inline
-bool GNet::EventLoopHandles::overflow_MT( std::size_t n ) const
+bool GNet::EventLoopHandles::overflow_MT( std::size_t ) const
 {
 	return false ; // not implemented
 }
 
 template <typename TList>
-std::string GNet::EventLoopHandles::help_MT( const TList & list , bool on_add ) const
+std::string GNet::EventLoopHandles::help_MT( const TList & /*list*/ , bool /*on_add*/ ) const
 {
 	return {} ; // not implemented
 }
 
 template <typename TList>
-std::size_t GNet::EventLoopHandles::shuffle_MT( TList & , Rc rc )
+std::size_t GNet::EventLoopHandles::shuffle_MT( TList & , Rc /*rc*/ )
 {
 	return 0U ; // not implemented
 }
 
 inline
-GNet::EventLoopHandles::Rc GNet::EventLoopHandles::wait_MT( DWORD ms )
+GNet::EventLoopHandles::Rc GNet::EventLoopHandles::wait_MT( DWORD /*ms*/ )
 {
 	return Rc( RcType::other ) ;
 }

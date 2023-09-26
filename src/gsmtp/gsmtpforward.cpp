@@ -174,7 +174,7 @@ void GSmtp::Forward::routingFilterDone( int filter_result )
 	if( continue_ )
 	{
 		if( m_store == nullptr )
-			m_message_done_signal.emit( std::string(abandon?"":"routing filter failed") , false ) ;
+			m_message_done_signal.emit( { 0 , abandon?"":"routing failed" , false } ) ;
 		else
 			m_continue_timer.startTimer( 0U ) ;
 	}
@@ -276,7 +276,7 @@ void GSmtp::Forward::onErrorTimeout()
 	throw G::Exception( m_error ) ; // terminates us
 }
 
-void GSmtp::Forward::onMessageDoneSignal( const std::string & reason , bool special )
+void GSmtp::Forward::onMessageDoneSignal( const Client::MessageDoneInfo & info )
 {
 	// optimise away repeated DNS queries on the default forward-to address
 	G_ASSERT( m_client_ptr.get() ) ;
@@ -296,7 +296,7 @@ void GSmtp::Forward::onMessageDoneSignal( const std::string & reason , bool spec
 	}
 	else
 	{
-		m_message_done_signal.emit( std::string(reason) , special ) ;
+		m_message_done_signal.emit( info ) ;
 	}
 }
 
@@ -358,7 +358,7 @@ std::string GSmtp::Forward::messageInfo( const GStore::StoredMessage & message )
 	return ss.str() ;
 }
 
-G::Slot::Signal<const std::string&,bool> & GSmtp::Forward::messageDoneSignal() noexcept
+G::Slot::Signal<const GSmtp::Client::MessageDoneInfo&> & GSmtp::Forward::messageDoneSignal() noexcept
 {
 	return m_message_done_signal ;
 }

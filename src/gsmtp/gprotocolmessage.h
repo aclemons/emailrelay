@@ -64,7 +64,15 @@ namespace GSmtp
 class GSmtp::ProtocolMessage
 {
 public:
-	using DoneSignal = G::Slot::Signal<bool,const GStore::MessageId&,const std::string&,const std::string&> ;
+	struct DoneInfo /// Parameters for GSmtp::ProtocolMessage::doneSignal()
+	{
+		bool success ;
+		GStore::MessageId id ; // message id, not valid() with 'success' true if abandoned
+		int response_code ; // response code (400..599) to send to remote client if not 'success', or zero to default
+		std::string response ; // response to send to remote client, empty if 'success'
+		std::string reason ; // log string typically from filter output
+	} ;
+	using DoneSignal = G::Slot::Signal<const DoneInfo&> ;
 	struct FromInfo /// Extra information from the SMTP MAIL-FROM command passed to GSmtp::ProtocolMessage::setFrom().
 	{
 		std::string auth ; // RFC-2554 MAIL-FROM with AUTH= ie. 'auth-in' (xtext or "<>")

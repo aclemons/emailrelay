@@ -489,7 +489,7 @@ bool G::Str::toBool( string_view s )
 	else if( imatch( s , "false"_sv ) )
 		result = false ;
 	else
-		throw InvalidFormat( "expected true/false" , sv_to_string(s) ) ;
+		throw InvalidFormat( "expected true/false" , s ) ;
 	return result ;
 }
 #endif
@@ -544,9 +544,9 @@ int G::Str::toInt( string_view s )
 	bool invalid = false ;
 	int result = StrImp::toInt( s , overflow , invalid ) ;
 	if( invalid )
-		throw InvalidFormat( "expected integer" , sv_to_string(s) ) ;
+		throw InvalidFormat( "expected integer" , s ) ;
 	if( overflow )
-		throw Overflow( sv_to_string(s) ) ;
+		throw Overflow( s ) ;
 	return result ;
 }
 
@@ -573,9 +573,9 @@ long G::Str::toLong( string_view s )
 	bool invalid = false ;
 	long result = StrImp::toLong( s , overflow , invalid ) ;
 	if( invalid )
-		throw InvalidFormat( "expected long integer" , sv_to_string(s) ) ;
+		throw InvalidFormat( "expected long integer" , s ) ;
 	if( overflow )
-		throw Overflow( sv_to_string(s) ) ;
+		throw Overflow( s ) ;
 	return result ;
 }
 #endif
@@ -606,9 +606,9 @@ short G::Str::toShort( string_view s )
 	bool invalid = false ;
 	short result = StrImp::toShort( s , overflow , invalid ) ;
 	if( invalid )
-		throw InvalidFormat( "expected short integer" , sv_to_string(s) ) ;
+		throw InvalidFormat( "expected short integer" , s ) ;
 	if( overflow )
-		throw Overflow( sv_to_string(s) ) ;
+		throw Overflow( s ) ;
 	return result ;
 }
 #endif
@@ -641,7 +641,7 @@ unsigned int G::Str::toUInt( string_view s , Limited )
 	bool invalid = false ;
 	unsigned int result = StrImp::toUInt( s , overflow , invalid ) ;
 	if( invalid )
-		throw InvalidFormat( "expected unsigned integer" , sv_to_string(s) ) ;
+		throw InvalidFormat( "expected unsigned integer" , s ) ;
 	if( overflow )
 		result = std::numeric_limits<unsigned int>::max() ;
 	return result ;
@@ -654,9 +654,9 @@ unsigned int G::Str::toUInt( string_view s )
 	bool invalid = false ;
 	unsigned int result = StrImp::toUInt( s , overflow , invalid ) ;
 	if( invalid )
-		throw InvalidFormat( "expected unsigned integer" , sv_to_string(s) ) ;
+		throw InvalidFormat( "expected unsigned integer" , s ) ;
 	if( overflow )
-		throw Overflow( sv_to_string(s) ) ;
+		throw Overflow( s ) ;
 	return result ;
 }
 
@@ -675,7 +675,7 @@ unsigned long G::Str::toULong( string_view s , Limited )
 	bool invalid = false ;
 	unsigned long result = StrImp::toULong( s , overflow , invalid ) ;
 	if( invalid )
-		throw InvalidFormat( "expected unsigned long integer" , sv_to_string(s) ) ;
+		throw InvalidFormat( "expected unsigned long integer" , s ) ;
 	if( overflow )
 		result = std::numeric_limits<unsigned long>::max() ;
 	return result ;
@@ -704,7 +704,7 @@ unsigned long G::StrImp::toULongHex( string_view s , bool limited )
 	if( (s.size()-i0) > (sizeof(unsigned long)*2U) )
 	{
 		if( limited ) return ~0UL ;
-		throw Str::Overflow( sv_to_string(s) ) ;
+		throw Str::Overflow( s ) ;
 	}
 	for( std::size_t i = i0 ; i < s.size() ; i++ )
 	{
@@ -712,7 +712,7 @@ unsigned long G::StrImp::toULongHex( string_view s , bool limited )
 		if( c >= 97U && c <= 102U ) c -= 87U ;
 		else if( c >= 65U && c <= 70U ) c -= 55U ;
 		else if( c >= 48U && c <= 57U ) c -= 48U ;
-		else throw Str::InvalidFormat( "invalid hexadecimal" , sv_to_string(s) ) ;
+		else throw Str::InvalidFormat( "invalid hexadecimal" , s ) ;
 		n <<= 4U ;
 		n += c ;
 	}
@@ -725,9 +725,9 @@ unsigned long G::Str::toULong( string_view s )
 	bool invalid = false ;
 	unsigned long result = StrImp::toULong( s , overflow , invalid ) ;
 	if( invalid )
-		throw InvalidFormat( "expected unsigned long integer" , sv_to_string(s) ) ;
+		throw InvalidFormat( "expected unsigned long integer" , s ) ;
 	else if( overflow )
-		throw Overflow( sv_to_string(s) ) ;
+		throw Overflow( s ) ;
 	return result ;
 }
 
@@ -756,7 +756,7 @@ unsigned short G::Str::toUShort( string_view s , Limited )
 	bool invalid = false ;
 	unsigned short result = StrImp::toUShort( s , overflow , invalid ) ;
 	if( invalid )
-		throw InvalidFormat( "expected unsigned short integer" , sv_to_string(s) ) ;
+		throw InvalidFormat( "expected unsigned short integer" , s ) ;
 	if( overflow )
 		result = std::numeric_limits<unsigned short>::max() ;
 	return result ;
@@ -770,9 +770,9 @@ unsigned short G::Str::toUShort( string_view s )
 	bool invalid = false ;
 	unsigned short result = StrImp::toUShort( s , overflow , invalid ) ;
 	if( invalid )
-		throw InvalidFormat( "expected unsigned short integer" , sv_to_string(s) ) ;
+		throw InvalidFormat( "expected unsigned short integer" , s ) ;
 	else if( overflow )
-		throw Overflow( sv_to_string(s) ) ;
+		throw Overflow( s ) ;
 	return result ;
 }
 #endif

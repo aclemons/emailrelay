@@ -91,6 +91,10 @@ public:
 		static std::ofstream & openAppend( std::ofstream & , const G::Path & ) ;
 	} ;
 
+	static G::Path defaultDirectory() ;
+		///< Returns a default spool directory, such as "/var/spool/emailrelay".
+		///< (Typically with an os-specific implementation.)
+
 	FileStore( const G::Path & spool_dir , const G::Path & delivery_dir , const Config & config ) ;
 		///< Constructor. Throws an exception if the spool directory
 		///< is invalid.

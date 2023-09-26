@@ -634,6 +634,13 @@
 			#define GCONFIG_HAVE_WINDOWS_VERSIONHELPERS_H 0
 		#endif
 	#endif
+	#if !defined(GCONFIG_HAVE_WINDOWS_STARTUP_INFO_EX)
+		#if defined(G_WINDOWS) && !defined(G_MINGW)
+			#define GCONFIG_HAVE_WINDOWS_STARTUP_INFO_EX 1
+		#else
+			#define GCONFIG_HAVE_WINDOWS_STARTUP_INFO_EX 0
+		#endif
+	#endif
 	#if !defined(GCONFIG_HAVE_DLOPEN)
 		#ifdef G_UNIX
 			#define GCONFIG_HAVE_DLOPEN 1

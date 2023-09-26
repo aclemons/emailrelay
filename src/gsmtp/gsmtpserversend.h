@@ -81,7 +81,7 @@ protected:
 	void sendBadTo( const std::string & , const std::string & , bool ) ;
 	void sendBadDataOutOfSequence() ;
 	void sendOutOfSequence() ;
-	void sendGreeting( const std::string & ) ;
+	void sendGreeting( const std::string & , bool ) ;
 	void sendQuitOk() ;
 	void sendUnrecognised( const std::string & ) ;
 	void sendNotImplemented() ;
@@ -91,11 +91,12 @@ protected:
 	void sendMailReply( const std::string & from ) ;
 	void sendRcptReply( const std::string & to , bool local ) ;
 	void sendDataReply() ;
-	void sendCompletionReply( bool ok , const std::string & ) ;
+	void sendCompletionReply( bool ok , int , const std::string & ) ;
 	void sendFailed() ;
 	void sendInvalidArgument() ;
 	void sendAuthenticationCancelled() ;
 	void sendAuthRequired( bool = false ) ;
+	void sendDisabled() ;
 	void sendNoRecipients() ;
 	void sendMissingParameter() ;
 	void sendVerified( const std::string & ) ;

@@ -74,6 +74,7 @@ AC_DEFUN([GCONFIG_FN_CHECK_FUNCTIONS],[
 	AC_REQUIRE([GCONFIG_FN_WINDOWS_CREATE_WAITABLE_TIMER_EX])
 	AC_REQUIRE([GCONFIG_FN_WINDOWS_CREATE_EVENT_EX])
 	AC_REQUIRE([GCONFIG_FN_WINDOWS_INIT_COMMON_CONTROLS_EX])
+	AC_REQUIRE([GCONFIG_FN_WINDOWS_STARTUP_INFO_EX])
 ])
 
 dnl GCONFIG_FN_CHECK_HEADERS
@@ -358,6 +359,16 @@ AC_DEFUN([GCONFIG_FN_CXX_STRING_VIEW],
 	else
 		AC_DEFINE(GCONFIG_HAVE_CXX_STRING_VIEW,0,[Define true if compiler supports c++ string_view])
 	fi
+])
+
+dnl GCONFIG_FN_ENABLE_ADMIN
+dnl -----------------------
+dnl Optionally disables the admin interface.
+dnl Typically used after AC_ARG_ENABLE(admin).
+dnl
+AC_DEFUN([GCONFIG_FN_ENABLE_ADMIN],
+[
+	AM_CONDITIONAL([GCONFIG_ADMIN],[test "$enable_admin" != "no"])
 ])
 
 dnl GCONFIG_FN_ENABLE_BSD
@@ -2837,6 +2848,36 @@ AC_DEFUN([GCONFIG_FN_WINDOWS_INIT_COMMON_CONTROLS_EX],
 		AC_DEFINE(GCONFIG_HAVE_WINDOWS_INIT_COMMON_CONTROLS_EX,1,[Define true if windows InitCommonControlsEx is available])
 	else
 		AC_DEFINE(GCONFIG_HAVE_WINDOWS_INIT_COMMON_CONTROLS_EX,0,[Define true if windows InitCommonControlsEx is available])
+	fi
+])
+
+dnl GCONFIG_FN_WINDOWS_STARTUP_INFO_EX
+dnl ----------------------------------
+dnl Tests for the STARTUPINFOEX structure.
+dnl
+AC_DEFUN([GCONFIG_FN_WINDOWS_STARTUP_INFO_EX],
+[AC_CACHE_CHECK([for windows STARTUPINFOEX],[gconfig_cv_win_si_ex],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#ifdef _WIN32]
+				[#include <windows.h>]
+				[#include <processthreadsapi.h>]
+			[#endif]
+			[STARTUPINFOEXA x ;]
+			[DWORD d ;]
+		],
+		[
+			[x.lpAttributeList = NULL ;]
+			[d = EXTENDED_STARTUPINFO_PRESENT ;]
+		])],
+		gconfig_cv_win_si_ex=yes,
+		gconfig_cv_win_si_ex=no )
+])
+	if test "$gconfig_cv_win_si_ex" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_WINDOWS_STARTUP_INFO_EX,1,[Define true if windows STARTUPINFOEX is available])
+	else
+		AC_DEFINE(GCONFIG_HAVE_WINDOWS_STARTUP_INFO_EX,0,[Define true if windows STARTUPINFOEX is available])
 	fi
 ])
 

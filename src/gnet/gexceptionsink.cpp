@@ -62,6 +62,13 @@ GNet::ExceptionSink GNet::ExceptionSink::logOnly()
 	return { log_only_exception_handler , nullptr } ;
 }
 
+#ifndef G_LIB_SMALL
+GNet::ExceptionSink GNet::ExceptionSink::rethrow()
+{
+	return {} ;
+}
+#endif
+
 GNet::ExceptionHandler * GNet::ExceptionSink::eh() const noexcept
 {
 	return m_eh ;

@@ -22,12 +22,15 @@
 #include "gtray.h"
 #include "gstr.h"
 #include "gappinst.h"
+#include "gassert.h"
 #include <cstring>
 
 GGui::Tray::Tray( unsigned int icon_id , const WindowBase & window ,
 	const std::string & tip , unsigned int message )
 {
 	m_info = NOTIFYICONDATA{} ;
+	G_ASSERT( m_info.uVersion == 0 ) ; // winxp
+
 	m_info.cbSize = sizeof(m_info) ;
 	m_info.hWnd = window.handle() ;
 	m_info.uID = message ;
@@ -35,6 +38,7 @@ GGui::Tray::Tray( unsigned int icon_id , const WindowBase & window ,
 	m_info.uCallbackMessage = message ;
 	m_info.hIcon = LoadIcon( ApplicationInstance::hinstance() , MAKEINTRESOURCE(icon_id) ) ;
 	G::Str::strncpy_s( m_info.szTip , sizeof(m_info.szTip) , tip.c_str() , G::Str::truncate ) ;
+
 	//m_info.dwState = 0 ;
 	//m_info.dwStateMask = 0 ;
 	//m_info.szInfo ...

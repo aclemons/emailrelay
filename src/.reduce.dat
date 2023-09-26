@@ -1226,11 +1226,11 @@ gaddress4.cpp	365	keep	void GNet::Address4::add( G::StringArray & result , const
 gaddress4.cpp	370	keep	bool GNet::Address4::format( G::string_view s )
 gaddress4.cpp	391	keep	unsigned int GNet::Address4::bits() const
 gaddress4.cpp	400	keep	bool GNet::Address4::isLocal( std::string & reason ) const
-gaddress4.cpp	415	keep	bool GNet::Address4::isLoopback() const
-gaddress4.cpp	421	keep	bool GNet::Address4::isLinkLocal() const
-gaddress4.cpp	427	keep	bool GNet::Address4::isUniqueLocal() const
-gaddress4.cpp	436	keep	bool GNet::Address4::isMulticast() const
-gaddress4.cpp	442	keep	bool GNet::Address4::isAny() const
+gaddress4.cpp	414	keep	bool GNet::Address4::isLoopback() const
+gaddress4.cpp	420	keep	bool GNet::Address4::isLinkLocal() const
+gaddress4.cpp	426	keep	bool GNet::Address4::isUniqueLocal() const
+gaddress4.cpp	435	keep	bool GNet::Address4::isMulticast() const
+gaddress4.cpp	441	keep	bool GNet::Address4::isAny() const
 gaddress6.cpp	46	keep	unsigned short GNet::Address6::af() noexcept
 gaddress6.cpp	51	keep	int GNet::Address6::domain() noexcept
 gaddress6.cpp	56	keep	GNet::Address6::Address6( std::nullptr_t ) : m_inet{}
@@ -1370,21 +1370,21 @@ gdnsblock.cpp	149	keep	void GNet::DnsBlock::configure( const Address & dns_serve
 gdnsblock.cpp	159	keep	GNet::Address GNet::DnsBlock::nameServerAddress()
 gdnsblock.cpp	165	keep	GNet::Address GNet::DnsBlock::nameServerAddress( const std::string & s )
 gdnsblock.cpp	170	keep	bool GNet::DnsBlock::isDomain( G::string_view s ) noexcept
-gdnsblock.cpp	177	keep	bool GNet::DnsBlock::isPositive( G::string_view s ) noexcept
-gdnsblock.cpp	182	keep	unsigned int GNet::DnsBlock::ms( G::string_view s )
-gdnsblock.cpp	190	keep	void GNet::DnsBlock::start( const Address & address )
-gdnsblock.cpp	242	keep	bool GNet::DnsBlock::busy() const
-gdnsblock.cpp	247	keep	void GNet::DnsBlock::readEvent()
-gdnsblock.cpp	294	keep	void GNet::DnsBlock::onTimeout()
-gdnsblock.cpp	303	keep	std::string GNet::DnsBlock::queryString( const Address & address )
-gdnsblock.cpp	308	keep	void GNet::DnsBlockResult::log() const
-gdnsblock.cpp	332	keep	void GNet::DnsBlockResult::warn() const
-gdnsblock.cpp	348	keep	bool GNet::DnsBlockResult::allow() const
-gdnsblock.cpp	353	remove	bool GNet::DnsBlockResult::deny() const
-gdnsblock.cpp	358	keep	std::size_t GNet::DnsBlock::countResponders( const ResultList & list )
-gdnsblock.cpp	364	keep	std::size_t GNet::DnsBlock::countDeniers( const ResultList & list )
-gdnsblock.cpp	370	keep	G::StringArray GNet::DnsBlockResult::deniers() const
-gdnsblock.cpp	376	keep	G::StringArray GNet::DnsBlockResult::laggards() const
+gdnsblock.cpp	179	keep	bool GNet::DnsBlock::isPositive( G::string_view s ) noexcept
+gdnsblock.cpp	184	keep	unsigned int GNet::DnsBlock::ms( G::string_view s )
+gdnsblock.cpp	192	keep	void GNet::DnsBlock::start( const Address & address )
+gdnsblock.cpp	244	keep	bool GNet::DnsBlock::busy() const
+gdnsblock.cpp	249	keep	void GNet::DnsBlock::readEvent()
+gdnsblock.cpp	296	keep	void GNet::DnsBlock::onTimeout()
+gdnsblock.cpp	305	keep	std::string GNet::DnsBlock::queryString( const Address & address )
+gdnsblock.cpp	310	keep	void GNet::DnsBlockResult::log() const
+gdnsblock.cpp	334	keep	void GNet::DnsBlockResult::warn() const
+gdnsblock.cpp	350	keep	bool GNet::DnsBlockResult::allow() const
+gdnsblock.cpp	355	remove	bool GNet::DnsBlockResult::deny() const
+gdnsblock.cpp	360	keep	std::size_t GNet::DnsBlock::countResponders( const ResultList & list )
+gdnsblock.cpp	366	keep	std::size_t GNet::DnsBlock::countDeniers( const ResultList & list )
+gdnsblock.cpp	372	keep	G::StringArray GNet::DnsBlockResult::deniers() const
+gdnsblock.cpp	378	keep	G::StringArray GNet::DnsBlockResult::laggards() const
 gdnsmessage.cpp	33	keep	GNet::DnsMessageRequest::DnsMessageRequest( const std::string & type , const std::string & hostname , unsigned int id )
 gdnsmessage.cpp	51	keep	void GNet::DnsMessageRequest::addDomainName( const std::string & domain , char sep )
 gdnsmessage.cpp	61	keep	void GNet::DnsMessageRequest::addLabel( G::string_view data )
@@ -1499,14 +1499,15 @@ gexceptionsink.cpp	44	keep	GNet::ExceptionSink::ExceptionSink() noexcept
 gexceptionsink.cpp	47	keep	GNet::ExceptionSink::ExceptionSink( ExceptionHandler & eh , ExceptionSource * esrc ) noexcept : m_eh(&eh) , m_esrc(esrc)
 gexceptionsink.cpp	53	keep	GNet::ExceptionSink::ExceptionSink( ExceptionHandler * eh , ExceptionSource * esrc ) noexcept : m_eh(eh) , m_esrc(esrc)
 gexceptionsink.cpp	59	keep	GNet::ExceptionSink GNet::ExceptionSink::logOnly()
-gexceptionsink.cpp	65	keep	GNet::ExceptionHandler * GNet::ExceptionSink::eh() const noexcept
-gexceptionsink.cpp	70	keep	GNet::ExceptionSource * GNet::ExceptionSink::esrc() const noexcept
-gexceptionsink.cpp	75	keep	void GNet::ExceptionSink::call( std::exception & e , bool done )
-gexceptionsink.cpp	81	keep	void GNet::ExceptionSink::reset() noexcept
-gexceptionsink.cpp	87	keep	bool GNet::ExceptionSink::set() const noexcept
-gexceptionsink.cpp	94	remove	GNet::ExceptionSinkUnbound::ExceptionSinkUnbound( ExceptionHandler & eh ) : m_eh(&eh)
-gexceptionsink.cpp	99	keep	GNet::ExceptionSinkUnbound::ExceptionSinkUnbound( ExceptionHandler * eh ) : m_eh(eh)
-gexceptionsink.cpp	105	keep	GNet::ExceptionSink GNet::ExceptionSinkUnbound::bind( ExceptionSource * source ) const
+gexceptionsink.cpp	65	remove	GNet::ExceptionSink GNet::ExceptionSink::rethrow()
+gexceptionsink.cpp	70	keep	GNet::ExceptionHandler * GNet::ExceptionSink::eh() const noexcept
+gexceptionsink.cpp	75	keep	GNet::ExceptionSource * GNet::ExceptionSink::esrc() const noexcept
+gexceptionsink.cpp	80	keep	void GNet::ExceptionSink::call( std::exception & e , bool done )
+gexceptionsink.cpp	86	keep	void GNet::ExceptionSink::reset() noexcept
+gexceptionsink.cpp	92	keep	bool GNet::ExceptionSink::set() const noexcept
+gexceptionsink.cpp	99	remove	GNet::ExceptionSinkUnbound::ExceptionSinkUnbound( ExceptionHandler & eh ) : m_eh(&eh)
+gexceptionsink.cpp	104	keep	GNet::ExceptionSinkUnbound::ExceptionSinkUnbound( ExceptionHandler * eh ) : m_eh(eh)
+gexceptionsink.cpp	110	keep	GNet::ExceptionSink GNet::ExceptionSinkUnbound::bind( ExceptionSource * source ) const
 gexceptionsource.cpp	25	keep	std::string GNet::ExceptionSource::exceptionSourceId() const
 gexceptionsource.cpp	30	keep	GNet::ExceptionSource::~ExceptionSource()
 gfutureevent_unix.cpp	84	keep	GNet::FutureEventImp::FutureEventImp( FutureEventHandler & handler , ExceptionSink es ) : m_handler(handler) , m_triggered(false)
@@ -1534,7 +1535,7 @@ ginterfaces_common.cpp	106	keep	GNet::Interfaces::const_iterator GNet::Interface
 ginterfaces_common.cpp	111	keep	void GNet::Interfaces::readEvent()
 ginterfaces_common.cpp	121	keep	void GNet::Interfaces::onFutureEvent()
 ginterfaces_common.cpp	133	keep	GNet::Interfaces::Item::Item() : address(Address::defaultAddress())
-glinebuffer.cpp	28	keep	GNet::LineBuffer::LineBuffer( const LineBufferConfig & config ) : m_auto(config.eol().empty()) , m_eol(config.eol()) , m_warn_limit(config.warn()) , m_fmin(config.fmin()) , m_expect(config.expect()) , m_warned(false) , m_pos(0U)
+glinebuffer.cpp	28	keep	GNet::LineBuffer::LineBuffer( const Config & config ) : m_auto(config.eol().empty()) , m_eol(config.eol()) , m_warn_limit(config.warn()) , m_fmin(config.fmin()) , m_expect(config.expect()) , m_warned(false) , m_pos(0U)
 glinebuffer.cpp	39	keep	void GNet::LineBuffer::clear()
 glinebuffer.cpp	50	keep	void GNet::LineBuffer::add( const char * data , std::size_t size )
 glinebuffer.cpp	56	remove	void GNet::LineBuffer::add( const std::string & s )
@@ -1552,15 +1553,13 @@ glinebuffer.cpp	203	keep	const char * GNet::LineBuffer::data() const
 glinebuffer.cpp	209	keep	GNet::LineBufferState GNet::LineBuffer::state() const
 glinebuffer.cpp	216	keep	GNet::LineBuffer::Output::Output()
 glinebuffer.cpp	219	keep	std::size_t GNet::LineBuffer::Output::set( LineStore & in , std::size_t pos , std::size_t size , std::size_t eolsize )
-glinebuffer.cpp	235	keep	GNet::LineBufferConfig::LineBufferConfig( const std::string & eol , std::size_t warn , std::size_t fmin , std::size_t expect ) : m_eol(eol) , m_warn(warn) , m_fmin(fmin) , m_expect(expect)
-glinebuffer.cpp	244	remove	bool GNet::LineBufferConfig::operator==( const LineBufferConfig & other ) const
-glinebuffer.cpp	253	keep	GNet::LineBufferConfig GNet::LineBufferConfig::transparent()
-glinebuffer.cpp	260	keep	GNet::LineBufferConfig GNet::LineBufferConfig::newline()
-glinebuffer.cpp	265	keep	GNet::LineBufferConfig GNet::LineBufferConfig::autodetect()
-glinebuffer.cpp	270	keep	GNet::LineBufferConfig GNet::LineBufferConfig::crlf()
-glinebuffer.cpp	275	keep	GNet::LineBufferConfig GNet::LineBufferConfig::smtp()
-glinebuffer.cpp	280	keep	GNet::LineBufferConfig GNet::LineBufferConfig::pop()
-glinebuffer.cpp	285	remove	GNet::LineBufferConfig GNet::LineBufferConfig::http()
+glinebuffer.cpp	235	keep	GNet::LineBuffer::Config GNet::LineBuffer::Config::transparent()
+glinebuffer.cpp	240	keep	GNet::LineBuffer::Config GNet::LineBuffer::Config::newline()
+glinebuffer.cpp	245	keep	GNet::LineBuffer::Config GNet::LineBuffer::Config::autodetect()
+glinebuffer.cpp	250	keep	GNet::LineBuffer::Config GNet::LineBuffer::Config::crlf()
+glinebuffer.cpp	255	keep	GNet::LineBuffer::Config GNet::LineBuffer::Config::smtp()
+glinebuffer.cpp	260	keep	GNet::LineBuffer::Config GNet::LineBuffer::Config::pop()
+glinebuffer.cpp	265	remove	GNet::LineBuffer::Config GNet::LineBuffer::Config::http()
 glinestore.cpp	196	keep	GNet::LineStore::LineStore()
 glinestore.cpp	199	keep	void GNet::LineStore::append( const std::string & s )
 glinestore.cpp	205	keep	void GNet::LineStore::append( const char * data , std::size_t size )
@@ -1711,7 +1710,7 @@ gserver.cpp	187	keep	std::vector<std::weak_ptr<GNet::ServerPeer>> GNet::Server::
 gserver.cpp	197	keep	void GNet::Server::writeEvent()
 gserver.cpp	202	keep	bool GNet::Server::unlink( G::SignalSafe , const char * path ) noexcept
 gserver.cpp	209	keep	GNet::ServerPeerInfo::ServerPeerInfo( Server * server , ServerPeer::Config server_peer_config ) : m_address(Address::defaultAddress()) , m_server_peer_config(server_peer_config) , m_server(server)
-gserverpeer.cpp	30	keep	GNet::ServerPeer::ServerPeer( ExceptionSink es , ServerPeerInfo && peer_info , const LineBufferConfig & line_buffer_config ) : m_es(es) , m_address(peer_info.m_address) , m_socket(std::move(peer_info.m_socket)) , m_sp(*this,es,*this,*m_socket,peer_info.m_server_peer_config.socket_protocol_config) , m_line_buffer(line_buffer_config) , m_config(peer_info.m_server_peer_config) , m_idle_timer(*this,&ServerPeer::onIdleTimeout,es)
+gserverpeer.cpp	30	keep	GNet::ServerPeer::ServerPeer( ExceptionSink es , ServerPeerInfo && peer_info , const LineBuffer::Config & line_buffer_config ) : m_es(es) , m_address(peer_info.m_address) , m_socket(std::move(peer_info.m_socket)) , m_sp(*this,es,*this,*m_socket,peer_info.m_server_peer_config.socket_protocol_config) , m_line_buffer(line_buffer_config) , m_config(peer_info.m_server_peer_config) , m_idle_timer(*this,&ServerPeer::onIdleTimeout,es)
 gserverpeer.cpp	52	keep	GNet::ServerPeer::~ServerPeer()
 gserverpeer.cpp	58	keep	void GNet::ServerPeer::secureAccept()
 gserverpeer.cpp	63	keep	bool GNet::ServerPeer::secureAcceptCapable() const
@@ -1726,18 +1725,18 @@ gserverpeer.cpp	106	keep	GNet::Address GNet::ServerPeer::peerAddress() const
 gserverpeer.cpp	111	keep	std::string GNet::ServerPeer::connectionState() const
 gserverpeer.cpp	116	keep	std::string GNet::ServerPeer::peerCertificate() const
 gserverpeer.cpp	121	keep	bool GNet::ServerPeer::send( const std::string & data )
-gserverpeer.cpp	126	keep	bool GNet::ServerPeer::send( G::string_view data )
-gserverpeer.cpp	131	remove	bool GNet::ServerPeer::send( const std::vector<G::string_view> & segments , std::size_t offset )
-gserverpeer.cpp	136	keep	void GNet::ServerPeer::writeEvent()
-gserverpeer.cpp	142	keep	void GNet::ServerPeer::doOnDelete( const std::string & reason , bool done )
-gserverpeer.cpp	148	keep	void GNet::ServerPeer::onIdleTimeout()
-gserverpeer.cpp	155	keep	void GNet::ServerPeer::onData( const char * data , std::size_t size )
-gserverpeer.cpp	164	keep	bool GNet::ServerPeer::onDataImp( const char * data , std::size_t size , std::size_t eolsize , std::size_t linesize , char c0 )
-gserverpeer.cpp	170	keep	GNet::LineBufferState GNet::ServerPeer::lineBuffer() const
-gserverpeer.cpp	175	keep	std::string GNet::ServerPeer::exceptionSourceId() const
-gserverpeer.cpp	186	keep	void GNet::ServerPeer::setIdleTimeout( unsigned int s )
-gserverpeer.cpp	194	remove	void GNet::ServerPeer::finish()
-gserverpeer.cpp	199	keep	void GNet::ServerPeer::onPeerDisconnect()
+gserverpeer.cpp	128	keep	bool GNet::ServerPeer::send( G::string_view data )
+gserverpeer.cpp	135	remove	bool GNet::ServerPeer::send( const std::vector<G::string_view> & segments , std::size_t offset )
+gserverpeer.cpp	142	keep	void GNet::ServerPeer::writeEvent()
+gserverpeer.cpp	148	keep	void GNet::ServerPeer::doOnDelete( const std::string & reason , bool done )
+gserverpeer.cpp	154	keep	void GNet::ServerPeer::onIdleTimeout()
+gserverpeer.cpp	161	keep	void GNet::ServerPeer::onData( const char * data , std::size_t size )
+gserverpeer.cpp	170	keep	bool GNet::ServerPeer::onDataImp( const char * data , std::size_t size , std::size_t eolsize , std::size_t linesize , char c0 )
+gserverpeer.cpp	176	keep	GNet::LineBufferState GNet::ServerPeer::lineBuffer() const
+gserverpeer.cpp	181	keep	std::string GNet::ServerPeer::exceptionSourceId() const
+gserverpeer.cpp	192	keep	void GNet::ServerPeer::setIdleTimeout( unsigned int s )
+gserverpeer.cpp	200	remove	void GNet::ServerPeer::finish()
+gserverpeer.cpp	205	keep	void GNet::ServerPeer::onPeerDisconnect()
 gsocket.cpp	31	keep	GNet::SocketBase::SocketBase( Address::Family family , int type , int protocol ) : m_reason(0) , m_domain(Address::domain(family)) , m_family(family) , m_read_added(false) , m_write_added(false) , m_other_added(false) , m_accepted(false)
 gsocket.cpp	50	keep	GNet::SocketBase::SocketBase( const SocketBase::Raw & , int domain , int type , int protocol ) : m_reason(0) , m_domain(domain) , m_family(Address::Family::local) , m_read_added(false) , m_write_added(false) , m_other_added(false) , m_accepted(false)
 gsocket.cpp	71	keep	GNet::SocketBase::SocketBase( Address::Family family , Descriptor fd ) : m_reason(0) , m_domain(Address::domain(family)) , m_family(family) , m_fd(fd) , m_read_added(false) , m_write_added(false) , m_other_added(false) , m_accepted(false)
@@ -2078,7 +2077,7 @@ gpop_enabled.cpp	30	keep	std::unique_ptr<GPop::Store> GPop::newStore( const G::P
 gpop_enabled.cpp	36	keep	std::unique_ptr<GAuth::SaslServerSecrets> GPop::newSecrets( const std::string & path )
 gpop_enabled.cpp	41	keep	std::unique_ptr<GPop::Server> GPop::newServer( GNet::ExceptionSink es , Store & store , const GAuth::SaslServerSecrets & secrets , const Server::Config & config )
 gpop_enabled.cpp	47	keep	void GPop::report( const Server * server , const std::string & group )
-gpopserver.cpp	28	keep	GPop::ServerPeer::ServerPeer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo && peer_info , Store & store , const GAuth::SaslServerSecrets & server_secrets , const std::string & sasl_server_config , std::unique_ptr<ServerProtocol::Text> ptext , const ServerProtocol::Config & protocol_config ) : GNet::ServerPeer(esu.bind(this),std::move(peer_info),GNet::LineBufferConfig::pop()) , m_ptext(ptext.release()) , m_protocol(*this,*this,store,server_secrets,sasl_server_config,*m_ptext,peerAddress(),protocol_config)
+gpopserver.cpp	28	keep	GPop::ServerPeer::ServerPeer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo && peer_info , Store & store , const GAuth::SaslServerSecrets & server_secrets , const std::string & sasl_server_config , std::unique_ptr<ServerProtocol::Text> ptext , const ServerProtocol::Config & protocol_config ) : GNet::ServerPeer(esu.bind(this),std::move(peer_info),GNet::LineBuffer::Config::pop()) , m_ptext(ptext.release()) , m_protocol(*this,*this,store,server_secrets,sasl_server_config,*m_ptext,peerAddress(),protocol_config)
 gpopserver.cpp	39	keep	void GPop::ServerPeer::onDelete( const std::string & reason )
 gpopserver.cpp	45	keep	bool GPop::ServerPeer::onReceive( const char * line_data , std::size_t line_size , std::size_t , std::size_t , char )
 gpopserver.cpp	51	keep	void GPop::ServerPeer::processLine( const std::string & line )
@@ -2484,38 +2483,49 @@ gverifierfactory.cpp	109	keep	void GVerifiers::VerifierFactory::checkNet( Spec &
 gverifierfactory.cpp	122	keep	void GVerifiers::VerifierFactory::checkRange( Spec & result )
 gverifierfactory.cpp	140	keep	void GVerifiers::VerifierFactory::fixFile( Spec & result , const G::Path & base_dir , const G::Path & app_dir )
 gverifierfactory.cpp	148	keep	void GVerifiers::VerifierFactory::checkFile( Spec & result , G::StringArray * warnings_p )
-gadminserver.cpp	37	keep	GSmtp::AdminServerPeer::AdminServerPeer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo && peer_info , AdminServer & server , const std::string & remote_address , const G::StringMap & info_commands , bool with_terminate ) : GNet::ServerPeer(esu.bind(this),std::move(peer_info),GNet::LineBufferConfig::autodetect()), m_es(esu.bind(this)) , m_server(server) , m_prompt("E-MailRelay> ") , m_blocked(false) , m_remote_address(remote_address) , m_notifying(false) , m_info_commands(info_commands) , m_with_terminate(with_terminate) , m_error_limit(30U) , m_error_count(0U)
-gadminserver.cpp	58	keep	GSmtp::AdminServerPeer::~AdminServerPeer()
-gadminserver.cpp	63	keep	void GSmtp::AdminServerPeer::clientDone( const std::string & s )
-gadminserver.cpp	72	keep	void GSmtp::AdminServerPeer::onDelete( const std::string & reason )
-gadminserver.cpp	78	keep	void GSmtp::AdminServerPeer::onSecure( const std::string & , const std::string & , const std::string & )
-gadminserver.cpp	82	keep	bool GSmtp::AdminServerPeer::onReceive( const char * line_data , std::size_t line_size , std::size_t , std::size_t , char )
-gadminserver.cpp	174	keep	std::string GSmtp::AdminServerPeer::eol() const
-gadminserver.cpp	180	keep	bool GSmtp::AdminServerPeer::is( G::string_view token , G::string_view key )
-gadminserver.cpp	185	keep	std::pair<bool,std::string> GSmtp::AdminServerPeer::find( G::string_view line , const G::StringMap & map )
-gadminserver.cpp	195	keep	void GSmtp::AdminServerPeer::help()
-gadminserver.cpp	213	keep	void GSmtp::AdminServerPeer::flush()
-gadminserver.cpp	237	keep	void GSmtp::AdminServerPeer::forward()
-gadminserver.cpp	250	keep	void GSmtp::AdminServerPeer::sendLine( std::string && line )
-gadminserver.cpp	259	keep	void GSmtp::AdminServerPeer::notify( const std::string & s0 , const std::string & s1 , const std::string & s2 , const std::string & s3 )
-gadminserver.cpp	270	keep	void GSmtp::AdminServerPeer::sendImp( const std::string & s )
-gadminserver.cpp	283	keep	void GSmtp::AdminServerPeer::onSendComplete()
-gadminserver.cpp	288	keep	void GSmtp::AdminServerPeer::status()
-gadminserver.cpp	305	keep	void GSmtp::AdminServerPeer::sendMessageIds( const std::vector<GStore::MessageId> & ids )
-gadminserver.cpp	323	keep	bool GSmtp::AdminServerPeer::notifying() const
-gadminserver.cpp	330	keep	GSmtp::AdminServer::AdminServer( GNet::ExceptionSink es , GStore::MessageStore & store , FilterFactoryBase & ff , const GAuth::SaslClientSecrets & client_secrets , const G::StringArray & interfaces , const Config & config ) : GNet::MultiServer(es,interfaces,config.port,"admin",config.net_server_peer_config,config.net_server_config) , m_store(store) , m_ff(ff) , m_client_secrets(client_secrets) , m_config(config) , m_command_timer(*this,&AdminServer::onCommandTimeout,es) , m_command(Command::forward) , m_command_arg(0U)
-gadminserver.cpp	344	keep	GSmtp::AdminServer::~AdminServer()
-gadminserver.cpp	349	keep	std::unique_ptr<GNet::ServerPeer> GSmtp::AdminServer::newPeer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo && peer_info , GNet::MultiServer::ServerInfo )
-gadminserver.cpp	374	keep	void GSmtp::AdminServer::emitCommand( Command command , unsigned int arg )
-gadminserver.cpp	381	keep	void GSmtp::AdminServer::onCommandTimeout()
-gadminserver.cpp	393	keep	G::Slot::Signal<GSmtp::AdminServer::Command,unsigned int> & GSmtp::AdminServer::commandSignal() noexcept
-gadminserver.cpp	398	keep	void GSmtp::AdminServer::report( const std::string & group ) const
-gadminserver.cpp	403	keep	void GSmtp::AdminServer::notify( const std::string & s0 , const std::string & s1 , const std::string & s2 , const std::string & s3 )
-gadminserver.cpp	419	keep	GStore::MessageStore & GSmtp::AdminServer::store()
-gadminserver.cpp	424	keep	GSmtp::FilterFactoryBase & GSmtp::AdminServer::ff()
-gadminserver.cpp	429	keep	const GAuth::SaslClientSecrets & GSmtp::AdminServer::clientSecrets() const
-gadminserver.cpp	434	keep	GSmtp::Client::Config GSmtp::AdminServer::clientConfig() const
-gadminserver.cpp	439	keep	bool GSmtp::AdminServer::notifying() const
+gadminserver_enabled.cpp	76	keep	GSmtp::AdminServerPeer::AdminServerPeer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo && peer_info , AdminServerImp & server_imp , const std::string & remote_address , const G::StringMap & info_commands , bool with_terminate ) : GNet::ServerPeer(esu.bind(this),std::move(peer_info),GNet::LineBuffer::Config::autodetect()), m_es(esu.bind(this)) , m_server_imp(server_imp) , m_prompt("E-MailRelay> ") , m_blocked(false) , m_remote_address(remote_address) , m_notifying(false) , m_info_commands(info_commands) , m_with_terminate(with_terminate) , m_error_limit(30U) , m_error_count(0U)
+gadminserver_enabled.cpp	97	keep	GSmtp::AdminServerPeer::~AdminServerPeer()
+gadminserver_enabled.cpp	102	keep	void GSmtp::AdminServerPeer::clientDone( const std::string & s )
+gadminserver_enabled.cpp	111	keep	void GSmtp::AdminServerPeer::onDelete( const std::string & reason )
+gadminserver_enabled.cpp	117	keep	void GSmtp::AdminServerPeer::onSecure( const std::string & , const std::string & , const std::string & )
+gadminserver_enabled.cpp	121	keep	bool GSmtp::AdminServerPeer::onReceive( const char * line_data , std::size_t line_size , std::size_t , std::size_t , char )
+gadminserver_enabled.cpp	213	keep	std::string GSmtp::AdminServerPeer::eol() const
+gadminserver_enabled.cpp	219	keep	bool GSmtp::AdminServerPeer::is( G::string_view token , G::string_view key )
+gadminserver_enabled.cpp	224	keep	std::pair<bool,std::string> GSmtp::AdminServerPeer::find( G::string_view line , const G::StringMap & map )
+gadminserver_enabled.cpp	234	keep	void GSmtp::AdminServerPeer::help()
+gadminserver_enabled.cpp	252	keep	void GSmtp::AdminServerPeer::flush()
+gadminserver_enabled.cpp	276	keep	void GSmtp::AdminServerPeer::forward()
+gadminserver_enabled.cpp	289	keep	void GSmtp::AdminServerPeer::sendLine( std::string && line )
+gadminserver_enabled.cpp	298	keep	void GSmtp::AdminServerPeer::notify( const std::string & s0 , const std::string & s1 , const std::string & s2 , const std::string & s3 )
+gadminserver_enabled.cpp	309	keep	void GSmtp::AdminServerPeer::sendImp( const std::string & s )
+gadminserver_enabled.cpp	322	keep	void GSmtp::AdminServerPeer::onSendComplete()
+gadminserver_enabled.cpp	327	keep	void GSmtp::AdminServerPeer::status()
+gadminserver_enabled.cpp	344	keep	void GSmtp::AdminServerPeer::sendMessageIds( const std::vector<GStore::MessageId> & ids )
+gadminserver_enabled.cpp	362	keep	bool GSmtp::AdminServerPeer::notifying() const
+gadminserver_enabled.cpp	369	keep	GSmtp::AdminServer::AdminServer( GNet::ExceptionSink es , GStore::MessageStore & store , FilterFactoryBase & ff , const GAuth::SaslClientSecrets & client_secrets , const G::StringArray & interfaces , const Config & config ) : m_imp(std::make_unique<AdminServerImp>(es,store,ff,client_secrets,interfaces,config))
+gadminserver_enabled.cpp	376	keep	GSmtp::AdminServer::~AdminServer()
+gadminserver_enabled.cpp	379	keep	bool GSmtp::AdminServer::enabled()
+gadminserver_enabled.cpp	384	keep	G::Slot::Signal<GSmtp::AdminServer::Command,unsigned int> & GSmtp::AdminServer::commandSignal()
+gadminserver_enabled.cpp	389	keep	void GSmtp::AdminServer::report( const std::string & group ) const
+gadminserver_enabled.cpp	394	remove	GStore::MessageStore & GSmtp::AdminServer::store()
+gadminserver_enabled.cpp	399	remove	GSmtp::FilterFactoryBase & GSmtp::AdminServer::ff()
+gadminserver_enabled.cpp	404	remove	const GAuth::SaslClientSecrets & GSmtp::AdminServer::clientSecrets() const
+gadminserver_enabled.cpp	409	remove	void GSmtp::AdminServer::emitCommand( Command command , unsigned int arg )
+gadminserver_enabled.cpp	414	keep	bool GSmtp::AdminServer::notifying() const
+gadminserver_enabled.cpp	419	keep	void GSmtp::AdminServer::notify( const std::string & s0 , const std::string & s1 , const std::string & s2 , const std::string & s3 )
+gadminserver_enabled.cpp	426	keep	GSmtp::AdminServerImp::AdminServerImp( GNet::ExceptionSink es , GStore::MessageStore & store , FilterFactoryBase & ff , const GAuth::SaslClientSecrets & client_secrets , const G::StringArray & interfaces , const AdminServer::Config & config ) : GNet::MultiServer(es,interfaces,config.port,"admin",config.net_server_peer_config,config.net_server_config) , m_store(store) , m_ff(ff) , m_client_secrets(client_secrets) , m_config(config) , m_command_timer(*this,&AdminServerImp::onCommandTimeout,es) , m_command(AdminServer::Command::forward) , m_command_arg(0U)
+gadminserver_enabled.cpp	440	keep	GSmtp::AdminServerImp::~AdminServerImp()
+gadminserver_enabled.cpp	445	keep	std::unique_ptr<GNet::ServerPeer> GSmtp::AdminServerImp::newPeer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo && peer_info , GNet::MultiServer::ServerInfo )
+gadminserver_enabled.cpp	470	keep	void GSmtp::AdminServerImp::emitCommand( AdminServer::Command command , unsigned int arg )
+gadminserver_enabled.cpp	477	keep	void GSmtp::AdminServerImp::onCommandTimeout()
+gadminserver_enabled.cpp	489	keep	G::Slot::Signal<GSmtp::AdminServer::Command,unsigned int> & GSmtp::AdminServerImp::commandSignal() noexcept
+gadminserver_enabled.cpp	494	keep	void GSmtp::AdminServerImp::report( const std::string & group ) const
+gadminserver_enabled.cpp	499	keep	void GSmtp::AdminServerImp::notify( const std::string & s0 , const std::string & s1 , const std::string & s2 , const std::string & s3 )
+gadminserver_enabled.cpp	515	keep	GStore::MessageStore & GSmtp::AdminServerImp::store()
+gadminserver_enabled.cpp	520	keep	GSmtp::FilterFactoryBase & GSmtp::AdminServerImp::ff()
+gadminserver_enabled.cpp	525	keep	const GAuth::SaslClientSecrets & GSmtp::AdminServerImp::clientSecrets() const
+gadminserver_enabled.cpp	530	keep	GSmtp::Client::Config GSmtp::AdminServerImp::clientConfig() const
+gadminserver_enabled.cpp	535	keep	bool GSmtp::AdminServerImp::notifying() const
 gfilter.cpp	26	keep	std::string GSmtp::Filter::str( Filter::Type type ) const
 gfilter.cpp	49	keep	G::string_view GSmtp::Filter::strtype( Filter::Type type ) noexcept
 gfilter.cpp	55	keep	GSmtp::Filter::Exit::Exit( int exit_code , Filter::Type type ) : result(Result::fail) , special(false)
@@ -2529,23 +2539,22 @@ gprotocolmessage.cpp	25	remove	void GSmtp::ProtocolMessage::addContentLine( cons
 gprotocolmessage.cpp	31	keep	GSmtp::ProtocolMessage::ToInfo::ToInfo( const VerifierStatus & status_in ) : status(status_in) , utf8address(status_in.utf8address())
 gprotocolmessageforward.cpp	28	keep	GSmtp::ProtocolMessageForward::ProtocolMessageForward( GNet::ExceptionSink es , GStore::MessageStore & store , FilterFactoryBase & ff , std::unique_ptr<ProtocolMessage> pm , const GSmtp::Client::Config & client_config , const GAuth::SaslClientSecrets & client_secrets , const std::string & forward_to , int forward_to_family ) : m_es(es) , m_store(store) , m_ff(ff) , m_client_location(forward_to,forward_to_family) , m_client_config(client_config) , m_client_secrets(client_secrets) , m_pm(pm.release()) , m_id(GStore::MessageId::none()) , m_done_signal(true)
 gprotocolmessageforward.cpp	48	keep	GSmtp::ProtocolMessageForward::~ProtocolMessageForward()
-gprotocolmessageforward.cpp	56	remove	GSmtp::ProtocolMessage::DoneSignal & GSmtp::ProtocolMessageForward::storageDoneSignal() noexcept
-gprotocolmessageforward.cpp	61	keep	GSmtp::ProtocolMessage::DoneSignal & GSmtp::ProtocolMessageForward::doneSignal() noexcept
-gprotocolmessageforward.cpp	66	keep	void GSmtp::ProtocolMessageForward::reset()
-gprotocolmessageforward.cpp	72	keep	void GSmtp::ProtocolMessageForward::clear()
-gprotocolmessageforward.cpp	77	keep	GStore::MessageId GSmtp::ProtocolMessageForward::setFrom( const std::string & from , const FromInfo & from_info )
-gprotocolmessageforward.cpp	82	keep	GSmtp::ProtocolMessage::FromInfo GSmtp::ProtocolMessageForward::fromInfo() const
-gprotocolmessageforward.cpp	87	keep	std::string GSmtp::ProtocolMessageForward::bodyType() const
-gprotocolmessageforward.cpp	92	keep	bool GSmtp::ProtocolMessageForward::addTo( const ToInfo & to_info )
-gprotocolmessageforward.cpp	97	keep	void GSmtp::ProtocolMessageForward::addReceived( const std::string & line )
-gprotocolmessageforward.cpp	102	keep	GStore::NewMessage::Status GSmtp::ProtocolMessageForward::addContent( const char * line_data , std::size_t line_size )
-gprotocolmessageforward.cpp	107	keep	std::size_t GSmtp::ProtocolMessageForward::contentSize() const
-gprotocolmessageforward.cpp	112	keep	std::string GSmtp::ProtocolMessageForward::from() const
-gprotocolmessageforward.cpp	117	keep	void GSmtp::ProtocolMessageForward::process( const std::string & auth_id , const std::string & peer_socket_address , const std::string & peer_certificate )
-gprotocolmessageforward.cpp	124	keep	void GSmtp::ProtocolMessageForward::processDone( bool success , const GStore::MessageId & id , const std::string & response , const std::string & reason )
-gprotocolmessageforward.cpp	156	keep	std::string GSmtp::ProtocolMessageForward::forward( const GStore::MessageId & id , bool & nothing_to_do )
-gprotocolmessageforward.cpp	192	keep	void GSmtp::ProtocolMessageForward::messageDone( const std::string & reason , bool )
-gprotocolmessageforward.cpp	199	keep	void GSmtp::ProtocolMessageForward::clientDone( const std::string & reason )
+gprotocolmessageforward.cpp	56	keep	GSmtp::ProtocolMessage::DoneSignal & GSmtp::ProtocolMessageForward::doneSignal() noexcept
+gprotocolmessageforward.cpp	61	keep	void GSmtp::ProtocolMessageForward::reset()
+gprotocolmessageforward.cpp	67	keep	void GSmtp::ProtocolMessageForward::clear()
+gprotocolmessageforward.cpp	72	keep	GStore::MessageId GSmtp::ProtocolMessageForward::setFrom( const std::string & from , const FromInfo & from_info )
+gprotocolmessageforward.cpp	77	keep	GSmtp::ProtocolMessage::FromInfo GSmtp::ProtocolMessageForward::fromInfo() const
+gprotocolmessageforward.cpp	82	keep	std::string GSmtp::ProtocolMessageForward::bodyType() const
+gprotocolmessageforward.cpp	87	keep	bool GSmtp::ProtocolMessageForward::addTo( const ToInfo & to_info )
+gprotocolmessageforward.cpp	92	keep	void GSmtp::ProtocolMessageForward::addReceived( const std::string & line )
+gprotocolmessageforward.cpp	97	keep	GStore::NewMessage::Status GSmtp::ProtocolMessageForward::addContent( const char * line_data , std::size_t line_size )
+gprotocolmessageforward.cpp	102	keep	std::size_t GSmtp::ProtocolMessageForward::contentSize() const
+gprotocolmessageforward.cpp	107	keep	std::string GSmtp::ProtocolMessageForward::from() const
+gprotocolmessageforward.cpp	112	keep	void GSmtp::ProtocolMessageForward::process( const std::string & auth_id , const std::string & peer_socket_address , const std::string & peer_certificate )
+gprotocolmessageforward.cpp	119	keep	void GSmtp::ProtocolMessageForward::processDone( const ProtocolMessage::DoneInfo & info )
+gprotocolmessageforward.cpp	151	keep	std::string GSmtp::ProtocolMessageForward::forward( const GStore::MessageId & id , bool & nothing_to_do )
+gprotocolmessageforward.cpp	187	keep	void GSmtp::ProtocolMessageForward::messageDone( const Client::MessageDoneInfo & info )
+gprotocolmessageforward.cpp	194	keep	void GSmtp::ProtocolMessageForward::clientDone( const std::string & reason )
 gprotocolmessagestore.cpp	28	keep	GSmtp::ProtocolMessageStore::ProtocolMessageStore( GStore::MessageStore & store , std::unique_ptr<Filter> filter ) : m_store(store) , m_filter(std::move(filter))
 gprotocolmessagestore.cpp	36	keep	GSmtp::ProtocolMessageStore::~ProtocolMessageStore()
 gprotocolmessagestore.cpp	41	keep	void GSmtp::ProtocolMessageStore::reset()
@@ -2561,22 +2570,21 @@ gprotocolmessagestore.cpp	129	keep	std::string GSmtp::ProtocolMessageStore::body
 gprotocolmessagestore.cpp	134	keep	void GSmtp::ProtocolMessageStore::process( const std::string & session_auth_id , const std::string & peer_socket_address , const std::string & peer_certificate )
 gprotocolmessagestore.cpp	158	keep	void GSmtp::ProtocolMessageStore::filterDone( int filter_result )
 gprotocolmessagestore.cpp	212	keep	GSmtp::ProtocolMessage::DoneSignal & GSmtp::ProtocolMessageStore::doneSignal() noexcept
-grequestclient.cpp	25	keep	GSmtp::RequestClient::RequestClient( GNet::ExceptionSink es , const std::string & key , const std::string & ok , const GNet::Location & location , unsigned int connect_timeout , unsigned int response_timeout , unsigned int idle_timeout ) : GNet::Client(es,location,netConfig(connect_timeout,response_timeout,idle_timeout)) , m_eol(1U,'\n') , m_key(key) , m_ok(ok) , m_timer(*this,&RequestClient::onTimeout,es)
-grequestclient.cpp	38	keep	GNet::Client::Config GSmtp::RequestClient::netConfig( unsigned int connection_timeout , unsigned int response_timeout , unsigned int idle_timeout )
-grequestclient.cpp	49	keep	void GSmtp::RequestClient::onConnect()
-grequestclient.cpp	56	keep	void GSmtp::RequestClient::request( const std::string & request_payload )
-grequestclient.cpp	71	keep	void GSmtp::RequestClient::onTimeout()
-grequestclient.cpp	77	keep	bool GSmtp::RequestClient::busy() const
-grequestclient.cpp	82	keep	void GSmtp::RequestClient::onDelete( const std::string & reason )
-grequestclient.cpp	88	keep	void GSmtp::RequestClient::onSecure( const std::string & , const std::string & , const std::string & )
-grequestclient.cpp	92	keep	bool GSmtp::RequestClient::onReceive( const char * line_data , std::size_t line_size , std::size_t , std::size_t , char )
-grequestclient.cpp	109	keep	void GSmtp::RequestClient::onSendComplete()
-grequestclient.cpp	113	keep	std::string GSmtp::RequestClient::requestLine( const std::string & request_payload ) const
-grequestclient.cpp	118	keep	std::string GSmtp::RequestClient::result( std::string line ) const
+grequestclient.cpp	25	keep	GSmtp::RequestClient::RequestClient( GNet::ExceptionSink es , const std::string & key , const std::string & ok , const GNet::Location & location , unsigned int connection_timeout , unsigned int response_timeout , unsigned int idle_timeout ) : GNet::Client(es,location, GNet::Client::Config() .set_line_buffer_config(GNet::LineBuffer::Config::newline()) .set_connection_timeout(connection_timeout) .set_response_timeout(response_timeout) .set_idle_timeout(idle_timeout)) , m_eol(1U,'\n') , m_key(key) , m_ok(ok) , m_timer(*this,&RequestClient::onTimeout,es)
+grequestclient.cpp	43	keep	void GSmtp::RequestClient::onConnect()
+grequestclient.cpp	50	keep	void GSmtp::RequestClient::request( const std::string & request_payload )
+grequestclient.cpp	65	keep	void GSmtp::RequestClient::onTimeout()
+grequestclient.cpp	71	keep	bool GSmtp::RequestClient::busy() const
+grequestclient.cpp	76	keep	void GSmtp::RequestClient::onDelete( const std::string & reason )
+grequestclient.cpp	82	keep	void GSmtp::RequestClient::onSecure( const std::string & , const std::string & , const std::string & )
+grequestclient.cpp	86	keep	bool GSmtp::RequestClient::onReceive( const char * line_data , std::size_t line_size , std::size_t , std::size_t , char )
+grequestclient.cpp	103	keep	void GSmtp::RequestClient::onSendComplete()
+grequestclient.cpp	107	keep	std::string GSmtp::RequestClient::requestLine( const std::string & request_payload ) const
+grequestclient.cpp	112	keep	std::string GSmtp::RequestClient::result( std::string line ) const
 gsmtpclient.cpp	35	keep	GSmtp::Client::Client( GNet::ExceptionSink es , FilterFactoryBase & ff , const GNet::Location & remote , const GAuth::SaslClientSecrets & secrets , const Config & config ) : GNet::Client(es,remote,netConfig(config)) , m_config(config) , m_nofilter_timer(*this,&Client::onNoFilterTimeout,es) , m_filter(ff.newFilter(es,Filter::Type::client,config.filter_config,config.filter_spec)) , m_protocol(es,*this,secrets,config.sasl_client_config,config.client_protocol_config,config.secure_tunnel) , m_secure(false) , m_filter_special(false)
 gsmtpclient.cpp	51	keep	GSmtp::Client::~Client()
 gsmtpclient.cpp	58	keep	GNet::Client::Config GSmtp::Client::netConfig( const Config & smtp_config )
-gsmtpclient.cpp	75	keep	G::Slot::Signal<const std::string&,bool> & GSmtp::Client::messageDoneSignal() noexcept
+gsmtpclient.cpp	75	keep	G::Slot::Signal<const GSmtp::Client::MessageDoneInfo&> & GSmtp::Client::messageDoneSignal() noexcept
 gsmtpclient.cpp	80	keep	void GSmtp::Client::sendMessage( std::unique_ptr<GStore::StoredMessage> message )
 gsmtpclient.cpp	88	keep	bool GSmtp::Client::ready() const
 gsmtpclient.cpp	93	keep	void GSmtp::Client::onConnect()
@@ -2587,20 +2595,20 @@ gsmtpclient.cpp	127	keep	bool GSmtp::Client::protocolSend( G::string_view line ,
 gsmtpclient.cpp	137	keep	void GSmtp::Client::filterStart()
 gsmtpclient.cpp	153	keep	void GSmtp::Client::onNoFilterTimeout()
 gsmtpclient.cpp	158	keep	void GSmtp::Client::filterDone( int filter_result )
-gsmtpclient.cpp	193	keep	void GSmtp::Client::protocolDone( int response_code , const std::string & response_in , const std::string & reason_in , const G::StringArray & rejectees )
-gsmtpclient.cpp	241	keep	void GSmtp::Client::quitAndFinish()
-gsmtpclient.cpp	247	keep	void GSmtp::Client::messageDestroy()
-gsmtpclient.cpp	253	keep	void GSmtp::Client::messageFail( int response_code , const std::string & reason )
-gsmtpclient.cpp	259	keep	bool GSmtp::Client::onReceive( const char * line_data , std::size_t line_size , std::size_t , std::size_t , char )
-gsmtpclient.cpp	277	keep	void GSmtp::Client::onDelete( const std::string & error )
-gsmtpclient.cpp	288	keep	void GSmtp::Client::onSendComplete()
-gsmtpclient.cpp	295	keep	GSmtp::Client::Config::Config() : local_address(GNet::Address::defaultAddress())
+gsmtpclient.cpp	193	keep	void GSmtp::Client::protocolDone( const ClientProtocol::DoneInfo & info )
+gsmtpclient.cpp	240	keep	void GSmtp::Client::quitAndFinish()
+gsmtpclient.cpp	246	keep	void GSmtp::Client::messageDestroy()
+gsmtpclient.cpp	252	keep	void GSmtp::Client::messageFail( int response_code , const std::string & reason )
+gsmtpclient.cpp	258	keep	bool GSmtp::Client::onReceive( const char * line_data , std::size_t line_size , std::size_t , std::size_t , char )
+gsmtpclient.cpp	276	keep	void GSmtp::Client::onDelete( const std::string & error )
+gsmtpclient.cpp	287	keep	void GSmtp::Client::onSendComplete()
+gsmtpclient.cpp	294	keep	GSmtp::Client::Config::Config() : local_address(GNet::Address::defaultAddress())
 gsmtpclientprotocol.cpp	64	keep	GSmtp::ClientProtocol::ClientProtocol( GNet::ExceptionSink es , Sender & sender , const GAuth::SaslClientSecrets & secrets , const std::string & sasl_client_config , const Config & config , bool in_secure_tunnel ) : GNet::TimerBase(es) , m_sender(sender) , m_sasl(std::make_unique<GAuth::SaslClient>(secrets,sasl_client_config)) , m_config(config) , m_in_secure_tunnel(in_secure_tunnel) , m_eightbit_warned(false) , m_binarymime_warned(false) , m_utf8_warned(false) , m_done_signal(true)
 gsmtpclientprotocol.cpp	82	keep	void GSmtp::ClientProtocol::start( std::weak_ptr<GStore::StoredMessage> message_in )
 gsmtpclientprotocol.cpp	98	keep	void GSmtp::ClientProtocol::finish()
 gsmtpclientprotocol.cpp	105	keep	void GSmtp::ClientProtocol::secure()
 gsmtpclientprotocol.cpp	110	keep	void GSmtp::ClientProtocol::sendComplete()
-gsmtpclientprotocol.cpp	126	keep	G::Slot::Signal<int,const std::string&,const std::string&,const G::StringArray&> & GSmtp::ClientProtocol::doneSignal() noexcept
+gsmtpclientprotocol.cpp	126	keep	G::Slot::Signal<const GSmtp::ClientProtocol::DoneInfo &> & GSmtp::ClientProtocol::doneSignal() noexcept
 gsmtpclientprotocol.cpp	131	keep	G::Slot::Signal<> & GSmtp::ClientProtocol::filterSignal() noexcept
 gsmtpclientprotocol.cpp	136	keep	bool GSmtp::ClientProtocol::apply( const std::string & rx )
 gsmtpclientprotocol.cpp	166	keep	bool GSmtp::ClientProtocol::applyEvent( const ClientReply & reply )
@@ -2636,24 +2644,24 @@ gsmtpclientprotocol.cpp	967	keep	GSmtp::ClientProtocolImp::AuthError::AuthError(
 gsmtpclientprotocol.cpp	973	keep	std::string GSmtp::ClientProtocolImp::AuthError::str() const
 gsmtpclientreply.cpp	28	keep	GSmtp::ClientReply::ClientReply()
 gsmtpclientreply.cpp	33	remove	GSmtp::ClientReply GSmtp::ClientReply::ok()
-gsmtpclientreply.cpp	43	keep	GSmtp::ClientReply GSmtp::ClientReply::error( Value v , const std::string & response , const std::string & reason )
-gsmtpclientreply.cpp	56	keep	GSmtp::ClientReply GSmtp::ClientReply::start()
-gsmtpclientreply.cpp	65	keep	GSmtp::ClientReply GSmtp::ClientReply::ok( Value v , const std::string & text )
-gsmtpclientreply.cpp	76	keep	GSmtp::ClientReply::ClientReply( const G::StringArray & lines )
-gsmtpclientreply.cpp	119	keep	bool GSmtp::ClientReply::validLine( const std::string & line )
-gsmtpclientreply.cpp	130	keep	bool GSmtp::ClientReply::valid() const
-gsmtpclientreply.cpp	135	keep	bool GSmtp::ClientReply::complete() const
-gsmtpclientreply.cpp	140	remove	bool GSmtp::ClientReply::incomplete() const
-gsmtpclientreply.cpp	145	keep	bool GSmtp::ClientReply::positive() const
-gsmtpclientreply.cpp	150	keep	bool GSmtp::ClientReply::positiveCompletion() const
-gsmtpclientreply.cpp	155	keep	int GSmtp::ClientReply::value() const
-gsmtpclientreply.cpp	160	keep	bool GSmtp::ClientReply::is( Value v ) const
-gsmtpclientreply.cpp	165	keep	std::string GSmtp::ClientReply::errorText() const
-gsmtpclientreply.cpp	170	keep	std::string GSmtp::ClientReply::errorReason() const
-gsmtpclientreply.cpp	175	keep	std::string GSmtp::ClientReply::text() const
-gsmtpclientreply.cpp	180	keep	bool GSmtp::ClientReply::isDigit( char c )
-gsmtpclientreply.cpp	185	keep	GSmtp::ClientReply::Type GSmtp::ClientReply::type() const
-gsmtpclientreply.cpp	191	remove	GSmtp::ClientReply::SubType GSmtp::ClientReply::subType() const
+gsmtpclientreply.cpp	43	keep	GSmtp::ClientReply GSmtp::ClientReply::ok( Value v )
+gsmtpclientreply.cpp	54	keep	GSmtp::ClientReply GSmtp::ClientReply::error( Value v , const std::string & response , const std::string & reason )
+gsmtpclientreply.cpp	69	keep	GSmtp::ClientReply GSmtp::ClientReply::start()
+gsmtpclientreply.cpp	78	keep	GSmtp::ClientReply::ClientReply( const G::StringArray & lines , char sep )
+gsmtpclientreply.cpp	123	keep	bool GSmtp::ClientReply::validLine( const std::string & line )
+gsmtpclientreply.cpp	134	keep	bool GSmtp::ClientReply::valid() const
+gsmtpclientreply.cpp	139	keep	bool GSmtp::ClientReply::complete() const
+gsmtpclientreply.cpp	144	remove	bool GSmtp::ClientReply::incomplete() const
+gsmtpclientreply.cpp	149	keep	bool GSmtp::ClientReply::positive() const
+gsmtpclientreply.cpp	154	keep	bool GSmtp::ClientReply::positiveCompletion() const
+gsmtpclientreply.cpp	159	keep	int GSmtp::ClientReply::value() const
+gsmtpclientreply.cpp	164	keep	bool GSmtp::ClientReply::is( Value v ) const
+gsmtpclientreply.cpp	169	keep	std::string GSmtp::ClientReply::errorText() const
+gsmtpclientreply.cpp	174	keep	std::string GSmtp::ClientReply::errorReason() const
+gsmtpclientreply.cpp	179	keep	std::string GSmtp::ClientReply::text() const
+gsmtpclientreply.cpp	184	keep	bool GSmtp::ClientReply::isDigit( char c )
+gsmtpclientreply.cpp	189	keep	GSmtp::ClientReply::Type GSmtp::ClientReply::type() const
+gsmtpclientreply.cpp	195	remove	GSmtp::ClientReply::SubType GSmtp::ClientReply::subType() const
 gsmtpforward.cpp	27	keep	GSmtp::Forward::Forward( GNet::ExceptionSink es , GStore::MessageStore & store , FilterFactoryBase & ff , const GNet::Location & forward_to_default , const GAuth::SaslClientSecrets & secrets , const Config & config ) : Forward( es , ff , forward_to_default , secrets , config )
 gsmtpforward.cpp	37	keep	GSmtp::Forward::Forward( GNet::ExceptionSink es , FilterFactoryBase & ff , const GNet::Location & forward_to_default , const GAuth::SaslClientSecrets & secrets , const Config & config ) : m_es(es) , m_store(nullptr) , m_ff(ff) , m_forward_to_default(forward_to_default) , m_forward_to_location(forward_to_default) , m_secrets(secrets) , m_config(config) , m_error_timer(*this,&Forward::onErrorTimeout,m_es) , m_continue_timer(*this,&Forward::onContinueTimeout,m_es) , m_message_count(0U) , m_has_connected(false) , m_finished(false)
 gsmtpforward.cpp	58	keep	GSmtp::Forward::~Forward()
@@ -2669,7 +2677,7 @@ gsmtpforward.cpp	242	keep	void GSmtp::Forward::onEventSignal( const std::string 
 gsmtpforward.cpp	247	keep	void GSmtp::Forward::onDeleteSignal( const std::string & )
 gsmtpforward.cpp	254	keep	void GSmtp::Forward::onDeletedSignal( const std::string & reason )
 gsmtpforward.cpp	274	keep	void GSmtp::Forward::onErrorTimeout()
-gsmtpforward.cpp	279	keep	void GSmtp::Forward::onMessageDoneSignal( const std::string & reason , bool special )
+gsmtpforward.cpp	279	keep	void GSmtp::Forward::onMessageDoneSignal( const Client::MessageDoneInfo & info )
 gsmtpforward.cpp	303	keep	void GSmtp::Forward::doOnDelete( const std::string & reason , bool /*done*/ )
 gsmtpforward.cpp	309	keep	void GSmtp::Forward::onDelete( const std::string & reason )
 gsmtpforward.cpp	320	keep	std::string GSmtp::Forward::peerAddressString() const
@@ -2678,9 +2686,9 @@ gsmtpforward.cpp	332	keep	bool GSmtp::Forward::unconnectable( const std::string 
 gsmtpforward.cpp	337	keep	void GSmtp::Forward::insert( G::StringArray & array , const std::string & value )
 gsmtpforward.cpp	344	keep	bool GSmtp::Forward::contains( const G::StringArray & array , const std::string & value )
 gsmtpforward.cpp	349	keep	std::string GSmtp::Forward::messageInfo( const GStore::StoredMessage & message )
-gsmtpforward.cpp	361	keep	G::Slot::Signal<const std::string&,bool> & GSmtp::Forward::messageDoneSignal() noexcept
+gsmtpforward.cpp	361	keep	G::Slot::Signal<const GSmtp::Client::MessageDoneInfo&> & GSmtp::Forward::messageDoneSignal() noexcept
 gsmtpforward.cpp	366	keep	G::Slot::Signal<const std::string&,const std::string&,const std::string&> & GSmtp::Forward::eventSignal() noexcept
-gsmtpserver.cpp	36	keep	GSmtp::ServerPeer::ServerPeer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo && peer_info , Server & server , VerifierFactoryBase & vf , const GAuth::SaslServerSecrets & server_secrets , const Server::Config & server_config , std::unique_ptr<ServerProtocol::Text> ptext ) : GNet::ServerPeer(esu.bind(this),std::move(peer_info),GNet::LineBufferConfig::transparent()) , m_server(server) , m_server_config(server_config) , m_block(std::bind(&ServerPeer::onDnsBlockResult,this,std::placeholders::_1),esu.bind(this),server_config.dnsbl_config) , m_check_timer(*this,&ServerPeer::onCheckTimeout,esu.bind(this)) , m_verifier(vf.newVerifier(esu.bind(this),server_config.verifier_config,server_config.verifier_spec)) , m_pmessage(server.newProtocolMessage(esu.bind(this))) , m_ptext(ptext.release()) , m_protocol(*this,*m_verifier,*m_pmessage,server_secrets, *m_ptext,peerAddress(), server_config.protocol_config) , m_input_buffer(esu.bind(this),m_protocol,server_config.buffer_config) , m_output_blocked(false)
+gsmtpserver.cpp	36	keep	GSmtp::ServerPeer::ServerPeer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo && peer_info , Server & server , VerifierFactoryBase & vf , const GAuth::SaslServerSecrets & server_secrets , const Server::Config & server_config , std::unique_ptr<ServerProtocol::Text> ptext ) : GNet::ServerPeer(esu.bind(this),std::move(peer_info),GNet::LineBuffer::Config::transparent()) , m_server(server) , m_server_config(server_config) , m_block(std::bind(&ServerPeer::onDnsBlockResult,this,std::placeholders::_1),esu.bind(this),server_config.dnsbl_config) , m_check_timer(*this,&ServerPeer::onCheckTimeout,esu.bind(this)) , m_verifier(vf.newVerifier(esu.bind(this),server_config.verifier_config,server_config.verifier_spec)) , m_pmessage(server.newProtocolMessage(esu.bind(this))) , m_ptext(ptext.release()) , m_protocol(*this,*m_verifier,*m_pmessage,server_secrets, *m_ptext,peerAddress(), server_config.protocol_config) , m_input_buffer(esu.bind(this),m_protocol,server_config.buffer_config) , m_output_blocked(false)
 gsmtpserver.cpp	67	keep	GSmtp::ServerPeer::~ServerPeer()
 gsmtpserver.cpp	72	keep	void GSmtp::ServerPeer::onDelete( const std::string & reason )
 gsmtpserver.cpp	80	keep	void GSmtp::ServerPeer::onData( const char * data , std::size_t size )
@@ -2707,7 +2715,7 @@ gsmtpserver.cpp	267	keep	std::unique_ptr<GSmtp::Filter> GSmtp::Server::newFilter
 gsmtpserver.cpp	273	keep	std::unique_ptr<GSmtp::ProtocolMessage> GSmtp::Server::newProtocolMessageStore( std::unique_ptr<Filter> filter )
 gsmtpserver.cpp	278	keep	std::unique_ptr<GSmtp::ProtocolMessage> GSmtp::Server::newProtocolMessageForward( GNet::ExceptionSink es , std::unique_ptr<ProtocolMessage> pm )
 gsmtpserver.cpp	286	keep	std::unique_ptr<GSmtp::ProtocolMessage> GSmtp::Server::newProtocolMessage( GNet::ExceptionSink es )
-gsmtpserverbufferin.cpp	26	keep	GSmtp::ServerBufferIn::ServerBufferIn( GNet::ExceptionSink es , ServerProtocol & protocol , const Config & config ) : m_protocol(protocol) , m_config(config) , m_line_buffer(GNet::LineBufferConfig::smtp()) , m_timer(*this,&ServerBufferIn::onTimeout,es)
+gsmtpserverbufferin.cpp	26	keep	GSmtp::ServerBufferIn::ServerBufferIn( GNet::ExceptionSink es , ServerProtocol & protocol , const Config & config ) : m_protocol(protocol) , m_config(config) , m_line_buffer(GNet::LineBuffer::Config::smtp()) , m_timer(*this,&ServerBufferIn::onTimeout,es)
 gsmtpserverbufferin.cpp	36	keep	GSmtp::ServerBufferIn::~ServerBufferIn()
 gsmtpserverbufferin.cpp	41	keep	void GSmtp::ServerBufferIn::apply( const char * data , std::size_t size )
 gsmtpserverbufferin.cpp	48	keep	void GSmtp::ServerBufferIn::onTimeout()
@@ -2749,55 +2757,56 @@ gsmtpserverprotocol.cpp	241	keep	void GSmtp::ServerProtocol::doStartTls( EventDa
 gsmtpserverprotocol.cpp	255	keep	bool GSmtp::ServerProtocol::apply( const ApplyArgsTuple & args )
 gsmtpserverprotocol.cpp	319	keep	void GSmtp::ServerProtocol::doDataContent( EventData , bool & )
 gsmtpserverprotocol.cpp	336	keep	void GSmtp::ServerProtocol::doEot( EventData , bool & ok )
-gsmtpserverprotocol.cpp	359	keep	void GSmtp::ServerProtocol::processDone( bool success , const GStore::MessageId & id , const std::string & response , const std::string & reason )
-gsmtpserverprotocol.cpp	371	keep	void GSmtp::ServerProtocol::doComplete( EventData event_data , bool & )
-gsmtpserverprotocol.cpp	377	keep	void GSmtp::ServerProtocol::doQuit( EventData , bool & )
-gsmtpserverprotocol.cpp	385	keep	void GSmtp::ServerProtocol::doBadDataCommand( EventData , bool & )
-gsmtpserverprotocol.cpp	391	keep	void GSmtp::ServerProtocol::doBdatOutOfSequence( EventData , bool & )
-gsmtpserverprotocol.cpp	397	keep	void GSmtp::ServerProtocol::doBdatFirst( EventData event_data , bool & ok )
-gsmtpserverprotocol.cpp	402	keep	void GSmtp::ServerProtocol::doBdatFirstLast( EventData event_data , bool & ok )
-gsmtpserverprotocol.cpp	407	keep	void GSmtp::ServerProtocol::doBdatFirstLastZero( EventData event_data , bool & ok )
-gsmtpserverprotocol.cpp	412	keep	void GSmtp::ServerProtocol::doBdatMore( EventData event_data , bool & ok )
-gsmtpserverprotocol.cpp	417	keep	void GSmtp::ServerProtocol::doBdatMoreLast( EventData event_data , bool & ok )
-gsmtpserverprotocol.cpp	422	keep	void GSmtp::ServerProtocol::doBdatMoreLastZero( EventData event_data , bool & ok )
-gsmtpserverprotocol.cpp	427	keep	void GSmtp::ServerProtocol::doBdatImp( G::string_view bdat_line , bool & ok , bool first , bool last , bool zero )
-gsmtpserverprotocol.cpp	477	keep	void GSmtp::ServerProtocol::doBdatContent( EventData , bool & complete )
-gsmtpserverprotocol.cpp	504	keep	void GSmtp::ServerProtocol::doBdatContentLast( EventData , bool & complete )
-gsmtpserverprotocol.cpp	528	keep	void GSmtp::ServerProtocol::doBdatCheck( EventData , bool & ok )
-gsmtpserverprotocol.cpp	548	keep	bool GSmtp::ServerProtocol::messageAddContentFailed()
-gsmtpserverprotocol.cpp	556	keep	bool GSmtp::ServerProtocol::messageAddContentTooBig()
-gsmtpserverprotocol.cpp	564	keep	void GSmtp::ServerProtocol::doBdatComplete( EventData event_data , bool & )
-gsmtpserverprotocol.cpp	570	keep	void GSmtp::ServerProtocol::doIgnore( EventData , bool & )
-gsmtpserverprotocol.cpp	574	keep	void GSmtp::ServerProtocol::doNoop( EventData , bool & )
-gsmtpserverprotocol.cpp	579	remove	void GSmtp::ServerProtocol::doNothing( EventData , bool & )
-gsmtpserverprotocol.cpp	583	keep	void GSmtp::ServerProtocol::doExpn( EventData , bool & )
-gsmtpserverprotocol.cpp	588	keep	void GSmtp::ServerProtocol::doHelp( EventData , bool & )
-gsmtpserverprotocol.cpp	593	keep	void GSmtp::ServerProtocol::doVrfy( EventData event_data , bool & predicate )
-gsmtpserverprotocol.cpp	627	keep	void GSmtp::ServerProtocol::verify( Verifier::Command command , const std::string & to , const std::string & from )
-gsmtpserverprotocol.cpp	637	keep	void GSmtp::ServerProtocol::verifyDone( Verifier::Command command , const VerifierStatus & status )
-gsmtpserverprotocol.cpp	654	keep	void GSmtp::ServerProtocol::doVrfyReply( EventData event_data , bool & )
-gsmtpserverprotocol.cpp	666	keep	void GSmtp::ServerProtocol::doEhlo( EventData event_data , bool & predicate )
-gsmtpserverprotocol.cpp	695	keep	void GSmtp::ServerProtocol::doHelo( EventData event_data , bool & predicate )
-gsmtpserverprotocol.cpp	711	keep	void GSmtp::ServerProtocol::doAuth( EventData event_data , bool & predicate )
-gsmtpserverprotocol.cpp	778	keep	void GSmtp::ServerProtocol::doAuthData( EventData event_data , bool & predicate )
-gsmtpserverprotocol.cpp	808	keep	void GSmtp::ServerProtocol::doMail( EventData event_data , bool & predicate )
-gsmtpserverprotocol.cpp	858	keep	void GSmtp::ServerProtocol::doRcpt( EventData event_data , bool & predicate )
-gsmtpserverprotocol.cpp	878	keep	void GSmtp::ServerProtocol::doRcptToReply( EventData event_data , bool & predicate )
-gsmtpserverprotocol.cpp	899	keep	void GSmtp::ServerProtocol::doUnknown( EventData event_data , bool & )
-gsmtpserverprotocol.cpp	905	keep	void GSmtp::ServerProtocol::clear()
-gsmtpserverprotocol.cpp	916	keep	void GSmtp::ServerProtocol::doRset( EventData , bool & )
-gsmtpserverprotocol.cpp	924	keep	void GSmtp::ServerProtocol::doNoRecipients( EventData , bool & )
-gsmtpserverprotocol.cpp	929	keep	void GSmtp::ServerProtocol::doData( EventData , bool & )
-gsmtpserverprotocol.cpp	940	keep	bool GSmtp::ServerProtocol::isEndOfText( const ApplyArgsTuple & args ) const
-gsmtpserverprotocol.cpp	948	keep	bool GSmtp::ServerProtocol::isEscaped( const ApplyArgsTuple & args ) const
-gsmtpserverprotocol.cpp	956	keep	GSmtp::ServerProtocol::Event GSmtp::ServerProtocol::commandEvent( G::string_view line ) const
-gsmtpserverprotocol.cpp	977	keep	GSmtp::ServerProtocol::Event GSmtp::ServerProtocol::dataEvent( G::string_view ) const
-gsmtpserverprotocol.cpp	986	keep	GSmtp::ServerProtocol::Event GSmtp::ServerProtocol::bdatEvent( G::string_view line ) const
-gsmtpserverprotocol.cpp	998	keep	void GSmtp::ServerProtocol::badClientEvent()
-gsmtpserverprotocol.cpp	1009	keep	std::string GSmtp::ServerProtocol::str( EventData sv )
-gsmtpserverprotocol.cpp	1014	keep	G::StringArray GSmtp::ServerProtocol::mechanisms() const
-gsmtpserverprotocol.cpp	1019	keep	G::StringArray GSmtp::ServerProtocol::mechanisms( bool secure ) const
-gsmtpserverprotocol.cpp	1026	keep	GSmtp::ServerProtocol::Config::Config()
+gsmtpserverprotocol.cpp	359	keep	void GSmtp::ServerProtocol::processDone( const ProtocolMessage::DoneInfo & info )
+gsmtpserverprotocol.cpp	378	keep	void GSmtp::ServerProtocol::doComplete( EventData event_data , bool & )
+gsmtpserverprotocol.cpp	384	keep	void GSmtp::ServerProtocol::doQuit( EventData , bool & )
+gsmtpserverprotocol.cpp	392	keep	void GSmtp::ServerProtocol::doBadDataCommand( EventData , bool & )
+gsmtpserverprotocol.cpp	398	keep	void GSmtp::ServerProtocol::doBdatOutOfSequence( EventData , bool & )
+gsmtpserverprotocol.cpp	404	keep	void GSmtp::ServerProtocol::doBdatFirst( EventData event_data , bool & ok )
+gsmtpserverprotocol.cpp	409	keep	void GSmtp::ServerProtocol::doBdatFirstLast( EventData event_data , bool & ok )
+gsmtpserverprotocol.cpp	414	keep	void GSmtp::ServerProtocol::doBdatFirstLastZero( EventData event_data , bool & ok )
+gsmtpserverprotocol.cpp	419	keep	void GSmtp::ServerProtocol::doBdatMore( EventData event_data , bool & ok )
+gsmtpserverprotocol.cpp	424	keep	void GSmtp::ServerProtocol::doBdatMoreLast( EventData event_data , bool & ok )
+gsmtpserverprotocol.cpp	429	keep	void GSmtp::ServerProtocol::doBdatMoreLastZero( EventData event_data , bool & ok )
+gsmtpserverprotocol.cpp	434	keep	void GSmtp::ServerProtocol::doBdatImp( G::string_view bdat_line , bool & ok , bool first , bool last , bool zero )
+gsmtpserverprotocol.cpp	484	keep	void GSmtp::ServerProtocol::doBdatContent( EventData , bool & complete )
+gsmtpserverprotocol.cpp	511	keep	void GSmtp::ServerProtocol::doBdatContentLast( EventData , bool & complete )
+gsmtpserverprotocol.cpp	535	keep	void GSmtp::ServerProtocol::doBdatCheck( EventData , bool & ok )
+gsmtpserverprotocol.cpp	555	keep	bool GSmtp::ServerProtocol::messageAddContentFailed()
+gsmtpserverprotocol.cpp	563	keep	bool GSmtp::ServerProtocol::messageAddContentTooBig()
+gsmtpserverprotocol.cpp	571	keep	void GSmtp::ServerProtocol::doBdatComplete( EventData event_data , bool & )
+gsmtpserverprotocol.cpp	577	keep	void GSmtp::ServerProtocol::doIgnore( EventData , bool & )
+gsmtpserverprotocol.cpp	581	keep	void GSmtp::ServerProtocol::doNoop( EventData , bool & )
+gsmtpserverprotocol.cpp	586	remove	void GSmtp::ServerProtocol::doNothing( EventData , bool & )
+gsmtpserverprotocol.cpp	590	keep	void GSmtp::ServerProtocol::doExpn( EventData , bool & )
+gsmtpserverprotocol.cpp	595	keep	void GSmtp::ServerProtocol::doHelp( EventData , bool & )
+gsmtpserverprotocol.cpp	600	keep	void GSmtp::ServerProtocol::doVrfy( EventData event_data , bool & predicate )
+gsmtpserverprotocol.cpp	634	keep	void GSmtp::ServerProtocol::verify( Verifier::Command command , const std::string & to , const std::string & from )
+gsmtpserverprotocol.cpp	644	keep	void GSmtp::ServerProtocol::verifyDone( Verifier::Command command , const VerifierStatus & status )
+gsmtpserverprotocol.cpp	661	keep	void GSmtp::ServerProtocol::doVrfyReply( EventData event_data , bool & )
+gsmtpserverprotocol.cpp	673	keep	void GSmtp::ServerProtocol::doEhlo( EventData event_data , bool & predicate )
+gsmtpserverprotocol.cpp	702	keep	void GSmtp::ServerProtocol::doHelo( EventData event_data , bool & predicate )
+gsmtpserverprotocol.cpp	718	keep	void GSmtp::ServerProtocol::doAuth( EventData event_data , bool & predicate )
+gsmtpserverprotocol.cpp	785	keep	void GSmtp::ServerProtocol::doAuthData( EventData event_data , bool & predicate )
+gsmtpserverprotocol.cpp	815	keep	void GSmtp::ServerProtocol::doMail( EventData event_data , bool & predicate )
+gsmtpserverprotocol.cpp	865	keep	void GSmtp::ServerProtocol::doRcpt( EventData event_data , bool & predicate )
+gsmtpserverprotocol.cpp	885	keep	void GSmtp::ServerProtocol::doRcptToReply( EventData event_data , bool & predicate )
+gsmtpserverprotocol.cpp	906	keep	void GSmtp::ServerProtocol::doUnknown( EventData event_data , bool & )
+gsmtpserverprotocol.cpp	912	keep	void GSmtp::ServerProtocol::clear()
+gsmtpserverprotocol.cpp	923	keep	void GSmtp::ServerProtocol::doRset( EventData , bool & )
+gsmtpserverprotocol.cpp	931	keep	void GSmtp::ServerProtocol::doNoRecipients( EventData , bool & )
+gsmtpserverprotocol.cpp	936	keep	void GSmtp::ServerProtocol::doData( EventData , bool & )
+gsmtpserverprotocol.cpp	947	keep	bool GSmtp::ServerProtocol::isEndOfText( const ApplyArgsTuple & args ) const
+gsmtpserverprotocol.cpp	955	keep	bool GSmtp::ServerProtocol::isEscaped( const ApplyArgsTuple & args ) const
+gsmtpserverprotocol.cpp	963	keep	GSmtp::ServerProtocol::Event GSmtp::ServerProtocol::commandEvent( G::string_view line ) const
+gsmtpserverprotocol.cpp	984	keep	GSmtp::ServerProtocol::Event GSmtp::ServerProtocol::dataEvent( G::string_view ) const
+gsmtpserverprotocol.cpp	993	keep	GSmtp::ServerProtocol::Event GSmtp::ServerProtocol::bdatEvent( G::string_view line ) const
+gsmtpserverprotocol.cpp	1005	keep	void GSmtp::ServerProtocol::badClientEvent()
+gsmtpserverprotocol.cpp	1016	keep	int GSmtp::ServerProtocol::code( EventData sv )
+gsmtpserverprotocol.cpp	1021	keep	std::string GSmtp::ServerProtocol::str( EventData sv )
+gsmtpserverprotocol.cpp	1026	keep	G::StringArray GSmtp::ServerProtocol::mechanisms() const
+gsmtpserverprotocol.cpp	1031	keep	G::StringArray GSmtp::ServerProtocol::mechanisms( bool secure ) const
+gsmtpserverprotocol.cpp	1038	keep	GSmtp::ServerProtocol::Config::Config()
 gsmtpserversend.cpp	28	keep	GSmtp::ServerSend::ServerSend( ServerSender * sender ) : m_sender(sender)
 gsmtpserversend.cpp	33	keep	void GSmtp::ServerSend::setSender( ServerSender * sender )
 gsmtpserversend.cpp	38	keep	void GSmtp::ServerSend::sendChallenge( const std::string & challenge )
@@ -2825,44 +2834,43 @@ gsmtpserversend.cpp	158	keep	void GSmtp::ServerSend::sendTooBig()
 gsmtpserversend.cpp	163	keep	void GSmtp::ServerSend::sendDataReply()
 gsmtpserversend.cpp	168	keep	void GSmtp::ServerSend::sendRsetReply()
 gsmtpserversend.cpp	173	keep	void GSmtp::ServerSend::sendMailReply( const std::string & from )
-gsmtpserversend.cpp	178	keep	void GSmtp::ServerSend::sendCompletionReply( bool ok , const std::string & response )
-gsmtpserversend.cpp	187	keep	void GSmtp::ServerSend::sendFailed()
-gsmtpserversend.cpp	192	keep	void GSmtp::ServerSend::sendRcptReply( const std::string & to , bool is_local )
-gsmtpserversend.cpp	198	keep	void GSmtp::ServerSend::sendBadFrom( const std::string & response_extra )
-gsmtpserversend.cpp	209	keep	void GSmtp::ServerSend::sendBadTo( const std::string & to , const std::string & text , bool temporary )
-gsmtpserversend.cpp	217	keep	void GSmtp::ServerSend::sendEhloReply( const Advertise & advertise )
-gsmtpserversend.cpp	253	keep	void GSmtp::ServerSend::sendHeloReply()
-gsmtpserversend.cpp	258	keep	void GSmtp::ServerSend::sendOk( const std::string & text )
-gsmtpserversend.cpp	263	remove	void GSmtp::ServerSend::sendOk()
-gsmtpserversend.cpp	268	keep	void GSmtp::ServerSend::send( const char * line )
-gsmtpserversend.cpp	273	keep	void GSmtp::ServerSend::send( std::string line_in , bool go_secure )
-gsmtpserversend.cpp	282	keep	void GSmtp::ServerSend::send( const std::ostringstream & ss )
+gsmtpserversend.cpp	178	keep	void GSmtp::ServerSend::sendCompletionReply( bool ok , int response_code , const std::string & response )
+gsmtpserversend.cpp	188	keep	void GSmtp::ServerSend::sendFailed()
+gsmtpserversend.cpp	193	keep	void GSmtp::ServerSend::sendRcptReply( const std::string & to , bool is_local )
+gsmtpserversend.cpp	199	keep	void GSmtp::ServerSend::sendBadFrom( const std::string & response_extra )
+gsmtpserversend.cpp	210	keep	void GSmtp::ServerSend::sendBadTo( const std::string & to , const std::string & text , bool temporary )
+gsmtpserversend.cpp	218	keep	void GSmtp::ServerSend::sendEhloReply( const Advertise & advertise )
+gsmtpserversend.cpp	254	keep	void GSmtp::ServerSend::sendHeloReply()
+gsmtpserversend.cpp	259	keep	void GSmtp::ServerSend::sendOk( const std::string & text )
+gsmtpserversend.cpp	264	remove	void GSmtp::ServerSend::sendOk()
+gsmtpserversend.cpp	269	keep	void GSmtp::ServerSend::send( const char * line )
+gsmtpserversend.cpp	274	keep	void GSmtp::ServerSend::send( std::string line_in , bool go_secure )
+gsmtpserversend.cpp	283	keep	void GSmtp::ServerSend::send( const std::ostringstream & ss )
 gsmtpservertext.cpp	32	keep	GSmtp::ServerText::ServerText( const std::string & code_ident , bool anonymous , bool with_received_line , const std::string & domain , const GNet::Address & peer_address ) : m_code_ident(code_ident) , m_anonymous(anonymous) , m_with_received_line(with_received_line) , m_domain(domain) , m_peer_address(peer_address)
 gsmtpservertext.cpp	45	keep	std::string GSmtp::ServerText::greeting() const
 gsmtpservertext.cpp	54	keep	std::string GSmtp::ServerText::hello( const std::string & ) const
 gsmtpservertext.cpp	63	keep	std::string GSmtp::ServerText::received( const std::string & smtp_peer_name , bool authenticated , bool secure , const std::string & protocol , const std::string & cipher ) const
 gsmtpservertext.cpp	70	keep	std::string GSmtp::ServerText::receivedLine( const std::string & smtp_peer_name , const std::string & peer_address , const std::string & receivedline_domain , bool authenticated , bool secure , const std::string & , const std::string & cipher_in )
-gspamclient.cpp	31	keep	GSmtp::SpamClient::SpamClient( GNet::ExceptionSink es , const GNet::Location & location , bool read_only , unsigned int connect_timeout , unsigned int response_timeout ) : GNet::Client(es,location,netConfig(connect_timeout,response_timeout)) , m_busy(false) , m_timer(*this,&SpamClient::onTimeout,es) , m_request(*this) , m_response(read_only)
-gspamclient.cpp	45	keep	GNet::Client::Config GSmtp::SpamClient::netConfig( unsigned int connect_timeout , unsigned int response_timeout )
-gspamclient.cpp	54	remove	void GSmtp::SpamClient::username( const std::string & username )
-gspamclient.cpp	59	keep	bool GSmtp::SpamClient::busy() const
-gspamclient.cpp	64	keep	void GSmtp::SpamClient::request( const std::string & path )
-gspamclient.cpp	74	keep	void GSmtp::SpamClient::onTimeout()
-gspamclient.cpp	81	keep	void GSmtp::SpamClient::onDelete( const std::string & )
-gspamclient.cpp	85	keep	void GSmtp::SpamClient::onSecure( const std::string & , const std::string & , const std::string & )
-gspamclient.cpp	89	keep	void GSmtp::SpamClient::onConnect()
-gspamclient.cpp	95	keep	void GSmtp::SpamClient::start()
-gspamclient.cpp	100	keep	void GSmtp::SpamClient::onSendComplete()
-gspamclient.cpp	108	keep	bool GSmtp::SpamClient::onReceive( const char * line_data , std::size_t line_size , std::size_t , std::size_t , char )
-gspamclient.cpp	118	keep	GSmtp::SpamClient::Request::Request( Client & client ) : m_client(&client) , m_buffer(10240U)
-gspamclient.cpp	124	keep	void GSmtp::SpamClient::Request::send( const std::string & path , const std::string & username )
-gspamclient.cpp	150	keep	bool GSmtp::SpamClient::Request::sendMore()
-gspamclient.cpp	168	keep	GSmtp::SpamClient::Response::Response( bool read_only ) : m_read_only(read_only) , m_state(0) , m_content_length(0U) , m_size(0U)
-gspamclient.cpp	176	keep	GSmtp::SpamClient::Response::~Response()
-gspamclient.cpp	185	keep	void GSmtp::SpamClient::Response::add( const std::string & path , const std::string & line )
-gspamclient.cpp	246	keep	bool GSmtp::SpamClient::Response::complete() const
-gspamclient.cpp	251	keep	bool GSmtp::SpamClient::Response::ok( const std::string & line ) const
-gspamclient.cpp	262	keep	std::string GSmtp::SpamClient::Response::result() const
+gspamclient.cpp	31	keep	GSmtp::SpamClient::SpamClient( GNet::ExceptionSink es , const GNet::Location & location , bool read_only , unsigned int connection_timeout , unsigned int response_timeout ) : GNet::Client(es,location, GNet::Client::Config() .set_line_buffer_config(GNet::LineBuffer::Config::newline()) .set_connection_timeout(connection_timeout) .set_response_timeout(response_timeout)) , m_busy(false) , m_timer(*this,&SpamClient::onTimeout,es) , m_request(*this) , m_response(read_only)
+gspamclient.cpp	49	remove	void GSmtp::SpamClient::username( const std::string & username )
+gspamclient.cpp	54	keep	bool GSmtp::SpamClient::busy() const
+gspamclient.cpp	59	keep	void GSmtp::SpamClient::request( const std::string & path )
+gspamclient.cpp	69	keep	void GSmtp::SpamClient::onTimeout()
+gspamclient.cpp	76	keep	void GSmtp::SpamClient::onDelete( const std::string & )
+gspamclient.cpp	80	keep	void GSmtp::SpamClient::onSecure( const std::string & , const std::string & , const std::string & )
+gspamclient.cpp	84	keep	void GSmtp::SpamClient::onConnect()
+gspamclient.cpp	90	keep	void GSmtp::SpamClient::start()
+gspamclient.cpp	95	keep	void GSmtp::SpamClient::onSendComplete()
+gspamclient.cpp	103	keep	bool GSmtp::SpamClient::onReceive( const char * line_data , std::size_t line_size , std::size_t , std::size_t , char )
+gspamclient.cpp	113	keep	GSmtp::SpamClient::Request::Request( Client & client ) : m_client(&client) , m_buffer(10240U)
+gspamclient.cpp	119	keep	void GSmtp::SpamClient::Request::send( const std::string & path , const std::string & username )
+gspamclient.cpp	145	keep	bool GSmtp::SpamClient::Request::sendMore()
+gspamclient.cpp	163	keep	GSmtp::SpamClient::Response::Response( bool read_only ) : m_read_only(read_only) , m_state(0) , m_content_length(0U) , m_size(0U)
+gspamclient.cpp	171	keep	GSmtp::SpamClient::Response::~Response()
+gspamclient.cpp	180	keep	void GSmtp::SpamClient::Response::add( const std::string & path , const std::string & line )
+gspamclient.cpp	241	keep	bool GSmtp::SpamClient::Response::complete() const
+gspamclient.cpp	246	keep	bool GSmtp::SpamClient::Response::ok( const std::string & line ) const
+gspamclient.cpp	257	keep	std::string GSmtp::SpamClient::Response::result() const
 gverifierfactorybase.cpp	24	keep	GSmtp::VerifierFactoryBase::Spec::Spec()
 gverifierfactorybase.cpp	27	keep	GSmtp::VerifierFactoryBase::Spec::Spec( const std::string & first_in , const std::string & second_in ) : first(first_in) , second(second_in)
 gverifierstatus.cpp	29	keep	GSmtp::VerifierStatus::VerifierStatus()

@@ -1,3 +1,10 @@
+emailrelay (2.5.1) unstable; urgency=low
+  * Proxying with "--immediate" passes back SMTP reponses more faithfully.
+  * Configure option "--disable-admin" restored.
+  * Fewer Windows handles inherited by filter programs [bug-id #55].
+  * Fix for "--dnsbl" option parsing.
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Mon, 25 Sep 2023 00:00:00 +0000
+
 emailrelay (2.5) unstable; urgency=low
   * Multiple configurations in one process.
   * SMTP PIPELINING (RFC-2920).
@@ -11,7 +18,7 @@ emailrelay (2.5) unstable; urgency=low
   * Client authentication details can be given directly from the command-line.
   * Multiple "client" authentication secrets, selected by a new envelope field.
   * Main binary can act as a simple submission tool ("configure --enable-submission").
- -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Thu, 10 Aug 2023 00:00:00 +0000
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Fri, 11 Aug 2023 00:00:00 +0000
 
 emailrelay (2.4) unstable; urgency=low
   * Multiple "--filter" and "--client-filter" options allowed.
@@ -24,7 +31,7 @@ emailrelay (2.4) unstable; urgency=low
   * The Linux event loop uses "epoll" by default rather than "select".
   * Some support for message routing (see NEWS).
   * Fix of error handling in network client filters ("--client-filter=net:...") [bug-id #50].
- -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Thu, 10 Aug 2023 00:00:00 +0000
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Tue, 01 Nov 2022 00:00:00 +0000
 
 emailrelay (2.3) unstable; urgency=low
   * Unix domain sockets supported (eg. "--interface=/tmp/smtp.s").

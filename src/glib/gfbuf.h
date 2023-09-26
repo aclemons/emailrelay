@@ -24,7 +24,7 @@
 #include "gdef.h"
 #include <streambuf>
 #include <functional>
-#include <array>
+#include <vector>
 
 namespace G
 {
@@ -100,8 +100,8 @@ private:
 	read_fn_t m_read_fn ;
 	write_fn_t m_write_fn ;
 	close_fn_t m_close_fn ;
-	std::array<char,N> m_input ;
-	std::array<char,N> m_output ;
+	std::vector<char> m_input ;
+	std::vector<char> m_output ;
 	bool m_file_open ;
 	T m_file ;
 } ;
@@ -111,8 +111,8 @@ G::fbuf<T,N>::fbuf( G::fbuf<T,N>::read_fn_t read , G::fbuf<T,N>::write_fn_t writ
 	m_read_fn(read) ,
 	m_write_fn(write) ,
 	m_close_fn(close) ,
-	m_input() ,
-	m_output() ,
+	m_input(static_cast<std::size_t>(N)) ,
+	m_output(static_cast<std::size_t>(N)) ,
 	m_file_open(false) ,
 	m_file()
 {
@@ -123,8 +123,8 @@ G::fbuf<T,N>::fbuf( T file , G::fbuf<T,N>::read_fn_t read , G::fbuf<T,N>::write_
 	m_read_fn(read) ,
 	m_write_fn(write) ,
 	m_close_fn(close) ,
-	m_input() ,
-	m_output() ,
+	m_input(static_cast<std::size_t>(N)) ,
+	m_output(static_cast<std::size_t>(N)) ,
 	m_file_open(false) ,
 	m_file()
 {

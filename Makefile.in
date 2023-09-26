@@ -223,7 +223,7 @@ CTAGS = ctags
 CSCOPE = cscope
 DIST_SUBDIRS = $(SUBDIRS)
 am__DIST_COMMON = $(srcdir)/Makefile.in AUTHORS COPYING ChangeLog \
-	INSTALL NEWS README compile install-sh missing
+	INSTALL NEWS README compile depcomp install-sh missing
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -987,10 +987,10 @@ $(TAR):
 zip: $(ZIP)
 
 $(ZIP): $(TAR)
-	-mkdir zip.d 2>/dev/null
-	-@rm -rf zip.d/* 2>/dev/null
-	tar -C zip.d --strip-components=1 -xzf $(TAR)
-	sh -c "cd zip.d && zip -r ../$(ZIP) ."
+	-mkdir makezip.tmp 2>/dev/null
+	-@rm -rf makezip.tmp/* 2>/dev/null
+	tar -C makezip.tmp --strip-components=1 -xzf $(TAR)
+	sh -c "cd makezip.tmp && zip -r ../$(ZIP) ."
 
 .PHONY: mbedtls
 mbedtls:

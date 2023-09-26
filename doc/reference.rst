@@ -588,7 +588,7 @@ simple locking scheme.
 
 The envelope file suffixes are:
 
-* *.new* -- while the envelope is first being written
+* *.new* -- while the e-mail message is first being written
 * *.busy* -- while the message is being forwarded
 * *.bad* -- if the message cannot be forwarded
 
@@ -652,11 +652,11 @@ success, or a value between 1 and 99 to indicate failure.
 When the filter program terminates with a non-zero exit code the envelope file
 is given a *.bad* filename suffix so that it will not get picked up for
 forwarding and the first few thousand characters of the filter's standard output
-stream are searched for a line starting with *<<error text>>* or
-\ *[[error text]]*\ . The text inside is taken as a failure reason and passed back
-to the SMTP client and also written into the envelope file. A second error-text
-line can be used for additional diagnostics that will not be visible to the
-remote client.
+stream are searched for a line like *<<error text>>* or *[[error text]]*. The
+text inside the double square or angle brackets is taken as a failure reason and
+passed back to the SMTP client and also written into the envelope file. A second
+error-text line can be used for additional diagnostics that will not be visible
+to the remote client.
 
 Filter exit codes between 100 and 115 are reserved for special processing: 100
 is used to abandon the current e-mail message so the filter can safely delete
@@ -774,7 +774,7 @@ Eg:
 
 Using *spam:* means that the e-mail message will be rejected outright if it
 fails the SpamAssassin tests, whereas with *spam-edit:* the message content is
-edited by SpamAssassin to hide the spam content within an attachment.
+edited by SpamAssassin to hide the original content within an attachment.
 
 Built-in filters
 ================
@@ -856,7 +856,7 @@ copy relates to a single domain. It then copies the recipient address's domain
 name into the *ForwardTo* field within the envelope file.
 
 Note that if new messages are created by the *split:* filter then they will not
-be processed by any other server filters.
+be processed by any other server-side filters.
 
 Domain name comparisons are case-insensitive by default. For exact comparisons
 use *split:raw*. This might be useful if an address verifier has already
@@ -955,7 +955,7 @@ converting to lower-case:
     exit 1
 
 The modified recipient address is stored in the envelope file and will be used
-as the SMTP SEND-TO address when the message is forwarded.
+as the SMTP RCPT-TO address when the message is forwarded.
 
 If the address verifier identifies a recipient address as being a local user
 with an associated mailbox then it should write two lines to the standard
@@ -1018,8 +1018,6 @@ like this:
     try
     {
         var address = WScript.Arguments(0) ;
-        var local_domain = WScript.Arguments(3) ;
-        var auth_mechanism = WScript.Arguments(4) ;
         var user = address.split(/@/)[0] || "" ;
         var domain = address.split(/@/)[1] || "" ;
         if( user === "postmaster" )
@@ -1098,7 +1096,7 @@ Eg:
 
 ::
 
-    --address-verifier="account:1000-1002;lc" --domain=example.com
+    --address-verifier="account:1000-1002;lowercase" --domain=example.com
 
 With the *check* parameter the verifier will test whether the recipient address
 is a local account but always accept the address as valid, whether it is a local
@@ -1288,7 +1286,7 @@ E-MailRelay can use negotiated TLS to encrypt SMTP and POP sessions: use the
 E-MailRelay is acting as an SMTP client, and use *--server-tls* to enable
 server-side TLS when E-MailRelay is acting as an SMTP or POP server. The
 connections start off as unencrypted and the SMTP command *STARTTLS* (or the
-POP *STLS* command) can be used to negotiate TLS encryption before any
+POP command *STLS*) can be used to negotiate TLS encryption before any
 passwords are exchanged.
 
 The *--server-tls* option requires that the *--server-tls-certificate* option
@@ -1358,12 +1356,12 @@ to their final destinations without needing a smarthost.
 
 The *ForwardToAddress* field in every message envelope file is normally empty
 but it can be populated by a filter script to activate message routing. If
-E-MailRelay sees a transport address in the *ForwardToAddress* field when a
-message is being forwarded then it will connect to that address rather than the
-default *--forward-to* address from the command-line or configuration
-file. And if every message is given a *ForwardToAddress* then the command-line
-*--forward-to* address will not be used at all so it can be a dummy server on
-the local machine.
+E-MailRelay sees a TCP address in the *ForwardToAddress* field when a message is
+being forwarded then it will connect to that address rather than the default
+*--forward-to* address from the command-line or configuration file. And if every
+message is given a *ForwardToAddress* then the command-line *--forward-to*
+address will not be used at all so it can be a dummy address like
+\ *127.0.0.1:9*\ .
 
 The *ForwardToAddress* should normally be an IP address and port number obtained
 from a MX DNS query but it can also be a domain name and port number, in which
@@ -1391,10 +1389,10 @@ up to the filter to make use of its value.
 (The built-in *mx:* filter can be used to do a MX DNS lookup on the *ForwardTo*
 domain and fill in the *ForwardToAddress*.)
 
-Connection failures do not cause messages to fail so any messages routed to
-unavailable addresses will stay in the spool directory. Use *--poll* to make
-sure that these messages are retried and check the spool directory for old
-messages files from time to time.
+Connection failures do not cause message forwarding to fail so any messages
+routed to unavailable addresses will stay in the spool directory. Use *--poll*
+to make sure that these messages are retried and check the spool directory for
+old messages files from time to time.
 
 If routed SMTP connections need to authenticate using different client account
 details then the filter that sets the *ForwardToAddress* in the message envelope
@@ -1429,9 +1427,9 @@ appropriate mailbox from which to serve up e-mails.
 
 Delivery is normally only relevant to incoming messages being received from
 external systems, but it might also be desirable for outgoing messages that are
-addressed to local users. For these messages is makes sense to deliver them
-straight into incoming mailboxes rather have them forwarded to the smarthost and
-then come back in again.
+addressed to local users. For these messages is makes sense for the delivery
+filter to move the message files straight into the incoming mailbox rather than
+have the message forwarded to the smarthost and then come back in again.
 
 deliver:
 --------
@@ -1462,7 +1460,7 @@ IP addresses
 ============
 By default the E-MailRelay server listens for connections on the wildcard IPv4
 and IPv6 addresses, and when making outgoing connections it does not explicitly
-bind any address to the the local socket.
+bind an address to the the local socket.
 
 If a single network address is specified with the *--interface* command-line
 option then that address is used for listening.

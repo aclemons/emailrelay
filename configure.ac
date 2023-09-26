@@ -19,7 +19,7 @@ dnl
 dnl Process this file with autoconf to produce a configure script.
 dnl
 
-AC_INIT([E-MailRelay],[2.5],[],[emailrelay])
+AC_INIT([E-MailRelay],[2.5.1rc1],[],[emailrelay])
 AC_CONFIG_SRCDIR([src/glib/gdef.h])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([no-define])
@@ -106,6 +106,8 @@ AC_ARG_ENABLE([dnsbl],AS_HELP_STRING([--enable-dnsbl],[enable DNSBL (default yes
 GCONFIG_FN_ENABLE_DNSBL
 AC_ARG_ENABLE([submission],AS_HELP_STRING([--enable-submission],[main binary is a submission tool when named emailrelay-submit (default no)]))
 GCONFIG_FN_ENABLE_SUBMISSION
+AC_ARG_ENABLE([admin],AS_HELP_STRING([--enable-admin],[enable admin interface (default yes)]))
+GCONFIG_FN_ENABLE_ADMIN
 
 dnl "--with-whatever" for external dependencies
 dnl

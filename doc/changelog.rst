@@ -2,11 +2,19 @@
 Change Log
 **********
 
+2.5 -> 2.5.1
+============
+
+* Proxying with *--immediate* passes back SMTP_ reponses more faithfully.
+* Configure option *--disable-admin* restored.
+* Fewer Windows handles inherited by filter programs [bug-id #55].
+* Fix for *--dnsbl* option parsing.
+
 2.4 -> 2.5
 ==========
 
 * Multiple configurations in one process.
-* SMTP_ PIPELINING (RFC-2920_).
+* SMTP PIPELINING (RFC-2920_).
 * SMTP CHUNKING/8BITMIME 'BDAT' extension (RFC-3030_), disabled by default.
 * SMTP SMTPUTF8 extension (RFC-6531_), disabled by default.
 * No 7-bit/8-bit check on received message content (see NEWS file).

@@ -402,8 +402,8 @@ void GNet::Socket::setOptionFreeBind()
 void GNet::Socket::setOptionLinger( int onoff , int time )
 {
 	struct linger linger_config {} ;
-	linger_config.l_onoff = onoff ;
-	linger_config.l_linger = time ;
+	linger_config.l_onoff = static_cast<decltype(linger::l_onoff)>(onoff) ;
+	linger_config.l_linger = static_cast<decltype(linger::l_linger)>(time) ;
 	bool ok = setOptionImp( SOL_SOCKET , SO_LINGER , &linger_config , sizeof(linger_config) ) ;
 	if( !ok )
 	{

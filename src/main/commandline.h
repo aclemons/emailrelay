@@ -94,6 +94,9 @@ public:
 	void showVersion( bool error_stream = false ) const ;
 		///< Writes the version number.
 
+	void showAdmin( bool error_stream = false , const std::string & = {} ) const ;
+		///< Writes the admin-enabled status.
+
 	void showBanner( bool error_stream = false , const std::string & = {} ) const ;
 		///< Writes a startup banner.
 

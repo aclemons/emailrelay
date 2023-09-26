@@ -598,7 +598,7 @@ out-forward-to smtp.smarthost.com</pre>
     </p>
 
     <ul>
-     <li><em>.new</em> -- while the envelope is first being written</li>
+     <li><em>.new</em> -- while the e-mail message is first being written</li>
      <li><em>.busy</em> -- while the message is being forwarded</li>
      <li><em>.bad</em> -- if the message cannot be forwarded</li>
     </ul>
@@ -684,11 +684,11 @@ out-forward-to smtp.smarthost.com</pre>
      When the filter program terminates with a non-zero exit code the envelope file
      is given a <em>.bad</em> filename suffix so that it will not get picked up for
      forwarding and the first few thousand characters of the filter's standard output
-     stream are searched for a line starting with <em><<error text>></em> or
-     <em>[[error text]]</em>. The text inside is taken as a failure reason and passed back
-     to the SMTP client and also written into the envelope file. A second error-text
-     line can be used for additional diagnostics that will not be visible to the
-     remote client.
+     stream are searched for a line like <em><<error text>></em> or <em>[[error text]]</em>. The
+     text inside the double square or angle brackets is taken as a failure reason and
+     passed back to the SMTP client and also written into the envelope file. A second
+     error-text line can be used for additional diagnostics that will not be visible
+     to the remote client.
     </p>
 
     <p>
@@ -831,7 +831,7 @@ WScript.Quit( 0 ) ;
     <p>
      Using <em>spam:</em> means that the e-mail message will be rejected outright if it
      fails the SpamAssassin tests, whereas with <em>spam-edit:</em> the message content is
-     edited by SpamAssassin to hide the spam content within an attachment.
+     edited by SpamAssassin to hide the original content within an attachment.
     </p>
    <h2><a class="a-header" name="SH_1_7">Built-in filters</a></h2> <!-- index:2:SH:1:7:Built-in filters -->
     <p>
@@ -930,7 +930,7 @@ WScript.Quit( 0 ) ;
 
     <p>
      Note that if new messages are created by the <em>split:</em> filter then they will not
-     be processed by any other server filters.
+     be processed by any other server-side filters.
     </p>
 
     <p>
@@ -1059,7 +1059,7 @@ exit 1
       </div><!-- div-pre -->
     <p>
      The modified recipient address is stored in the envelope file and will be used
-     as the SMTP SEND-TO address when the message is forwarded.
+     as the SMTP RCPT-TO address when the message is forwarded.
     </p>
 
     <p>
@@ -1136,8 +1136,6 @@ exit 100
 try
 {
     var address = WScript.Arguments(0) ;
-    var local_domain = WScript.Arguments(3) ;
-    var auth_mechanism = WScript.Arguments(4) ;
     var user = address.split(/@/)[0] || "" ;
     var domain = address.split(/@/)[1] || "" ;
 	if( user === "postmaster" )
@@ -1224,7 +1222,7 @@ catch( e )
      Eg:
     </p>
       <div class="div-pre">
-       <pre>--address-verifier="account:1000-1002;lc" --domain=example.com
+       <pre>--address-verifier="account:1000-1002;lowercase" --domain=example.com
 </pre>
       </div><!-- div-pre -->
     <p>
@@ -1468,7 +1466,7 @@ server plain carol my+20password
      E-MailRelay is acting as an SMTP client, and use <em>--server-tls</em> to enable
      server-side TLS when E-MailRelay is acting as an SMTP or POP server. The
      connections start off as unencrypted and the SMTP command <em>STARTTLS</em> (or the
-     POP <em>STLS</em> command) can be used to negotiate TLS encryption before any
+     POP command <em>STLS</em>) can be used to negotiate TLS encryption before any
      passwords are exchanged.
     </p>
 
@@ -1560,12 +1558,12 @@ server plain carol my+20password
     <p>
      The <em>ForwardToAddress</em> field in every message envelope file is normally empty
      but it can be populated by a filter script to activate message routing. If
-     E-MailRelay sees a transport address in the <em>ForwardToAddress</em> field when a
-     message is being forwarded then it will connect to that address rather than the
-     default <em>--forward-to</em> address from the command-line or configuration
-     file. And if every message is given a <em>ForwardToAddress</em> then the command-line
-     <em>--forward-to</em> address will not be used at all so it can be a dummy server on
-     the local machine.
+     E-MailRelay sees a TCP address in the <em>ForwardToAddress</em> field when a message is
+     being forwarded then it will connect to that address rather than the default
+     <em>--forward-to</em> address from the command-line or configuration file. And if every
+     message is given a <em>ForwardToAddress</em> then the command-line <em>--forward-to</em>
+     address will not be used at all so it can be a dummy address like
+     <em>127.0.0.1:9</em>.
     </p>
 
     <p>
@@ -1605,10 +1603,10 @@ server plain carol my+20password
     </p>
 
     <p>
-     Connection failures do not cause messages to fail so any messages routed to
-     unavailable addresses will stay in the spool directory. Use <em>--poll</em> to make
-     sure that these messages are retried and check the spool directory for old
-     messages files from time to time.
+     Connection failures do not cause message forwarding to fail so any messages
+     routed to unavailable addresses will stay in the spool directory. Use <em>--poll</em>
+     to make sure that these messages are retried and check the spool directory for
+     old messages files from time to time.
     </p>
 
     <p>
@@ -1653,9 +1651,9 @@ server plain carol my+20password
     <p>
      Delivery is normally only relevant to incoming messages being received from
      external systems, but it might also be desirable for outgoing messages that are
-     addressed to local users. For these messages is makes sense to deliver them
-     straight into incoming mailboxes rather have them forwarded to the smarthost and
-     then come back in again.
+     addressed to local users. For these messages is makes sense for the delivery
+     filter to move the message files straight into the incoming mailbox rather than
+     have the message forwarded to the smarthost and then come back in again.
     </p>
    <h3><a class="a-header">deliver:</a></h3>
     <p>
@@ -1691,7 +1689,7 @@ server plain carol my+20password
     <p>
      By default the E-MailRelay server listens for connections on the wildcard IPv4
      and IPv6 addresses, and when making outgoing connections it does not explicitly
-     bind any address to the the local socket.
+     bind an address to the the local socket.
     </p>
 
     <p>

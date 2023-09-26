@@ -60,7 +60,7 @@ GNet::Client::Config GSmtp::Client::netConfig( const Config & smtp_config )
 	return
 		GNet::Client::Config()
 			.set_stream_socket_config( smtp_config.stream_socket_config )
-			.set_line_buffer_config( GNet::LineBufferConfig::smtp() )
+			.set_line_buffer_config( GNet::LineBuffer::Config::smtp() )
 			.set_bind_local_address( smtp_config.bind_local_address )
 			.set_local_address( smtp_config.local_address )
 			.set_connection_timeout( smtp_config.connection_timeout )
@@ -68,11 +68,11 @@ GNet::Client::Config GSmtp::Client::netConfig( const Config & smtp_config )
 				GNet::SocketProtocol::Config()
 					.set_client_tls_profile( smtp_config.client_tls_profile )
 					.set_secure_connection_timeout( smtp_config.secure_connection_timeout ) ) ;
-			//.set_response_timeout = 0U ; // the protocol class does this
-			//.set_idle_timeout = 0U ; // not needed
+			//.set_response_timeout() // the protocol class does this
+			//.set_idle_timeout() // not needed
 }
 
-G::Slot::Signal<const std::string&,bool> & GSmtp::Client::messageDoneSignal() noexcept
+G::Slot::Signal<const GSmtp::Client::MessageDoneInfo&> & GSmtp::Client::messageDoneSignal() noexcept
 {
 	return m_message_done_signal ;
 }
@@ -190,44 +190,43 @@ void GSmtp::Client::filterDone( int filter_result )
 	}
 }
 
-void GSmtp::Client::protocolDone( int response_code , const std::string & response_in ,
-	const std::string & reason_in , const G::StringArray & rejectees )
+void GSmtp::Client::protocolDone( const ClientProtocol::DoneInfo & info )
 {
-	G_DEBUG( "GSmtp::Client::protocolDone: \"" << response_in << "\"" ) ;
+	G_ASSERT( info.response_code >= -2 ) ;
+	G_DEBUG( "GSmtp::Client::protocolDone: \"" << info.response << "\"" ) ;
 
-	std::string response = response_in.empty() ? std::string() : ( "smtp client failure: " + response_in ) ;
-	std::string reason = reason_in.empty() ? response : reason_in ;
-	std::string short_reason = ( response_in.empty() || reason_in.empty() ) ? response_in : reason_in ;
+	std::string reason = info.reason.empty() ? info.response : info.reason ;
+	std::string short_reason = ( info.response.empty() || info.reason.empty() ) ? info.response : info.reason ;
 	std::string message_id = message()->id().str() ;
 
-	if( response_code == -1 ) // filter abandon
+	if( info.response_code == -1 ) // filter abandon
 	{
 		// abandon this message if eg. already deleted
 		short_reason = "abandoned" ;
 	}
-	else if( response_code == -2 ) // filter error
+	else if( info.response_code == -2 ) // filter error
 	{
 		messageFail( 550 , reason ) ;
 		short_reason = "rejected" ;
 	}
-	else if( response.empty() )
+	else if( info.response.empty() )
 	{
 		// forwarded ok to all, so delete our copy
 		messageDestroy() ;
 	}
-	else if( rejectees.empty() )
+	else if( info.rejects.empty() )
 	{
 		// eg. rejected by the server, so fail the message
 		G_ASSERT( !reason.empty() ) ;
 		m_filter->cancel() ;
-		messageFail( response_code , reason ) ;
+		messageFail( info.response_code , reason ) ;
 	}
 	else
 	{
 		// some recipients rejected by the server, so update the to-list and fail the message
 		m_filter->cancel() ;
-		message()->editRecipients( rejectees ) ;
-		messageFail( response_code , reason ) ;
+		message()->editRecipients( info.rejects ) ;
+		messageFail( info.response_code , reason ) ;
 	}
 
 	G::CallFrame this_( m_stack ) ;
@@ -235,7 +234,7 @@ void GSmtp::Client::protocolDone( int response_code , const std::string & respon
 	if( this_.deleted() ) return ; // just in case
 
 	m_message.reset() ;
-	messageDoneSignal().emit( response , m_filter_special ) ;
+	messageDoneSignal().emit( { std::max(0,info.response_code) , info.response , m_filter_special } ) ;
 }
 
 void GSmtp::Client::quitAndFinish()

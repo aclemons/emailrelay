@@ -118,13 +118,7 @@ sub requireUnix
 
 sub requireUnixDomainSockets
 {
-	my $has_uds ;
-	if( System::unix() )
-	{
-		my $server = new Server() ;
-		$has_uds = $server->hasUnixDomainSockets() ;
-		$server->cleanup() ;
-	}
+	my $has_uds = System::unix() && Server::hasUnixDomainSockets() ;
 	die "skipped: no unix domain socket support\n"
 		if !$has_uds ;
 }
@@ -150,16 +144,13 @@ sub requireRootOrSudo
 
 sub requireDebug
 {
-	my $server = new Server() ;
 	die "skipped: not a debug build\n"
-		if !$server->hasDebug() ;
+		if !Server::hasDebug() ;
 }
 
 sub requireThreads
 {
-	my $server = new Server() ;
-	my $has_threads = $server->hasThreads() ;
-	$server->cleanup() ;
+	my $has_threads = Server::hasThreads() ;
 	die "skipped: not multi-threaded\n"
 		if !$has_threads ;
 }
@@ -179,20 +170,23 @@ sub requireOpensslTool
 
 sub requireTls
 {
-	my $server = new Server() ;
-	my $has_tls = $server->hasTls() ;
-	$server->cleanup() ;
+	my $has_tls = Server::hasTls() ;
 	die "skipped: no tls\n"
 		if !$has_tls ;
 }
 
 sub requirePop
 {
-	my $server = new Server() ;
-	my $has_pop = $server->hasPop() ;
-	$server->cleanup() ;
+	my $has_pop = Server::hasPop() ;
 	die "skipped: no pop\n"
 		if !$has_pop ;
+}
+
+sub requireAdmin
+{
+	my $has_admin = Server::hasAdmin() ;
+	die "skipped: no admin\n"
+		if !$has_admin ;
 }
 
 sub createCerts
@@ -298,6 +292,7 @@ sub testServerAdminTerminate
 		SpoolDir => 1 ,
 		AdminTerminate => 1 ,
 	) ;
+	requireAdmin() ;
 	my $server = new Server() ;
 	Check::ok( $server->run(\%args) , "failed to run" , $server->message() ) ;
 	Check::that( $server->rc() == 0 , "immediate error" ) ;
@@ -651,6 +646,7 @@ sub testServerFlushNoMessages
 		ForwardTo => 1 ,
 		PidFile => 1 ,
 	) ;
+	requireAdmin() ;
 	my $spool_dir = System::createSpoolDir() ;
 	my $server = new Server(undef,undef,undef,$spool_dir) ;
 	Check::ok( $server->run(\%args) , "failed to run" , $server->message() ) ;
@@ -682,6 +678,7 @@ sub testServerFlushNoServer
 		ForwardTo => 1 ,
 		PidFile => 1 ,
 	) ;
+	requireAdmin() ;
 	my $spool_dir = System::createSpoolDir() ;
 	System::submitSmallMessage( $spool_dir ) ;
 	my $server = new Server(undef,undef,undef,$spool_dir) ;
@@ -718,6 +715,7 @@ sub testServerFlush
 		ForwardTo => 1 ,
 		PidFile => 1 ,
 	) ;
+	requireAdmin() ;
 	my $spool_dir_1 = System::createSpoolDir( "spool-1" ) ;
 	my $spool_dir_2 = System::createSpoolDir( "spool-2" ) ;
 	my $server_1 = new Server(undef,undef,undef,$spool_dir_1) ;
@@ -770,6 +768,7 @@ sub testServerPolling
 		Poll => 1 ,
 		ConnectionTimeout => 1 ,
 	) ;
+	requireAdmin() ;
 	my $spool_dir_1 = System::createSpoolDir( "spool-1" ) ;
 	my $spool_dir_2 = System::createSpoolDir( "spool-2" ) ;
 	my $server_1 = new Server(undef,undef,undef,$spool_dir_1) ;
@@ -810,6 +809,7 @@ sub testServerWithBadClient
 		SpoolDir => 1 ,
 		PidFile => 1 ,
 	) ;
+	requireAdmin() ;
 	my $server = new Server() ;
 	Check::ok( $server->run(\%args) , "failed to run" , $server->message() ) ;
 	Check::running( $server->pid() , $server->message() ) ;
@@ -1015,7 +1015,7 @@ sub testClientSavesReasonCode
 	System::waitForFiles( $client->spoolDir()."/emailrelay.*.envelope*bad" , 1 , "envelope" ) ;
 	Check::fileMatchCount( $client->spoolDir()."/emailrelay.*.content" , 1 , "content" ) ;
 	my @files = System::glob_( $client->spoolDir()."/emailrelay*bad" ) ;
-	Check::fileContains( $files[0] , "X-MailRelay-ReasonCode: 452" ) ;
+	Check::fileContains( $files[0] , "X-MailRelay-ReasonCode: [45][0-9][0-9]" ) ;
 
 	# tear down
 	$client->wait() ;
@@ -1599,6 +1599,7 @@ sub testProxyConnectsOnce
 		Immediate => 1 ,
 		PidFile => 1 ,
 	) ;
+	requireAdmin() ;
 	my $server_1 = new Server() ;
 	my $spool_dir_1 = $server_1->spoolDir() ;
 	my $server_2 = new Server() ;
@@ -1655,6 +1656,7 @@ sub testProxyServerRejection
 		Immediate => 1 ,
 		PidFile => 1 ,
 	) ;
+	requireAdmin() ;
 	my $server = new Server() ;
 	my $test_server = new TestServer( System::nextPort() ) ;
 	my $test_client = new SmtpClient( $server->smtpPort() ) ;
@@ -1671,7 +1673,7 @@ sub testProxyServerRejection
 	Check::fileMatchCount( $server->spoolDir()."/*envelope" , 0 ) ;
 	Check::fileMatchCount( $server->spoolDir()."/*envelope.bad" , 1 ) ;
 	Check::fileMatchCount( $server->spoolDir()."/*content" , 1 ) ;
-	Check::fileContains( $server->log() , "452 forwarding failed" , undef , 1 ) ;
+	Check::fileContains( $server->log() , "499 failed for testing" , undef , 1 ) ;
 
 	# tear down
 	$server->kill() ;
@@ -1696,6 +1698,7 @@ sub testProxyClientFilterFails
 		PidFile => 1 ,
 		ClientFilter => 1 ,
 	) ;
+	requireAdmin() ;
 	my $server = new Server() ;
 	my $test_server = new TestServer( System::nextPort() ) ;
 	my $test_client = new SmtpClient( $server->smtpPort() ) ;
@@ -1709,7 +1712,7 @@ sub testProxyClientFilterFails
 
 	# test that a proxied message is stored as bad if the client filter fails
 	$test_client->submit() ;
-	System::waitForFileLine( $server->log() , "452 forwarding failed" ) ;
+	System::waitForFileLine( $server->log() , "452 rejected" ) ;
 	Check::fileContains( $server->log() , "failing envelope" ) ;
 	Check::fileMatchCount( $server->spoolDir()."/*envelope" , 0 ) ;
 	Check::fileMatchCount( $server->spoolDir()."/*envelope.bad" , 1 ) ;
@@ -1739,6 +1742,7 @@ sub testProxyRoutingFilterFails
 		Filter => 1 ,
 		ClientFilter => 1 ,
 	) ;
+	requireAdmin() ;
 	my $server = new Server() ;
 	my $test_server = new TestServer( System::nextPort() ) ;
 	my $test_client = new SmtpClient( $server->smtpPort() ) ;
@@ -1753,7 +1757,7 @@ sub testProxyRoutingFilterFails
 
 	# test that a proxied message is stored as bad if the routing filter fails
 	$test_client->submit() ;
-	System::waitForFileLine( $server->log() , "452 forwarding failed" ) ;
+	System::waitForFileLine( $server->log() , "452 routing failed" ) ;
 	Check::fileContains( $server->log() , "failing envelope" ) ;
 	Check::fileMatchCount( $server->spoolDir()."/*envelope" , 0 ) ;
 	Check::fileMatchCount( $server->spoolDir()."/*envelope.bad" , 1 ) ;
@@ -1922,6 +1926,7 @@ sub testRouting
 		ClientFilter => 1 ,
 		Admin => 1 ,
 	) ;
+	requireAdmin() ;
 	my $server = new Server() ;
 	my $test_server_1 = new TestServer( System::nextPort() ) ;
 	my $test_server_2 = new TestServer( System::nextPort() ) ;
@@ -2044,6 +2049,7 @@ sub testRoutingWithSplitAndMxFilters
 		ForwardTo => 1 ,
 		Admin => 1 ,
 	) ;
+	requireAdmin() ;
 	my $server = new Server() ;
 	my $client = new Server() ;
 	my $dnsserver = new DnsServer( System::nextPort() , "127.0.@.0" ) ; # should fail to connect
@@ -2570,6 +2576,7 @@ sub _testTlsServer
 		Admin => 1 ,
 		AdminTerminate => 1 ,
 	) ;
+	requireAdmin() ;
 	my $openssl = _newOpenssl() ;
 	my $server_key ;
 	my $server_cert ;
@@ -2715,6 +2722,7 @@ sub _testTlsClient
 		Poll => 1 , # because the emailrelay client has to start before the s_server
 		TlsConfig => 1 ,
 	) ;
+	requireAdmin() ;
 	my $openssl = _newOpenssl() ;
 	my $server_port = System::nextPort() ;
 	my $client_cert = $openssl->concatenate( @$client_cert_names ) ;

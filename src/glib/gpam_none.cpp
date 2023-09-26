@@ -36,7 +36,6 @@ G::Pam::~Pam()
 bool G::Pam::authenticate( bool )
 {
 	throw Error( "authenticate" , 0 ) ;
-	return false ;
 }
 
 void G::Pam::checkAccount( bool )

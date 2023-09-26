@@ -27,6 +27,7 @@
 #include <algorithm> // std::swap()
 #include <utility> // std::swap()
 #include <cstring> // std::memcpy()
+#include <type_traits>
 #include <climits>
 #include <sys/types.h>
 #include <sstream>
@@ -370,9 +371,10 @@ namespace GNet
 		{
 			struct in6_addr addr {} ;
 			reset( addr ) ;
-			addr.s6_addr[15] = rhs ;
-			addr.s6_addr[0] = lhs_hi ;
-			addr.s6_addr[1] = lhs_lo ;
+			using lhs_type = std::remove_reference<decltype(addr.s6_addr[0])>::type ;
+			addr.s6_addr[15] = static_cast<lhs_type>(rhs) ;
+			addr.s6_addr[0] = static_cast<lhs_type>(lhs_hi) ;
+			addr.s6_addr[1] = static_cast<lhs_type>(lhs_lo) ;
 			return addr ;
 		}
 		void applyMask( struct in6_addr & addr , const struct in6_addr & mask )

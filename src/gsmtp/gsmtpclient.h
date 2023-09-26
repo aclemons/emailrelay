@@ -57,6 +57,8 @@ namespace GSmtp
 /// class fails the current message if the GNet::Client was not
 /// finish()ed (see quitAndFinish()) and the exception was not GNet::Done.
 ///
+/// \see GSmtp::Forward
+///
 class GSmtp::Client : public GNet::Client , private ClientProtocol::Sender
 {
 public:
@@ -90,6 +92,13 @@ public:
 		Config & set_fail_if_no_remote_recipients( bool = true ) noexcept ;
 	} ;
 
+	struct MessageDoneInfo /// Signal parameters for GNet::Client::messageDoneSignal()
+	{
+		int response_code ; // smtp response code, or 0 for an internal non-smtp error
+		std::string response ; // response text, empty iff sent successfully
+		bool filter_special ;
+	} ;
+
 	Client( GNet::ExceptionSink ,
 		FilterFactoryBase & , const GNet::Location & remote ,
 		const GAuth::SaslClientSecrets & , const Config & config ) ;
@@ -120,10 +129,9 @@ public:
 		///< Finishes a sendMessage() sequence. Sends a QUIT command and
 		///< finish()es the GNet::Client.
 
-	G::Slot::Signal<const std::string&,bool> & messageDoneSignal() noexcept ;
+	G::Slot::Signal<const MessageDoneInfo&> & messageDoneSignal() noexcept ;
 		///< Returns a signal that indicates that sendMessage()
-		///< has completed or failed. The boolean value is set
-		///< if the filter completed with its special value.
+		///< has completed or failed.
 
 private: // overrides
 	void onConnect() override ; // GNet::Client
@@ -141,7 +149,7 @@ public:
 
 private:
 	std::shared_ptr<GStore::StoredMessage> message() ;
-	void protocolDone( int , const std::string & , const std::string & , const G::StringArray & ) ; // see ClientProtocol::doneSignal()
+	void protocolDone( const ClientProtocol::DoneInfo & ) ; // GSmtp::ClientProtocol::doneSignal()
 	void filterStart() ;
 	void filterDone( int ) ;
 	bool ready() const ;
@@ -157,7 +165,7 @@ private:
 	std::shared_ptr<GStore::StoredMessage> m_message ;
 	std::unique_ptr<Filter> m_filter ;
 	ClientProtocol m_protocol ;
-	G::Slot::Signal<const std::string&,bool> m_message_done_signal ;
+	G::Slot::Signal<const MessageDoneInfo&> m_message_done_signal ;
 	bool m_secure ;
 	bool m_filter_special ;
 	G::CallStack m_stack ;

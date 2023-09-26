@@ -47,7 +47,8 @@ std::unique_ptr<GAuth::SaslServer> GSmtp::ServerProtocol::newSaslServer( const G
 
 GSmtp::ServerProtocol::ServerProtocol( ServerSender & sender , Verifier & verifier ,
 	ProtocolMessage & pmessage , const GAuth::SaslServerSecrets & secrets ,
-	Text & text , const GNet::Address & peer_address , const Config & config ) :
+	Text & text , const GNet::Address & peer_address , const Config & config ,
+	bool enabled ) :
 		ServerSend(&sender) ,
 		m_sender(&sender) ,
 		m_verifier(verifier) ,
@@ -64,7 +65,8 @@ GSmtp::ServerProtocol::ServerProtocol( ServerSender & sender , Verifier & verifi
 		m_client_error_count(0U) ,
 		m_session_esmtp(false) ,
 		m_bdat_arg(0U) ,
-		m_bdat_sum(0U)
+		m_bdat_sum(0U) ,
+		m_enabled(enabled)
 {
 	m_fsm( Event::Quit , State::s_Any , State::End , &ServerProtocol::doQuit ) ;
 	m_fsm( Event::Unknown , State::Processing , State::s_Same , &ServerProtocol::doIgnore ) ;
@@ -210,7 +212,7 @@ void GSmtp::ServerProtocol::init()
 	if( m_config.tls_connection )
 		m_sender->protocolSecure() ;
 	else
-		sendGreeting( m_text.greeting() ) ;
+		sendGreeting( m_text.greeting() , m_enabled ) ;
 }
 
 void GSmtp::ServerProtocol::applyEvent( Event event , EventData event_data )
@@ -239,7 +241,7 @@ void GSmtp::ServerProtocol::doSecure( EventData , bool & )
 void GSmtp::ServerProtocol::doSecureGreeting( EventData , bool & )
 {
 	m_secure = true ;
-	sendGreeting( m_text.greeting() ) ;
+	sendGreeting( m_text.greeting() , m_enabled ) ;
 }
 
 void GSmtp::ServerProtocol::doStartTls( EventData , bool & ok )
@@ -360,13 +362,20 @@ void GSmtp::ServerProtocol::doEot( EventData , bool & ok )
 	}
 }
 
-void GSmtp::ServerProtocol::processDone( bool success , const GStore::MessageId & id ,
-	const std::string & response , const std::string & reason )
+void GSmtp::ServerProtocol::processDone( const ProtocolMessage::DoneInfo & info )
 {
-	GDEF_IGNORE_PARAMS( success , id , reason ) ;
-	G_DEBUG( "GSmtp::ServerProtocol::processDone: " << (success?1:0) << " " << id.str()
-		<< " [" << response << "] [" << reason << "]" ) ;
-	G_ASSERT( success == response.empty() ) ;
+	G_ASSERT( info.response.find_first_of("\r\t",0U,2U) == std::string::npos ) ;
+	G_ASSERT( info.success == info.response.empty() ) ;
+	G_ASSERT( info.response_code >= 0 ) ;
+	G_DEBUG( "GSmtp::ServerProtocol::processDone: ok=" << (info.success?1:0) << " msgid=" << info.id.str()
+		<< " rc=" << info.response_code << " rsp=[" << info.response << "] reason=[" << info.reason << "]" ) ;
+
+	std::string response = info.response ;
+	G::Str::replace( response , '\n' , ' ' ) ;
+	if( !info.success )
+		response
+			.append(1U,'\t')
+			.append(G::Str::fromInt((info.response_code<400||info.response_code>=600)?452:info.response_code)) ;
 
 	applyEvent( Event::Done , {response.data(),response.size()} ) ;
 	m_change_signal.emit() ;
@@ -375,7 +384,7 @@ void GSmtp::ServerProtocol::processDone( bool success , const GStore::MessageId 
 void GSmtp::ServerProtocol::doComplete( EventData event_data , bool & )
 {
 	clear() ;
-	sendCompletionReply( event_data.empty() , str(event_data) ) ;
+	sendCompletionReply( event_data.empty() , code(event_data) , str(event_data) ) ;
 }
 
 void GSmtp::ServerProtocol::doQuit( EventData , bool & )
@@ -568,7 +577,7 @@ bool GSmtp::ServerProtocol::messageAddContentTooBig()
 void GSmtp::ServerProtocol::doBdatComplete( EventData event_data , bool & )
 {
 	clear() ;
-	sendCompletionReply( event_data.empty() , str(event_data) ) ;
+	sendCompletionReply( event_data.empty() , code(event_data) , str(event_data) ) ;
 }
 
 void GSmtp::ServerProtocol::doIgnore( EventData , bool & )
@@ -815,7 +824,12 @@ void GSmtp::ServerProtocol::doMail( EventData event_data , bool & predicate )
 {
 	G::string_view mail_line = event_data ;
 	m_message.clear() ;
-	if( m_config.mail_requires_authentication &&
+	if( !m_enabled )
+	{
+		predicate = false ;
+		sendDisabled() ;
+	}
+	else if( m_config.mail_requires_authentication &&
 		!m_sasl->authenticated() &&
 		!m_sasl->trusted(m_peer_address.wildcards(),m_peer_address.hostPartString()) )
 	{
@@ -1012,9 +1026,14 @@ void GSmtp::ServerProtocol::badClientEvent()
 	}
 }
 
+int GSmtp::ServerProtocol::code( EventData sv )
+{
+	return G::Str::toInt( G::Str::tailView(sv,sv.find('\t'),"501"_sv) ) ;
+}
+
 std::string GSmtp::ServerProtocol::str( EventData sv )
 {
-	return G::sv_to_string( sv ) ;
+	return G::sv_to_string( G::Str::headView(sv,sv.find('\t'),sv) ) ;
 }
 
 G::StringArray GSmtp::ServerProtocol::mechanisms() const

@@ -63,7 +63,7 @@ void SubmissionImp::submit( G::Arg arg )
 	else
 	{
 		unsigned int shift = 1U + (arg.contains("-d")?1U:0U) + (arg.contains("-f")?1U:0U) ;
-		std::string spool_dir = arg.removeValue( "-d" , GStore::MessageStore::defaultDirectory().str() ) ;
+		std::string spool_dir = arg.removeValue( "-d" , GStore::FileStore::defaultDirectory().str() ) ;
 		std::string from = arg.removeValue( "-f" ) ;
 		auto paths = writeFiles( spool_dir , from , arg.array(shift) , std::cin ) ;
 		std::cout << paths.first << std::endl ;

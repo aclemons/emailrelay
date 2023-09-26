@@ -36,6 +36,7 @@
 //           --pause                 slow final ok response
 //           --terminate             terminate when failing
 //           --tls                   enable tls
+//           --huge                  send huge smtp responses
 //
 
 #include "gdef.h"
@@ -76,6 +77,7 @@ struct TestServerConfig
 	bool m_tls ;
 	bool m_quiet ;
 	unsigned int m_idle_timeout ;
+	std::size_t m_huge ;
 } ;
 
 class Peer : public GNet::ServerPeer
@@ -86,7 +88,7 @@ public:
 	void onSendComplete() override ;
 	bool onReceive( const char * , std::size_t , std::size_t , std::size_t , char ) override ;
 	void onSecure( const std::string & , const std::string & , const std::string & ) override ;
-	void tx( const std::string & ) ;
+	void tx( std::string ) ;
 
 private:
 	void onPauseTimeout() ;
@@ -149,7 +151,7 @@ std::unique_ptr<GNet::ServerPeer> Server::newPeer( GNet::ExceptionSinkUnbound es
 //
 
 Peer::Peer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo && peer_info , TestServerConfig config ) :
-	GNet::ServerPeer(esu.bind(this),std::move(peer_info),GNet::LineBufferConfig::smtp()) ,
+	GNet::ServerPeer(esu.bind(this),std::move(peer_info),GNet::LineBuffer::Config::smtp()) ,
 	m_es(esu.bind(this)) ,
 	m_config(config) ,
 	m_pause_timer(*this,&Peer::onPauseTimeout,m_es) ,
@@ -190,6 +192,8 @@ bool Peer::onReceive( const char * line_data , std::size_t line_size , std::size
 
 		std::ostringstream ss ;
 		ss << "250-HELLO\r\n" ;
+		if( m_config.m_huge )
+			ss << "250-" << std::string(m_config.m_huge,'x') << "\r\n" ;
 		ss << "250-VRFY\r\n" ;
 		if( auth )
 			ss << "250-AUTH" ;
@@ -224,7 +228,7 @@ bool Peer::onReceive( const char * line_data , std::size_t line_size , std::size
 				throw G::Exception( "connection dropped" ) ;
 			else if( m_config.m_terminate )
 				GNet::EventLoop::instance().quit( "fail-at with terminate" ) ;
-			tx( "452 failed\r\n" ) ;
+			tx( "499-failed\r\n499 for testing\r\n" ) ;
 		}
 		else if( m_config.m_pause )
 		{
@@ -286,7 +290,11 @@ bool Peer::onReceive( const char * line_data , std::size_t line_size , std::size
 	}
 	else if( uwords[0] == "RCPT" && uwords[1].find("TO:<REJECTME") == 0U )
 	{
-		tx( "550 invalid recipient\r\n" ) ;
+		tx( "551 invalid recipient\r\n" ) ;
+	}
+	else if( uwords[0] == "MAIL" && uwords[1].find("FROM:<REJECTME") == 0U )
+	{
+		tx( "552 invalid originator\r\n" ) ;
 	}
 	else if( m_in_data && line.find("SHUTDOWN") != std::string::npos )
 	{
@@ -305,13 +313,17 @@ bool Peer::onReceive( const char * line_data , std::size_t line_size , std::size
 	return true ;
 }
 
-void Peer::tx( const std::string & s )
+void Peer::tx( std::string s )
 {
+	if( m_config.m_huge && s.size() >= 4U && G::Str::isNumeric(s.substr(0U,3U)) )
+	{
+		s.insert( 3U , std::string(1U,'-').append(m_config.m_huge,'x').append("\r\n").append(s.substr(0U,3U)) ) ;
+	}
 	if( !m_config.m_quiet )
 	{
-		std::string ss( s ) ;
-		G::Str::trimRight( ss , "\n\r" ) ;
-		G_LOG_IF( !m_config.m_quiet , "Peer::tx: tx>>: [" << ss << "]" ) ;
+		std::string log_text( s ) ;
+		G::Str::trimRight( log_text , "\n\r" ) ;
+		G_LOG_IF( !m_config.m_quiet , "Peer::tx: tx>>: [" << log_text << "]" ) ;
 	}
 	send( s ) ; // GNet::ServerPeer::send()
 }
@@ -348,6 +360,7 @@ int main( int argc , char * argv [] )
 		G::Options::add( options , 'P' , "port" , "port number" , "" , M::one , "port" , 1 , 0 ) ;
 		G::Options::add( options , 'f' , "pid-file" , "pid file" , "" , M::one , "path" , 1 , 0 ) ;
 		G::Options::add( options , '6' , "ipv6" , "use ipv6" , "" , M::zero , "" , 1 , 0 ) ;
+		G::Options::add( options , 'H' , "huge" , "send huge ehlo response" , "" , M::zero , "" , 1 , 0 ) ;
 		G::GetOpt opt( arg , options ) ;
 		if( opt.hasErrors() )
 		{
@@ -373,6 +386,7 @@ int main( int argc , char * argv [] )
 		test_config.m_drop = opt.contains( "drop" ) ;
 		test_config.m_terminate = opt.contains( "terminate" ) ;
 		test_config.m_ipv6 = opt.contains( "ipv6" ) ;
+		test_config.m_huge = opt.contains( "huge" ) ? 100000U : 0U ;
 		test_config.m_port = opt.contains("port") ? G::Str::toUInt(opt.value("port")) : 10025U ;
 		test_config.m_idle_timeout = opt.contains("idle-timeout") ? G::Str::toInt(opt.value("idle-timeout")) : 300U ;
 		bool debug = opt.contains( "debug" ) ;

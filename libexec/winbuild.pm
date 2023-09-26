@@ -61,6 +61,7 @@ package winbuild ;
 
 sub find_msbuild
 {
+	return "msbuild" if $^O eq "linux" ;
 	return _fcache( "msbuild" ,
 		_find_bypass( "find-msbuild" , "msbuild" ) ||
 		_find_basic( "find-msbuild" , "msbuild.exe" , _path_dirs() ) ||
@@ -79,6 +80,7 @@ sub find_msbuild
 sub find_cmake
 {
 	my ( $msbuild ) = @_ ;
+	return ( -x "/usr/bin/cmake" ? "/usr/bin/cmake" : undef ) if $^O eq "linux" ;
 	my $msbuild_root = $msbuild ? _sanepath(File::Basename::dirname($msbuild))."/../../.." : "." ;
 	return _fcache( "cmake" ,
 		_find_bypass( "find-cmake" , "cmake" ) ||
@@ -91,6 +93,8 @@ sub find_cmake
 
 sub find_qt
 {
+	return undef if $^O eq "linux" ;
+
 	my @dirs = (
 		File::Basename::dirname($0)."/.." ,
 		"$ENV{HOMEDRIVE}$ENV{HOMEPATH}/qt" ,
@@ -123,6 +127,7 @@ sub find_qt
 
 sub find_mbedtls
 {
+	return ( -d "mbedtls" ? "mbedtls" : undef ) if $^O eq "linux" ;
 	return _fcache( "mbedtls" ,
 		_find_bypass( "find-mbedtls" , "mbedtls" ) ||
 		_find_match( "find-mbedtls" , "mbedtls*" , undef ,

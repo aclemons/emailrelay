@@ -28,7 +28,7 @@
 GPop::ServerPeer::ServerPeer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo && peer_info , Store & store ,
 	const GAuth::SaslServerSecrets & server_secrets , const std::string & sasl_server_config ,
 	std::unique_ptr<ServerProtocol::Text> ptext , const ServerProtocol::Config & protocol_config ) :
-		GNet::ServerPeer(esu.bind(this),std::move(peer_info),GNet::LineBufferConfig::pop()) ,
+		GNet::ServerPeer(esu.bind(this),std::move(peer_info),GNet::LineBuffer::Config::pop()) ,
 		m_ptext(ptext.release()) ,
 		m_protocol(*this,*this,store,server_secrets,sasl_server_config,*m_ptext,peerAddress(),protocol_config)
 {

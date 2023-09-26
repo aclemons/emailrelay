@@ -49,7 +49,7 @@ public:
 	G_EXCEPTION( ProtocolError , tx("protocol error") ) ;
 
 	RequestClient( GNet::ExceptionSink , const std::string & key , const std::string & ok ,
-		const GNet::Location & host_and_service , unsigned int connect_timeout ,
+		const GNet::Location & host_and_service , unsigned int connection_timeout ,
 		unsigned int response_timeout , unsigned int idle_timeout ) ;
 			///< Constructor.  The 'key' parameter is used in the callback
 			///< signal. The 'ok' parameter is a response string that is
@@ -95,7 +95,6 @@ private:
 	void onTimeout() ;
 	std::string requestLine( const std::string & ) const ;
 	std::string result( std::string ) const ;
-	static GNet::Client::Config netConfig( unsigned int , unsigned int , unsigned int ) ;
 
 private:
 	std::string m_eol ;

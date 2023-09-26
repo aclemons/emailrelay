@@ -37,7 +37,7 @@ namespace GStore
 }
 
 //| \class GStore::MessageId
-/// A somewhat opaque identifer for a MessageStore message.
+/// A somewhat opaque identifer for a GStore::MessageStore message id.
 ///
 class GStore::MessageId
 {
@@ -93,10 +93,6 @@ public:
 		virtual ~Iterator() = default ;
 			///< Destructor.
 	} ;
-
-	static G::Path defaultDirectory() ;
-		///< Returns a default spool directory, such as "/var/spool/emailrelay".
-		///< (Typically with an os-specific implementation.)
 
 	virtual ~MessageStore() = default ;
 		///< Destructor.

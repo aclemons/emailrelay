@@ -420,10 +420,18 @@ void Main::CommandLine::showVersion( bool e ) const
 		showThreading( e , "\n" ) ;
 		showUds( e , "\n" ) ;
 		showPop( e , "\n" ) ;
+		showAdmin( e , "\n" ) ;
 		showSslVersion( e , "\n" ) ;
 	}
 	showSslCredit( e , "\n" ) ;
 	showWarranty( e ) ;
+}
+
+void Main::CommandLine::showAdmin( bool e , const std::string & eot ) const
+{
+	bool enabled = GSmtp::AdminServer::enabled() ;
+	Show show( m_output , e , m_verbose ) ;
+	show.s() << "Admin server: " << (enabled?"enabled":"disabled") << eot ;
 }
 
 void Main::CommandLine::showSemanticError( const std::string & error ) const

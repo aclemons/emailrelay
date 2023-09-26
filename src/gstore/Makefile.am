@@ -16,11 +16,11 @@
 #
 
 if GCONFIG_WINDOWS
-OS_SOURCES=gmessagestore_win32.cpp
-OS_SOURCES_EXTRA_DIST=gmessagestore_unix.cpp
+OS_SOURCES=gfilestore_win32.cpp
+OS_SOURCES_EXTRA_DIST=gfilestore_unix.cpp
 else
-OS_SOURCES=gmessagestore_unix.cpp
-OS_SOURCES_EXTRA_DIST=gmessagestore_win32.cpp
+OS_SOURCES=gfilestore_unix.cpp
+OS_SOURCES_EXTRA_DIST=gfilestore_win32.cpp
 endif
 
 EXTRA_DIST=\

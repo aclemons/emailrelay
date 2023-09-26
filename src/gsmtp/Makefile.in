@@ -108,10 +108,29 @@ am__v_AR_0 = @echo "  AR      " $@;
 am__v_AR_1 = 
 libgsmtp_a_AR = $(AR) $(ARFLAGS)
 libgsmtp_a_LIBADD =
-am_libgsmtp_a_OBJECTS = gadminserver.$(OBJEXT) \
-	grequestclient.$(OBJEXT) gspamclient.$(OBJEXT) \
-	gfilter.$(OBJEXT) gfilterfactorybase.$(OBJEXT) \
-	gprotocolmessage.$(OBJEXT) gprotocolmessageforward.$(OBJEXT) \
+am__libgsmtp_a_SOURCES_DIST = gadminserver.h gadminserver_disabled.cpp \
+	gadminserver_enabled.cpp grequestclient.cpp grequestclient.h \
+	gspamclient.cpp gspamclient.h gfilter.cpp gfilter.h \
+	gfilterfactorybase.cpp gfilterfactorybase.h \
+	gprotocolmessage.cpp gprotocolmessageforward.cpp \
+	gprotocolmessageforward.h gprotocolmessage.h \
+	gprotocolmessagestore.cpp gprotocolmessagestore.h \
+	gsmtpclient.cpp gsmtpclient.h gsmtpclientprotocol.cpp \
+	gsmtpclientprotocol.h gsmtpclientreply.cpp gsmtpclientreply.h \
+	gsmtpforward.cpp gsmtpforward.h gsmtpserver.cpp gsmtpserver.h \
+	gsmtpserverbufferin.cpp gsmtpserverbufferin.h \
+	gsmtpserverflowcontrol.h gsmtpserverparser.cpp \
+	gsmtpserverparser.h gsmtpserverprotocol.cpp \
+	gsmtpserverprotocol.h gsmtpserversend.cpp gsmtpserversend.h \
+	gsmtpserversender.h gsmtpservertext.cpp gsmtpservertext.h \
+	gverifier.cpp gverifier.h gverifierfactorybase.cpp \
+	gverifierfactorybase.h gverifierstatus.cpp gverifierstatus.h
+@GCONFIG_ADMIN_FALSE@am__objects_1 = gadminserver_disabled.$(OBJEXT)
+@GCONFIG_ADMIN_TRUE@am__objects_1 = gadminserver_enabled.$(OBJEXT)
+am_libgsmtp_a_OBJECTS = $(am__objects_1) grequestclient.$(OBJEXT) \
+	gspamclient.$(OBJEXT) gfilter.$(OBJEXT) \
+	gfilterfactorybase.$(OBJEXT) gprotocolmessage.$(OBJEXT) \
+	gprotocolmessageforward.$(OBJEXT) \
 	gprotocolmessagestore.$(OBJEXT) gsmtpclient.$(OBJEXT) \
 	gsmtpclientprotocol.$(OBJEXT) gsmtpclientreply.$(OBJEXT) \
 	gsmtpforward.$(OBJEXT) gsmtpserver.$(OBJEXT) \
@@ -120,6 +139,14 @@ am_libgsmtp_a_OBJECTS = gadminserver.$(OBJEXT) \
 	gsmtpservertext.$(OBJEXT) gverifier.$(OBJEXT) \
 	gverifierfactorybase.$(OBJEXT) gverifierstatus.$(OBJEXT)
 libgsmtp_a_OBJECTS = $(am_libgsmtp_a_OBJECTS)
+libgsmtpextra_a_AR = $(AR) $(ARFLAGS)
+libgsmtpextra_a_LIBADD =
+am__libgsmtpextra_a_SOURCES_DIST = gadminserver.h \
+	gadminserver_enabled.cpp gadminserver_disabled.cpp
+@GCONFIG_ADMIN_FALSE@am__objects_2 = gadminserver_enabled.$(OBJEXT)
+@GCONFIG_ADMIN_TRUE@am__objects_2 = gadminserver_disabled.$(OBJEXT)
+am_libgsmtpextra_a_OBJECTS = $(am__objects_2)
+libgsmtpextra_a_OBJECTS = $(am_libgsmtpextra_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -135,8 +162,9 @@ am__v_at_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = ./$(DEPDIR)/gadminserver.Po \
-	./$(DEPDIR)/gfilter.Po ./$(DEPDIR)/gfilterfactorybase.Po \
+am__depfiles_remade = ./$(DEPDIR)/gadminserver_disabled.Po \
+	./$(DEPDIR)/gadminserver_enabled.Po ./$(DEPDIR)/gfilter.Po \
+	./$(DEPDIR)/gfilterfactorybase.Po \
 	./$(DEPDIR)/gprotocolmessage.Po \
 	./$(DEPDIR)/gprotocolmessageforward.Po \
 	./$(DEPDIR)/gprotocolmessagestore.Po \
@@ -176,8 +204,9 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(libgsmtp_a_SOURCES)
-DIST_SOURCES = $(libgsmtp_a_SOURCES)
+SOURCES = $(libgsmtp_a_SOURCES) $(libgsmtpextra_a_SOURCES)
+DIST_SOURCES = $(am__libgsmtp_a_SOURCES_DIST) \
+	$(am__libgsmtpextra_a_SOURCES_DIST)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -342,9 +371,18 @@ AM_CPPFLAGS = \
 	-D G_LIB_SMALL
 
 noinst_LIBRARIES = libgsmtp.a
+EXTRA_LIBRARIES = libgsmtpextra.a
+@GCONFIG_ADMIN_FALSE@ADMIN_SOURCES = gadminserver.h gadminserver_disabled.cpp
+@GCONFIG_ADMIN_TRUE@ADMIN_SOURCES = gadminserver.h gadminserver_enabled.cpp
+@GCONFIG_ADMIN_FALSE@ADMIN_EXTRA_DIST = gadminserver_enabled.cpp
+@GCONFIG_ADMIN_TRUE@ADMIN_EXTRA_DIST = gadminserver_disabled.cpp
+@GCONFIG_ADMIN_FALSE@ADMIN_EXTRA_SOURCES = gadminserver.h gadminserver_enabled.cpp
+@GCONFIG_ADMIN_TRUE@ADMIN_EXTRA_SOURCES = gadminserver.h gadminserver_disabled.cpp
+EXTRA_DIST = \
+	$(ADMIN_EXTRA_DIST)
+
 libgsmtp_a_SOURCES = \
-	gadminserver.cpp \
-	gadminserver.h \
+	$(ADMIN_SOURCES) \
 	grequestclient.cpp \
 	grequestclient.h \
 	gspamclient.cpp \
@@ -388,6 +426,9 @@ libgsmtp_a_SOURCES = \
 	gverifierstatus.cpp \
 	gverifierstatus.h
 
+libgsmtpextra_a_SOURCES = \
+	$(ADMIN_EXTRA_SOURCES)
+
 all: all-am
 
 .SUFFIXES:
@@ -430,13 +471,19 @@ libgsmtp.a: $(libgsmtp_a_OBJECTS) $(libgsmtp_a_DEPENDENCIES) $(EXTRA_libgsmtp_a_
 	$(AM_V_AR)$(libgsmtp_a_AR) libgsmtp.a $(libgsmtp_a_OBJECTS) $(libgsmtp_a_LIBADD)
 	$(AM_V_at)$(RANLIB) libgsmtp.a
 
+libgsmtpextra.a: $(libgsmtpextra_a_OBJECTS) $(libgsmtpextra_a_DEPENDENCIES) $(EXTRA_libgsmtpextra_a_DEPENDENCIES) 
+	$(AM_V_at)-rm -f libgsmtpextra.a
+	$(AM_V_AR)$(libgsmtpextra_a_AR) libgsmtpextra.a $(libgsmtpextra_a_OBJECTS) $(libgsmtpextra_a_LIBADD)
+	$(AM_V_at)$(RANLIB) libgsmtpextra.a
+
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gadminserver.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gadminserver_disabled.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gadminserver_enabled.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfilter.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfilterfactorybase.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gprotocolmessage.Po@am__quote@ # am--include-marker
@@ -603,7 +650,8 @@ clean: clean-am
 clean-am: clean-generic clean-noinstLIBRARIES mostlyclean-am
 
 distclean: distclean-am
-		-rm -f ./$(DEPDIR)/gadminserver.Po
+		-rm -f ./$(DEPDIR)/gadminserver_disabled.Po
+	-rm -f ./$(DEPDIR)/gadminserver_enabled.Po
 	-rm -f ./$(DEPDIR)/gfilter.Po
 	-rm -f ./$(DEPDIR)/gfilterfactorybase.Po
 	-rm -f ./$(DEPDIR)/gprotocolmessage.Po
@@ -673,7 +721,8 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-		-rm -f ./$(DEPDIR)/gadminserver.Po
+		-rm -f ./$(DEPDIR)/gadminserver_disabled.Po
+	-rm -f ./$(DEPDIR)/gadminserver_enabled.Po
 	-rm -f ./$(DEPDIR)/gfilter.Po
 	-rm -f ./$(DEPDIR)/gfilterfactorybase.Po
 	-rm -f ./$(DEPDIR)/gprotocolmessage.Po
@@ -729,6 +778,8 @@ uninstall-am:
 
 .PRECIOUS: Makefile
 
+
+extra-local: libgsmtpextra.a
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
