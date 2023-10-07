@@ -36,7 +36,7 @@
 
 namespace G
 {
-	namespace StrImp /// An implementation namespace for G::Str.
+	namespace StrImp
 	{
 		string_view hexmap() noexcept ;
 		bool isDigit( char c ) noexcept ;

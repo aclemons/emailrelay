@@ -41,15 +41,17 @@ namespace GNet
 /// asynchronous task classes such as GNet::Task and GNet::Resolver.
 ///
 /// The thread-safe trigger function send() is typically called from
-/// a worker thread just before it finishes.
+/// a worker thread just before the thread finishes.
 ///
 /// Eg:
 /// \code
 /// struct Foo : private FutureEventHandler , private ExceptionHandler
 /// {
 ///  Foo() ;
-///  void onFutureEvent() ;
+///  G::Slot::signal<int> m_signal ;
+///  private:
 ///  void run( HANDLE ) ;
+///  void onFutureEvent() override ;
 ///  FutureEvent m_future_event ;
 ///  std::thread m_thread ;
 ///  int m_result ;
@@ -61,8 +63,13 @@ namespace GNet
 /// }
 /// void Foo::run( HANDLE h )
 /// {
-///   m_result = ... ; // do blocking work in worker thread
+///   // this is the worker thread spun off from the ctor
+///   m_result = ... ; // do blocking work
 ///   FutureEvent::send( h ) ; // raise 'work complete' event
+/// }
+/// void Foo::onFutureEvent()
+/// {
+///   m_signal.emit( m_result ) ;
 /// }
 /// \endcode
 ///

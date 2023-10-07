@@ -17,7 +17,6 @@
 ./src/gstore/gnewfile.cpp
 ./src/gstore/gmessagedelivery.cpp
 ./src/gstore/gfilestore_unix.cpp
-./src/gstore/gmessagestore_unix.cpp
 ./src/gstore/genvelope.cpp
 ./src/gstore/gmessagestore.cpp
 ./src/gstore/gfiledelivery.cpp

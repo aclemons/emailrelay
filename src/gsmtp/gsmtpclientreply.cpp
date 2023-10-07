@@ -26,10 +26,8 @@
 #include "glog.h"
 #include "gassert.h"
 
-GSmtp::ClientReply::ClientReply() :
-	m_value(0)
-{
-}
+GSmtp::ClientReply::ClientReply()
+= default ;
 
 #ifndef G_LIB_SMALL
 GSmtp::ClientReply GSmtp::ClientReply::ok()

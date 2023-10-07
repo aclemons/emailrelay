@@ -16,7 +16,7 @@
 #
 
 SUBDIRS = glib gssl gnet gauth gstore gsmtp gpop win32 gfilters gverifiers main gui
-EXTRA_DIST = .clang-tidy .clang-format .reduce.dat
+EXTRA_DIST = .clang-tidy .clang-format
 CLEANFILES = compile_commands.json
 
 TIDY ?= clang-tidy

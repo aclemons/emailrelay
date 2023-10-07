@@ -33,7 +33,7 @@
 
 namespace GFilters
 {
-	namespace MxLookupImp /// An implementation namespace for GFilters::MxLookup.
+	namespace MxLookupImp
 	{
 		enum class Result { error , fatal , mx , cname , ip } ;
 		std::pair<Result,std::string> parse( const GNet::DnsMessage & , const GNet::Address & , unsigned int ) ;

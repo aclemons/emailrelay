@@ -35,7 +35,7 @@
 
 namespace GAuth
 {
-	namespace CramImp /// An implementation namespace for GAuth::Cram.
+	namespace CramImp
 	{
 		GSsl::Library & lib()
 		{

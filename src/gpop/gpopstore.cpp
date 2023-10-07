@@ -33,7 +33,7 @@
 
 namespace GPop
 {
-	namespace StoreImp /// An implementation namespace for GPop::Store
+	namespace StoreImp
 	{
 		struct FileReader /// Used by GPop::Store like G::Root when reading.
 		{

@@ -28,7 +28,7 @@
 
 namespace GNet
 {
-	namespace ExceptionSinkImp /// An implementation namespace for GNet::ExceptionSink.
+	namespace ExceptionSinkImp
 	{
 		struct LogExceptionHandler : ExceptionHandler /// A GNet::ExceptionHandler that just logs.
 		{

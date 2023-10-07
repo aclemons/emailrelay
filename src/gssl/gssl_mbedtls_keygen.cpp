@@ -170,10 +170,10 @@ int GSsl::MbedTlsImp::randomFill( void * , unsigned char * output , std::size_t 
 
 #ifdef G_WINDOWS
 #pragma warning( suppress : 4996 )
-void GSsl::MbedTlsImp::sleep_( int s ) { Sleep( s * 1000 ) ; }
 int GSsl::MbedTlsImp::open_( const char * path ) { return _open( path , _O_RDONLY ) ; }
 void GSsl::MbedTlsImp::close_( int fd ) { _close( fd ) ; }
 ssize_t GSsl::MbedTlsImp::read_( int fd , char * p , std::size_t n ) { return _read( fd , p , static_cast<unsigned>(n) ) ; }
+void GSsl::MbedTlsImp::sleep_( int s ) { Sleep( s * 1000 ) ; }
 #else
 int GSsl::MbedTlsImp::open_( const char * path ) { return ::open( path , O_RDONLY ) ; }
 void GSsl::MbedTlsImp::close_( int fd ) { ::close( fd ) ; }

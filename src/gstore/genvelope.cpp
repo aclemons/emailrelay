@@ -28,7 +28,7 @@
 
 namespace GStore
 {
-	namespace EnvelopeImp /// An implementation namespace for GStore::Envelope.
+	namespace EnvelopeImp
 	{
 		std::string folded( const std::string & ) ;
 		std::string xnormalise( const std::string & ) ;

@@ -1,9 +1,11 @@
 emailrelay (2.5.1) unstable; urgency=low
+  * Filters can control the SMTP server's error response code.
   * Proxying with "--immediate" passes back SMTP reponses more faithfully.
-  * Configure option "--disable-admin" restored.
+  * The "--disable-admin" build-time configure option is restored.
+  * New "smtp disable" admin command to disable new SMTP sessions.
   * Fewer Windows handles inherited by filter programs [bug-id #55].
   * Fix for "--dnsbl" option parsing.
- -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Tue, 26 Sep 2023 00:00:00 +0000
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Sat,  7 Oct 2023 00:00:00 +0000
 
 emailrelay (2.5) unstable; urgency=low
   * Multiple configurations in one process.

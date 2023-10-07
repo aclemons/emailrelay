@@ -29,7 +29,7 @@
 
 namespace G
 {
-	namespace Md5Imp /// An implementation namespace for G::Md5.
+	namespace Md5Imp
 	{
 		using digest_state = Md5::digest_state ;
 		using small_t = Md5::small_t ;

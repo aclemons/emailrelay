@@ -34,7 +34,7 @@
 
 namespace GNet
 {
-	namespace DnsBlockImp /// An implementation namespace for GNet::DnsBlock.
+	namespace DnsBlockImp
 	{
 		static constexpr G::string_view default_timeout_ms {"5000",4U} ;
 		static constexpr unsigned int default_threshold {1U} ;

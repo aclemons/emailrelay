@@ -31,7 +31,7 @@
 
 namespace G
 {
-	namespace DateTimeImp /// An implementation namespace for G::DateTime.
+	namespace DateTimeImp
 	{
 		static constexpr const char * good_format = "%ntYyCGgmUWVjdwuHIMSDFRT" ;
 		static constexpr unsigned int million = 1000000U ;

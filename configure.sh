@@ -30,7 +30,9 @@
 #         -w32 cross-compile for windows 32-bit with mingw-w64
 #         -w64 cross-compile for windows 64-bit with mingw-w64
 #         -p   cross-compile for rpi
-#         -g   git-clone mbedtls and exit
+#         -m   git fetch mbedtls v2
+#         -m3  git fetch mbedtls v3
+#         -q6  build gui using ~/Qt/6.x.x
 #         -S   force e_systemddir
 #         -X   suppress e_systemddir
 #
@@ -47,7 +49,8 @@ while expr "x$1" : "x-" >/dev/null
 do
 	valued=0
 	case "`echo \"$1\" | sed 's/^--*//'`" in
-		g) opt_git=1 ;;
+		m|m2|g) opt_get_mbedtls=2 ;;
+		m3) opt_get_mbedtls=3 ;;
 		d) opt_debug=1 ;;
 		s) opt_sanitise="$2" ; valued=1 ;;
 		o) opt_openwrt=1 ;;
@@ -55,6 +58,7 @@ do
 		w32) opt_mingw=1 ; opt_win=32 ;;
 		w64) opt_mingw=1 ; opt_win=64 ;;
 		p) opt_rpi=1 ;;
+		q6|qt6) opt_qt6_home=1 ;;
 		S) opt_systemd=1 ;;
 		X) opt_systemd=0 ;;
 		h) echo usage: `basename $0` $usage "..." ; $thisdir/configure --help=short ; exit 0 ;;
@@ -75,24 +79,8 @@ then
 	exit 1
 fi
 
-if test "0$opt_git" -eq 1
-then
-    branch="mbedtls-2.28"
-    #branch="master"
-    git clone https://github.com/Mbed-TLS/mbedtls.git
-    ( cd mbedtls && git checkout -q remotes/origin/$branch )
-	e="$?"
-	patch -d mbedtls/library -l -p1 < src/gssl/mbedtls-vsnprintf-fix-new.p1 || patch -d mbedtls/library -l -p1 < src/gssl/mbedtls-vsnprintf-fix.p1
-	if test "$e" -eq 0 -a "0$opt_mingw" -eq 0
-	then
-		echo build with...
-		echo "  make -C mbedtls/library WINDOWS=0"
-	fi
-	exit "$e"
-fi
-
 enable_debug=""
-if test "0$opt_debug" -eq 1
+if test "0$opt_debug" -ne 0
 then
 	export CFLAGS="-O0 -g"
 	export CXXFLAGS="-O0 -g"
@@ -114,23 +102,81 @@ then
 	export LDFLAGS="-fsanitize=$opt_sanitise"
 fi
 
+if test "0$opt_get_mbedtls" -ne 0
+then
+	if test -d mbedtls
+	then
+		( cd mbedtls && git fetch )
+	else
+    	git clone https://github.com/Mbed-TLS/mbedtls.git mbedtls
+	fi
+	if test "$opt_get_mbedtls" -eq 3
+	then
+    	( cd mbedtls && git checkout -q master )
+	else
+		( cd mbedtls && git checkout -q "mbedtls-2.28" )
+	fi
+	if test "0$opt_mingw" -ne 0
+	then
+		if test "$opt_win" -eq 32
+		then
+			patch -d mbedtls/library -l -N -r - -p1 < src/gssl/mbedtls-vsnprintf-fix.p1
+			patch -d mbedtls/library -l -N -r - -p1 < src/gssl/mbedtls-vsnprintf-fix-new.p1
+			rm mbedtls/library/platform.c.orig 2>/dev/null
+		fi
+	fi
+fi
+
 MBEDTLS_DIR="`find . -maxdepth 1 -type d -name mbedtls\* 2>/dev/null | head -1`"
 make_mbedtls=0
-with_mbedtls=""
-if test "0$opt_mingw" -eq 1 -o "0$opt_rpi" -eq 1 -o "0$opt_openwrt" -eq 1
+configure_mbedtls=""
+if test "0$opt_mingw" -ne 0 -o "0$opt_rpi" -ne 0 -o "0$opt_openwrt" -ne 0
 then
-	with_mbedtls="--with-mbedtls=no"
+	configure_mbedtls="--with-mbedtls=no"
 fi
 if test -d "$MBEDTLS_DIR"
 then
-	echo "configure.sh: mbedtls directory exists: adding --with-mbedtls and CXXFLAGS=-I$MBEDTLS_DIR/include etc"
-	with_mbedtls="--with-mbedtls"
+	echo "configure.sh: mbedtls exists: adding --with-mbedtls and CXXFLAGS=-I$MBEDTLS_DIR/include etc"
+	configure_mbedtls="--with-mbedtls"
 	make_mbedtls=1
 	export CXXFLAGS="$CXXFLAGS -I`pwd`/$MBEDTLS_DIR/include"
 	export LDFLAGS="$LDFLAGS -L`pwd`/$MBEDTLS_DIR/library"
 fi
 
-if test "0$opt_mingw" -eq 1
+MakeTlsCommand()
+{
+	if test "0$make_mbedtls" -ne 0
+	then
+		if test "0$opt_mingw" -ne 0
+		then
+			echo "make -C $MBEDTLS_DIR/library WINDOWS=1" "$@" PYTHON=python3
+		else
+			echo "make -C $MBEDTLS_DIR/library" "$@"
+		fi
+	fi
+}
+
+Echo()
+{
+	if test "`echo x $*`" != "x"
+	then
+		echo "$@"
+	fi
+}
+
+if test "0$opt_qt6_home" -ne 0
+then
+	qt_dir="`ls -1td \"$HOME\"/Qt/6*/gcc_64 2>/dev/null | head -1`"
+	if test ! -d "$qt_dir" ; then echo configure.sh: no qt6 directory $qt_dir >&2 ; exit 1 ; fi
+	export LDFLAGS="$LDFLAGS -L$qt_dir/lib"
+	export QT_LIBS="-lQt6Gui -lQt6Widgets -lQt6Core"
+	export QT_CFLAGS="-std=c++17 -I$qt_dir/include"
+	export QT_MOC="$qt_dir/libexec/moc"
+	configure_qt="--enable-gui"
+	echo "configure.sh: qt: adding --enable-gui and QT_MOC=$qt_dir/libexec/moc etc"
+fi
+
+if test "0$opt_mingw" -ne 0
 then
 	if test "$opt_win" -eq 32
 	then
@@ -149,7 +195,7 @@ then
 	export LDFLAGS="$LDFLAGS -pthread"
 	if test -x "`which $CXX`" ; then : ; else echo "error: no mingw c++ compiler: [$CXX]\n" ; exit 1 ; fi
 	( echo msbuild . ; echo qt-x86 . ; echo qt-x64 . ; echo cmake . ; echo msvc . ) > winbuild.cfg
-	if test "$make_mbedtls" -eq 1
+	if test "$make_mbedtls" -ne 0
 	then
 		echo mbedtls $MBEDTLS_DIR >> winbuild.cfg
 	else
@@ -157,38 +203,38 @@ then
 	fi
 	$thisdir/configure $enable_debug --host $TARGET \
 		--enable-windows --disable-interface-names \
-		$with_mbedtls \
+		$configure_mbedtls \
 		--disable-gui --without-pam --without-doxygen \
 		--prefix=/usr --libexecdir=/usr/lib --sysconfdir=/etc \
 		--localstatedir=/var $opt_passthrough e_initdir=/etc/init.d "$@"
 	echo :
 	echo "build with..."
-	test "$make_mbedtls" -eq 1 && echo "  make -C $MBEDTLS_DIR/library WINDOWS=1 CC=$CC AR=$AR"
+	Echo "  `MakeTlsCommand CC=$CC AR=$AR`"
 	echo "  make"
 	echo "  make -C src/main strip"
 	echo "  perl winbuild.pl mingw"
 :
-elif test "0$opt_rpi" -eq 1
+elif test "0$opt_rpi" -ne 0
 then
 	TARGET="arm-linux-gnueabihf"
 	export CXX="$TARGET-g++"
 	export CC="$TARGET-gcc"
 	export AR="$TARGET-ar"
 	export STRIP="$TARGET-strip"
-	export CXXFLAGS="$CXXFLAGS -std=c++11 -pthread"
+	export CXXFLAGS="$CXXFLAGS -std=c++11 -pthread -Wno-psabi"
 	export LDFLAGS="$LDFLAGS -pthread"
 	$thisdir/configure $enable_debug --host $TARGET \
-		--disable-gui $with_mbedtls --without-openssl \
+		--disable-gui $configure_mbedtls --without-openssl \
 		--without-pam --without-doxygen \
 		--prefix=/usr --libexecdir=/usr/lib --sysconfdir=/etc \
 		--localstatedir=/var $opt_passthrough e_initdir=/etc/init.d "$@"
 	echo :
 	echo "build with..."
-	test "$make_mbedtls" -eq 1 && echo "  make -C $MBEDTLS_DIR/library CC=$CC AR=$AR"
+	Echo "  `MakeTlsCommand CC=$CC AR=$AR`"
 	echo "  make"
 	echo "  make -C src/main strip"
 :
-elif test "0$opt_openwrt" -eq 1
+elif test "0$opt_openwrt" -ne 0
 then
 	TARGET="mips-openwrt-linux-musl"
 	SDK_DIR="`find $HOME -maxdepth 3 -type d -iname openwrt-sdk\* 2>/dev/null | sort | head -1`"
@@ -205,14 +251,14 @@ then
 	if test -x "$CXX" ; then : ; else echo "error: no c++ compiler for target [$TARGET]: CXX=[$CXX]\n" ; exit 1 ; fi
 	$thisdir/configure $enable_debug --host $TARGET \
 		--disable-gui --without-pam --without-doxygen \
-		$with_mbedtls --disable-std-thread \
+		$configure_mbedtls --disable-std-thread \
 		--prefix=/usr --libexecdir=/usr/lib --sysconfdir=/etc \
 		--localstatedir=/var $opt_passthrough e_initdir=/etc/init.d "$@"
 	echo :
 	echo "build with..."
-	#echo "  export PATH=\"$SDK_TOOLCHAIN_DIR/bin:\$PATH\""
-	#echo "  export STAGING_DIR=\"$SDK_DIR/staging_dir\""
-	test "$make_mbedtls" -eq 1 && echo "  make -C $MBEDTLS_DIR/library CC=$CC AR=$AR"
+#	echo "  export PATH=\"$SDK_TOOLCHAIN_DIR/bin:\$PATH\""
+#	echo "  export STAGING_DIR=\"$SDK_DIR/staging_dir\""
+	Echo "  `MakeTlsCommand CC=$CC AR=$AR`"
 	echo "  make"
 	echo "  make -C src/main strip"
 :
@@ -220,7 +266,7 @@ elif test "`uname`" = "NetBSD"
 then
 	export CXXFLAGS="$CXXFLAGS -I/usr/X11R7/include"
 	export LDFLAGS="$LDFLAGS -L/usr/X11R7/lib"
-	$thisdir/configure $enable_debug $with_mbedtls \
+	$thisdir/configure $enable_debug $configure_mbedtls \
 		--prefix=/usr --libexecdir=/usr/lib --sysconfdir=/etc \
 		--localstatedir=/var $opt_passthrough e_bsdinitdir=/etc/rc.d "$@"
 :
@@ -228,7 +274,7 @@ elif test "`uname`" = "FreeBSD"
 then
 	export CXXFLAGS="$CXXFLAGS -I/usr/local/include -I/usr/local/include/libav"
 	export LDFLAGS="$LDFLAGS -L/usr/local/lib -L/usr/local/lib/libav"
-	$thisdir/configure $enable_debug $with_mbedtls \
+	$thisdir/configure $enable_debug $configure_mbedtls \
 		--prefix=/usr/local --mandir=/usr/local/man \
 		$opt_passthrough e_bsdinitdir=/usr/local/etc/rc.d "$@"
 :
@@ -236,7 +282,7 @@ elif test "`uname`" = "OpenBSD"
 then
 	export CXXFLAGS="$CXXFLAGS -I/usr/X11R6/include"
 	export LDFLAGS="$LDFLAGS -L/usr/X11R6/lib"
-	$thisdir/configure $enable_debug $with_mbedtls \
+	$thisdir/configure $enable_debug $configure_mbedtls \
 		--prefix=/usr/local --mandir=/usr/local/man \
 		$opt_passthrough e_bsdinitdir=/usr/local/etc/rc.d "$@"
 :
@@ -244,14 +290,14 @@ elif test "`uname`" = "Darwin"
 then
 	export CXXFLAGS="$CXXFLAGS -I/opt/local/include -I/opt/X11/include"
 	export LDFLAGS="$LDFLAGS -L/opt/local/lib -L/opt/X11/lib"
-	$thisdir/configure $enable_debug $with_mbedtls \
+	$thisdir/configure $enable_debug $configure_mbedtls \
 		--prefix=/opt/local --mandir=/opt/local/man $opt_passthrough "$@"
 :
-elif test "`uname`" = "Linux" -a "$opt_systemd" -eq 1
+elif test "`uname`" = "Linux" -a "$opt_systemd" -ne 0
 then
 	export CXXFLAGS
 	export LDFLAGS
-	$thisdir/configure $enable_debug $with_mbedtls \
+	$thisdir/configure $enable_debug $configure_mbedtls $configure_qt \
 		--prefix=/usr --libexecdir=/usr/lib --sysconfdir=/etc \
 		--localstatedir=/var e_systemddir=/usr/lib/systemd/system \
 		$opt_passthrough e_rundir=/run/emailrelay "$@"
@@ -260,14 +306,21 @@ elif test "`uname`" = "Linux"
 then
 	export CXXFLAGS
 	export LDFLAGS
-	$thisdir/configure $enable_debug $with_mbedtls \
+	$thisdir/configure $enable_debug $configure_mbedtls $configure_qt \
 		--prefix=/usr --libexecdir=/usr/lib --sysconfdir=/etc \
 		--localstatedir=/var e_initdir=/etc/init.d \
 		$opt_passthrough e_rundir=/run/emailrelay "$@"
+	if test "0$opt_get_mbedtls" -ne 0
+	then
+		echo :
+		echo "build with..."
+		Echo "  `MakeTlsCommand`"
+		echo "  make"
+	fi
 :
 else
 	export CXXFLAGS="$CXXFLAGS -I/usr/X11R7/include -I/usr/X11R6/include -I/usr/local/include -I/opt/local/include -I/opt/X11/include"
 	export LDFLAGS="$LDFLAGS -L/usr/X11R7/lib -L/usr/X11R6/lib -L/usr/local/lib -L/opt/local/lib -L/opt/X11/lib"
-	$thisdir/configure $enable_debug $with_mbedtls $opt_passthrough "$@"
+	$thisdir/configure $enable_debug $configure_mbedtls $configure_qt $opt_passthrough "$@"
 fi
 

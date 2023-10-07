@@ -415,12 +415,12 @@ void GNet::EventLoopImp::handleSocketEvent( std::size_t index )
 	ListItem * item = &m_list[index] ;
 
 	WSANETWORKEVENTS events_info ;
-	int rc = WSAEnumNetworkEvents( item->m_socket , item->m_handle , &events_info ) ;
 	bool e_not_sock = false ;
-	if( rc != 0 && !(e_not_sock = (WSAGetLastError()==WSAENOTSOCK)) )
+	int rc = WSAEnumNetworkEvents( item->m_socket , item->m_handle , &events_info ) ;
+	if( rc != 0 )
+		e_not_sock = WSAGetLastError() == WSAENOTSOCK ;
+	if( rc != 0 && !e_not_sock )
 		throw Error( "enum-network-events failed" ) ;
-
-	G_ASSERT( !e_not_sock ) ;
 	if( e_not_sock )
 		throw Error( "enum-network-events failed: not a socket" ) ;
 

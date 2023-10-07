@@ -116,6 +116,8 @@ void Gui::Dialog::setFirstPage( Page & page )
 
 void Gui::Dialog::backButtonClicked()
 {
+	if( m_history.size() < 2U )
+		throw std::runtime_error( std::string() + "internal error: cannot go back" ) ;
 	std::string old_page_name = m_history.back();
 	m_history.pop_back() ;
 	switchPage( m_history.back() , old_page_name , true ) ;

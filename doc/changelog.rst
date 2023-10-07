@@ -5,8 +5,10 @@ Change Log
 2.5 -> 2.5.1
 ============
 
-* Proxying with *--immediate* passes back SMTP_ reponses more faithfully.
-* Configure option *--disable-admin* restored.
+* Filters can control the SMTP_ server's error response code.
+* Proxying with *--immediate* passes back SMTP reponses more faithfully.
+* The *--disable-admin* build-time configure option is restored.
+* New *smtp disable* admin command to disable new SMTP sessions.
 * Fewer Windows handles inherited by filter programs [bug-id #55].
 * Fix for *--dnsbl* option parsing.
 
