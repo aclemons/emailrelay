@@ -609,7 +609,11 @@ sub run_mbedtls_msbuild
 	}
 	else
 	{
-		my @msbuild_args = ( "/fileLogger" , "/p:Configuration=$confname" , "\"$mbedtls_project.sln\"" ) ;
+		my @msbuild_args = (
+			"-fileLogger" ,
+			"-p:Configuration=$confname" ,
+			"-target:mbedtls,mbedcrypto,mbedx509" ,
+			"\"$mbedtls_project.sln\"" ) ;
 		print "mbedtls-msbuild($arch,$confname): running msbuild\n" ;
 		my $rc = system( $msbuild , @msbuild_args ) ;
 		print "mbedtls-msbuild($arch,$confname): exit=[$rc]\n" ;
