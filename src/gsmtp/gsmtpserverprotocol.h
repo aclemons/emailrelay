@@ -300,8 +300,7 @@ private:
 	bool messageAddContentFailed() ;
 	bool messageAddContentTooBig() ;
 	void badClientEvent() ;
-	void processDone( const ProtocolMessage::DoneInfo & ) ; // ProtocolMessage::doneSignal()
-	void prepareDone( bool , bool , std::string ) ;
+	void protocolMessageProcessed( const ProtocolMessage::ProcessedInfo & ) ;
 	bool rcptState() const ;
 	bool flush() const ;
 	bool isEndOfText( const ApplyArgsTuple & ) const ;
@@ -353,7 +352,7 @@ private:
 	ServerSender * m_sender ;
 	Verifier & m_verifier ;
 	Text & m_text ;
-	ProtocolMessage & m_message ;
+	ProtocolMessage & m_pm ;
 	std::unique_ptr<GAuth::SaslServer> m_sasl ;
 	Config m_config ;
 	G::Slot::Signal<> m_change_signal ;

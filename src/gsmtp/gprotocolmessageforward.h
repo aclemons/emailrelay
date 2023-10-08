@@ -67,7 +67,7 @@ public:
 		///< Destructor.
 
 private: // overrides
-	ProtocolMessage::DoneSignal & doneSignal() noexcept override ; // GSmtp::ProtocolMessage
+	ProtocolMessage::ProcessedSignal & processedSignal() noexcept override ; // GSmtp::ProtocolMessage
 	void reset() override ; // GSmtp::ProtocolMessage
 	void clear() override ; // GSmtp::ProtocolMessage
 	GStore::MessageId setFrom( const std::string & from_user , const FromInfo & ) override ; // GSmtp::ProtocolMessage
@@ -90,7 +90,7 @@ public:
 private:
 	void clientDone( const std::string & ) ; // GNet::Client::doneSignal()
 	void messageDone( const Client::MessageDoneInfo & ) ; // GSmtp::Client::messageDoneSignal()
-	void processDone( const ProtocolMessage::DoneInfo & ) ; // GSmtp::ProtocolMessage::doneSignal()
+	void protocolMessageProcessed( const ProtocolMessage::ProcessedInfo & ) ; // GSmtp::ProtocolMessage::processedSignal()
 	std::string forward( const GStore::MessageId & , bool & ) ;
 
 private:
@@ -104,7 +104,7 @@ private:
 	std::unique_ptr<ProtocolMessage> m_pm ;
 	GNet::ClientPtr<GSmtp::Forward> m_client_ptr ;
 	GStore::MessageId m_id ;
-	ProtocolMessage::DoneSignal m_done_signal ;
+	ProtocolMessage::ProcessedSignal m_processed_signal ;
 } ;
 
 #endif

@@ -103,6 +103,11 @@ std::string GFilters::MxFilter::response() const
 	return std::string( m_result == Result::fail ? "failed" : "" ) ;
 }
 
+int GFilters::MxFilter::responseCode() const
+{
+	return 0 ;
+}
+
 std::string GFilters::MxFilter::reason() const
 {
 	return response() ;

@@ -62,6 +62,19 @@ namespace G
 				#endif
 			#endif
 		}
+		void uninherited( HANDLE h )
+		{
+			if( h )
+				SetHandleInformation( h , HANDLE_FLAG_INHERIT , 0 ) ;
+		}
+		HANDLE handle( int fd )
+		{
+			return fd >= 0 ? reinterpret_cast<HANDLE>( _get_osfhandle(fd) ) : HNULL ;
+		}
+		int fd( std::FILE * fp )
+		{
+			return fp ? _fileno( fp ) : -1 ;
+		}
 		std::FILE * fopen( const char * path , const char * mode ) noexcept
 		{
 			std::FILE * fp = nullptr ;
@@ -78,19 +91,6 @@ namespace G
 			#endif
 			uninherited( handle(fd(fp)) ) ; // or add "N" to mode
 			return fp ;
-		}
-		void uninherited( HANDLE h )
-		{
-			if( h )
-				SetHandleInformation( h , HANDLE_FLAG_INHERIT , 0 ) ;
-		}
-		HANDLE handle( int fd )
-		{
-			return fd >= 0 ? reinterpret_cast<HANDLE>( _get_osfhandle(fd) ) : HNULL ;
-		}
-		int fd( std::FILE * fp )
-		{
-			return fp ? _fileno( fp ) : -1 ;
 		}
 	}
 }

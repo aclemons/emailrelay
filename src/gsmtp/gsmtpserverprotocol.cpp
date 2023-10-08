@@ -46,14 +46,14 @@ std::unique_ptr<GAuth::SaslServer> GSmtp::ServerProtocol::newSaslServer( const G
 }
 
 GSmtp::ServerProtocol::ServerProtocol( ServerSender & sender , Verifier & verifier ,
-	ProtocolMessage & pmessage , const GAuth::SaslServerSecrets & secrets ,
+	ProtocolMessage & pm , const GAuth::SaslServerSecrets & secrets ,
 	Text & text , const GNet::Address & peer_address , const Config & config ,
 	bool enabled ) :
 		ServerSend(&sender) ,
 		m_sender(&sender) ,
 		m_verifier(verifier) ,
 		m_text(text) ,
-		m_message(pmessage) ,
+		m_pm(pm) ,
 		m_sasl(newSaslServer(secrets,config.sasl_server_config,config.sasl_server_challenge_hostname)) ,
 		m_config(config) ,
 		m_apply_data(nullptr) ,
@@ -126,12 +126,12 @@ GSmtp::ServerProtocol::ServerProtocol( ServerSender & sender , Verifier & verifi
 		m_fsm( Event::Secure , State::StartingTls , State::Start , &ServerProtocol::doSecureGreeting ) ;
 	}
 	m_verifier.doneSignal().connect( G::Slot::slot(*this,&ServerProtocol::verifyDone) ) ;
-	m_message.doneSignal().connect( G::Slot::slot(*this,&ServerProtocol::processDone) ) ;
+	m_pm.processedSignal().connect( G::Slot::slot(*this,&ServerProtocol::protocolMessageProcessed) ) ;
 }
 
 GSmtp::ServerProtocol::~ServerProtocol()
 {
-	m_message.doneSignal().disconnect() ;
+	m_pm.processedSignal().disconnect() ;
 	m_verifier.doneSignal().disconnect() ;
 }
 
@@ -145,9 +145,9 @@ bool GSmtp::ServerProtocol::inBusyState() const
 	// return true if waiting for an asynchronous filter
 	// or verifier completion event
 	return
-		// states expecting eDone...
+		// states expecting Event::Done...
 		m_fsm.state() == State::Processing ||
-		// states expecting eVrfyReply...
+		// states expecting Event::VrfyReply...
 		m_fsm.state() == State::VrfyStart ||
 		m_fsm.state() == State::VrfyIdle ||
 		m_fsm.state() == State::VrfyGotMail ||
@@ -332,9 +332,9 @@ void GSmtp::ServerProtocol::doDataContent( EventData , bool & )
 	std::size_t eolsize = std::get<2>( *m_apply_data ) ;
 
 	if( isEscaped(*m_apply_data) )
-		m_message.addContent( ptr+1 , size+eolsize-1U ) ;
+		m_pm.addContent( ptr+1 , size+eolsize-1U ) ;
 	else
-		m_message.addContent( ptr , size+eolsize ) ;
+		m_pm.addContent( ptr , size+eolsize ) ;
 
 	// ignore addContent() errors here -- use addContent(0) at the end to check
 }
@@ -358,16 +358,16 @@ void GSmtp::ServerProtocol::doEot( EventData , bool & ok )
 	}
 	else
 	{
-		m_message.process( m_sasl->id() , m_peer_address.hostPartString() , m_certificate ) ;
+		m_pm.process( m_sasl->id() , m_peer_address.hostPartString() , m_certificate ) ;
 	}
 }
 
-void GSmtp::ServerProtocol::processDone( const ProtocolMessage::DoneInfo & info )
+void GSmtp::ServerProtocol::protocolMessageProcessed( const ProtocolMessage::ProcessedInfo & info )
 {
 	G_ASSERT( info.response.find_first_of("\r\t",0U,2U) == std::string::npos ) ;
 	G_ASSERT( info.success == info.response.empty() ) ;
 	G_ASSERT( info.response_code >= 0 ) ;
-	G_DEBUG( "GSmtp::ServerProtocol::processDone: ok=" << (info.success?1:0) << " msgid=" << info.id.str()
+	G_DEBUG( "GSmtp::ServerProtocol::protocolMessageProcessed: ok=" << (info.success?1:0) << " msgid=" << info.id.str()
 		<< " rc=" << info.response_code << " rsp=[" << info.response << "] reason=[" << info.reason << "]" ) ;
 
 	std::string response = info.response ;
@@ -445,7 +445,7 @@ void GSmtp::ServerProtocol::doBdatImp( G::string_view bdat_line , bool & ok , bo
 		std::string received_line = m_text.received( m_session_peer_name , m_sasl->authenticated() ,
 			m_secure , m_protocol , m_cipher ) ;
 		if( received_line.length() )
-			m_message.addReceived( received_line ) ;
+			m_pm.addReceived( received_line ) ;
 	}
 
 	if( last && zero )
@@ -504,7 +504,7 @@ void GSmtp::ServerProtocol::doBdatContent( EventData , bool & complete )
 	complete = m_bdat_sum >= m_bdat_arg ;
 
 	G_DEBUG( "GSmtp::ServerProtocol: rx<<: [" << fullsize << " bytes (" << m_bdat_sum << "/" << m_bdat_arg << ")]" ) ;
-	m_message.addContent( ptr , fullsize ) ;
+	m_pm.addContent( ptr , fullsize ) ;
 
 	if( complete )
 	{
@@ -530,7 +530,7 @@ void GSmtp::ServerProtocol::doBdatContentLast( EventData , bool & complete )
 	complete = m_bdat_sum >= m_bdat_arg ;
 
 	G_DEBUG( "GSmtp::ServerProtocol: rx<<: [" << fullsize << " bytes (" << m_bdat_sum << "/" << m_bdat_arg << ")]" ) ;
-	m_message.addContent( ptr , fullsize ) ;
+	m_pm.addContent( ptr , fullsize ) ;
 
 	if( complete )
 	{
@@ -554,13 +554,13 @@ void GSmtp::ServerProtocol::doBdatCheck( EventData , bool & ok )
 	}
 	else
 	{
-		m_message.process( m_sasl->id() , m_peer_address.hostPartString() , m_certificate ) ;
+		m_pm.process( m_sasl->id() , m_peer_address.hostPartString() , m_certificate ) ;
 	}
 }
 
 bool GSmtp::ServerProtocol::messageAddContentFailed()
 {
-	bool failed = m_message.addContent( nullptr , 0U ) == GStore::NewMessage::Status::Error ;
+	bool failed = m_pm.addContent( nullptr , 0U ) == GStore::NewMessage::Status::Error ;
 	if( failed )
 		G_WARNING( "GSmtp::ServerProtocol::messageAddContentFailed: failed to save message content" ) ;
 	return failed ;
@@ -568,7 +568,7 @@ bool GSmtp::ServerProtocol::messageAddContentFailed()
 
 bool GSmtp::ServerProtocol::messageAddContentTooBig()
 {
-	bool too_big = m_message.addContent( nullptr , 0U ) == GStore::NewMessage::Status::TooBig ;
+	bool too_big = m_pm.addContent( nullptr , 0U ) == GStore::NewMessage::Status::TooBig ;
 	if( too_big )
 		G_WARNING( "GSmtp::ServerProtocol::messageAddContentTooBig: message content too big" ) ;
 	return too_big ;
@@ -823,7 +823,7 @@ void GSmtp::ServerProtocol::doAuthData( EventData event_data , bool & predicate 
 void GSmtp::ServerProtocol::doMail( EventData event_data , bool & predicate )
 {
 	G::string_view mail_line = event_data ;
-	m_message.clear() ;
+	m_pm.clear() ;
 	if( !m_enabled )
 	{
 		predicate = false ;
@@ -870,7 +870,7 @@ void GSmtp::ServerProtocol::doMail( EventData event_data , bool & predicate )
 			from_info.body = mail_command.body ;
 			from_info.smtputf8 = mail_command.smtputf8 ;
 			from_info.utf8address = mail_command.utf8address ;
-			m_message.setFrom( mail_command.address , from_info ) ;
+			m_pm.setFrom( mail_command.address , from_info ) ;
 		}
 	}
 }
@@ -884,14 +884,14 @@ void GSmtp::ServerProtocol::doRcpt( EventData event_data , bool & predicate )
 		predicate = false ;
 		sendBadTo( std::string() , rcpt_command.error , false ) ;
 	}
-	else if( rcpt_command.utf8address && !m_message.fromInfo().smtputf8 && m_config.smtputf8_strict )
+	else if( rcpt_command.utf8address && !m_pm.fromInfo().smtputf8 && m_config.smtputf8_strict )
 	{
 		predicate = false ;
 		sendBadTo( std::string() , "invalid character in mailbox name" , false ) ;
 	}
 	else
 	{
-		verify( Verifier::Command::RCPT , rcpt_command.address , m_message.from() ) ;
+		verify( Verifier::Command::RCPT , rcpt_command.address , m_pm.from() ) ;
 	}
 }
 
@@ -901,7 +901,7 @@ void GSmtp::ServerProtocol::doRcptToReply( EventData event_data , bool & predica
 	VerifierStatus status = VerifierStatus::parse( str(event_data) ) ;
 
 	// store the status.address as the recipient address in the envelope
-	bool ok = m_message.addTo( ProtocolMessage::ToInfo(status) ) ;
+	bool ok = m_pm.addTo( ProtocolMessage::ToInfo(status) ) ;
 	G_ASSERT( status.is_valid || !ok ) ;
 
 	// respond with reference the original recipient address
@@ -929,14 +929,14 @@ void GSmtp::ServerProtocol::clear()
 	// sasl state unaffected
 	m_bdat_sum = 0U ;
 	m_bdat_arg = 0U ;
-	m_message.clear() ;
+	m_pm.clear() ;
 	m_verifier.cancel() ;
 }
 
 void GSmtp::ServerProtocol::doRset( EventData , bool & )
 {
 	clear() ;
-	m_message.reset() ; // drop any ProtocolMessage forwarding client connection (moot)
+	m_pm.reset() ; // drop any ProtocolMessage forwarding client connection (moot)
 
 	sendRsetReply() ;
 }
@@ -952,7 +952,7 @@ void GSmtp::ServerProtocol::doData( EventData , bool & )
 		m_secure , m_protocol , m_cipher ) ;
 
 	if( received_line.length() )
-		m_message.addReceived( received_line ) ;
+		m_pm.addReceived( received_line ) ;
 
 	sendDataReply() ;
 }
@@ -997,7 +997,7 @@ GSmtp::ServerProtocol::Event GSmtp::ServerProtocol::commandEvent( G::string_view
 GSmtp::ServerProtocol::Event GSmtp::ServerProtocol::dataEvent( G::string_view ) const
 {
 	// RFC-3030 p6 ("BINARYMIME cannot be used with the DATA command...")
-	if( G::Str::imatch( m_message.bodyType() , "BINARYMIME" ) )
+	if( G::Str::imatch( m_pm.bodyType() , "BINARYMIME" ) )
 		return Event::DataFail ; // State::MustReset
 
 	return Event::Data ;

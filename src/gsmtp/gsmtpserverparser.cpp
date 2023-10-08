@@ -130,7 +130,7 @@ GSmtp::ServerParser::AddressCommand GSmtp::ServerParser::parseAddressPart( G::st
 		return {"missing colon"} ;
 	startpos++ ;
 	while( startpos < line.size() && line[startpos] == ' ' )
-		startpos++ ;
+		startpos++ ; // (as requested)
 	if( (startpos+2U) > line.size() || line[startpos] != '<' || line.find('>',startpos+1U) == std::string::npos )
 	{
 		return {"missing or invalid angle brackets in mailbox name"} ;

@@ -61,6 +61,7 @@ private: // overrides
 	void cancel() override ; // GSmtp::Filter
 	Result result() const override ; // GSmtp::Filter
 	std::string response() const override ; // GSmtp::Filter
+	int responseCode() const override ; // GSmtp::Filter
 	std::string reason() const override ; // GSmtp::Filter
 	bool special() const override ; // GSmtp::Filter
 

@@ -27,7 +27,7 @@
 
 namespace GAuth
 {
-	namespace SecretsImp /// An implementation namespace for GAuth::Secrets.
+	namespace SecretsImp
 	{
 		bool pam( const std::string & s )
 		{

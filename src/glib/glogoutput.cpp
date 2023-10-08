@@ -38,7 +38,7 @@
 
 namespace G
 {
-	namespace LogOutputImp /// An implementation namespace for G::LogOutput.
+	namespace LogOutputImp
 	{
 		constexpr int stderr_fileno = 2 ; // STDERR_FILENO
 		LogOutput * this_ = nullptr ;

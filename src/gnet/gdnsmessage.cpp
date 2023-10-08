@@ -539,7 +539,7 @@ GNet::Address GNet::DnsMessageRR::addressImp( unsigned int port , bool & ok ) co
 
 namespace GNet
 {
-	namespace DnsMessageRecordTypeImp /// An implementation namespace for GNet::DnsMessage.
+	namespace DnsMessageRecordTypeImp
 	{
 		struct Pair /// A std::pair-like structure used in GNet::DnsMessage, needed for gcc 4.2.1
 		{

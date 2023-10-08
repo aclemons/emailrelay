@@ -358,13 +358,32 @@
     </p>
    <h2><a class="a-header" name="SH_1_13">Source control</a></h2> <!-- index:2:SH:1:13:Source control -->
     <p>
-     The source code is stored in the SourceForge <em>svn</em> repository. A working
-     copy can be checked out as follows:
+     The source code is stored in the SourceForge <em>svn</em> and/or <em>git</em> repository.
+    </p>
+
+    <p>
+     For example:
     </p>
 
       <div class="div-pre">
-       <pre>$ svn co https://svn.code.sf.net/p/emailrelay/code/trunk emailrelay</pre>
+       <pre>$ svn co https://svn.code.sf.net/p/emailrelay/code emailrelay
+$ cd emailrelay/tags/V_2_5
+</pre>
       </div><!-- div-pre -->
+    <p>
+     or
+    </p>
+
+      <div class="div-pre">
+       <pre>$ git clone https://git.code.sf.net/p/emailrelay/git emailrelay
+$ cd emailrelay
+$ git checkout V_2_5
+</pre>
+      </div><!-- div-pre -->
+    <p>
+     Code that has been formally released will be tagged with a tag like <em>V_2_5</em> and
+     any minor post-release fixes will be on a <em>fixes</em> branch like <em>V_2_5_fixes</em>.
+    </p>
    <h2><a class="a-header" name="SH_1_14">Compile-time features</a></h2> <!-- index:2:SH:1:14:Compile-time features -->
     <p>
      Compile-time features can be selected with options passed to the <em>configure</em>

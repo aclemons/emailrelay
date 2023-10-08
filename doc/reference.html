@@ -685,10 +685,12 @@ out-forward-to smtp.smarthost.com</pre>
      is given a <em>.bad</em> filename suffix so that it will not get picked up for
      forwarding and the first few thousand characters of the filter's standard output
      stream are searched for a line like <em><<error text>></em> or <em>[[error text]]</em>. The
-     text inside the double square or angle brackets is taken as a failure reason and
-     passed back to the SMTP client and also written into the envelope file. A second
-     error-text line can be used for additional diagnostics that will not be visible
-     to the remote client.
+     error text inside the double square or angle brackets is taken as a failure
+     reason and passed back to the remote SMTP client and also written into the
+     envelope file. If the error text starts with a three-digit number between 400
+     and 599 followed by a space then that is used as the SMTP response code. A
+     second error-text line can be used for additional diagnostics that will not be
+     visible to the client.
     </p>
 
     <p>
@@ -779,7 +781,7 @@ WScript.Quit( 0 ) ;
     </p>
 
     <ul>
-     <li>The standard input and output are not used; the message filenames are passed on the command-line.</li>
+     <li>The standard input and output are not used for message content; the message filenames are passed on the command-line.</li>
      <li>Programs are run with a reduced set of environment variables.</li>
      <li>Message files use CR-LF line terminators.</li>
      <li>Envelope files will have a file extension of <em>.new</em> or <em>.busy</em> when the filter runs.</li>

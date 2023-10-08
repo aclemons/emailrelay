@@ -35,7 +35,7 @@
 
 namespace GSmtp
 {
-	namespace ClientProtocolImp /// An implementation namespace for GSmtp::ClientProtocol.
+	namespace ClientProtocolImp
 	{
 		class EhloReply ;
 		struct AuthError ;

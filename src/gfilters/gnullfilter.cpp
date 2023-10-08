@@ -82,6 +82,11 @@ std::string GFilters::NullFilter::response() const
 	return ( m_exit.ok() || m_exit.abandon() ) ? std::string() : std::string("rejected") ;
 }
 
+int GFilters::NullFilter::responseCode() const
+{
+	return 0 ;
+}
+
 std::string GFilters::NullFilter::reason() const
 {
 	return ( m_exit.ok() || m_exit.abandon() ) ? std::string() : m_id ;

@@ -139,6 +139,11 @@ std::string GFilters::FilterChain::response() const
 	return m_filter->response() ;
 }
 
+int GFilters::FilterChain::responseCode() const
+{
+	return m_filter->responseCode() ;
+}
+
 std::string GFilters::FilterChain::reason() const
 {
 	return m_filter->reason() ;

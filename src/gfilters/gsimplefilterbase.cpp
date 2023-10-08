@@ -74,6 +74,11 @@ std::string GFilters::SimpleFilterBase::response() const
 	return std::string( m_result == Result::fail ? "failed" : "" ) ;
 }
 
+int GFilters::SimpleFilterBase::responseCode() const
+{
+	return 0 ;
+}
+
 std::string GFilters::SimpleFilterBase::reason() const
 {
 	return response() ;

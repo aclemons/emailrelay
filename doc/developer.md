@@ -298,10 +298,21 @@ interface, but that does not have any support for i18n.
 
 Source control
 --------------
-The source code is stored in the SourceForge `svn` repository. A working
-copy can be checked out as follows:
+The source code is stored in the SourceForge `svn` and/or `git` repository.
 
-        $ svn co https://svn.code.sf.net/p/emailrelay/code/trunk emailrelay
+For example:
+
+        $ svn co https://svn.code.sf.net/p/emailrelay/code emailrelay
+        $ cd emailrelay/tags/V_2_5
+
+or
+
+        $ git clone https://git.code.sf.net/p/emailrelay/git emailrelay
+        $ cd emailrelay
+        $ git checkout V_2_5
+
+Code that has been formally released will be tagged with a tag like `V_2_5` and
+any minor post-release fixes will be on a `fixes` branch like `V_2_5_fixes`.
 
 Compile-time features
 ---------------------

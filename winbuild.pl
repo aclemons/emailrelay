@@ -42,9 +42,7 @@
 # tool, "windeployqt".
 #
 # On linux the "install_winxp" sub-task can be used after a mingw cross
-# build to assemble an installation zip file, and the "mkbat" sub-task
-# can be used to create simple "mk.bat" batch files to do a native windows
-# build without needing mbedtls, qt, visual studio, msbuild, or nmake.
+# build to assemble an installation zip file.
 #
 
 use strict ;
@@ -56,13 +54,36 @@ use File::Copy ;
 use lib dirname($0) , dirname($0)."/libexec" ;
 require "winbuild.pm" ;
 
-# configuration ...
+# command-line parsing
+my $opt_x86 = 0 ;
+my $opt_debug = 0 ;
+my $opt_no_mbedtls = 0 ;
+my $opt_no_gui = 0 ;
+my @opt_run_parts = () ;
+for my $arg ( @ARGV )
+{
+	if( $arg eq "--x86" ) { $opt_x86 = 1 }
+	elsif( $arg eq "--debug" ) { $opt_debug = 1 }
+	elsif( $arg eq "--no-mbedtls" ) { $opt_no_mbedtls = 1 }
+	elsif( $arg eq "--no-gui" ) { $opt_no_gui = 1 }
+	else { push @opt_run_parts , $arg }
+}
 
-my $cfg_x64 = 1 ;
-my $cfg_x86 = 0 ;
-die unless ($cfg_x64 || $cfg_x86) ;
-my $cfg_debug = 0 ;
+# configuration
+my $cfg_gui = !$opt_no_gui ; # << edit here - set to zero if no qt libraries
+my $cfg_mbedtls = !$opt_no_mbedtls ; # << edit here - set to zero if no mbedtls libraries
+my $cfg_debug = $opt_debug ;
 my $cfg_add_runtime = 1 ;
+my $cfg_x64 = 1 ;
+my $cfg_x86 = $opt_x86 ;
+die unless ($cfg_x64 || $cfg_x86) ;
+my @cfg_run_parts = @opt_run_parts ;
+if( scalar(@cfg_run_parts) == 0 )
+{
+	@cfg_run_parts = $^O eq "linux" ? qw( install_winxp ) : ( $cfg_mbedtls ?
+		qw( batchfiles generate mbedtls cmake build ) :
+		qw( batchfiles generate cmake build ) ) ;
+}
 
 # cmake command-line options
 my $cmake_args = {
@@ -94,7 +115,7 @@ my %switches = (
 	GCONFIG_DNSBL => 1 ,
 	GCONFIG_EPOLL => 0 ,
 	GCONFIG_GETTEXT => 0 ,
-	GCONFIG_GUI => 1 , # << zero if no qt libraries
+	GCONFIG_GUI => $cfg_gui ,
 	GCONFIG_ICONV => 0 ,
 	GCONFIG_INSTALL_HOOK => 0 ,
 	GCONFIG_INTERFACE_NAMES => 1 ,
@@ -103,10 +124,10 @@ my %switches = (
 	GCONFIG_POP => 1 ,
 	GCONFIG_ADMIN => 1 ,
 	GCONFIG_TESTING => 1 ,
-	GCONFIG_TLS_USE_MBEDTLS => 1 , # << zero if no mbedtls source
+	GCONFIG_TLS_USE_MBEDTLS => ($cfg_mbedtls?1:0) ,
 	GCONFIG_TLS_USE_OPENSSL => 0 ,
 	GCONFIG_TLS_USE_BOTH => 0 ,
-	GCONFIG_TLS_USE_NONE => 0 ,
+	GCONFIG_TLS_USE_NONE => ($cfg_mbedtls?0:1) ,
 	GCONFIG_UDS => 0 ,
 	GCONFIG_WINDOWS => 1 ,
 ) ;
@@ -142,60 +163,39 @@ my %vars = (
 	RPM_ROOT => "rpm" ,
 ) ;
 
-$switches{GCONFIG_TLS_USE_NONE} = 1 if (
-	$switches{GCONFIG_TLS_USE_MBEDTLS} == 0 &&
-	$switches{GCONFIG_TLS_USE_OPENSSL} == 0 ) ;
-
-$switches{GCONFIG_TLS_USE_BOTH} = 1 if (
-	$switches{GCONFIG_TLS_USE_MBEDTLS} == 1 &&
-	$switches{GCONFIG_TLS_USE_OPENSSL} == 1 ) ;
-
 # pre-find ...
 
 winbuild::spit_out_batch_files( "find" ) ;
-winbuild::fcache_delete() if $ARGV[0] eq "find" ;
 
 # find stuff ...
 
-my $want_mbedtls = ( $switches{GCONFIG_TLS_USE_MBEDTLS} || $switches{GCONFIG_TLS_USE_BOTH} ) ;
-my $want_qt = $switches{GCONFIG_GUI} && $^O ne "linux" ;
-
 my $msbuild = winbuild::find_msbuild() ;
 my $cmake = winbuild::find_cmake( $msbuild ) ;
-my $qt_info = $want_qt ? winbuild::find_qt() : undef ;
-my $mbedtls = $want_mbedtls ? winbuild::find_mbedtls() : undef ;
+my $qt_info = $cfg_gui ? winbuild::find_qt() : undef ;
+my $mbedtls = $cfg_mbedtls ? winbuild::find_mbedtls() : undef ;
 
 my $missing_cmake = !$cmake ;
 my $missing_msbuild = !$msbuild ;
-my $missing_qt = ( $want_qt && $cfg_x86 && !$qt_info->{x86} ) || ( $want_qt && $cfg_x64 && !$qt_info->{x64} ) ;
-my $missing_mbedtls = ( $want_mbedtls && !$mbedtls ) ;
+my $missing_qt = ( $cfg_gui && $cfg_x86 && !$qt_info->{x86} ) || ( $cfg_gui && $cfg_x64 && !$qt_info->{x64} ) ;
+my $missing_mbedtls = ( $cfg_mbedtls && !$mbedtls ) ;
 
 warn "error: cannot find cmake.exe: please download from cmake.org\n" if $missing_cmake ;
 warn "error: cannot find msbuild.exe: please install visual studio\n" if $missing_msbuild ;
-warn "error: cannot find qt libraries: please download from wwww.qt.io or unset GCONFIG_GUI\n" if $missing_qt ;
-warn "error: cannot find mbedtls source: please download from tls.mbed.org " .
-	"or unset GCONFIG_TLS_USE_MBEDTLS\n" if $missing_mbedtls ;
+warn "error: cannot find qt libraries: please download from wwww.qt.io or unset cfg_gui in winbuild.pl\n" if $missing_qt ;
+warn "error: cannot find mbedtls source: please download from tls.mbed.org or undef cfg_mbedtls in winbuild.pl\n" if $missing_mbedtls ;
 
 if( $missing_cmake || $missing_msbuild || $missing_qt || $missing_mbedtls )
 {
-	winbuild::fcache_write() if $ARGV[0] eq "find" ;
+	winbuild::fcache_create() ; # if none
 	warn "error: missing prerequisites: please install the missing components " ,
 		"or " . (-f "winbuild.cfg"?"edit the":"use a") . " winbuild.cfg configuration file" ,
 		( ($missing_qt||$missing_mbedtls) ? " or unset configuration items in winbuild.pl\n" : "\n" ) ;
 	die "error: missing prerequisites\n" ;
 }
 
-# choose what to run ...
-
-my @default_parts =
-	$^O eq "linux" ? qw( install_winxp mkbat ) : ( $want_mbedtls ?
-		qw( batchfiles generate mbedtls cmake build ) :
-		qw( batchfiles generate cmake build ) ) ;
-
 # run stuff ...
 
-my @run_parts = scalar(@ARGV) ? @ARGV : @default_parts ;
-for my $part ( @run_parts )
+for my $part ( @cfg_run_parts )
 {
 	if( $part eq "find" )
 	{
@@ -258,26 +258,16 @@ for my $part ( @run_parts )
 		winbuild::deltree( $install_x86 ) if $cfg_x86 ;
 		winbuild::deltree( "$mbedtls/x64" ) if $cfg_x64 ;
 		winbuild::deltree( "$mbedtls/x86" ) if $cfg_x86 ;
-		winbuild::fcache_delete() ;
+		winbuild::fcache_cleanup() ;
 	}
 	elsif( $part eq "install" )
 	{
-		my $with_gui = $switches{GCONFIG_GUI} ;
-		my $with_mbedtls = $switches{GCONFIG_TLS_USE_MBEDTLS} || $switches{GCONFIG_TLS_USE_BOTH} ;
-		install( $install_x64 , "x64" , $qt_info , $with_gui , $with_mbedtls , $cfg_add_runtime ) if $cfg_x64 ;
-		install( $install_x86 , "x86" , $qt_info , $with_gui , $with_mbedtls , $cfg_add_runtime ) if $cfg_x86 ;
+		install( $install_x64 , "x64" , $qt_info , $cfg_gui , $cfg_mbedtls , $cfg_add_runtime ) if $cfg_x64 ;
+		install( $install_x86 , "x86" , $qt_info , $cfg_gui , $cfg_mbedtls , $cfg_add_runtime ) if $cfg_x86 ;
 	}
 	elsif( $part eq "install_winxp" )
 	{
 		run_install_winxp() ;
-	}
-	elsif( $part eq "mkbat" )
-	{
-		$switches{GCONFIG_TLS_USE_MBEDTLS} = 0 ;
-		$switches{GCONFIG_TLS_USE_NONE} = 1 ;
-		$switches{GCONFIG_TLS_USE_OPENSSL} = 0 ;
-		$switches{GCONFIG_TLS_USE_BOTH} = 0 ;
-		run_mkbat( \%switches , \%vars ) ;
 	}
 	elsif( $part eq "debug-test" )
 	{
@@ -297,7 +287,7 @@ for my $part ( @run_parts )
 winbuild::create_touchfile( winbuild::default_touchfile($0) ) ;
 
 # show a helpful message
-if( (grep {$_ eq "build"} @run_parts) && !(grep {$_ eq "install"} @run_parts) )
+if( (grep {$_ eq "build"} @cfg_run_parts) && !(grep {$_ eq "install"} @cfg_run_parts) )
 {
 	print "build finished -- try winbuild-install.bat for packaging\n"
 }
@@ -318,17 +308,17 @@ sub create_cmake_file
 	{
 		print $fh "cmake_minimum_required(VERSION 3.1.0)\n" ;
 		print $fh "project($project)\n" ;
-		if( $switches{GCONFIG_GUI} && $qt_info->{v} == 5 )
+		if( $cfg_gui && $qt_info->{v} == 5 )
 		{
 			# see https://doc.qt.io/qt-5/cmake-get-started.html
 			print $fh "find_package(Qt5 COMPONENTS Widgets REQUIRED)\n" ;
 		}
-		elsif( $switches{GCONFIG_GUI} )
+		elsif( $cfg_gui )
 		{
 			# see https://doc.qt.io/qt-6/cmake-get-started.html
 			print $fh "find_package(Qt6 REQUIRED COMPONENTS Widgets)\n" ;
 		}
-		if( $switches{GCONFIG_TLS_USE_MBEDTLS} || $switches{GCONFIG_TLS_USE_BOTH} )
+		if( $cfg_mbedtls )
 		{
 			print $fh "find_package(MbedTLS REQUIRED)\n" ;
 		}
@@ -406,8 +396,7 @@ sub create_cmake_file
 		my $sys_libs = join( " " , $m->sys_libs( $program ) ) ;
 
 		my $tls_libs = "" ;
-		if( ( $our_libs =~ m/gssl/ || $our_libs =~ m/keygen/ ) &&
-			( $switches->{GCONFIG_TLS_USE_MBEDTLS} || $switches->{GCONFIG_TLS_USE_BOTH} ) )
+		if( ( $our_libs =~ m/gssl/ || $our_libs =~ m/keygen/ ) && $cfg_mbedtls )
 		{
 			if( ! $tls_libs_fixed )
 			{
@@ -512,16 +501,8 @@ sub run_generate
 
 sub run_cmake
 {
-	my ( $cmake , $mbedtls , $qt_info , $arch ) = @_ ;
-	$mbedtls ||= "." ;
+	my ( $cmake , $mbedtls_dir , $qt_info , $arch ) = @_ ;
 	$arch ||= "x64" ;
-
-	# (only full paths work here)
-	my $mbedtls_dir = Cwd::realpath( $mbedtls ) ;
-	my $mbedtls_include_dir = "$mbedtls_dir/include" ;
-	my $mbedtls_lib_dir = "$mbedtls_dir/$arch/library/Release" ; # fixed up to Debug elsewhere
-	my $qt_dir = defined($qt_info) ? Cwd::realpath( $qt_info->{$arch} ) : "." ;
-	my $module_path = Cwd::realpath( "." ) ; # see create_cmake_find_mbedtls_file()
 
 	my @arch_args = @{$cmake_args->{$arch}} ;
 	my $rc ;
@@ -530,18 +511,29 @@ sub run_cmake
 		winbuild::clean_cmake_cache_files( $arch , {verbose=>0} ) ;
 
 		my @args = @$arch_args ;
-		unshift @args , "-DCMAKE_MODULE_PATH:FILEPATH=$module_path" ;
-		unshift @args , "-DCMAKE_INCLUDE_PATH:FILEPATH=$mbedtls_include_dir" ;
-		unshift @args , "-DCMAKE_LIBRARY_PATH:FILEPATH=$mbedtls_lib_dir" ;
-		if( $qt_info->{v} == 5 )
+		if( defined($mbedtls) )
 		{
-			unshift @args , "-DQt5_DIR:FILEPATH=$qt_dir" ;
+			my $mbedtls_realpath = Cwd::realpath($mbedtls_dir) ; # must be full paths
+			my $mbedtls_include_dir = "$mbedtls_realpath/include" ;
+			my $mbedtls_lib_dir = "$mbedtls_realpath/$arch/library/Release" ; # fixed up to Debug elsewhere
+			my $module_path = Cwd::realpath( "." ) ; # see create_cmake_find_mbedtls_file()
+			unshift @args , "-DCMAKE_MODULE_PATH:FILEPATH=$module_path" ;
+			unshift @args , "-DCMAKE_INCLUDE_PATH:FILEPATH=$mbedtls_include_dir" ;
+			unshift @args , "-DCMAKE_LIBRARY_PATH:FILEPATH=$mbedtls_lib_dir" ;
 		}
-		else
+		if( defined($qt_info) )
 		{
-			unshift @args , "-DQt6_DIR:FILEPATH=$qt_dir" ;
-			unshift @args , "-DQt6CoreTools_DIR:FILEPATH=".Cwd::realpath("$qt_dir/../qt6coretools") ;
-			unshift @args , "-DQt6GuiTools_DIR:FILEPATH=".Cwd::realpath("$qt_dir/../qt6guitools") ;
+			my $qt_dir = defined($qt_info) ? Cwd::realpath( $qt_info->{$arch} ) : "." ;
+			if( $qt_info->{v} == 5 )
+			{
+				unshift @args , "-DQt5_DIR:FILEPATH=$qt_dir" ;
+			}
+			else
+			{
+				unshift @args , "-DQt6_DIR:FILEPATH=$qt_dir" ;
+				unshift @args , "-DQt6CoreTools_DIR:FILEPATH=".Cwd::realpath("$qt_dir/../qt6coretools") ;
+				unshift @args , "-DQt6GuiTools_DIR:FILEPATH=".Cwd::realpath("$qt_dir/../qt6guitools") ;
+			}
 		}
 		unshift @args , "-DCMAKE_MC_COMPILER:FILEPATH=mc" ;
 
@@ -640,6 +632,7 @@ sub install
 	my ( $install , $arch , $qt_info , $with_gui , $with_mbedtls , $add_runtime ) = @_ ;
 
 	my $msvc_base = winbuild::find_msvc_base( $arch ) ;
+	$msvc_base or die "error: install: cannot determine the msvc base directory\n" ;
 	print "msvc-base=[$msvc_base]\n" ;
 
 	my $runtime = $add_runtime ? winbuild::find_runtime( $msvc_base , $arch , "vcruntime140.dll" , "msvcp140.dll" ) : undef ;
@@ -753,106 +746,6 @@ sub run_install_winxp
 	print "winxp mingw distribution in [$install_winxp]\n" ;
 }
 
-sub run_mkbat
-{
-	my ( $switches , $vars ) = @_ ;
-
-	my @makefiles = winbuild::read_makefiles( $switches , $vars ) ;
-	my $files = "" ;
-	for my $m ( @makefiles )
-	{
-		my $file = create_mkbat_file( $m , $switches ) ;
-		$files .= " $file" if defined($file) ;
-	}
-	unlink( "mkbat.zip" ) ;
-	system( "zip -q mkbat.zip $files" ) ;
-}
-
-sub create_mkbat_file
-{
-	my ( $m , $switches ) = @_ ;
-
-	my $path = join( "/" , dirname($m->path()) , "mk.bat" ) ;
-
-	# prune the tree to root and src with no src/gui
-	my @subdirs = $path eq "./mk.bat" ? ("src") : ( grep { $_ ne "gui" } $m->subdirs() ) ;
-	return undef if ( $path ne "./mk.bat" && $path !~ "src/" ) ;
-
-	print "mkbat-file=[$path]\n" ;
-	my $fh = new FileHandle( $path , "w" ) or die ;
-
-	print $fh "\@echo off\r\n" ;
-	print $fh "rem\r\nrem $path -- generated by $0\r\nrem\r\n" ;
-	print $fh "\@echo on\r\n" ;
-	print $fh "\r\n" ;
-
-	if( $path eq "./mk.bat" )
-	{
-		print $fh "echo. >> src\\gconfig_defs.h\r\n\r\n" ;
-	}
-
-	if( @subdirs )
-	{
-		print $fh "rem subdirs...\r\n" ;
-		print $fh 'for /d %%i in ('.join(" ",@subdirs).') do cmd /c "cd %%i && .\mk.bat"' , "\r\n\r\n" ;
-	}
-
-	my @includes = ( "." , ".." , $m->includes($m->base()) ) ;
-	my $includes = join( " " , map { "/I$_" } @includes ) ;
-	my $cxxflags = "/nologo $includes /DG_WINDOWS=1 /MT /EHsc /W4" ;
-
-	my @libraries = $m->libraries() ;
-	for my $library ( @libraries )
-	{
-		next if $library =~ /extra\.a$/ ;
-		( my $lib = $library ) =~ s/\.a$/.lib/ ; $lib =~ s/^lib// ;
-		print $fh "rem library: $lib\r\n" ;
-		my @objects = () ;
-		for my $source ( $m->sources( $library ) )
-		{
-			( my $object = $source ) =~ s/\.cpp$/.obj/ ;
-			push @objects , $object ;
-			print $fh "cl $cxxflags /c $source\r\n" ;
-		}
-		print $fh "lib /OUT:$lib " , join(" ",@objects) , "\r\n" ;
-		print $fh "\r\n" ;
-	}
-
-	my @programs = $m->programs() ;
-	for my $program ( @programs )
-	{
-		print $fh "rem program: $program\r\n" ;
-		my $resources = "" ;
-		if( $program eq "emailrelay" )
-		{
-			print $fh "copy icon\\emailrelay-icon.ico .\r\n" ;
-			print $fh "mc messages.mc\r\n" ;
-			print $fh "rc emailrelay.rc\r\n" ;
-			$resources = "emailrelay.res" ;
-		}
-		my @libpath = map { my $x = $_ ; $x =~ s;/;\\;g ; $x } $m->libpath( $program , "../.." ) ;
-		( my $libpath = join( " /LIBPATH:" , "" , @libpath ) ) =~ s/^ // ;
-		my @objects = () ;
-		my $sources = join( " " , $m->sources( $program ) ) ;
-		my $our_libs = join( " " , map { "$_.lib" } $m->our_libs( $program ) ) ;
-		my $sys_libs = "kernel32.lib user32.lib gdi32.lib advapi32.lib comctl32.lib ws2_32.lib iphlpapi.lib shell32.lib" ;
-		my $tls_libs = $switches->{GCONFIG_TLS_USE_MBEDTLS} ? "mbedtls.lib mbedcrypto.lib mbedx509.lib" : "" ;
-		my $libs = join( " " , $resources , $our_libs , $tls_libs , $sys_libs ) ;
-		my $subsystem = $program eq "emailrelay" ? "windows" : "console" ;
-		my $linkflags = "/RELEASE /SUBSYSTEM:$subsystem" ;
-		for my $source ( $m->sources( $program ) )
-		{
-			( my $object = $source ) =~ s/\.cpp$/.obj/ ;
-			push @objects , $object ;
-			print $fh "cl $cxxflags /c $source\r\n" ;
-		}
-		print $fh "link $linkflags $libpath /OUT:${program}.exe " , join(" ",@objects) , " $libs\r\n" ;
-		print $fh "\r\n" ;
-	}
-	$fh->close() or die ;
-	return $path ;
-}
-
 sub install_runtime
 {
 	my ( $runtime , $arch , $dst_dir ) = @_ ;
@@ -894,7 +787,7 @@ sub install_gui_dependencies
 sub find_qt_bin
 {
 	my ( $arch , $qtv ) = @_ ;
-	my $qt_core = cache_value_qt_core( $arch , $qtv ) ;
+	my $qt_core = cmake_cache_value_qt_core( $arch , $qtv ) ;
 	my $dir = $qt_core ;
 	for( 1..10 )
 	{
@@ -905,10 +798,10 @@ sub find_qt_bin
 	return "$dir/bin" ;
 }
 
-sub cache_value_qt_core
+sub cmake_cache_value_qt_core
 {
 	my ( $arch , $qtv ) = @_ ;
-	my $qt_core_dir = winbuild::cache_value( $arch , qr/^Qt[56]Core_DIR:[A-Z]+=(.*)/ ) ;
+	my $qt_core_dir = winbuild::cmake_cache_value( $arch , qr/^Qt[56]Core_DIR:[A-Z]+=(.*)/ ) ;
 	$qt_core_dir or die "error: install: cannot read qt path from CMakeCache.txt\n" ;
 	return $qt_core_dir ;
 }

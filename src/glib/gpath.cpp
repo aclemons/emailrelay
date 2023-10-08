@@ -29,7 +29,7 @@
 
 namespace G
 {
-	namespace PathImp /// An implementation namespace for G::Path.
+	namespace PathImp
 	{
 		enum class Platform { Unix , Windows } ;
 		template <Platform> struct PathPlatform /// A class template specialised by o/s in the implementation of G::Path.

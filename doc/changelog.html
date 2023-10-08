@@ -11,8 +11,10 @@
   <h1><a class="a-header" name="H_1">E-MailRelay Change Log</a></h1> <!-- index:1:H:E-MailRelay Change Log -->
    <h2><a class="a-header" name="SH_1_1">2.5 -> 2.5.1</a></h2> <!-- index:2:SH:1:1:2.5 -> 2.5.1 -->
     <ul>
+     <li>Filters can control the SMTP server's error response code.</li>
      <li>Proxying with <em>--immediate</em> passes back SMTP reponses more faithfully.</li>
-     <li>Configure option <em>--disable-admin</em> restored.</li>
+     <li>The <em>--disable-admin</em> build-time configure option is restored.</li>
+     <li>New <em>smtp disable</em> admin command to disable new SMTP sessions.</li>
      <li>Fewer Windows handles inherited by filter programs [bug-id #55].</li>
      <li>Fix for <em>--dnsbl</em> option parsing.</li>
     </ul>

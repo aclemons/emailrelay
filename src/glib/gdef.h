@@ -34,7 +34,9 @@
 	 * file to copy, or just create an empty file and maybe tweak
 	 * the values that are defaulted below.
 	 */
-	#include <gconfig_defs.h>
+	#ifndef GCONFIG_NO_GCONFIG_DEFS
+		#include <gconfig_defs.h>
+	#endif
 
 	/* Check target operating-system switches
 	 */

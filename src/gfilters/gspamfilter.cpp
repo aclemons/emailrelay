@@ -119,6 +119,11 @@ std::string GFilters::SpamFilter::response() const
 	return m_text.empty() ? std::string() : std::string("rejected") ;
 }
 
+int GFilters::SpamFilter::responseCode() const
+{
+	return 0 ;
+}
+
 std::string GFilters::SpamFilter::reason() const
 {
 	return m_text ;

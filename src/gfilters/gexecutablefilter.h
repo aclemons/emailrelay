@@ -30,6 +30,7 @@
 #include "gtimer.h"
 #include "gtask.h"
 #include <utility>
+#include <tuple>
 
 namespace GFilters
 {
@@ -57,6 +58,7 @@ private: // overrides
 	void cancel() override ; // GSmtp::Filter
 	Result result() const override ; // GSmtp::Filter
 	std::string response() const override ; // GSmtp::Filter
+	int responseCode() const override ; // GSmtp::Filter
 	std::string reason() const override ; // GSmtp::Filter
 	bool special() const override ; // GSmtp::Filter
 	void onTaskDone( int , const std::string & ) override ; // GNet::TaskCallback
@@ -68,7 +70,7 @@ public:
 	ExecutableFilter & operator=( ExecutableFilter && ) = delete ;
 
 private:
-	std::pair<std::string,std::string> parseOutput( std::string , const std::string & ) const ;
+	std::tuple<std::string,int,std::string> parseOutput( std::string , const std::string & ) const ;
 	void onTimeout() ;
 	std::string prefix() const ;
 
@@ -81,6 +83,7 @@ private:
 	unsigned int m_timeout ;
 	GNet::Timer<ExecutableFilter> m_timer ;
 	std::string m_response ;
+	int m_response_code {0} ;
 	std::string m_reason ;
 	GNet::Task m_task ;
 } ;
