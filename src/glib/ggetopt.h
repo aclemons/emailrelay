@@ -45,14 +45,13 @@ namespace G
 ///
 /// Usage:
 /// \code
-///  using Layout = G::OptionsOutputLayout ;
-///  using Output = G::OptionsOutput ;
 ///  G::Arg arg( argc , argv ) ;
 ///  G::GetOpt opt( arg , "e!extra!does something! extra!1!something!1" "|" "h!help!shows help!!0!!1" ) ;
 ///  if( opt.hasErrors() ) { opt.showErrors( std::cerr ) ; exit( 2 ) ; }
-///  if( opt.contains("help"sv) ) { Output(opt.options()).showUsage( Layout().set_whatever() ,
-///    std::cout , arg.prefix() , " [<more>]" ) ; exit( 0 ) ; }
-///  run( opt.args() , opt.contains("extra"sv) ? opt.value("extra"sv) : std::string() ) ;
+///  if( opt.contains("help") ) { G::OptionsUsage usage( opt.options() ) ;
+///    usage.output( {} , std::cout , arg.prefix() , " [<more>]" ) ;
+///    exit( 0 ) ; }
+///  run( opt.args() , opt.value("extra","default") ) ;
 /// \endcode
 ///
 /// This class is a thin layer over G::Options, G::OptionMap, G::OptionParser etc,

@@ -126,7 +126,7 @@ std::pair<std::string,int> GFilters::NetworkFilter::responsePair() const
 		( s.size() == 3U || s[3] == ' ' ) )
 	{
 		n = G::Str::toInt( s.substr(0U,3U) ) ;
-		s.erase( s.size() == 3U ? 3U : 4U ) ;
+		s.erase( 0U , s.size() == 3U ? 3U : 4U ) ;
 	}
 	return {s,n} ;
 }

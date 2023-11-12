@@ -1,9 +1,7 @@
 
 #include "windows.h"
 
-LANGUAGE 0x9,0x1
-1 11 "MSG00001.bin"
-
+/* icon -- IDI_ICON1 is a string here (no resource.h), picked up by Qt */
 IDI_ICON1 ICON DISCARDABLE "emailrelay-icon.ico"
 
 VS_VERSION_INFO VERSIONINFO
@@ -40,5 +38,3 @@ BEGIN
     END
 END
 
-/* this for mingw... */
-/* 1 RT_MANIFEST "emailrelay-gui.exe.manifest" */

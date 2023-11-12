@@ -4,9 +4,10 @@
 @rem
 @rem Runs "perl %1" and checks for an output file %2.
 @rem
-@rem The perl program is located using "ftype" or the PATH. Using ftype
-@rem is more likely to find ActiveState perl rather than MSYS or Cygwin.
-@rem For ActiveState the perl script sees a $^O value of "MSWin32".
+@rem The perl program is located using "ftype" or the PATH or c:/perl/bin.
+@rem Using ftype is more likely to find ActiveState perl rather than
+@rem MSYS or Cygwin. For ActiveState the perl script sees a $^O value
+@rem of "MSWin32".
 @rem
 
 @rem find perl using ftype
@@ -23,11 +24,18 @@ goto done
 @rem find perl on the path
 :no_ftype
 where /q perl
-if errorlevel 1 goto fail_no_perl
+if errorlevel 1 goto no_path
 
 @rem run perl on the path
 IF EXIST %2 del /f %2
 cmd /c perl %1 %3 %4 %5
+goto done
+
+@rem try c:\perl\bin
+:no_path
+c:\perl\bin\perl.exe -e "exit 99" 2>NUL:
+if not errorlevel 99 goto fail_no_perl
+c:\perl\bin\perl.exe %1 %3 %4 %5
 goto done
 
 @rem after running perl check for the touchfile

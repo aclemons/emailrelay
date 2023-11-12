@@ -15,37 +15,25 @@
 #   $ qmake --qt=5 CONFIG+=unix emailrelay-gui.pro
 #   $ make release
 #
-# On windows a static build of emailrelay-gui needs a
-# static build of the Qt library code.
-#
 # Eg:
-#	msvc> cd <qt-source>\qtbase
-#   msvc> edit mkspecs\common\msvc-desktop.conf (/MT)
-#   msvc> PATH=<qt-source>\qtbase\bin;%PATH%
-#   msvc> configure.bat -static -release -prefix "<qt-install>" ... etc
-#   msvc> nmake -f Makefile release
-#   msvc> nmake -f Makefile install
+#   $ qmake CONFIG+=win32 emailrelay-gui.pro
+#   $ nmake /u VERBOSE=1 release
 #
-# Then:
-#   msvc> PATH=<qt-install>\bin;%PATH%
-#   msvc> qmake CONFIG+="win static" emailrelay-gui.pro
-#   msvc> copy ..\main\icon\*.ico .
-#   msvc> mc messages.mc
-#   msvc> nmake -f Makefile release
+# See also: qtbuild.pl, winbuild.pl
 #
 
-CONFIG += \
-	warn_on \
-	strict_c++ \
-	debug_and_release \
-	build_all
+CONFIG += warn_on
+CONFIG += strict_c++
+CONFIG += debug_and_release
+CONFIG += static
 
 TEMPLATE = app
 
 QT += widgets
 
-win {
+win32 {
 	QMAKE_LFLAGS += "/MANIFESTUAC:level='highestAvailable'"
+	QMAKE_LFLAGS += "/MANIFESTINPUT:emailrelay-gui.exe.manifest"
 	LIBS += advapi32.lib ole32.lib oleaut32.lib
 	SOURCES += \
 		guiaccess_win32.cpp \
@@ -65,9 +53,10 @@ unix {
 }
 
 RC_FILE = emailrelay-gui.rc
+RC_INCLUDEPATH = ..\src\main\icon ..\..\src\main\icon ..\..\..\src\main\icon ..\..\..\..\src\main\icon
 
 build_pass:CONFIG(debug,debug|release) {
-	DEFINES += _DEBUG=1
+	DEFINES += G_WITH_DEBUG
 }
 
 build_pass:CONFIG(release,debug|release) {

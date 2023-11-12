@@ -59,7 +59,6 @@
 ./src/gsmtp/gfilterfactorybase.cpp
 ./src/gsmtp/gsmtpserversend.cpp
 ./src/gsmtp/gverifierfactorybase.cpp
-./src/gsmtp/gadminserver.cpp
 ./src/gsmtp/gprotocolmessagestore.cpp
 ./src/gsmtp/gsmtpserverparser.cpp
 ./src/gsmtp/gsmtpserverbufferin.cpp
@@ -163,7 +162,6 @@
 ./src/gnet/gexceptionsource.cpp
 ./src/gnet/geventloop_select.cpp
 ./src/gnet/ginterfaces_none.cpp
-./src/gnet/geventhandlerlist.cpp
 ./src/gnet/gaddress.cpp
 ./src/gnet/gdnsmessage.cpp
 ./src/gnet/gexceptionsink.cpp

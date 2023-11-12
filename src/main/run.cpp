@@ -56,7 +56,7 @@ namespace Main { std::string localedir() { return std::string() ; } }
 
 std::string Main::Run::versionNumber()
 {
-	return "2.5.1rc3" ;
+	return "2.5.1" ;
 }
 
 Main::Run::Run( Main::Output & output , const G::Arg & arg , bool has_gui ) :

@@ -51,7 +51,7 @@ GSmtp::Filter::Result GFilters::SplitFilter::run( const GStore::MessageId & mess
 	G::Path content_path = m_store.contentPath( message_id ) ;
 	G::Path envelope_path = m_store.envelopePath( message_id , e_state ) ;
 
-	GStore::Envelope envelope = m_store.readEnvelope( envelope_path ) ;
+	GStore::Envelope envelope = GStore::FileStore::readEnvelope( envelope_path ) ;
 
 	// group-by domain
 	G::StringArray domains ;
@@ -78,9 +78,9 @@ GSmtp::Filter::Result GFilters::SplitFilter::run( const GStore::MessageId & mess
 	std::stringstream extra_headers ;
 	if( ids.size() > 1U )
 	{
-		extra_headers << m_store.x() << "SplitGroupCount: " << ids.size() << "\n" ;
+		extra_headers << GStore::FileStore::x() << "SplitGroupCount: " << ids.size() << "\n" ;
 		for( const auto & id : ids )
-			extra_headers << m_store.x() << "SplitGroup: " << id << "\n" ;
+			extra_headers << GStore::FileStore::x() << "SplitGroup: " << id << "\n" ;
 	}
 
 	// create new messages for each domain

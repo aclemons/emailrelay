@@ -31,6 +31,7 @@
 #include "gtest.h"
 #include <algorithm>
 #include <sstream>
+#include <iostream>
 #include <stdexcept>
 #include <string>
 #include <cstring>
@@ -40,6 +41,7 @@ namespace G
 {
 	namespace LogOutputImp
 	{
+		constexpr int stdout_fileno = 1 ; // STDOUT_FILENO
 		constexpr int stderr_fileno = 2 ; // STDERR_FILENO
 		LogOutput * this_ = nullptr ;
 		constexpr std::size_t margin = 7U ;
@@ -141,9 +143,15 @@ void G::LogOutput::configure( const Config & config )
 G::LogOutput::~LogOutput()
 {
 	if( LogOutputImp::this_ == this )
+	{
 		LogOutputImp::this_ = nullptr ;
-	if( !m_path.empty() && m_fd != LogOutputImp::stderr_fileno && m_fd >= 0 )
+	}
+	if( !m_path.empty() && m_fd >= 0 &&
+		m_fd != LogOutputImp::stderr_fileno &&
+		m_fd != LogOutputImp::stdout_fileno )
+	{
 		G::File::close( m_fd ) ;
+	}
 	oscleanup() ;
 }
 
@@ -243,7 +251,7 @@ void G::LogOutput::open( const std::string & path , bool do_throw )
 {
 	if( path.empty() )
 	{
-		m_fd = LogOutputImp::stderr_fileno ;
+		m_fd = m_config.m_stdout ? LogOutputImp::stdout_fileno : LogOutputImp::stderr_fileno ;
 	}
 	else
 	{
@@ -257,7 +265,7 @@ void G::LogOutput::open( const std::string & path , bool do_throw )
 		}
 		if( fd >= 0 )
 		{
-			if( m_fd >= 0 && m_fd != LogOutputImp::stderr_fileno )
+			if( m_fd >= 0 && m_fd != LogOutputImp::stderr_fileno && m_fd != LogOutputImp::stdout_fileno )
 				G::File::close( m_fd ) ;
 			m_fd = fd ;
 		}
@@ -328,6 +336,9 @@ void G::LogOutput::output( LogStream & logstream , int )
 	p[n] = '\0' ;
 	for( char * pp = std::strchr(buffer,'\033') ; pp ; pp = std::strchr(p+1,'\033') )
 		*pp = '.' ;
+
+	if( m_fd == LogOutputImp::stdout_fileno )
+		std::cout.flush() ;
 
 	// do the actual output in an o/s-specific manner -- the margin
 	// allows the implementation to extend the text with eg. a newline
@@ -495,4 +506,12 @@ G::LogOutput::Config & G::LogOutput::Config::set_umask( Process::Umask::Mode uma
 	m_umask = umask ;
 	return *this ;
 }
+
+#ifndef G_LIB_SMALL
+G::LogOutput::Config & G::LogOutput::Config::set_stdout( bool value )
+{
+	m_stdout = value ;
+	return *this ;
+}
+#endif
 

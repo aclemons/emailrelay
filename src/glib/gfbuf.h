@@ -81,7 +81,7 @@ protected:
 		///< Called to pull a character out of the input buffer,
 		///< and pre-fill the input buffer if necessary.
 
-	int sync() override ;
+	int sync() final override ;
 		///< Called to sync the stream.
 
 public:

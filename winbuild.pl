@@ -664,7 +664,7 @@ sub install
 		}
 
 		winbuild::translate( $arch , $qt_info , "no_NO" , "no" ) ;
-		install_copy( "src/gui/emailrelay.no.qm" , "$install/gui/translations/" ) ;
+		install_copy( "src/gui/emailrelay.no.qm" , "$install/translations/" ) ;
 		install_copy( "src/gui/emailrelay.no.qm" , "$install/payload/files/gui/translations/" ) ;
 	}
 

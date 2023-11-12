@@ -1,9 +1,18 @@
 
-#include <windows.h>
+#include "windows.h"
 #include "resource.h"
 
+/* manifest -- mingw only, native builds use 'link /MANIFESTINPUT' */
+#ifdef G_MINGW
+1 RT_MANIFEST "emailrelay.exe.manifest"
+#endif
+
+/* icon -- see also resource.h and winapp.cpp */
+IDI_ICON1 ICON "emailrelay-icon.ico"
+
+/* messagetable -- see glogoutput_win32.cpp */
 LANGUAGE 0x9,0x1
-1 11 "MSG00001.bin"
+1 MESSAGETABLE "MSG00001.bin"
 
 IDD_PROPPAGE_1 DIALOGEX 0, 0, 259, 178
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_DISABLED | WS_CAPTION
@@ -29,8 +38,6 @@ BEGIN
     DEFPUSHBUTTON   "OK",IDOK,130,174,50,14
     EDITTEXT        IDC_EDIT1,7,7,297,163,ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL | ES_READONLY | WS_VSCROLL | WS_HSCROLL
 END
-
-IDI_ICON1               ICON                    "emailrelay-icon.ico"
 
 IDR_MENU1 MENU
 BEGIN

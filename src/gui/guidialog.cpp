@@ -26,7 +26,9 @@
 #include <algorithm>
 #include <stdexcept>
 
+#ifndef G_NO_MOC_INCLUDE
 #include "moc_guidialog.cpp"
+#endif
 
 Gui::Dialog::Dialog( const G::Path & virgin_flag_file , bool with_launch ) :
 	QDialog(nullptr) ,

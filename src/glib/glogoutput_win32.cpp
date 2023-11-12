@@ -27,7 +27,7 @@
 
 namespace G
 {
-	namespace LogOutputImp
+	namespace LogOutputWindowsImp
 	{
 		std::string thisExe()
 		{
@@ -94,7 +94,7 @@ void G::LogOutput::osoutput( int fd , G::Log::Severity severity , char * message
 
 		// very old windowses do not seem to recognise "!S!" format specifiers so
 		// as a workround (fwiw) use additional entries in messages.mc (1011, etc)
-		if( LogOutputImp::oldWindows() )
+		if( LogOutputWindowsImp::oldWindows() )
 			id += 10 ;
 
 		message[n] = '\0' ;
@@ -115,10 +115,10 @@ void G::LogOutput::osinit()
 {
 	if( m_config.m_use_syslog )
 	{
-		std::string this_exe = LogOutputImp::thisExe() ;
+		std::string this_exe = LogOutputWindowsImp::thisExe() ;
 		if( !this_exe.empty() )
 		{
-			std::string this_name = LogOutputImp::basename( this_exe ) ;
+			std::string this_name = LogOutputWindowsImp::basename( this_exe ) ;
 			G::LogOutput::register_( this_exe ) ;
 			m_handle = RegisterEventSourceA( nullptr , this_name.c_str() ) ;
 			if( m_handle == HNULL && !m_config.m_allow_bad_syslog )
@@ -129,25 +129,29 @@ void G::LogOutput::osinit()
 
 void G::LogOutput::register_( const std::string & exe_path )
 {
+	// this method will normally fail because of access rights so it
+	// should also be run as part of the install process
+
 	std::string reg_path =
 		"SYSTEM\\CurrentControlSet\\services\\eventlog\\Application\\" +
-		LogOutputImp::basename(exe_path) ;
+		LogOutputWindowsImp::basename(exe_path) ;
 
 	HKEY key = 0 ;
-	LONG e = RegCreateKeyA( HKEY_LOCAL_MACHINE , reg_path.c_str() , &key ) ;
+	int sam = KEY_WRITE ;
+	LONG e = RegCreateKeyExA( HKEY_LOCAL_MACHINE , reg_path.c_str() , 0 , NULL , 0 , sam , NULL , &key , NULL ) ;
 	if( e == ERROR_SUCCESS && key != 0 )
 	{
 		DWORD one = 1 ;
 		DWORD types = EVENTLOG_INFORMATION_TYPE | EVENTLOG_WARNING_TYPE | EVENTLOG_ERROR_TYPE ;
-		! RegSetValueExA( key , "EventMessageFile" , 0 , REG_SZ ,
+		RegSetValueExA( key , "EventMessageFile" , 0 , REG_SZ ,
 			reinterpret_cast<const BYTE*>(exe_path.c_str()) ,
-			static_cast<DWORD>(exe_path.length())+1U ) &&
-		! RegSetValueExA( key , "CategoryCount" , 0 , REG_DWORD ,
-			reinterpret_cast<const BYTE*>(&one) , sizeof(one) ) &&
-		! RegSetValueExA( key , "CategoryMessageFile" , 0 , REG_SZ ,
+			static_cast<DWORD>(exe_path.length())+1U ) ;
+		RegSetValueExA( key , "CategoryCount" , 0 , REG_DWORD ,
+			reinterpret_cast<const BYTE*>(&one) , sizeof(one) ) ;
+		RegSetValueExA( key , "CategoryMessageFile" , 0 , REG_SZ ,
 			reinterpret_cast<const BYTE*>(exe_path.c_str()) ,
-			static_cast<DWORD>(exe_path.length())+1U ) &&
-		! RegSetValueExA( key , "TypesSupported" , 0 , REG_DWORD ,
+			static_cast<DWORD>(exe_path.length())+1U ) ;
+		RegSetValueExA( key , "TypesSupported" , 0 , REG_DWORD ,
 			reinterpret_cast<const BYTE*>(&types) , sizeof(types) ) ;
 	}
 	if( key != 0 )
