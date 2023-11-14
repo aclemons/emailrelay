@@ -944,10 +944,11 @@ G::StringArray GSmtp::ClientProtocolImp::EhloReply::values( const std::string & 
 	G::StringArray result ;
 	std::string text = m_reply.text() ; // (eg. "hello\nAUTH FOO\n")
 	std::size_t start_pos = text.find( std::string(1U,'\n').append(option).append(1U,' ') ) ;
-	std::size_t end_pos = start_pos == std::string::npos ? start_pos : text.find('\n',start_pos+1U) ;
-	if( end_pos != std::string::npos )
+	if( start_pos != std::string::npos )
 	{
-		result = G::Str::splitIntoTokens( text.substr(start_pos,end_pos-start_pos) , G::Str::ws() ) ;
+		std::size_t end_pos = text.find( '\n' , start_pos+1U ) ;
+		std::size_t size = end_pos == std::string::npos ? end_pos : ( end_pos - start_pos ) ;
+		result = G::Str::splitIntoTokens( text.substr(start_pos,size) , G::Str::ws() ) ;
 		G_ASSERT( result.at(0U) == option ) ;
 		if( !result.empty() ) result.erase( result.begin() ) ;
 	}
