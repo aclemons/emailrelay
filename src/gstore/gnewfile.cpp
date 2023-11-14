@@ -52,7 +52,7 @@ GStore::NewFile::NewFile( FileStore & store , const std::string & from ,
 
 	// ask the store for a content stream
 	G_LOG( "GStore::NewFile: new content file [" << cpath().basename() << "]" ) ;
-	m_content = m_store.stream( cpath() ) ;
+	m_content = FileStore::stream( cpath() ) ;
 }
 
 GStore::NewFile::~NewFile()
@@ -159,7 +159,7 @@ std::size_t GStore::NewFile::contentSize() const
 void GStore::NewFile::saveEnvelope( Envelope & env , const G::Path & path )
 {
 	G_LOG( "GStore::NewFile: new envelope file [" << path.basename() << "]" ) ;
-	std::unique_ptr<std::ofstream> envelope_stream = m_store.stream( path ) ;
+	std::unique_ptr<std::ofstream> envelope_stream = FileStore::stream( path ) ;
 	env.endpos = GStore::Envelope::write( *envelope_stream , env ) ;
 	env.crlf = true ;
 	envelope_stream->close() ;

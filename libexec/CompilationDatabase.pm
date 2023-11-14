@@ -120,7 +120,7 @@ sub stanzas
 	for my $m ( @{$this->{m_makefiles}} )
 	{
 		my $dir = File::Basename::dirname( $m->path() ) ;
-		my @includes = map { "-I$_" } $m->includes( $m->base() , $this->{m_config}->{full_paths} ) ;
+		my @includes = map { "-I$_" } $m->includes( $m->base() , $this->{m_config}->{full_paths} , 1 ) ;
 		my @definitions = map { "-D$_" } $m->definitions() ;
 		my @compile_options = $m->compile_options() ;
 		my @link_options = $m->link_options() ;

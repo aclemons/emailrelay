@@ -114,7 +114,6 @@ int Gui::DirImp::special_id( const std::string & type )
 	if( type == "programs" ) return sizeof(void*) == 4 ? CSIDL_PROGRAM_FILESX86 : CSIDL_PROGRAM_FILES ; // "c:/program files"
 	if( type == "data" ) return CSIDL_COMMON_APPDATA ; // "c:/programdata"
 	throw std::runtime_error("internal error") ;
-	return 0 ;
 }
 
 G::Path Gui::DirImp::envPath( const std::string & key , const G::Path & default_ )

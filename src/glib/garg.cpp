@@ -251,3 +251,15 @@ std::string G::Arg::exe( bool do_throw )
 	}
 }
 
+#ifndef G_LIB_SMALL
+G::StringArray::const_iterator G::Arg::cbegin() const
+{
+	return m_array.size() <= 1U ? cend() : std::next( m_array.cbegin() ) ;
+}
+#endif
+
+G::StringArray::const_iterator G::Arg::cend() const
+{
+	return m_array.cend() ;
+}
+

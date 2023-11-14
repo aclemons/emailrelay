@@ -203,9 +203,9 @@ COMMON_LDADD = \
 	$(top_builddir)/src/glib/libglib.a
 
 if GCONFIG_WINDOWS
- SYS_LIBS=-lws2_32 -liphlpapi -lcomctl32
+ OS_LIBS =-lws2_32 -lshell32 -liphlpapi -lcomctl32 -ladvapi32 -luser32 -lgdi32 -luser32 -lkernel32
 else
- SYS_LIBS=
+ OS_LIBS =
 endif
 
 emailrelay_test_scanner_SOURCES = emailrelay_test_scanner.cpp
@@ -218,7 +218,7 @@ emailrelay_test_scanner_LDADD = \
 	$(top_builddir)/src/win32/libwin32.a \
 	$(COMMON_LDADD) \
 	$(GCONFIG_TLS_LIBS) \
-	$(SYS_LIBS)
+	$(OS_LIBS)
 
 emailrelay_test_server_SOURCES = emailrelay_test_server.cpp
 if GCONFIG_WINDOWS
@@ -230,7 +230,7 @@ emailrelay_test_server_LDADD = \
 	$(top_builddir)/src/win32/libwin32.a \
 	$(COMMON_LDADD) \
 	$(GCONFIG_TLS_LIBS) \
-	$(SYS_LIBS)
+	$(OS_LIBS)
 
 emailrelay_test_dnsserver_SOURCES = emailrelay_test_dnsserver.cpp
 if GCONFIG_WINDOWS
@@ -242,14 +242,14 @@ emailrelay_test_dnsserver_LDADD = \
 	$(top_builddir)/src/win32/libwin32.a \
 	$(COMMON_LDADD) \
 	$(GCONFIG_TLS_LIBS) \
-	$(SYS_LIBS)
+	$(OS_LIBS)
 
 emailrelay_test_client_SOURCES = emailrelay_test_client.cpp
 if GCONFIG_WINDOWS
 emailrelay_test_client_LDFLAGS = -static
 endif
 emailrelay_test_client_LDADD = \
-	$(SYS_LIBS)
+	$(OS_LIBS)
 
 emailrelay_test_verifier_SOURCES = emailrelay_test_verifier.cpp
 if GCONFIG_WINDOWS
@@ -261,7 +261,7 @@ emailrelay_test_verifier_LDADD = \
 	$(top_builddir)/src/win32/libwin32.a \
 	$(COMMON_LDADD) \
 	$(GCONFIG_TLS_LIBS) \
-	$(SYS_LIBS)
+	$(OS_LIBS)
 
 .PHONY: programs
 if GCONFIG_WINDOWS

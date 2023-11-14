@@ -31,7 +31,6 @@ compile_commands.json: Makefile
 .PHONY: tidy
 tidy: compile_commands.json
 	@chmod +x $(top_srcdir)/libexec/make2cdb || true
-	@touch $(top_srcdir)/gconfig_defs.h
 	$(top_srcdir)/libexec/make2cdb --list | xargs -- "$(TIDY)" -p . || true
 
 .PHONY: format

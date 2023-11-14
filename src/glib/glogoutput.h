@@ -87,6 +87,7 @@ public:
 		bool m_quiet_stderr {false} ;
 		bool m_use_syslog {false} ;
 		bool m_allow_bad_syslog {false} ;
+		bool m_stdout {false} ;
 		SyslogFacility m_facility {SyslogFacility::User} ;
 		Process::Umask::Mode m_umask {Process::Umask::Mode::NoChange} ;
 		Config() ;
@@ -104,6 +105,7 @@ public:
 		Config & set_allow_bad_syslog( bool value = true ) ;
 		Config & set_facility( SyslogFacility ) ;
 		Config & set_umask( Process::Umask::Mode ) ;
+		Config & set_stdout( bool value = true ) ;
 	} ;
 
 	LogOutput( const std::string & exename , const Config & config ,

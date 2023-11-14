@@ -54,7 +54,7 @@ GFilters::MxFilter::~MxFilter()
 void GFilters::MxFilter::start( const GStore::MessageId & message_id )
 {
 	G::Path envelope_path = m_store.envelopePath( message_id , storestate() ) ;
-	GStore::Envelope envelope = m_store.readEnvelope( envelope_path ) ;
+	GStore::Envelope envelope = GStore::FileStore::readEnvelope( envelope_path ) ;
 	unsigned int port = parseForwardToPort( envelope.forward_to ) ;
 	std::string domain = parseForwardToDomain( envelope.forward_to ) ;
 	if( domain.empty() )

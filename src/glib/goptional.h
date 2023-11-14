@@ -118,7 +118,8 @@ G::optional<T>::operator bool() const noexcept
 template <typename T>
 const T & G::optional<T>::value() const
 {
-	return m_has_value ? m_value : ( doThrow() , m_value ) ;
+	if( !m_has_value ) doThrow() ;
+	return m_value ;
 }
 
 template <typename T>

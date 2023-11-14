@@ -104,12 +104,12 @@ std::unique_ptr<GNet::EventLoop> GNet::EventLoop::create()
 
 GNet::EventLoopImp::EventLoopImp() // NOLINT cppcoreguidelines-pro-type-member-init
 {
-	FD_ZERO( &m_read_set ) ;
-	FD_ZERO( &m_write_set ) ;
-	FD_ZERO( &m_other_set ) ;
-	FD_ZERO( &m_read_set_copy ) ;
-	FD_ZERO( &m_write_set_copy ) ;
-	FD_ZERO( &m_other_set_copy ) ;
+	FD_ZERO( &m_read_set ) ; // NOLINT
+	FD_ZERO( &m_write_set ) ; // NOLINT
+	FD_ZERO( &m_other_set ) ; // NOLINT
+	FD_ZERO( &m_read_set_copy ) ; // NOLINT
+	FD_ZERO( &m_write_set_copy ) ; // NOLINT
+	FD_ZERO( &m_other_set_copy ) ; // NOLINT
 }
 
 std::string GNet::EventLoopImp::run()
@@ -152,7 +152,7 @@ void GNet::EventLoopImp::runOnce()
 	if( TimerList::ptr() != nullptr )
 	{
 		G::TimeInterval interval = G::TimeInterval::zero() ;
-		bool infinite ;
+		bool infinite = false ;
 		std::tie( interval , infinite ) = TimerList::instance().interval() ;
 		timeout.tv_sec = interval.s() ;
 		timeout.tv_usec = interval.us() ;

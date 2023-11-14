@@ -41,7 +41,9 @@
 #include <fstream>
 #include <cstring>
 
+#ifndef G_NO_MOC_INCLUDE
 #include "moc_guipages.cpp"
+#endif
 
 // ==
 

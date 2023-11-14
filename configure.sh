@@ -106,15 +106,15 @@ if test "0$opt_get_mbedtls" -ne 0
 then
 	if test -d mbedtls
 	then
-		( cd mbedtls && git fetch )
+		git -C mbedtls fetch
 	else
     	git clone https://github.com/Mbed-TLS/mbedtls.git mbedtls
 	fi
 	if test "$opt_get_mbedtls" -eq 3
 	then
-    	( cd mbedtls && git checkout -q master )
+    	git -C mbedtls checkout -q "mbedtls-3.5.0"
 	else
-		( cd mbedtls && git checkout -q "mbedtls-2.28" )
+		git -C mbedtls checkout -q "mbedtls-2.28"
 	fi
 	if test "0$opt_mingw" -ne 0
 	then
@@ -212,7 +212,7 @@ then
 	Echo "  `MakeTlsCommand CC=$CC AR=$AR`"
 	echo "  make"
 	echo "  make -C src/main strip"
-	echo "  perl winbuild.pl mingw"
+	echo "  perl winbuild.pl install_winxp"
 :
 elif test "0$opt_rpi" -ne 0
 then

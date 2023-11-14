@@ -143,7 +143,6 @@ sub _find_mbedtls
 {
 	return (
 		_find_match( "find-mbedtls" , "mbedtls*" , undef ,
-			File::Basename::dirname($0) ,
 			File::Basename::dirname($0)."/.." ,
 			"$ENV{HOMEDRIVE}$ENV{HOMEPATH}" ,
 			"$ENV{SystemDrive}" ) ) ;

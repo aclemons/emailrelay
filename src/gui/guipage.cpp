@@ -26,7 +26,9 @@
 #include "gmapfile.h"
 #include "glog.h"
 
+#ifndef G_NO_MOC_INCLUDE
 #include "moc_guipage.cpp"
+#endif
 
 int Gui::Page::m_test_mode = 0 ;
 

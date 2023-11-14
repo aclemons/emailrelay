@@ -133,6 +133,7 @@
 #ifdef G_WINDOWS
 #ifdef G_QT_STATIC
 Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin)
+Q_IMPORT_PLUGIN(QWindowsVistaStylePlugin)
 #endif
 #endif
 
@@ -277,7 +278,7 @@ int main( int argc , char * argv [] )
 				.set_debug(args.count("-v")>2U)
 				.set_strip(args.count("-v")<2U)
 				.set_with_level(true)
-				.set_use_syslog(args.contains("-v")) ) ;
+				.set_use_syslog(false) ) ;
 		G_LOG( "main: start: " << argv[0] ) ;
 
 		try
