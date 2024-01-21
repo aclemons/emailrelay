@@ -25,7 +25,6 @@
 #include "gtimer.h"
 #include "gnetdone.h"
 #include "gsmtpclient.h"
-#include "gresolver.h"
 #include "gfilterfactorybase.h"
 #include "gresolver.h"
 #include "gassert.h"
@@ -38,9 +37,7 @@ GSmtp::Client::Client( GNet::ExceptionSink es , FilterFactoryBase & ff , const G
 		m_config(config) ,
 		m_nofilter_timer(*this,&Client::onNoFilterTimeout,es) ,
 		m_filter(ff.newFilter(es,Filter::Type::client,config.filter_config,config.filter_spec)) ,
-		m_protocol(es,*this,secrets,config.sasl_client_config,config.client_protocol_config,config.secure_tunnel) ,
-		m_secure(false) ,
-		m_filter_special(false)
+		m_protocol(es,*this,secrets,config.sasl_client_config,config.client_protocol_config,config.secure_tunnel)
 {
 	G_ASSERT( m_filter.get() != nullptr ) ;
 	m_protocol.doneSignal().connect( G::Slot::slot(*this,&Client::protocolDone) ) ;

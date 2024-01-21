@@ -784,8 +784,7 @@ G::Options Main::Options::spec( bool is_windows )
 				// added to mail message content files, and stops the SMTP
 				// client protocol adding "AUTH=" to the "MAIL" command.
 				// For finer control use a comma-separated list of things
-				// to anonymise: "vrfy", "server", "content" and/or "client",
-				// eg. --anonymous=server,content.
+				// to anonymise: "vrfy", "server", "content" and/or "client".
 
 		G::Options::add( opt , 'B' , "pop" ,
 			tx("enables the pop server") , "" ,

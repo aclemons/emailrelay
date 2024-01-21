@@ -48,8 +48,7 @@ GSmtp::ServerPeer::ServerPeer( GNet::ExceptionSinkUnbound esu ,
 		m_protocol(*this,*m_verifier,*m_pmessage,server_secrets,
 			*m_ptext,peerAddress(),
 			server_config.protocol_config,enabled) ,
-		m_input_buffer(esu.bind(this),m_protocol,server_config.buffer_config) ,
-		m_output_blocked(false)
+		m_input_buffer(esu.bind(this),m_protocol,server_config.buffer_config)
 {
 	G_LOG_S( "GSmtp::ServerPeer: smtp connection from " << peerAddress().displayString() ) ;
 
@@ -190,8 +189,7 @@ GSmtp::Server::Server( GNet::ExceptionSink es , GStore::MessageStore & store , F
 		m_forward_to(forward_to) ,
 		m_forward_to_family(forward_to_family) ,
 		m_client_secrets(client_secrets) ,
-		m_dnsbl_suspend_time(G::TimerTime::zero()) ,
-		m_enabled(true)
+		m_dnsbl_suspend_time(G::TimerTime::zero())
 {
 }
 

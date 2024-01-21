@@ -113,6 +113,7 @@ private:
 	static bool isSimplyQuoted( const std::string & ) ;
 	static std::string windowsPath() ;
 	static std::string cscript() ;
+	static std::string powershell() ;
 
 private:
 	HANDLE m_hprocess ;
@@ -328,6 +329,13 @@ std::pair<std::string,std::string> G::NewProcessImp::commandLine( std::string ex
 		// that CreateProcess() with a batch file runs
 		// "cmd.exe /c" internally
 	}
+	else if( type == "ps1" )
+	{
+		args.insert( args.begin() , exe ) ;
+		args.insert( args.begin() , "-File" ) ;
+		args.insert( args.begin() , "-NoLogo" ) ;
+		exe = powershell() ;
+	}
 	else
 	{
 		args.insert( args.begin() , exe ) ;
@@ -400,6 +408,11 @@ std::string G::NewProcessImp::windowsPath()
 std::string G::NewProcessImp::cscript()
 {
 	return windowsPath().append("\\system32\\cscript.exe") ;
+}
+
+std::string G::NewProcessImp::powershell()
+{
+	return windowsPath().append("\\System32\\WindowsPowerShell\\v1.0\\powershell.exe") ;
 }
 
 // ==

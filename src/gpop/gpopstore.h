@@ -95,7 +95,7 @@ public:
 	std::string name ;
 	Size size ;
 	bool in_parent ;
-	bool deleted ;
+	bool deleted {false} ;
 } ;
 
 //| \class GPop::StoreUser

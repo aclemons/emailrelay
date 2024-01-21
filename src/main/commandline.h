@@ -27,7 +27,6 @@
 #include "goptions.h"
 #include "goptionmap.h"
 #include "output.h"
-#include "output.h"
 #include "gstringarray.h"
 #include <string>
 #include <vector>

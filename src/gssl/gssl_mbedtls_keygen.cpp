@@ -49,8 +49,12 @@ namespace GSsl
 		struct FileCloser
 		{
 			explicit FileCloser( int fd ) : m_fd(fd) {}
-			void release() { m_fd = -1 ; }
 			~FileCloser() { if(m_fd >= 0) close_(m_fd) ; }
+			FileCloser( const FileCloser & ) = delete ;
+			FileCloser( FileCloser && ) = delete ;
+			FileCloser & operator=( const FileCloser & ) = delete ;
+			FileCloser & operator=( FileCloser && ) = delete ;
+			void release() { m_fd = -1 ; }
 			int m_fd ;
 		} ;
 	}

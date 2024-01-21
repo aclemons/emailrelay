@@ -190,12 +190,10 @@ GNet::Address GNet::Address::parse( const std::string & host_part , unsigned int
 	return { host_part , port } ;
 }
 
-#ifndef G_LIB_SMALL
 GNet::Address GNet::Address::parse( const std::string & host_part , const std::string & port_part )
 {
 	return { host_part , port_part } ;
 }
-#endif
 
 bool GNet::Address::isFamilyLocal( const std::string & s ) noexcept
 {

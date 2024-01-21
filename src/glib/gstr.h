@@ -634,14 +634,14 @@ inline
 std::string G::Str::fromULong( unsigned long u , const Hex & )
 {
 	std::array <char,sizeof(u)*2U> buffer ; // NOLINT cppcoreguidelines-pro-type-member-init
-	return sv_to_string( fromULongToHex( u , &buffer[0] ) ) ;
+	return sv_to_string( fromULongToHex( u , buffer.data() ) ) ;
 }
 
 inline
 std::string G::Str::fromULongLong( unsigned long long u , const Hex & )
 {
 	std::array <char,sizeof(u)*2U> buffer ; // NOLINT cppcoreguidelines-pro-type-member-init
-	return sv_to_string( fromULongLongToHex( u , &buffer[0] ) ) ;
+	return sv_to_string( fromULongLongToHex( u , buffer.data() ) ) ;
 }
 
 template <typename T>

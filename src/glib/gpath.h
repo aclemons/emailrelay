@@ -250,7 +250,7 @@ namespace G
 	inline
 	Path operator+( const Path & p , const std::string & str )
 	{
-		return Path( p , str ) ;
+		return Path( p , str ) ; // NOLINT not return {...}
 	}
 
 	inline

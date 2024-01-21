@@ -216,9 +216,9 @@ std::size_t G::StringWrap::wordsize( G::string_view s , const std::locale & loc 
 		char32_t * wnext = nullptr ;
 		auto rc = codecvt.in( state ,
 			s.data() , s.end() , cnext ,
-			&warray[0] , &warray[0]+warray.size() , wnext ) ;
+			warray.data() , warray.data()+warray.size() , wnext ) ;
 		std::size_t din = cnext ? std::distance( s.data() , cnext ) : 0U ;
-		std::size_t dout = wnext ? std::distance( &warray[0] , wnext ) : 0U ;
+		std::size_t dout = wnext ? std::distance( warray.data() , wnext ) : 0U ;
 		return ( rc == std::codecvt_base::ok && din == s.size() && dout ) ? dout : s.size() ;
 	}
 	catch( std::exception & )

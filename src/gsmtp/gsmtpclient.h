@@ -166,8 +166,8 @@ private:
 	std::unique_ptr<Filter> m_filter ;
 	ClientProtocol m_protocol ;
 	G::Slot::Signal<const MessageDoneInfo&> m_message_done_signal ;
-	bool m_secure ;
-	bool m_filter_special ;
+	bool m_secure {false} ;
+	bool m_filter_special {false} ;
 	G::CallStack m_stack ;
 } ;
 

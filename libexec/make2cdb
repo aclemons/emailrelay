@@ -19,7 +19,7 @@
 # make2cdb
 #
 # Parses automake files throughout the source tree and generates
-# a "compilation database" file, "compile_commands.json".
+# a "compilation database" file on stdout.
 #
 # See also: https://clang.llvm.org/docs/JSONCompilationDatabase.html
 #

@@ -91,9 +91,9 @@ private:
 	FileStore & m_store ;
 	MessageId m_id ;
 	std::unique_ptr<std::ofstream> m_content ;
-	bool m_committed ;
-	bool m_saved ;
-	std::size_t m_size ;
+	bool m_committed {false} ;
+	bool m_saved {false} ;
+	std::size_t m_size {0U} ;
 	std::size_t m_max_size ;
 	Envelope m_env ;
 } ;

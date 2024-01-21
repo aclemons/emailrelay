@@ -27,7 +27,6 @@
 #include "goptionmap.h"
 #include "gpath.h"
 #include "gstringarray.h"
-#include "glogoutput.h"
 #include "gserver.h"
 #include "gserverpeer.h"
 #include "gsmtpserver.h"

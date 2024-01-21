@@ -160,6 +160,7 @@ am__DEPENDENCIES_1 =
 @GCONFIG_WINDOWS_FALSE@	$(top_builddir)/src/gnet/libgnet.a \
 @GCONFIG_WINDOWS_FALSE@	$(top_builddir)/src/gssl/libgssl.a \
 @GCONFIG_WINDOWS_FALSE@	$(top_builddir)/src/glib/libglib.a \
+@GCONFIG_WINDOWS_FALSE@	$(am__DEPENDENCIES_1) \
 @GCONFIG_WINDOWS_FALSE@	$(am__DEPENDENCIES_1)
 @GCONFIG_WINDOWS_TRUE@emailrelay_DEPENDENCIES = libmain.a \
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/gfilters/libgfilters.a \
@@ -172,7 +173,8 @@ am__DEPENDENCIES_1 =
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/gssl/libgssl.a \
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/win32/libwin32.a \
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/glib/libglib.a \
-@GCONFIG_WINDOWS_TRUE@	$(RESOURCES) $(am__DEPENDENCIES_1)
+@GCONFIG_WINDOWS_TRUE@	$(RESOURCES) $(am__DEPENDENCIES_1) \
+@GCONFIG_WINDOWS_TRUE@	$(am__DEPENDENCIES_1)
 emailrelay_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(emailrelay_LDFLAGS) $(LDFLAGS) -o $@
 am__emailrelay_keygen_SOURCES_DIST = keygen.cpp
@@ -183,8 +185,10 @@ am__emailrelay_keygen_SOURCES_DIST = keygen.cpp
 @GCONFIG_TLS_USE_BOTH_TRUE@	$(am__objects_7)
 emailrelay_keygen_OBJECTS = $(am_emailrelay_keygen_OBJECTS)
 @GCONFIG_TLS_USE_BOTH_FALSE@@GCONFIG_TLS_USE_MBEDTLS_TRUE@emailrelay_keygen_DEPENDENCIES = $(top_builddir)/src/gssl/libgsslkeygen.a \
+@GCONFIG_TLS_USE_BOTH_FALSE@@GCONFIG_TLS_USE_MBEDTLS_TRUE@	$(am__DEPENDENCIES_1) \
 @GCONFIG_TLS_USE_BOTH_FALSE@@GCONFIG_TLS_USE_MBEDTLS_TRUE@	$(am__DEPENDENCIES_1)
 @GCONFIG_TLS_USE_BOTH_TRUE@emailrelay_keygen_DEPENDENCIES = $(top_builddir)/src/gssl/libgsslkeygen.a \
+@GCONFIG_TLS_USE_BOTH_TRUE@	$(am__DEPENDENCIES_1) \
 @GCONFIG_TLS_USE_BOTH_TRUE@	$(am__DEPENDENCIES_1)
 emailrelay_keygen_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(emailrelay_keygen_LDFLAGS) $(LDFLAGS) -o $@
@@ -193,10 +197,12 @@ emailrelay_passwd_OBJECTS = $(am_emailrelay_passwd_OBJECTS)
 @GCONFIG_WINDOWS_FALSE@emailrelay_passwd_DEPENDENCIES =  \
 @GCONFIG_WINDOWS_FALSE@	$(top_builddir)/src/gssl/libgssl.a \
 @GCONFIG_WINDOWS_FALSE@	$(top_builddir)/src/glib/libglib.a \
+@GCONFIG_WINDOWS_FALSE@	$(am__DEPENDENCIES_1) \
 @GCONFIG_WINDOWS_FALSE@	$(am__DEPENDENCIES_1)
 @GCONFIG_WINDOWS_TRUE@emailrelay_passwd_DEPENDENCIES =  \
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/gssl/libgssl.a \
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/glib/libglib.a \
+@GCONFIG_WINDOWS_TRUE@	$(am__DEPENDENCIES_1) \
 @GCONFIG_WINDOWS_TRUE@	$(am__DEPENDENCIES_1)
 emailrelay_passwd_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(emailrelay_passwd_LDFLAGS) $(LDFLAGS) -o $@
@@ -206,23 +212,26 @@ am__objects_8 = servicewrapper.$(OBJEXT)
 @GCONFIG_WINDOWS_TRUE@	$(am__objects_8)
 emailrelay_service_OBJECTS = $(am_emailrelay_service_OBJECTS)
 @GCONFIG_WINDOWS_TRUE@emailrelay_service_DEPENDENCIES = libmain.a \
-@GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/glib/libglib.a
+@GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/glib/libglib.a \
+@GCONFIG_WINDOWS_TRUE@	$(am__DEPENDENCIES_1)
 emailrelay_service_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(emailrelay_service_LDFLAGS) $(LDFLAGS) -o $@
 am_emailrelay_start_OBJECTS = start.$(OBJEXT)
 emailrelay_start_OBJECTS = $(am_emailrelay_start_OBJECTS)
-emailrelay_start_DEPENDENCIES =
+emailrelay_start_DEPENDENCIES = $(am__DEPENDENCIES_1)
 emailrelay_start_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(emailrelay_start_LDFLAGS) $(LDFLAGS) -o $@
 am_emailrelay_submit_OBJECTS = submit.$(OBJEXT) legal.$(OBJEXT)
 emailrelay_submit_OBJECTS = $(am_emailrelay_submit_OBJECTS)
 @GCONFIG_WINDOWS_FALSE@emailrelay_submit_DEPENDENCIES =  \
 @GCONFIG_WINDOWS_FALSE@	$(top_builddir)/src/gstore/libgstore.a \
-@GCONFIG_WINDOWS_FALSE@	$(top_builddir)/src/glib/libglib.a
+@GCONFIG_WINDOWS_FALSE@	$(top_builddir)/src/glib/libglib.a \
+@GCONFIG_WINDOWS_FALSE@	$(am__DEPENDENCIES_1)
 @GCONFIG_WINDOWS_TRUE@emailrelay_submit_DEPENDENCIES =  \
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/gstore/libgstore.a \
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/win32/libwin32.a \
-@GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/glib/libglib.a
+@GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/glib/libglib.a \
+@GCONFIG_WINDOWS_TRUE@	$(am__DEPENDENCIES_1)
 emailrelay_submit_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(emailrelay_submit_LDFLAGS) $(LDFLAGS) -o $@
 am__emailrelay_textmode_SOURCES_DIST = main.cpp commandline.h \
@@ -242,6 +251,7 @@ emailrelay_textmode_OBJECTS = $(am_emailrelay_textmode_OBJECTS)
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/gssl/libgssl.a \
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/win32/libwin32.a \
 @GCONFIG_WINDOWS_TRUE@	$(top_builddir)/src/glib/libglib.a \
+@GCONFIG_WINDOWS_TRUE@	$(am__DEPENDENCIES_1) \
 @GCONFIG_WINDOWS_TRUE@	$(am__DEPENDENCIES_1)
 emailrelay_textmode_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(emailrelay_textmode_LDFLAGS) $(LDFLAGS) -o $@
@@ -555,6 +565,7 @@ AM_CPPFLAGS = \
  -I$(top_srcdir)/src/gpop \
  -I$(top_srcdir)/src/gfilters \
  -I$(top_srcdir)/src/gverifiers \
+ -I$(top_srcdir)/src/main/icon \
  -D "G_SPOOLDIR=$(e_spooldir)" \
  -D "G_LOCALEDIR=$(localedir)"
 
@@ -640,7 +651,9 @@ MISC_EXTRA_DIST = \
 
 @GCONFIG_WINDOWS_FALSE@libmain_a_SOURCES = $(UNIX_LIBMAIN_SOURCES) $(LIBMAIN_SOURCES)
 @GCONFIG_WINDOWS_TRUE@libmain_a_SOURCES = $(WINDOWS_LIBMAIN_SOURCES) $(LIBMAIN_SOURCES)
-@GCONFIG_WINDOWS_TRUE@RESOURCES = emailrelay.o
+@GCONFIG_WINDOWS_FALSE@OS_LIBS = 
+@GCONFIG_WINDOWS_TRUE@OS_LIBS = -lws2_32 -lshell32 -liphlpapi -lcomctl32 -ladvapi32 -lgdi32 -luser32 -lkernel32
+@GCONFIG_WINDOWS_TRUE@RESOURCES = emailrelay-res.o
 @GCONFIG_WINDOWS_FALSE@emailrelay_SOURCES = $(TEXTMODE_MAIN_SOURCES) $(OTHER_SOURCES)
 @GCONFIG_WINDOWS_TRUE@emailrelay_SOURCES = $(WINDOWS_MAIN_SOURCES) $(OTHER_SOURCES)
 @GCONFIG_WINDOWS_FALSE@emailrelay_LDFLAGS = 
@@ -656,7 +669,8 @@ MISC_EXTRA_DIST = \
 @GCONFIG_WINDOWS_FALSE@ $(top_builddir)/src/gnet/libgnet.a \
 @GCONFIG_WINDOWS_FALSE@ $(top_builddir)/src/gssl/libgssl.a \
 @GCONFIG_WINDOWS_FALSE@ $(top_builddir)/src/glib/libglib.a \
-@GCONFIG_WINDOWS_FALSE@ $(GCONFIG_TLS_LIBS)
+@GCONFIG_WINDOWS_FALSE@ $(GCONFIG_TLS_LIBS) \
+@GCONFIG_WINDOWS_FALSE@ $(OS_LIBS)
 
 @GCONFIG_WINDOWS_TRUE@emailrelay_LDADD = \
 @GCONFIG_WINDOWS_TRUE@ libmain.a \
@@ -672,7 +686,7 @@ MISC_EXTRA_DIST = \
 @GCONFIG_WINDOWS_TRUE@ $(top_builddir)/src/glib/libglib.a \
 @GCONFIG_WINDOWS_TRUE@ $(RESOURCES) \
 @GCONFIG_WINDOWS_TRUE@ $(GCONFIG_TLS_LIBS) \
-@GCONFIG_WINDOWS_TRUE@ -lws2_32 -liphlpapi -lcomctl32
+@GCONFIG_WINDOWS_TRUE@ $(OS_LIBS)
 
 @GCONFIG_WINDOWS_TRUE@emailrelay_textmode_SOURCES = $(TEXTMODE_MAIN_SOURCES) $(OTHER_SOURCES)
 @GCONFIG_WINDOWS_TRUE@emailrelay_textmode_LDFLAGS = -static
@@ -689,7 +703,7 @@ MISC_EXTRA_DIST = \
 @GCONFIG_WINDOWS_TRUE@ $(top_builddir)/src/win32/libwin32.a \
 @GCONFIG_WINDOWS_TRUE@ $(top_builddir)/src/glib/libglib.a \
 @GCONFIG_WINDOWS_TRUE@ $(GCONFIG_TLS_LIBS) \
-@GCONFIG_WINDOWS_TRUE@ -lws2_32 -liphlpapi -lcomctl32
+@GCONFIG_WINDOWS_TRUE@ $(OS_LIBS)
 
 emailrelay_passwd_SOURCES = passwd.cpp legal.cpp legal.h
 @GCONFIG_WINDOWS_FALSE@emailrelay_passwd_LDFLAGS = 
@@ -697,26 +711,28 @@ emailrelay_passwd_SOURCES = passwd.cpp legal.cpp legal.h
 @GCONFIG_WINDOWS_FALSE@emailrelay_passwd_LDADD = \
 @GCONFIG_WINDOWS_FALSE@ $(top_builddir)/src/gssl/libgssl.a \
 @GCONFIG_WINDOWS_FALSE@ $(top_builddir)/src/glib/libglib.a \
-@GCONFIG_WINDOWS_FALSE@ $(GCONFIG_TLS_LIBS)
+@GCONFIG_WINDOWS_FALSE@ $(GCONFIG_TLS_LIBS) \
+@GCONFIG_WINDOWS_FALSE@ $(OS_LIBS)
 
 @GCONFIG_WINDOWS_TRUE@emailrelay_passwd_LDADD = \
 @GCONFIG_WINDOWS_TRUE@ $(top_builddir)/src/gssl/libgssl.a \
 @GCONFIG_WINDOWS_TRUE@ $(top_builddir)/src/glib/libglib.a \
 @GCONFIG_WINDOWS_TRUE@ $(GCONFIG_TLS_LIBS) \
-@GCONFIG_WINDOWS_TRUE@ -lws2_32 -liphlpapi -lcomctl32
+@GCONFIG_WINDOWS_TRUE@ $(OS_LIBS)
 
 emailrelay_submit_SOURCES = submit.cpp legal.cpp legal.h
 @GCONFIG_WINDOWS_FALSE@emailrelay_submit_LDFLAGS = 
 @GCONFIG_WINDOWS_TRUE@emailrelay_submit_LDFLAGS = -static
 @GCONFIG_WINDOWS_FALSE@emailrelay_submit_LDADD = \
 @GCONFIG_WINDOWS_FALSE@ $(top_builddir)/src/gstore/libgstore.a \
-@GCONFIG_WINDOWS_FALSE@ $(top_builddir)/src/glib/libglib.a
+@GCONFIG_WINDOWS_FALSE@ $(top_builddir)/src/glib/libglib.a \
+@GCONFIG_WINDOWS_FALSE@ $(OS_LIBS)
 
 @GCONFIG_WINDOWS_TRUE@emailrelay_submit_LDADD = \
 @GCONFIG_WINDOWS_TRUE@ $(top_builddir)/src/gstore/libgstore.a \
 @GCONFIG_WINDOWS_TRUE@ $(top_builddir)/src/win32/libwin32.a \
 @GCONFIG_WINDOWS_TRUE@ $(top_builddir)/src/glib/libglib.a \
-@GCONFIG_WINDOWS_TRUE@ -lws2_32 -liphlpapi -lcomctl32
+@GCONFIG_WINDOWS_TRUE@ $(OS_LIBS)
 
 @GCONFIG_TLS_USE_BOTH_FALSE@@GCONFIG_TLS_USE_MBEDTLS_TRUE@emailrelay_keygen_SOURCES = $(KEYGEN_SOURCES)
 @GCONFIG_TLS_USE_BOTH_TRUE@emailrelay_keygen_SOURCES = $(KEYGEN_SOURCES)
@@ -724,18 +740,19 @@ emailrelay_submit_SOURCES = submit.cpp legal.cpp legal.h
 @GCONFIG_TLS_USE_BOTH_TRUE@@GCONFIG_WINDOWS_TRUE@emailrelay_keygen_LDFLAGS = -static
 @GCONFIG_TLS_USE_BOTH_FALSE@@GCONFIG_TLS_USE_MBEDTLS_TRUE@emailrelay_keygen_LDADD = \
 @GCONFIG_TLS_USE_BOTH_FALSE@@GCONFIG_TLS_USE_MBEDTLS_TRUE@  $(top_builddir)/src/gssl/libgsslkeygen.a \
-@GCONFIG_TLS_USE_BOTH_FALSE@@GCONFIG_TLS_USE_MBEDTLS_TRUE@  $(GCONFIG_TLS_LIBS)
+@GCONFIG_TLS_USE_BOTH_FALSE@@GCONFIG_TLS_USE_MBEDTLS_TRUE@  $(GCONFIG_TLS_LIBS) \
+@GCONFIG_TLS_USE_BOTH_FALSE@@GCONFIG_TLS_USE_MBEDTLS_TRUE@  $(OS_LIBS)
 
 @GCONFIG_TLS_USE_BOTH_TRUE@emailrelay_keygen_LDADD = \
 @GCONFIG_TLS_USE_BOTH_TRUE@ $(top_builddir)/src/gssl/libgsslkeygen.a \
-@GCONFIG_TLS_USE_BOTH_TRUE@ $(GCONFIG_TLS_LIBS)
+@GCONFIG_TLS_USE_BOTH_TRUE@ $(GCONFIG_TLS_LIBS) \
+@GCONFIG_TLS_USE_BOTH_TRUE@ $(OS_LIBS)
 
 emailrelay_start_SOURCES = start.cpp
 @GCONFIG_WINDOWS_FALSE@emailrelay_start_LDFLAGS = 
 @GCONFIG_WINDOWS_TRUE@emailrelay_start_LDFLAGS = -static
-@GCONFIG_WINDOWS_FALSE@emailrelay_start_LDADD = 
-@GCONFIG_WINDOWS_TRUE@emailrelay_start_LDADD = \
-@GCONFIG_WINDOWS_TRUE@ -lws2_32 -liphlpapi -lcomctl32
+emailrelay_start_LDADD = \
+ $(OS_LIBS)
 
 @GCONFIG_WINDOWS_TRUE@emailrelay_service_SOURCES = \
 @GCONFIG_WINDOWS_TRUE@ $(WINDOWS_SERVICEWRAPPER_SOURCES)
@@ -744,7 +761,7 @@ emailrelay_start_SOURCES = start.cpp
 @GCONFIG_WINDOWS_TRUE@emailrelay_service_LDADD = \
 @GCONFIG_WINDOWS_TRUE@ libmain.a \
 @GCONFIG_WINDOWS_TRUE@ $(top_builddir)/src/glib/libglib.a \
-@GCONFIG_WINDOWS_TRUE@ -lws2_32 -liphlpapi -lcomctl32
+@GCONFIG_WINDOWS_TRUE@ $(OS_LIBS)
 
 all: all-recursive
 
@@ -1274,7 +1291,7 @@ uninstall-am: uninstall-e_spoolDATA uninstall-local \
 
 
 @GCONFIG_WINDOWS_TRUE@$(RESOURCES): emailrelay.rc MSG00001.bin messages.rc
-@GCONFIG_WINDOWS_TRUE@	$(GCONFIG_WINDRES) --preprocessor "$(CC) -E -xc-header -DRC_INVOKED" -D_WIN32=1 -DG_MINGW --include-dir . --include-dir icon --include-dir $(top_srcdir)/src/main/icon -i $(top_srcdir)/src/main/emailrelay.rc -o $(RESOURCES)
+@GCONFIG_WINDOWS_TRUE@	$(GCONFIG_WINDRES) --preprocessor "$(CC) -E -xc-header -DRC_INVOKED" -D_WIN32=1 --include-dir . --include-dir icon --include-dir $(top_srcdir)/src/main/icon -i $(top_srcdir)/src/main/emailrelay.rc -o $(RESOURCES)
 
 install-data-local: install-sbinPROGRAMS install-e_spoolDATA
 	-mkdir -p "$(DESTDIR)$(e_spooldir)"

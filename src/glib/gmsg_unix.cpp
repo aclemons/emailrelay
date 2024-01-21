@@ -69,7 +69,7 @@ ssize_t G::Msg::sendto( int fd , const std::vector<string_view> & data , int fla
 	{
 		#if GCONFIG_HAVE_IOVEC_SIMPLE
 			// struct iovec is the same as string_view so we can cast
-			const ::iovec * io_p = reinterpret_cast<const ::iovec*>( &data[0] ) ;
+			const ::iovec * io_p = reinterpret_cast<const ::iovec*>( data.data() ) ;
 			return MsgImp::sendmsg( fd , io_p , data.size() , flags , address_p , address_n , -1 ) ;
  		#else
 			std::array<::iovec,40> iovec_array ;
@@ -78,13 +78,13 @@ ssize_t G::Msg::sendto( int fd , const std::vector<string_view> & data , int fla
 			if( data.size() <= iovec_array.size() )
 			{
 				std::size_t n = MsgImp::copy( data.begin() , data.end() , iovec_array.begin() , iovec_array.end() , fn_convert , fn_empty ) ;
-				return n ? MsgImp::sendmsg( fd , &iovec_array[0] , n , flags , address_p , address_n , -1 ) : 0U ;
+				return n ? MsgImp::sendmsg( fd , iovec_array.data() , n , flags , address_p , address_n , -1 ) : 0U ;
 			}
 			else
 			{
 				std::vector<::iovec> iovec_vector( data.size() ) ;
 				std::size_t n = MsgImp::copy( data.begin() , data.end() , iovec_vector.begin() , iovec_vector.end() , fn_convert , fn_empty ) ;
-				return n ? MsgImp::sendmsg( fd , &iovec_vector[0] , n , flags , address_p , address_n , -1 ) : 0U ;
+				return n ? MsgImp::sendmsg( fd , iovec_vector.data() , n , flags , address_p , address_n , -1 ) : 0U ;
 			}
 		#endif
 	}
@@ -123,8 +123,8 @@ ssize_t G::MsgImp::sendmsg( int fd , const ::iovec * iovec_p , std::size_t iovec
 	constexpr std::size_t space = CMSG_SPACE( sizeof(int) ) ;
 	static_assert( space != 0U , "" ) ;
 	std::array<char,space> control_buffer {} ;
-	std::memset( &control_buffer[0] , 0 , control_buffer.size() ) ;
-	msg.msg_control = &control_buffer[0] ;
+	std::memset( control_buffer.data() , 0 , control_buffer.size() ) ;
+	msg.msg_control = control_buffer.data() ;
 	msg.msg_controllen = control_buffer.size() ;
 
 	struct ::cmsghdr * cmsg = CMSG_FIRSTHDR( &msg ) ; /// NOLINT
@@ -170,7 +170,7 @@ ssize_t G::Msg::recvfrom( int fd , void * buffer , std::size_t size , int flags 
 	msg.msg_iovlen = 1 ;
 
 	std::array<char,CMSG_SPACE(sizeof(int))> control_buffer {} ;
-	msg.msg_control = &control_buffer[0] ;
+	msg.msg_control = control_buffer.data() ;
 	msg.msg_controllen = control_buffer.size() ;
 
 	ssize_t rc = ::recvmsg( fd , &msg , flags ) ;

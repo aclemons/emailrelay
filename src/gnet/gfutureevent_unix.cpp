@@ -78,15 +78,14 @@ private:
 	FutureEventHandler & m_handler ;
 	Fd m_read ;
 	Fd m_write ;
-	bool m_triggered ;
+	bool m_triggered {false} ;
 } ;
 
 GNet::FutureEventImp::FutureEventImp( FutureEventHandler & handler , ExceptionSink es ) :
-	m_handler(handler) ,
-	m_triggered(false)
+	m_handler(handler)
 {
 	std::array<int,2U> fds {{ -1 , -1 }} ;
-	int rc = ::socketpair( AF_UNIX , SOCK_DGRAM , 0 , &fds[0] ) ;
+	int rc = ::socketpair( AF_UNIX , SOCK_DGRAM , 0 , fds.data() ) ;
 	if( rc != 0 )
 	{
 		int e = G::Process::errno_() ;

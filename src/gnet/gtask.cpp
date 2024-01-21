@@ -82,7 +82,7 @@ private:
 	Task * m_task ;
 	FutureEvent m_future_event ;
 	Timer<TaskImp> m_timer ;
-	bool m_logged ;
+	bool m_logged {false} ;
 	G::NewProcess m_process ;
 	G::threading::thread_type m_thread ;
 	static std::size_t m_zcount ;
@@ -100,7 +100,6 @@ GNet::TaskImp::TaskImp( Task & task , ExceptionSink es , bool sync ,
 		m_task(&task) ,
 		m_future_event(*this,es) ,
 		m_timer(*this,&TaskImp::onTimeout,es) ,
-		m_logged(false) ,
 		m_process( commandline.exe() , commandline.args() ,
 			G::NewProcess::Config()
 				.set_env(env)
@@ -219,7 +218,7 @@ void GNet::TaskImp::onFutureEvent()
 	G_DEBUG( "GNet::TaskImp::onFutureEvent: exit code " << exit_code ) ;
 
 	std::string pipe_output = m_process.waitable().output() ;
-	G_DEBUG( "GNet::TaskImp::onFutureEvent: output: [" << G::Str::printable(pipe_output) << "]" ) ;
+	G_LOG_MORE( "GNet::TaskImp::onFutureEvent: executable output: [" << G::Str::printable(pipe_output) << "]" ) ;
 
 	if( m_task )
 		m_task->done( exit_code , pipe_output ) ; // last
@@ -232,8 +231,7 @@ GNet::Task::Task( TaskCallback & callback , ExceptionSink es ,
 		m_callback(callback) ,
 		m_es(es) ,
 		m_exec_error_format(exec_error_format) ,
-		m_id(id) ,
-		m_busy(false)
+		m_id(id)
 {
 }
 

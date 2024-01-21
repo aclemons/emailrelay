@@ -71,8 +71,8 @@ private:
 	AdminServer::Config m_config ;
 	GNet::Timer<AdminServerImp> m_command_timer ;
 	G::Slot::Signal<AdminServer::Command,unsigned int> m_command_signal ;
-	AdminServer::Command m_command ;
-	unsigned int m_command_arg ;
+	AdminServer::Command m_command {AdminServer::Command::forward} ;
+	unsigned int m_command_arg {0U} ;
 } ;
 
 // ==
@@ -85,13 +85,9 @@ GSmtp::AdminServerPeer::AdminServerPeer( GNet::ExceptionSinkUnbound esu , GNet::
 		m_es(esu.bind(this)) ,
 		m_server_imp(server_imp) ,
 		m_prompt("E-MailRelay> ") ,
-		m_blocked(false) ,
 		m_remote_address(remote_address) ,
-		m_notifying(false) ,
 		m_info_commands(info_commands) ,
-		m_with_terminate(with_terminate) ,
-		m_error_limit(30U) ,
-		m_error_count(0U)
+		m_with_terminate(with_terminate)
 {
 	G_LOG_S( "GSmtp::AdminServerPeer: admin connection from " << peerAddress().displayString() ) ;
 	m_client_ptr.deletedSignal().connect( G::Slot::slot(*this,&AdminServerPeer::clientDone) ) ;
@@ -462,9 +458,7 @@ GSmtp::AdminServerImp::AdminServerImp( GNet::ExceptionSink es , GStore::MessageS
 		m_ff(ff) ,
 		m_client_secrets(client_secrets) ,
 		m_config(config) ,
-		m_command_timer(*this,&AdminServerImp::onCommandTimeout,es) ,
-		m_command(AdminServer::Command::forward) ,
-		m_command_arg(0U)
+		m_command_timer(*this,&AdminServerImp::onCommandTimeout,es)
 {
 }
 

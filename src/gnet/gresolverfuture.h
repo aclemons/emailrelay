@@ -110,8 +110,8 @@ private:
 	int m_family ;
 	struct addrinfo m_ai_hint {} ;
 	bool m_test_mode ;
-	int m_rc ;
-	struct addrinfo * m_ai ;
+	int m_rc {0} ;
+	struct addrinfo * m_ai {nullptr} ;
 	std::string m_reason ;
 } ;
 

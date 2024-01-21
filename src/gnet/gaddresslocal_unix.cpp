@@ -31,7 +31,7 @@ namespace GNet
 {
 	namespace AddressLocalImp
 	{
-		static constexpr std::size_t minsize()
+		constexpr std::size_t minsize()
 		{
 			#if GCONFIG_HAVE_UDS_LEN
 			return offsetof( sockaddr_un , sun_family ) + sizeof( sockaddr_un::sun_family ) ;
@@ -39,7 +39,7 @@ namespace GNet
 			return sizeof( sockaddr_un::sun_family ) ;
 			#endif
 		}
-		static void setsize( sockaddr_un & a ) noexcept
+		void setsize( sockaddr_un & a ) noexcept
 		{
 			#if GCONFIG_HAVE_UDS_LEN
 			a.sun_len = SUN_LEN( &a ) ; // ie. poffset() + strlen(sun_path)
@@ -47,15 +47,15 @@ namespace GNet
 			GDEF_IGNORE_PARAM( a ) ;
 			#endif
 		}
-		static constexpr std::size_t psize()
+		constexpr std::size_t psize()
 		{
 			return sizeof( sockaddr_un::sun_path ) ;
 		}
-		static constexpr std::size_t poffset() noexcept
+		constexpr std::size_t poffset() noexcept
 		{
 			return offsetof( sockaddr_un , sun_path ) ;
 		}
-		static std::size_t strnlen( const char * p , std::size_t limit ) noexcept
+		std::size_t strnlen( const char * p , std::size_t limit ) noexcept
 		{
 			std::size_t n = 0U ;
 			for( ; p && *p && n < limit ; ++p )
@@ -169,11 +169,11 @@ std::string GNet::AddressLocal::path() const
 	namespace imp = AddressLocalImp ;
 	if( m_size <= imp::poffset() )
 	{
-		return std::string( 1U , '/' ) ; // unbound address displayed as "/"
+		return std::string( 1U , '/' ) ; // unbound address displayed as "/" // NOLINT not return {...}
 	}
 	else if( G::is_linux() && m_local.sun_path[0] == '\0' )
 	{
-		return std::string( &m_local.sun_path[0] , m_size - imp::poffset() ) ;
+		return { &m_local.sun_path[0] , m_size-imp::poffset() } ;
 	}
 	else
 	{

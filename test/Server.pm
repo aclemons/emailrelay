@@ -491,10 +491,7 @@ sub hasTls
 	while(<$fh>)
 	{
 		chomp( my $line = $_ ) ;
-		if( $line =~ m/tls.library:/i )
-		{
-			return ( $line =~ m/openssl/i ) || ( $line =~ m/mbed/i ) ;
-		}
+		return 1 if( $line =~ m/TLS.library:.*[A-Z]/ ) ; # not "none"
 	}
 	return undef ;
 }

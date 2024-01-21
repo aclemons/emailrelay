@@ -136,9 +136,9 @@ am__libguimain_a_SOURCES_DIST = guiaccess_unix.cpp guidir_unix.cpp \
 	guiboot_unix.cpp guilink_unix.cpp guiaccess_mac.cpp \
 	guidir_mac.cpp guiboot_mac.cpp guilink_mac.cpp \
 	guiaccess_win32.cpp guidir_win32.cpp guiboot_win32.cpp \
-	guilink_win32.cpp emailrelay-gui.rc guidir.cpp guidir.h \
-	gcominit.h glibsources.cpp guiaccess.h guiboot.h guilink.h \
-	guilegal.cpp guilegal.h installer.h serverconfiguration.cpp \
+	guilink_win32.cpp guidir.cpp guidir.h gcominit.h \
+	glibsources.cpp guiaccess.h guiboot.h guilink.h guilegal.cpp \
+	guilegal.h installer.h serverconfiguration.cpp \
 	serverconfiguration.h
 am__objects_1 = guiaccess_unix.$(OBJEXT) guidir_unix.$(OBJEXT) \
 	guiboot_unix.$(OBJEXT) guilink_unix.$(OBJEXT)
@@ -414,7 +414,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 MAC_SOURCES = guiaccess_mac.cpp guidir_mac.cpp guiboot_mac.cpp guilink_mac.cpp
-WIN32_SOURCES = guiaccess_win32.cpp guidir_win32.cpp guiboot_win32.cpp guilink_win32.cpp emailrelay-gui.rc
+WIN32_SOURCES = guiaccess_win32.cpp guidir_win32.cpp guiboot_win32.cpp guilink_win32.cpp
 UNIX_SOURCES = guiaccess_unix.cpp guidir_unix.cpp guiboot_unix.cpp guilink_unix.cpp
 QT_SOURCES = \
 	installer.cpp \
@@ -442,8 +442,10 @@ LIB_SOURCES = \
 	serverconfiguration.h
 
 TS_FILES = emailrelay_tr.no_NO.ts
-QM_IN_FILES = emailrelay.no.qm_in
 QM_FILES = emailrelay.no.qm
+@GCONFIG_MAC_FALSE@@GCONFIG_WINDOWS_FALSE@OS_LIBS = 
+@GCONFIG_MAC_TRUE@@GCONFIG_WINDOWS_FALSE@OS_LIBS = 
+@GCONFIG_WINDOWS_TRUE@OS_LIBS = -lws2_32 -lshell32 -liphlpapi -lcomctl32 -ladvapi32 -lgdi32 -luser32 -lkernel32
 @GCONFIG_MAC_FALSE@@GCONFIG_WINDOWS_FALSE@OS_SOURCES = $(UNIX_SOURCES)
 @GCONFIG_MAC_TRUE@@GCONFIG_WINDOWS_FALSE@OS_SOURCES = $(MAC_SOURCES)
 @GCONFIG_WINDOWS_TRUE@OS_SOURCES = $(WIN32_SOURCES)
@@ -455,9 +457,9 @@ QM_FILES = emailrelay.no.qm
 @GCONFIG_WINDOWS_TRUE@OS_NOINST = 
 EXTRA_DIST = \
 	$(TS_FILES) \
-	$(QM_IN_FILES) \
+	$(QM_FILES) \
 	emailrelay-gui.exe.manifest \
-	emailrelay-gui.pro \
+	emailrelay-gui.rc \
 	messages.mc \
 	$(OS_EXTRA_DIST)
 
@@ -469,13 +471,14 @@ MOC_OUTPUT = \
 	moc_guipage.cpp \
 	moc_guipages.cpp
 
-CLEANFILES = $(MOC_OUTPUT) $(QM_FILES)
+CLEANFILES = $(MOC_OUTPUT)
 DISTCLEANFILES = ./.deps/moc*
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/glib \
 	-I$(top_srcdir)/src/gssl \
 	-I$(top_srcdir)/src/gnet \
 	-I$(top_srcdir)/src/main \
+	-I$(top_srcdir)/src/main/icon \
 	-D "G_SBINDIR=$(sbindir)" \
 	-D "G_SPOOLDIR=$(e_spooldir)" \
 	-D "G_INITDIR=$(e_initdir)" \
@@ -495,13 +498,15 @@ AM_CPPFLAGS = \
 @GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_TRUE@emailrelay_gui_DEPENDENCIES = libguimain.a
 @GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_TRUE@emailrelay_gui_LDADD = \
 @GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_TRUE@	libguimain.a \
-@GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_TRUE@	$(GCONFIG_QT_LIBS)
+@GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_TRUE@	$(GCONFIG_QT_LIBS) \
+@GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_TRUE@	$(OS_LIBS)
 
 @GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_FALSE@emailrelay_gui_real_SOURCES = guimain.cpp $(QT_SOURCES)
 @GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_FALSE@emailrelay_gui_real_DEPENDENCIES = libguimain.a
 @GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_FALSE@emailrelay_gui_real_LDADD = \
 @GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_FALSE@	libguimain.a \
-@GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_FALSE@	$(GCONFIG_QT_LIBS)
+@GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_FALSE@	$(GCONFIG_QT_LIBS) \
+@GCONFIG_GUI_TRUE@@GCONFIG_WINDOWS_FALSE@	$(OS_LIBS)
 
 all: all-am
 
@@ -926,10 +931,6 @@ uninstall-am: uninstall-e_trDATA uninstall-sbinPROGRAMS
 
 .PRECIOUS: Makefile
 
-
-emailrelay.no.qm: emailrelay.no.qm_in
-	-$(AWK) '/^[0123456789]/ {for(i=1;i<NF;i++){printf("%c",$$i)}}' $(srcdir)/emailrelay.no.qm_in > emailrelay.no.qm
-	@test -s $(QM_FILES)
 
 @GCONFIG_GUI_TRUE@moc_guidialog.cpp: $(srcdir)/guidialog.h
 @GCONFIG_GUI_TRUE@	$(GCONFIG_QT_MOC) $< -o $@

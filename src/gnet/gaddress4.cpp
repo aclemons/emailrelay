@@ -171,11 +171,11 @@ std::string GNet::Address4::hostPartString() const
 {
 	std::array<char,INET_ADDRSTRLEN+1U> buffer {} ;
 	const void * vp = & m_inet.sin_addr ;
-	const char * p = inet_ntop( af() , const_cast<void*>(vp) , &buffer[0] , buffer.size() ) ;
+	const char * p = inet_ntop( af() , const_cast<void*>(vp) , buffer.data() , buffer.size() ) ;
 	if( p == nullptr )
 		throw Address::Error( "inet_ntop() failure" ) ;
 	buffer[buffer.size()-1U] = '\0' ;
-	return { &buffer[0] } ; // sic
+	return { buffer.data() } ; // sic
 }
 
 std::string GNet::Address4::queryString() const
@@ -366,7 +366,7 @@ void GNet::Address4::add( G::StringArray & result , G::string_view head , const 
 
 void GNet::Address4::add( G::StringArray & result , const char * tail )
 {
-	result.push_back( std::string(tail) ) ;
+	result.emplace_back( tail ) ;
 }
 
 bool GNet::Address4::format( G::string_view s )

@@ -105,14 +105,14 @@ private:
 	GNet::ExceptionSink m_es ;
 	AdminServerImp & m_server_imp ;
 	std::string m_prompt ;
-	bool m_blocked ;
+	bool m_blocked {false} ;
 	std::string m_remote_address ;
 	GNet::ClientPtr<GSmtp::Forward> m_client_ptr ;
-	bool m_notifying ;
+	bool m_notifying {false} ;
 	G::StringMap m_info_commands ;
 	bool m_with_terminate ;
-	unsigned int m_error_limit ;
-	unsigned int m_error_count ;
+	unsigned int m_error_limit {30U} ;
+	unsigned int m_error_count {0U} ;
 } ;
 
 //| \class GSmtp::AdminServer

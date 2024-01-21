@@ -29,7 +29,7 @@ GSmtp::Forward::Forward( GNet::ExceptionSink es , GStore::MessageStore & store ,
 	const GAuth::SaslClientSecrets & secrets , const Config & config ) :
 		Forward( es , ff , forward_to_default , secrets , config )
 {
-	m_store = &store ;
+	m_store = &store ; // NOLINT
 	m_iter = m_store->iterator( /*lock=*/true ) ;
 	m_continue_timer.startTimer( 0U ) ;
 }

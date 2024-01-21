@@ -25,6 +25,7 @@ txt_files_install=\
 	doxygen.cfg.in
 
 txt_files_noinstall=\
+	.readthedocs.yaml \
 	index.rst \
 	conf.py
 

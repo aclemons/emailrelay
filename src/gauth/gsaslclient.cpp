@@ -104,7 +104,7 @@ std::string GAuth::SaslClientImp::mechanism( const G::StringArray & server_mecha
 	}
 	if( m_secrets.clientSecret("oauth",selector).valid() )
 	{
-		our_list.push_back( "XOAUTH2" ) ;
+		our_list.emplace_back( "XOAUTH2" ) ;
 	}
 	if( m_secrets.clientSecret("plain",selector).valid() )
 	{

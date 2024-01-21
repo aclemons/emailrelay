@@ -26,9 +26,7 @@ GFilters::SimpleFilterBase::SimpleFilterBase( GNet::ExceptionSink es ,
 	Filter::Type filter_type , G::string_view id ) :
 		m_filter_type(filter_type) ,
 		m_id(G::sv_to_string(id)) ,
-		m_timer(*this,&SimpleFilterBase::onTimeout,es) ,
-		m_result(Result::fail) ,
-		m_special(false)
+		m_timer(*this,&SimpleFilterBase::onTimeout,es)
 {
 }
 
@@ -71,7 +69,7 @@ GSmtp::Filter::Result GFilters::SimpleFilterBase::result() const
 
 std::string GFilters::SimpleFilterBase::response() const
 {
-	return std::string( m_result == Result::fail ? "failed" : "" ) ;
+	return { m_result == Result::fail ? "failed" : "" } ;
 }
 
 int GFilters::SimpleFilterBase::responseCode() const

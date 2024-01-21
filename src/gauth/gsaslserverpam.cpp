@@ -144,9 +144,9 @@ void GAuth::PamImp::delay( unsigned int )
 
 GAuth::SaslServerPamImp::SaslServerPamImp( bool with_apop )
 {
-	m_mechanisms.push_back( "PLAIN" ) ;
+	m_mechanisms.emplace_back( "PLAIN" ) ;
 	if( with_apop )
-		m_mechanisms.push_back( "APOP" ) ;
+		m_mechanisms.emplace_back( "APOP" ) ;
 }
 
 GAuth::SaslServerPamImp::~SaslServerPamImp()
@@ -205,7 +205,7 @@ std::string GAuth::SaslServerPamImp::apply( const std::string & response , bool 
 	}
 
 	done = true ; // (only single challenge-response supported)
-	return std::string() ; // challenge
+	return {} ; // challenge
 }
 
 // ==
@@ -230,7 +230,7 @@ std::string GAuth::SaslServerPam::mechanism() const
 
 std::string GAuth::SaslServerPam::preferredMechanism( bool ) const
 {
-	return std::string() ;
+	return {} ;
 }
 
 bool GAuth::SaslServerPam::trusted( const G::StringArray & , const std::string & ) const
@@ -255,7 +255,7 @@ bool GAuth::SaslServerPam::init( bool secure , const std::string & mechanism )
 
 std::string GAuth::SaslServerPam::initialChallenge() const
 {
-	return std::string() ;
+	return {} ;
 }
 
 std::string GAuth::SaslServerPam::apply( const std::string & response , bool & done )

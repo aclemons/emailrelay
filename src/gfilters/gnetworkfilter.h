@@ -85,7 +85,7 @@ private:
 	unsigned int m_connection_timeout ;
 	unsigned int m_response_timeout ;
 	G::optional<std::string> m_text ;
-	Result m_result ;
+	Result m_result {Result::fail} ;
 } ;
 
 #endif

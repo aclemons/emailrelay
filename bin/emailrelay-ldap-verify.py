@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (C) 2020-2023 <richardwvm@users.sourceforge.net>
+# Copyright (C) 2020-2024 <richardwvm@users.sourceforge.net>
 # 
 # Copying and distribution of this file, with or without modification,
 # are permitted in any medium without royalty provided the copyright

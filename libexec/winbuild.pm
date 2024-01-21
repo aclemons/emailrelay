@@ -25,23 +25,14 @@
 #  require "winbuild.pm" ;
 #  winbuild::default_touchfile(...) ;
 #  winbuild::find_cmake(...) ;
-#  winbuild::find_msbuild(...) ;
-#  winbuild::find_qt(...) ;
-#  winbuild::find_mbedtls(...) ;
+#  winbuild::find_qt_x86(...) ;
+#  winbuild::find_qt_x64(...) ;
+#  winbuild::find_mbedtls_src(...) ;
 #  winbuild::find_runtime(...) ;
-#  winbuild::find_msvc_base(...) ;
-#  winbuild::fcache_create(...) ;
-#  winbuild::fcache_write(...) ;
-#  winbuild::fcache_cleanup(...) ;
 #  winbuild::spit_out_batch_files(...) ;
 #  winbuild::clean_cmake_files(...) ;
-#  winbuild::clean_cmake_cache_files(...) ;
 #  winbuild::deltree(...) ;
-#  winbuild::run_msbuild(...) ;
-#  winbuild::translate(...) ;
 #  winbuild::create_touchfile(...) ;
-#  winbuild::read_makefiles(...) ;
-#  winbuild::read_makefiles_imp(...) ;
 #  winbuild::cmake_cache_value(...) ;
 #  winbuild::fixup(...) ;
 #  winbuild::touch(...) ;
@@ -55,41 +46,17 @@ use FileHandle ;
 use File::Basename ;
 use File::Find ;
 use File::Path ;
-use File::Glob ':bsd_glob' ;
+use File::Glob ;
+use File::Copy ;
 use lib dirname($0) , dirname($0)."/bin" ;
 use AutoMakeParser ;
 $AutoMakeParser::debug = 0 ;
 
 package winbuild ;
 
-sub _find_msbuild
-{
-	return (
-		_find_basic( "find-msbuild" , "msbuild.exe" , _path_dirs() ) ||
-		_find_match( "find-msbuild" , "Microsoft Visual Studio/2*/*/msbuild/current/bin/msbuild.exe" , undef ,
-			$ENV{'ProgramFiles(x86)'} ,
-			$ENV{'ProgramFiles'} ) ||
-		_find_under( "find-msbuild" , "msbuild.exe" ,
-			$ENV{'ProgramFiles(x86)'}."/msbuild" ,
-			$ENV{'ProgramFiles'}."/msbuild" ,
-			$ENV{'ProgramFiles(x86)'}."/Microsoft Visual Studio" ,
-			$ENV{'ProgramFiles'}."/Microsoft Visual Studio" ,
-			$ENV{'ProgramFiles(x86)'} ,
-			$ENV{ProgramFiles} ) ) ;
-}
-
-sub find_msbuild
-{
-	return "msbuild" if $^O eq "linux" ;
-	return _fcache( "msbuild" , \&_find_msbuild ) ;
-}
-
 sub _find_cmake
 {
-	my ( $msbuild ) = @_ ;
-	my $msbuild_root = $msbuild ? _sanepath(File::Basename::dirname($msbuild))."/../../.." : "." ;
 	return (
-		_find_basic( "find-cmake" , "cmake.exe" , "$msbuild_root/common7/ide/commonextensions/microsoft/cmake/cmake/bin" ) ||
 		_find_basic( "find-cmake" , "cmake.exe" , _path_dirs() ) ||
 		_find_match( "find-cmake" , "cmake*/bin/cmake.exe" , undef ,
 			"$ENV{SystemDrive}" ,
@@ -99,59 +66,50 @@ sub _find_cmake
 sub find_cmake
 {
 	return ( -x "/usr/bin/cmake" ? "/usr/bin/cmake" : undef ) if $^O eq "linux" ;
-	return _fcache( "cmake" , \&_find_cmake ) ;
+	return _find_cmake() ;
 }
 
-sub _find_qt_x86
+sub find_qt_x86
 {
-	my @dirs = (
-		File::Basename::dirname($0)."/.." ,
-		"$ENV{HOMEDRIVE}$ENV{HOMEPATH}/qt" ,
-		"$ENV{SystemDrive}/qt" ,
-	) ;
-	return (
-		_find_match( "find-qt(x86)" , "6*/msvc*/lib/cmake/qt6" , qr;/msvc\d\d\d\d/; , @dirs ) ||
-		_find_match( "find-qt(x86)" , "5*/msvc*/lib/cmake/qt5" , qr;/msvc\d\d\d\d/; , @dirs ) ) ;
+	my $parent_dir = File::Basename::dirname( File::Basename::dirname($0) ) ;
+	my $qt = _find_basic( "find-qt(x86)" , "qt-x86" , $parent_dir ) ; # see qtbuild.pl
+	return $qt if $qt ;
+	my @dirs = ( "$ENV{HOMEDRIVE}$ENV{HOMEPATH}/qt" , "$ENV{SystemDrive}/qt" ) ;
+	my $qt_include =
+		_find_match( "find-qt(x86)" , "5*/msvc*/include/" , qr;/msvc\d\d\d\d/; , @dirs ) ||
+		_find_match( "find-qt(x86)" , "6*/msvc*/include/" , qr;/msvc\d\d\d\d/; , @dirs ) ;
+	return undef if !$qt_include ;
+	( $qt = $qt_include ) =~ s;/include$;; ;
+	return $qt ;
 }
 
-sub _find_qt_x64
+sub find_qt_x64
 {
-	my @dirs = (
-		File::Basename::dirname($0)."/.." ,
-		"$ENV{HOMEDRIVE}$ENV{HOMEPATH}/qt" ,
-		"$ENV{SystemDrive}/qt" ,
-	) ;
-	return (
-		_find_match( "find-qt(x64)" , "6*/msvc*_64/lib/cmake/qt6" , undef , @dirs ) ||
-		_find_match( "find-qt(x64)" , "5*/msvc*_64/lib/cmake/qt5" , undef , @dirs ) ) ;
+	my $parent_dir = File::Basename::dirname( File::Basename::dirname($0) ) ;
+	my $qt = _find_basic( "find-qt(x64)" , "qt-x64" , $parent_dir ) ; # see qtbuild.pl
+	return $qt if $qt ;
+	my @dirs = ( "$ENV{HOMEDRIVE}$ENV{HOMEPATH}/qt" , "$ENV{SystemDrive}/qt" ) ;
+	my $qt_include =
+		_find_match( "find-qt(x64)" , "5*/msvc*_64/include/" , undef , @dirs ) ||
+		_find_match( "find-qt(x64)" , "6*/msvc*_64/include/" , undef , @dirs ) ;
+	return undef if !$qt_include ;
+	( $qt = $qt_include ) =~ s;/include$;; ;
+	return $qt ;
 }
 
-sub find_qt
+sub _find_mbedtls_src
 {
-	return undef if $^O eq "linux" ;
-
-	my $x86 = _fcache( "qt-x86" , \&_find_qt_x86 ) ;
-	my $x64 = _fcache( "qt-x64" , \&_find_qt_x64 ) ;
-
-	my $qt_version = ( ( $x86 && ($x86 =~ m;qt6;i) ) || ( $x64 && ($x64 =~ m;qt6;i) ) ) ? 6 : 5 ;
-	my $qt_libs = ( $qt_version == 6 ) ? "Qt6::Widgets" : "Qt5::Widgets Qt5::Gui Qt5::Core" ;
-
-	return { v => $qt_version , x86 => $x86 , x64 => $x64 , libs => $qt_libs } ;
+	my $version_c =
+		_find_match( "find-mbedtls-src" , "mbedtls*/library/version.c" , undef ,
+			File::Basename::dirname($0) ,
+			File::Basename::dirname($0)."/.." ) ;
+	return -f $version_c ? File::Basename::dirname(File::Basename::dirname($version_c)) : undef ;
 }
 
-sub _find_mbedtls
-{
-	return (
-		_find_match( "find-mbedtls" , "mbedtls*" , undef ,
-			File::Basename::dirname($0)."/.." ,
-			"$ENV{HOMEDRIVE}$ENV{HOMEPATH}" ,
-			"$ENV{SystemDrive}" ) ) ;
-}
-
-sub find_mbedtls
+sub find_mbedtls_src
 {
 	return ( -d "mbedtls" ? "mbedtls" : undef ) if $^O eq "linux" ;
-	return _fcache( "mbedtls" , \&_find_mbedtls ) ;
+	return _find_mbedtls_src() ;
 }
 
 sub find_runtime
@@ -177,27 +135,6 @@ sub find_runtime
 		}
 	}
 	return \%runtime ;
-}
-
-sub default_touchfile
-{
-	my ( $script ) = @_ ;
-	$script =~ s/\.pl$// ;
-	return "$script.ok" ;
-}
-
-sub _path_dirs
-{
-	my $path = $ENV{PATH} ;
-	my $sep = ( $path =~ m/;/ ) ? ";" : ":" ;
-	return split( $sep , $path ) ;
-}
-
-sub _sanepath
-{
-	my ( $path ) = @_ ;
-	$path =~ s:\\:/:g ;
-	return $path ;
 }
 
 sub _find_basic
@@ -238,77 +175,43 @@ sub _find_all_under
 	return @result ;
 }
 
-my %fcache = () ;
-sub _fcache
-{
-	my ( $key , $find_fn ) = @_ ;
-	if( ! exists $fcache{initialised} )
-	{
-		$fcache{initialised} = 1 ;
-		my $fh = new FileHandle( "winbuild.cfg" ) ;
-		while(<$fh>)
-		{
-			chomp( my $line = $_ ) ;
-			$line =~ s/#.*// ;
-			my ( $k , $v ) = ( $line =~ m/(\S+)\s+(.*)/ ) ;
-			$fcache{$k} = $v ;
-		}
-	}
-	if( defined($fcache{$key}) )
-	{
-		return $fcache{$key} ;
-	}
-	else
-	{
-		$fcache{$key} = &{$find_fn}() ;
-		return $fcache{$key} ;
-	}
-}
-
-sub fcache_cleanup
-{
-	unlink( "winbuild.cfg" ) ;
-	unlink( "winbuild.cfg.old" ) ;
-}
-
-sub fcache_create
-{
-	fcache_write() if ! -e "winbuild.cfg" ;
-}
-
-sub fcache_write
-{
-	my $filename = "winbuild.cfg" ;
-	rename( $filename , "$filename.old" ) if -f $filename ;
-	my $fh = new FileHandle( $filename , "w" ) or die "error: cannot create [$filename]\n" ;
-	for my $k ( grep { ! m/initialised/ } sort keys %fcache )
-	{
-		if( $fcache{$k} )
-		{
-			print $fh "$k $fcache{$k}\n" ;
-		}
-		else
-		{
-			print $fh "$k # not found -- edit here\n" ;
-		}
-	}
-	$fh->close() or die ;
-}
-
 sub _find_match
 {
 	my ( $logname , $glob , $re , @dirs ) = @_ ;
 	$re = qr;.; if !defined($re) ;
+
+	my $find_dir = ( $glob =~ m;/$; ) ;
+	$glob =~ s;/$;; if $find_dir ;
+
+	# for each base directory in @dirs do the file glob and return
+	# the first glob path that matches the regex (optionally only
+	# considering glob paths that are directories if the glob
+	# pattern ends in a slash)
+
 	my $result ;
 	for my $dir ( map {_sanepath($_)} @dirs )
 	{
 		my @glob_match = () ;
-		push @glob_match , grep { -e $_ && $_ =~ m/$re/ } File::Glob::bsd_glob( "$dir/$glob" ) ;
+		push @glob_match , grep { -e $_ && $_ =~ m/$re/ && ( !$find_dir || -d $_ ) } File::Glob::bsd_glob( "$dir/$glob" ) ;
 		if( @glob_match ) { $result = Cwd::realpath($glob_match[0]) ; last }
 		print "$logname: no match for $dir/$glob\n" ;
 	}
-	print "$logname=[$result]\n" if $result ;
+	print "$logname=[$result]\n" if( $result && $logname ) ;
 	return $result ;
+}
+
+sub default_touchfile
+{
+	my ( $script ) = @_ ;
+	$script =~ s/\.pl$// ;
+	return "$script.ok" ;
+}
+
+sub create_touchfile
+{
+	my ( $touchfile ) = @_ ;
+	my $fh = new FileHandle( $touchfile , "w" ) or die ;
+	$fh->close() or die ;
 }
 
 sub spit_out_batch_files
@@ -332,21 +235,7 @@ sub clean_cmake_files
 	$base_dir ||= "." ;
 	my @list = () ;
 	File::Find::find( sub { push @list , $File::Find::name if $_ eq "CMakeLists.txt" } , $base_dir ) ;
-	unlink @list ;
-}
-
-sub clean_cmake_cache_files
-{
-	my ( $base_dir , $opt ) = @_ ;
-	my $verbose = $opt->{verbose} || 0 ;
-	$base_dir ||= "." ;
-	my @tree_list = () ;
-	my @file_list = () ;
-	File::Find::find( sub { push @tree_list , $File::Find::name if $_ eq "CMakeFiles" } , $base_dir ) ;
-	File::Find::find( sub { push @file_list , $File::Find::name if $_ eq "CMakeCache.txt" } , $base_dir ) ;
-	map { print "cmake: cleaning [$base_dir/$_]\n" if $verbose } ( @tree_list , @file_list ) ;
-	map { deltree($_) } @tree_list ;
-	map { unlink $_ or die } @file_list ;
+	unlink grep {!m/mbedtls/i} grep {!m/qt/i} @list ;
 }
 
 sub deltree
@@ -364,52 +253,10 @@ sub deltree
 	}
 }
 
-sub run_msbuild
-{
-	my ( $msbuild , $project , $build_dir , $confname , $arch , $target ) = @_ ;
-	$build_dir ||= "x64" ;
-	$confname ||= "Release" ;
-	my @msbuild_args = ( "/fileLogger" , "$build_dir/$project.sln" ) ;
-	push @msbuild_args , "/t:$target" if $target ;
-	push @msbuild_args , "/p:Configuration=$confname" ;
-	push @msbuild_args , "/p:Platform=$arch" if $arch ; # (new)
-	if( $^O eq "linux" ) { $msbuild = ("make") ; @msbuild_args = ( $target ) }
-	my $rc = system( $msbuild , @msbuild_args ) ;
-	print "msbuild-exit=[$rc]\n" ;
-	die unless $rc == 0 ;
-}
-
-sub translate
-{
-	my ( $arch , $qt_info , $xx_XX , $xx ) = @_ ;
-	my $dir = $qt_info->{$arch} ;
-	$dir = File::Basename::dirname( $dir ) ;
-	$dir = File::Basename::dirname( $dir ) ;
-	$dir = File::Basename::dirname( $dir ) ;
-	my $tool = join( "/" , $dir , "bin" , "lrelease.exe" ) ;
-	my $rc = system( $tool , "src/gui/emailrelay_tr.$xx_XX.ts" , "-qm" , "src/gui/emailrelay.$xx.qm" ) ;
-	print "lrelease-exit=[$rc]\n" ;
-	die unless $rc == 0 ;
-}
-
-sub create_touchfile
-{
-	my ( $touchfile ) = @_ ;
-	my $fh = new FileHandle( $touchfile , "w" ) or die ;
-	$fh->close() or die ;
-}
-
-sub read_makefiles
-{
-	my ( $switches , $vars ) = @_ ;
-	my $verbose = 1 ;
-	return AutoMakeParser::readall( "." , $switches , $vars , $verbose ) ;
-}
-
 sub cmake_cache_value
 {
 	my ( $arch , $re ) = @_ ;
-	my $fh = new FileHandle( "$arch/CMakeCache.txt" , "r" ) or Carp::confess "error: cannot open cmake cache file\n" ;
+	my $fh = new FileHandle( "$arch/CMakeCache.txt" , "r" ) or Carp::confess "error: cannot open cmake cache file [$arch/CMakeCache.txt] cwd=[".Cwd::getcwd()."]\n" ;
 	my $value ;
 	while(<$fh>)
 	{
@@ -424,22 +271,22 @@ sub cmake_cache_value
 	return $value ;
 }
 
-sub _find_msvc_base
+sub msvc_base
 {
-	my $msvc_linker = _cmake_cache_value_msvc_linker( "x64" ) ;
-	if( !defined($msvc_linker) )
+	my ( $arch ) = @_ ;
+	my $msvc_linker = undef ;
+	if( defined($arch) )
 	{
-		$msvc_linker = _cmake_cache_value_msvc_linker( "x86" ) ;
+		$msvc_linker = _cmake_cache_value_msvc_linker( $arch ) ;
+	}
+	else
+	{
+		$msvc_linker = _cmake_cache_value_msvc_linker( "x64" ) ;
+		$msvc_linker = _cmake_cache_value_msvc_linker( "x86" ) if( !defined($msvc_linker) ) ;
 	}
 	my $dir = File::Basename::dirname( $msvc_linker ) ;
 	my ( $base ) = ( $dir =~ m:(.*/vc)/.*:i ) ; # could to better
-	return $base ;
-}
-
-sub find_msvc_base
-{
-	my ( $arch__ignored ) = @_ ;
-	return _fcache( "msvc" , \&_find_msvc_base ) ;
+	return Cwd::realpath( $base ) ;
 }
 
 sub _cmake_cache_value_msvc_linker
@@ -528,6 +375,20 @@ sub file_copy
 	{
 		File::Copy::copy( $src , $dst ) or die "error: failed to copy [$src] to [$dst]\n" ;
 	}
+}
+
+sub _path_dirs
+{
+	my $path = $ENV{PATH} ;
+	my $sep = ( $path =~ m/;/ ) ? ";" : ":" ;
+	return split( $sep , $path ) ;
+}
+
+sub _sanepath
+{
+	my ( $path ) = @_ ;
+	$path =~ s:\\:/:g ;
+	return $path ;
 }
 
 package main ;

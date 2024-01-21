@@ -24,8 +24,7 @@
 #include <array>
 #include <algorithm>
 
-GNet::Socks::Socks( const Location & location ) :
-	m_request_offset(0U)
+GNet::Socks::Socks( const Location & location )
 {
 	if( location.socks() )
 	{
@@ -34,7 +33,6 @@ GNet::Socks::Socks( const Location & location ) :
 			throw SocksError( "invalid port" ) ;
 
 		m_request = buildPdu( location.socksFarHost() , far_port ) ;
-		m_request_offset = 0U ;
 	}
 }
 
@@ -92,7 +90,7 @@ bool GNet::Socks::send( G::ReadWrite & io )
 bool GNet::Socks::read( G::ReadWrite & io )
 {
 	std::array<char,8U> buffer {} ;
-	ssize_t rc = io.read( &buffer[0] , buffer.size() ) ;
+	ssize_t rc = io.read( buffer.data() , buffer.size() ) ;
 	if( rc == 0 )
 	{
 		throw SocksError( "disconnected" ) ;
@@ -109,7 +107,7 @@ bool GNet::Socks::read( G::ReadWrite & io )
 	{
 		G_ASSERT( rc >= 1 && rc <= 8 ) ;
 		std::size_t n = std::min( buffer.size() , static_cast<std::size_t>(rc) ) ;
-		m_response.append( &buffer[0] , n ) ;
+		m_response.append( buffer.data() , n ) ;
 	}
 
 	if( m_response.size() >= 8U )

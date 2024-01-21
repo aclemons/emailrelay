@@ -142,7 +142,7 @@ Specifies a timeout (in seconds) for getting responses from remote SMTP servers.
 <DT><B>--forward-to-all</B>
 
 <DD>
-Requires all recipient addresses to be accepted by the remote server before forwarding. This is currently the default behaviour  so this option is for forwards compatibility only.
+Requires all recipient addresses to be accepted by the remote server before forwarding. This is currently the default behaviour so this option is for forwards compatibility only.
 <DT><B>--forward-to-some</B>
 
 <DD>
@@ -171,11 +171,11 @@ Runs the specified external program to verify a message recipient's e-mail addre
 <DT><B>-A, --anonymous, --anonymous=</B><I>&lt;scope&gt;</I>
 
 <DD>
-Disables the server's SMTP VRFY command, sends less verbose SMTP greeting and responses, stops <I>Received</I> lines being added to mail message content files, and stops the SMTP client protocol adding <I>AUTH=</I> to the <I>MAIL</I> command. For finer control use a comma-separated list of things to anonymise: <I>vrfy</I>, <I>server</I>, <I>content</I> and/or <I>client</I>, eg. <I>--anonymous</I>=server,content.
+Disables the server's SMTP VRFY command, sends less verbose SMTP greeting and responses, stops <I>Received</I> lines being added to mail message content files, and stops the SMTP client protocol adding <I>AUTH=</I> to the <I>MAIL</I> command. For finer control use a comma-separated list of things to anonymise: <I>vrfy</I>, <I>server</I>, <I>content</I> and/or <I>client</I>.
 <DT><B>-s, --delivery-dir </B><I>&lt;dir&gt;</I>
 
 <DD>
-Specifies the base directory for mailboxes when delivering  messages that have local recipients. This defaults to the main spool directory.
+Specifies the base directory for mailboxes when delivering messages that have local recipients. This defaults to the main spool directory.
 <DT><B>--dnsbl </B><I>&lt;config&gt;</I>
 
 <DD>
@@ -220,7 +220,7 @@ Enables the POP server, listening by default on port 110, providing access to sp
 <DT><B>-J, --pop-by-name</B>
 
 <DD>
-Modifies the POP server's spool directory to be the sub-directory with the same name as the user-id used for POP authentication. This  allows POP clients to see only their own messages after they have  been moved into separate sub-directories typically by the built-in  <I>deliver:</I> or <I>copy:</I> filters. Content files can remain in the  main spool directory to save disk space; they will be deleted by  the POP server when it deletes the last matching envelope file.
+Modifies the POP server's spool directory to be the sub-directory with the same name as the user-id used for POP authentication. This allows POP clients to see only their own messages after they have been moved into separate sub-directories typically by the built-in <I>deliver:</I> or <I>copy:</I> filters. Content files can remain in the main spool directory to save disk space; they will be deleted by the POP server when it deletes the last matching envelope file.
 <DT><B>-G, --pop-no-delete</B>
 
 <DD>
@@ -250,7 +250,7 @@ Enables the <I>terminate</I> command in the administration interface.
 <DT><B>-C, --client-auth </B><I>&lt;file&gt;</I>
 
 <DD>
-Enables SMTP client authentication with the remote server, using the client account details taken from the specified secrets file.  The secrets file should normally contain one line having between four and five space-separated fields. The first field must be <I>client</I>, the second field is the password type (<I>plain</I> or <I>md5</I>), the third is the xtext-encoded user-id and the fourth is the xtext-encoded password. Alternatively, the user-id and password fields can be Base64 encoded if the second field is <I>plain:b</I>. It is also possible to do without a secrets file and give the Base64 encoded user-id and  password directly on the command-line or in the configuration file formatted as <I>plain:&lt;base64-user-id&gt;:&lt;base64-password&gt;</I>. Note that putting these account details on the command-line is not recommended because it will make the password easily visible to all users on the  local machine.
+Enables SMTP client authentication with the remote server, using the client account details taken from the specified secrets file. The secrets file should normally contain one line having between four and five space-separated fields. The first field must be <I>client</I>, the second field is the password type (<I>plain</I> or <I>md5</I>), the third is the xtext-encoded user-id and the fourth is the xtext-encoded password. Alternatively, the user-id and password fields can be Base64 encoded if the second field is <I>plain:b</I>. It is also possible to do without a secrets file and give the Base64 encoded user-id and password directly on the command-line or in the configuration file formatted as <I>plain:&lt;base64-user-id&gt;:&lt;base64-password&gt;</I>. Note that putting these account details on the command-line is not recommended because it will make the password easily visible to all users on the local machine.
 <DT><B>--client-auth-config </B><I>&lt;config&gt;</I>
 
 <DD>
@@ -258,7 +258,7 @@ Configures the SMTP client authentication module using a semicolon-separated lis
 <DT><B>-S, --server-auth </B><I>&lt;file&gt;</I>
 
 <DD>
-Enables SMTP server authentication of remote SMTP clients. Account names and passwords are taken from the specified secrets file. The secrets file should contain lines that have four space-separated fields, starting with <I>server</I> in the first field; the second field is the password encoding (<I>plain</I> or <I>md5</I>), the third is the client user-id and the fourth is the password. The user-id is RFC-1891 xtext encoded, and the password is either xtext encoded or generated by <I>emailrelay-passwd</I>. Alternatively, the username and password can be Base64 encoded if the second field is <I>plain:b</I>. A special value of  <I>pam:</I> can be used for authentication using linux PAM.
+Enables SMTP server authentication of remote SMTP clients. Account names and passwords are taken from the specified secrets file. The secrets file should contain lines that have four space-separated fields, starting with <I>server</I> in the first field; the second field is the password encoding (<I>plain</I> or <I>md5</I>), the third is the client user-id and the fourth is the password. The user-id is RFC-1891 xtext encoded, and the password is either xtext encoded or generated by <I>emailrelay-passwd</I>. Alternatively, the username and password can be Base64 encoded if the second field is <I>plain:b</I>. A special value of <I>pam:</I> can be used for authentication using linux PAM.
 <DT><B>--server-auth-config </B><I>&lt;config&gt;</I>
 
 <DD>
@@ -307,7 +307,7 @@ Enables TLS for incoming SMTP and POP connections. SMTP clients can then request
 <DT><B>--server-tls-certificate </B><I>&lt;pem-file&gt;</I>
 
 <DD>
-Defines the TLS certificate file when acting as a SMTP or POP server. This file must contain the server's private key and certificate chain using the PEM file format. Alternatively, use this option twice with the first specifying the key file and the second the certificate  file. Keep the file permissions tight to avoid accidental exposure  of the private key.
+Defines the TLS certificate file when acting as a SMTP or POP server. This file must contain the server's private key and certificate chain using the PEM file format. Alternatively, use this option twice with the first specifying the key file and the second the certificate file. Keep the file permissions tight to avoid accidental exposure of the private key.
 <DT><B>--server-tls-connection</B>
 
 <DD>
@@ -319,7 +319,7 @@ Makes the use of TLS mandatory for any incoming SMTP and POP connections. SMTP c
 <DT><B>--server-tls-verify </B><I>&lt;ca-list&gt;</I>
 
 <DD>
-Enables verification of remote SMTP and POP clients' certificates against any of the trusted CA certificates in the specified file or directory. In many use cases this should be a file containing just your self-signed root certificate. Specify <I>&lt;default&gt;</I>  (including the angle brackets) for the TLS library's default set  of trusted CAs.
+Enables verification of remote SMTP and POP clients' certificates against any of the trusted CA certificates in the specified file or directory. In many use cases this should be a file containing just your self-signed root certificate. Specify <I>&lt;default&gt;</I> (including the angle brackets) for the TLS library's default set of trusted CAs.
 <DT><B>-9, --tls-config </B><I>&lt;options&gt;</I>
 
 <DD>

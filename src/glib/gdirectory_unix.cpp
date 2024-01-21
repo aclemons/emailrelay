@@ -60,12 +60,12 @@ public:
 	DirectoryIteratorImp & operator=( DirectoryIteratorImp && ) = delete ;
 
 private:
-	DIR * m_d ;
-	struct dirent * m_dp ;
+	DIR * m_d {nullptr} ;
+	struct dirent * m_dp {nullptr} ;
 	Directory m_dir ;
-	bool m_error ;
-	bool m_is_dir ;
-	bool m_is_link ;
+	bool m_error {true} ;
+	bool m_is_dir {false} ;
+	bool m_is_link {false} ;
 } ;
 
 //
@@ -150,15 +150,10 @@ std::string G::DirectoryIterator::sizeString() const
 // ===
 
 G::DirectoryIteratorImp::DirectoryIteratorImp( const Directory & dir ) :
-	m_d(nullptr) ,
-	m_dp(nullptr) ,
-	m_dir(dir) ,
-	m_error(true) ,
-	m_is_dir(false) ,
-	m_is_link(false)
+	m_dir(dir)
 {
 	m_d = ::opendir( dir.path().cstr() ) ;
-	m_error = m_d == nullptr ;
+	m_error = m_d == nullptr ; // NOLINT
 }
 
 bool G::DirectoryIteratorImp::error() const

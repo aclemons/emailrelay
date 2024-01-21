@@ -45,39 +45,50 @@ sub new
 	my $this = bless {
 		m_vars => {} ,
 		m_switches => {} ,
-		m_path => $path ,
+		m_path => undef ,
 	} , $classname ;
 
-	# optionally search the file-system for "config.status"
-	my $start_dir = undef ;
-	if( !defined($path) )
+	if( defined($path) && ref($path) )
 	{
-		$start_dir = "."
+		my $p = _find_under( $path->{dir} ) ;
+		_die_no_config_status( $path->{dir} ) if !-f $p ;
+		$this->parse( $p ) ;
 	}
-	elsif( ref($path) && exists($path->{dir}) )
+	elsif( defined($path) && $path eq "" )
 	{
-		$start_dir = $path->{dir} ;
+		# user calls parse()
 	}
-	if( defined($start_dir) )
+	elsif( defined($path) )
 	{
-		for my $subdir ( "." , ".." , "../.." , "../../.." )
-		{
-			if( -e "$start_dir/$subdir/config.status" )
-			{
-				$path = "$start_dir/$subdir/config.status" ;
-				last ;
-			}
-		}
-		$path or die "no config.status file up from $start_dir" ;
-		$this->{m_path} = $path ;
-	}
-
-	if( $path )
-	{
+		_die_no_config_status( $path ) if !-f $path ;
 		$this->parse( $path ) ;
 	}
-
+	else
+	{
+		my $p = _find_under( "." ) ;
+		_die_no_config_status( "." ) if !-f $p ;
+		$this->parse( $p ) ;
+	}
 	return $this ;
+}
+
+sub _die_no_config_status
+{
+	my ( $dir ) = @_ ;
+	die "error: no config.status file found when searching up from [$dir]: run \"configure\" first\n" ;
+}
+
+sub _find_under
+{
+	my ( $start_dir ) = @_ ;
+	for my $subdir ( "." , ".." , "../.." , "../../.." )
+	{
+		if( -e "$start_dir/$subdir/config.status" )
+		{
+			return "$start_dir/$subdir/config.status" ;
+		}
+	}
+	return undef ;
 }
 
 sub path
@@ -150,6 +161,14 @@ sub parse
 		}
 	}
 	$this->_expand() ;
+
+	# sanity check
+	if( !exists $this->{m_vars}->{VERSION} )
+	{
+		die "config.status file [$filename] does not define a version" ;
+	}
+
+	$this->{m_path} = $filename ;
 	return $this ;
 }
 

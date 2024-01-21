@@ -25,7 +25,6 @@
 #include "gpath.h"
 #include "gstringarray.h"
 #include "gexception.h"
-#include "gstringarray.h"
 #include <string>
 
 namespace G

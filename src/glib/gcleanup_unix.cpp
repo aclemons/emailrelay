@@ -228,7 +228,7 @@ void G::CleanupImp::atexit( bool active )
 	if( active && !m_atexit_installed )
 	{
 		m_atexit_installed = true ;
-		::atexit( atexitHandler ) ;
+		::atexit( atexitHandler ) ; // NOLINT
 	}
 	m_atexit_active = active ;
 }

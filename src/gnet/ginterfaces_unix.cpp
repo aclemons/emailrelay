@@ -158,7 +158,7 @@ std::pair<T*,std::size_t> GNet::InterfacesNotifierImp::readSocket()
 	static_assert( sizeof(T) <= 4096U , "" ) ;
 	m_buffer.resize( 4096U ) ;
 
-	ssize_t rc = m_socket->read( &m_buffer[0] , m_buffer.size() ) ;
+	ssize_t rc = m_socket->read( m_buffer.data() , m_buffer.size() ) ;
 	if( rc < 0 )
 	{
 		GDEF_UNUSED int e = G::Process::errno_() ;
@@ -172,7 +172,7 @@ std::pair<T*,std::size_t> GNet::InterfacesNotifierImp::readSocket()
 
 std::string GNet::InterfacesNotifierImp::onFutureEvent()
 {
-	return std::string() ;
+	return {} ;
 }
 
 #if GCONFIG_HAVE_RTNETLINK
@@ -222,7 +222,7 @@ std::string GNet::InterfacesNotifierImp::readEvent()
 	const nlmsghdr * hdr = buffer_pair.first ;
 	std::size_t size = buffer_pair.second ;
 	if( hdr == nullptr || size == 0U )
-		return std::string() ;
+		return {} ;
 
 	const char * sep = "" ;
 	std::ostringstream ss ;
@@ -312,7 +312,7 @@ GNet::InterfacesNotifierImp::InterfacesNotifierImp( Interfaces * , ExceptionSink
 
 std::string GNet::InterfacesNotifierImp::readEvent()
 {
-	return std::string() ;
+	return {} ;
 }
 
 #endif

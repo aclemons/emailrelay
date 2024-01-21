@@ -42,12 +42,12 @@ std::string G::Hash::xor_( const std::string & s1 , const std::string & s2 )
 
 std::string G::Hash::ipad( std::size_t blocksize )
 {
-	return std::string( blocksize , '\066' ) ;
+	return std::string( blocksize , '\066' ) ; // NOLINT not return {...}
 }
 
 std::string G::Hash::opad( std::size_t blocksize )
 {
-	return std::string( blocksize , '\134' ) ;
+	return std::string( blocksize , '\134' ) ; // NOLINT not return {...}
 }
 
 std::string G::Hash::printable( const std::string & input )

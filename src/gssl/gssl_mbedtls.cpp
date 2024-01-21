@@ -65,11 +65,28 @@
 #endif
 #endif
 
+#ifndef GCONFIG_HAVE_MBEDTLS_PSA
+#if MBEDTLS_VERSION_MAJOR >= 3
+#define GCONFIG_HAVE_MBEDTLS_PSA 1
+#else
+#define GCONFIG_HAVE_MBEDTLS_PSA 0
+#endif
+#endif
+
 GSsl::MbedTls::LibraryImp::LibraryImp( G::StringArray & library_config , Library::LogFn log_fn , bool verbose ) :
 	m_log_fn(log_fn) ,
 	m_config(library_config)
 {
-	mbedtls_debug_set_threshold( verbose ? 3 : 1 ) ; // "Messages that have a level over the threshold value are ignored."
+	mbedtls_debug_set_threshold( verbose ? 3 : 1 ) ;
+
+	if( m_config.psa() )
+	{
+		#if GCONFIG_HAVE_MBEDTLS_PSA
+			int rc = psa_crypto_init() ;
+			if( rc != PSA_SUCCESS )
+				throw Error( "psa error (" + std::to_string(rc) + ")" ) ;
+		#endif
+	}
 }
 
 GSsl::MbedTls::LibraryImp::~LibraryImp()
@@ -109,22 +126,21 @@ GSsl::Library::LogFn GSsl::MbedTls::LibraryImp::log() const
 	return m_log_fn ;
 }
 
-std::string GSsl::MbedTls::LibraryImp::version()
+std::string GSsl::MbedTls::LibraryImp::features()
 {
-	std::vector<char> buffer( 100U ) ; // "at least 9"
-	G_ASSERT( buffer.size() >= 9U ) ;
-	mbedtls_version_get_string( &buffer[0] ) ;
-	buffer[buffer.size()-1U] = '\0' ;
-	return G::Str::printable( std::string(&buffer[0]) ) ;
+	if( 0 == mbedtls_version_check_feature( "MBEDTLS_SSL_PROTO_TLS1_3" ) )
+		return "(TLS1.3)" ;
+	else
+		return {} ;
 }
 
 std::string GSsl::MbedTls::LibraryImp::sid()
 {
 	std::vector<char> buffer( 100U ) ; // "at least 18"
 	G_ASSERT( buffer.size() >= 18U ) ;
-	mbedtls_version_get_string_full( &buffer[0] ) ;
+	mbedtls_version_get_string_full( buffer.data() ) ;
 	buffer[buffer.size()-1U] = '\0' ;
-	return G::Str::printable( std::string(&buffer[0]) ) ;
+	return G::Str::join( " "_sv , G::Str::printable(std::string(buffer.data())) , features() ) ;
 }
 
 std::string GSsl::MbedTls::LibraryImp::id() const
@@ -157,45 +173,47 @@ GSsl::Digester GSsl::MbedTls::LibraryImp::digester( const std::string & hash_typ
 
 GSsl::MbedTls::Config::Config( G::StringArray & config ) :
 	m_noverify(consume(config,"noverify")),
-	m_clientnoverify(consume(config,"clientnoverify")),
-	m_servernoverify(consume(config,"servernoverify")),
-	m_min(-1),
-	m_max(-1)
+	m_noisy(consume(config,"noisy"))
 {
 
-#ifdef MBEDTLS_SSL_MINOR_VERSION_0
+#if defined(MBEDTLS_SSL_MINOR_VERSION_0) && defined(MBEDTLS_SSL_PROTO_SSL3)
 	static constexpr int SSL_v3 = MBEDTLS_SSL_MINOR_VERSION_0 ;
 	static_assert( SSL_v3 >= 0 , "" ) ;
 	if( consume(config,"sslv3") ) m_min = SSL_v3 ;
 	if( consume(config,"-sslv3") ) m_max = SSL_v3 ;
 #endif
 
-#ifdef MBEDTLS_SSL_MINOR_VERSION_1
+#if defined(MBEDTLS_SSL_MINOR_VERSION_1) && defined(MBEDTLS_SSL_PROTO_TLS1)
 	static constexpr int TLS_v1_0 = MBEDTLS_SSL_MINOR_VERSION_1 ;
 	static_assert( TLS_v1_0 >= 0 , "" ) ;
 	if( consume(config,"tlsv1.0") ) m_min = TLS_v1_0 ;
 	if( consume(config,"-tlsv1.0") ) m_max = TLS_v1_0 ;
 #endif
 
-#ifdef MBEDTLS_SSL_MINOR_VERSION_2
+#if defined(MBEDTLS_SSL_MINOR_VERSION_2) && defined(MBEDTLS_SSL_PROTO_TLS1_1)
 	static constexpr int TLS_v1_1 = MBEDTLS_SSL_MINOR_VERSION_2 ;
 	static_assert( TLS_v1_1 >= 0 , "" ) ;
 	if( consume(config,"tlsv1.1") ) m_min = TLS_v1_1 ;
 	if( consume(config,"-tlsv1.1") ) m_max = TLS_v1_1 ;
 #endif
 
-#ifdef MBEDTLS_SSL_MINOR_VERSION_3
+#if defined(MBEDTLS_SSL_MINOR_VERSION_3) && defined(MBEDTLS_SSL_PROTO_TLS1_2)
 	static constexpr int TLS_v1_2 = MBEDTLS_SSL_MINOR_VERSION_3 ;
 	static_assert( TLS_v1_2 >= 0 , "" ) ;
 	if( consume(config,"tlsv1.2") ) m_min = TLS_v1_2 ;
 	if( consume(config,"-tlsv1.2") ) m_max = TLS_v1_2 ;
 #endif
 
-#ifdef MBEDTLS_SSL_MINOR_VERSION_4
+#if defined(MBEDTLS_SSL_MINOR_VERSION_4) && defined(MBEDTLS_SSL_PROTO_TLS1_3)
 	static constexpr int TLS_v1_3 = MBEDTLS_SSL_MINOR_VERSION_4 ;
 	static_assert( TLS_v1_3 >= 0 , "" ) ;
 	if( consume(config,"tlsv1.3") ) m_min = TLS_v1_3 ;
 	if( consume(config,"-tlsv1.3") ) m_max = TLS_v1_3 ;
+#endif
+
+#if GCONFIG_HAVE_MBEDTLS_PSA
+	if( consume(config,"nopsa") )
+		m_psa = false ;
 #endif
 }
 
@@ -214,14 +232,14 @@ bool GSsl::MbedTls::Config::noverify() const noexcept
 	return m_noverify ;
 }
 
-bool GSsl::MbedTls::Config::clientnoverify() const noexcept
+bool GSsl::MbedTls::Config::psa() const noexcept
 {
-	return m_clientnoverify ;
+	return m_psa ;
 }
 
-bool GSsl::MbedTls::Config::servernoverify() const noexcept
+bool GSsl::MbedTls::Config::noisy() const noexcept
 {
-	return m_servernoverify ;
+	return m_noisy ;
 }
 
 bool GSsl::MbedTls::Config::consume( G::StringArray & list , G::string_view item )
@@ -239,7 +257,7 @@ GSsl::MbedTls::DigesterImp::DigesterImp( const std::string & hash_name , const s
 	#if ! GCONFIG_HAVE_MBEDTLS_HASH_STATE
 	if( have_state || need_state )
 	{
-		throw Error( std::string("hash state resoration not implemented for ").append(hash_name) ) ;
+		throw Error( std::string("hash state restoration not implemented for ").append(hash_name) ) ;
 	}
 	#else
 	GDEF_IGNORE_PARAM( need_state ) ;
@@ -327,24 +345,24 @@ std::string GSsl::MbedTls::DigesterImp::value()
 	if( m_hash_type == Type::Md5 )
 	{
 		std::array<unsigned char,16> buffer {} ;
-		call( FN_RETv3(mbedtls_md5_finish) , &m_md5 , &buffer[0] ) ;
-		return std::string( reinterpret_cast<const char*>(&buffer[0]) , buffer.size() ) ;
+		call( FN_RETv3(mbedtls_md5_finish) , &m_md5 , buffer.data() ) ;
+		return { reinterpret_cast<const char*>(buffer.data()) , buffer.size() } ;
 	}
 	else if( m_hash_type == Type::Sha1 )
 	{
 		std::array<unsigned char,20> buffer {} ;
-		call( FN_RETv3(mbedtls_sha1_finish) , &m_sha1 , &buffer[0] ) ;
-		return std::string( reinterpret_cast<const char*>(&buffer[0]) , buffer.size() ) ;
+		call( FN_RETv3(mbedtls_sha1_finish) , &m_sha1 , buffer.data() ) ;
+		return { reinterpret_cast<const char*>(buffer.data()) , buffer.size() } ;
 	}
 	else if( m_hash_type == Type::Sha256 )
 	{
 		std::array<unsigned char,32> buffer {} ;
-		call( FN_RETv3(mbedtls_sha256_finish) , &m_sha256 , &buffer[0] ) ;
-		return std::string( reinterpret_cast<const char*>(&buffer[0]) , buffer.size() ) ;
+		call( FN_RETv3(mbedtls_sha256_finish) , &m_sha256 , buffer.data() ) ;
+		return { reinterpret_cast<const char*>(buffer.data()) , buffer.size() } ;
 	}
 	else
 	{
-		return std::string() ;
+		return {} ;
 	}
 }
 
@@ -389,7 +407,8 @@ GSsl::MbedTls::ProfileImp::ProfileImp( const LibraryImp & library_imp , bool is_
 		m_default_peer_certificate_name(default_peer_certificate_name) ,
 		m_default_peer_host_name(default_peer_host_name) ,
 		m_config{} ,
-		m_authmode(0)
+		m_authmode(0) ,
+		m_noisy(false)
 {
 	mbedtls_ssl_config * cleanup_ptr = nullptr ;
 	G::ScopeExit cleanup( [&](){if(cleanup_ptr) mbedtls_ssl_config_free(cleanup_ptr);} ) ;
@@ -404,6 +423,7 @@ GSsl::MbedTls::ProfileImp::ProfileImp( const LibraryImp & library_imp , bool is_
 			G_WARNING( "GSsl::MbedTls::ProfileImp::ctor: tls-config: tls " << (is_server_profile?"server":"client")
 				<< " profile configuration ignored: [" << G::Str::join(",",profile_config_list) << "]" ) ;
 	}
+	m_noisy = extra_config.noisy() ;
 
 	// initialise the mbedtls_ssl_config structure
 	{
@@ -434,16 +454,11 @@ GSsl::MbedTls::ProfileImp::ProfileImp( const LibraryImp & library_imp , bool is_
 	{
 		if( ca_path.empty() )
 		{
-			// verify if possible, but continue on failure - see mbedtls_ssl_get_verify_result()
+			// if no CA given then request the peer certificate and verify if possible
+			// but continue on failure -- see mbedtls_ssl_get_verify_result() -- this
+			// is not properly implemented in several versions of mbedtls, so use
+			// "<none>" or Config::noverify() if necessary
 			m_authmode = MBEDTLS_SSL_VERIFY_OPTIONAL ;
-
-			// mbedtls 2.4.2 can incorrectly fail to handshake when OPTIONAL so provide some more tweakability
-			if( is_server_profile && extra_config.servernoverify() )
-				m_authmode = MBEDTLS_SSL_VERIFY_NONE ;
-			else if( !is_server_profile && extra_config.clientnoverify() )
-				m_authmode = MBEDTLS_SSL_VERIFY_NONE ;
-			else if( mbedtls_version_get_number() <= 0x02040200 )
-				G_WARNING_ONCE( "GSsl::MbedTls::LibraryImp::ctor: mbedtls library version " << LibraryImp::version() << " is deprecated" ) ;
 		}
 		else if( ca_path == "<none>" )
 		{
@@ -528,8 +543,9 @@ void GSsl::MbedTls::ProfileImp::onDebug( void * This , int level_in , const char
 
 void GSsl::MbedTls::ProfileImp::doDebug( int level_in , const char * file , int line , const char * message )
 {
-	// in practice even level 0 messages are too noisy, so discard them all :(
-	level_in = 4 ;
+	// in practice even level 0 messages are too noisy, so discard them all by default :(
+	if( !m_noisy )
+		level_in = 4 ;
 
 	// map from 'level_in' mbedtls levels to GSsl::Library::LogFn levels...
 	// 4 -> <discarded>
@@ -688,9 +704,9 @@ std::string GSsl::MbedTls::ProtocolImp::verifyResultString( int rc )
 	{
 		auto verify_result = mbedtls_ssl_get_verify_result( m_ssl.ptr() ) ; // MBEDTLS_X509_BADCERT_...
 		std::vector<char> buffer( 1024U ) ;
-		mbedtls_x509_crt_verify_info( &buffer[0] , buffer.size() , "" , verify_result ) ;
+		mbedtls_x509_crt_verify_info( buffer.data() , buffer.size() , "" , verify_result ) ;
 		buffer.back() = '\0' ;
-		return G::Str::printable( std::string(&buffer[0]) ) ;
+		return G::Str::printable( G::Str::trimmed(std::string(buffer.data()),G::Str::ws()) ) ;
 	}
 	else
 	{
@@ -789,11 +805,11 @@ std::string GSsl::MbedTls::ProtocolImp::getPeerCertificate()
 
 		// write it into the correctly sized buffer
 		std::vector<unsigned char> buffer( n ) ;
-		rc = mbedtls_pem_write_buffer( head , tail , raw_p , raw_n , &buffer[0] , buffer.size() , &n ) ;
+		rc = mbedtls_pem_write_buffer( head , tail , raw_p , raw_n , buffer.data() , buffer.size() , &n ) ;
 		if( n == 0 || rc != 0 )
 			throw Error( "certificate error" ) ;
 
-		result = std::string( reinterpret_cast<const char *>(&buffer[0]) , n-1U ) ;
+		result = std::string( reinterpret_cast<const char *>(buffer.data()) , n-1U ) ;
 		if( std::string(result.c_str()) != result || result.find(tail) == std::string::npos ) // NOLINT readability-redundant-string-cstr
 			throw Error( "certificate error" ) ;
 	}
@@ -858,7 +874,7 @@ GSsl::MbedTls::Rng::Rng() :
 	mbedtls_ctr_drbg_init( &x ) ;
 
 	static constexpr std::array<unsigned char,33> extra { "sdflkjsdlkjsdfkljxmvnxcvmxmncvxy" } ;
-	int rc = mbedtls_ctr_drbg_seed( &x , mbedtls_entropy_func , &entropy , &extra[0] , extra.size()-1U ) ;
+	int rc = mbedtls_ctr_drbg_seed( &x , mbedtls_entropy_func , &entropy , extra.data() , extra.size()-1U ) ;
 	if( rc != 0 )
 	{
 		mbedtls_entropy_free( &entropy ) ;
@@ -917,7 +933,7 @@ void GSsl::MbedTls::SecureFile::clear( std::vector<char> & buffer ) noexcept
 	static_assert( noexcept(buffer.clear()) , "" ) ;
 	if( !buffer.empty() )
 	{
-		scrub( &buffer[0] , buffer.size() ) ;
+		scrub( buffer.data() , buffer.size() ) ;
 		buffer.clear() ;
 	}
 }
@@ -938,7 +954,7 @@ GSsl::MbedTls::SecureFile::SecureFile( const std::string & path , bool with_coun
 
 	m_buffer.reserve( n+1U ) ;
 	m_buffer.resize( n ) ;
-	bool ok = fileRead( f , &m_buffer[0] , n ) ;
+	bool ok = fileRead( f , m_buffer.data() , n ) ;
 	if( !ok )
 		return ;
 
@@ -956,7 +972,7 @@ GSsl::MbedTls::SecureFile::~SecureFile()
 const char * GSsl::MbedTls::SecureFile::p() const
 {
 	static char c = '\0' ;
-	return m_buffer.empty() ? &c : &m_buffer[0] ;
+	return m_buffer.empty() ? &c : m_buffer.data() ;
 }
 
 #ifndef G_LIB_SMALL
@@ -1085,11 +1101,11 @@ std::string GSsl::MbedTls::Error::format( const std::string & fnname , int rc , 
 {
 	std::vector<char> buffer( 200U ) ;
 	buffer[0] = '\0' ;
-	mbedtls_strerror( rc , &buffer[0] , buffer.size() ) ;
+	mbedtls_strerror( rc , buffer.data() , buffer.size() ) ;
 	buffer.back() = '\0' ;
 
 	std::ostringstream ss ;
-	ss << "tls error: " << fnname << "(): mbedtls [" << G::Str::printable(std::string(&buffer[0])) << "]" ;
+	ss << "tls error: " << fnname << "(): mbedtls [" << G::Str::printable(std::string(buffer.data())) << "]" ;
 	if( !more.empty() )
 		ss << " [" << more << "]" ;
 

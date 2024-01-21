@@ -418,19 +418,19 @@ G::Md5Imp::big_t G::Md5Imp::digest::T( small_t i )
 std::string G::Md5Imp::format::encode( const digest_state & state )
 {
 	const std::array<big_t,4U> state_array {{ state.a , state.b , state.c , state.d }} ;
-	return HashState<16,big_t,small_t>::encode( &state_array[0] ) ;
+	return HashState<16,big_t,small_t>::encode( state_array.data() ) ;
 }
 
 std::string G::Md5Imp::format::encode( const digest_state & state , big_t n )
 {
 	const std::array<big_t,4U> state_array {{ state.a , state.b , state.c , state.d }} ;
-	return HashState<16,big_t,small_t>::encode( &state_array[0] , n ) ;
+	return HashState<16,big_t,small_t>::encode( state_array.data() , n ) ;
 }
 
 G::Md5Imp::digest_state G::Md5Imp::format::decode( const std::string & str , small_t & n )
 {
 	std::array<big_t,4U> state_array {{ 0 , 0 , 0 , 0 }} ;
-	G::HashState<16,big_t,small_t>::decode( str , &state_array[0] , n ) ;
+	G::HashState<16,big_t,small_t>::decode( str , state_array.data() , n ) ;
 	digest_state result = { 0 , 0 , 0 , 0 } ;
 	result.a = state_array[0] ;
 	result.b = state_array[1] ;

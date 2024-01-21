@@ -407,8 +407,7 @@ EXTRA_DIST = \
 	autogen.sh \
 	winbuild.bat \
 	winbuild.pl \
-	runperl.bat \
-	.readthedocs.yaml
+	runperl.bat
 
 SUBDIRS = libexec bin src etc doc debian test m4 bsd po unity
 
@@ -976,6 +975,11 @@ cmake:
 	test -d build || mkdir build
 	cd build && cmake -DCMAKE_MAKE_PROGRAM:FILEPATH=/usr/bin/make -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ..
 	@echo now run make from the '"build"' directory
+
+.PHONY: qmake
+qmake:
+	@chmod +x libexec/make2qmake || true
+	libexec/make2qmake
 
 .PHONY: tar
 tar: $(TAR)

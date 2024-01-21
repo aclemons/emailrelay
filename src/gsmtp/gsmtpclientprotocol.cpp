@@ -69,9 +69,6 @@ GSmtp::ClientProtocol::ClientProtocol( GNet::ExceptionSink es , Sender & sender 
 		m_sasl(std::make_unique<GAuth::SaslClient>(secrets,sasl_client_config)) ,
 		m_config(config) ,
 		m_in_secure_tunnel(in_secure_tunnel) ,
-		m_eightbit_warned(false) ,
-		m_binarymime_warned(false) ,
-		m_utf8_warned(false) ,
 		m_done_signal(true)
 {
 	m_config.bdat_chunk_size = std::max( std::size_t(64U) , m_config.bdat_chunk_size ) ;
@@ -646,7 +643,7 @@ std::string GSmtp::ClientProtocol::checkSendable()
 			G_WARNING( "GSmtp::ClientProtocol::checkSendable: sending a message with utf8 mailbox names"
 				" to a server that has not advertised the SMTPUTF8 extension" ) ;
 		}
-		return std::string() ;
+		return {} ;
 	}
 }
 
@@ -833,7 +830,7 @@ bool GSmtp::ClientProtocol::sendBdatAndChunk( std::size_t size , const std::stri
 	std::size_t margin = last ? 0U : 10U ;
 
 	m_message_buffer.resize( buffer_size + margin ) ;
-	char * out = &m_message_buffer[0] + margin ;
+	char * out = m_message_buffer.data() + margin ;
 
 	std::memcpy( out , "BDAT " , 5U ) ; // NOLINT bugprone-not-null-terminated-result
 	std::memcpy( out+5U , size_str.data() , size_str.size() ) ; // NOLINT
@@ -842,8 +839,8 @@ bool GSmtp::ClientProtocol::sendBdatAndChunk( std::size_t size , const std::stri
 	std::memcpy( out+eolpos , "\r\n" , 2U ) ; // NOLINT
 
 	G_ASSERT( buffer_size > datapos ) ;
-	G_ASSERT( (out+datapos) < (&m_message_buffer[0]+m_message_buffer.size()) ) ;
-	message().contentStream().read( out+datapos , buffer_size-datapos ) ;
+	G_ASSERT( (out+datapos) < (m_message_buffer.data()+m_message_buffer.size()) ) ;
+	message().contentStream().read( out+datapos , buffer_size-datapos ) ; // NOLINT narrowing
 	std::streamsize gcount = message().contentStream().gcount() ;
 
 	G_ASSERT( gcount >= 0 ) ;
@@ -861,7 +858,7 @@ bool GSmtp::ClientProtocol::sendBdatAndChunk( std::size_t size , const std::stri
 		out = out + datapos - cmdsize ;
 		datapos = cmdsize ;
 		G_ASSERT( n.size() <= size_str.size() ) ;
-		G_ASSERT( out >= &m_message_buffer[0] ) ;
+		G_ASSERT( out >= m_message_buffer.data() ) ;
 		std::memcpy( out , "BDAT " , 5U ) ; // NOLINT
 		std::memcpy( out+5U , n.data() , n.size() ) ; // NOLINT
 		std::memcpy( out+5U+n.size(), " LAST\r\n" , 7U ) ; // NOLINT
@@ -978,6 +975,6 @@ GSmtp::ClientProtocolImp::AuthError::AuthError( const GAuth::SaslClient & sasl ,
 
 std::string GSmtp::ClientProtocolImp::AuthError::str() const
 {
-	return std::string( what() ) ;
+	return { what() } ;
 }
 

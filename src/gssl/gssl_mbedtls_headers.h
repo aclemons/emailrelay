@@ -21,12 +21,37 @@
 #ifndef G_SSL_MBEDTLS_HEADERS_H
 #define G_SSL_MBEDTLS_HEADERS_H
 
-#if GCONFIG_MBEDTLS_DISABLE_PSA_HEADER
+#include "gdef.h"
+
+// workround for msvc 'c linkage function cannot return
+// c++ class' with mbedtls 3.x and msvc 2019 -- see also
+// https://github.com/Mbed-TLS/mbedtls/issues/7087
+#if !defined(GCONFIG_MBEDTLS_INCLUDE_PSA_CRYPTO_STRUCT)
+	#if defined(_MSC_VER) && _MSC_VER <= 1929 && defined(__has_include)
+		#if __has_include(<psa/crypto_struct.h>)
+			#define GCONFIG_MBEDTLS_INCLUDE_PSA_CRYPTO_STRUCT 1
+			#define GCONFIG_MBEDTLS_DISABLE_PSA_HEADER 1
+		#else
+			#define GCONFIG_MBEDTLS_INCLUDE_PSA_CRYPTO_STRUCT 0
+		#endif
+	#else
+		#define GCONFIG_MBEDTLS_INCLUDE_PSA_CRYPTO_STRUCT 0
+	#endif
+#endif
+
 // 3.3.0's psa/crypto_extra.h is broken for c++17
+#if !defined(GCONFIG_MBEDTLS_DISABLE_PSA_HEADER)
+	#define GCONFIG_MBEDTLS_DISABLE_PSA_HEADER 0
+#endif
+
+#if GCONFIG_MBEDTLS_DISABLE_PSA_HEADER
 #define PSA_CRYPTO_EXTRA_H
 #endif
 
-#include <mbedtls/ssl.h>
+#if GCONFIG_MBEDTLS_INCLUDE_PSA_CRYPTO_STRUCT
+#include <psa/crypto_struct.h>
+#endif
+
 #include <mbedtls/ssl_ciphersuites.h>
 #include <mbedtls/entropy.h>
 #if GCONFIG_HAVE_MBEDTLS_NET_H

@@ -89,7 +89,7 @@ GNet::TimerList::~TimerList()
 
 void GNet::TimerList::add( TimerBase & t , ExceptionSink es )
 {
-	(m_locked?m_list_added:m_list).push_back( Value(&t,es) ) ;
+	(m_locked?m_list_added:m_list).emplace_back( &t , es ) ;
 }
 
 void GNet::TimerList::remove( TimerBase & timer ) noexcept

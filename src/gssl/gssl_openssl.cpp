@@ -51,7 +51,7 @@ GSsl::OpenSSL::LibraryImp::LibraryImp( G::StringArray & library_config , Library
 	GDEF_IGNORE_RETURN RAND_status() ;
 
 	// allocate a slot for a pointer from SSL to ProtocolImp
-	m_index = SSL_get_ex_new_index( 0 , nullptr , nullptr , nullptr , nullptr ) ;
+	m_index = SSL_get_ex_new_index( 0 , nullptr , nullptr , nullptr , nullptr ) ; // NOLINT
 	if( m_index < 0 )
 	{
 		cleanup() ;
@@ -137,10 +137,10 @@ G::StringArray GSsl::OpenSSL::LibraryImp::digesters( bool need_state ) const
 {
 	G::StringArray result ;
 	if( !need_state )
-		result.push_back( "SHA512" ) ;
-	result.push_back( "SHA256" ) ;
-	result.push_back( "SHA1" ) ;
-	result.push_back( "MD5" ) ;
+		result.emplace_back( "SHA512" ) ;
+	result.emplace_back( "SHA256" ) ;
+	result.emplace_back( "SHA1" ) ;
+	result.emplace_back( "MD5" ) ;
 	return result ;
 }
 
@@ -149,12 +149,9 @@ GSsl::Digester GSsl::OpenSSL::LibraryImp::digester( const std::string & hash_typ
 	return Digester( std::make_unique<GSsl::OpenSSL::DigesterImp>(hash_type,state,need_state) ) ;
 }
 
-GSsl::OpenSSL::DigesterImp::DigesterImp( const std::string & hash_type , const std::string & state , bool need_state ) :
-	m_hash_type(Type::Other) ,
-	m_evp_ctx(nullptr)
+GSsl::OpenSSL::DigesterImp::DigesterImp( const std::string & hash_type , const std::string & state , bool need_state )
 {
 	bool have_state = !state.empty() ;
-	m_state_size = 0U ;
 
 	#if GCONFIG_HAVE_OPENSSL_HASH_FUNCTIONS
 	if( hash_type == "MD5" && ( have_state || need_state ) )
@@ -192,7 +189,7 @@ GSsl::OpenSSL::DigesterImp::DigesterImp( const std::string & hash_type , const s
 	if( m_state_size == 0U )
 	{
 		if( have_state || need_state )
-			throw Error( std::string("hash state resoration not implemented for ").append(hash_type) ) ;
+			throw Error( std::string("hash state restoration not implemented for ").append(hash_type) ) ;
 
 		m_hash_type = Type::Other ;
 		m_evp_ctx = EVP_MD_CTX_create() ;
@@ -239,7 +236,7 @@ std::string GSsl::OpenSSL::DigesterImp::state()
 	else if( m_hash_type == Type::Sha256 )
 		return G::HashState<32,SHA_LONG,SHA_LONG>::encode( m_sha256.Nh , m_sha256.Nl , m_sha256.h ) ;
 	#endif
-	return std::string() ; // not available
+	return {} ; // not available
 }
 
 void GSsl::OpenSSL::DigesterImp::add( G::string_view data )
@@ -267,31 +264,31 @@ std::string GSsl::OpenSSL::DigesterImp::value()
 	{
 		n = MD5_DIGEST_LENGTH ;
 		output.resize( n ) ;
-		MD5_Final( &output[0] , &m_md5 ) ;
+		MD5_Final( output.data() , &m_md5 ) ;
 	}
 	else if( m_hash_type == Type::Sha1 )
 	{
 		n = SHA_DIGEST_LENGTH ;
 		output.resize( n ) ;
-		SHA1_Final( &output[0] , &m_sha1 ) ;
+		SHA1_Final( output.data() , &m_sha1 ) ;
 	}
 	else if( m_hash_type == Type::Sha256 )
 	{
 		n = SHA256_DIGEST_LENGTH ;
 		output.resize( n ) ;
-		SHA256_Final( &output[0] , &m_sha256 ) ;
+		SHA256_Final( output.data() , &m_sha256 ) ;
 	}
 	#endif
 	if( n == 0U )
 	{
 		unsigned int output_size = 0 ;
 		output.resize( EVP_MAX_MD_SIZE ) ;
-		EVP_DigestFinal_ex( m_evp_ctx , &output[0] , &output_size ) ;
+		EVP_DigestFinal_ex( m_evp_ctx , output.data() , &output_size ) ;
 		n = static_cast<std::size_t>(output_size) ;
 	}
 	G_ASSERT( n == valuesize() ) ;
-	const char * p = reinterpret_cast<char*>(&output[0]) ;
-	return std::string(p,n) ;
+	const char * p = reinterpret_cast<char*>(output.data()) ;
+	return { p , n } ;
 }
 
 // ==
@@ -382,7 +379,7 @@ GSsl::OpenSSL::ProfileImp::ProfileImp( const LibraryImp & library_imp , bool is_
 	if( is_server_profile )
 	{
 		static std::string x = "GSsl.OpenSSL." + G::Path(G::Process::exe()).basename() ;
-		SSL_CTX_set_session_id_context( m_ssl_ctx.get() , reinterpret_cast<const unsigned char *>(x.data()) , x.size() ) ;
+		SSL_CTX_set_session_id_context( m_ssl_ctx.get() , reinterpret_cast<const unsigned char *>(x.data()) , static_cast<unsigned>(x.size()) ) ;
 	}
 }
 
@@ -435,11 +432,15 @@ void GSsl::OpenSSL::ProfileImp::check( int rc , const std::string & fnname_tail 
 void GSsl::OpenSSL::ProfileImp::apply( const Config & config )
 {
 	#if GCONFIG_HAVE_OPENSSL_MIN_MAX
+	GDEF_WARNING_DISABLE_START( 4244 )
+
 	if( config.min_() )
 		SSL_CTX_set_min_proto_version( m_ssl_ctx.get() , config.min_() ) ;
 
 	if( config.max_() )
 		SSL_CTX_set_max_proto_version( m_ssl_ctx.get() , config.max_() ) ;
+
+	GDEF_WARNING_DISABLE_END
 	#endif
 
 	if( config.reset() != 0L )
@@ -497,11 +498,11 @@ int GSsl::OpenSSL::ProfileImp::verifyPeerName( int ok , X509_STORE_CTX * ctx )
 
 std::string GSsl::OpenSSL::ProfileImp::name( X509_NAME * x509_name )
 {
-	if( x509_name == nullptr ) return std::string() ;
+	if( x509_name == nullptr ) return {} ;
 	std::vector<char> buffer( 2048U ) ; // 200 in openssl code
-	X509_NAME_oneline( x509_name , &buffer[0] , buffer.size() ) ;
+	X509_NAME_oneline( x509_name , buffer.data() , static_cast<int>(buffer.size()) ) ;
 	buffer.back() = '\0' ;
-	return G::Str::printable( std::string(&buffer[0]) ) ;
+	return G::Str::printable( std::string(buffer.data()) ) ;
 }
 
 // ==
@@ -511,9 +512,7 @@ GSsl::OpenSSL::ProtocolImp::ProtocolImp( const ProfileImp & profile , const std:
 		m_ssl(nullptr,std::function<void(SSL*)>(deleter)) ,
 		m_log_fn(profile.lib().log()) ,
 		m_verbose(profile.lib().verbose()) ,
-		m_fd_set(false) ,
-		m_required_peer_certificate_name(required_peer_certificate_name) ,
-		m_verified(false)
+		m_required_peer_certificate_name(required_peer_certificate_name)
 {
 	m_ssl.reset( SSL_new(profile.p()) ) ;
 	if( m_ssl == nullptr )
@@ -559,13 +558,13 @@ GSsl::Protocol::Result GSsl::OpenSSL::ProtocolImp::convert( int e )
 
 GSsl::Protocol::Result GSsl::OpenSSL::ProtocolImp::connect( G::ReadWrite & io )
 {
-	set( io.fd() ) ;
+	set( static_cast<int>(io.fd()) ) ;
 	return connect() ;
 }
 
 GSsl::Protocol::Result GSsl::OpenSSL::ProtocolImp::accept( G::ReadWrite & io )
 {
-	set( io.fd() ) ;
+	set( static_cast<int>(io.fd()) ) ;
 	return accept() ;
 }
 
@@ -682,7 +681,7 @@ std::string GSsl::OpenSSL::ProtocolImp::cipher() const
 std::string GSsl::OpenSSL::ProtocolImp::protocol() const
 {
 	const SSL_SESSION * session = SSL_get_session( const_cast<SSL*>(m_ssl.get()) ) ;
-	if( session == nullptr ) return std::string() ;
+	if( session == nullptr ) return {} ;
 	int v = SSL_SESSION_get_protocol_version( session ) ;
 	#ifdef TLS1_VERSION
 		if( v == TLS1_VERSION ) return "TLSv1.0" ; // cf. mbedtls
@@ -760,8 +759,8 @@ void GSsl::OpenSSL::Error::clearErrors()
 std::string GSsl::OpenSSL::Error::text( unsigned long e )
 {
 	std::vector<char> v( 300 ) ;
-	ERR_error_string_n( e , &v[0] , v.size() ) ;
-	std::string s( &v[0] , v.size() ) ;
+	ERR_error_string_n( e , v.data() , v.size() ) ;
+	std::string s( v.data() , v.size() ) ;
 	return std::string( s.c_str() ) ; // NOLINT copy up to first null character
 }
 
@@ -814,18 +813,14 @@ std::string GSsl::OpenSSL::Certificate::str() const
 // ==
 
 GSsl::OpenSSL::Config::Config( G::StringArray & cfg ) :
-	m_min(0) ,
-	m_max(0) ,
-	m_options_set(0L) ,
-	m_options_reset(0L) ,
 	m_noverify(consume(cfg,"noverify"))
 {
 	#if GCONFIG_HAVE_OPENSSL_TLS_METHOD
-		m_server_fn = TLS_server_method ;
-		m_client_fn = TLS_client_method ;
+		m_server_fn = TLS_server_method ; // NOLINT
+		m_client_fn = TLS_client_method ; // NOLINT
 	#else
-		m_server_fn = SSLv23_server_method ;
-		m_client_fn = SSLv23_client_method ;
+		m_server_fn = SSLv23_server_method ; // NOLINT
+		m_client_fn = SSLv23_client_method ; // NOLINT
 	#endif
 
 	#if GCONFIG_HAVE_OPENSSL_MIN_MAX

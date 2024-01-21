@@ -101,7 +101,7 @@ void G::DirectoryList::readImp( const G::Path & dir , bool sub_dirs , G::string_
 {
 	Directory directory( dir ) ;
 	DirectoryIterator iter( directory ) ;
-	for( unsigned int i = 0U ; iter.more() && !iter.error() ; ++i )
+	while( iter.more() && !iter.error() )
 	{
 		// (we do our own filename matching here to avoid glob())
 		if( sub_dirs ? iter.isDir() : ( suffix.empty() || Str::tailMatch(iter.fileName(),suffix) ) )

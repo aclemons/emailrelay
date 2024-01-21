@@ -175,7 +175,7 @@ std::string GSmtp::ProtocolMessageForward::forward( const GStore::MessageId & id
 			}
 			m_client_ptr->sendMessage( std::unique_ptr<GStore::StoredMessage>(message.release()) ) ;
 		}
-		return std::string() ;
+		return {} ;
 	}
 	catch( std::exception & e ) // send forwarding errors back to the remote client via the server protocol
 	{

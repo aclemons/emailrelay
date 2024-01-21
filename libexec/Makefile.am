@@ -23,13 +23,21 @@ work_scripts = \
 	make-website \
 	make2cmake \
 	make2cdb \
+	make2qmake \
+	make2nmake \
 	make2unity \
-	reduce \
-	reduce.pl \
+	mbedtlsbuild.pl \
+	libresslbuild.pl \
+	libresslbuild.mak \
+	qtbuild.pl \
 	winbuild.pm \
+	winbuildall.bat \
 	AutoMakeParser.pm \
+	BuildInfo.pm \
 	CompilationDatabase.pm \
 	ConfigStatus.pm \
+	reduce \
+	reduce.pl \
 	Functions.pm \
 	Reduce.pm
 

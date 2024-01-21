@@ -102,9 +102,9 @@ for my $cfg_program ( @cfg_programs )
 		{
 			if( $p eq $program || ($p eq "$program.real") )
 			{
-				map { $libs{"lib".$_.".a"} = 1 } $m->our_libs( $p ) ;
+				map { $libs{"lib".$_.".a"} = 1 } $m->our_libnames( $p ) ;
 				push @out_lines , "/* exe [$dir] */\n" ;
-				print $fh_out "/* c++ -pthread".join(" -I ../",("",$m->includes("",0,0)))." -o $p $p.cpp ".join(" -l",("",$m->sys_libs($p)))." */\n" ;
+				print $fh_out "/* c++ -pthread".join(" -I ../",("","src",$m->includes("",0,0)))." -o $p $p.cpp ".join(" -l",("",$m->sys_libs($p)))." */\n" ;
 				for my $src ( $m->sources($p) )
 				{
 					push @out_lines , "#include \"$src\"\n" ;

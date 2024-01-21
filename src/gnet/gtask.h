@@ -104,7 +104,7 @@ private:
 	ExceptionSink m_es ;
 	std::string m_exec_error_format ;
 	G::Identity m_id ;
-	bool m_busy ;
+	bool m_busy {false} ;
 } ;
 
 //| \class GNet::TaskCallback

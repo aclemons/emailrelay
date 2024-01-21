@@ -72,8 +72,8 @@ private:
 	std::string m_id ;
 	GNet::Timer<SimpleFilterBase> m_timer ;
 	G::Slot::Signal<int> m_done_signal ;
-	Result m_result ;
-	bool m_special ;
+	Result m_result {Result::fail} ;
+	bool m_special {false} ;
 } ;
 
 #endif

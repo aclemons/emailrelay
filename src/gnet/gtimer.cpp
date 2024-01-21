@@ -27,8 +27,6 @@
 #include <algorithm>
 
 GNet::TimerBase::TimerBase( ExceptionSink es ) :
-	m_active(false) ,
-	m_immediate(false) ,
 	m_time(G::TimerTime::zero())
 {
 	TimerList::instance().add( *this , es ) ;

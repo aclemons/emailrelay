@@ -58,14 +58,14 @@ public:
 	bool authenticated() const ;
 
 private:
-	bool m_first_apply ;
+	bool m_first_apply {true} ;
 	const SaslServerSecrets & m_secrets ;
 	G::StringArray m_mechanisms_secure ;
 	G::StringArray m_mechanisms_insecure ;
 	std::string m_mechanism ;
 	std::string m_challenge ;
 	std::string m_challenge_domain ;
-	bool m_authenticated ;
+	bool m_authenticated {false} ;
 	std::string m_id ;
 	std::string m_trustee ;
 	static G::string_view login_challenge_1 ;
@@ -79,10 +79,8 @@ G::string_view GAuth::SaslServerBasicImp::login_challenge_2 {"Password:",9U} ;
 
 GAuth::SaslServerBasicImp::SaslServerBasicImp( const SaslServerSecrets & secrets ,
 	bool with_apop , const std::string & config , const std::string & challenge_domain ) :
-		m_first_apply(true) ,
 		m_secrets(secrets) ,
-		m_challenge_domain(challenge_domain) ,
-		m_authenticated(false)
+		m_challenge_domain(challenge_domain)
 {
 	// prepare a list of mechanisms, but remove any that are completely unusable
 	G::StringArray mechanisms ;
@@ -91,8 +89,8 @@ GAuth::SaslServerBasicImp::SaslServerBasicImp( const SaslServerSecrets & secrets
 		if( secrets.contains( "PLAIN" , {} ) )
 		{
 			mechanisms = Cram::hashTypes( "CRAM-" ) ;
-			mechanisms.push_back( "PLAIN" ) ;
-			mechanisms.push_back( "LOGIN" ) ;
+			mechanisms.emplace_back( "PLAIN" ) ;
+			mechanisms.emplace_back( "LOGIN" ) ;
 		}
 		else
 		{
@@ -104,7 +102,7 @@ GAuth::SaslServerBasicImp::SaslServerBasicImp( const SaslServerSecrets & secrets
 			}
 		}
 		if( with_apop )
-			mechanisms.push_back( "APOP" ) ;
+			mechanisms.emplace_back( "APOP" ) ;
 	}
 
 	m_mechanisms_secure = mechanisms ;
@@ -113,7 +111,7 @@ GAuth::SaslServerBasicImp::SaslServerBasicImp( const SaslServerSecrets & secrets
 	// RFC-4954 4 p6 -- PLAIN is always an option when secure
 	if( m_mechanisms_secure.empty() && secrets.valid() )
 	{
-		m_mechanisms_secure.push_back( "PLAIN" ) ;
+		m_mechanisms_secure.emplace_back( "PLAIN" ) ;
 	}
 
 	// apply the allow/deny configuration
@@ -208,14 +206,14 @@ std::string GAuth::SaslServerBasicImp::preferredMechanism( bool secure ) const
 			}
 		}
 	}
-	return std::string() ;
+	return {} ;
 }
 
 std::string GAuth::SaslServerBasicImp::initialChallenge() const
 {
 	// see RFC-4422 section 5
 	if( m_mechanism == "PLAIN" ) // "client-first"
-		return std::string() ;
+		return {} ;
 	else if( m_mechanism == "LOGIN" ) // "variable"
 		return G::sv_to_string(login_challenge_1) ;
 	else // APOP/CRAM-X "server-first"

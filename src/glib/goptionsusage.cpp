@@ -274,15 +274,15 @@ std::string G::OptionsUsage::helpSeparator( const Config & config , std::size_t 
 	if( !config.separator.empty() )
 		return config.separator ;
 	else if( (config.margin+syntax_length) >= config.column )
-		return std::string( 1U , m_space_separator ) ;
+		return std::string( 1U , m_space_separator ) ; // NOLINT not return {...}
 	else
-		return std::string( config.column-syntax_length-config.margin , m_space_separator ) ;
+		return std::string( config.column-syntax_length-config.margin , m_space_separator ) ; // NOLINT not return {...}
 }
 
 std::string G::OptionsUsage::helpPadding( const Config & config ) const
 {
 	std::size_t n = std::max( std::size_t(1U) , config.column - std::min(config.column,config.margin) ) ;
-	return std::string( n , m_space_padding ) ;
+	return std::string( n , m_space_padding ) ; // NOLINT not return {...}
 }
 
 G::OptionsUsage::SortFn G::OptionsUsage::sort()

@@ -40,13 +40,13 @@ std::string ServiceImp::install( const std::string & , const std::string & name 
 {
 	std::cout << "ServiceImp::install: " << name << std::endl ;
 	name_ = name ;
-	return std::string() ;
+	return {} ;
 }
 
 std::string ServiceImp::remove( const std::string & name )
 {
 	std::cout << "ServiceImp::remove: " << name << std::endl ;
-	return std::string() ;
+	return {} ;
 }
 
 std::pair<ServiceImp::StatusHandle,DWORD> ServiceImp::statusHandle( const std::string & , HandlerFn )

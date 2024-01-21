@@ -136,7 +136,7 @@ private:
 	MessageId m_id ;
 	Envelope m_env ;
 	State m_state ;
-	bool m_unlock ;
+	bool m_unlock {false} ;
 } ;
 
 #endif

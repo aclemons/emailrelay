@@ -156,7 +156,7 @@ gid_t G::Identity::lookupGroup( const std::string & group )
 
 bool G::Identity::match( std::pair<int,int> uid_range ) const
 {
-	return G::Range::within( uid_range , m_uid ) ;
+	return G::Range::within( uid_range , static_cast<int>(m_uid) ) ;
 }
 
 // ==
@@ -174,7 +174,7 @@ bool G::IdentityImp::lookupUser( std::string & name , uid_t & uid , gid_t & gid 
 		std::vector<char> buffer( buffer_size ) ;
 		passwd_t pwd {} ;
 		passwd_t * result_p = nullptr ;
-		int rc = ::getpwnam_r( name.c_str() , &pwd , &buffer[0] , buffer_size , &result_p ) ;
+		int rc = ::getpwnam_r( name.c_str() , &pwd , buffer.data() , buffer_size , &result_p ) ;
 		int e = Process::errno_() ;
 		if( rc != 0 && e == ERANGE && (i+1U) < sizes.size() )
 		{
@@ -217,7 +217,7 @@ bool G::IdentityImp::lookupGroup( const std::string & group , gid_t & gid )
 		std::vector<char> buffer( buffer_size ) ;
 		group_t grp {} ;
 		group_t * result_p = nullptr ;
-		int rc = ::getgrnam_r( group.c_str() , &grp , &buffer[0] , buffer_size , &result_p ) ;
+		int rc = ::getgrnam_r( group.c_str() , &grp , buffer.data() , buffer_size , &result_p ) ;
 		if( rc == 0 && result_p )
 		{
 			gid = result_p->gr_gid ;

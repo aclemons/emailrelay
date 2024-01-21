@@ -145,8 +145,8 @@ private:
 	std::string helpPadding( const Config & ) const ;
 	std::string helpImp( const Config & , bool , bool & ) const ;
 	std::string optionHelp( const Config & , const Option & option , bool , bool & ) const ;
-	std::string helpWrap( const Config & , const std::string & separator ,
-		const std::string & syntax , const std::string & syntax2 ,
+	std::string helpWrap( const Config & , const std::string & syntax_simple ,
+		const std::string & syntax_aligned , const std::string & separator ,
 		const std::string & description , bool , bool & ) const ;
 	static Config setDefaults( const Config & ) ;
 	static Config setWidthsWrtMargin( const Config & ) ;

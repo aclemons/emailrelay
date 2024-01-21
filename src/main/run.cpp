@@ -51,12 +51,12 @@
 #ifdef G_LOCALEDIR
 namespace Main { std::string localedir() { return G_STR(G_LOCALEDIR) ; } }
 #else
-namespace Main { std::string localedir() { return std::string() ; } }
+namespace Main { std::string localedir() { return {} ; } }
 #endif
 
 std::string Main::Run::versionNumber()
 {
-	return "2.5.1a" ;
+	return "2.5.2" ;
 }
 
 Main::Run::Run( Main::Output & output , const G::Arg & arg , bool has_gui ) :

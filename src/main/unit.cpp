@@ -44,7 +44,7 @@ Main::Unit::Unit( Run & run , unsigned int unit_id , const std::string & version
 
 	// cache the forwarding address's address family
 	//
-	m_resolver_family = resolverFamily() ;
+	m_resolver_family = resolverFamily() ; // NOLINT
 
 	// early check that the forward-to address can be resolved
 	//
@@ -312,7 +312,7 @@ std::string Main::Unit::startForwarding()
 			GNet::Location(m_configuration.serverAddress(),m_resolver_family) ,
 			*m_client_secrets ,
 			m_configuration.smtpClientConfig( clientTlsProfile() , domain() ) ) ) ;
-		return std::string() ;
+		return {} ;
 	}
 	catch( std::exception & e )
 	{

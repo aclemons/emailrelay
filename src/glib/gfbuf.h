@@ -81,7 +81,7 @@ protected:
 		///< Called to pull a character out of the input buffer,
 		///< and pre-fill the input buffer if necessary.
 
-	int sync() final override ;
+	int sync() final ;
 		///< Called to sync the stream.
 
 public:
@@ -148,10 +148,10 @@ void G::fbuf<T,N>::open( T file )
 	m_file = file ;
 	m_file_open = true ;
 
-	char * input_begin = &m_input[0] ;
+	char * input_begin = m_input.data() ;
 	setg( input_begin , input_begin , input_begin ) ;
 
-	char * output_begin = &m_output[0] ;
+	char * output_begin = m_output.data() ;
 	char * output_end = output_begin + m_output.size() ;
 	setp( output_begin , output_end-1 ) ;
 }
@@ -213,7 +213,7 @@ int G::fbuf<T,N>::underflow()
 {
 	if( gptr() == egptr() )
 	{
-		char * input_begin = &m_input[0] ;
+		char * input_begin = m_input.data() ;
 		ssize_t nread = m_read_fn( m_file , input_begin , m_input.size() ) ;
 		if( nread <= 0 )
 			return traits_type::eof() ;

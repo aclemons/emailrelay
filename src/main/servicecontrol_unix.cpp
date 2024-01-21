@@ -24,7 +24,7 @@
 std::string service_install( const std::string & , const std::string & , const std::string & ,
 	const std::string & , bool )
 {
-	return std::string() ;
+	return {} ;
 }
 
 bool service_installed( const std::string & )

@@ -36,9 +36,7 @@ GNet::ResolverFuture::ResolverFuture( const std::string & host , const std::stri
 		m_service(service) ,
 		m_service_p(m_service.c_str()) ,
 		m_family(family) ,
-		m_test_mode(for_async_hint&&G::Test::enabled("getaddrinfo-slow")) ,
-		m_rc(0) ,
-		m_ai(nullptr)
+		m_test_mode(for_async_hint&&G::Test::enabled("getaddrinfo-slow"))
 {
 	std::memset( &m_ai_hint , 0 , sizeof(m_ai_hint) ) ;
 	m_ai_hint.ai_flags = AI_CANONNAME | // NOLINT
@@ -118,7 +116,7 @@ bool GNet::ResolverFuture::fetch( List & list ) const
 		socklen_t addrlen = static_cast<socklen_t>(p->ai_addrlen) ;
 		if( Address::validData( p->ai_addr , addrlen ) )
 		{
-			list.push_back( Address( p->ai_addr , addrlen ) ) ;
+			list.emplace_back( p->ai_addr , addrlen ) ;
 			got_one = true ;
 		}
 	}

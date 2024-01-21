@@ -78,7 +78,7 @@ public:
 	struct Config /// A configuration structure for GSmtp::ServerBufferIn.
 	{
 		std::size_t input_buffer_soft_limit {G::Limits<>::net_buffer} ; // threshold to apply flow control
-		std::size_t input_buffer_hard_limit {G::Limits<>::net_buffer*4U} ; // threshold to fail
+		std::size_t input_buffer_hard_limit {static_cast<std::size_t>(G::Limits<>::net_buffer)*4U} ; // threshold to fail
 		Config & set_input_buffer_soft_limit( std::size_t ) noexcept ;
 		Config & set_input_buffer_hard_limit( std::size_t ) noexcept ;
 	} ;

@@ -34,7 +34,7 @@ what it is doing.
 
 Configuration
 =============
-E-MailRelay is configured with options like *--verbose* or *--spool-dir* in the
+E-MailRelay is configured with options like *-\ -verbose* or *-\ -spool-dir* in the
 *emailrelay-startup.bat* batch file.
 
 Note that *emailrelay-start.bat* lives under *ProgramData*, and although this
@@ -49,7 +49,7 @@ Alternatively, use the *emailrelay-gui* program to make the changes.
 All configuration options are documented in the E-MailRelay reference document.
 
 Account user-ids and passwords can be configured by editing the E-MailRelay
-*secrets* file. Check the *--client-auth* or *--server-auth* options in the
+*secrets* file. Check the *-\ -client-auth* or *-\ -server-auth* options in the
 startup batch file to find out where this is.
 
 Manual installation
@@ -67,15 +67,15 @@ as simple as this:
 
 The configuration options should normally include:
 
-* \ *--log*\
-* \ *--verbose*\
-* \ *--log-file=@app\\log-%d.txt*\
-* \ *--spool-dir=@app\\spool*\
-* \ *--client-auth=@app\\auth.txt*\
-* \ *--client-tls*\
-* \ *--forward-to=smtp.example.com:25*\
-* \ *--forward-on-disconnect*\
-* \ *--poll=60*\
+* *-\ -log*
+* *-\ -verbose*
+* *-\ -log-file=@app\\log-%d.txt*
+* *-\ -spool-dir=@app\\spool*
+* *-\ -client-auth=@app\\auth.txt*
+* *-\ -client-tls*
+* *-\ -forward-to=smtp.example.com:25*
+* *-\ -forward-on-disconnect*
+* *-\ -poll=60*
 
 Copy the shortcut to *Start Menu* and *Startup* folders as necessary.
 
@@ -99,7 +99,7 @@ The startup batch file should contain a single line, something like this:
 
     start "emailrelay" "C:\Program Files\E-MailRelay\emailrelay.exe" --forward-to smtp.example.com:25 ...
 
-There is no need to use *--no-daemon* and *--hidden*; these are added
+There is no need to use *-\ -no-daemon* and *-\ -hidden*; these are added
 automatically.
 
 The contents of the service-wrapper configuration file can be a single
@@ -110,14 +110,14 @@ like this:
 
     dir-config="C:\ProgramData\E-MailRelay"
 
-Then just run *emailrelay-service --install* from an Administrator command
+Then just run *emailrelay-service -\ -install* from an Administrator command
 prompt to install the service.
 
 Every time the service starts it reads the service-wrapper configuration file
 and the startup batch file in order to run the E-MailRelay program.
 
 If you need to run multiple E-MailRelay services then put a unique service
-name and display name on the *emailrelay-service --install <name> <display-name>*
+name and display name on the *emailrelay-service -\ -install <name> <display-name>*
 command-line. The service name you give is used to derive the name of the
 *<name>-start.bat* batch file that contains the E-MailRelay server's
 configuration options, so you will need to create that first.
@@ -127,7 +127,7 @@ Uninstall
 To uninstall:
 
 * Stop the program and/or the service.
-* Uninstall the service, if installed (\ *emailrelay-service --remove*\ ).
+* Uninstall the service, if installed (\ *emailrelay-service -\ -remove*\ ).
 * Delete the files from the E-MailRelay *program files* folder (eg. *C:\\Program Files\\E-MailRelay*).
 * Delete the files from the E-MailRelay *program data* folder (eg. *C:\\ProgramData\\E-MailRelay*).
 * Delete any desktop shortcuts (eg. *%USERPROFILE%\\Desktop\\E-MailRelay.lnk*).
@@ -142,9 +142,9 @@ file, and individual failed mail messages will have the failure reason recorded
 inside the *.bad* envelope file.
 
 The Windows Event Log can be accessed by running *eventvwr.exe* or searching for
-\ *Event Viewer*\ ; from there look under *Windows Logs* and *Application*.
+*Event Viewer*; from there look under *Windows Logs* and *Application*.
 
-You can increase the verbosity of the logging by adding the *--verbose* option
+You can increase the verbosity of the logging by adding the *-\ -verbose* option
 to the E-MailRelay options, typically by editing the *emailrelay-start.bat*
 batch script in *C:\\ProgramData\\E-MailRelay*.
 

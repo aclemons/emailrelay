@@ -23,9 +23,9 @@ E-MailRelay can be run straight from the command-line, and on Windows you can
 run *emailrelay.exe* or *emailrelay-textmode.exe* from the zip file without
 going through the installation process.
 
-To use E-MailRelay in store-and-forward mode use the *--as-server* option to
+To use E-MailRelay in store-and-forward mode use the *-\ -as-server* option to
 start the storage daemon in the background, and then do delivery of spooled
-messages by running with *--as-client*.
+messages by running with *-\ -as-client*.
 
 .. image:: serverclient.png
    :alt: serverclient.png
@@ -53,7 +53,7 @@ like this:
 
     emailrelay --as-client smtp.example.com:25 --spool-dir /tmp
 
-To forward continuously you can add the *--poll* and *--forward-to* options to
+To forward continuously you can add the *-\ -poll* and *-\ -forward-to* options to
 the server command-line:
 
 .. image:: forwardto.png
@@ -68,14 +68,14 @@ minute:
     emailrelay --as-server --poll 60 --forward-to smtp.example.com:25
 
 Or for a server that forwards each message as soon as it has been received, you
-can use *--forward-on-disconnect*:
+can use *-\ -forward-on-disconnect*:
 
 ::
 
     emailrelay --as-server --forward-on-disconnect --forward-to smtp.example.com:25
 
 To edit or filter e-mail as it passes through the server specify your filter
-program with the *--filter* option, something like this:
+program with the *-\ -filter* option, something like this:
 
 ::
 
@@ -89,22 +89,22 @@ E-MailRelay can also be used as a personal internet mail server:
    :alt: mailserver.png
 
 
-Use *--remote-clients* (\ *-r*\ ) to allow connections from outside the local
-network, define your domain name with *--domain* and use an address verifier as
+Use *-\ -remote-clients* (\ *-r*\ ) to allow connections from outside the local
+network, define your domain name with *-\ -domain* and use an address verifier as
 a first line of defense against spammers:
 
 ::
 
     emailrelay --as-server -v -r --domain=example.com --address-verifier=account:
 
-Then enable POP access to the incoming e-mails with *--pop*, *--pop-port* and
-\ *--pop-auth*\ :
+Then enable POP access to the incoming e-mails with *-\ -pop*, *-\ -pop-port* and
+*-\ -pop-auth*:
 
 ::
 
     emailrelay ... --pop --pop-port 10110 --pop-auth /etc/emailrelay.auth
 
-Set up the POP account with a user-id and password in the *--pop-auth* secrets
+Set up the POP account with a user-id and password in the *-\ -pop-auth* secrets
 file. The secrets file should contain a single line of text like this:
 
 ::
@@ -172,13 +172,13 @@ Documentation
 =============
 The following documentation is provided:
 
-* README -- this document
-* COPYING -- the GNU General Public License
-* INSTALL -- generic build & install instructions
-* AUTHORS -- authors, credits and additional copyrights
-* userguide.txt -- user guide
-* reference.txt -- reference document
-* ChangeLog -- change log for releases
+* README -\ - this document
+* COPYING -\ - the GNU General Public License
+* INSTALL -\ - generic build & install instructions
+* AUTHORS -\ - authors, credits and additional copyrights
+* userguide.txt -\ - user guide
+* reference.txt -\ - reference document
+* ChangeLog -\ - change log for releases
 
 Source code documentation will be generated when building from source if
 *doxygen* is available.

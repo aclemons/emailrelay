@@ -34,8 +34,7 @@ GFilters::SpamFilter::SpamFilter( GNet::ExceptionSink es , GStore::FileStore & f
 		m_read_only(read_only) ,
 		m_always_pass(always_pass) ,
 		m_connection_timeout(config.timeout) ,
-		m_response_timeout(config.timeout) ,
-		m_result(Result::fail)
+		m_response_timeout(config.timeout)
 {
 	m_client_ptr.eventSignal().connect( G::Slot::slot(*this,&GFilters::SpamFilter::clientEvent) ) ;
 	m_client_ptr.deletedSignal().connect( G::Slot::slot(*this,&GFilters::SpamFilter::clientDeleted) ) ;

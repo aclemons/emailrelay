@@ -98,7 +98,7 @@ struct G::PathImp::PathPlatform<G::PathImp::Platform::Windows>
 	}
 	static void normalise( std::string & s )
 	{
-		Str::replaceAll( s , "/"_sv , "\\"_sv ) ;
+		Str::replace( s , '/' , '\\' ) ;
 		bool special = s.find("\\\\",0U,2U) == 0U ;
 		while( Str::replaceAll( s , "\\\\"_sv , "\\"_sv ) ) {;}
 		if( special ) s.insert( 0U , 1U , '\\' ) ;
@@ -163,14 +163,14 @@ namespace G
 		static bool use_posix = !G::is_windows() ; // gdef.h // NOLINT bogus cert-err58-cpp
 		using U = PathPlatform<Platform::Unix> ;
 		using W = PathPlatform<Platform::Windows> ;
-		static string_view sep() { return use_posix ? U::sep() : W::sep() ; }
-		static void normalise( std::string & s ) { use_posix ? U::normalise(s) : W::normalise(s) ; }
-		static bool simple( const std::string & s ) { return use_posix ? U::simple(s) : W::simple(s) ; }
-		static bool isdrive( const std::string & s ) { return use_posix ? U::isdrive(s) : W::isdrive(s) ; }
-		static bool absolute( const std::string & s ) { return use_posix ? U::absolute(s) : W::absolute(s); }
-		static std::string null() { return use_posix ? U::null() : W::null() ; }
-		static std::size_t rootsize( const std::string & s ) { return use_posix ? U::rootsize(s) : W::rootsize(s) ; }
-		static std::size_t slashpos( const std::string & s ) { return use_posix ? U::slashpos(s) : W::slashpos(s) ; }
+		string_view sep() { return use_posix ? U::sep() : W::sep() ; }
+		void normalise( std::string & s ) { use_posix ? U::normalise(s) : W::normalise(s) ; }
+		bool simple( const std::string & s ) { return use_posix ? U::simple(s) : W::simple(s) ; }
+		bool isdrive( const std::string & s ) { return use_posix ? U::isdrive(s) : W::isdrive(s) ; }
+		bool absolute( const std::string & s ) { return use_posix ? U::absolute(s) : W::absolute(s); }
+		std::string null() { return use_posix ? U::null() : W::null() ; }
+		std::size_t rootsize( const std::string & s ) { return use_posix ? U::rootsize(s) : W::rootsize(s) ; }
+		std::size_t slashpos( const std::string & s ) { return use_posix ? U::slashpos(s) : W::slashpos(s) ; }
 	}
 }
 
@@ -178,7 +178,7 @@ namespace G
 {
 	namespace PathImp
 	{
-		static std::size_t dotpos( const std::string & s ) noexcept
+		std::size_t dotpos( const std::string & s ) noexcept
 		{
 			const std::size_t npos = std::string::npos ;
 			const std::size_t sp = slashpos( s ) ;
@@ -193,7 +193,7 @@ namespace G
 				return dp ;
 		}
 
-		static void splitInto( const std::string & str , StringArray & a )
+		void splitInto( const std::string & str , StringArray & a )
 		{
 			std::size_t rs = rootsize( str ) ;
 			if( str.empty() )
@@ -211,7 +211,7 @@ namespace G
 			}
 		}
 
-		static bool purge( StringArray & a )
+		bool purge( StringArray & a )
 		{
 			const std::string dot( 1U , '.' ) ;
 			a.erase( std::remove( a.begin() , a.end() , std::string() ) , a.end() ) ;
@@ -221,7 +221,7 @@ namespace G
 			return all_dots ;
 		}
 
-		static std::string join( StringArray::const_iterator p , StringArray::const_iterator end )
+		std::string join( StringArray::const_iterator p , StringArray::const_iterator end )
 		{
 			std::string str ;
 			int i = 0 ;
@@ -239,7 +239,7 @@ namespace G
 			return str ;
 		}
 
-		static std::string join( const StringArray & a )
+		std::string join( const StringArray & a )
 		{
 			return join( a.begin() , a.end() ) ;
 		}
@@ -438,7 +438,7 @@ G::StringArray G::Path::split() const
 {
 	StringArray a ;
 	PathImp::splitInto( m_str , a ) ;
-	if( PathImp::purge(a) ) a.push_back( "." ) ;
+	if( PathImp::purge(a) ) a.emplace_back( "." ) ;
 	return a ;
 }
 
@@ -545,8 +545,7 @@ G::Path G::Path::difference( const G::Path & root_in , const G::Path & path_in )
 	if( path_parts.size() < root_parts.size() )
 		return {} ;
 
-	using Pair = std::pair<StringArray::iterator,StringArray::iterator> ;
-	Pair p = std::mismatch( root_parts.begin() , root_parts.end() , path_parts.begin() ) ;
+	auto p = std::mismatch( root_parts.begin() , root_parts.end() , path_parts.begin() ) ;
 
 	if( p.first == root_parts.end() && p.second == path_parts.end() )
 		return { "." } ;

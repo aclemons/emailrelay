@@ -66,7 +66,7 @@ public:
 
 private:
 	std::string m_server ;
-	bool m_valid ;
+	bool m_valid {false} ;
 	std::vector<Address> m_addresses ;
 } ;
 
@@ -129,7 +129,7 @@ public:
 private:
 	using ResultList = std::vector<DnsBlockServerResult> ;
 	Type m_type {Type::Inactive} ;
-	std::size_t m_threshold{0U} ;
+	std::size_t m_threshold {0U} ;
 	Address m_address ;
 	ResultList m_list ;
 } ;
@@ -202,12 +202,12 @@ private:
 	ExceptionSink m_es ;
 	Timer<DnsBlock> m_timer ;
 	G::StringArray m_servers ;
-	std::size_t m_threshold ;
-	bool m_allow_on_timeout ;
+	std::size_t m_threshold {1U} ;
+	bool m_allow_on_timeout {true} ;
 	Address m_dns_server ;
-	G::TimeInterval m_timeout ;
+	G::TimeInterval m_timeout {0U} ;
 	DnsBlockResult m_result ;
-	unsigned int m_id_base ;
+	unsigned int m_id_base {0U} ;
 	std::unique_ptr<DatagramSocket> m_socket_ptr ;
 } ;
 
@@ -228,8 +228,7 @@ public:
 
 inline
 GNet::DnsBlockServerResult::DnsBlockServerResult( const std::string & server ) :
-	m_server(server) ,
-	m_valid(false)
+	m_server(server)
 {
 }
 

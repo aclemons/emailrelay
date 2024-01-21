@@ -70,7 +70,7 @@ std::string GFilters::ExecutableFilter::response() const
 {
 	G_ASSERT( m_exit.ok() || m_exit.abandon() || !m_response.empty() ) ;
 	if( m_exit.ok() || m_exit.abandon() )
-		return std::string() ;
+		return {} ;
 	else
 		return m_response ;
 }
@@ -84,7 +84,7 @@ std::string GFilters::ExecutableFilter::reason() const
 {
 	G_ASSERT( m_exit.ok() || m_exit.abandon() || !m_reason.empty() ) ;
 	if( m_exit.ok() || m_exit.abandon() )
-		return std::string() ;
+		return {} ;
 	else
 		return m_reason ;
 }

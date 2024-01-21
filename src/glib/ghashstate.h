@@ -145,16 +145,17 @@ template <unsigned int N, typename U, typename S>
 std::string G::HashState<N,U,S>::encode( uint_type hi , uint_type low , uint_type v0 ,
 	uint_type v1 , uint_type v2 , uint_type v3 , uint_type v4 )
 {
+	unsigned int NN = N ; // workround for msvc C4127
 	uint_type n = hi ;
 	n <<= 29 ;
 	n |= ( low >> 3 ) ;
 	std::array<uint_type,N/4> values {} ;
-	if( N > 0 ) values[0] = v0 ;
-	if( N > 4 ) values[1] = v1 ;
-	if( N > 8 ) values[2] = v2 ;
-	if( N > 12 ) values[3] = v3 ;
-	if( N > 16 ) values[4] = v4 ;
-	return encode( &values[0] , n ) ;
+	if( NN > 0 ) values[0] = v0 ;
+	if( NN > 4 ) values[1] = v1 ;
+	if( NN > 8 ) values[2] = v2 ;
+	if( NN > 12 ) values[3] = v3 ;
+	if( NN > 16 ) values[4] = v4 ;
+	return encode( values.data() , n ) ;
 }
 
 template <typename U>
@@ -180,7 +181,7 @@ void G::HashState<N,U,S>::decode( const std::string & str , uint_type & hi , uin
 	if( str.length() < (N+4U) ) return decode( str+std::string(N+4U,'\0') , hi , low , v0 , v1 , v2 , v3 , v4 ) ;
 	std::array<uint_type,N/4> values {} ;
 	uint_type n ;
-	convert( str , &values[0] , n ) ;
+	convert( str , values.data() , n ) ;
 	if( v0 && N > 0 ) *v0 = values[0] ;
 	if( v1 && N > 4 ) *v1 = values[1] ;
 	if( v2 && N > 8 ) *v2 = values[2] ;

@@ -54,7 +54,7 @@ namespace G
 		} ;
 		LogStream & ostream1()
 		{
-			static G::omembuf buf( &buffer[0] , buffer.size() ) ; // bogus clang-tidy cert-err58-cpp
+			static G::omembuf buf( buffer.data() , buffer.size() ) ; // bogus clang-tidy cert-err58-cpp
 			static ostream s( &buf ) ;
 			static LogStream logstream( &s ) ;
 			s.reset() ;
@@ -234,12 +234,12 @@ std::string G::LogOutput::makePath( const std::string & path_in ) const
 	// this is called at most hourly, so not optimised
 	std::string path_out = path_in ;
 	std::size_t pos = 0U ;
-	if( (pos=path_out.find("%d")) != std::string::npos )
+	if( (pos=path_out.find("%d")) != std::string::npos ) // NOLINT assignment
 	{
-		std::string yyyymmdd( &m_time_buffer[0] , 8U ) ;
+		std::string yyyymmdd( m_time_buffer.data() , 8U ) ;
 		path_out.replace( pos , 2U , yyyymmdd ) ;
 	}
-	if( (pos=path_out.find("%h")) != std::string::npos )
+	if( (pos=path_out.find("%h")) != std::string::npos ) // NOLINT assignment
 	{
 		path_out[pos] = m_time_buffer[9] ;
 		path_out[pos+1U] = m_time_buffer[10] ;
@@ -303,7 +303,7 @@ void G::LogOutput::output( LogStream & logstream , int )
 	if( m_depth ) m_depth-- ;
 	if( m_depth ) return ;
 
-	char * buffer = &LogOutputImp::buffer[0] ;
+	char * buffer = LogOutputImp::buffer.data() ;
 	std::size_t n = LogOutputImp::tellp( logstream ) ;
 
 	// elipsis on overflow
@@ -352,7 +352,7 @@ void G::LogOutput::assertionFailure( const char * file , int line , const char *
 	{
 		LogStream & logstream = LogOutputImp::ostream1() ;
 		logstream << txt("assertion error: ") << basename(file) << "(" << line << "): " << test_expression ;
-		char * p = &LogOutputImp::buffer[0] ;
+		char * p = LogOutputImp::buffer.data() ;
 		std::size_t n = LogOutputImp::tellp( logstream ) ;
 		instance()->osoutput( instance()->m_fd , Log::Severity::Assertion , p , n ) ;
 	}
@@ -376,13 +376,13 @@ bool G::LogOutput::updateTime()
 	{
 		m_time_s = now.s() ;
 		m_time_buffer[0] = '\0' ;
-		now.local().format( &m_time_buffer[0] , m_time_buffer.size() , "%Y%m%d.%H%M%S." ) ;
+		now.local().format( m_time_buffer.data() , m_time_buffer.size() , "%Y%m%d.%H%M%S." ) ;
 		m_time_buffer[16U] = '\0' ;
 
-		new_hour = 0 != std::memcmp( &m_time_change_buffer[0] , &m_time_buffer[0] , 11U ) ;
+		new_hour = 0 != std::memcmp( m_time_change_buffer.data() , m_time_buffer.data() , 11U ) ;
 
 		static_assert( sizeof(m_time_change_buffer) == sizeof(m_time_buffer) , "" ) ;
-		std::memcpy( &m_time_change_buffer[0] , &m_time_buffer[0] , m_time_buffer.size() ) ;
+		std::memcpy( m_time_change_buffer.data() , m_time_buffer.data() , m_time_buffer.size() ) ;
 	}
 	return new_hour ;
 }
@@ -390,7 +390,7 @@ bool G::LogOutput::updateTime()
 void G::LogOutput::appendTimeTo( LogStream & logstream )
 {
 	logstream
-		<< &m_time_buffer[0]
+		<< m_time_buffer.data()
 		<< static_cast<char>( '0' + ( ( m_time_us / 100000U ) % 10U ) )
 		<< static_cast<char>( '0' + ( ( m_time_us / 10000U ) % 10U ) )
 		<< static_cast<char>( '0' + ( ( m_time_us / 1000U ) % 10U ) )

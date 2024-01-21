@@ -35,7 +35,7 @@ G::Arg::Arg( int argc , char **argv )
 	G_ASSERT( argc > 0 ) ;
 	G_ASSERT( argv != nullptr ) ;
 	for( int i = 0 ; i < argc ; i++ )
-		m_array.push_back( argv[i] ) ;
+		m_array.emplace_back( argv[i] ) ;
 
 	static bool first = true ;
 	if( first )
@@ -102,7 +102,7 @@ bool G::Arg::contains( const std::string & option , std::size_t option_args , bo
 }
 
 #ifndef G_LIB_SMALL
-std::size_t G::Arg::count( const std::string & option )
+std::size_t G::Arg::count( const std::string & option ) const
 {
 	return find( true , option , 0U , nullptr ) ;
 }

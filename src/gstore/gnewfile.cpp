@@ -39,9 +39,6 @@ GStore::NewFile::NewFile( FileStore & store , const std::string & from ,
 	std::size_t max_size ) :
 		m_store(store) ,
 		m_id(store.newId()) ,
-		m_committed(false) ,
-		m_saved(false) ,
-		m_size(0U) ,
 		m_max_size(max_size)
 {
 	m_env.from = from ;

@@ -134,7 +134,7 @@ test_names = \
 	testTlsServerBadClientCertificateVerifyRejected.test \
 	testTlsClientGoodServerCertificateVerifyAccepted.test \
 	testTlsClientBadServerCertificateVerifyRejected.test \
-	testTlsClientBadServerCertificateNoVerifyRejected.test \
+	testTlsClientBadServerCertificateNoVerifyAccepted.test \
 	testTlsGoodServerCertificateVerifyAccepted.test \
 	testTlsBadServerCertificateVerifyRejected.test \
 	testTlsBadServerCertificateNoVerifyAccepted.test \
@@ -203,7 +203,7 @@ COMMON_LDADD = \
 	$(top_builddir)/src/glib/libglib.a
 
 if GCONFIG_WINDOWS
- OS_LIBS =-lws2_32 -lshell32 -liphlpapi -lcomctl32 -ladvapi32 -luser32 -lgdi32 -luser32 -lkernel32
+ OS_LIBS =-lws2_32 -lshell32 -liphlpapi -lcomctl32 -ladvapi32 -lgdi32 -luser32 -lkernel32
 else
  OS_LIBS =
 endif
