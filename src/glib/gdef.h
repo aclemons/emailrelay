@@ -544,13 +544,6 @@
 	#if !defined(GCONFIG_HAVE_MBEDTLS_NET_H)
 		#define GCONFIG_HAVE_MBEDTLS_NET_H 0
 	#endif
-	#if !defined(GCONFIG_MBEDTLS_DISABLE_PSA_HEADER)
-		#ifdef G_UNIX
-			#define GCONFIG_MBEDTLS_DISABLE_PSA_HEADER 0
-		#else
-			#define GCONFIG_MBEDTLS_DISABLE_PSA_HEADER 1
-		#endif
-	#endif
 	#if !defined(GCONFIG_HAVE_OPENSSL)
 		#ifdef G_UNIX
 			#define GCONFIG_HAVE_OPENSSL 1
@@ -752,6 +745,7 @@
 		#include <cstdlib>
 		#include <ios>
 		#include <iosfwd>
+		#include <ctime>
 	#else
 		#include <stddef.h>
 		#include <stdlib.h>
@@ -995,6 +989,16 @@
 		#define GDEF_IGNORE_PARAM(name) std::ignore = name
 		#define GDEF_IGNORE_VARIABLE(name) std::ignore = name
 
+		/* pragma wrappers
+		*/
+		#if defined(_MSC_VER)
+			#define GDEF_WARNING_DISABLE_START( n ) __pragma(warning(push)) __pragma(warning(disable:n))
+			#define GDEF_WARNING_DISABLE_END __pragma(warning(pop))
+		#else
+			#define GDEF_WARNING_DISABLE_START( n )
+			#define GDEF_WARNING_DISABLE_END
+		#endif
+
 		/* C++ language backwards compatibility
 	 	*/
 		#if !GCONFIG_HAVE_CXX_STD_MAKE_UNIQUE
@@ -1003,7 +1007,7 @@
 			namespace std // NOLINT
 			{
 				template <typename T, typename... Args>
-				std::unique_ptr<T> make_unique( Args&&... args )
+				std::unique_ptr<T> make_unique( Args&&... args ) // NOLINT
 				{
 					return std::unique_ptr<T>( new T( std::forward<Args>(args)... ) ) ; // NOLINT
 				}
@@ -1272,7 +1276,6 @@
 		#endif
 
 		#if ! GCONFIG_HAVE_GMTIME_R && !defined(gmtime_r)
-			#include <ctime>
 			inline std::tm * gmtime_r( const std::time_t * tp , std::tm * tm_p )
 			{
 				#if GCONFIG_HAVE_GMTIME_S || defined(gmtime_s)
@@ -1289,7 +1292,6 @@
 		#endif
 
 		#if ! GCONFIG_HAVE_LOCALTIME_R && !defined(localtime_r)
-			#include <ctime>
 			inline struct std::tm * localtime_r( const std::time_t * tp , struct std::tm * tm_p )
 			{
 				#if GCONFIG_HAVE_LOCALTIME_S || defined(localtime_s)
@@ -1306,7 +1308,6 @@
 		#endif
 
 		#if ! GCONFIG_HAVE_LOCALTIME_S && !defined(localtime_s)
-			#include <ctime>
 			inline errno_t localtime_s( struct std::tm * tm_p , const std::time_t * tp )
 			{
 				const errno_t e_inval = 22 ;
@@ -1322,7 +1323,6 @@
 		#endif
 
 		#if ! GCONFIG_HAVE_GMTIME_S && !defined(gmtime_s)
-			#include <ctime>
 			inline errno_t gmtime_s( struct std::tm * tm_p , const std::time_t * tp )
 			{
 				const errno_t e_inval = 22 ;

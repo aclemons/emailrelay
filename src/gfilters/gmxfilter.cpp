@@ -37,8 +37,6 @@ GFilters::MxFilter::MxFilter( GNet::ExceptionSink es , GStore::FileStore & store
 		m_filter_config(filter_config) ,
 		m_spec(spec) ,
 		m_id("mx:") ,
-		m_result(Result::fail) ,
-		m_special(false) ,
 		m_timer(*this,&MxFilter::onTimeout,es)
 {
 	if( !MxLookup::enabled() )
@@ -100,7 +98,7 @@ GSmtp::Filter::Result GFilters::MxFilter::result() const
 
 std::string GFilters::MxFilter::response() const
 {
-	return std::string( m_result == Result::fail ? "failed" : "" ) ;
+	return { m_result == Result::fail ? "failed" : "" } ;
 }
 
 int GFilters::MxFilter::responseCode() const
@@ -158,6 +156,8 @@ GStore::FileStore::State GFilters::MxFilter::storestate() const
 		GStore::FileStore::State::Locked ;
 }
 
+// TODO combine mxconfig() and mxnameservers() to better report errors (fr #36)
+
 GFilters::MxLookup::Config GFilters::MxFilter::mxconfig( const std::string & spec )
 {
 	MxLookup::Config config ;
@@ -178,8 +178,11 @@ std::vector<GNet::Address> GFilters::MxFilter::mxnameservers( const std::string 
 	G::string_view spec_sv = spec ;
 	for( G::StringTokenView t(spec_sv,";",1U) ; t ; ++t )
 	{
-		if( GNet::Address::validString( G::sv_to_string(t()) ) )
-			result.push_back( GNet::Address::parse( G::sv_to_string(t()) ) ) ;
+		std::string s = G::sv_to_string( t() ) ;
+		if( GNet::Address::validString( s ) )
+			result.push_back( GNet::Address::parse( s ) ) ;
+		else if( GNet::Address::validStrings( s , "53" ) )
+			result.push_back( GNet::Address::parse( s , "53" ) ) ;
 	}
 	return result.empty() ? GNet::nameservers(53U) : result ;
 }

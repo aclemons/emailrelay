@@ -118,7 +118,7 @@ GAuth::Secret GAuth::SecretsFileClient::clientSecret( G::string_view type , G::s
 {
 	if( m_id_pwd && type == "plain"_sv )
 	{
-		return GAuth::Secret( {m_id,"base64"} , {m_pwd,"base64"} ) ;
+		return { {m_id,"base64"} , {m_pwd,"base64"} } ;
 	}
 	else if( m_id_pwd )
 	{

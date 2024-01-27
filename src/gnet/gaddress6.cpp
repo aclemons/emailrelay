@@ -222,11 +222,11 @@ std::string GNet::Address6::hostPartString() const
 {
 	std::array<char,INET6_ADDRSTRLEN+1U> buffer {} ;
 	const void * vp = & m_inet.sin6_addr ;
-	const char * p = inet_ntop( af() , const_cast<void*>(vp) , &buffer[0] , buffer.size() ) ; // cast for win32
+	const char * p = inet_ntop( af() , const_cast<void*>(vp) , buffer.data() , buffer.size() ) ; // cast for win32
 	if( p == nullptr )
 		throw Address::Error( "inet_ntop() failure" ) ;
 	buffer[buffer.size()-1U] = '\0' ;
-	return { &buffer[0] } ; // sic
+	return { buffer.data() } ; // sic
 }
 
 std::string GNet::Address6::queryString() const

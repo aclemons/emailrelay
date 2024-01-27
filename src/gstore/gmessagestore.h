@@ -152,7 +152,7 @@ namespace GStore
 }
 
 inline GStore::MessageId::MessageId( const std::string & s ) : m_s(s) {}
-inline GStore::MessageId GStore::MessageId::none() { return MessageId() ; }
+inline GStore::MessageId GStore::MessageId::none() { return {} ; }
 inline std::string GStore::MessageId::str() const { return m_s ; }
 inline bool GStore::MessageId::valid() const { return !m_s.empty() ; }
 

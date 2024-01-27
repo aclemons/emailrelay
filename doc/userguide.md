@@ -222,7 +222,7 @@ Refer to the `Delivery` section in the E-MailRelay reference document for more
 information.
 
 If you are using POP to view a spool directory that is also being used for
-e-mail forwarding then you must use `--pop-no-delete`.
+e-mail forwarding then you should use `--pop-no-delete`.
 
 IMAP
 ----
@@ -232,10 +232,8 @@ such as [dovecot][] can be used to serve them from there.
 
 It is normally sufficient for a filter script to just move the E-MailRelay
 content file straight into the mailbox `cur` directory, delete the corresponding
-envelope file and then exit with an exit code of 100.
-
-The built-in `deliver:` filter will automatically do this if it sees that the
-target sub-directory of the spool directory is actually a `maildir` mailbox.
+envelope file and then exit with an exit code of 100. The built-in `deliver:`
+filter can be used to do this.
 
 Triggering delivery
 -------------------
@@ -252,7 +250,7 @@ wireless `/etc/network/if-up.d`.
 Just create a two-line script like this in the relevant directory:
 
         #!/bin/sh
-        exec /usr/local/sbin/emailrelay --as-client=smtp.example.com:smtp
+        exec /usr/sbin/emailrelay --as-client=smtp.example.com:smtp
 
 and make it executable using `chmod +x`.
 
@@ -381,7 +379,7 @@ command-line, split onto multiple lines for readability:
         --in-port 25
         --in-domain example.com
         --in-address-verifier account:
-        --in-dnsbl 1.1.1.1:53,500,1,dnsbl.example.com
+        --in-dnsbl dnsbl.example.com
         --in-filter spam-edit:127.0.0.1:783
         --in-filter deliver:
         --in-server-smtp-config +chunking,+smtputf8
@@ -423,7 +421,7 @@ connection is checked against a DNSBL database; SpamAssassin is used to
 identify spam; and Linux [PAM][] is used for POP authentication.
 
 The `out` server is a routing [MTA][] that sends outgoing e-mail messages directly
-to destination servers. The filter makes copies so that eash e-mail message goes
+to destination servers. The filter makes copies so that each e-mail message goes
 to just one domain. The client filter uses DNS MX queries against the local
 system's default name servers to do the routing. If any e-mail messages are
 addressed to local users they are short-circuited and delivered directly to

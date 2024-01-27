@@ -224,6 +224,9 @@ UDS_SOURCES = \
 UDS_EXTRA_SOURCES = \
 	gaddresslocal_unix.cpp
 
+UDS_EXTRA_DIST = \
+	gaddresslocal_unix.cpp
+
 else
 
 UDS_SOURCES = \

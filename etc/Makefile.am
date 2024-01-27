@@ -52,7 +52,7 @@ do_sed = sed -e "s:__INIT_DIR__:$(e_initdir):g" -e "s:__RUN_DIR__:$(e_rundir):g"
 emailrelay.service: emailrelay.service.in
 	$(do_sed) < $(srcdir)/emailrelay.service.in > emailrelay.service
 
-do_sed2 = sed -e "s:^.spool-dir .*:spool-dir $(e_spooldir):g" -e "s:/var/spool/emailrelay:$(e_spooldir):g" -e "s:/etc:$(e_sysconfdir):g" -e "s:/usr/local/sbin:$(sbindir):g"
+do_sed2 = sed -e "s:/var/spool/emailrelay:$(e_spooldir):g" -e "s:^.spool-dir .*:spool-dir $(e_spooldir):g" -e "s:/etc:$(e_sysconfdir):g" -e "s:/usr/local/sbin:$(sbindir):g"
 
 emailrelay.conf: emailrelay.conf.in
 	$(do_sed2) < $(srcdir)/emailrelay.conf.in > emailrelay.conf

@@ -76,9 +76,9 @@ public:
 
 public:
 	Pam & m_pam ;
-	int m_magic ;
-	mutable int m_rc ; // required for pam_end()
-	Handle m_hpam ;
+	int m_magic {MAGIC} ;
+	mutable int m_rc {PAM_SUCCESS} ; // required for pam_end()
+	Handle m_hpam {nullptr} ;
 	Conversation m_conv ;
 	bool m_silent ;
 
@@ -100,9 +100,6 @@ private:
 
 G::PamImp::PamImp( G::Pam & pam , const std::string & application , const std::string & user , bool silent ) :
 	m_pam(pam) ,
-	m_magic(MAGIC) ,
-	m_rc(PAM_SUCCESS) ,
-	m_hpam(nullptr) ,
 	m_conv{} ,
 	m_silent(silent)
 {
@@ -181,7 +178,7 @@ std::string G::PamImp::name() const
 	m_rc = ::pam_get_item( hpam() , PAM_USER , &vp ) ;
 	check( "pam_get_item" , m_rc ) ;
 	const char * cp = static_cast<const char*>(vp) ;
-	return std::string( cp ? cp : "" ) ;
+	return { cp ? cp : "" } ;
 }
 
 void G::PamImp::setCredentials( int flag )

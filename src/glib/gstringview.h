@@ -135,7 +135,7 @@ namespace G
 
 namespace std /// NOLINT
 {
-	inline bool operator<( const string & s , G::string_view sv )
+	inline bool operator<( const string & s , G::string_view sv ) // NOLINT
 	{
 		return s.compare( 0 , s.size() , sv.data() , sv.size() ) < 0 ;
 	}

@@ -89,40 +89,40 @@
     <p>
      The main C++ libraries in the E-MailRelay code base are as follows:
     </p>
-   <h3><a class="a-header"><em>glib</em></a></h3>
+   <h3><a class="a-header">glib</a></h3>
       <dd>
        Low-level classes for file-system abstraction, date and time representation,
        string utility functions, logging, command line parsing etc.
       </dd>
-   <h3><a class="a-header"><em>gssl</em></a></h3>
+   <h3><a class="a-header">gssl</a></h3>
       <dd>
        A thin layer over the third-party TLS libraries.
       </dd>
-   <h3><a class="a-header"><em>gnet</em></a></h3>
+   <h3><a class="a-header">gnet</a></h3>
       <dd>
        Network and event-loop classes.
       </dd>
-   <h3><a class="a-header"><em>gauth</em></a></h3>
+   <h3><a class="a-header">gauth</a></h3>
       <dd>
        Implements various authentication mechanisms.
       </dd>
-   <h3><a class="a-header"><em>gsmtp</em></a></h3>
+   <h3><a class="a-header">gsmtp</a></h3>
       <dd>
        SMTP protocol classes.
       </dd>
-   <h3><a class="a-header"><em>gpop</em></a></h3>
+   <h3><a class="a-header">gpop</a></h3>
       <dd>
        POP3 protocol classes.
       </dd>
-   <h3><a class="a-header"><em>gstore</em></a></h3>
+   <h3><a class="a-header">gstore</a></h3>
       <dd>
        Message store classes.
       </dd>
-   <h3><a class="a-header"><em>gfilters</em></a></h3>
+   <h3><a class="a-header">gfilters</a></h3>
       <dd>
        Built-in filters.
       </dd>
-   <h3><a class="a-header"><em>gverifiers</em></a></h3>
+   <h3><a class="a-header">gverifiers</a></h3>
       <dd>
        Built-in address verifiers.
       </dd>
@@ -276,56 +276,79 @@
     </p>
    <h2><a class="a-header" name="SH_1_9">Windows build</a></h2> <!-- index:2:SH:1:9:Windows build -->
     <p>
-     E-MailRelay can be compiled on Windows using Microsoft Visual Studio C++ (MSVC)
-     or mingw-w64.
+     E-MailRelay can be built for Windows using the native Visual Studio MSVC
+     compiler or using MinGW (mingw-w64) on Linux.
     </p>
 
     <p>
-     For MSVC builds there is a perl script (<em>winbuild.pl</em>) that creates <em>cmake</em>
-     files from the autotools makefiles, runs <em>cmake</em> to create the MSVC project
-     files and then runs <em>msbuild</em> to compile E-MailRelay. If perl, cmake, MSVC, Qt
-     and mbedTLS source are installed in the right way then the <em>winbuild.bat</em> batch
-     file should be able to do a complete MSVC release build in one go. After that
-     the <em>winbuild-install.bat</em> batch file can be used to create a distribution.
+     For active development use <em>winbuild.bat</em> to set up an environment that uses
+     <em>cmake</em> and Visual Studio, or for one-off release builds use <em>winbuildall.bat</em>.
     </p>
 
     <p>
-     When building for a public release the E-MailRelay setup program should be
-     statically linked and copied into the distribution created by <em>winbuild.pl</em>.
-     This requires a static build of Qt: edit <em>msvc-desktop.conf</em> to use <em>/MT</em>;
-     run <em>configure.bat</em> with <em>-static -release</em>; run <em>nmake -f Makefile</em> for
-     <em>release</em> then <em>install</em>. Then build the E-MailRelay GUI using
-     <em>emailrelay-gui.pro</em>: <em>qmake CONFIG+='win static' emailrelay-gui.pro</em>;
-     then <em>mc messages.mc</em>; then copy <em>emailrelay-icon.ico</em>; and finally
-     <em>nmake -f Makefile.Release</em>.
+     The <em>winbuild.bat</em> script expects to find mbedtls source code in a child or
+     sibling directory and Qt libraries under <em>c:\qt</em>, but refer to <em>winbuild.pm</em> for
+     the details. The build proceeds using <em>cmake</em> and <em>msbuild</em> resulting in
+     statically-linked executables but with the GUI typically dynamically-linked.
+    </p>
+
+    <p>
+     The mbedtls code is built if necessary by running <em>cmake</em> and <em>cmake --build</em> in
+     a <em>mbedtls-x64</em> build sub-directory. The mbedtls headers are copied into the
+     build tree. The mbedtls configuration header (mbedtls_config.h) is optionally
+     edited to enable TLS v1.3. If necessary delete the <em>mbedtls-x64</em> build directory
+     to trigger a rebuild.
+    </p>
+
+    <p>
+     A release assembly can be created by running <em>winbuild-install.bat</em> or
+     <em>perl winbuild.pl install</em>. This makes use of the Qt <em>windeployqt</em> utility to
+     assemble DLLs and it also generates the Qt translation files (<em>*.qm</em>).
+    </p>
+
+    <p>
+     For public release builds the E-MailRelay GUI must be statically linked. Start
+     with a normal build with a dynamically-linked GUI and use <em>winbuild.pl install</em>
+     to create the release assembly. Then use the <em>qtbuild.pl</em> perl script to build
+     static Qt libraries from source in a location that <em>winbuild.pl</em> will find
+     (or use <em>winbuildall.bat</em>). Rebuild so that the GUI is now statically linked and
+     manually copy the statically-linked <em>emailrelay-gui.exe</em> binary into the release
+     assembly, replacing <em>emailrelay-setup.exe</em> and <em>emailrelay-gui.exe</em>. Remove the
+     now-redundant DLLs (in the both the root and payload directories) before
+     zipping.
     </p>
 
     <p>
      For MinGW cross-builds use <em>./configure.sh -w64</em> and <em>make</em> on a Linux box and
-     copy the built executables and the MinGW run-time to the target. Any extra
-     run-time files can be identified by running <em>dumpbin /dependents</em> in the normal
-     way.
+     copy the built executables. Any extra run-time files can be identified by
+     running <em>dumpbin /dependents</em> in the normal way.
+    </p>
+
+    <p>
+     To target ancient versions of Windows start with a MinGW cross-build for 32-bit
+     (<em>./configure.sh -m -w32 --disable-gui</em>). Then <em>winbuild.pl install_winxp</em> can
+     be used to make a simplified distribution assembly, without a GUI.
     </p>
    <h2><a class="a-header" name="SH_1_10">Windows packaging</a></h2> <!-- index:2:SH:1:10:Windows packaging -->
     <p>
-     On Windows E-MailRelay is packaged as a zip file containing the executables
-     (including the emailrelay GUI as <em>emailrelay-setup.exe</em>), documentation, and a
-     <em>payload</em> directory tree. The payload contains many of the same files all over
-     again, and while this duplication is not ideal it is at least straightforward.
+     On Windows E-MailRelay is packaged as a zip file containing the files assembled
+     by <em>winbuild.pl install</em> with a statically-built GUI copied in manually (see
+     above).
     </p>
 
     <p>
-     The Qt tool <em>windeployqt</em> is used to add run-time dependencies, such as the
-     platform DLL. (Public releases of Windows builds are normally statically linked,
-     so many of the DLLs added by <em>windeployqt</em> are not needed.)
+     The setup program is the emailrelay GUI running in setup mode, with a <em>payload</em>
+     directory containing the files to be installed.
     </p>
-
+   <h2><a class="a-header" name="SH_1_11">Unix build</a></h2> <!-- index:2:SH:1:11:Unix build -->
     <p>
-     To target ancient versions of Windows start with a cross-build using MinGW
-     for 32-bit (<em>./configure.sh -w32</em>); then <em>winbuild.pl mingw</em> can be used to
-     assemble a slimmed-down package for distribution.
+     E-MailRelay uses autoconf and automake, but the <em>libexec/make2cmake</em> script can
+     be used to generate cmake files. The generated cmake files incorporate some of
+     the settings from the <em>configure</em> script, so run <em>configure</em> or <em>configure.sh</em>
+     before <em>make2cmake</em>. The <em>configure</em> script is normally part of the release but
+     it can itself be generated by running the <em>bootstrap</em> script.
     </p>
-   <h2><a class="a-header" name="SH_1_11">Unix packaging</a></h2> <!-- index:2:SH:1:11:Unix packaging -->
+   <h2><a class="a-header" name="SH_1_12">Unix packaging</a></h2> <!-- index:2:SH:1:12:Unix packaging -->
     <p>
      On Unix-like operating systems it is more natural to use some sort of package
      derived from the <em>make install</em> process rather than an installer program, so
@@ -334,9 +357,9 @@
 
     <p>
      Top-level makefile targets <em>dist</em>, <em>deb</em> and <em>rpm</em> can be used to create a
-     binary tarball, a debian package, and an RPM package respectively.
+     binary tarball, debian package, and RPM package respectively.
     </p>
-   <h2><a class="a-header" name="SH_1_12">Internationalisation</a></h2> <!-- index:2:SH:1:12:Internationalisation -->
+   <h2><a class="a-header" name="SH_1_13">Internationalisation</a></h2> <!-- index:2:SH:1:13:Internationalisation -->
     <p>
      The GUI code has i18n support using the Qt framework, with the tr() function
      used throughout the GUI source code. The GUI main() function loads translations
@@ -356,7 +379,7 @@
      On Windows the main server executable has a tabbed dialog-box as its user
      interface, but that does not have any support for i18n.
     </p>
-   <h2><a class="a-header" name="SH_1_13">Source control</a></h2> <!-- index:2:SH:1:13:Source control -->
+   <h2><a class="a-header" name="SH_1_14">Source control</a></h2> <!-- index:2:SH:1:14:Source control -->
     <p>
      The source code is stored in the SourceForge <em>svn</em> and/or <em>git</em> repository.
     </p>
@@ -367,7 +390,7 @@
 
       <div class="div-pre">
        <pre>$ svn co https://svn.code.sf.net/p/emailrelay/code emailrelay
-$ cd emailrelay/tags/V_2_5
+$ cd emailrelay/tags/V_2_5_2
 </pre>
       </div><!-- div-pre -->
     <p>
@@ -377,14 +400,15 @@ $ cd emailrelay/tags/V_2_5
       <div class="div-pre">
        <pre>$ git clone https://git.code.sf.net/p/emailrelay/git emailrelay
 $ cd emailrelay
-$ git checkout V_2_5
+$ git checkout V_2_5_2
 </pre>
       </div><!-- div-pre -->
     <p>
-     Code that has been formally released will be tagged with a tag like <em>V_2_5</em> and
-     any minor post-release fixes will be on a <em>fixes</em> branch like <em>V_2_5_fixes</em>.
+     Code that has been formally released will be tagged with a tag like <em>V_2_5_2</em>
+     and any post-release or back-ported fixes will be on a <em>fixes</em> branch like
+     <em>V_2_5_2_fixes</em>.
     </p>
-   <h2><a class="a-header" name="SH_1_14">Compile-time features</a></h2> <!-- index:2:SH:1:14:Compile-time features -->
+   <h2><a class="a-header" name="SH_1_15">Compile-time features</a></h2> <!-- index:2:SH:1:15:Compile-time features -->
     <p>
      Compile-time features can be selected with options passed to the <em>configure</em>
      script. These include the following:

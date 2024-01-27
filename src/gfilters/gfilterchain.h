@@ -76,9 +76,9 @@ private:
 	G::Slot::Signal<int> m_done_signal ;
 	std::string m_filter_id ;
 	std::vector<std::unique_ptr<GSmtp::Filter>> m_filters ;
-	std::size_t m_filter_index ;
-	GSmtp::Filter * m_filter ;
-	bool m_running ;
+	std::size_t m_filter_index {0U} ;
+	GSmtp::Filter * m_filter {nullptr} ;
+	bool m_running {false} ;
 	GStore::MessageId m_message_id ;
 } ;
 

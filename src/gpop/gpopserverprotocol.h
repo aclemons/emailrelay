@@ -209,10 +209,10 @@ private:
 	Fsm m_fsm ;
 	std::string m_user ;
 	std::unique_ptr<std::istream> m_content ;
-	long m_body_limit ;
-	bool m_in_body ;
-	bool m_secure ;
-	bool m_sasl_init_apop ;
+	long m_body_limit {-1L} ;
+	bool m_in_body {false} ;
+	bool m_secure {false} ;
+	bool m_sasl_init_apop {false} ;
 } ;
 
 //| \class GPop::ServerProtocolText

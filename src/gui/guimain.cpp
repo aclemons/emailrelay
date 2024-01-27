@@ -132,8 +132,8 @@
 
 #ifdef G_WINDOWS
 #ifdef G_QT_STATIC
-Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin)
 Q_IMPORT_PLUGIN(QWindowsVistaStylePlugin)
+Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin)
 #endif
 #endif
 
@@ -259,7 +259,7 @@ int main( int argc , char * argv [] )
 {
 	try
 	{
-		G::Arg args( argc , argv ) ;
+		const G::Arg args( argc , argv ) ;
 		Application app( argc , argv ) ;
 		if( argc > 1 && std::string(argv[1]) == "--message" ) // message-box helper esp. for mac
 		{
@@ -305,6 +305,14 @@ int main( int argc , char * argv [] )
 					QCoreApplication::installTranslator( &translator ) ;
 				else
 					G_LOG( "main: no translations loaded" ) ;
+			}
+
+			// load an icon
+			if( !isWindows() && !isMac() && !args.contains("-qwindowicon") )
+			{
+				G::Path icon_png_path = search( argv0.dirname() , "emailrelay-icon.png" , "." , "icon" , "resources" ) ;
+				if( !icon_png_path.empty() )
+					app.setWindowIcon( QIcon(GQt::qstr(icon_png_path)) ) ;
 			}
 
 			// test-mode -- create a minimal payload, make it easier to

@@ -103,7 +103,7 @@ Specifies a timeout (in seconds) for receiving network traffic from remote SMTP 
 Specifies a timeout (in seconds) for getting responses from remote SMTP servers. The default is 60 seconds.
 .TP
 .B --forward-to-all
-Requires all recipient addresses to be accepted by the remote server before forwarding. This is currently the default behaviour  so this option is for forwards compatibility only.
+Requires all recipient addresses to be accepted by the remote server before forwarding. This is currently the default behaviour so this option is for forwards compatibility only.
 .TP
 .B --forward-to-some
 Allow forwarding to continue even if some recipient addresses on an e-mail envelope are rejected by the remote server.
@@ -122,10 +122,10 @@ Allows incoming connections from addresses that are not local. The default behav
 Runs the specified external program to verify a message recipient's e-mail address. A network verifier can be specified as \fInet:<tcp-address>\fR. The \fIaccount:\fR built-in address verifier can be used to check recipient addresses against the list of local system account names.
 .TP
 .B \-A, --anonymous, --anonymous=\fI<scope>\fR
-Disables the server's SMTP VRFY command, sends less verbose SMTP greeting and responses, stops \fIReceived\fR lines being added to mail message content files, and stops the SMTP client protocol adding \fIAUTH=\fR to the \fIMAIL\fR command. For finer control use a comma-separated list of things to anonymise: \fIvrfy\fR, \fIserver\fR, \fIcontent\fR and/or \fIclient\fR, eg. \fI--anonymous\fR=server\fR,content.
+Disables the server's SMTP VRFY command, sends less verbose SMTP greeting and responses, stops \fIReceived\fR lines being added to mail message content files, and stops the SMTP client protocol adding \fIAUTH=\fR to the \fIMAIL\fR command. For finer control use a comma-separated list of things to anonymise: \fIvrfy\fR, \fIserver\fR, \fIcontent\fR and/or \fIclient\fR.
 .TP
 .B \-s, --delivery-dir \fI<dir>\fR
-Specifies the base directory for mailboxes when delivering  messages that have local recipients. This defaults to the main spool directory.
+Specifies the base directory for mailboxes when delivering messages that have local recipients. This defaults to the main spool directory.
 .TP
 .B --dnsbl \fI<config>\fR
 Specifies a list of DNSBL servers that are used to reject SMTP connections from blocked addresses. The configuration string is made up of comma-separated fields: the DNS server's transport address, a timeout in milliseconds, a rejection threshold, and then the list of DNSBL servers.
@@ -156,7 +156,7 @@ Limits the size of mail messages that can be submitted over SMTP.
 Enables the POP server, listening by default on port 110, providing access to spooled mail messages. Negotiated TLS using the POP \fISTLS\fR command will be enabled if the \fI--server-tls\fR option is also given.
 .TP
 .B \-J, --pop-by-name
-Modifies the POP server's spool directory to be the sub-directory with the same name as the user-id used for POP authentication. This  allows POP clients to see only their own messages after they have  been moved into separate sub-directories typically by the built-in  \fIdeliver:\fR or \fIcopy:\fR filters. Content files can remain in the  main spool directory to save disk space; they will be deleted by  the POP server when it deletes the last matching envelope file.
+Modifies the POP server's spool directory to be the sub-directory with the same name as the user-id used for POP authentication. This allows POP clients to see only their own messages after they have been moved into separate sub-directories typically by the built-in \fIdeliver:\fR or \fIcopy:\fR filters. Content files can remain in the main spool directory to save disk space; they will be deleted by the POP server when it deletes the last matching envelope file.
 .TP
 .B \-G, --pop-no-delete
 Disables the POP DELE command so that the command appears to succeed but mail messages are not deleted from the spool directory.
@@ -173,13 +173,13 @@ Enables the \fIterminate\fR command in the administration interface.
 .SS Authentication options
 .TP
 .B \-C, --client-auth \fI<file>\fR
-Enables SMTP client authentication with the remote server, using the client account details taken from the specified secrets file.  The secrets file should normally contain one line having between four and five space-separated fields. The first field must be \fIclient\fR, the second field is the password type (\fIplain\fR or \fImd5\fR), the third is the xtext-encoded user-id and the fourth is the xtext-encoded password. Alternatively, the user-id and password fields can be Base64 encoded if the second field is \fIplain:b\fR. It is also possible to do without a secrets file and give the Base64 encoded user-id and  password directly on the command-line or in the configuration file formatted as \fIplain:<base64-user-id>:<base64-password>\fR. Note that putting these account details on the command-line is not recommended because it will make the password easily visible to all users on the  local machine.
+Enables SMTP client authentication with the remote server, using the client account details taken from the specified secrets file. The secrets file should normally contain one line having between four and five space-separated fields. The first field must be \fIclient\fR, the second field is the password type (\fIplain\fR or \fImd5\fR), the third is the xtext-encoded user-id and the fourth is the xtext-encoded password. Alternatively, the user-id and password fields can be Base64 encoded if the second field is \fIplain:b\fR. It is also possible to do without a secrets file and give the Base64 encoded user-id and password directly on the command-line or in the configuration file formatted as \fIplain:<base64-user-id>:<base64-password>\fR. Note that putting these account details on the command-line is not recommended because it will make the password easily visible to all users on the local machine.
 .TP
 .B --client-auth-config \fI<config>\fR
 Configures the SMTP client authentication module using a semicolon-separated list of configuration items. Each item is a single-character key, followed by a colon and then a comma-separated list. A 'm' character introduces an ordered list of preferred authentication mechanisms and an 'x' introduces a list of mechanisms to avoid. An 'a' list and a 'd' list can be used similarly to prefer and avoid certain mechanisms once the session is encrypted with TLS.
 .TP
 .B \-S, --server-auth \fI<file>\fR
-Enables SMTP server authentication of remote SMTP clients. Account names and passwords are taken from the specified secrets file. The secrets file should contain lines that have four space-separated fields, starting with \fIserver\fR in the first field; the second field is the password encoding (\fIplain\fR or \fImd5\fR), the third is the client user-id and the fourth is the password. The user-id is RFC-1891 xtext encoded, and the password is either xtext encoded or generated by \fIemailrelay-passwd\fR. Alternatively, the username and password can be Base64 encoded if the second field is \fIplain:b\fR. A special value of  \fIpam:\fR can be used for authentication using linux PAM.
+Enables SMTP server authentication of remote SMTP clients. Account names and passwords are taken from the specified secrets file. The secrets file should contain lines that have four space-separated fields, starting with \fIserver\fR in the first field; the second field is the password encoding (\fIplain\fR or \fImd5\fR), the third is the client user-id and the fourth is the password. The user-id is RFC-1891 xtext encoded, and the password is either xtext encoded or generated by \fIemailrelay-passwd\fR. Alternatively, the username and password can be Base64 encoded if the second field is \fIplain:b\fR. A special value of \fIpam:\fR can be used for authentication using linux PAM.
 .TP
 .B --server-auth-config \fI<config>\fR
 Configures the SMTP server authentication module using a semicolon-separated list of configuration items. Each item is a single-character key, followed by a colon and then a comma-separated list. A 'm' character introduces an ordered list of allowed authentication mechanisms and an 'x' introduces a list of mechanisms to deny. An 'a' list and a 'd' list can be used similarly to allow and deny mechanisms once the session is encrypted with TLS. In typical usage you might have an empty allow list for an unencrypted session and a single preferred mechanism once encrypted, \fIm:;a:plain\fR.
@@ -213,7 +213,7 @@ Enables verification of the CNAME within the remote SMTP server's certificate.
 Enables TLS for incoming SMTP and POP connections. SMTP clients can then request TLS encryption by issuing the STARTTLS command. The \fI--server-tls-certificate\fR option must be used to define the server certificate.
 .TP
 .B --server-tls-certificate \fI<pem-file>\fR
-Defines the TLS certificate file when acting as a SMTP or POP server. This file must contain the server's private key and certificate chain using the PEM file format. Alternatively, use this option twice with the first specifying the key file and the second the certificate  file. Keep the file permissions tight to avoid accidental exposure  of the private key.
+Defines the TLS certificate file when acting as a SMTP or POP server. This file must contain the server's private key and certificate chain using the PEM file format. Alternatively, use this option twice with the first specifying the key file and the second the certificate file. Keep the file permissions tight to avoid accidental exposure of the private key.
 .TP
 .B --server-tls-connection
 Enables SMTP over TLS when acting as an SMTP server. This is for SMTP over TLS (SMTPS), not TLS negotiated within SMTP using STARTTLS.
@@ -222,7 +222,7 @@ Enables SMTP over TLS when acting as an SMTP server. This is for SMTP over TLS (
 Makes the use of TLS mandatory for any incoming SMTP and POP connections. SMTP clients must use the STARTTLS command to establish a TLS session before they can issue SMTP AUTH or SMTP MAIL-TO commands.
 .TP
 .B --server-tls-verify \fI<ca-list>\fR
-Enables verification of remote SMTP and POP clients' certificates against any of the trusted CA certificates in the specified file or directory. In many use cases this should be a file containing just your self-signed root certificate. Specify \fI<default>\fR  (including the angle brackets) for the TLS library's default set  of trusted CAs.
+Enables verification of remote SMTP and POP clients' certificates against any of the trusted CA certificates in the specified file or directory. In many use cases this should be a file containing just your self-signed root certificate. Specify \fI<default>\fR (including the angle brackets) for the TLS library's default set of trusted CAs.
 .TP
 .B \-9, --tls-config \fI<options>\fR
 Selects and configures the low-level TLS library, using a comma-separated list of keywords. If OpenSSL and mbedTLS are both built in then keywords of \fIopenssl\fR and \fImbedtls\fR will select one or the other. Keywords like \fItlsv1.0\fR can be used to set a minimum TLS protocol version, or \fI-tlsv1.2\fR to set a maximum version.

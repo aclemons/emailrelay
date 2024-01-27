@@ -297,9 +297,6 @@ const char * Main::Configuration::semanticError1() const
 
 		if( contains_admin )
 			return tx("the --admin option cannot be used with --as-client or --dont-serve") ;
-
-		if( contains_poll )
-			return tx("the --poll option cannot be used with --as-client or --dont-serve") ;
 	}
 
 	if( contains("no-smtp") ) // ie. if not serving smtp
@@ -419,13 +416,13 @@ std::string Main::Configuration::semanticError2() const
 	using G::format ;
 
 	GSmtp::FilterFactoryBase::Spec f ;
-	if( (f=filter()).first.empty() )
+	if( (f=filter()).first.empty() ) // NOLINT assignment
 		return str( format( txt("invalid filter specification: %1%") ) % f.second ) ;
-	if( (f=_clientFilter()).first.empty() )
+	if( (f=_clientFilter()).first.empty() ) // NOLINT assignment
 		return str( format( txt("invalid client filter specification: %1%") ) % f.second ) ;
 
 	GSmtp::VerifierFactoryBase::Spec v ;
-	if( (v=_verifier()).first.empty() )
+	if( (v=_verifier()).first.empty() ) // NOLINT assignment
 		return str( format( txt("invalid verifier specification: %1%") ) % v.second ) ;
 
 	return {} ;
@@ -438,7 +435,7 @@ G::StringArray Main::Configuration::semanticWarnings() const
 	G::StringArray warnings ;
 
 	if( m_pid_file_warning )
-		warnings.push_back( txt("more than one --pid-file: using the first") ) ;
+		warnings.emplace_back( txt("more than one --pid-file: using the first") ) ;
 
 	const bool no_syslog =
 		contains( "no-syslog" ) ||
@@ -472,13 +469,13 @@ G::StringArray Main::Configuration::semanticWarnings() const
 
 	if( contains("show") && ( no_daemon || contains("hidden") ) ) // (windows)
 	{
-		warnings.push_back(
+		warnings.emplace_back(
 			txt("the --show option is ignored when using --no-daemon, --as-client or --hidden") ) ;
 	}
 
 	if( stringValue("server-auth") == "/pam" || stringValue("pop-auth") == "/pam" )
 	{
-		warnings.push_back(
+		warnings.emplace_back(
 			txt("pam authentication should be enabled with pam: rather than /pam") ) ;
 	}
 

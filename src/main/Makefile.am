@@ -56,6 +56,7 @@ AM_CPPFLAGS = \
  -I$(top_srcdir)/src/gpop \
  -I$(top_srcdir)/src/gfilters \
  -I$(top_srcdir)/src/gverifiers \
+ -I$(top_srcdir)/src/main/icon \
  -D "G_SPOOLDIR=$(e_spooldir)" \
  -D "G_LOCALEDIR=$(localedir)"
 
@@ -159,7 +160,13 @@ else
 endif
 
 if GCONFIG_WINDOWS
- RESOURCES = emailrelay.o
+ OS_LIBS =-lws2_32 -lshell32 -liphlpapi -lcomctl32 -ladvapi32 -lgdi32 -luser32 -lkernel32
+else
+ OS_LIBS =
+endif
+
+if GCONFIG_WINDOWS
+ RESOURCES = emailrelay-res.o
  emailrelay_SOURCES = $(WINDOWS_MAIN_SOURCES) $(OTHER_SOURCES)
  emailrelay_LDFLAGS = -mwindows -static
  emailrelay_LDADD = \
@@ -176,7 +183,7 @@ if GCONFIG_WINDOWS
  $(top_builddir)/src/glib/libglib.a \
  $(RESOURCES) \
  $(GCONFIG_TLS_LIBS) \
- -lws2_32 -liphlpapi -lcomctl32
+ $(OS_LIBS)
 else
  emailrelay_SOURCES = $(TEXTMODE_MAIN_SOURCES) $(OTHER_SOURCES)
  emailrelay_LDFLAGS =
@@ -191,7 +198,8 @@ else
  $(top_builddir)/src/gnet/libgnet.a \
  $(top_builddir)/src/gssl/libgssl.a \
  $(top_builddir)/src/glib/libglib.a \
- $(GCONFIG_TLS_LIBS)
+ $(GCONFIG_TLS_LIBS) \
+ $(OS_LIBS)
 endif
 
 if GCONFIG_WINDOWS
@@ -210,7 +218,7 @@ if GCONFIG_WINDOWS
  $(top_builddir)/src/win32/libwin32.a \
  $(top_builddir)/src/glib/libglib.a \
  $(GCONFIG_TLS_LIBS) \
- -lws2_32 -liphlpapi -lcomctl32
+ $(OS_LIBS)
 endif
 
 emailrelay_passwd_SOURCES = passwd.cpp legal.cpp legal.h
@@ -220,13 +228,14 @@ if GCONFIG_WINDOWS
  $(top_builddir)/src/gssl/libgssl.a \
  $(top_builddir)/src/glib/libglib.a \
  $(GCONFIG_TLS_LIBS) \
- -lws2_32 -liphlpapi -lcomctl32
+ $(OS_LIBS)
 else
  emailrelay_passwd_LDFLAGS =
  emailrelay_passwd_LDADD =  \
  $(top_builddir)/src/gssl/libgssl.a \
  $(top_builddir)/src/glib/libglib.a \
- $(GCONFIG_TLS_LIBS)
+ $(GCONFIG_TLS_LIBS) \
+ $(OS_LIBS)
 endif
 
 emailrelay_submit_SOURCES = submit.cpp legal.cpp legal.h
@@ -236,12 +245,13 @@ if GCONFIG_WINDOWS
  $(top_builddir)/src/gstore/libgstore.a \
  $(top_builddir)/src/win32/libwin32.a \
  $(top_builddir)/src/glib/libglib.a \
- -lws2_32 -liphlpapi -lcomctl32
+ $(OS_LIBS)
 else
  emailrelay_submit_LDFLAGS =
  emailrelay_submit_LDADD = \
  $(top_builddir)/src/gstore/libgstore.a \
- $(top_builddir)/src/glib/libglib.a
+ $(top_builddir)/src/glib/libglib.a \
+ $(OS_LIBS)
 endif
 
 if GCONFIG_TLS_USE_BOTH
@@ -251,7 +261,8 @@ if GCONFIG_WINDOWS
 endif
 emailrelay_keygen_LDADD = \
  $(top_builddir)/src/gssl/libgsslkeygen.a \
- $(GCONFIG_TLS_LIBS)
+ $(GCONFIG_TLS_LIBS) \
+ $(OS_LIBS)
 else
 if GCONFIG_TLS_USE_MBEDTLS
 emailrelay_keygen_SOURCES = $(KEYGEN_SOURCES)
@@ -260,19 +271,19 @@ emailrelay_keygen_LDFLAGS = -static
 endif
 emailrelay_keygen_LDADD = \
   $(top_builddir)/src/gssl/libgsslkeygen.a \
-  $(GCONFIG_TLS_LIBS)
+  $(GCONFIG_TLS_LIBS) \
+  $(OS_LIBS)
 endif
 endif
 
 emailrelay_start_SOURCES = start.cpp
 if GCONFIG_WINDOWS
  emailrelay_start_LDFLAGS = -static
- emailrelay_start_LDADD = \
- -lws2_32 -liphlpapi -lcomctl32
 else
  emailrelay_start_LDFLAGS =
- emailrelay_start_LDADD =
 endif
+emailrelay_start_LDADD = \
+ $(OS_LIBS)
 
 if GCONFIG_WINDOWS
  emailrelay_service_SOURCES = \
@@ -281,12 +292,12 @@ if GCONFIG_WINDOWS
  emailrelay_service_LDADD = \
  libmain.a \
  $(top_builddir)/src/glib/libglib.a \
- -lws2_32 -liphlpapi -lcomctl32
+ $(OS_LIBS)
 endif
 
 if GCONFIG_WINDOWS
 $(RESOURCES): emailrelay.rc MSG00001.bin messages.rc
-	$(GCONFIG_WINDRES) --preprocessor "$(CC) -E -xc-header -DRC_INVOKED" -D_WIN32=1 -DG_MINGW --include-dir . --include-dir icon --include-dir $(top_srcdir)/src/main/icon -i $(top_srcdir)/src/main/emailrelay.rc -o $(RESOURCES)
+	$(GCONFIG_WINDRES) --preprocessor "$(CC) -E -xc-header -DRC_INVOKED" -D_WIN32=1 --include-dir . --include-dir icon --include-dir $(top_srcdir)/src/main/icon -i $(top_srcdir)/src/main/emailrelay.rc -o $(RESOURCES)
 endif
 
 install-data-local: install-sbinPROGRAMS install-e_spoolDATA

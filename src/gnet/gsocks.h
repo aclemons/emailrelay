@@ -56,7 +56,7 @@ public:
 		///< Builds a SOCKS4a connect request pdu.
 
 private:
-	std::size_t m_request_offset ;
+	std::size_t m_request_offset {0U} ;
 	std::string m_request ;
 	std::string m_response ;
 } ;

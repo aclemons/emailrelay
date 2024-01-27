@@ -29,7 +29,7 @@ namespace G
 {
 	namespace Base64Imp
 	{
-		#ifdef G_WINDOWS
+		#if defined(G_WINDOWS) && defined(_MSC_VER) && _MSC_VER <= 1929
 		using uint32_type = volatile g_uint32_t ; // volatile as workround for compiler bug: MSVC 2019 16.6.2 /02 /Ob2
 		#else
 		using uint32_type = g_uint32_t ;

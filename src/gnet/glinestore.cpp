@@ -24,6 +24,7 @@
 #include "gstr.h"
 #include "gassert.h"
 #include <iterator>
+#include <cstddef>
 
 namespace GNet
 {
@@ -33,10 +34,15 @@ namespace GNet
 //| \class GNet::LineStoreIterator
 /// An iterator class for GNet::LineStore.
 ///
-class GNet::LineStoreIterator : public std::iterator<std::bidirectional_iterator_tag,char,ptrdiff_t>
+class GNet::LineStoreIterator
 {
 public:
 	G_EXCEPTION( Error , tx("line buffer internal error") ) ;
+	using iterator_category = std::bidirectional_iterator_tag ;
+	using value_type = char ;
+	using difference_type = std::ptrdiff_t ;
+	using pointer = char* ;
+	using reference = char ;
 	LineStoreIterator() = default;
 	~LineStoreIterator() = default;
 	explicit LineStoreIterator( const LineStore & line_store , bool end = false ) :
@@ -44,31 +50,10 @@ public:
 		m_pos(end?line_store.size():0U)
 	{
 	}
-	LineStoreIterator( const LineStoreIterator & other ) :
-		m_p(other.m_p) ,
-		m_pos(other.m_pos)
-	{
-	}
-	LineStoreIterator( LineStoreIterator && other ) noexcept :
-		m_p(other.m_p) ,
-		m_pos(other.m_pos)
-	{
-	}
-	void swap( LineStoreIterator & other ) noexcept
-	{
-		using std::swap ;
-		swap( m_p , other.m_p ) ;
-		swap( m_pos , other.m_pos ) ;
-	}
-	LineStoreIterator & operator=( const LineStoreIterator & other )
-	{
-		LineStoreIterator(other).swap(*this) ; return *this ;
-	}
-	LineStoreIterator & operator=( LineStoreIterator && other ) noexcept
-	{
-		LineStoreIterator(other).swap(*this) ;
-		return *this ;
-	}
+	LineStoreIterator( const LineStoreIterator & ) = default ;
+	LineStoreIterator( LineStoreIterator && ) noexcept = default ;
+	LineStoreIterator & operator=( const LineStoreIterator & ) = default ;
+	LineStoreIterator & operator=( LineStoreIterator && ) noexcept = default ;
 	LineStoreIterator & operator++()
 	{
 		m_pos++ ;
@@ -113,26 +98,26 @@ public:
 		G_ASSERT( m_p != nullptr ) ;
 		return m_p ? m_p->at( m_pos + n ) : '\0' ;
 	}
-	void operator+=( ptrdiff_t n )
+	void operator+=( std::ptrdiff_t n )
 	{
 		if( n < 0 )
 			m_pos -= static_cast<std::size_t>(-n) ;
 		else
 			m_pos += static_cast<std::size_t>(n) ;
 	}
-	void operator-=( ptrdiff_t n )
+	void operator-=( std::ptrdiff_t n )
 	{
 		if( n < 0 )
 			m_pos += static_cast<std::size_t>(-n) ;
 		else
 			m_pos -= static_cast<std::size_t>(n) ;
 	}
-	ptrdiff_t distanceTo( const LineStoreIterator & other ) const
+	std::ptrdiff_t distanceTo( const LineStoreIterator & other ) const
 	{
 		if( other.m_pos >= m_pos )
-			return static_cast<ptrdiff_t>(other.m_pos-m_pos) ;
+			return static_cast<std::ptrdiff_t>(other.m_pos-m_pos) ;
 		else
-			return -static_cast<ptrdiff_t>(m_pos-other.m_pos) ;
+			return -static_cast<std::ptrdiff_t>(m_pos-other.m_pos) ;
 	}
 	std::size_t pos() const
 	{
@@ -140,37 +125,33 @@ public:
 	}
 
 private:
-	const LineStore * m_p{nullptr} ;
-	std::size_t m_pos{0U} ;
+	const LineStore * m_p {nullptr} ;
+	std::size_t m_pos {0U} ;
 } ;
 
 namespace GNet
 {
-	inline LineStoreIterator operator+( const LineStoreIterator & in , ptrdiff_t n )
+	inline LineStoreIterator operator+( const LineStoreIterator & in , std::ptrdiff_t n )
 	{
 		LineStoreIterator result( in ) ;
 		result += n ;
 		return result ;
 	}
-	inline LineStoreIterator operator-( const LineStoreIterator & in , ptrdiff_t n )
+	inline LineStoreIterator operator-( const LineStoreIterator & in , std::ptrdiff_t n )
 	{
 		LineStoreIterator result( in ) ;
 		result -= n ;
 		return result ;
 	}
-	inline LineStoreIterator operator+( ptrdiff_t n , const LineStoreIterator & in )
+	inline LineStoreIterator operator+( std::ptrdiff_t n , const LineStoreIterator & in )
 	{
 		LineStoreIterator result( in ) ;
 		result += n ;
 		return result ;
 	}
-	inline ptrdiff_t operator-( const LineStoreIterator & a , const LineStoreIterator & b )
+	inline std::ptrdiff_t operator-( const LineStoreIterator & a , const LineStoreIterator & b )
 	{
 		return a.distanceTo( b ) ;
-	}
-	inline void swap( LineStoreIterator & a , LineStoreIterator & b ) noexcept
-	{
-		a.swap( b ) ;
 	}
 }
 

@@ -30,9 +30,7 @@ GNet::LineBuffer::LineBuffer( const Config & config ) :
 	m_eol(config.eol()) ,
 	m_warn_limit(config.warn()) ,
 	m_fmin(config.fmin()) ,
-	m_expect(config.expect()) ,
-	m_warned(false) ,
-	m_pos(0U)
+	m_expect(config.expect())
 {
 }
 
@@ -119,14 +117,14 @@ bool GNet::LineBuffer::more( bool fragments )
 		//
 		return false ;
 	}
-	else if( (pos=m_in.find(m_eol,m_pos)) != npos )
+	else if( (pos=m_in.find(m_eol,m_pos)) != npos ) // NOLINT assignment
 	{
 		// complete line available
 		//
 		output( pos-m_pos , m_eol.size() ) ;
 		return true ;
 	}
-	else if( fragments && (pos=m_in.findSubStringAtEnd(m_eol,m_pos)) != m_pos && !trivial(pos) )
+	else if( fragments && (pos=m_in.findSubStringAtEnd(m_eol,m_pos)) != m_pos && !trivial(pos) ) // NOLINT assignment
 	{
 		// finished iterating, return the residual fragment
 		//

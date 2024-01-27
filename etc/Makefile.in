@@ -308,7 +308,7 @@ e_systemd_DATA = \
 	emailrelay.service
 
 do_sed = sed -e "s:__INIT_DIR__:$(e_initdir):g" -e "s:__RUN_DIR__:$(e_rundir):g" -e "s:__SYSCONF_DIR__:$(e_sysconfdir):g" -e "s:__SBIN_DIR__:$(sbindir):g"
-do_sed2 = sed -e "s:^.spool-dir .*:spool-dir $(e_spooldir):g" -e "s:/var/spool/emailrelay:$(e_spooldir):g" -e "s:/etc:$(e_sysconfdir):g" -e "s:/usr/local/sbin:$(sbindir):g"
+do_sed2 = sed -e "s:/var/spool/emailrelay:$(e_spooldir):g" -e "s:^.spool-dir .*:spool-dir $(e_spooldir):g" -e "s:/etc:$(e_sysconfdir):g" -e "s:/usr/local/sbin:$(sbindir):g"
 CLEANFILES = \
 	emailrelay \
 	emailrelay.auth \

@@ -190,18 +190,18 @@ public:
 	int min_() const noexcept ;
 	int max_() const noexcept ;
 	bool noverify() const noexcept ;
-	bool clientnoverify() const noexcept ;
-	bool servernoverify() const noexcept ;
+	bool noisy() const noexcept ;
+	bool psa() const noexcept ;
 
 private:
 	static bool consume( G::StringArray & , G::string_view ) ;
 
 private:
 	bool m_noverify ;
-	bool m_clientnoverify ;
-	bool m_servernoverify ;
-	int m_min ;
-	int m_max ;
+	bool m_noisy ;
+	int m_min {-1} ;
+	int m_max {-1} ;
+	bool m_psa {true} ;
 } ;
 
 //| \class GSsl::MbedTls::LibraryImp
@@ -219,7 +219,7 @@ public:
 	Config config() const ;
 	static std::string credit( const std::string & , const std::string & , const std::string & ) ;
 	static std::string sid() ;
-	static std::string version() ; // eg. "1.2.3"
+	static std::string features() ;
 
 private: // overrides
 	void addProfile( const std::string & profile_name , bool is_server_profile ,
@@ -294,6 +294,7 @@ private:
 	Certificate m_certificate ;
 	Certificate m_ca_list ;
 	int m_authmode ;
+	bool m_noisy ;
 } ;
 
 //| \class GSsl::MbedTls::ProtocolImp

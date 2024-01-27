@@ -73,7 +73,7 @@ private:
 
 private:
 	using Signal = G::Slot::Signal<GSmtp::Verifier::Command,const GSmtp::VerifierStatus&> ;
-	Command m_command ;
+	GSmtp::Verifier::Command m_command {GSmtp::Verifier::Command::RCPT} ;
 	GSmtp::Verifier::Config m_config ;
 	GNet::Timer<UserVerifier> m_timer ;
 	GSmtp::VerifierStatus m_result ;

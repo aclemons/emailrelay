@@ -40,11 +40,7 @@ GPop::ServerProtocol::ServerProtocol( Sender & sender , Security & security , St
 		m_config(config) ,
 		m_sasl(GAuth::SaslServerFactory::newSaslServer(server_secrets,true,sasl_server_config,config.sasl_server_challenge_domain)) ,
 		m_peer_address(peer_address) ,
-		m_fsm(State::sStart,State::sEnd,State::s_Same,State::s_Any) ,
-		m_body_limit(-1L) ,
-		m_in_body(false) ,
-		m_secure(false) ,
-		m_sasl_init_apop(false)
+		m_fsm(State::sStart,State::sEnd,State::s_Same,State::s_Any)
 {
 	// (dont send anything to the peer from this ctor -- the Sender object is not fuly constructed)
 

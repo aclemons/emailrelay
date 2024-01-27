@@ -34,7 +34,7 @@
 #      -q  - no 'skipping' messages
 #      -t  - keep temporary files
 #      -u  - unprivileged login account name (if running as root)
-#      -T  - tls-config (default "-tlsv1.2") (eg. "-T mbedtls")
+#      -T  - tls-config (eg. "-T mbedtls,-tlsv1.2")
 #      -O  - options for openssl s_client and s_server
 #      -C  - create certs and exit
 #      -V  - use valgrind
@@ -96,7 +96,7 @@ $System::bin_dir = $opt_bin_dir ;
 $System::localhost = "127.0.0.1" ; # in case localhost resolves to ipv6 first
 $System::verbose = 1 if exists $opts{v} ;
 $System::keep = 1 if exists $opts{t} ;
-$Server::tls_config = exists $opts{T} ? $opts{T} : "-tlsv1.2" ;
+$Server::tls_config = exists $opts{T} ? $opts{T} : "" ; # was "-tlsv1.2"
 $Server::with_valgrind = $opts{V} if exists $opts{V} ;
 $Server::bin_dir = $opt_bin_dir ;
 $Helper::bin_dir = $opt_test_bin_dir ;
@@ -2548,7 +2548,7 @@ sub testClientFailsMessagesWithNoRemoteRecipients
 
 sub _newOpenssl
 {
-	die "no test certificates: please use -C" if ! -f "$opt_certs_dir/alice.key" ;
+	die "no test certificates: please use -C or -c" if ! -f "$opt_certs_dir/alice.key" ;
 	my $fs = new OpensslFileStore( $opt_certs_dir , ".pem" ) ;
 	return new Openssl( $fs ) ;
 }
@@ -2613,7 +2613,7 @@ sub _testTlsServer
 	else
 	{
 		System::waitForFileLine( $server_log , "tls.*established" ) ;
-		Check::fileContains( $client_log , "Session-ID" ) ;
+		Check::fileContains( $client_log , OpensslRun::runClientSecureMatch() ) ;
 	}
 
 	# tear down
@@ -2747,12 +2747,13 @@ sub _testTlsClient
 	{
 		Check::fileDoesNotContain( $client_log , "tls.*established" ) ;
 		Check::fileContains( $client_log , "tls error" ) ;
-		Check::fileContains( $server_log , "ERROR|Alert.*fatal" ) ;
+		Check::fileContains( $server_log , OpensslRun::runServerErrorMatch() ) ;
 	}
 	else
 	{
 		Check::fileContains( $client_log , "tls.*established" ) ;
 		Check::fileDoesNotContain( $client_log , "tls error" ) ;
+		Check::fileDoesNotContain( $server_log , OpensslRun::runServerErrorMatch() ) ;
 	}
 
 	# tear down
@@ -2784,7 +2785,7 @@ sub testTlsClientBadServerCertificateVerifyRejected
 		$verify , $expect_fail ) ;
 }
 
-sub testTlsClientBadServerCertificateNoVerifyRejected
+sub testTlsClientBadServerCertificateNoVerifyAccepted
 {
 	# c:trent (nv) <-- s:malory
 	# c:alice/carol --> s:trent
@@ -2885,8 +2886,9 @@ sub _testTls
 	elsif( $expect_failure )
 	{
 		System::waitForFiles( $client->spoolDir()."/emailrelay.*.envelope.bad" , 1 ) ;
-		System::waitForFileLine( $client_log , "tls error" ) ;
-		#Check::fileDoesNotContain( $client_log , "tls.*established" ) ; # not a valid check for v1.3
+		System::waitForFileLine( $client_log , "failing envelope" ) ;
+		#System::waitForFileLine( $client_log , "tls error" ) ; # not a valid check for TLSv1.3
+		#Check::fileDoesNotContain( $client_log , "tls.*established" ) ; # not a valid check for TLSv1.3
 		System::waitForFileLine( $server_log , "tls error" ) ;
 		Check::fileDoesNotContain( $server_log , "tls.*established" ) ;
 	}

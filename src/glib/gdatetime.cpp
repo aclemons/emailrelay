@@ -245,7 +245,7 @@ bool G::BrokenDownTime::format( char * out , std::size_t out_size , const char *
 
 void G::BrokenDownTime::format( std::vector<char> & out , const char * fmt ) const
 {
-	if( !format( &out[0] , out.size() , fmt ) )
+	if( !format( out.data() , out.size() , fmt ) )
 		throw DateTime::Error() ;
 }
 
@@ -265,7 +265,7 @@ std::string G::BrokenDownTime::str( const char * fmt ) const
 	std::vector<char> buffer( n ) ;
 	format( buffer , fmt ) ;
 	buffer.at(buffer.size()-1U) = '\0' ; // just in case
-	return std::string( &buffer[0] ) ;
+	return { buffer.data() } ;
 }
 
 int G::BrokenDownTime::hour() const

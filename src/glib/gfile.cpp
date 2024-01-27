@@ -131,11 +131,11 @@ void G::File::copy( std::istream & in , std::ostream & out , std::streamsize lim
 	while( ( limit == 0U || size < limit ) && in.good() && out.good() )
 	{
 		std::streamsize request = limit == 0U || (limit-size) > b ? b : (limit-size) ;
-		in.read( &buffer[0] , request ) ;
+		in.read( buffer.data() , request ) ;
 		std::streamsize result = in.gcount() ;
 		if( result == 0U )
 			break ;
-		out.write( &buffer[0] , result ) ;
+		out.write( buffer.data() , result ) ;
 		size += result ;
 	}
 

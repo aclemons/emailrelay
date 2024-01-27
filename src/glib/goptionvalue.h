@@ -96,7 +96,7 @@ G::OptionValue::OptionValue( const std::string & s , std::size_t count ) :
 inline
 G::OptionValue G::OptionValue::on()
 {
-	return OptionValue() ;
+	return {} ;
 }
 
 inline

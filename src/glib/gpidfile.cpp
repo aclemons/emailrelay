@@ -78,9 +78,9 @@ void G::PidFile::create( const Path & pid_file )
 		// (leak only if necessary)
 		static constexpr std::size_t buffer_size = 60U ; // eg. "/var/run/whatever/whatever.pid"
 		static std::array<char,buffer_size> buffer {} ;
-		const char * cleanup_arg = &buffer[0] ;
+		const char * cleanup_arg = buffer.data() ;
 		if( buffer[0] == '\0' && pid_file.size() < buffer.size() )
-			G::Str::strncpy_s( &buffer[0] , buffer.size() , pid_file.cstr() , pid_file.size() ) ;
+			G::Str::strncpy_s( buffer.data() , buffer.size() , pid_file.cstr() , pid_file.size() ) ;
 		else
 			cleanup_arg = Cleanup::strdup( pid_file.str() ) ;
 
@@ -98,12 +98,12 @@ G::Process::Id G::PidFile::read( SignalSafe , const char * path ) noexcept
 	std::array<char,buffer_size> buffer {} ;
 	buffer[0U] = '\0' ;
 
-	ssize_t rc = File::read( fd , &buffer[0] , buffer_size-1U ) ;
+	ssize_t rc = File::read( fd , buffer.data() , buffer_size-1U ) ;
 	File::close( fd ) ;
 	if( rc <= 0 )
 		return Process::Id::invalid() ;
 
-	return Process::Id( &buffer[0] , &buffer[0]+static_cast<std::size_t>(rc) ) ;
+	return Process::Id( buffer.data() , buffer.data()+static_cast<std::size_t>(rc) ) ;
 }
 
 bool G::PidFile::cleanup( SignalSafe safe , const char * path ) noexcept

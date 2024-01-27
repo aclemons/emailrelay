@@ -317,7 +317,7 @@ std::string GStore::EnvelopeImp::readValue( std::istream & stream , const std::s
 
 	std::string prefix = FileStore::x().append(expected_key).append(1U,':') ;
 	if( line == prefix )
-		return std::string() ;
+		return {} ;
 
 	prefix.append( 1U , ' ' ) ;
 	std::size_t pos = line.find( prefix  ) ;

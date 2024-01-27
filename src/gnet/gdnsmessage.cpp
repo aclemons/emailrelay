@@ -109,7 +109,7 @@ bool GNet::DnsMessage::valid() const
 
 const char * GNet::DnsMessage::p() const noexcept
 {
-	return &m_buffer[0] ;
+	return m_buffer.data() ;
 }
 
 std::size_t GNet::DnsMessage::n() const noexcept
@@ -120,14 +120,14 @@ std::size_t GNet::DnsMessage::n() const noexcept
 #ifndef G_LIB_SMALL
 GNet::DnsMessage GNet::DnsMessage::empty()
 {
-	return DnsMessage() ;
+	return {} ;
 }
 #endif
 
 GNet::DnsMessage GNet::DnsMessage::request( const std::string & type , const std::string & hostname , unsigned int id )
 {
 	DnsMessageRequest r( type , hostname , id ) ;
-	return DnsMessage( r.p() , r.n() ) ;
+	return { r.p() , r.n() } ;
 }
 
 std::vector<GNet::Address> GNet::DnsMessage::addresses() const
@@ -157,7 +157,7 @@ std::string GNet::DnsMessage::span( unsigned int begin , unsigned int end ) cons
 {
 	if( begin >= m_buffer.size() || end > m_buffer.size() || begin > end )
 		throw Error( "invalid span" ) ;
-	return std::string( m_buffer.begin()+begin , m_buffer.begin()+end ) ;
+	return { m_buffer.begin()+begin , m_buffer.begin()+end } ;
 }
 
 unsigned int GNet::DnsMessage::ID() const
@@ -248,7 +248,7 @@ void GNet::DnsMessage::convertToResponse( unsigned int rcode , bool authoritativ
 		throw Error( "cannot convert" ) ;
 
 	// fix up the header
-	unsigned char * buffer = reinterpret_cast<unsigned char*>(&m_buffer[0]) ;
+	unsigned char * buffer = reinterpret_cast<unsigned char*>( m_buffer.data() ) ;
 	buffer[2U] |= 0x80U ; // QR
 	if( authoritative ) buffer[2U] |= 0x04U ; // AA
 	buffer[3U] &= 0xf0U ; buffer[3U] |= ( rcode & 0x0fU ) ; // RCODE
@@ -284,7 +284,7 @@ GNet::DnsMessageQuestion GNet::DnsMessage::question( unsigned int record_index )
 	unsigned int offset = 12U ; // HEADER size
 	for( unsigned int i = 0U ; i < record_index ; i++ )
 		offset += Question(*this,offset).size() ;
-	return Question(*this,offset) ;
+	return { *this , offset } ;
 }
 
 GNet::DnsMessageRR GNet::DnsMessage::rr( unsigned int record_index ) const
@@ -300,7 +300,7 @@ GNet::DnsMessageRR GNet::DnsMessage::rr( unsigned int record_index ) const
 		else
 			offset += RR(*this,offset).size() ;
 	}
-	return RR( *this , offset ) ;
+	return { *this , offset } ;
 }
 
 GNet::Address GNet::DnsMessage::rrAddress( unsigned int record_index ) const
@@ -310,8 +310,7 @@ GNet::Address GNet::DnsMessage::rrAddress( unsigned int record_index ) const
 
 // ==
 
-GNet::DnsMessageQuestion::DnsMessageQuestion( const DnsMessage & msg , unsigned int offset ) :
-	m_size(0U)
+GNet::DnsMessageQuestion::DnsMessageQuestion( const DnsMessage & msg , unsigned int offset )
 {
 	m_qname = DnsMessageNameParser::read( msg , offset ) ;
 	unsigned int qname_size = DnsMessageNameParser::size( msg , offset ) ;
@@ -401,22 +400,17 @@ std::string GNet::DnsMessageNameParser::read( const DnsMessage & msg , unsigned 
 
 GNet::DnsMessageRR::DnsMessageRR( const DnsMessage & msg , unsigned int offset ) :
 	m_msg(msg) ,
-	m_offset(offset) ,
-	m_size(0U) ,
-	m_type(0U) ,
-	m_class(0U) ,
-	m_rdata_offset(0U) ,
-	m_rdata_size(0U)
+	m_offset(offset)
 {
 	m_name = DnsMessageNameParser::read( msg , offset ) ; // NAME
 	offset += DnsMessageNameParser::size( msg , offset ) ;
 
-	m_type = msg.word( offset ) ; offset += 2U ; // TYPE
-	m_class = msg.word( offset ) ; offset += 2U ; // CLASS
+	m_type = msg.word( offset ) ; offset += 2U ; // TYPE // NOLINT
+	m_class = msg.word( offset ) ; offset += 2U ; // CLASS // NOLINT
 	offset += 4U ; // TTL
-	m_rdata_size = msg.word( offset ) ; offset += 2U ; // RDLENGTH
+	m_rdata_size = msg.word( offset ) ; offset += 2U ; // RDLENGTH // NOLINT
 
-	m_rdata_offset = offset ;
+	m_rdata_offset = offset ; // NOLINT
 	m_size = offset - m_offset + m_rdata_size ;
 
 	if( m_class != 1U ) // "IN" (internet)

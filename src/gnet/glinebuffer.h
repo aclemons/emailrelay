@@ -166,7 +166,7 @@ public:
 		///< \code
 		///< void Foo::onData( const char * data , std::size_t size )
 		///< {
-		///<   apply( data , size , onLine , false ) ;
+		///<   m_line_buffer.apply( data , size , onLine , false ) ;
 		///< }
 		///< bool onLine( const char * data , std::size_t size , std::size_t , std::size_t , char )
 		///< {
@@ -182,7 +182,7 @@ public:
 			///< \code
 			///< void Foo::onData( const char * data , std::size_t size )
 			///< {
-			///<   apply( this , &Foo::onLine , data , size , false ) ;
+			///<   m_line_buffer.apply( this , &Foo::onLine , data , size , false ) ;
 			///< }
 			///< bool Foo::onLine( const char * data , std::size_t size , std::size_t , std::size_t , char )
 			///< {
@@ -327,10 +327,10 @@ private:
 	std::size_t m_warn_limit ;
 	std::size_t m_fmin ;
 	std::size_t m_expect ;
-	bool m_warned ;
+	bool m_warned {false} ;
 	LineStore m_in ;
 	Output m_out ;
-	std::size_t m_pos ;
+	std::size_t m_pos {0U} ;
 } ;
 
 //| \class GNet::LineBufferState
@@ -384,7 +384,15 @@ inline
 GNet::LineBuffer::Extension::~Extension()
 {
 	if( m_call_frame.valid() )
-		m_line_buffer->extensionEnd() ;
+	{
+		try
+		{
+			m_line_buffer->extensionEnd() ;
+		}
+		catch(...) // dtor
+		{
+		}
+	}
 }
 
 inline

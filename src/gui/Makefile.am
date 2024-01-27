@@ -33,7 +33,7 @@
 #
 
 MAC_SOURCES = guiaccess_mac.cpp guidir_mac.cpp guiboot_mac.cpp guilink_mac.cpp
-WIN32_SOURCES = guiaccess_win32.cpp guidir_win32.cpp guiboot_win32.cpp guilink_win32.cpp emailrelay-gui.rc
+WIN32_SOURCES = guiaccess_win32.cpp guidir_win32.cpp guiboot_win32.cpp guilink_win32.cpp
 UNIX_SOURCES = guiaccess_unix.cpp guidir_unix.cpp guiboot_unix.cpp guilink_unix.cpp
 
 QT_SOURCES = \
@@ -62,23 +62,21 @@ LIB_SOURCES = \
 	serverconfiguration.h
 
 TS_FILES = emailrelay_tr.no_NO.ts
-QM_IN_FILES = emailrelay.no.qm_in
 QM_FILES = emailrelay.no.qm
 
-emailrelay.no.qm: emailrelay.no.qm_in
-	-$(AWK) '/^[0123456789]/ {for(i=1;i<NF;i++){printf("%c",$$i)}}' $(srcdir)/emailrelay.no.qm_in > emailrelay.no.qm
-	@test -s $(QM_FILES)
-
 if GCONFIG_WINDOWS
+OS_LIBS =-lws2_32 -lshell32 -liphlpapi -lcomctl32 -ladvapi32 -lgdi32 -luser32 -lkernel32
 OS_SOURCES = $(WIN32_SOURCES)
 OS_EXTRA_DIST = $(MAC_SOURCES) $(UNIX_SOURCES)
 OS_NOINST =
 else
 if GCONFIG_MAC
+OS_LIBS =
 OS_SOURCES = $(MAC_SOURCES)
 OS_EXTRA_DIST = $(UNIX_SOURCES) $(WIN32_SOURCES)
 OS_NOINST =
 else
+OS_LIBS =
 OS_SOURCES = $(UNIX_SOURCES)
 OS_EXTRA_DIST = $(MAC_SOURCES) $(WIN32_SOURCES)
 OS_NOINST =
@@ -87,9 +85,9 @@ endif
 
 EXTRA_DIST=\
 	$(TS_FILES) \
-	$(QM_IN_FILES) \
+	$(QM_FILES) \
 	emailrelay-gui.exe.manifest \
-	emailrelay-gui.pro \
+	emailrelay-gui.rc \
 	messages.mc \
 	$(OS_EXTRA_DIST)
 
@@ -101,7 +99,7 @@ MOC_OUTPUT=\
 	moc_guipage.cpp \
 	moc_guipages.cpp
 
-CLEANFILES = $(MOC_OUTPUT) $(QM_FILES)
+CLEANFILES = $(MOC_OUTPUT)
 DISTCLEANFILES = ./.deps/moc*
 
 AM_CPPFLAGS=\
@@ -109,6 +107,7 @@ AM_CPPFLAGS=\
 	-I$(top_srcdir)/src/gssl \
 	-I$(top_srcdir)/src/gnet \
 	-I$(top_srcdir)/src/main \
+	-I$(top_srcdir)/src/main/icon \
 	-D "G_SBINDIR=$(sbindir)" \
 	-D "G_SPOOLDIR=$(e_spooldir)" \
 	-D "G_INITDIR=$(e_initdir)" \
@@ -148,7 +147,8 @@ emailrelay_gui_SOURCES = guimain.cpp $(QT_SOURCES)
 emailrelay_gui_DEPENDENCIES = libguimain.a
 emailrelay_gui_LDADD = \
 	libguimain.a \
-	$(GCONFIG_QT_LIBS)
+	$(GCONFIG_QT_LIBS) \
+	$(OS_LIBS)
 
 else
 
@@ -158,7 +158,8 @@ emailrelay_gui_real_SOURCES = guimain.cpp $(QT_SOURCES)
 emailrelay_gui_real_DEPENDENCIES = libguimain.a
 emailrelay_gui_real_LDADD = \
 	libguimain.a \
-	$(GCONFIG_QT_LIBS)
+	$(GCONFIG_QT_LIBS) \
+	$(OS_LIBS)
 
 endif
 

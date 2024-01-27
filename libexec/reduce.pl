@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
 # Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 

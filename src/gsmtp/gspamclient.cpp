@@ -35,7 +35,6 @@ GSmtp::SpamClient::SpamClient( GNet::ExceptionSink es , const GNet::Location & l
 				.set_line_buffer_config(GNet::LineBuffer::Config::newline())
 				.set_connection_timeout(connection_timeout)
 				.set_response_timeout(response_timeout)) ,
-		m_busy(false) ,
 		m_timer(*this,&SpamClient::onTimeout,es) ,
 		m_request(*this) ,
 		m_response(read_only)
@@ -146,7 +145,7 @@ void GSmtp::SpamClient::Request::send( const std::string & path , const std::str
 
 bool GSmtp::SpamClient::Request::sendMore()
 {
-	m_stream.read( &m_buffer[0] , m_buffer.size() ) ; // NOLINT narrowing
+	m_stream.read( m_buffer.data() , m_buffer.size() ) ; // NOLINT narrowing
 	std::streamsize n = m_stream.gcount() ;
 	if( n <= 0 )
 	{
@@ -156,17 +155,14 @@ bool GSmtp::SpamClient::Request::sendMore()
 	else
 	{
 		G_DEBUG( "GSmtp::SpamClient::Request::sendMore: spam request sending " << n << " bytes" ) ;
-		return m_client->send( G::string_view(&m_buffer[0],static_cast<std::size_t>(n)) ) ;
+		return m_client->send( G::string_view(m_buffer.data(),static_cast<std::size_t>(n)) ) ;
 	}
 }
 
 // ==
 
 GSmtp::SpamClient::Response::Response( bool read_only ) :
-	m_read_only(read_only) ,
-	m_state(0) ,
-	m_content_length(0U) ,
-	m_size(0U)
+	m_read_only(read_only)
 {
 }
 
@@ -259,7 +255,7 @@ bool GSmtp::SpamClient::Response::ok( const std::string & line ) const
 std::string GSmtp::SpamClient::Response::result() const
 {
 	if( G::Str::imatch(m_result.substr(0U,5U),"False") )
-		return std::string() ;
+		return {} ;
 	else
 		return m_result ; // eg. "True ; 4.5 / 5.0"
 }

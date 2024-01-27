@@ -264,11 +264,11 @@ std::string GSmtp::ServerParser::parseHeloPeerName( const std::string & line )
 {
 	std::size_t pos = line.find_first_not_of( " \t" ) ;
 	if( pos == std::string::npos )
-		return std::string() ;
+		return {} ;
 
 	pos = line.find_first_of( " \t" , pos ) ;
 	if( pos == std::string::npos )
-		return std::string() ;
+		return {} ;
 
 	std::string smtp_peer_name = line.substr( pos + 1U ) ;
 	G::Str::trim( smtp_peer_name , {" \t",2U} ) ;

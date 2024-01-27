@@ -356,20 +356,20 @@ private:
 	std::unique_ptr<GAuth::SaslServer> m_sasl ;
 	Config m_config ;
 	G::Slot::Signal<> m_change_signal ;
-	const ApplyArgsTuple * m_apply_data ;
-	bool m_apply_more ;
+	const ApplyArgsTuple * m_apply_data {nullptr} ;
+	bool m_apply_more {false} ;
 	Fsm m_fsm ;
-	bool m_with_starttls ;
+	bool m_with_starttls {false} ;
 	GNet::Address m_peer_address ;
-	bool m_secure ;
+	bool m_secure {false} ;
 	std::string m_certificate ;
 	std::string m_protocol ;
 	std::string m_cipher ;
-	unsigned int m_client_error_count ;
+	unsigned int m_client_error_count {0U} ;
 	std::string m_session_peer_name ;
-	bool m_session_esmtp ;
-	std::size_t m_bdat_arg ;
-	std::size_t m_bdat_sum ;
+	bool m_session_esmtp {false} ;
+	std::size_t m_bdat_arg {0U} ;
+	std::size_t m_bdat_sum {0U} ;
 	bool m_enabled ;
 } ;
 

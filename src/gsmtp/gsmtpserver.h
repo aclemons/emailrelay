@@ -165,7 +165,7 @@ private:
 	std::string m_sasl_client_config ;
 	G::Slot::Signal<const std::string&,const std::string&> m_event_signal ;
 	G::TimerTime m_dnsbl_suspend_time ;
-	bool m_enabled ;
+	bool m_enabled {true} ;
 } ;
 
 //| \class GSmtp::ServerPeer
@@ -219,7 +219,7 @@ private:
 	ServerProtocol m_protocol ;
 	ServerBufferIn m_input_buffer ;
 	std::string m_output_buffer ;
-	bool m_output_blocked ;
+	bool m_output_blocked {false} ;
 } ;
 
 inline GSmtp::Server::Config & GSmtp::Server::Config::set_allow_remote( bool b ) noexcept { allow_remote = b ; return *this ; }

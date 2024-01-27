@@ -70,11 +70,7 @@ GNet::DnsBlock::DnsBlock( DnsBlockCallback & callback , ExceptionSink es , G::st
 	m_callback(callback) ,
 	m_es(es) ,
 	m_timer(*this,&DnsBlock::onTimeout,es) ,
-	m_threshold(1U) ,
-	m_allow_on_timeout(true) ,
-	m_dns_server(Address::defaultAddress()) ,
-	m_timeout(0) ,
-	m_id_base(0U)
+	m_dns_server(Address::defaultAddress())
 {
 	if( !config.empty() )
 		configure( config ) ;
@@ -131,7 +127,7 @@ void GNet::DnsBlock::configureImp( G::string_view config , DnsBlock * dnsblock_p
 		for( std::size_t i = 0U ; i < list.size() && isDomain(list[i]) ; i++ )
 			domains++ ;
 
-		auto p = std::next( list.begin() , domains ) ;
+		auto p = std::next( list.begin() , domains ) ; // NOLINT narrowing
 		unsigned int threshold = p == list.end() ? imp::default_threshold : G::Str::toUInt(*p++) ;
 		bool positive_timeout = isPositive( p == list.end() ? imp::default_timeout_ms : *p ) ;
 		unsigned int timeout_ms = ms( p == list.end() ? imp::default_timeout_ms : *p++ ) ;
@@ -250,7 +246,7 @@ void GNet::DnsBlock::readEvent()
 {
 	static std::vector<char> buffer;
 	buffer.resize( 4096U ) ; // 512 in RFC-1035 4.2.1
-	ssize_t rc = m_socket_ptr->read( &buffer[0] , buffer.size() ) ;
+	ssize_t rc = m_socket_ptr->read( buffer.data() , buffer.size() ) ;
 	if( rc <= 0 || static_cast<std::size_t>(rc) >= buffer.size() )
 		throw BadDnsResponse() ;
 	buffer.resize( static_cast<std::size_t>(rc) ) ;

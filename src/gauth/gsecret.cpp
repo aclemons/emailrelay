@@ -69,12 +69,12 @@ std::string GAuth::Secret::check( Value id , Value secret , G::string_view hash_
 	if( encoding(secret) == Encoding::dotted && !G::Str::imatch(hash_function,"md5"_sv) )
 		return "invalid use of dotted format" ;
 
-	return std::string() ;
+	return {} ;
 }
 
 GAuth::Secret GAuth::Secret::none()
 {
-	return Secret() ;
+	return {} ;
 }
 
 bool GAuth::Secret::valid() const

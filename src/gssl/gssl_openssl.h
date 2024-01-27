@@ -113,10 +113,10 @@ private:
 private:
 	Fn m_server_fn ;
 	Fn m_client_fn ;
-	int m_min ;
-	int m_max ;
-	long m_options_set ;
-	long m_options_reset ;
+	int m_min {0} ;
+	int m_max {0} ;
+	long m_options_set {0L} ;
+	long m_options_reset {0L} ;
 	bool m_noverify ;
 } ;
 
@@ -235,7 +235,7 @@ private:
 	Library::LogFn m_log_fn ;
 	bool m_verbose ;
 	Map m_profile_map ;
-	int m_index ; // SSL_get_ex_new_index()
+	int m_index {-1} ; // SSL_get_ex_new_index()
 	Config m_config ;
 } ;
 
@@ -287,11 +287,11 @@ private:
 	std::unique_ptr<SSL,std::function<void(SSL*)>> m_ssl ;
 	Library::LogFn m_log_fn ;
 	bool m_verbose ;
-	bool m_fd_set ;
+	bool m_fd_set {false} ;
 	std::string m_required_peer_certificate_name ;
 	std::string m_peer_certificate ;
 	std::string m_peer_certificate_chain ;
-	bool m_verified ;
+	bool m_verified {false} ;
 } ;
 
 //| \class GSsl::OpenSSL::DigesterImp
@@ -319,16 +319,16 @@ public:
 
 private:
 	enum class Type { Md5 , Sha1 , Sha256 , Other } ;
-	Type m_hash_type ;
+	Type m_hash_type {Type::Other} ;
 	#if GCONFIG_HAVE_OPENSSL_HASH_FUNCTIONS
 	MD5_CTX m_md5 {} ;
 	SHA_CTX m_sha1 {} ;
 	SHA256_CTX m_sha256 {} ;
 	#endif
-	EVP_MD_CTX * m_evp_ctx ;
-	std::size_t m_block_size {0} ;
-	std::size_t m_value_size {0} ;
-	std::size_t m_state_size {0} ;
+	EVP_MD_CTX * m_evp_ctx {nullptr} ;
+	std::size_t m_block_size {0U} ;
+	std::size_t m_value_size {0U} ;
+	std::size_t m_state_size {0U} ;
 } ;
 
 #endif

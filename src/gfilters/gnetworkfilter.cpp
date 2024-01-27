@@ -33,8 +33,7 @@ GFilters::NetworkFilter::NetworkFilter( GNet::ExceptionSink es ,
 		m_done_signal(true) ,
 		m_location(server) ,
 		m_connection_timeout(config.timeout) ,
-		m_response_timeout(config.timeout) ,
-		m_result(Result::fail)
+		m_response_timeout(config.timeout)
 {
 	m_client_ptr.eventSignal().connect( G::Slot::slot(*this,&GFilters::NetworkFilter::clientEvent) ) ;
 }

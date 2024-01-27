@@ -103,8 +103,8 @@ private:
 	static G::TimerTime history() ;
 
 private:
-	bool m_active ;
-	bool m_immediate ;
+	bool m_active {false} ;
+	bool m_immediate {false} ;
 	G::TimerTime m_time ;
 } ;
 

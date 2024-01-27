@@ -186,10 +186,10 @@ namespace G
 		void checkalloc() { checkalloc(m_p) ; }
 		T * checkalloc( T * p ) { if( p == nullptr ) throw std::bad_alloc() ; return p ; }
 		void checkindex( std::size_t i ) const { if( i >= m_n ) throw std::out_of_range("G::Buffer") ; }
-		char * m_p{nullptr} ;
-		std::size_t m_n{0U} ;
-		std::size_t m_c{0U} ;
-		value_type m_c0{'\0'} ;
+		char * m_p {nullptr} ;
+		std::size_t m_n {0U} ;
+		std::size_t m_c {0U} ;
+		value_type m_c0 {'\0'} ;
 	} ;
 
 	template <typename Uptr, typename T = char>
@@ -197,8 +197,8 @@ namespace G
 	{
 		using U = typename std::remove_pointer<Uptr>::type ;
 		T * p = buffer.template aligned<U>() ;
-		G_ASSERT( p == nullptr || p == &buffer[0] ) ; // assert malloc is behaving
-		if( p != &buffer[0] )
+		G_ASSERT( p == nullptr || p == buffer.data() ) ; // assert malloc is behaving
+		if( p != buffer.data() )
 			throw std::bad_cast() ; // buffer too small for a U
 		return new(p) U ;
 	}
@@ -208,8 +208,8 @@ namespace G
 	{
 		using U = typename std::remove_pointer<Uptr>::type ;
 		T * p = buffer.template aligned<U>() ;
-		G_ASSERT( p == nullptr || p == &buffer[0] ) ; // assert malloc is behaving
-		if( p != &buffer[0] )
+		G_ASSERT( p == nullptr || p == buffer.data() ) ; // assert malloc is behaving
+		if( p != buffer.data() )
 			return nullptr ; // buffer too small for a U
 		return new(p) U ;
 	}

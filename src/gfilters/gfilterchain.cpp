@@ -30,9 +30,6 @@
 GFilters::FilterChain::FilterChain( GNet::ExceptionSink es , GSmtp::FilterFactoryBase & ff ,
 	Filter::Type filter_type , const Filter::Config & filter_config ,
 	const GSmtp::FilterFactoryBase::Spec & spec ) :
-		m_filter_index(0U) ,
-		m_filter(nullptr) ,
-		m_running(false) ,
 		m_message_id(GStore::MessageId::none())
 {
 	using Spec = GSmtp::FilterFactoryBase::Spec ;

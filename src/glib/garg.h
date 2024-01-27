@@ -106,7 +106,7 @@ public:
 		///< with a dash, but that is not required here; it's just a string
 		///< that is matched against command-line arguments.)
 
-	std::size_t count( const std::string & option ) ;
+	std::size_t count( const std::string & option ) const ;
 		///< Returns the number of times the given string appears in the
 		///< list of arguments.
 

@@ -29,7 +29,6 @@
 
 GVerifiers::UserVerifier::UserVerifier( GNet::ExceptionSink es ,
 	const GSmtp::Verifier::Config & config , const std::string & spec ) :
-		m_command(Command::RCPT) ,
 		m_config(config) ,
 		m_timer(*this,&UserVerifier::onTimeout,es) ,
 		m_result(GSmtp::VerifierStatus::invalid({})) ,

@@ -89,8 +89,8 @@ private:
 	Filter::Config m_filter_config ;
 	std::string m_spec ;
 	std::string m_id ;
-	Result m_result ;
-	bool m_special ;
+	Result m_result {Result::fail} ;
+	bool m_special {false} ;
 	GNet::Timer<MxFilter> m_timer ;
 	G::Slot::Signal<int> m_done_signal ;
 	std::unique_ptr<MxLookup> m_lookup ;

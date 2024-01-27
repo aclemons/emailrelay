@@ -203,11 +203,11 @@ sub allFilesContain
 
 sub noFileContains
 {
-	my ( $glob , $string_or_list , $more ) = @_ ;
+	my ( $glob , $re_or_list , $more ) = @_ ;
 	my @files = System::glob_( $glob ) ;
 	for my $file ( @files )
 	{
-		fileDoesNotContain( $file , $string_or_list , $more ) ;
+		fileDoesNotContain( $file , $re_or_list , $more ) ;
 	}
 }
 
@@ -228,36 +228,36 @@ sub fileContains
 
 sub fileContainsEither
 {
-	my ( $path , $string1 , $string2 , $more ) = @_ ;
+	my ( $path , $re1 , $re2 , $more ) = @_ ;
 	my $fh = new FileHandle( $path ) ;
 	my $n = 0 ;
 	while(<$fh>)
 	{
 		my $line = $_ ;
 		chomp $line ;
-		if( $line =~ m/$string1/ ) { $n++ }
-		if( $line =~ m/$string2/ ) { $n++ }
+		if( $line =~ m/$re1/ ) { $n++ }
+		if( $line =~ m/$re2/ ) { $n++ }
 	}
-	Check::that( $n > 0 , "file does not contain one of strings" , $path , "[$string1] [$string2]" , $more ) ;
+	Check::that( $n > 0 , "file does not contain one of strings" , $path , "[$re1] [$re2]" , $more ) ;
 }
 
 sub fileDoesNotContain
 {
-	my ( $path , $string_or_list , $more ) = @_ ;
-	die if !defined($string_or_list) ;
-	my @strings = ref($string_or_list) ? @$string_or_list : ($string_or_list) ;
+	my ( $path , $re_or_list , $more ) = @_ ;
+	die if !defined($re_or_list) ;
+	my @re_list = ref($re_or_list) eq "ARRAY" ? @$re_or_list : ($re_or_list) ;
 	my $fh = new FileHandle( $path ) ;
 	my $n = 0 ;
 	while(<$fh>)
 	{
 		my $line = $_ ;
 		chomp $line ;
-		for my $string ( @strings )
+		for my $re ( @re_list )
 		{
-			if( $line =~ m/$string/ ) { $n++ }
+			if( $line =~ m/$re/ ) { $n++ }
 		}
 	}
-	Check::that( $n <= 0 , "file contains unexpected string" , $path , "[@strings]" , $more ) ;
+	Check::that( $n <= 0 , "file contains unexpected string" , $path , "[@re_list]" , $more ) ;
 }
 
 sub match

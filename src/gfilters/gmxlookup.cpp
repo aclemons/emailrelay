@@ -113,11 +113,11 @@ void GFilters::MxLookup::readEvent()
 {
 	G_DEBUG( "GFilters::MxLookup::readEvent" ) ;
 	std::vector<char> buffer( 4096U ) ; // 512 in RFC-1035 4.2.1
-	ssize_t nread = m_socket4->read( &buffer[0] , buffer.size() ) ;
+	ssize_t nread = m_socket4->read( buffer.data() , buffer.size() ) ;
 	if( nread > 0 )
-		process( &buffer[0] , static_cast<std::size_t>(nread) ) ;
-	else if( (nread=m_socket6->read( &buffer[0] , buffer.size() )) > 0 )
-		process( &buffer[0] , static_cast<std::size_t>(nread) ) ;
+		process( buffer.data() , static_cast<std::size_t>(nread) ) ;
+	else if( (nread=m_socket6->read( buffer.data() , buffer.size() )) > 0 ) // NOLINT assignment
+		process( buffer.data() , static_cast<std::size_t>(nread) ) ;
 	else
 		fail( "dns socket error" ) ;
 }

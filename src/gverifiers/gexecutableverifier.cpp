@@ -31,7 +31,6 @@
 
 GVerifiers::ExecutableVerifier::ExecutableVerifier( GNet::ExceptionSink es , const G::Path & path , unsigned int timeout ) :
 	m_timer(*this,&ExecutableVerifier::onTimeout,es) ,
-	m_command(GSmtp::Verifier::Command::VRFY) ,
 	m_path(path) ,
 	m_timeout(timeout) ,
 	m_task(*this,es,"<<verifier exec error: __strerror__>>",G::Root::nobody())

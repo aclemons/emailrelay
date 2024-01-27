@@ -22,19 +22,20 @@
 # directories depending on the host environment and simplifies
 # cross-compilation.
 #
-# usage: configure.sh [-g] [{-d|-s <>}] [{-o|-w|-p}] -- [<configure-options>]
-#         -d   add debug compiler flags
-#         -s   add sanitiser compiler flags (eg. -s address)
-#         -o   cross-compile for openwrt (edit as required)
-#         -w   cross-compile for windows 32-bit with mingw-w64
-#         -w32 cross-compile for windows 32-bit with mingw-w64
-#         -w64 cross-compile for windows 64-bit with mingw-w64
-#         -p   cross-compile for rpi
-#         -m   git fetch mbedtls v2
-#         -m3  git fetch mbedtls v3
-#         -q6  build gui using ~/Qt/6.x.x
-#         -S   force e_systemddir
-#         -X   suppress e_systemddir
+# usage: configure.sh [{-d|-s <>}] [{-o|-w|-p}] -- [<configure-options>]
+#         -d           add debug compiler flags
+#         -s           add sanitiser compiler flags (eg. -s address)
+#         -o           cross-compile for openwrt (edit as required)
+#         -w           cross-compile for windows 32-bit with mingw-w64
+#         -w32         cross-compile for windows 32-bit with mingw-w64
+#         -w64         cross-compile for windows 64-bit with mingw-w64
+#         -p           cross-compile for rpi
+#         -m           git-fetch and patch mbedtls v2
+#         -m3          git-fetch and patch mbedtls v3
+#         -S           force e_systemddir
+#         -X           suppress e_systemddir
+#         -q6          build gui using qt6 at ~/Qt/6.x.x
+#         -qt6 <dir>   build gui using qt6 at <dir>
 #
 # When cross-compiling with mbedtls the mbedtls source should be unpacked
 # into this base directory (see MBEDTLS_DIR below), or use '-g' to
@@ -43,7 +44,7 @@
 
 thisdir="`cd \`dirname $0\` && pwd`"
 
-usage="[-g] [{-d|-s <>}] [{-o|-w|-p}] -- <configure-args>"
+usage="[{-d|-s <>}] [{-o|-w|-p}] -- <configure-args>"
 opt_systemd=0 ; if test "`systemctl is-system-running 2>/dev/null | sed 's/offline//'`" != "" ; then opt_systemd=1 ; fi
 while expr "x$1" : "x-" >/dev/null
 do
@@ -55,10 +56,11 @@ do
 		s) opt_sanitise="$2" ; valued=1 ;;
 		o) opt_openwrt=1 ;;
 		w) opt_mingw=1 ; opt_win=32 ;;
-		w32) opt_mingw=1 ; opt_win=32 ;;
-		w64) opt_mingw=1 ; opt_win=64 ;;
+		w32|win32) opt_mingw=1 ; opt_win=32 ;;
+		w64|win64) opt_mingw=1 ; opt_win=64 ;;
 		p) opt_rpi=1 ;;
-		q6|qt6) opt_qt6_home=1 ;;
+		q6) opt_qt6=1 ; qt6_dir="`ls -1td \"$HOME\"/Qt/6*/gcc_64 2>/dev/null | head -1`" ;;
+		qt6) opt_qt6=1 ; qt6_dir="$2" ; $valued=1 ;;
 		S) opt_systemd=1 ;;
 		X) opt_systemd=0 ;;
 		h) echo usage: `basename $0` $usage "..." ; $thisdir/configure --help=short ; exit 0 ;;
@@ -116,14 +118,10 @@ then
 	else
 		git -C mbedtls checkout -q "mbedtls-2.28"
 	fi
-	if test "0$opt_mingw" -ne 0
+	if test "0$opt_mingw" -ne 0 -a "$opt_win" -eq 32
 	then
-		if test "$opt_win" -eq 32
-		then
-			patch -d mbedtls/library -l -N -r - -p1 < src/gssl/mbedtls-vsnprintf-fix.p1
-			patch -d mbedtls/library -l -N -r - -p1 < src/gssl/mbedtls-vsnprintf-fix-new.p1
-			rm mbedtls/library/platform.c.orig 2>/dev/null
-		fi
+		#patch -d mbedtls/library -F 10 -l -N -r - -p1 < src/gssl/mbedtls-vsnprintf-fix.p1
+		sed -i 's/^#if defined._TRUNCATE.*/#if 0/' mbedtls/library/platform.c
 	fi
 fi
 
@@ -164,16 +162,15 @@ Echo()
 	fi
 }
 
-if test "0$opt_qt6_home" -ne 0
+if test "0$opt_qt6" -ne 0
 then
-	qt_dir="`ls -1td \"$HOME\"/Qt/6*/gcc_64 2>/dev/null | head -1`"
-	if test ! -d "$qt_dir" ; then echo configure.sh: no qt6 directory $qt_dir >&2 ; exit 1 ; fi
-	export LDFLAGS="$LDFLAGS -L$qt_dir/lib"
+	if test ! -d "$qt6_dir" ; then echo configure.sh: no qt6 directory $qt6_dir >&2 ; exit 1 ; fi
+	export LDFLAGS="$LDFLAGS -L$qt6_dir/lib"
 	export QT_LIBS="-lQt6Gui -lQt6Widgets -lQt6Core"
-	export QT_CFLAGS="-std=c++17 -I$qt_dir/include"
-	export QT_MOC="$qt_dir/libexec/moc"
+	export QT_CFLAGS="-std=c++17 -I$qt6_dir/include"
+	export QT_MOC="$qt6_dir/libexec/moc"
 	configure_qt="--enable-gui"
-	echo "configure.sh: qt: adding --enable-gui and QT_MOC=$qt_dir/libexec/moc etc"
+	echo "configure.sh: qt: adding --enable-gui and QT_MOC=$qt6_dir/libexec/moc etc"
 fi
 
 if test "0$opt_mingw" -ne 0
@@ -194,13 +191,9 @@ then
 	#export CXXFLAGS="$CXXFLAGS -D_WIN32_WINNT=0x0501" eg. for Windows XP, otherwise whatever mingw defaults to
 	export LDFLAGS="$LDFLAGS -pthread"
 	if test -x "`which $CXX`" ; then : ; else echo "error: no mingw c++ compiler: [$CXX]\n" ; exit 1 ; fi
-	( echo msbuild . ; echo qt-x86 . ; echo qt-x64 . ; echo cmake . ; echo msvc . ) > winbuild.cfg
-	if test "$make_mbedtls" -ne 0
-	then
-		echo mbedtls $MBEDTLS_DIR >> winbuild.cfg
-	else
-		echo mbedtls . >> winbuild.cfg
-	fi
+	echo with-gui 0 > winbuild.cfg
+	echo with-mbedtls 0 >> winbuild.cfg
+	echo with-openssl 0 >> winbuild.cfg
 	$thisdir/configure $enable_debug --host $TARGET \
 		--enable-windows --disable-interface-names \
 		$configure_mbedtls \

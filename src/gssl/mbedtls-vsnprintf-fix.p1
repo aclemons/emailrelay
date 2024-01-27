@@ -11,14 +11,14 @@
 # compiled unconditionally, even though it is never used.
 #
 diff -Naur old/platform.c new/platform.c
---- old/platform.c	2022-03-17 19:15:29.904188069 +0000
-+++ new/platform.c	2022-03-17 19:15:44.404259786 +0000
-@@ -132,7 +132,7 @@
-     if( s == NULL || n == 0 || fmt == NULL )
-         return( -1 );
+--- old/platform.c	2024-01-24 17:13:11.381268475 +0000
++++ new/platform.c	2024-01-24 17:13:24.197488034 +0000
+@@ -121,7 +121,7 @@
+         return -1;
+     }
 
 -#if defined(_TRUNCATE)
 +#if 0
-     ret = vsnprintf_s( s, n, _TRUNCATE, fmt, arg );
+     ret = vsnprintf_s(s, n, _TRUNCATE, fmt, arg);
  #else
-     ret = vsnprintf( s, n, fmt, arg );
+     ret = vsnprintf(s, n, fmt, arg);

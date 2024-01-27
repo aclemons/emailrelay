@@ -128,8 +128,8 @@ protected:
 		bool ok() const ;
 		bool abandon() const ;
 		bool fail() const ;
-		Result result ;
-		bool special ;
+		Result result {Result::fail} ;
+		bool special {false} ;
 	} ;
 } ;
 

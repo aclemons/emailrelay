@@ -143,7 +143,7 @@ void G::Environment::set( const std::string & name , const std::string & value )
 
 char ** G::Environment::v() const noexcept
 {
-	return const_cast<char**>(&m_pointers[0]) ;
+	return const_cast<char**>( m_pointers.data() ) ;
 }
 
 #ifndef G_LIB_SMALL

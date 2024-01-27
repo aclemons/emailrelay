@@ -67,10 +67,10 @@ private:
 private:
 	ConnectionMap m_connections ;
 	ServerMap m_servers ;
-	unsigned long m_client_adds ;
-	unsigned long m_client_removes ;
-	unsigned long m_server_peer_adds ;
-	unsigned long m_server_peer_removes ;
+	unsigned long m_client_adds {0UL} ;
+	unsigned long m_client_removes {0UL} ;
+	unsigned long m_server_peer_adds {0UL} ;
+	unsigned long m_server_peer_removes {0UL} ;
 } ;
 
 GNet::Monitor * & GNet::Monitor::pthis() noexcept
@@ -170,11 +170,7 @@ void GNet::Monitor::report( G::StringArray & out ) const
 
 // ==
 
-GNet::MonitorImp::MonitorImp( Monitor & ) :
-	m_client_adds(0UL) ,
-	m_client_removes(0UL) ,
-	m_server_peer_adds(0UL) ,
-	m_server_peer_removes(0UL)
+GNet::MonitorImp::MonitorImp( Monitor & )
 {
 }
 

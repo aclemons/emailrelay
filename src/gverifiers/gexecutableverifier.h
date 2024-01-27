@@ -60,7 +60,7 @@ private:
 
 private:
 	GNet::Timer<ExecutableVerifier> m_timer ;
-	GSmtp::Verifier::Command m_command ;
+	GSmtp::Verifier::Command m_command {GSmtp::Verifier::Command::VRFY} ;
 	G::Path m_path ;
 	unsigned int m_timeout ;
 	G::Slot::Signal<GSmtp::Verifier::Command,const GSmtp::VerifierStatus&> m_done_signal ;

@@ -721,7 +721,7 @@ test_names = \
 	testTlsServerBadClientCertificateVerifyRejected.test \
 	testTlsClientGoodServerCertificateVerifyAccepted.test \
 	testTlsClientBadServerCertificateVerifyRejected.test \
-	testTlsClientBadServerCertificateNoVerifyRejected.test \
+	testTlsClientBadServerCertificateNoVerifyAccepted.test \
 	testTlsGoodServerCertificateVerifyAccepted.test \
 	testTlsBadServerCertificateVerifyRejected.test \
 	testTlsBadServerCertificateNoVerifyAccepted.test \
@@ -781,7 +781,7 @@ COMMON_LDADD = \
 	$(top_builddir)/src/glib/libglib.a
 
 @GCONFIG_WINDOWS_FALSE@OS_LIBS = 
-@GCONFIG_WINDOWS_TRUE@OS_LIBS = -lws2_32 -lshell32 -liphlpapi -lcomctl32 -ladvapi32 -luser32 -lgdi32 -luser32 -lkernel32
+@GCONFIG_WINDOWS_TRUE@OS_LIBS = -lws2_32 -lshell32 -liphlpapi -lcomctl32 -ladvapi32 -lgdi32 -luser32 -lkernel32
 emailrelay_test_scanner_SOURCES = emailrelay_test_scanner.cpp
 @GCONFIG_WINDOWS_TRUE@emailrelay_test_scanner_LDFLAGS = -static
 emailrelay_test_scanner_LDADD = \

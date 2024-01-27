@@ -22,7 +22,6 @@
 #include "glimits.h"
 #include "gstringview.h"
 #include "gcall.h"
-#include "gtest.h"
 #include "gtimer.h"
 #include "gssl.h"
 #include "gsocketprotocol.h"
@@ -112,11 +111,11 @@ private:
 	Segments m_segments ;
 	Position m_position ;
 	std::string m_data_copy ;
-	bool m_failed ;
+	bool m_failed {false} ;
 	std::unique_ptr<GSsl::Protocol> m_ssl ;
-	State m_state ;
+	State m_state {State::raw} ;
 	std::vector<char> m_read_buffer ;
-	ssize_t m_read_buffer_n ;
+	ssize_t m_read_buffer_n {0} ;
 	Timer<SocketProtocolImp> m_secure_connection_timer ;
 	std::string m_peer_certificate ;
 } ;
@@ -151,10 +150,7 @@ GNet::SocketProtocolImp::SocketProtocolImp( EventHandler & handler , ExceptionSi
 		m_socket(socket) ,
 		m_config(config) ,
 		m_one_segment(1U) ,
-		m_failed(false) ,
-		m_state(State::raw) ,
 		m_read_buffer(std::max(std::size_t(1U),config.read_buffer_size)) ,
-		m_read_buffer_n(0) ,
 		m_secure_connection_timer(*this,&SocketProtocolImp::onSecureConnectionTimeout,es)
 {
 	if( m_config.server_tls_profile.empty() ) m_config.server_tls_profile = "server" ;
@@ -567,7 +563,7 @@ void GNet::SocketProtocolImp::sslReadImp()
 	Result rc = Result::more ;
 	for( int sanity = 0 ; rc == Result::more && sanity < 100000 ; sanity++ )
 	{
-		rc = m_ssl->read( &m_read_buffer[0] , m_read_buffer.size() , m_read_buffer_n ) ;
+		rc = m_ssl->read( m_read_buffer.data() , m_read_buffer.size() , m_read_buffer_n ) ;
 		G_DEBUG( "SocketProtocolImp::sslReadImp: result=" << GSsl::Protocol::str(rc) ) ;
 		if( rc == Result::error )
 		{
@@ -595,7 +591,7 @@ void GNet::SocketProtocolImp::sslReadImp()
 			if( n != 0U )
 			{
 				G::CallFrame this_( m_stack ) ;
-				m_sink.onData( &m_read_buffer[0] , n ) ;
+				m_sink.onData( m_read_buffer.data() , n ) ;
 				if( this_.deleted() ) break ;
 			}
 		}
@@ -615,7 +611,7 @@ bool GNet::SocketProtocolImp::rawOtherEvent( EventHandler::Reason reason )
 		G_DEBUG( "GNet::SocketProtocolImp::rawOtherEvent: shutdown: clearing receive queue" ) ;
 		for(;;)
 		{
-			const ssize_t rc = m_socket.read( &m_read_buffer[0] , m_read_buffer.size() ) ;
+			const ssize_t rc = m_socket.read( m_read_buffer.data() , m_read_buffer.size() ) ;
 			G_DEBUG( "GNet::SocketProtocolImp::rawOtherEvent: read " << m_socket.asString() << ": " << rc ) ;
 			if( rc == 0 )
 			{
@@ -627,7 +623,7 @@ bool GNet::SocketProtocolImp::rawOtherEvent( EventHandler::Reason reason )
 			}
 			G_ASSERT( static_cast<std::size_t>(rc) <= m_read_buffer.size() ) ;
 			G::CallFrame this_( m_stack ) ;
-			m_sink.onData( &m_read_buffer[0] , static_cast<std::size_t>(rc) ) ;
+			m_sink.onData( m_read_buffer.data() , static_cast<std::size_t>(rc) ) ;
 			if( this_.deleted() ) break ;
 		}
 		return true ;
@@ -640,7 +636,7 @@ bool GNet::SocketProtocolImp::rawOtherEvent( EventHandler::Reason reason )
 
 bool GNet::SocketProtocolImp::rawReadEvent( bool no_throw_on_peer_disconnect )
 {
-	const ssize_t rc = m_socket.read( &m_read_buffer[0] , m_read_buffer.size() ) ;
+	const ssize_t rc = m_socket.read( m_read_buffer.data() , m_read_buffer.size() ) ;
 	if( rc == 0 && no_throw_on_peer_disconnect )
 	{
 		m_socket.dropReadHandler() ;
@@ -654,7 +650,7 @@ bool GNet::SocketProtocolImp::rawReadEvent( bool no_throw_on_peer_disconnect )
 	else if( rc != -1 )
 	{
 		G_ASSERT( static_cast<std::size_t>(rc) <= m_read_buffer.size() ) ;
-		m_sink.onData( &m_read_buffer[0] , static_cast<std::size_t>(rc) ) ;
+		m_sink.onData( m_read_buffer.data() , static_cast<std::size_t>(rc) ) ;
 	}
 	else
 	{

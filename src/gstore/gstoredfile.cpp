@@ -36,8 +36,7 @@
 GStore::StoredFile::StoredFile( FileStore & store , const MessageId & id , State state ) :
 	m_store(store) ,
 	m_id(id) ,
-	m_state(state) ,
-	m_unlock(false)
+	m_state(state)
 {
 }
 
@@ -98,7 +97,7 @@ std::string GStore::StoredFile::reopen()
 	if( !readEnvelope(reason) || !openContent(reason) )
 		return reason ;
 	else
-		return std::string() ;
+		return {} ;
 }
 
 bool GStore::StoredFile::readEnvelope( std::string & reason )

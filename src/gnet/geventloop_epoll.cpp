@@ -151,7 +151,7 @@ void GNet::EventLoopImp::runOnce()
 
 	// extract the pending events
 	int timeout_ms = ms() ;
-	m_wait_rc = epoll_wait( m_fd , &m_wait_events[0] , m_wait_events.size() , timeout_ms ) ;
+	m_wait_rc = epoll_wait( m_fd , m_wait_events.data() , m_wait_events.size() , timeout_ms ) ; // NOLINT narrowing
 	if( m_wait_rc < 0 )
 	{
 		int e = G::Process::errno_() ;

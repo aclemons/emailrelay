@@ -201,12 +201,12 @@ std::string G::Process::cwd( bool no_throw )
 	for( std::size_t n : sizes )
 	{
 		std::vector<char> buffer( n ) ;
-		char * p = getcwd( &buffer[0] , buffer.size() ) ;
+		char * p = getcwd( buffer.data() , buffer.size() ) ;
 		int error = errno_() ;
 		if( p != nullptr )
 		{
 			buffer.push_back( '\0' ) ;
-			result.assign( &buffer[0] ) ;
+			result.assign( buffer.data() ) ;
 			break ;
 		}
 		else if( error != ERANGE )
@@ -226,12 +226,12 @@ std::string G::Process::exe()
 	// (see also _NSGetExecutablePath())
 	std::vector<char> buffer( std::max(100,PROC_PIDPATHINFO_MAXSIZE) ) ;
 	buffer[0] = '\0' ;
-	int rc = proc_pidpath( getpid() , &buffer[0] , buffer.size() ) ;
+	int rc = proc_pidpath( getpid() , buffer.data() , buffer.size() ) ;
 	if( rc > 0 )
 	{
 		std::size_t n = static_cast<std::size_t>(rc) ;
 		if( n > buffer.size() ) n = buffer.size() ;
-		return std::string( &buffer[0] , n ) ;
+		return std::string( buffer.data() , n ) ;
 	}
 	else
 	{

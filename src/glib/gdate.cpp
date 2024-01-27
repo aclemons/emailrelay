@@ -182,7 +182,7 @@ std::string G::Date::weekdayName( bool brief ) const
 	else if( d == Weekday::thursday ) p= brief ? "Thu" : "Thursday" ;
 	else if( d == Weekday::friday ) p = brief ? "Fri" : "Friday" ;
 	else if( d == Weekday::saturday ) p = brief ? "Sat" : "Saturday" ;
-	return std::string(p) ;
+	return { p } ;
 }
 
 G::Date::Month G::Date::month() const
@@ -206,7 +206,7 @@ std::string G::Date::monthName( bool brief ) const
 	else if( m == Month::october ) p = brief ? "Oct" : "October" ;
 	else if( m == Month::november ) p = brief ? "Nov" : "November" ;
 	else if( m == Month::december ) p = brief ? "Dec" : "December" ;
-	return std::string(p) ;
+	return { p } ;
 }
 
 int G::Date::year() const

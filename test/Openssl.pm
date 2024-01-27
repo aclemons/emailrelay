@@ -65,10 +65,10 @@ sub _available
 	my ( $tool ) = @_ ;
 	my $fh = new FileHandle( "$tool errstr 0 2>&1 |" ) ;
 	my $result = 0 ;
-	if( defined($fh) )
+	while(<$fh>)
 	{
-		my $line = <$fh> ;
-		$result = 1 if( $line && ( $line =~ m/^error:0/ ) ) ;
+		chomp( my $line = $_ ) ;
+		$result = 1 if( $line && ( $line =~ m/^error:0000/ ) ) ;
 	}
 	return $result ;
 }
@@ -80,18 +80,29 @@ sub search
 	# that can be assigned to "$openssl".
 	my ( $dir0 , $windows ) = @_ ;
 
-	my @dirs = defined($dir0) ? ($dir0,"") : ("") ;
-	push @dirs , "c:/program files/git/mingw64/bin" if $windows ;
+	my @dirs = () ;
+	if( defined($dir0) )
+	{
+		if( ! -d $dir0 ) { die "invalid directory for the openssl tool [$dir0]\n" }
+		push @dirs , $dir0 ;
+	}
+	else
+	{
+		push @dirs , "" ; # PATH
+		push @dirs , "c:/program files/git/mingw64/bin" if $windows ;
+	}
 	for my $dir ( @dirs )
 	{
 		my $tool = $dir ? "$dir/openssl" : "openssl" ;
 		$tool .= ".exe" if $windows ;
+		$tool =~ s;/;\\;g if $windows ;
 		$tool = "\"$tool\"" if( $tool =~ m/ / ) ;
 		if( _available($tool) )
 		{
 			return $tool ;
 		}
 	}
+	die "no openssl tool in [$dir0]" if defined($dir0) ;
 	return $windows ? "openssl.exe" : "openssl" ;
 }
 

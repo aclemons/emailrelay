@@ -189,7 +189,7 @@ G::NewProcessImp::NewProcessImp( const Path & exe , const StringArray & args , c
 
 			// restore SIGPIPE handling so that writing to
 			// the closed pipe should terminate the child
-			::signal( SIGPIPE , SIG_DFL ) ;
+			::signal( SIGPIPE , SIG_DFL ) ; // NOLINT
 
 			// start a new process group
 			::setpgrp() ; // feature-tested -- see gdef.h
@@ -337,7 +337,7 @@ bool G::NewProcessImp::duplicate( Fd fd , int fd_std )
 
 G::NewProcessUnixImp::Pipe::Pipe()
 {
-	if( ::socketpair( AF_UNIX , SOCK_STREAM , 0 , &m_fds[0] ) < 0 ) // must be a stream to dup() onto stdout
+	if( ::socketpair( AF_UNIX , SOCK_STREAM , 0 , m_fds.data() ) < 0 ) // must be a stream to dup() onto stdout
 		throw NewProcess::PipeError() ;
 	G_DEBUG( "G::Pipe::ctor: " << m_fds[0] << " " << m_fds[1] ) ;
 }
@@ -427,12 +427,12 @@ G::NewProcessWaitable & G::NewProcessWaitable::wait()
 	// (worker thread - keep it simple - never throws - does read then waitpid)
 	{
 		std::array<char,64U> discard {} ;
-		char * p = &m_buffer[0] ;
+		char * p = m_buffer.data() ;
 		std::size_t space = m_buffer.size() ;
 		std::size_t size = 0U ;
 		while( m_fd >= 0 )
 		{
-			ssize_t n = ::read( m_fd , p?p:&discard[0] , p?space:discard.size() ) ;
+			ssize_t n = ::read( m_fd , p?p:discard.data() , p?space:discard.size() ) ;
 			m_read_error = errno ;
 			if( n < 0 && m_read_error == EINTR )
 			{
@@ -532,6 +532,6 @@ std::string G::NewProcessWaitable::output() const
 	if( m_fd < 0 || m_read_error != 0 )
 		return {} ;
 	else
-		return { &m_buffer[0] , m_buffer.size() } ;
+		return { m_buffer.data() , m_buffer.size() } ;
 }
 

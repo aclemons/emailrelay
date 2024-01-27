@@ -113,18 +113,18 @@ private:
 		bool complete() const ;
 		std::string result() const ;
 		bool m_read_only ;
-		int m_state ;
+		int m_state {0} ;
 		std::string m_path_tmp ;
 		std::string m_path_final ;
 		std::ofstream m_stream ;
-		std::size_t m_content_length ;
-		std::size_t m_size ;
+		std::size_t m_content_length {0U} ;
+		std::size_t m_size {0U} ;
 		std::string m_result ;
 	} ;
 
 private:
 	std::string m_path ;
-	bool m_busy ;
+	bool m_busy {false} ;
 	GNet::Timer<SpamClient> m_timer ;
 	Request m_request ;
 	Response m_response ;

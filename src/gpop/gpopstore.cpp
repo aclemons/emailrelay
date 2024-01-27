@@ -136,8 +136,7 @@ bool GPop::Store::byName() const
 GPop::StoreMessage::StoreMessage( const std::string & name_in , Size size_in , bool in_parent_in ) :
 	name(name_in) ,
 	size(size_in) ,
-	in_parent(in_parent_in) ,
-	deleted(false)
+	in_parent(in_parent_in)
 {
 }
 
@@ -148,12 +147,12 @@ G::Path GPop::StoreMessage::cpath( const G::Path & edir , const G::Path & sdir )
 
 G::Path GPop::StoreMessage::cpath( const G::Path & dir ) const
 {
-	return G::Path( dir , name+".content" ) ;
+	return G::Path( dir , name+".content" ) ; // NOLINT not return {...}
 }
 
 G::Path GPop::StoreMessage::epath( const G::Path & edir ) const
 {
-	return G::Path( edir , name+".envelope" ) ;
+	return G::Path( edir , name+".envelope" ) ; // NOLINT not return {...}
 }
 
 GPop::StoreMessage GPop::StoreMessage::invalid()

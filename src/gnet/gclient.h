@@ -304,9 +304,9 @@ private:
 	LineBuffer m_line_buffer ;
 	std::unique_ptr<Resolver> m_resolver ;
 	Location m_remote_location ;
-	State m_state ;
-	bool m_finished ;
-	bool m_has_connected ;
+	State m_state {State::Idle} ;
+	bool m_finished {false} ;
+	bool m_has_connected {false} ;
 	Timer<Client> m_start_timer ;
 	Timer<Client> m_connect_timer ;
 	Timer<Client> m_connected_timer ;

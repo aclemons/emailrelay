@@ -275,9 +275,9 @@ private:
 	std::unique_ptr<GAuth::SaslClient> m_sasl ;
 	Config m_config ;
 	const bool m_in_secure_tunnel ;
-	bool m_eightbit_warned ;
-	bool m_binarymime_warned ;
-	bool m_utf8_warned ;
+	bool m_eightbit_warned {false} ;
+	bool m_binarymime_warned {false} ;
+	bool m_utf8_warned {false} ;
 	G::Slot::Signal<const DoneInfo &> m_done_signal ;
 	G::Slot::Signal<> m_filter_signal ;
 	Protocol m_protocol ;

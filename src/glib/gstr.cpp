@@ -150,7 +150,7 @@ std::string G::Str::dequote( const std::string & s , char qq , char esc , string
 			{
 				in_quote = false ;
 			}
-			else if( in_quote && (wspos=ws.find(c)) != std::string::npos )
+			else if( in_quote && (wspos=ws.find(c)) != std::string::npos ) // NOLINT assignment
 			{
 				if( escaped )
 				{
@@ -185,7 +185,7 @@ void G::Str::unescape( std::string & s , char c_escape , string_view specials_in
 	auto out = s.begin() ; // output in-place
 	for( char & c_in : s )
 	{
-		if( escaped && (cpos=specials_in.find(c_in)) != std::string::npos ) // was BS now 'n'
+		if( escaped && (cpos=specials_in.find(c_in)) != std::string::npos ) // was BS now 'n' // NOLINT assigmnent
 			*out++ = specials_out.at(cpos) , escaped = false ; // emit NL
 		else if( escaped && c_in == c_escape ) // was BS now BS
 			*out++ = c_escape , escaped = false ; // emit BS

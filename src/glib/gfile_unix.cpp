@@ -116,7 +116,7 @@ bool G::File::probe( const char * path ) noexcept
 	int fd = ::open( path , O_WRONLY|O_CREAT|O_EXCL , 0666 ) ; // NOLINT
 	if( fd < 0 )
 		return false ;
-	std::remove( path ) ;
+	std::remove( path ) ; // NOLINT ignore result
 	::close( fd ) ;
 	return true ;
 }
@@ -411,13 +411,13 @@ G::Path G::File::readlink( const Path & link , std::nothrow_t )
 	{
 		std::size_t buffer_size = statbuf.st_size ? (statbuf.st_size+1U) : 1024U ;
 		std::vector<char> buffer( buffer_size , '\0' ) ;
-		ssize_t nread = ::readlink( link.cstr() , &buffer[0] , buffer.size() ) ;
+		ssize_t nread = ::readlink( link.cstr() , buffer.data() , buffer.size() ) ;
 
 		// (filesystem race can cause truncation -- treat as an error)
 		if( nread > 0 && static_cast<std::size_t>(nread) < buffer.size() )
 		{
 			G_ASSERT( buffer.at(static_cast<std::size_t>(nread-1)) != '\0' ) ; // readlink does not null-terminate
-			result = Path( std::string( &buffer[0] , static_cast<std::size_t>(nread) ) ) ;
+			result = Path( std::string( buffer.data() , static_cast<std::size_t>(nread) ) ) ;
 		}
 	}
 	return result ;

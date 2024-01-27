@@ -111,7 +111,7 @@ std::string GAuth::Cram::response( G::string_view hash_type , bool as_hmac ,
 	catch( std::exception & e )
 	{
 		G_WARNING( "GAuth::Cram::response: challenge-response failure: " << e.what() ) ;
-		return std::string() ;
+		return {} ;
 	}
 }
 
@@ -205,7 +205,7 @@ G::StringArray GAuth::Cram::hashTypes( G::string_view prefix , bool require_stat
 	//
 	G::StringArray result = GSsl::Library::digesters( require_state ) ; // strongest first
 	if( G::Test::enabled("cram-fake-hash") )
-		result.push_back( "FAKE" ) ;
+		result.emplace_back( "FAKE" ) ;
 
 	G_DEBUG( "GAuth::Cram::hashTypes: tls library [" << GSsl::Library::ids() << "]" ) ;
 	G_DEBUG( "GAuth::Cram::hashTypes: tls library hash types: [" << G::Str::join(",",result) << "] "
@@ -213,7 +213,7 @@ G::StringArray GAuth::Cram::hashTypes( G::string_view prefix , bool require_stat
 
 	// always include MD5 since we use G::Md5 code
 	if( !G::StringList::match( result , "MD5" ) )
-		result.push_back( "MD5" ) ;
+		result.emplace_back( "MD5" ) ;
 
 	if( !prefix.empty() )
 	{

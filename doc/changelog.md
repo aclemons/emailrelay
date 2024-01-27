@@ -1,6 +1,13 @@
 E-MailRelay Change Log
 ======================
 
+2.5.1 -> 2.5.2
+--------------
+
+* Windows build scripts reworked.
+* Filters can be Windows PowerShell `.ps1` scripts.
+* Fix for client protocol [bug-id #57].
+
 2.5 -> 2.5.1
 ------------
 

@@ -289,12 +289,12 @@ private:
 
 private:
 	const DnsMessage & m_msg ;
-	unsigned int m_offset ;
-	unsigned int m_size ;
-	unsigned int m_type ;
-	unsigned int m_class ;
-	unsigned int m_rdata_offset ;
-	unsigned int m_rdata_size ;
+	unsigned int m_offset {0U} ;
+	unsigned int m_size {0U} ;
+	unsigned int m_type {0U} ;
+	unsigned int m_class {0U} ;
+	unsigned int m_rdata_offset {0U} ;
+	unsigned int m_rdata_size {0U} ;
 	std::string m_name ;
 } ;
 
@@ -320,9 +320,9 @@ public:
 		///< Returns the question domain name (QNAME).
 
 private:
-	unsigned int m_size ;
-	unsigned int m_qtype ;
-	unsigned int m_qclass ;
+	unsigned int m_size {0U} ;
+	unsigned int m_qtype {0U} ;
+	unsigned int m_qclass {0U} ;
 	std::string m_qname ;
 } ;
 

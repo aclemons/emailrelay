@@ -69,7 +69,7 @@ private:
 	unsigned int m_response_timeout ;
 	GNet::ClientPtr<GSmtp::RequestClient> m_client_ptr ;
 	std::string m_to_address ;
-	GSmtp::Verifier::Command m_command ;
+	GSmtp::Verifier::Command m_command {GSmtp::Verifier::Command::VRFY} ;
 } ;
 
 #endif

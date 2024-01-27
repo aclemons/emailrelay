@@ -116,7 +116,7 @@ public:
 
 private:
 	CallStack & m_stack ;
-	bool m_valid ;
+	bool m_valid {true} ;
 	CallFrame * m_outer ;
 } ;
 
@@ -152,9 +152,8 @@ void G::CallStack::pop( CallFrame * p ) noexcept
 inline
 G::CallFrame::CallFrame( CallStack & stack ) noexcept :
 	m_stack(stack) ,
-	m_valid(true)
+	m_outer(stack.push(this))
 {
-	m_outer = m_stack.push( this ) ;
 }
 
 inline

@@ -48,7 +48,7 @@ use FileHandle ;
 
 package OpensslRun ;
 our $openssl = "openssl" ;
-our $client_options = "" ; # or undef for "no_tls1_3"
+our $client_options = "" ;
 our $server_options = "" ;
 our $log_line_fn = sub {} ;
 our $log_run_fn = sub {} ;
@@ -62,15 +62,22 @@ sub runClient
 
 	my ( $peer , $logfile , $cert , $ca_file , $on_completion ) = @_ ;
 
-	$client_options = _default_client_options() if !defined($client_options) ;
+	my $end_match_1 = qr{^New.*Cipher is } ;
+	my $end_match_2 = qr{^---} ;
+	my $error_match = qr{^ERROR} ;
 
-	my $cmd = "$openssl s_client -4 -no_ssl3 -msg -starttls smtp -crlf -connect $peer -showcerts $client_options" ;
+	my $cmd = "$openssl s_client -4 -state -msg -debug -starttls smtp -crlf -connect $peer -showcerts $client_options" ;
 	$cmd .= " -cert $cert" if defined($cert) ;
 	$cmd .= " -CAfile $ca_file" if defined($ca_file) ;
 	$cmd .= " -verify 10" ; # failure is not fatal -- look for "verify error:" near top of s_client log
 
 	_log_run( "runClient" , $cmd , $logfile ) ;
-	_run( $cmd , $logfile , qr{^SSL-Session:} , qr{^---} , $on_completion ) ;
+	return _run( $cmd , $logfile , $end_match_1 , $end_match_2 , $error_match , $on_completion ) ;
+}
+
+sub runClientSecureMatch
+{
+	return qr{^New.*Cipher is } ;
 }
 
 sub runServer
@@ -82,16 +89,23 @@ sub runServer
 
 	my ( $port , $logfile , $cert , $ca_file , $on_completion , $windows ) = @_ ;
 
-	$server_options = _default_server_options() if !defined($server_options) ;
+	my $end_match_1 = qr{Handshake.*, Finished} ;
+	my $end_match_2 = qr{CIPHER is |^SSL_accept:\S+ read finished A} ;
+	my $error_match = runServerErrorMatch() ;
 
-	my $cmd = "$openssl s_server -4 -no_ssl3 -msg -crlf -accept $port $server_options" ;
+	my $cmd = "$openssl s_server -4 -state -msg -debug -crlf -accept $port $server_options" ;
 	$cmd .= " -cert $cert" if defined($cert) ;
 	$cmd .= " -CAfile $ca_file" if defined($ca_file) ;
 	$cmd .= " -Verify 99" ;
 	###$cmd .= " </dev/tty" unless $windows ; # otherwise with "make -j" the s_server terminates immediately because stdin is eof
 
 	_log_run( "runServer" , $cmd , $logfile ) ;
-	_run( $cmd , $logfile , qr{^ERROR|BIO_bind:unable.to.bind|^<<< TLS.*Alert.*fatal|^>>> TLS.*Handshake.*Finished} , undef , $on_completion ) ;
+	return _run( $cmd , $logfile , $end_match_1 , $end_match_2 , $error_match , $on_completion ) ;
+}
+
+sub runServerErrorMatch
+{
+	return qr{^ERROR|unable.to.bind|Alert.*fatal|error:.* alert } ;
 }
 
 sub parseLog
@@ -146,34 +160,6 @@ sub parseLog
 	return $result ;
 }
 
-sub _default_server_options
-{
-	return _run_help_match( "$openssl s_server" , qr{/no_tls1_3/} ) ? "-no_tls1_3" : "" ;
-}
-
-sub _default_client_options
-{
-	return _run_help_match( "$openssl s_client" , qr{/no_tls1_3/} ) ? "-no_tls1_3" : "" ;
-}
-
-sub _run_help_match
-{
-	my ( $openssl_s_whatever , $re ) = @_ ;
-
-	open( my $fh , "$openssl_s_whatever -help 2>&1 |" ) ;
-	while(<$fh>)
-	{
-		chomp( my $line = $_ ) ;
-		if( $line =~ m/$re/ )
-		{
-			close( $fh ) ;
-			return $line ;
-		}
-	}
-	close( $fh ) ;
-	return undef ;
-}
-
 sub _run
 {
 	# Runs the given openssl command (in practice s_server or s_client) with its output
@@ -184,30 +170,45 @@ sub _run
 	# work and the on-completion callback is called. The callback will typically
 	# try to terminate the peer or kill the openssl process directly.
 
-	my ( $cmd , $log_file , $end_match_1 , $end_match_2 , $on_completion ) = @_ ;
+	my ( $cmd , $log_file , $end_match_1 , $end_match_2 , $error_match , $on_completion ) = @_ ;
 
 	my $fh_log = new FileHandle( $log_file , "w" ) or die ;
 	$fh_log->autoflush() ;
 
-	# run the command -- if the cmd has special shell operators we will trigger
-	# perl's use of "sh -c" -- that means that we get the shell's pid and not
-	# the s_server's
+	# run the command -- the cmd must not have any special shell operators
+	# otherwise it will trigger perl's use of "sh -c" and we will get the
+	# shell's pid and not the s_server's
 	my $pid = open( my $fh , "$cmd 2>&1 |" ) ;
-	my $ending ;
+	my $ended ;
+	my $matched_first ;
 	while(<$fh>)
 	{
 		chomp( my $line = $_ ) ;
 		print $fh_log $line , "\n" ;
 		_log_line( $line ) ;
-		my $match_1 = ( $line =~ m/$end_match_1/ ) ;
-		my $match_2 = defined($end_match_2) && ( $line =~ m/$end_match_2/ ) ;
-		last if ( $match_1 && !defined($end_match_2) ) ;
-		last if ( $ending && $match_2 ) ;
-		$ending = 1 if( $match_1 ) ;
+		my $e = ( $line =~ m/$error_match/ ) ;
+		my $m1 = ( $line =~ m/$end_match_1/ ) ;
+		my $m2 = defined($end_match_2) && ( $line =~ m/$end_match_2/ ) ;
+		if( $e )
+		{
+			last ;
+		}
+		elsif( $m1 && !defined($end_match_2) )
+		{
+			$ended = 1 ;
+			last ;
+		}
+		elsif( $matched_first && $m2 )
+		{
+			$ended = 1 ;
+			last ;
+		}
+		$matched_first = 1 if( $m1 ) ;
 	}
 	$fh_log->close() ;
 	&$on_completion($pid) if defined($on_completion) ;
 	close($fh) ; # may block until the peer goes away
+	return $ended ;
 }
 
 sub _log_line

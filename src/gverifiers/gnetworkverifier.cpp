@@ -30,8 +30,7 @@ GVerifiers::NetworkVerifier::NetworkVerifier( GNet::ExceptionSink es , const GSm
 		m_es(es) ,
 		m_location(server) ,
 		m_connection_timeout(config.timeout) ,
-		m_response_timeout(config.timeout) ,
-		m_command(Command::VRFY)
+		m_response_timeout(config.timeout)
 {
 	G_DEBUG( "GVerifiers::NetworkVerifier::ctor: " << server ) ;
 	m_client_ptr.eventSignal().connect( G::Slot::slot(*this,&GVerifiers::NetworkVerifier::clientEvent) ) ;

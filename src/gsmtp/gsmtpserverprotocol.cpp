@@ -56,16 +56,8 @@ GSmtp::ServerProtocol::ServerProtocol( ServerSender & sender , Verifier & verifi
 		m_pm(pm) ,
 		m_sasl(newSaslServer(secrets,config.sasl_server_config,config.sasl_server_challenge_hostname)) ,
 		m_config(config) ,
-		m_apply_data(nullptr) ,
-		m_apply_more(false) ,
 		m_fsm(State::Start,State::End,State::s_Same,State::s_Any) ,
-		m_with_starttls(false) ,
 		m_peer_address(peer_address) ,
-		m_secure(false) ,
-		m_client_error_count(0U) ,
-		m_session_esmtp(false) ,
-		m_bdat_arg(0U) ,
-		m_bdat_sum(0U) ,
 		m_enabled(enabled)
 {
 	m_fsm( Event::Quit , State::s_Any , State::End , &ServerProtocol::doQuit ) ;

@@ -52,9 +52,7 @@ G::string_view GSmtp::Filter::strtype( Filter::Type type ) noexcept
 		( type == Type::client ? "client-filter"_sv : "routing-filter"_sv ) ;
 }
 
-GSmtp::Filter::Exit::Exit( int exit_code , Filter::Type type ) :
-	result(Result::fail) ,
-	special(false)
+GSmtp::Filter::Exit::Exit( int exit_code , Filter::Type type )
 {
 	if( exit_code == 0 )
 	{

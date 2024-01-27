@@ -180,7 +180,7 @@ std::string G::GetOpt::value( string_view name , string_view default_ ) const
 
 G::optional<std::string> G::GetOpt::optional( string_view name ) const
 {
-	return G::optional<std::string>( m_map.contains(name) , value(name) ) ;
+	return { m_map.contains(name) , value(name) } ;
 }
 
 G::Arg G::GetOpt::args() const
