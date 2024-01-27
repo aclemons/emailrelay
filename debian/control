@@ -1,0 +1,17 @@
+Source: emailrelay
+Section: mail
+Priority: optional
+Maintainer: Graeme Walker <graeme_walker@users.sourceforge.net>
+Build-Depends: debhelper-compat (= 13), autotools-dev, libssl-dev, libpam0g-dev
+Standards-Version: 3.9.8
+Homepage: http://emailrelay.sourceforge.net
+
+Package: emailrelay
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: E-mail store-and-forward transfer agent and pop server.
+ E-MailRelay is a lightweight SMTP store-and-forward mail server with POP access
+ to spooled messages. It can be used as a personal internet mail server with
+ SpamAssassin spam filtering and DNSBL connection blocking. Forwarding can be
+ to a fixed smarthost or using DNS MX routing. External scripts can be used for
+ address validation and e-mail message processing.

@@ -1,0 +1,17 @@
+[Unit]
+Description=E-MailRelay mail server
+Documentation=man:emailrelay(1)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=forking
+Restart=on-success
+KillMode=control-group
+ExecStart=/usr/sbin/emailrelay --as-server --syslog --pid-file /run/emailrelay/emailrelay.pid /etc/emailrelay.conf
+ExecStop=/bin/kill -15 $MAINPID
+PIDFile=/run/emailrelay/emailrelay.pid
+
+[Install]
+WantedBy=multi-user.target
+

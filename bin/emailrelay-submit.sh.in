@@ -1,0 +1,97 @@
+#!/bin/sh
+#
+# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+# 
+# Copying and distribution of this file, with or without modification,
+# are permitted in any medium without royalty provided the copyright
+# notice and this notice are preserved.  This file is offered as-is,
+# without any warranty.
+# ===
+#
+# emailrelay-submit.sh
+#
+# An example script that reads an e-mail message from stdin and deposits in into
+# a sub-directory of the E-MailRelay spool directory depending on the "To:"
+# address. This could be used with an E-MailRelay POP server using the
+# "--pop-by-name" option so that messages get routed appropriately.
+#
+# See also 'man emailrelay-filter-copy'.
+#
+
+store="__SPOOL_DIR__"
+log="/var/log/emailrelay-submit.out"
+
+tmp="/tmp/`basename $0.$$.tmp`"
+trap "rm -f \"${tmp}\" 2>/dev/null ; exit 0" 0
+trap "rm -f \"${tmp}\" 2>/dev/null ; exit 1" 1 2 3 13 15
+
+List()
+{
+	# Maps from the given "To:" address to a spool sub-directory -- edit as required
+	to_="${1}"
+	to_="`echo \"${to_}\" | tr '[A-Z]' '[a-z]'`"
+	case "${to_}" in
+		me@*) echo me_1 me_2 ;;
+		other@*) echo other_1 other_2 ;;
+		*) echo postmaster ;;
+	esac
+}
+
+Create()
+{
+	# Creates a spool sub-directory if it doesnt already exist
+	dir_="${1}"
+	if test ! -f "${dir_}"
+	then
+		echo `basename $0`: creating directory \"${dir_}\"
+		mkdir "${dir_}"
+		chown root:daemon "${dir_}"
+		chmod 775 "${dir_}"
+	fi
+}
+
+Main()
+{
+	# take a copy of the content
+	cat > ${tmp}
+
+	# parse out the "To:" address
+	to="`head -500 \"${tmp}\" | grep '^To:' | perl -ane 'print $F[1];exit'`"
+	echo `basename $0`: to \"${to}\"
+
+	# submit the message into the main spool directory
+	content="`cat \"${tmp}\" | \"${sbin}emailrelay-submit\" --verbose --spool-dir \"${store}\" \"${to}\"`"
+	envelope="`echo \"${content}\" | sed 's/content/envelope/'`"
+	if test \! -f "${content}"
+	then
+		echo `basename $0`: emailrelay-submit failed >&2
+		trap "" 0 # leave it in /tmp
+		return
+	fi
+
+	# link & copy into sub-directories
+	copied="0"
+	for name in `List "${to}"` ""
+	do
+		if test "${name}" != ""
+		then
+			Create "${store}/${name}"
+
+			c="${store}/${name}/`basename \"${content}\"`"
+			e="${store}/${name}/`basename \"${envelope}\"`"
+
+			ln "${content}" "${c}" && cp -p "${envelope}" "${e}"
+			if test "$?" -ne 0 ; then return ; fi
+			copied="1"
+		fi
+	done
+
+	# delete from the main directory
+	if test "${copied}" -eq 1
+	then
+		rm -f "${envelope}" && rm -f "${content}"
+	fi
+}
+
+Main "$@" >> "${log}" 2>&1
+

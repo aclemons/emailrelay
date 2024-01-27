@@ -1,0 +1,526 @@
+#!/usr/bin/env perl
+#
+# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# ===
+#
+# make-website
+#
+# usage: make-website [--host=<key>] <version-for-download-button>
+#
+# Pulls together a doxygen-based website. Requires doxygen and dot
+# on the path. Developed against doxygen version 1.8.14.
+#
+#
+
+use strict ;
+use FileHandle ;
+use File::Basename ;
+use Getopt::Long ;
+
+my %opt = () ;
+GetOptions( \%opt , "host=s" ) or die "usage error" ;
+die "usage error" if scalar(@ARGV) == 0 ;
+my $cfg_upload_version = $ARGV[0] ;
+
+my $cfg_button_paragraph = 5 ; # which 'what-is-it' paragraph for the green button
+
+my $cfg_author = "Graeme Walker" ;
+my $cfg_copyright = "Copyright (C) 2023 $cfg_author" ;
+my $cfg_output_dir = "website" ;
+my %colour = ( h => 195 , s => 255 , v => 100 ) ; # #0090c0
+my %cfg_meta = (
+	description => "E-MailRelay: a simple SMTP store-and-forward MTA and POP3 server" ,
+	keywords => "MTA SMTP relay proxy e-mail store forward POP3 server" ,
+	author => $cfg_author ,
+	robots => "index,follow" ,
+) ;
+
+my @cfg_mainpage = qw( userguide.md reference.md windows.md ) ;
+my $cfg_css = "emailrelay-doxygen.css" ;
+my ( $cfg_icon ) = grep { -e $_ } ( "../icon/emailrelay-icon-small.png" , "../src/main/icon/emailrelay-icon-small.png" ) ;
+
+my $cfg_doxygen_cfg = "website.tmp.cfg" ;
+my $cfg_mainpage_md = "website.tmp.mainpage.md" ;
+my $cfg_pages_md = "website.tmp.pages.md" ;
+my $cfg_header = "website.tmp.header.html" ;
+
+my %cfg_hosts = (
+	sourceforge =>
+	{
+		url_base => "https://sourceforge.net/projects/emailrelay" ,
+		download_url => "__base__/files/emailrelay/__version__" ,
+		button_url => "__base__/files/latest/download" ,
+		button_img_src => 'https://a.fsdn.com/con/app/sf-download-button' ,
+		button_img_attributes => 'src="__src__" width=276 height=48 srcset="__src__?button_size=2x 2x"' ,
+		svn_trunk => 'https://svn.code.sf.net/p/emailrelay/code/trunk' ,
+	} ,
+	local =>
+	{
+		url_base => "https://sourceforge.net/projects/emailrelay" ,
+		download_url => "files/" ,
+		button_url => "files/" ,
+		button_img_src => 'download-button.png' ,
+		button_img_attributes => 'src="__src__"' ,
+		svn_trunk => 'https://svn.code.sf.net/p/emailrelay/code/trunk' ,
+	}
+) ;
+
+my %cfg_host = defined($opt{host}) ? %{$cfg_hosts{$opt{host}}} : %{$cfg_hosts{sourceforge}} ;
+$cfg_host{button_url} =~ s/__base__/$cfg_host{url_base}/g ;
+$cfg_host{download_url} =~ s/__base__/$cfg_host{url_base}/g ;
+$cfg_host{download_url} =~ s/__version__/$cfg_upload_version/g ;
+$cfg_host{button_img_attributes} =~ s/__src__/$cfg_host{button_img_src}/g ;
+
+my $cfg_project_md = '[SourceForge]('.$cfg_host{url_base}.')' ;
+my $cfg_download_page_md = '[download page]('.$cfg_host{download_url}.')' ;
+my $cfg_svn_trunk = $cfg_host{svn_trunk} ;
+my $cfg_button_html =
+	'<a href="'.$cfg_host{button_url}.'">' .
+	'<img alt="Download E-MailRelay" '.$cfg_host{button_img_attributes}.'></a>' ;
+
+my $cfg_button_marker = "i i i i i i i i i i i i i" ;
+
+my %config = (
+	INPUT => "$cfg_mainpage_md $cfg_pages_md" ,
+	HTML_OUTPUT => $cfg_output_dir ,
+	PROJECT_NAME => "E-MailRelay" ,
+	GENERATE_TREEVIEW => "YES" ,
+	TREEVIEW_WIDTH => 120 ,
+	DISABLE_INDEX => "YES" ,
+	HTML_COLORSTYLE_HUE => $colour{h} ,
+	HTML_COLORSTYLE_SAT => $colour{s} ,
+	HTML_COLORSTYLE_GAMMA => $colour{v} ,
+	HTML_EXTRA_STYLESHEET => $cfg_css ,
+	#PROJECT_LOGO => $cfg_icon ,
+	TOC_INCLUDE_HEADINGS => 3 ,
+	SHOW_FILES => "NO" ,
+	SEARCHENGINE => "NO" ,
+	#LAYOUT_FILE => $layout ,
+	HTML_HEADER => $cfg_header ,
+	GENERATE_LATEX => "NO" ,
+	QUIET => "YES" ,
+) ;
+
+sub make_config
+{
+	my ( $fname ) = @_ ;
+
+	# use "doxygen -g" to create a template config file
+	my $fh_in = new FileHandle( "doxygen -g - |" ) or die "make-website: error: cannot run \"doxygen -g\"\n" ;
+
+	# edit the config file according to %config
+	my $fh = new FileHandle( $fname , "w" ) or die "make-website: error: cannot create file [$fname]\n" ;
+	my $line_number = 0 ;
+	while(<$fh_in>)
+	{
+		chomp( my $line = $_ ) ;
+
+		# check the doxygen version number while we're here
+		if( $line_number++ == 0 && $line =~ m/^# Doxyfile/ )
+		{
+			my ( $a , $b , $c ) = ( $line =~ m/# Doxyfile (\d+).?(\d*).?(\d*)/ ) ;
+			$a = ( defined($a) && $a ne "" ) ? $a : 0 ;
+			$b = ( defined($b) && $b ne "" ) ? $b : 0 ;
+			$c = ( defined($c) && $c ne "" ) ? $c : 0 ;
+			my $version = $a * 1000000 + $b * 1000 + $c ;
+			if( $version < 1008014 )
+			{
+				warn "make-website: warning: doxygen is too old: [$version]: please use 1.8.14 or later" ;
+			}
+		}
+
+		for my $key ( keys %config )
+		{
+			if( $line =~ m/^$key\s+/ )
+			{
+				my $value = $config{$key} ;
+				$line = "$key = $value" ;
+				last ;
+			}
+		}
+		print $fh $line , "\n" ;
+	}
+	$fh_in->close() or die ;
+	$fh->close() or die ;
+}
+
+sub make_mainpage_md
+{
+	my ( $fname_out ) = @_ ;
+	my $fh = new FileHandle( $fname_out , "w" ) or die ;
+	my $done_toc ;
+	print $fh "\\mainpage E-MailRelay\n\n" ;
+	for my $fname ( @cfg_mainpage )
+	{
+		my $fh_in = new FileHandle( $fname , "r" ) or die "make-website: error: cannot open file [$fname]\n" ;
+		my @lines = () ;
+		while(<$fh_in>)
+		{
+			chomp( my $line = $_ ) ;
+			push @lines , $line ;
+		}
+		$fh_in->close() or die ;
+		my $lines = scalar( @lines ) ;
+		my $line_number = 0 ;
+		while( $line_number < $lines )
+		{
+			my $line = $lines[$line_number++] ;
+			my $next_line = $lines[$line_number] ;
+			if( $next_line =~ m/^=====+$/ )
+			{
+				$lines[$line_number] = undef ;
+				$line =~ s/E-MailRelay // ;
+				( my $id = basename($fname) . "_$line" ) =~ s/[- '?.]/_/g ;
+				print $fh "\\section $id $line\n" ;
+				if( ! $done_toc )
+				{
+					print $fh "\n[TOC]\n" ;
+					$done_toc = 1 ;
+				}
+			}
+			elsif( $next_line =~ m/^-----+$/ )
+			{
+				$lines[$line_number] = undef ;
+				$line =~ s/^E-MailRelay // ;
+				( my $id = basename($fname) . "_$line" ) =~ s/[- '?.]/_/g ;
+				print $fh "\\subsection $id $line\n" ;
+			}
+			elsif( $line =~ m/^______+$/ )
+			{
+				$lines[$line_number] = undef ; # no footer text
+			}
+			elsif( defined($line) )
+			{
+				$line =~ s/`%/`%%/g ; # only required for markdown-in-doxygen
+				print $fh $line , "\n" ;
+			}
+		}
+	}
+	$fh->close() or die ;
+}
+
+sub make_pages_md
+{
+	my ( $fname ) = @_ ;
+
+	my $text = '
+		\page Download Download
+
+		E-MailRelay is hosted on '.$cfg_project_md.' and you can get release
+		tarballs from the project '.$cfg_download_page_md.'.
+
+		The green button automatically downloads the latest release for a target environment that is deduced
+		from your browser version.
+
+		<div align="left">
+		'.$cfg_button_marker.'
+		</div>
+
+		\page Source Source
+
+		You can get source code tarballs from the SourceForge
+		'.$cfg_download_page_md.' or
+		use subversion to get the latest code:
+
+			svn co '.$cfg_svn_trunk.' emailrelay
+
+		If the project is re-hosted it will be announced at [graemewalker.org](https://graemewalker.org/emailrelay).
+
+		Browseable source code documentation generated by doxygen is available [here](doxygen/namespaces.html).
+
+		\page Change_Log Change Log
+
+	' ;
+
+	$text =~ s/\t/    /mg ;
+	$text =~ s/^        //mg ;
+
+	my $fh_out = new FileHandle( $fname , "w" ) or die ;
+	print $fh_out $text ;
+
+	{
+		my $fh = new FileHandle( "changelog.md" , "r" ) or die ;
+		my @lines = () ;
+		while(<$fh>)
+		{
+			chomp( my $line = $_ ) ;
+			push @lines , $line ;
+		}
+		$fh->close() or die ;
+		my $lines = scalar( @lines ) ;
+		my $line_number = 0 ;
+		while( $line_number < $lines )
+		{
+			my $line = $lines[$line_number++] ;
+			my $next_line = $lines[$line_number] ;
+			if( $next_line =~ m/^=====+$/ )
+			{
+				$lines[$line_number] = undef ;
+			}
+			elsif( $next_line =~ m/^---+$/ )
+			{
+				$lines[$line_number] = undef ;
+				( my $id = "changelog_$line" ) =~ s/[- '?.>]/_/g ;
+				print $fh_out "\\section $id $line\n" ;
+			}
+			elsif( defined($line) )
+			{
+				print $fh_out $line , "\n" ;
+			}
+		}
+	}
+
+	$fh_out->close() or die ;
+}
+
+sub make_header
+{
+	my ( $header_out , $config_in ) = @_ ;
+
+	-e $config_in or die ;
+
+	my $header_tmp = ".header.$$.tmp" ;
+	my $footer_tmp = ".footer.$$.tmp" ;
+	my $layout_tmp = ".layout.$$.tmp" ;
+
+	# the header_out file is referred to in the config, so make sure it exists
+	{ my $fh = new FileHandle( $header_out , "w" ) or die ; }
+
+	# get doxygen to create header, footer and layout files
+	my $cmd = "doxygen -w html $header_tmp $footer_tmp $layout_tmp $config_in" ;
+	system( $cmd ) ;
+	-e $footer_tmp && -e $layout_tmp or die "make-website: error: \"doxygen -w\" failed\n" ;
+
+	# discard the generated footer and layout files
+	unlink( $footer_tmp ) ;
+	unlink( $layout_tmp ) ;
+
+	# edit the generated header file into the output file
+	my $fh_in = new FileHandle( $header_tmp , "r" ) or die "make-website: error \"doxygen -w\" did not create a header file\n" ;
+	my $fh = new FileHandle( "$header_out.tmp" , "w" ) or die ;
+	my $active = 1 ;
+	my $seen = 0 ;
+	while(<$fh_in>)
+	{
+		chomp( my $line = $_ ) ;
+		if( $line =~ m/BEGIN TITLEAREA/ )
+		{
+			print $fh $line , "\n" ;
+			print $fh "<div id=\"titlearea\">\n" ;
+
+			$seen = 1 ;
+			$active = 0 ;
+		}
+		elsif( $line =~ m/END TITLEAREA/ )
+		{
+			print $fh "</div>\n" ;
+			print $fh $line , "\n" ;
+			$active = 1 ;
+		}
+		elsif( $active )
+		{
+			print $fh $line , "\n" ;
+		}
+	}
+	die if ! $seen ;
+	$fh_in->close() or die ;
+	$fh->close() or die ;
+	rename( "$header_out.tmp" , $header_out ) or die ;
+	unlink( $header_tmp ) ;
+}
+
+sub run_doxygen
+{
+	unlink( "$cfg_output_dir/doxygen/index.html" ) ; # in case symlinked
+	system( "doxygen $cfg_doxygen_cfg" ) == 0 or die ;
+	system( "cp ".(-d "graphics"?"graphics/":"")."*.png $cfg_output_dir/" ) == 0 or die ;
+	unlink( "$cfg_output_dir/doxygen.png" ) ;
+}
+
+sub fixup_footers
+{
+	my ( @files ) = @_ ;
+	for my $path_in ( @files )
+	{
+		my $path_tmp = ".$$.tmp" ;
+		my $fh_in = new FileHandle( $path_in , "r" ) or die ;
+		my $fh_out = new FileHandle( $path_tmp , "w" ) or die ;
+		while(<$fh_in>)
+		{
+			chomp( my $line = $_ ) ;
+
+			# brittle, but the customised footer feature does not work
+			if( $line =~ m/<li.*footer.*Generated by/ )
+			{
+				$line =~ s;Generated by.*;$cfg_copyright</li>; ;
+				<$fh_in> ;
+				<$fh_in> ;
+			}
+
+			print $fh_out $line , "\n" ;
+		}
+		$fh_in->close() or die ;
+		$fh_out->close() or die ;
+		rename( $path_tmp , $path_in ) or die ;
+	}
+}
+
+sub fixup_mainpage
+{
+	my $path_in = "$cfg_output_dir/index.html" ; # from mainpage.md
+	my $path_tmp = ".$$.tmp" ;
+	my $fh_in = new FileHandle( $path_in , "r" ) or die ;
+	my $fh_out = new FileHandle( $path_tmp , "w" ) or die ;
+	my $p = 0 ;
+	my $done_meta ;
+	while(<$fh_in>)
+	{
+		chomp( my $line = $_ ) ;
+
+		# count paragraphs
+		if( $line =~ m/^<p>/ )
+		{
+			$p++ ;
+		}
+
+		# add meta tags
+		if( $line =~ m;^<meta .*/>\s*$; && !$done_meta )
+		{
+			$line = $line . "\n" . join( "\n" , map { "<meta name=\"$_\" content=\"$cfg_meta{$_}\"/>" } keys %cfg_meta ) ;
+			$done_meta = 1 ;
+		}
+
+		# fix the title
+		if( $line eq "<title>E-MailRelay: E-MailRelay</title>" )
+		{
+			$line = "<title>E-MailRelay</title>" ;
+		}
+
+		# add an icon
+		if( $line =~ m;^<div class="title">; )
+		{
+			my $fname = basename($cfg_icon) ;
+			$line =~ s%<div class="title">([^<]*)(<.*)%<div class="title" style="overflow: auto;">$1<img style="float: right; padding-right: 20px;" src="$fname">$2% ;
+		}
+
+		# remove redundant heading
+		if( $line =~ m;<h1><a.*User_Guide"></a>\s*$;p )
+		{
+			$line = ${^PREMATCH} ;
+			<$fh_in> ;
+		}
+
+		# add anchors and links for --foo
+		if( $line =~ m;^<li><p class="startli">--[-a-z]+.*</p>$; )
+		{
+			$line =~ s;--([a-z][-a-z]+);<span class="anchor" id="__$1">--$1; ;
+
+			$line =~ s/id="__([a-z]+)-([a-z]+)-([a-z]+)"/id="__$1_$2_$3"/g ;
+			$line =~ s/id="__([a-z]+)-([a-z]+)"/id="__$1_$2"/g ;
+
+			$line =~ s;</p>;</span></p>; ;
+		}
+		elsif( $line =~ m/--[a-z][-a-z]+/ )
+		{
+			$line =~ s;([^!])--([a-z][-a-z]+);$1<a class="option" href="#__$2">--$2</a>;g ;
+
+			$line =~ s/href="#__([a-z]+)-([a-z]+)-([a-z]+)"/href="#__$1_$2_$3"/g ;
+			$line =~ s/href="#__([a-z]+)-([a-z]+)"/href="#__$1_$2"/g ;
+		}
+
+		print $fh_out $line , "\n" ;
+
+		# add a big green button
+		if( $line =~ m/^<p>/ && $p == $cfg_button_paragraph )
+		{
+			print $fh_out "<div class=\"button\" align=\"center\">\n" ;
+			print $fh_out $cfg_button_html ;
+			print $fh_out "</div>\n" ;
+		}
+	}
+	$fh_in->close() or die ;
+	$fh_out->close() or die ;
+	rename( $path_tmp , $path_in ) or die ;
+}
+
+sub fixup
+{
+	my ( $fname , $from , $to ) = @_ ;
+	my $path_in = "$cfg_output_dir/$fname" ;
+	my $path_tmp = ".$$.tmp" ;
+	my $fh_in = new FileHandle( $path_in , "r" ) or die ;
+	my $fh_out = new FileHandle( $path_tmp , "w" ) or die ;
+	while(<$fh_in>)
+	{
+		chomp( my $line = $_ ) ;
+		$line =~ s/$from/$to/g ;
+		print $fh_out $line , "\n" ;
+	}
+	$fh_in->close() or die ;
+	$fh_out->close() or die ;
+	rename( $path_tmp , $path_in ) or die ;
+}
+
+sub copy_doxygen_tree
+{
+	my $base_dir = "." ;
+	die "make-website: error: no doxygen tree\n" if ( ! -d "$base_dir/doxygen" ) ;
+	#if( -d "$base_dir/doxygen" )
+	{
+		system( "cp -r $base_dir/doxygen $cfg_output_dir" ) ;
+		if( -e "$cfg_output_dir/doxygen/index.html" )
+		{
+			unlink( "$cfg_output_dir/doxygen/index.html" ) or die ;
+		}
+		system( "cd $cfg_output_dir/doxygen && ln -s ../Source.html index.html" ) == 0 or die ;
+	}
+}
+
+sub copy_icon
+{
+	system( "cp $cfg_icon $cfg_output_dir/" ) == 0 or die ;
+}
+
+sub create_robots_file
+{
+	my $fh = new FileHandle( "$cfg_output_dir/robots.txt" , "w" ) or die ;
+	print $fh 'User-agent: *' , "\n" ;
+	print $fh 'Disallow: /doxygen/' , "\n" ;
+	$fh->close() or die ;
+}
+
+sub cleanup
+{
+	unlink( $cfg_header ) or die ;
+	unlink( $cfg_doxygen_cfg ) or die ;
+	unlink( $cfg_mainpage_md ) or die ;
+	unlink( $cfg_pages_md ) or die ;
+}
+
+make_config( $cfg_doxygen_cfg ) ;
+make_mainpage_md( $cfg_mainpage_md ) ;
+make_pages_md( $cfg_pages_md ) ;
+make_header( $cfg_header , $cfg_doxygen_cfg ) ;
+run_doxygen() ;
+fixup_mainpage() ;
+fixup_footers( glob("$cfg_output_dir/*.html") ) ;
+fixup( "Download.html" , $cfg_button_marker , $cfg_button_html ) ;
+copy_doxygen_tree() ;
+copy_icon() ;
+unlink( "$cfg_output_dir/pages.html" ) ;
+create_robots_file() ;
+cleanup() ;
+print "success\n" ;

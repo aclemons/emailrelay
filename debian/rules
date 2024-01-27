@@ -1,0 +1,14 @@
+#!/usr/bin/make -f
+#
+# rules
+#
+# See dh(1) and debhelper(7)
+#
+
+%:
+	dh $@ --parallel --no-start
+
+override_dh_auto_configure:
+	# (the init script and pam file go to one side under /usr/lib since we have .init and .pam files in debian/)
+	dh_auto_configure -- e_libdir=/usr/lib/emailrelay e_initdir=/usr/lib/emailrelay/init e_rundir=/run/emailrelay e_pamdir=/usr/lib/emailrelay/pam --without-doxygen --without-man2html --with-openssl --without-mbedtls --with-pam --disable-gui --disable-testing
+

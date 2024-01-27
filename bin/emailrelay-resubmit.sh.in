@@ -1,0 +1,54 @@
+#!/bin/sh
+#
+# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+# 
+# Copying and distribution of this file, with or without modification,
+# are permitted in any medium without royalty provided the copyright
+# notice and this notice are preserved.  This file is offered as-is,
+# without any warranty.
+# ===
+#
+# emailrelay-resubmit.sh
+#
+# Looks for all failed e-mails in the E-MailRelay spool directory and resubmits
+# them. However, if an e-mail has been retried five times already then it is not
+# resubmitted again.
+#
+# usage: emailrelay-resubmit.sh [<spool-dir>]
+#
+# See also emailrelay-resubmit.js for Windows.
+#
+
+store="__SPOOL_DIR__"
+retry_limit="5"
+
+# parse the command line
+#
+if test $# -ge 1
+then
+	store="$1"
+fi
+
+# check the spool directory is valid
+#
+if test \! -d "$store"
+then
+	echo `basename $0`: invalid spool directory >&2
+	exit 1
+fi
+
+# for each failed e-mail...
+#
+ls -1 "$store/emailrelay.*.envelope.bad" | while read file
+do
+	if test -f "$file"
+	then
+		failures="`fgrep MailRelay-Reason: < \"${file}\" | wc -l`"
+		if test "$failures" -lt "$retry_limit"
+		then
+			good_file="`echo \"${file}\" | sed 's/\.bad$//'`"
+			mv -f "$file" "$good_file"
+		fi
+	fi
+done
+

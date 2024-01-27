@@ -1,0 +1,43 @@
+#
+# emailrelay.auth
+#
+# E-MailRelay secrets file.
+#
+# Point to this file on the emailrelay commandline, like this:
+#
+#     $ emailrelay --as-client=example.com:25 --client-auth=/etc/emailrelay.auth
+#     $ emailrelay --as-server --server-auth=/etc/emailrelay.auth
+#     $ emailrelay --pop --no-smtp --pop-auth=/etc/emailrelay.auth
+#
+# Each line in this file has four space-separated fields in one of the
+# following forms:
+#
+#     client {plain|md5} <id> <password>
+#     server {plain|md5} <id> <password>
+#     server none <address-range> <verifier-keyword>
+#
+# For example:
+#
+#      client plain alice my+20secret
+#      server plain bob e+3Dmc2
+#      server md5   carol Oqng9/H7wAyKgbuqw5VzG1bNO6feqtblyiNEi6QuN5dH
+#      server none  192.168.0.0/24 localnet
+#
+# Normally there should be one "client" line used to connect to a remote SMTP
+# server and multiple "server" lines representing accounts used by clients to
+# connect to this server (SMTP or POP).
+#
+# For slightly better security use MD5 hashed passwords when using "CRAM-MD5"
+# authentication, but note that hashed passwords cannot be used with
+# other authentication mechanisms. Hashed passwords should be generated
+# by running the "emailrelay-passwd" program.
+#
+# Any unusual characters (including space, "=" and "+") in the "name" and
+# "password" fields should be encoded using the RFC-1891 "xtext" encoding
+# scheme so that they are represented as hexadecimal ascii as "+XX".
+#
+# Alternatively use "plain:b" instead of "plain" and then use Base64 encoding
+# for the id and password.
+#
+# The "none" rows allow trusted IP addresses to bypass authentication.
+#

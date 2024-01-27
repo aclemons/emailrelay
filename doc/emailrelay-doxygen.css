@@ -1,0 +1,71 @@
+/*
+  Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+*/
+
+/*
+	emailrelay-doxygen.css
+*/
+
+div#titlearea
+{
+	visibility: hidden ;
+	display: none ;
+}
+
+h1
+{
+	color: #09c ;
+}
+
+h2
+{
+	color: #09c ;
+}
+
+.title
+{
+	color: #09c ;
+}
+
+div#projectname
+{
+	color: #09c ;
+}
+
+pre.fragment
+{
+}
+
+pre.fragment a
+{
+	color: black ;
+}
+
+pre.fragment a:visited
+{
+	color: black ;
+}
+
+a.option
+{
+    color: black ;
+}
+
+a.option:visited
+{
+    color: black ;
+}
+
+code
+{
+	/* font-weight: bold ; */
+	background-color: #eee ;
+}
+
+p.startli
+{
+}
+
+li.footer
+{
+}

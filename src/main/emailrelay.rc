@@ -1,0 +1,85 @@
+
+#include "windows.h"
+#include "resource.h"
+
+/* manifest -- mingw only, native builds use 'link /MANIFESTINPUT' */
+#ifdef G_MINGW
+1 RT_MANIFEST "emailrelay.exe.manifest"
+#endif
+
+/* icon -- see also resource.h and winapp.cpp */
+IDI_ICON1 ICON "emailrelay-icon.ico"
+
+/* messagetable -- see glogoutput_win32.cpp */
+LANGUAGE 0x9,0x1
+1 MESSAGETABLE "MSG00001.bin"
+
+IDD_PROPPAGE_1 DIALOGEX 0, 0, 259, 178
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_DISABLED | WS_CAPTION
+CAPTION "Property Page"
+FONT 8, "MS Shell Dlg", 400, 0, 0x0
+BEGIN
+    CONTROL         "",IDC_LIST1,"SysListView32",LVS_REPORT | LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP,7,7,245,164
+END
+
+IDD_DIALOG1 DIALOG 0, 0, 259, 190
+STYLE DS_SETFONT | WS_CHILD
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,105,169,50,14
+    EDITTEXT        IDC_EDIT1,7,7,245,153,ES_MULTILINE | ES_READONLY | WS_VSCROLL
+END
+
+IDD_DIALOG2 DIALOGEX 0, 0, 311, 194
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Dialog"
+FONT 8, "MS Sans Serif", 0, 0, 0x0
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,130,174,50,14
+    EDITTEXT        IDC_EDIT1,7,7,297,163,ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL | ES_READONLY | WS_VSCROLL | WS_HSCROLL
+END
+
+IDR_MENU1 MENU
+BEGIN
+    POPUP "popup"
+    BEGIN
+        MENUITEM "&Open",                       IDM_OPEN
+        MENUITEM "&Close",                      IDM_CLOSE
+        MENUITEM "&Quit",                       IDM_QUIT
+    END
+END
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 2, 5, 2, 0
+ PRODUCTVERSION 2, 5, 2, 0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x10004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "080904b0"
+        BEGIN
+            VALUE "Comments", "GPL v3 license"
+            VALUE "CompanyName", " "
+            VALUE "FileDescription", "E-MailRelay Application"
+            VALUE "FileVersion", "2, 5, 2, 0"
+            VALUE "InternalName", "emailrelay"
+            VALUE "LegalCopyright", "Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>"
+            VALUE "OriginalFilename", "emailrelay.exe"
+            VALUE "ProductName", "E-MailRelay"
+            VALUE "ProductVersion", "2, 5, 2, 0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x809, 1200
+    END
+END
+

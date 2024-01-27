@@ -1,0 +1,123 @@
+/*
+  Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+*/
+
+/*
+	emailrelay.css
+*/
+
+body
+{
+	font-family: verdana, arial, helvetica, sans-serif ;
+	color: #000 ;
+	background-color: #fff ;
+	margin: 0px ;
+	padding: 0px ;
+}
+
+h1
+{
+	text-align: center ;
+	color: #09c ;
+}
+
+h2
+{
+	color: #09c ;
+}
+
+h3
+{
+	color: #09c ;
+}
+
+div.div-main
+{
+	margin-left: 10% ;
+	margin-right: 10% ;
+}
+
+div.div-footer
+{
+	margin-top: 60px ;
+	color: #888 ;
+	font-size: smaller ;
+}
+
+div.div-pre
+{
+	margin-left: 3% ;
+	background-color: #eee ;
+	padding: 0.5em ;
+	border: none ;
+}
+
+p
+{
+	font-family: verdana, arial, helvetica, sans-serif ;
+	text-align: justify ;
+}
+
+img
+{
+	border-width: 0px ;
+	border-style: none ; /* check */
+	margin-left: 8% ;
+}
+
+a.a-header
+{
+	text-decoration:none ;
+}
+
+a.a-href
+{
+	text-decoration: none ;
+	font-weight: bold ;
+}
+
+a.a-href:link
+{
+	color: #09c ;
+}
+
+a.a-href:visited
+{
+	color: #07a ;
+}
+
+a.a-href:hover
+{
+	color: #09c ;
+	background-color: #ddd ;
+}
+
+em.quote
+{
+	font-weight: bold ;
+}
+
+em.fn
+{
+	font-weight: bold ;
+}
+
+li em.fn
+{
+	font-weight: normal ;
+	font-style: normal ;
+}
+
+dt
+{
+	font-weight: bold ;
+	margin-left: 3% ;
+}
+
+dd
+{
+	font-size: smaller ;
+	margin-left: 6% ;
+    padding-bottom: 8px ;
+}
+

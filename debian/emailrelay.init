@@ -1,0 +1,267 @@
+#!/bin/sh
+#
+# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# ===
+#
+# emailrelay
+#
+# A start/stop script for E-MailRelay in the SysV init system.
+#
+# usage: emailrelay { start | stop | restart | force-reload | status }
+#
+# See also: install_initd, remove_initd
+#
+### BEGIN INIT INFO
+# Provides:            emailrelay
+# Required-Start:      $local_fs $network $syslog
+# Required-Stop:       $local_fs $network $syslog
+# Default-Start:       2 3 4 5
+# Default-Stop:        0 1 6
+# Short-Description:   E-MailRelay mail server
+### END INIT INFO
+##
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+NAME=emailrelay
+DESC="E-MailRelay mail server"
+CONFIG=/etc/$NAME.conf
+PIDFILE=/run/emailrelay/$NAME.pid
+GROUP=daemon
+DAEMON=/usr/sbin/$NAME
+SUBMIT=/usr/sbin/$NAME-submit
+FACILITY=mail
+
+test -f /etc/default/$NAME && . /etc/default/$NAME
+test -f /etc/rc.conf.d/$NAME && . /etc/rc.conf.d/$NAME
+test -f /etc/default/rcS && . /etc/default/rcS
+
+# Default lsb functions in case there is no lsb/init-functions...
+#
+log_success_msg()
+{
+	echo "$@"
+}
+log_failure_msg()
+{
+	echo "$@"
+}
+log_warning_msg()
+{
+	echo "$@"
+}
+start_daemon()
+{
+	if test "`cat \"$2\" 2>/dev/null`" -gt 0 2>/dev/null && kill -0 "`cat \"$2\"`"
+	then
+		: # running already
+	else
+		shift ; shift ; shift
+		"$@"
+	fi
+}
+killproc()
+{
+	shift
+	kill `cat "$1" 2>/dev/null` 2>/dev/null
+}
+pidofproc()
+{
+	shift
+	kill -0 `cat "$1" 2>/dev/null` 2>/dev/null
+}
+log_daemon_msg()
+{
+	echo -n "$@"
+}
+log_progress_msg()
+{
+	:;
+}
+log_end_msg()
+{
+	if test "$1" -eq 0
+	then
+		log_success_msg " ... ok"
+		true
+	else
+		log_failure_msg " ... failed!"
+		false
+	fi
+}
+
+# Setup functions...
+#
+# Some packaging scripts do "emailrelay setup" for some of their
+# post-install steps, and "emailrelay setup" might also be useful
+# administratively after editing the /etc/default file. The "start"
+# sub-command below also uses setup_rundir() because the /run
+# directory will not necessarily persist across a reboot.
+#
+# (This code must come before the potential 'init-functions' redirect
+# to systemd.)
+#
+setup_config()
+{
+	if test ! -e "$CONFIG"
+	then
+		echo "# emailrelay.conf" > "$CONFIG"
+	fi
+}
+root_root()
+{
+	# True if the given file exists and is owned by 'root.root',
+	# as if newly copied by the install process and never
+	# subsequently chown'ed by the administrator
+	ls -nd "$1" 2>/dev/null | cut -d' ' -f 3,4 | grep -q '^0 0$'
+}
+spooldir()
+{
+	# Prints the spool directory path from the config file, but with a
+	# default because packaged installs might not edit the config file
+	# like 'make install' does
+	( echo spool-dir /var/spool/emailrelay ; cat "$CONFIG" ) | \
+		tr '\t' ' ' | sed 's/  */ /g' | grep '^spool-dir [^ ]' | \
+		tail -1 | cut -d' ' -f 2
+}
+setup_rundir_imp()
+{
+	test -d "$1" || mkdir -p "$1"
+	if echo "$1" | grep -q "/emailrelay$"
+	then
+		if root_root "$1"
+		then
+			chgrp "$GROUP" "$1"
+			chmod 775 "$1"
+		fi
+	fi
+}
+setup_rundir()
+{
+	# Recreates the pidfile directory, which might disappear after a reboot
+	setup_rundir_imp "`dirname \"$PIDFILE\"`"
+}
+setup_spooldir_imp()
+{
+	test -d "$1" || mkdir -p "$1"
+	if root_root "$1"
+	then
+		chgrp "$GROUP" "$1"
+		chmod 775 "$1"
+		chmod g+s "$1"
+	fi
+}
+setup_spooldir()
+{
+	setup_spooldir_imp "`spooldir`"
+}
+setup_sgid()
+{
+	if root_root "$1"
+	then
+		chgrp "$GROUP" "$1"
+		chmod 755 "$1"
+		chmod g+s "$1"
+	fi
+}
+setup_tools()
+{
+	setup_sgid "/usr/sbin/emailrelay-submit"
+}
+setup_openrc()
+{
+	rc-update -q -q add "$NAME" >/dev/null 2>&1 || true
+}
+setup()
+{
+	setup_config
+	setup_rundir
+	setup_spooldir
+	setup_tools
+	setup_openrc
+}
+if test "$1" = "setup" ; then setup ; exit 0 ; fi
+
+# Read lsb init-functions. Annoyingly, systemd sometimes hijacks this to
+# generate a service file under /run/systemd, run systemctl etc, without
+# ever returning to this script.
+#
+test -f /lib/lsb/init-functions && . /lib/lsb/init-functions
+
+case "$1" in
+
+	restart|force-reload)
+		$0 stop
+		$0 start
+	;;
+
+	try-restart)
+		echo `basename $0`: $1 not implemented >&2
+		exit 3
+		;;
+
+	*start)
+		if test "${EMAILRELAY_ENABLED:-1}" -eq 1
+		then
+			log_daemon_msg "Starting $DESC"
+			log_progress_msg "$NAME"
+			setup_rundir
+			start_daemon -p "$PIDFILE" -- "$DAEMON" --as-server --syslog=$FACILITY --pid-file "$PIDFILE" "$CONFIG"
+			e="$?"
+			log_end_msg $e
+			if test -d /run/systemd/system ; then sleep 0.2 2>/dev/null ; fi # pid file race
+			test "$e" -eq 0
+		else
+			log_warning_msg "$NAME startup is disabled in /etc/default/$NAME"
+			exit 0
+		fi
+		;;
+
+	stop)
+		log_daemon_msg "Stopping $DESC"
+		log_progress_msg "$NAME"
+		killproc -p "$PIDFILE" "$DAEMON"
+		e="$?"
+		log_end_msg $e
+		test "$e" -eq 0
+		;;
+
+	reload)
+		echo `basename $0`: $1 not implemented >&2
+		exit 3
+		;;
+
+	status)
+		if pidofproc -p "$PIDFILE" "$DAEMON" >/dev/null
+		then
+			log_success_msg "$NAME is running"
+			exit 0
+		else
+			log_failure_msg "$NAME is not running"
+			exit 32 # see guiboot_unix.cpp
+		fi
+		;;
+
+	setup)
+		# never gets here -- see above
+		setup
+		;;
+
+	*)
+		echo usage: `basename $0` "{start|stop|restart|status}" >&2
+		exit 2
+		;;
+
+esac

@@ -1,0 +1,89 @@
+.\" Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+.\" 
+.\" This program is free software: you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation, either version 3 of the License, or
+.\" (at your option) any later version.
+.\" 
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\" 
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <http://www.gnu.org/licenses/>.
+.TH EMAILRELAY-SUBMIT 1 local
+.SH NAME
+emailrelay-submit \- a submission utility for emailrelay
+.SH SYNOPSIS
+.B emailrelay-submit
+[--help] [--verbose] [--spool-dir
+.IR spool-directory ]
+[--from
+.IR from-address ]
+.I to-address
+.RI [ to-address \ ...]
+.SH DESCRIPTION
+.I emailrelay-submit
+is a utility which reads an RFC-822 e-mail message from the standard
+input, with SMTP envelope recipient addresses passed on the
+command-line, and writes it into the
+.B E-MailRelay
+spool directory.
+.LP
+The verbose option causes the path of the new content file
+to be printed.
+.SH OPTIONS
+.TP
+.B \-f, --from \fI<name>\fR
+Sets the envelope 'from' address.
+.TP
+.B \-h, --help
+Shows help text and exits.
+.TP
+.B \-s, --spool-dir \fI<dir>\fR
+Specifies the spool directory.
+.TP
+.B \-v, --verbose
+Prints the full path of the content file.
+.TP
+.B \-d, --content-date
+Adds a \fIDate:\fR content header if there is none.
+.TP
+.B \-F, --content-from
+Adds the envelope 'from' addresses as a \fIFrom:\fR content header.
+.TP
+.B \-I, --content-message-id \fI<domain-part>\fR
+Adds a \fIMessage-ID:\fR content header if there is none.
+.TP
+.B \-t, --content-to
+Adds the envelope 'to' addresses as \fITo:\fR content headers.
+.TP
+.B \-c, --copy
+Copies the envelope file into all sub-directories of the main spool directory.
+.TP
+.B \-n, --filename
+Prints the name of the content file.
+.TP
+.B \-V, --version
+Prints the version number and exits.
+.TP
+.B \-a, --auth \fI<name>\fR
+Sets the authentication value in the envelope file.
+.TP
+.B \-C, --content \fI<base64>\fR
+Sets a line of content. This can be a header line, a blank line or a line of the body text. The first blank line separates headers  from the body. The option value should be base64 encoded.
+.TP
+.B \-i, --from-auth-in \fI<name>\fR
+Sets the 'from-auth-in' value in the envelope file.
+.TP
+.B \-o, --from-auth-out \fI<name>\fR
+Sets the 'from-auth-out' value in the envelope file.
+.TP
+.B \-N, --no-stdin
+Ignores the standard-input. Typically used with \fI\fR\fI--content\fR\fI\fR.
+.SH SEE ALSO
+.BR emailrelay (1),
+.BR emailrelay-passwd (1)
+.SH AUTHOR
+Graeme Walker, mailto:graeme_walker@users.sourceforge.net

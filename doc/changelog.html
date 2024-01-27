@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <title>E-MailRelay Change Log</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <link rel="stylesheet" href="emailrelay.css" type="text/css">
+ </head>
+ <body>
+  <!-- index:0::::E-MailRelay Change Log -->
+ <div class="div-main">
+  <h1><a class="a-header" name="H_1">E-MailRelay Change Log</a></h1> <!-- index:1:H:E-MailRelay Change Log -->
+   <h2><a class="a-header" name="SH_1_1">2.5.1 -> 2.5.2</a></h2> <!-- index:2:SH:1:1:2.5.1 -> 2.5.2 -->
+    <ul>
+     <li>Windows build scripts reworked.</li>
+     <li>Filters can be Windows PowerShell <em>.ps1</em> scripts.</li>
+     <li>Fix for client protocol [bug-id #57].</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_2">2.5 -> 2.5.1</a></h2> <!-- index:2:SH:1:2:2.5 -> 2.5.1 -->
+    <ul>
+     <li>Filters can control the SMTP server's error response code.</li>
+     <li>Proxying with <em>--immediate</em> passes back SMTP reponses more faithfully.</li>
+     <li>The <em>--disable-admin</em> build-time configure option is restored.</li>
+     <li>New <em>smtp disable</em> admin command to disable new SMTP sessions.</li>
+     <li>Fewer Windows handles inherited by filter programs [bug-id #55].</li>
+     <li>Fix for <em>--dnsbl</em> option parsing.</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_3">2.4 -> 2.5</a></h2> <!-- index:2:SH:1:3:2.4 -> 2.5 -->
+    <ul>
+     <li>Multiple configurations in one process.</li>
+     <li>SMTP PIPELINING (RFC-2920).</li>
+     <li>SMTP CHUNKING/8BITMIME 'BDAT' extension (RFC-3030), disabled by default.</li>
+     <li>SMTP SMTPUTF8 extension (RFC-6531), disabled by default.</li>
+     <li>No 7-bit/8-bit check on received message content (see NEWS file).</li>
+     <li>New built-in filters: <em>deliver:</em>, <em>split:</em>, <em>copy:</em>, <em>mx:</em>, <em>msgid:</em>.</li>
+     <li>New built-in address verifier: <em>account:</em></li>
+     <li>No <em>.local</em> files (see NEWS file).</li>
+     <li>PAM authentication is now enabled with <em>--server-auth=pam:</em> not <em>/pam</em>.</li>
+     <li>Client authentication details can be given directly from the command-line.</li>
+     <li>Multiple <em>client</em> authentication secrets, selected by a new envelope field.</li>
+     <li>Main binary can act as a simple submission tool (<em>configure --enable-submission</em>).</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_4">2.3 -> 2.4</a></h2> <!-- index:2:SH:1:4:2.3 -> 2.4 -->
+    <ul>
+     <li>Multiple <em>--filter</em> and <em>--client-filter</em> options allowed.</li>
+     <li>TLS key and certificate files can be specified separately.</li>
+     <li>Finer control when using <em>--anonymous</em> (eg. <em>--anonymous=server</em>).</li>
+     <li>The <em>auth-config</em> options can distinguish between TLS and non-TLS authentication.</li>
+     <li>Hourly log file rotation using <em>%h</em> (eg. <em>--log-file=log.%d.%h</em>).</li>
+     <li>Listening file descriptors can be inherited from the parent process (see <em>--interface</em>).</li>
+     <li>Listening ports on Windows use exclusive binding.</li>
+     <li>The Linux event loop uses <em>epoll</em> by default rather than <em>select</em>.</li>
+     <li>Some support for message routing (see NEWS).</li>
+     <li>Fix of error handling in network client filters (<em>--client-filter=net:...</em>) [bug-id #50].</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_5">2.2 -> 2.3</a></h2> <!-- index:2:SH:1:5:2.2 -> 2.3 -->
+    <ul>
+     <li>Unix domain sockets supported (eg. <em>--interface=/tmp/smtp.s</em>).</li>
+     <li>Windows event log not used for verbose logging (prefer <em>--log-file</em>).</li>
+     <li>New admin <em>forward</em> command to trigger forwarding without waiting.</li>
+     <li>Optional base64 encoding of passwords in secrets files (<em>plain:b</em>).</li>
+     <li>Support for MbedTLS version 3.</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_6">2.1 -> 2.2</a></h2> <!-- index:2:SH:1:6:2.1 -> 2.2 -->
+    <ul>
+     <li>Connections from IPv4 'private use' addresses are allowed by default (see <em>--remote-clients</em>).</li>
+     <li>Interface names can be used with <em>--interface</em> (eg. <em>--interface=eth0</em>).</li>
+     <li>New <em>--server-tls-connection</em> option for server-side implicit TLS.</li>
+     <li>New <em>--forward-to-some</em> option to permit some message recipients to be rejected.</li>
+     <li>New <em>--log-address</em> option to aid adaptive firewalling.</li>
+     <li>Dynamic log file rolling when using <em>--log-file=%d</em>.</li>
+     <li>Choice of syslog 'facility' on Linux with <em>--syslog=local0</em> etc.</li>
+     <li>Pipelined SMTP QUIT commands sent by broken clients are tolerated.</li>
+     <li>Better handling of overly-verbose or unkillable <em>--filter</em> scripts.</li>
+     <li>Optional epoll event loop on Linux (<em>configure --enable-epoll</em>).</li>
+     <li>Some internationalisation support (see NEWS file).</li>
+     <li>Support for Windows XP restored when built with mingw-w64.</li>
+     <li>C++ 2011 compiler is required.</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_7">2.0.1 -> 2.1</a></h2> <!-- index:2:SH:1:7:2.0.1 -> 2.1 -->
+    <ul>
+     <li>Backwards compatibility features for 1.9-to-2.0 transition removed.</li>
+     <li>Better handling of too-many-connections on Windows.</li>
+     <li>New <em>--idle-timeout</em> option for server-side connections.</li>
+     <li>Support for RFC-5782 DNSBL blocking (<em>--dnsbl</em>).</li>
+     <li>Filter scripts are given the path of the envelope file in argv2.</li>
+     <li>Message files can be edited by <em>--client-filter</em> scripts.</li>
+     <li>Better support for CRAM-SHAx authentication.</li>
+     <li>New <em>--client-auth-config</em> and <em>--server-auth-config</em> options.</li>
+     <li>New <em>--show</em> option on windows to better control the user interface style.</li>
+     <li>The <em>--pop</em> option always requires <em>--pop-auth</em>.</li>
+     <li>No message is spooled if all its envelope recipients are local-mailboxes.</li>
+     <li>TLS cipher name added to <em>Received</em> line as per RFC-8314 4.3.</li>
+     <li>Certificate contents are not logged.</li>
+     <li>Timestamp parts of spool filenames no longer limited to six digits.</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_8">2.0 -> 2.0.1</a></h2> <!-- index:2:SH:1:8:2.0 -> 2.0.1 -->
+    <ul>
+     <li>Make PLAIN client authentication work against servers with broken 334 responses.</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_9">1.9.2 -> 2.0</a></h2> <!-- index:2:SH:1:9:1.9.2 -> 2.0 -->
+    <ul>
+     <li>Improved IPv6 support, with IPv4 and IPv6 used independently at run-time (see <em>--interface</em>).</li>
+     <li>Server process is not blocked during <em>--filter</em> or <em>--address-verifier</em> execution, if multi-threaded.</li>
+     <li>Support for the <em>mbedTLS</em> TLS library as an alternative to OpenSSL (<em>configure --with-mbedtls</em>).</li>
+     <li>TLS server certificates specified with new <em>--server-tls-certificate</em> option, not <em>--server-tls</em>.</li>
+     <li>TLS servers enable client certificate verification with <em>--server-tls-verify</em>, not <em>--tls-config</em>.</li>
+     <li>TLS clients can verify server certificates with <em>--client-tls-verify</em> and <em>--client-tls-verify-name</em>.</li>
+     <li>The <em>--tls-config</em> option works differently (see NEWS file).</li>
+     <li>New <em>--client-tls-server-name</em> option for server name identification (SNI).</li>
+     <li>New <em>--client-tls-required</em> option to force client connections to use TLS.</li>
+     <li>New <em>--server-tls-required</em> option to force remote SMTP clients to use STARTTLS.</li>
+     <li>New <em>--forward-on-disconnect</em> option replaces <em>--poll=0</em>.</li>
+     <li>The <em>--anonymous</em> option now suppresses the <em>Received</em> line, whatever the <em>--domain</em>.</li>
+     <li>The second field in the secrets file indicates the password encoding, not AUTH mechanism.</li>
+     <li>The <em>--verifier</em> option is now <em>--address-verifier</em>, with simplified command-line parameters.</li>
+     <li>Command-line file paths can use <em>@app</em> as a prefix to be relative to the executable directory.</li>
+     <li>Command-line file paths can be relative to the startup cwd even when daemonised.</li>
+     <li>Filter exit codes between 104 and 107 are interpreted differently (see NEWS file).</li>
+     <li>Message rejection reasons passed back to the submitting SMTP client are much less verbose.</li>
+     <li>Forwarding events are queued up if the forwarding client is still busy from last time.</li>
+     <li>The bind address for outgoing connections is no longer taken from first unqualified <em>--interface</em> address [bug-id #27].</li>
+     <li>The SMTP client protocol tries more than one authentication mechanism.</li>
+     <li>Some support for XOAUTH2 client-side authentication.</li>
+     <li>Client protocol sends QUIT with a socket shutdown().</li>
+     <li>The Windows commdlg list-view widget is used for the server status pages.</li>
+     <li>The Windows connection-lookup feature is withdrawn (<em>--peer-lookup</em>).</li>
+     <li>Several build-time configure options like <em>--disable-pop</em> are withdrawn.</li>
+     <li>C++ 2011 is preferred, and required for multi-threading.</li>
+     <li>Support for very old versions of Windows is dropped.</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_10">1.9.1 -> 1.9.2</a></h2> <!-- index:2:SH:1:10:1.9.1 -> 1.9.2 -->
+    <ul>
+     <li>Fixed a leak in the event-loop garbage collection.</li>
+     <li>A local hostname that fails to resolve is not an error.</li>
+     <li>A warning is emitted if there is more than one client authentication secret.</li>
+     <li>Multiple <em>--interface</em> options are allowed separately on the command-line.</li>
+     <li>Added a new <em>--client-interface</em> option.</li>
+     <li>The <em>Received</em> line is formatted as per RFC-3848 (<em>with ESMTPSA</em>).</li>
+     <li>The LOGIN and PLAIN mechanisms in the secrets file are now equivalent.</li>
+     <li>The Windows service wrapper can use a configuration file to locate the startup batch file.</li>
+     <li>Simplified the implementation of the GUI installation program.</li>
+     <li>Reworded the <em>read error: disconnected</em> log message.</li>
+     <li>Less verbose logging of <em>no more messages to send</em>.</li>
+     <li>Qt4 or Qt5 selected by the <em>configure</em> script.</li>
+     <li>Improved the RPM spec file.</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_11">1.9 -> 1.9.1</a></h2> <!-- index:2:SH:1:11:1.9 -> 1.9.1 -->
+    <ul>
+     <li>Updated OpenSSL from 1.0.1e to 1.0.1g in the Windows build.</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_12">1.8.2 -> 1.9</a></h2> <!-- index:2:SH:1:12:1.8.2 -> 1.9 -->
+    <ul>
+     <li>Added negotiated TLS/SSL for POP (ie. <em>STLS</em>).</li>
+     <li>The first two fields in the secrets files are reordered (with backwards compatibility).</li>
+     <li>Added Linux PAM authentication (<em>configure --with-pam</em> and then <em>--server-auth=/pam</em>).</li>
+     <li>Optional protocol-specific <em>--interface</em> qualifiers, eg. <em>--interface smtp=127.0.0.1,pop=192.168.1.1</em>.</li>
+     <li>Outgoing client connection bound with the first <em>--interface</em> or <em>--interface client=...</em> address.</li>
+     <li>Support for SMTP-over-TLS on outgoing client connection (<em>--client-tls-connection</em>) (cf. <em>STARTTLS</em>)</li>
+     <li>Support for SOCKS 4a on outgoing client connection, eg. <em>--forward-to example.com:25@127.0.0.1:9050</em>.</li>
+     <li>TLS configuration options (<em>--tls-config=...</em>) for SSLv2/3 fallback etc.</li>
+     <li>No <em>Received</em> line added if <em>--anonymous</em> and an empty <em>--domain</em> name.</li>
+     <li>Error text for <em>all recipients rejected</em> is now more accurately <em>one or more recipients rejected</em>.</li>
+     <li>New behaviour for <em>--client-filter</em> exit values of 100 and over.</li>
+     <li>New commands on the admin interface, <em>failures</em> and <em>unfail-all</em>.</li>
+     <li>Shorter descriptions in the usage help unless <em>--verbose</em>.</li>
+     <li>New default spool directory location on windows, now under <em>system32</em>.</li>
+     <li>Windows project files for MSVC 2012 included.</li>
+     <li>Removed support for Windows NT and Windows 9x.</li>
+     <li>Better support for Windows Vista and Windows 7.</li>
+     <li>Removed Windows <em>--icon</em> option.</li>
+     <li>Removed <em>--enable-fhs</em> option for <em>configure</em> (see INSTALL document for equivalent usage).</li>
+     <li>Added <em>--log-file</em> option to redirect stderr.</li>
+     <li>Added Windows <em>--peer-lookup</em> option.</li>
+     <li>Fix for MD5 code in 64-bit builds.</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_13">1.8.1 -> 1.8.2</a></h2> <!-- index:2:SH:1:13:1.8.1 -> 1.8.2 -->
+    <ul>
+     <li>Fix namespaces for gcc 3.4.</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_14">1.8 -> 1.8.1</a></h2> <!-- index:2:SH:1:14:1.8 -> 1.8.1 -->
+    <ul>
+     <li>Changed the definition of <em>--as-proxy</em> to use <em>--poll 0</em> rather than <em>--immediate</em> [bug-id 1961652].</li>
+     <li>Fixed stalling bug when using server-side TLS/SSL (<em>--server-tls</em>) [bug-id 1961655].</li>
+     <li>Improved Debian packaging for Linux (<em>make deb</em>).</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_15">1.7 -> 1.8</a></h2> <!-- index:2:SH:1:15:1.7 -> 1.8 -->
+    <ul>
+     <li>Speed optimisations (as identified by KCachegrind/valgrind in KDevelop).</li>
+     <li>Build-time size optimisations (eg. <em>./configure --disable-exec --enable-small-exceptions ...</em>).</li>
+     <li>Build-time options to reduce runtime library dependencies (eg. <em>./configure --disable-dns --disable-identity</em>).</li>
+     <li>New switch to limit the size of submitted messages (<em>--size</em>).</li>
+     <li>New semantics for <em>--poll 0</em>, providing a good alternative to <em>--immediate</em> when proxying.</li>
+     <li>SMTP client protocol emits a RSET after a rejected recipient as a workround for broken server protocols.</li>
+     <li>SMTP client protocol continues if the server advertises AUTH but the client has no authentication secrets.</li>
+     <li>When a message cannot be forwarded the offending SMTP protocol response number, if any, is put in the envelope file.</li>
+     <li>A warning is printed if logging is requested but both stderr and syslog are disabled.</li>
+     <li>A cross-compiling toolchain builder script added for running on mips-based routers (<em>extra/mips</em>).</li>
+     <li>New example scripts for SMTP multicasting and editing envelope files.</li>
+     <li>Improved native support for Mac OS X (10.5) with graphical installation from disk image.</li>
+     <li>Compatibility with gcc 2.95 restored.</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_16">1.6 -> 1.7</a></h2> <!-- index:2:SH:1:16:1.6 -> 1.7 -->
+    <ul>
+     <li>TLS/SSL support for SMTP using OpenSSL (<em>./configure --with-openssl</em> with <em>--client-tls</em> and <em>--server-tls</em>).</li>
+     <li>Authentication mechanism <em>PLAIN</em> added.</li>
+     <li>Some tightening up of the SMTP server protocol.</li>
+     <li>Windows service wrapper has an <em>--uninstall</em> option.</li>
+     <li>Windows installation GUI uninstalls the service before reinstalling it.</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_17">1.5 -> 1.6</a></h2> <!-- index:2:SH:1:17:1.5 -> 1.6 -->
+    <ul>
+     <li>GPLv3 licence (see <em>http://gplv3.fsf.org</em>).</li>
+     <li>New <em>--prompt-timeout</em> switch for the timeout when waiting for the initial 220 prompt from the SMTP server.</li>
+     <li>Fix for flow-control assertion error when the POP server sends a very long list of spooled messages.</li>
+     <li>Wildcard matching for trusted IP addresses in the authentication secrets file can now use CIDR notation.</li>
+     <li>More fine-grained switching of effective user-id to read files and directories when running as root.</li>
+     <li>Fewer new client connections when proxying.</li>
+     <li>The server drops the connection if a remote SMTP client causes too many protocol errors.</li>
+     <li>More complete implementation of <em>--hidden</em> on Windows.</li>
+     <li>Scanner switch (<em>--scanner</em>) replaced by a more general <em>--filter</em> and <em>--client-filter</em> switch syntax.</li>
+     <li>Support for address verification (<em>--verifier</em>) over the network.</li>
+     <li>Better support for running as a Windows service (<em>emailrelay-service --install</em>).</li>
+     <li>Utility filter program <em>emailrelay-filter-copy</em> exits with 100 if it deletes the envelope file.</li>
+     <li>Windows <em>cscript.exe</em> wrapper is added automatically to non-bat/exe <em>--filter</em> command-lines.</li>
+     <li>Installation GUI makes backups of the files it edits and preserves authentication secrets.</li>
+     <li>Installation GUI can install <em>init.d</em> links.</li>
+     <li>Experimental SpamAssassin spamc/spamd protocol support.</li>
+     <li>Acceptance tests added to the distribution.</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_18">1.4 -> 1.5</a></h2> <!-- index:2:SH:1:18:1.4 -> 1.5 -->
+    <ul>
+     <li>New installation and configuration GUI using TrollTech Qt 4.x (<em>./configure --enable-gui</em>)</li>
+     <li>Default address verifier accepts all addresses as valid and never treats them as local mailboxes.</li>
+     <li>Fix for server exit bug when failing to send data down a newly accepted connection.</li>
+     <li>Spooled content files can be left in the parent directory to save diskspace when using <em>--pop-by-name</em>.</li>
+     <li>Client protocol improved for the case where there are no valid recipients.</li>
+     <li>New <em>--syslog</em> switch to override <em>--no-syslog</em>.</li>
+     <li>New <em>--filter-timeout</em> switch added.</li>
+     <li>Support for <em>--foo=bar</em> switch syntax (ie. with <em>=</em>).</li>
+     <li>Multiple listening interfaces allowed with a comma-separated <em>--interface</em> list.</li>
+     <li>New <em>--filter</em> utility called <em>emailrelay-filter-copy</em> to support <em>--pop-by-name</em>.</li>
+     <li>Documentation also created in docbook format (requires xmlto).</li>
+     <li>Windows installation document revised.</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_19">1.3.3 -> 1.4</a></h2> <!-- index:2:SH:1:19:1.3.3 -> 1.4 -->
+    <ul>
+     <li>POP3 server (enable with <em>--pop</em>, disable at build-time with <em>./configure --disable-pop</em>).</li>
+     <li>Fix for logging reentrancy bug (affects <em>./configure --enable-debug</em> with <em>--debug</em>).</li>
+     <li>Fix to ensure sockets are always non-blocking (affects <em>--scanner</em>).</li>
+     <li>Allow <em>--verifier</em> scripts to reject addresses with a temporary <em>4xx</em> error code.</li>
+     <li>Automatic re-reading of secrets files.</li>
+     <li>Write to the Windows event log even if no write access to the registry.</li>
+     <li>Modification of set-group-id policy if not started as root.</li>
+     <li>Better checking of spool directory access on startup.</li>
+     <li>New <em>emailrelay-submit.sh</em> example script for submitting messages for <em>--pop-by-name</em>.</li>
+     <li>The <em>--dont-listen</em> switch is now <em>--no-smtp</em>.</li>
+     <li>Better IPv6 support (Linux only).</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_20">1.3.2 -> 1.3.3</a></h2> <!-- index:2:SH:1:20:1.3.2 -> 1.3.3 -->
+    <ul>
+     <li>No bind() for outgoing connections [bug-id 1051689].</li>
+     <li>Updated rpm spec file [bug-id 1224850].</li>
+     <li>Fix for gcc3.4 compilation error in <em>md5.cpp</em>.</li>
+     <li>Fix for glob()/size_t compilation warning.</li>
+     <li>Documentation of <em>auth</em> switches corrected.</li>
+     <li>State-machine template type declaration modernised, possibly breaking older compilers.</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_21">1.3.1 -> 1.3.2</a></h2> <!-- index:2:SH:1:21:1.3.1 -> 1.3.2 -->
+    <ul>
+     <li>Fix for core dump when <em>--client-filter</em> pre-processing fails.</li>
+     <li>Revised code structure to prepare for asynchronous pre-processing.</li>
+     <li>Better diagnostics when pre-processor exec() fails.</li>
+     <li>Better cleanup of empty and orphaned files.</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_22">1.3 -> 1.3.1</a></h2> <!-- index:2:SH:1:22:1.3 -> 1.3.1 -->
+    <ul>
+     <li>Windows resource leak from CreateProcess() fixed.</li>
+     <li>Windows dialog box double-close fix.</li>
+     <li>Some documentation for the <em>--scanner</em> switch.</li>
+     <li>New usage patterns section in the user guide.</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_23">1.2 -> 1.3</a></h2> <!-- index:2:SH:1:23:1.2 -> 1.3 -->
+    <ul>
+     <li>Client protocol waits for a greeting from the server on startup [bug-id 842156].</li>
+     <li>Fix for incorrect backslash normalisation on <em>--verifier</em> command-lines containing spaces [bug-id 890646].</li>
+     <li>Verifier programs can now summarily abort a connection using an exit value of 100.</li>
+     <li>New <em>--anonymous</em> switch that reduces information leakage to the SMTP client and disables <em>VRFY</em>.</li>
+     <li>Better validation of <em>MAIL-FROM</em> and <em>RCPT-TO</em> formatting.</li>
+     <li>Rewrite of low-level MD5 code.</li>
+     <li>Performance tuning.</li>
+     <li>Template <em>emailrelay.conf</em> gets installed in <em>/etc</em>.</li>
+     <li>New switches for the <em>configure</em> script.</li>
+     <li>More JavaScript example scripts.</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_24">1.1.2 -> 1.2</a></h2> <!-- index:2:SH:1:24:1.1.2 -> 1.2 -->
+    <ul>
+     <li>The <em>--filter</em> and <em>--verifier</em> arguments interpreted as command-lines; spaces in executable paths now need escaping.</li>
+     <li>The <em>--interface</em> switch applies to outgoing connections too.</li>
+     <li>New <em>--client-filter</em> switch to do synchronous message processing before sending.</li>
+     <li>Keeps authentication after a <em>rset</em> command.</li>
+     <li>Fix for dangling reference bug, seen after <em>quit</em> command on Windows.</li>
+     <li>JavaScript examples in the documentation.</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_25">1.1.1 -> 1.1.2</a></h2> <!-- index:2:SH:1:25:1.1.1 -> 1.1.2 -->
+    <ul>
+     <li>Earlier check for un-bindable ports on startup, and later fork()ing [bug-id 776972].</li>
+     <li>Resolved the file-descriptor kludge for <em>--verifier</em> on Windows.</li>
+     <li>Less strict about failing eight bit messages sent to servers with no <em>8BITMIME</em> extension.</li>
+     <li>Supplementary group memberships revoked at startup if root or suid.</li>
+     <li>Pre-processor (<em>--filter</em>) program's standard output searched for a failure reason string.</li>
+     <li>Undocumented <em>--scanner</em> switch added for asynchronous processing by a separate network server.</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_26">1.1.0 -> 1.1.1</a></h2> <!-- index:2:SH:1:26:1.1.0 -> 1.1.1 -->
+    <ul>
+     <li>Restored the fix for building with gcc2.96.</li>
+     <li>Support for MinGW builds on Windows.</li>
+     <li>More reasonable size of the <em>--help --verbose</em> message box on Windows.</li>
+     <li>Windows <em>--icon</em> switch changed from <em>-i</em> to <em>-c</em> to avoid conflicting with <em>--interface</em>.</li>
+     <li>Shows <em>next server address</em> correctly in the configuration report when using <em>--forward-to</em>.</li>
+     <li>Fix for <em>make install</em> when <em>man2html</em> is not available.</li>
+     <li>Updated init script.</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_27">1.0.2 -> 1.1.0</a></h2> <!-- index:2:SH:1:27:1.0.2 -> 1.1.0 -->
+    <ul>
+     <li>In proxy mode unexpected client-side disconnects and timeouts do not leave <em>.bad</em> files [see also bug-id 659039].</li>
+     <li>By default proxy mode does not interpret addresses for local delivery (<em>--postmaster</em>).</li>
+     <li>Polling option added (<em>--poll</em>) to rescan the spool directory periodically.</li>
+     <li>New special exit code (103) for the pre-processor to trigger immediate polling; 100 to 107 now reserved.</li>
+     <li>Orphaned zero-length content files are deleted properly if the server-side dialogue is cut short.</li>
+     <li>The <em>--interface</em> switch applies to the <em>--admin</em> interface too.</li>
+     <li>Improved internal event architecture using slot/signal design pattern, and fewer singleton classes.</li>
+     <li>Event notification available through the administration interface.</li>
+     <li>New <em>--hidden</em> switch for Windows.</li>
+     <li>Syslog output includes process-id.</li>
+     <li>Support for Sun WorkShop 5.0 added.</li>
+     <li>Documentation overhaul.</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_28">1.0.0 -> 1.0.2</a></h2> <!-- index:2:SH:1:28:1.0.0 -> 1.0.2 -->
+    <ul>
+     <li>Support for trusted IP addresses, allowing certain clients to avoid authentication.</li>
+     <li>Address verifier interface extended to include authentication information.</li>
+     <li>New public mail relay section added to the user guide.</li>
+     <li>Example verifier scripts etc. added to the reference guide.</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_29">1.0.0 -> 1.0.1</a></h2> <!-- index:2:SH:1:29:1.0.0 -> 1.0.1 -->
+    <ul>
+     <li>In proxy mode unexpected client-side disconnects and timeouts result in <em>.bad</em> files [bug-id 659039].</li>
+     <li>Require successful <em>AUTH</em> before <em>MAIL FROM</em> when using <em>--server-auth</em>.</li>
+     <li>Better word-wrap on <em>--help</em> output.</li>
+     <li>Use of RedHat's <em>functions</em> code, and support for <em>chkconfig</em>, added to the <em>init.d</em> script.</li>
+     <li>Builds with gcc3.2 (1.0.0-pl5).</li>
+     <li>Fix for files left as <em>busy</em> after a connection failure in proxy mode [bug-id 631032] (1.0.0-pl3/4/5).</li>
+     <li>Trivial documentation fixes (1.0.0-pl3).</li>
+     <li>Fix for the double-dot escape bug in the client protocol [bug-id 611624] (1.0.0-pl2).</li>
+     <li>Fix build when using gcc2.96 rather than gcc2.95 (1.0.0-pl1).</li>
+     <li>Fix default spool directory in example scripts (1.0.0-pl1).</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_30">0.9.9 -> 1.0.0</a></h2> <!-- index:2:SH:1:30:0.9.9 -> 1.0.0 -->
+    <ul>
+     <li>Briefer <em>--help</em> output; works with <em>--verbose</em>.</li>
+     <li>Option to listen on a specific network interface (<em>--interface</em>).</li>
+     <li>Option for an external address verifier program (<em>--verifier</em>).</li>
+     <li>Some Linux Standard Base stuff added to the <em>init.d</em> script.</li>
+     <li>Pid files world-readable and deleted on abnormal termination.</li>
+     <li>Compiles with gcc 3.0 and intel 6.0.</li>
+     <li>Autoconf tweak for MacOS X.</li>
+     <li>Corrected the <em>Received:</em> typo [bug-id 572236].</li>
+     <li>EHLO response parsing is now case-insensitive [bug-id 561522].</li>
+     <li>Fewer missing-secrets warnings [bug-id 564987].</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_31">0.9.8 -> 0.9.9</a></h2> <!-- index:2:SH:1:31:0.9.8 -> 0.9.9 -->
+    <ul>
+     <li>More flexible logging options (<em>--verbose</em> and <em>--debug</em> work better).</li>
+     <li>File Hierarchy Standard (FHS) option for <em>configure</em> (<em>--enable-fhs</em>).</li>
+     <li>FHS-compatible RPMs.</li>
+     <li>Spool files writeable by pre-processor when server started as root.</li>
+     <li>Default directories in executables and scripts come from <em>configure</em>.</li>
+     <li>The <em>init.d</em> script is renamed <em>emailrelay</em> (was <em>emailrelay.sh</em>).</li>
+     <li>Man pages are gzipped when installed.</li>
+     <li>Fix for access violation under Windows NT when client disconnects.</li>
+     <li>Use of event log when compiled on Windows NT.</li>
+     <li>Fix for info-after-flush bug when using the administration interface. [rc2]</li>
+     <li>New <em>resubmit</em> script. [rc2]</li>
+     <li>Submit utility works under Windows. [rc2]</li>
+     <li>Improved Windows project files. [rc2]</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_32">0.9.7 -> 0.9.8</a></h2> <!-- index:2:SH:1:32:0.9.7 -> 0.9.8 -->
+    <ul>
+     <li>Fix for running pre-processor (<em>--filter</em>) as root.</li>
+     <li>Ignore bogus <em>AUTH=LOGIN</em> lines in EHLO response.</li>
+     <li>Submit utility improved to work with mutt.</li>
+     <li>Installation of submit man page.</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_33">0.9.6 -> 0.9.7</a></h2> <!-- index:2:SH:1:33:0.9.6 -> 0.9.7 -->
+    <ul>
+     <li>CRAM-MD5 authentication mechanism added.</li>
+     <li>Revoke root permissions at start up, and reclaim them when needed.</li>
+     <li>Allow mail pre-processing (<em>--filter</em>) when started as root.</li>
+     <li>Domain-override switch (<em>--domain</em>) added.</li>
+     <li>Non-privileged user switch (<em>--user</em>) added.</li>
+     <li>Better handling of NarrowPipe exception (ie. 8-bit message to 7-bit server).</li>
+     <li>Allow null return path in MAIL-FROM.</li>
+     <li>Reject recipients which look like <em><user>@localhost</em> (as used by fetchmail for local delivery).</li>
+     <li>Treat recipients which look like <em>postmaster@localhost</em> or <em>postmaster@<fqdn></em> as local postmaster.</li>
+     <li>Optional timestamps on log output (<em>--log-time</em>).</li>
+     <li>Fix EHLO to HELO fallback for 501/502 responses in client protocol.</li>
+     <li>Submission utility <em>emailrelay-submit</em> added.</li>
+     <li>HTML4.0 compliant HTML documentation, using CSS.</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_34">0.9.5 -> 0.9.6</a></h2> <!-- index:2:SH:1:34:0.9.5 -> 0.9.6 -->
+    <ul>
+     <li>SMTP AUTHentication extension -- LOGIN mechanism only.</li>
+     <li>Client-side protocol timeout.</li>
+     <li>Client-side connection timeout.</li>
+     <li>Preprocessor can cancel further message processing.</li>
+     <li>Client's IP address recorded in envelope files.</li>
+     <li>Multiple hard-coded listening addresses supported at compile-time.</li>
+     <li>Fix for automatic reopening of stderr stream.</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_35">0.9.4 -> 0.9.5</a></h2> <!-- index:2:SH:1:35:0.9.4 -> 0.9.5 -->
+    <p>
+     Windows fixes and improvements...
+    </p>
+    <ul>
+     <li>system-tray + dialog-box user interface</li>
+     <li>fix for dropped connections</li>
+     <li>fix for content file deletion</li>
+     <li>fix for directory iterator</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_36">0.9.3 -> 0.9.4</a></h2> <!-- index:2:SH:1:36:0.9.3 -> 0.9.4 -->
+    <ul>
+     <li>Fixed memory leak when no <em>--log</em> switch.</li>
+     <li>Windows build is more <em>gui</em> and less <em>command-line</em>.</li>
+     <li><em>Info</em> command added to the administration interface.</li>
+     <li>Doxygen files removed from binary RPM.</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_37">0.9.2 -> 0.9.3</a></h2> <!-- index:2:SH:1:37:0.9.2 -> 0.9.3 -->
+    <ul>
+     <li>Proxy mode (<em>--immediate</em> and <em>--as-proxy</em>).</li>
+     <li>Message pre-processing (<em>--filter</em>).</li>
+     <li>Message store classes better separated using abstract interfaces.</li>
+     <li>Improved notification script, with MIME encoding.</li>
+     <li>Builds with old 2.91 version of gcc.</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_38">0.9.1 -> 0.9.2</a></h2> <!-- index:2:SH:1:38:0.9.1 -> 0.9.2 -->
+    <ul>
+     <li>Better autoconf detection.</li>
+     <li>Workround for FreeBSD uname() feature.</li>
+     <li>Added missing <em>.sh_</em> files to the distribution.</li>
+     <li>Fixed a benign directory iterator bug.</li>
+     <li>Use of gcc's <em>exception</em> header.</li>
+    </ul>
+   <h2><a class="a-header" name="SH_1_39">0.9 -> 0.9.1</a></h2> <!-- index:2:SH:1:39:0.9 -> 0.9.1 -->
+    <ul>
+     <li>Improved documentation from doxygen.</li>
+     <li>More complete use of namespaces.</li>
+     <li>Experimental compile-time support for IPv6.</li>
+    </ul>
+
+ </div> <!-- div-main -->
+ </body>
+</html>
+<!-- Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->

@@ -1,0 +1,221 @@
+#!/usr/bin/env perl
+#
+# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# ===
+#
+# make-format
+#
+# Runs clang-format with some post-processing to get close to the preferred
+# style.
+#
+# usage: make-format [options] { [--list] -d <dir> | <file> [<file> ...] }
+#
+
+use strict ;
+use FileHandle ;
+use File::Find ;
+use File::Copy ;
+use Data::Dumper ;
+use Getopt::Long ;
+
+# configure
+my $cfg_formatter = "clang-format" ;
+my $cfg_tab = 4 ; # in .clang-format
+my @cfg_stop = qw(
+	/gdef\.h$
+	/gconfig_defs\.h$
+	/moc_
+	/mbedtls/
+) ;
+
+# parse the command-line
+my %opt = () ;
+GetOptions( \%opt ,
+	"quiet|q" ,
+	"verbose|v" ,
+	"formatter|f=s" , # clang-format
+	"nofixup" , # no post-processing
+	"noformat|n" , # no clang-format
+	"nobackup|x" ,
+	"list" , # list files, with -d
+	"d=s" , # base directory for --list
+) or die ;
+$cfg_formatter = $opt{formatter} if $opt{formatter} ;
+my @files = @ARGV ;
+die "usage error\n" if ( $opt{list} && !$opt{d} ) ;
+
+# deal with "--list -d ..."
+if( $opt{list} && $opt{d} )
+{
+	my @files = find_files( $opt{d} , \@cfg_stop ) ;
+	print join( "\n" , (@files,"") ) ;
+	exit 0 ;
+}
+
+# sanity checks
+if( !$opt{noformat} )
+{
+	chomp( my $version = `$cfg_formatter --version` ) ;
+	my ($v1,$v2) = ( $version =~ m/(\d+)\.(\d+)/ ) ;
+	die "make-format: error: cannot run [$cfg_formatter --version]\n"
+		if ( !$v1 && !$v2 ) ;
+	die "make-format: error: $cfg_formatter [$v1] is too old: use version 10 or later\n"
+		if ( $v1 < 10 ) ;
+	die "make-format: error: no .clang-format file in cwd\n"
+		if ! -e ".clang-format" ;
+}
+
+# check for future command-line options
+my $formatter_options = "" ;
+{
+	my $fh = new FileHandle( "$cfg_formatter --help |" ) ;
+	while(<$fh>)
+	{
+		chomp( my $line = $_ ) ;
+		if( $line =~ m/sort.includes/ ) # new in v11
+		{
+			$formatter_options = "--sort-includes=false" ;
+		}
+	}
+}
+
+# build the "-d" file list
+if( $opt{d} )
+{
+	@files = find_files( $opt{d} , \@cfg_stop , $opt{verbose} ) ;
+}
+
+# format each file
+for my $fname ( @files )
+{
+	my $cmd = "$cfg_formatter $formatter_options --style=file -i $fname" ;
+	print "make-format: [$fname]\n" unless $opt{quiet} ;
+
+	# make a backup
+	if( !$opt{nobackup} )
+	{
+		my $t = time() ;
+		File::Copy::copy( $fname , "$fname.$t.bak" ) or
+			die "make-format: error: cannot create a backup for [$fname]\n" ;
+	}
+
+	# run clang-format
+	if( !$opt{noformat} )
+	{
+		my $rc = system( $cmd ) ;
+		if( $rc )
+		{
+			die "make-format: error: failed to run clang-format on [$fname]\n             $cmd\n" ;
+		}
+	}
+
+	# fix things that clang-format has messed up
+	if( !$opt{nofixup} )
+	{
+		fixup( $fname ) ;
+	}
+}
+
+sub fixup
+{
+	my ( $fname ) = @_ ;
+	my $fh_in = new FileHandle( $fname ) or die ;
+	my $fh_out = new FileHandle( "$fname.new" , "w" ) or die ;
+	my $old_indent ;
+	my $bad_indent ;
+	while(<$fh_in>)
+	{
+		chomp( my $line = $_ ) ;
+		if( $line =~ m:^// clang-format off: )
+		{
+			$fh_out->close() ;
+			unlink( "$fname.new" ) ;
+			return ;
+		}
+
+		# clang-format tries to align with tabs followed by spaces --
+		# here we make sure that only tabs are used for indenting, with
+		# the indenting level increasing by no more than one tab on
+		# consecutive lines
+		my ( $indent ) = ( $line =~ m/^(\s*)/ ) ;
+		if( $line eq "" )
+		{
+			$old_indent = undef ;
+			$bad_indent = undef ;
+		}
+		elsif( defined($old_indent) && sizeof($indent) > (sizeof($old_indent)+$cfg_tab) )
+		{
+			$bad_indent = $indent ;
+			$line =~ s/^\s*/$old_indent\t/ ;
+		}
+		elsif( $indent =~ m/\t / )
+		{
+			$bad_indent = $indent ;
+			$line =~ s/^\s*/$old_indent\t/ ;
+		}
+		elsif( defined($bad_indent) && sizeof($indent) == sizeof($bad_indent) )
+		{
+			$line =~ s/^\s*/$old_indent\t/ ;
+		}
+		else
+		{
+			$old_indent = $indent ;
+			$bad_indent = undef ;
+		}
+
+		# add some more whitespace
+		$line =~ s:(\S);$:$1 ;: ;
+		$line =~ s:(\S); //(.*):$1 ; //$2: ;
+		$line =~ s:(\S),:$1 ,:g unless ( $line =~ m/["']/ or $line =~ m://.*,: ) ;
+
+		print $fh_out $line , "\n" or die ;
+	}
+	$fh_in->close() ;
+	$fh_out->close() or die ;
+	rename( "$fname.new" , $fname ) or die ;
+}
+
+sub sizeof
+{
+	my ( $s ) = @_ ;
+	my $spaces = ' ' x $cfg_tab ;
+	$s =~ s/\t/$spaces/g ;
+	return length($s) ;
+}
+
+sub find_files
+{
+	my ( $base , $stoplist , $verbose ) = @_ ;
+	my @files = () ;
+	my @stopped = () ;
+	my $callback = sub {
+		my $filename = $_ ;
+		my $path = $File::Find::name ;
+		return if( -d $path ) ;
+		if( $filename =~ m/\.cpp$|\.h$/ )
+		{
+			my $stop = 0 ;
+			map { my $re = $_ ; $stop = 1 if $path =~ m/$re/ } @$stoplist ;
+			$path =~ s:^\./:: ;
+			push @files , $path unless $stop ;
+			push @stopped , $path if $stop ;
+		}
+	} ;
+	File::Find::find( $callback , $base ) ;
+	map { print "ignoring [$_]\n" } @stopped if $verbose ;
+	return @files ;
+}
+

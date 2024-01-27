@@ -1,0 +1,47 @@
+#!/bin/sh
+#
+# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# ===
+#
+# emailrelay-bsd.sh
+#
+# Start/stop wrapper for E-MailRelay on FreeBSD, installed as
+# "/etc/rc.d/emailrelay" or "/usr/local/etc/rc.d/emailrelay".
+#
+# Requires the following line to be added to "/etc/rc.conf":
+#
+#    emailrelay_enable="YES"
+#
+# Delegates to the linux start/stop script, which reads default directories
+# from "/etc/rc.conf.d/emailrelay" (if present) and server command-line
+# options from "/usr/local/etc/emailrelay.conf".
+#
+# See also man rc(8), man service(8)
+#
+# PROVIDE: emailrelay
+# REQUIRE: DAEMON
+#
+
+. /etc/rc.subr
+emailrelay_enable=${emailrelay_enable:-"NO"}
+name=emailrelay
+procname=__SBIN_DIR__/emailrelay
+rcvar=emailrelay_enable
+command=__INIT_DIR__/emailrelay
+command_args="$1"
+load_rc_config $name
+run_rc_command "$1"
+

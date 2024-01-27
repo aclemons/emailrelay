@@ -1,0 +1,140 @@
+#!/bin/sh
+#
+# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# ===
+#
+# reduce
+#
+# Runs the 'reduce.pl' script for emailrelay source files.
+#
+# usage: reduce {--create|--apply|--undo} [--debug]
+#
+
+thisdir="`cd \`dirname $0\` && pwd`"
+srcdir="`cd \`dirname $0\`/../src && pwd`"
+maindir="`cd \`dirname $0\`/../src/main && pwd`"
+
+usage="{--create|--apply|--undo}"
+opt_debug=""
+if test "$2" = "--debug"
+then
+	opt_debug="--debug"
+:
+elif test "$2" != ""
+then
+	echo usage: `basename $0` "$usage" >&2
+	exit 2
+fi
+
+cfg_dirs="glib gssl gnet gauth gpop gstore gfilters gverifiers gsmtp"
+
+cfg_exclude_files="__none__"
+cfg_exclude_files="${cfg_exclude_files}|geventemitter.cpp" # used differently for select vs epoll
+cfg_exclude_files="${cfg_exclude_files}|gtest.cpp" # preprocessor shenanigans
+cfg_exclude_files="${cfg_exclude_files}|ginterfaces_unix.cpp" # preprocessor shenanigans
+
+cfg_exclude_functions="__none__"
+cfg_exclude_functions="${cfg_exclude_function} GNet::inet_pton_imp" # see gdef.h
+cfg_exclude_functions="${cfg_exclude_function} GNet::inet_ntop_imp" # see gdef.h
+cfg_exclude_functions="${cfg_exclude_function} G::LogOutput::assertion" # needed for CPPFLAGS=-D_DEBUG etc
+
+cd "$maindir"
+
+if test "$1" = "--create"
+then
+	# check source is unreduced
+	if grep -q -l "ifndef G_LIB_SMALL" ../glib/*.cpp
+	then
+		echo "reduce: error: source code already reduced" >&2
+		exit 1
+	fi
+
+	# start with a clean build with everything included (debugging, openssl, mbedtls etc) except the gui
+	echo -n "reduce: running intial build..."
+	if cd ../.. && ./configure.sh -d -q --disable-gui --enable-submission --without-doxygen --with-openssl --with-mbedtls --with-submission
+	then
+		cd "$maindir"
+	else
+		echo ".. configure failed"
+		exit 1
+	fi
+	if test ! -e Makefile ; then echo "reduce: error: no Makefile in $maindir" >&2 ; exit 1 ; fi
+	if make -C .. -j 10 V=0 >/dev/null 2>&1 ; then :
+	else
+		echo ".. make failed"
+		exit 1
+	fi
+	echo ".. done"
+
+	# run 'reduce --append --out' for every source file
+	t="`perl -e 'print time'`"
+	errors=0
+	for d in $cfg_dirs
+	do
+		for f in `$thisdir/reduce.pl --sources "../$d"`
+		do
+			if test ! -f "../$d/$f"
+			then
+				echo "reduce: error: source code not found [src/$d/$f]" >&2
+				exit 1
+			fi
+			if grep -q -l "ifndef G_LIB_SMALL" "../$d/$f"
+			then
+				echo "reduce: error: source code already reduced" >&2
+				exit 1
+			fi
+			if echo "$f" | egrep -q "$cfg_exclude_files" ; then :
+			else
+				if "$thisdir/reduce.pl" $opt_debug --append --out "$srcdir/reduce.dat.$t" -- "../$d/$f" 'make -C ..' 'make -C .. extra' 'make -C ../../test programs'
+				then :
+				else
+					echo "reduce: error: failed to reduce [$f]" >&2
+					errors=1
+				fi
+			fi
+		done
+	done
+
+	# fix up -- delete specific functions
+	for re in $cfg_exclude_functions
+	do
+		sed -i "/$re/d" "$srcdir/reduce.dat.$t"
+	done
+
+	# report the output
+	if test "$errors" -ne 0
+	then
+		echo "reduce: error: failed to reduce one or more source files: partial output in reduce.dat.$t" >&2
+	else
+		echo "$srcdir/reduce.dat.$t"
+	fi
+
+	# stash the output for "--apply"
+	cp "$srcdir/reduce.dat.$t" "$srcdir/.reduce.dat"
+:
+elif test "$1" = "--apply"
+then
+	"$thisdir/reduce.pl" --in "$srcdir/.reduce.dat"
+:
+elif test "$1" = "--undo"
+then
+	"$thisdir/reduce.pl" --undo "$srcdir"
+:
+else
+	echo usage: `basename $0` "$usage" >&2
+	exit 2
+fi
+

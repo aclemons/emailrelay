@@ -1,0 +1,28 @@
+AUTHORS
+=======
+
+Source files
+------------
+* Graeme Walker <graeme_walker@users.sourceforge.net>
+
+except where stated otherwise
+
+Binary distributions
+--------------------
+Binary distributions of E-MailRelay might include copyrighted code from:
+* OpenSSL Toolkit (http://www.openssl.org)
+* mbedTLS (http://tls.mbed.org)
+* Qt (http://qt.io)
+* Microsoft (http://microsoft.com)
+* Free Software Foundation (fsf.org)
+
+These parts are distributed under license; please refer to their
+websites for further details.
+
+This product includes software developed by the OpenSSL Project
+for use in the OpenSSL Toolkit (http://www.openssl.org/).
+
+Translations
+------------
+Thanks to Per-Arne Christensen for the Norwegian translation of
+the GUI.

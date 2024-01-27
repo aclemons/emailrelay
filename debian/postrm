@@ -1,0 +1,33 @@
+#!/bin/sh
+#
+# postrm
+#
+
+spool="/var/spool/emailrelay"
+rundir="/run/emailrelay"
+
+emailrelay_unfix_html()
+{
+	# see postinst
+	rm -f /usr/share/doc/emailrelay/changelog.html
+}
+
+emailrelay_purge()
+{
+	# (purge deliberately fails if spooled messages exist)
+	#rm -rf "$spool" 2>/dev/null
+	rmdir "$spool" 2>/dev/null
+	rmdir "$rundir" 2>/dev/null
+	rm /etc/emailrelay.conf 2>/dev/null
+	rm -rf "/usr/share/doc/emailrelay/doxygen" 2>/dev/null
+}
+
+#DEBHELPER#
+
+emailrelay_unfix_html
+if test "$1" = "purge"
+then
+	emailrelay_purge
+fi
+exit 0
+

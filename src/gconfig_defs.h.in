@@ -1,0 +1,343 @@
+/* src/gconfig_defs.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define true to use epoll */
+#undef GCONFIG_ENABLE_EPOLL
+
+/* Define true to use std::thread */
+#undef GCONFIG_ENABLE_STD_THREAD
+
+/* Define true to enable submission-tool functionality */
+#undef GCONFIG_ENABLE_SUBMISSION
+
+/* Define true if arpa/inet.h is available */
+#undef GCONFIG_HAVE_ARPA_INET_H
+
+/* Define true if compiler has std::align() */
+#undef GCONFIG_HAVE_CXX_ALIGNMENT
+
+/* Define true if compiler has std::make_unique */
+#undef GCONFIG_HAVE_CXX_MAKE_UNIQUE
+
+/* Define true if compiler has std::thread */
+#undef GCONFIG_HAVE_CXX_STD_THREAD
+
+/* Define true if compiler supports c++ string_view */
+#undef GCONFIG_HAVE_CXX_STRING_VIEW
+
+/* Define true to enable use of epoll */
+#undef GCONFIG_HAVE_EPOLL
+
+/* Define true if errno.h is available */
+#undef GCONFIG_HAVE_ERRNO_H
+
+/* Define true if errno_t type definition in error.h */
+#undef GCONFIG_HAVE_ERRNO_T
+
+/* Define true if have execvpe() in unistd.h */
+#undef GCONFIG_HAVE_EXECVPE
+
+/* Define true if extended fstream::open() is available */
+#undef GCONFIG_HAVE_EXTENDED_OPEN
+
+/* Define true if fopen_s() is available */
+#undef GCONFIG_HAVE_FOPEN_S
+
+/* Define true if _fsopen() is available */
+#undef GCONFIG_HAVE_FSOPEN
+
+/* Define true if gai_strerror() is available */
+#undef GCONFIG_HAVE_GAISTRERROR
+
+/* Define true if getenv_s in stdlib.h */
+#undef GCONFIG_HAVE_GETENV_S
+
+/* Define true if getgrnam in pwd.h */
+#undef GCONFIG_HAVE_GETGRNAM
+
+/* Define true if getgrnam_r in pwd.h */
+#undef GCONFIG_HAVE_GETGRNAM_R
+
+/* Define true if getpwnam in pwd.h */
+#undef GCONFIG_HAVE_GETPWNAM
+
+/* Define true if getpwnam_r in pwd.h */
+#undef GCONFIG_HAVE_GETPWNAM_R
+
+/* Define true to use gettext */
+#undef GCONFIG_HAVE_GETTEXT
+
+/* Define true if gid_t is a type */
+#undef GCONFIG_HAVE_GID_T
+
+/* Define true if gmtime_r in time.h */
+#undef GCONFIG_HAVE_GMTIME_R
+
+/* Define true if gmtime_s in time.h */
+#undef GCONFIG_HAVE_GMTIME_S
+
+/* Define true if grp.h is available */
+#undef GCONFIG_HAVE_GRP_H
+
+/* Define true if struct ifreq has ifr_ifindex */
+#undef GCONFIG_HAVE_IFINDEX
+
+/* Define true if if_nametoindex() is available */
+#undef GCONFIG_HAVE_IFNAMETOINDEX
+
+/* Define true if ConvertInterfaceNameToLuid() is available */
+#undef GCONFIG_HAVE_IFNAMETOLUID
+
+/* Define true if inet_ntop() is available */
+#undef GCONFIG_HAVE_INET_NTOP
+
+/* Define true if inet_pton() is available */
+#undef GCONFIG_HAVE_INET_PTON
+
+/* Define true if compiler has int16_t in stdint.h */
+#undef GCONFIG_HAVE_INT16
+
+/* Define true if compiler has int32_t in stdint.h */
+#undef GCONFIG_HAVE_INT32
+
+/* Define true if compiler has int64_t in stdint.h */
+#undef GCONFIG_HAVE_INT64
+
+/* Define true if inttypes.h is available */
+#undef GCONFIG_HAVE_INTTYPES_H
+
+/* Define true if struct iovec has a simple layout */
+#undef GCONFIG_HAVE_IOVEC_SIMPLE
+
+/* Define true if ipv6 is available */
+#undef GCONFIG_HAVE_IPV6
+
+/* Define true if localtime_r in time.h */
+#undef GCONFIG_HAVE_LOCALTIME_R
+
+/* Define true if localtime_s in time.h */
+#undef GCONFIG_HAVE_LOCALTIME_S
+
+/* Define true to enable mbedtls */
+#undef GCONFIG_HAVE_MBEDTLS
+
+/* Define true to use deprecated mbedtls/net.h */
+#undef GCONFIG_HAVE_MBEDTLS_NET_H
+
+/* Define true if netdb.h is available */
+#undef GCONFIG_HAVE_NETDB_H
+
+/* Define true if netinet/in.h is available */
+#undef GCONFIG_HAVE_NETINET_IN_H
+
+/* Define true to enable use of bsd routing sockets */
+#undef GCONFIG_HAVE_NETROUTE
+
+/* Define true if net/if.h is available */
+#undef GCONFIG_HAVE_NET_IF_H
+
+/* Define true to enable openssl */
+#undef GCONFIG_HAVE_OPENSSL
+
+/* Define true if openssl has SSL_set_min_proto_version */
+#undef GCONFIG_HAVE_OPENSSL_MIN_MAX
+
+/* Define true if openssl has TLS_method */
+#undef GCONFIG_HAVE_OPENSSL_TLS_METHOD
+
+/* Define true to use pam */
+#undef GCONFIG_HAVE_PAM
+
+/* Define true to include pam_appl.h as-is */
+#undef GCONFIG_HAVE_PAM_IN_INCLUDE
+
+/* Define true to include pam_appl.h from pam */
+#undef GCONFIG_HAVE_PAM_IN_PAM
+
+/* Define true to include pam_appl.h from security */
+#undef GCONFIG_HAVE_PAM_IN_SECURITY
+
+/* Define true if pid_t is a type */
+#undef GCONFIG_HAVE_PID_T
+
+/* Define true if have OSX proc_pidpath() */
+#undef GCONFIG_HAVE_PROC_PIDPATH
+
+/* Define true if pthread_sigmask() is available */
+#undef GCONFIG_HAVE_PTHREAD_SIGMASK
+
+/* Define true if putenv_s in stdlib.h */
+#undef GCONFIG_HAVE_PUTENV_S
+
+/* Define true if pwd.h is available */
+#undef GCONFIG_HAVE_PWD_H
+
+/* Define true if have readlink() in unistd.h */
+#undef GCONFIG_HAVE_READLINK
+
+/* Define true to enable use of linux rtnetlink */
+#undef GCONFIG_HAVE_RTNETLINK
+
+/* Define true if setgroups is available */
+#undef GCONFIG_HAVE_SETGROUPS
+
+/* Define true if setpgrp has two parameters */
+#undef GCONFIG_HAVE_SETPGRP_BSD
+
+/* Define true if sigprocmask() is available */
+#undef GCONFIG_HAVE_SIGPROCMASK
+
+/* Define true if sockaddr_in6 has a sin6_len member */
+#undef GCONFIG_HAVE_SIN6_LEN
+
+/* Define true if socklen_t type definition in sys/socket.h */
+#undef GCONFIG_HAVE_SOCKLEN_T
+
+/* Define true if _sopen() is available */
+#undef GCONFIG_HAVE_SOPEN
+
+/* Define true if _sopen_s() is available */
+#undef GCONFIG_HAVE_SOPEN_S
+
+/* Define true if ssize_t type is defined */
+#undef GCONFIG_HAVE_SSIZE_T
+
+/* Define true if statbuf has a st_atim.tv_nsec member */
+#undef GCONFIG_HAVE_STATBUF_NSEC
+
+/* Define true if statbuf has a st_atimespec member */
+#undef GCONFIG_HAVE_STATBUF_TIMESPEC
+
+/* Define true if stdint.h is available */
+#undef GCONFIG_HAVE_STDINT_H
+
+/* Define true if strncpy_s in string.h */
+#undef GCONFIG_HAVE_STRNCPY_S
+
+/* Define true if sys/mman.h is available */
+#undef GCONFIG_HAVE_SYS_MMAN_H
+
+/* Define true if sys/select.h is available */
+#undef GCONFIG_HAVE_SYS_SELECT_H
+
+/* Define true if sys/socket.h is available */
+#undef GCONFIG_HAVE_SYS_SOCKET_H
+
+/* Define true if sys/stat.h is available */
+#undef GCONFIG_HAVE_SYS_STAT_H
+
+/* Define true if sys/types.h is available */
+#undef GCONFIG_HAVE_SYS_TYPES_H
+
+/* Define true if sys/utsname.h is available */
+#undef GCONFIG_HAVE_SYS_UTSNAME_H
+
+/* Define true if sys/wait.h is available */
+#undef GCONFIG_HAVE_SYS_WAIT_H
+
+/* Define true to use unix domain sockets */
+#undef GCONFIG_HAVE_UDS
+
+/* Define true if sockaddr_un has a sun_len field */
+#undef GCONFIG_HAVE_UDS_LEN
+
+/* Define true if uid_t is a type */
+#undef GCONFIG_HAVE_UID_T
+
+/* Define true if uintptr_t type is defined stdint.h */
+#undef GCONFIG_HAVE_UINTPTR_T
+
+/* Define true if unistd.h is available */
+#undef GCONFIG_HAVE_UNISTD_H
+
+/* Define true if windows CreateEventEx is available */
+#undef GCONFIG_HAVE_WINDOWS_CREATE_EVENT_EX
+
+/* Define true if windows CreateWaitableTimerEx is available */
+#undef GCONFIG_HAVE_WINDOWS_CREATE_WAITABLE_TIMER_EX
+
+/* Define true if windows InitCommonControlsEx is available */
+#undef GCONFIG_HAVE_WINDOWS_INIT_COMMON_CONTROLS_EX
+
+/* Define true if iphlpapi.h is available */
+#undef GCONFIG_HAVE_WINDOWS_IPHLPAPI_H
+
+/* Define true if windows STARTUPINFOEX is available */
+#undef GCONFIG_HAVE_WINDOWS_STARTUP_INFO_EX
+
+/* Define true if versionhelpers.h is available */
+#undef GCONFIG_HAVE_WINDOWS_VERSIONHELPERS_H
+
+/* Define true for a windows build using the mingw tool chain */
+#undef GCONFIG_MINGW
+
+/* Define to disable the G_LOG macro */
+#undef GCONFIG_NO_LOG
+
+/* Define true if the PAM API uses const */
+#undef GCONFIG_PAM_CONST
+
+/* Define true for a windows build */
+#undef GCONFIG_WINDOWS
+
+/* Define to enable debug messages at compile-time */
+#undef G_WITH_DEBUG
+
+/* define if the compiler supports basic C++11 syntax */
+#undef HAVE_CXX11
+
+/* Define to 1 if the system has the type `gid_t'. */
+#undef HAVE_GID_T
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* Define to 1 if the system has the type `pid_t'. */
+#undef HAVE_PID_T
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if the system has the type `uid_t'. */
+#undef HAVE_UID_T
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS

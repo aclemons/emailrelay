@@ -1,0 +1,12 @@
+News
+====
+
+2.5.2
+-----
+The E-MailRelay 2.5.2 release has very few code changes compared to the 2.5.1a
+source tarball. The biggest change is to the Windows build scripts so that it
+is now possible to build using "nmake" without needing "cmake" or Visual Studio,
+and it is easier to use LibreSSL as the TLS library. Also, the "make2cmake"
+script can now be run on Windows to create cmake files.
+
+Refer to the developer document for more information.

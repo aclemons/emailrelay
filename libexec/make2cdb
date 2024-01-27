@@ -1,0 +1,79 @@
+#!/usr/bin/env perl
+#
+# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# ===
+#
+# make2cdb
+#
+# Parses automake files throughout the source tree and generates
+# a "compilation database" file on stdout.
+#
+# See also: https://clang.llvm.org/docs/JSONCompilationDatabase.html
+#
+# Usage: make2cdb [--list] [<base-dir> [<config-status> [<base-to-top>]]]
+#
+# Eg:
+#  $ cd src
+#  $ ../libexec/make2cdb > compile_commands.json
+#  $ ../libexec/make2cdb --list | xargs clang-tidy -p .
+#
+
+use strict ;
+use Cwd ;
+use FileHandle ;
+use File::Find ;
+use File::Basename ;
+use File::Spec ;
+use File::Copy ;
+use Getopt::Long ;
+use lib dirname($0) ;
+use ConfigStatus ;
+use CompilationDatabase ;
+
+my %opt = () ;
+GetOptions( \%opt , "list" , "test" , "debug" ) or die "$0: usage error\n" ;
+my $cfg_show_list = exists( $opt{list} ) ;
+my $cfg_test_mode = exists( $opt{test} ) ;
+my $cfg_debug = exists( $opt{debug} ) ;
+$CompilationDatabase::debug = $cfg_debug ;
+$AutoMakeParser::debug = $cfg_debug ;
+
+my $base_dir = @ARGV ? $ARGV[0] : dirname($0)."/../src" ;
+my $config_status = @ARGV > 1 ? $ARGV[1] : undef ;
+my $base_to_top = @ARGV > 2 ? $ARGV[2] : ".." ;
+
+my $cs = new ConfigStatus( $config_status ) ;
+my %switches = $cs->switches() ;
+my %vars = $cs->vars() ;
+$vars{top_srcdir} = $base_to_top ;
+$vars{top_builddir} = "." ;
+
+my $cdb = new CompilationDatabase( $base_dir , \%switches , \%vars , {test_mode=>$cfg_test_mode,full_paths=>1} ) ;
+if( $cfg_show_list )
+{
+	print join( "\n" , $cdb->list() , "" ) ;
+}
+elsif( $cfg_test_mode )
+{
+	print join( "" , $cdb->stanzas() ) ;
+}
+else
+{
+	print "[\n" ;
+	print join( ",\n" , $cdb->stanzas() ) ;
+	print "]\n" ;
+}
+

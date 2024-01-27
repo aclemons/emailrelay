@@ -1,0 +1,16 @@
+# Example fail2ban filter definition for emailrelay.
+#
+# Install this as /etc/fail2ban/filter.d/emailrelay.conf
+# and configure emailrelay to use the "--log-address"
+# option.
+
+[Definition]
+
+failregex = emailrelay: warning: <HOST>; failed authentication
+            emailrelay: warning: <HOST>; .* AUTH requested but not advertised
+            emailrelay: warning: <HOST>; empty MAIL-FROM return path
+            emailrelay: info: <HOST>; address verifier: exit code
+
+ignoreregex = emailrelay: warning: <HOST>; dnsbl
+              emailrelay: info: <HOST>; address verifier: exit code 1:
+

@@ -1,0 +1,2 @@
+# set EMAILRELAY_ENABLED=0 to disable sysv-init emailrelay start
+#EMAILRELAY_ENABLED=0
