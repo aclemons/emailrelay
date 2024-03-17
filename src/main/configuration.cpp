@@ -50,7 +50,7 @@ Main::Configuration::Configuration( const G::OptionMap & map , const std::string
 	G_ASSERT( m_base_dir.isAbsolute() ) ;
 	if( m_map.count("pid-file") > 1U )
 	{
-		// let the start/stop override the config file
+		// let the start/stop script override the config file
 		m_pid_file_warning = true ;
 		m_map.replace( "pid-file" , (*m_map.find("pid-file")).second.value() ) ;
 	}
@@ -59,6 +59,12 @@ Main::Configuration::Configuration( const G::OptionMap & map , const std::string
 		for( const auto & p : map )
 			std::cout << "config: [" << name << "] " << p.first << "=[" << p.second.value() << "]\n" ;
 	}
+}
+
+void Main::Configuration::merge( const Configuration & c )
+{
+	m_map.replace( "log-address" , c.stringValue("log-address") ) ;
+	m_map.replace( "log-format" , c.stringValue("log-format") ) ;
 }
 
 std::string Main::Configuration::name() const
@@ -113,7 +119,17 @@ bool Main::Configuration::validSyslogFacility() const
 	return false ;
 }
 
-G::StringArray Main::Configuration::listeningNames( G::string_view protocol ) const
+bool Main::Configuration::logFormatContains( std::string_view field ) const
+{
+	std::string s = stringValue( "log-format" ) ;
+	std::string_view sv = s ;
+	for( G::StringFieldView f(sv,",",1U) ; f ; ++f )
+		if( f() == field )
+			return true ;
+	return false ;
+}
+
+G::StringArray Main::Configuration::listeningNames( std::string_view protocol ) const
 {
 	// allow eg. "127.0.0.1,smtp=192.168.1.1,admin=10.0.0.1,pop=fd#4"
 
@@ -178,7 +194,7 @@ G::Path Main::Configuration::certificateFile( const std::string & option_name ) 
     return value.empty() ? G::Path() : pathValueImp( G::Str::tail(value,",",false) ) ;
 }
 
-bool Main::Configuration::anonymous( G::string_view type ) const
+bool Main::Configuration::anonymous( std::string_view type ) const
 {
 	if( !contains( "anonymous" ) )
 		return false ;
@@ -486,21 +502,21 @@ G::StringArray Main::Configuration::semanticWarnings() const
 	return warnings ;
 }
 
-GSmtp::FilterFactoryBase::Spec Main::Configuration::filterValue( G::string_view option_name ,
+GSmtp::FilterFactoryBase::Spec Main::Configuration::filterValue( std::string_view option_name ,
 	G::StringArray * warnings_p ) const
 {
 	std::string value = stringValue( option_name ) ;
 	return GFilters::FilterFactory::parse( value , m_base_dir.str() , m_app_dir.str() , warnings_p ) ;
 }
 
-GSmtp::VerifierFactoryBase::Spec Main::Configuration::verifierValue( G::string_view option_name ,
+GSmtp::VerifierFactoryBase::Spec Main::Configuration::verifierValue( std::string_view option_name ,
 	G::StringArray * warnings_p ) const
 {
 	std::string value = stringValue( option_name ) ;
 	return GVerifiers::VerifierFactory::parse( value , m_base_dir.str() , m_app_dir.str() , warnings_p ) ;
 }
 
-G::Path Main::Configuration::pathValue( G::string_view option_name ) const
+G::Path Main::Configuration::pathValue( std::string_view option_name ) const
 {
 	std::string value = stringValue( option_name ) ;
 	if( tlsVerifyType(option_name) && specialTlsVerifyString(value) )
@@ -533,7 +549,7 @@ G::Path Main::Configuration::pathValueImp( std::string && value ) const
 	return G::Path(value).isAbsolute() ? G::Path(value) : ( daemon() ? (m_base_dir+value) : value ) ;
 }
 
-bool Main::Configuration::pathlike( G::string_view option_name )
+bool Main::Configuration::pathlike( std::string_view option_name )
 {
 	return
 		option_name == "log-file"_sv ||
@@ -550,14 +566,14 @@ bool Main::Configuration::pathlike( G::string_view option_name )
 		false ; // NOLINT readability-simplify-boolean-expr
 }
 
-bool Main::Configuration::tlsVerifyType( G::string_view option_name )
+bool Main::Configuration::tlsVerifyType( std::string_view option_name )
 {
 	return
 		option_name == "server-tls-verify"_sv ||
 		option_name == "client-tls-verify"_sv ;
 }
 
-bool Main::Configuration::specialTlsVerifyString( G::string_view value )
+bool Main::Configuration::specialTlsVerifyString( std::string_view value )
 {
 	return !value.empty() && value.at(0U) == '<' && value.at(value.size()-1U) == '>' ;
 }
@@ -629,8 +645,8 @@ G::LogOutput::Config Main::Configuration::logOutputConfig( bool has_gui ) const
 			.set_more_verbose_info( m_map.count("verbose") > 1U )
 			.set_debug( debug() )
 			.set_with_level( true)
-			.set_with_timestamp( contains("log-time") )
-			.set_with_context( contains("log-address") )
+			.set_with_timestamp( contains("log-time") || logFormatContains("time") )
+			.set_with_context( contains("log-address") || contains("log-format") )
 			.set_strip( !debug() )
 			.set_use_syslog( useSyslog() )
 			.set_allow_bad_syslog( !(has_gui && logFile().empty()) )
@@ -668,11 +684,11 @@ GSmtp::ServerProtocol::Config Main::Configuration::_smtpServerProtocolConfig( bo
 
 GNet::Server::Config Main::Configuration::_netServerConfig( std::pair<int,int> linger ) const
 {
-	bool open = user().empty() || user() == "root" ;
+	bool open_permissions = user().empty() || user() == "root" ;
 	return
 		GNet::Server::Config()
 			.set_stream_socket_config( _netSocketConfig(linger) )
-			.set_uds_open_permissions( open ) ;
+			.set_uds_open_permissions( open_permissions ) ;
 }
 
 GNet::StreamSocket::Config Main::Configuration::_netSocketConfig( std::pair<int,int> linger ) const
@@ -711,7 +727,9 @@ GSmtp::Server::Config Main::Configuration::smtpServerConfig( const std::string &
 			.set_net_server_peer_config(
 				GNet::ServerPeer::Config()
 					.set_socket_protocol_config( _socketProtocolConfig(server_tls_profile) )
-					.set_idle_timeout( _idleTimeout() ) )
+					.set_idle_timeout( _idleTimeout() )
+					.set_log_address( contains("log-address") || logFormatContains("address") )
+					.set_log_port( logFormatContains("port") ) )
 			.set_net_server_config( _netServerConfig(_smtpServerSocketLinger()) )
 			.set_protocol_config( _smtpServerProtocolConfig(server_secrets_valid,domain) )
 			.set_dnsbl_config( dnsbl() )
@@ -752,7 +770,6 @@ GSmtp::Client::Config Main::Configuration::smtpClientConfig( const std::string &
 	Switches smtp_client_switches( stringValue( "client-smtp-config" ) ) ;
 	return
 		GSmtp::Client::Config()
-			.set_stream_socket_config( _netSocketConfig(_clientSocketLinger()) )
 			.set_client_protocol_config(
 				GSmtp::ClientProtocol::Config()
 					.set_thishost_name( GNet::Local::canonicalName() )
@@ -767,19 +784,26 @@ GSmtp::Client::Config Main::Configuration::smtpClientConfig( const std::string &
 					.set_smtputf8_strict( smtp_client_switches("smtputf8strict"_sv,true) )
 					.set_eightbit_strict( smtp_client_switches("eightbitstrict"_sv,false) )
 					.set_binarymime_strict( smtp_client_switches("binarymimestrict"_sv,true) ) )
+			.set_net_client_config(
+				GNet::Client::Config()
+					.set_stream_socket_config( _netSocketConfig(_clientSocketLinger()) )
+					.set_line_buffer_config( GNet::LineBuffer::Config::smtp() )
+					.set_bind_local_address( !local_address_str.empty() )
+					.set_local_address( local_address )
+					.set_connection_timeout( _connectionTimeout() )
+					.set_socket_protocol_config(
+						GNet::SocketProtocol::Config()
+							.set_client_tls_profile( client_tls_profile )
+							.set_secure_connection_timeout( _secureConnectionTimeout() ) ) )
 			.set_filter_config(
 				GSmtp::Filter::Config()
 					.set_domain( domain )
 					.set_timeout( filterTimeout() ) )
 			.set_filter_spec( _clientFilter() )
-			.set_bind_local_address( !local_address_str.empty() )
-			.set_local_address( local_address )
-			.set_connection_timeout( _connectionTimeout() )
-			.set_secure_connection_timeout( _secureConnectionTimeout() )
 			.set_secure_tunnel( clientOverTls() )
 			.set_sasl_client_config( _smtpSaslClientConfig() )
-			.set_client_tls_profile( client_tls_profile )
-			.set_fail_if_no_remote_recipients() ;
+			.set_fail_if_no_remote_recipients()
+			.set_log_msgid( logFormatContains("msgid") ) ;
 }
 
 GSmtp::AdminServer::Config Main::Configuration::adminServerConfig( const G::StringMap & info_map ,
@@ -831,7 +855,7 @@ Main::Configuration::Switches::~Switches()
 	}
 }
 
-bool Main::Configuration::Switches::remove( G::string_view item )
+bool Main::Configuration::Switches::remove( std::string_view item )
 {
 	return remove( G::sv_to_string(item) ) ;
 }
@@ -845,17 +869,17 @@ bool Main::Configuration::Switches::remove( const std::string & item )
 	return result ;
 }
 
-std::string Main::Configuration::Switches::str( char c , G::string_view item )
+std::string Main::Configuration::Switches::str( char c , std::string_view item )
 {
 	return std::string(1U,c).append(item.data(),item.size()) ;
 }
 
-std::string Main::Configuration::Switches::str( G::string_view prefix , G::string_view item )
+std::string Main::Configuration::Switches::str( std::string_view prefix , std::string_view item )
 {
 	return G::sv_to_string(prefix).append(item.data(),item.size()) ;
 }
 
-bool Main::Configuration::Switches::operator()( G::string_view item , bool default_ )
+bool Main::Configuration::Switches::operator()( std::string_view item , bool default_ )
 {
 	if( remove(item) ) return true ;
 	if( remove(str('+',item)) ) return true ;

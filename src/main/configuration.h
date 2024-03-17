@@ -63,6 +63,10 @@ public:
 			///< value, and the base-dir path is used to turn relative paths
 			///< into absolute ones when daemon() is true.
 
+	void merge( const Configuration & ) ;
+		///< Merges process-wide items from the given configuration into
+		///< this one.
+
 	std::string name() const ;
 		///< Returns the configuration name, or the empty string for the
 		///< default configuration.
@@ -254,7 +258,7 @@ public:
 		const std::string & domain ) const ;
 			///< Returns the admin server configuration structure.
 
-	G::StringArray listeningNames( G::string_view protocol = {} ) const ;
+	G::StringArray listeningNames( std::string_view protocol = {} ) const ;
 		///< Returns the listening addresses, interfaces and file descriptors.
 
 	GSmtp::FilterFactoryBase::Spec filter() const ;
@@ -266,19 +270,22 @@ public:
 	G::Path deliveryDir() const ;
 		///< Returns a local-delivery base directory.
 
+	bool logFormatContains( std::string_view ) const ;
+		///< Returns true if the log format contains the given type.
+
 private:
 	bool contains( const char * ) const ;
 	unsigned int numberValue( const char * key , unsigned int default_ ) const ;
-	std::string stringValue( G::string_view ) const ;
+	std::string stringValue( std::string_view ) const ;
 	std::string stringValue( const char * ) const ;
 	std::string stringValue( const char * , const std::string & ) const ;
 	std::string stringValue( const char * , std::function<std::string()> ) const ;
 	std::string stringValue( const std::string & ) const ;
-	G::Path pathValue( G::string_view ) const ;
+	G::Path pathValue( std::string_view ) const ;
 	G::Path pathValueImp( std::string && ) const ;
-	GSmtp::FilterFactoryBase::Spec filterValue( G::string_view , G::StringArray * = nullptr ) const ;
-	GSmtp::VerifierFactoryBase::Spec verifierValue( G::string_view , G::StringArray * = nullptr ) const ;
-	static bool pathlike( G::string_view ) ;
+	GSmtp::FilterFactoryBase::Spec filterValue( std::string_view , G::StringArray * = nullptr ) const ;
+	GSmtp::VerifierFactoryBase::Spec verifierValue( std::string_view , G::StringArray * = nullptr ) const ;
+	static bool pathlike( std::string_view ) ;
 	//
 	const char * semanticError1() const ;
 	std::string semanticError2() const ;
@@ -286,9 +293,9 @@ private:
 	G::Path certificateFile( const std::string & option ) const ;
 	G::Path keyFile( const std::string & option ) const ;
 	bool validSyslogFacility() const ;
-	bool anonymous( G::string_view ) const ;
-	static bool tlsVerifyType( G::string_view ) ;
-	static bool specialTlsVerifyString( G::string_view ) ;
+	bool anonymous( std::string_view ) const ;
+	static bool tlsVerifyType( std::string_view ) ;
+	static bool specialTlsVerifyString( std::string_view ) ;
 	//
 	GNet::Server::Config _netServerConfig( std::pair<int,int> linger ) const ;
 	GNet::StreamSocket::Config _netSocketConfig( std::pair<int,int> linger ) const ;
@@ -329,11 +336,11 @@ private:
 		Switches( Switches && ) noexcept = default ;
 		Switches & operator=( const Switches & ) = default ;
 		Switches & operator=( Switches && ) noexcept = default ;
-		bool operator()( G::string_view item , bool default_ ) ;
+		bool operator()( std::string_view item , bool default_ ) ;
 		G::StringArray m_items ;
-		static std::string str( char , G::string_view ) ;
-		static std::string str( G::string_view , G::string_view ) ;
-		bool remove( G::string_view ) ;
+		static std::string str( char , std::string_view ) ;
+		static std::string str( std::string_view , std::string_view ) ;
+		bool remove( std::string_view ) ;
 		bool remove( const std::string & ) ;
 	} ;
 
@@ -370,7 +377,7 @@ std::string Main::Configuration::stringValue( const char * key , std::function<s
 }
 
 inline
-std::string Main::Configuration::stringValue( G::string_view key ) const
+std::string Main::Configuration::stringValue( std::string_view key ) const
 {
 	return m_map.value( key ) ;
 }

@@ -242,7 +242,7 @@ bool GSsl::MbedTls::Config::noisy() const noexcept
 	return m_noisy ;
 }
 
-bool GSsl::MbedTls::Config::consume( G::StringArray & list , G::string_view item )
+bool GSsl::MbedTls::Config::consume( G::StringArray & list , std::string_view item )
 {
 	return LibraryImp::consume( list , item ) ;
 }
@@ -330,7 +330,7 @@ GSsl::MbedTls::DigesterImp::~DigesterImp()
 		mbedtls_sha256_free( &m_sha256 ) ;
 }
 
-void GSsl::MbedTls::DigesterImp::add( G::string_view sv )
+void GSsl::MbedTls::DigesterImp::add( std::string_view sv )
 {
 	if( m_hash_type == Type::Md5 )
 		call( FN_RETv3(mbedtls_md5_update) , &m_md5 , reinterpret_cast<const unsigned char*>(sv.data()) , sv.size() ) ;
@@ -656,14 +656,12 @@ GSsl::Protocol::Result GSsl::MbedTls::ProtocolImp::shutdown()
 	return convert( "mbedtls_ssl_close_notify" , rc ) ;
 }
 
-#ifndef G_LIB_SMALL
 int GSsl::MbedTls::ProtocolImp::doRecvTimeout( void * This , unsigned char * p , std::size_t n , uint32_t /*timeout_ms*/ )
 {
 	// with event-driven i/o the timeout is probably not useful since
 	// higher layers will time out eventually
 	return doRecv( This , p , n ) ;
 }
-#endif
 
 int GSsl::MbedTls::ProtocolImp::doRecv( void * This , unsigned char * p , std::size_t n )
 {
@@ -776,12 +774,10 @@ std::string GSsl::MbedTls::ProtocolImp::cipher() const
 	return G::Str::printable(p?std::string(p):std::string()) ;
 }
 
-#ifndef G_LIB_SMALL
 const GSsl::Profile & GSsl::MbedTls::ProtocolImp::profile() const
 {
 	return m_profile ;
 }
-#endif
 
 std::string GSsl::MbedTls::ProtocolImp::getPeerCertificate()
 {
@@ -888,12 +884,10 @@ GSsl::MbedTls::Rng::~Rng()
 	mbedtls_entropy_free( &entropy ) ;
 }
 
-#ifndef G_LIB_SMALL
 mbedtls_ctr_drbg_context * GSsl::MbedTls::Rng::ptr()
 {
 	return &x ;
 }
-#endif
 
 mbedtls_ctr_drbg_context * GSsl::MbedTls::Rng::ptr() const
 {
@@ -975,12 +969,10 @@ const char * GSsl::MbedTls::SecureFile::p() const
 	return m_buffer.empty() ? &c : m_buffer.data() ;
 }
 
-#ifndef G_LIB_SMALL
 const unsigned char * GSsl::MbedTls::SecureFile::pu() const
 {
 	return reinterpret_cast<const unsigned char*>( p() ) ;
 }
-#endif
 
 unsigned char * GSsl::MbedTls::SecureFile::pu()
 {
@@ -1030,12 +1022,10 @@ mbedtls_pk_context * GSsl::MbedTls::Key::ptr()
 	return &x ;
 }
 
-#ifndef G_LIB_SMALL
 mbedtls_pk_context * GSsl::MbedTls::Key::ptr() const
 {
 	return const_cast<mbedtls_pk_context*>( &x ) ;
 }
-#endif
 
 // ==
 
@@ -1075,7 +1065,6 @@ mbedtls_x509_crt * GSsl::MbedTls::Certificate::ptr()
 	return loaded() ? &x : nullptr ;
 }
 
-#ifndef G_LIB_SMALL
 mbedtls_x509_crt * GSsl::MbedTls::Certificate::ptr() const
 {
 	if( loaded() )
@@ -1083,7 +1072,6 @@ mbedtls_x509_crt * GSsl::MbedTls::Certificate::ptr() const
 	else
 		return nullptr ;
 }
-#endif
 
 // ==
 

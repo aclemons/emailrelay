@@ -128,33 +128,38 @@ std::filebuf * G::File::open( std::filebuf & fb , const Path & path , InOut inou
 	return fb.is_open() ? &fb : nullptr ;
 }
 
-int G::File::open( const char * path , InOutAppend mode ) noexcept
+int G::File::open( const Path & path , InOutAppend mode ) noexcept
 {
+	static_assert( noexcept(path.cstr()) , "" ) ;
+	const char * path_cstr = path.cstr() ;
 	int pmode = _S_IREAD | _S_IWRITE ;
 	if( mode == InOutAppend::In )
-		return FileImp::open( path , _O_RDONLY|_O_BINARY , pmode ) ;
+		return FileImp::open( path_cstr , _O_RDONLY|_O_BINARY , pmode ) ;
 	else if( mode == InOutAppend::Out )
-		return FileImp::open( path , _O_WRONLY|_O_CREAT|_O_TRUNC|_O_BINARY , pmode ) ;
+		return FileImp::open( path_cstr , _O_WRONLY|_O_CREAT|_O_TRUNC|_O_BINARY , pmode ) ;
+	else if( mode == InOutAppend::OutNoCreate )
+		return FileImp::open( path_cstr , _O_WRONLY|_O_BINARY , pmode ) ;
 	else
-		return FileImp::open( path , _O_WRONLY|_O_CREAT|_O_APPEND|_O_BINARY , pmode ) ;
+		return FileImp::open( path_cstr , _O_WRONLY|_O_CREAT|_O_APPEND|_O_BINARY , pmode ) ;
 }
 
-int G::File::open( const char * path , CreateExclusive ) noexcept
+int G::File::open( const Path & path , CreateExclusive ) noexcept
 {
 	int pmode = _S_IREAD | _S_IWRITE ;
-	return FileImp::open( path , _O_WRONLY|_O_CREAT|_O_EXCL|_O_BINARY , pmode ) ;
+	return FileImp::open( path.cstr() , _O_WRONLY|_O_CREAT|_O_EXCL|_O_BINARY , pmode ) ;
 }
 
-std::FILE * G::File::fopen( const char * path , const char * mode ) noexcept
+std::FILE * G::File::fopen( const Path & path , const char * mode ) noexcept
 {
-	G_ASSERT( path && mode ) ;
-	return FileImp::fopen( path , mode ) ;
+	G_ASSERT( mode ) ;
+	return FileImp::fopen( path.cstr() , mode ) ;
 }
 
-bool G::File::probe( const char * path ) noexcept
+bool G::File::probe( const Path & path ) noexcept
 {
+	static_assert( noexcept(path.cstr()) , "" ) ;
 	int pmode = _S_IREAD | _S_IWRITE ;
-	int fd = FileImp::open( path , _O_WRONLY|_O_CREAT|_O_EXCL|O_TEMPORARY|_O_BINARY , pmode ) ;
+	int fd = FileImp::open( path.cstr() , _O_WRONLY|_O_CREAT|_O_EXCL|O_TEMPORARY|_O_BINARY , pmode ) ;
 	if( fd >= 0 )
 		_close( fd ) ; // also deletes
 	return fd >= 0 ;
@@ -170,11 +175,14 @@ void G::File::create( const Path & path )
 
 bool G::File::renameOnto( const Path & from , const Path & to , std::nothrow_t ) noexcept
 {
+	static_assert( noexcept(from.cstr()) , "" ) ;
+	static_assert( noexcept(File::remove(to,std::nothrow)) , "" ) ;
+
 	bool ok = 0 == std::rename( from.cstr() , to.cstr() ) ;
 	int error = Process::errno_() ;
 	if( !ok && error == EEXIST ) // MS documentation says EACCES :-<
 	{
-		std::remove( to.cstr() ) ;
+		File::remove( to , std::nothrow ) ;
 		ok = 0 == std::rename( from.cstr() , to.cstr() ) ;
 	}
 	return ok ;

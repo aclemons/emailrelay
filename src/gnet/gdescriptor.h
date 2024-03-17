@@ -42,7 +42,7 @@ public:
 	explicit Descriptor( SOCKET , HANDLE = HNULL ) noexcept ;
 		///< Constructor.
 
-	bool valid() const noexcept ;
+	bool validfd() const noexcept ;
 		///< Returns true if the socket part is valid, ignoring
 		///< the handle.
 

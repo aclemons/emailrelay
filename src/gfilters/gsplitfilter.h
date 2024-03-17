@@ -38,7 +38,7 @@ namespace GFilters
 class GFilters::SplitFilter : public SimpleFilterBase
 {
 public:
-	SplitFilter( GNet::ExceptionSink es , GStore::FileStore & ,
+	SplitFilter( GNet::EventState es , GStore::FileStore & ,
 		Filter::Type , const Filter::Config & , const std::string & spec ) ;
 			///< Constructor.
 

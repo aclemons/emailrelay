@@ -29,7 +29,7 @@
 #include "glocal.h"
 #include "glog.h"
 
-GVerifiers::ExecutableVerifier::ExecutableVerifier( GNet::ExceptionSink es , const G::Path & path , unsigned int timeout ) :
+GVerifiers::ExecutableVerifier::ExecutableVerifier( GNet::EventState es , const G::Path & path , unsigned int timeout ) :
 	m_timer(*this,&ExecutableVerifier::onTimeout,es) ,
 	m_path(path) ,
 	m_timeout(timeout) ,

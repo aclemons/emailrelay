@@ -61,7 +61,7 @@ private:
 
 // ==
 
-GSmtp::ClientProtocol::ClientProtocol( GNet::ExceptionSink es , Sender & sender ,
+GSmtp::ClientProtocol::ClientProtocol( GNet::EventState es , Sender & sender ,
 	const GAuth::SaslClientSecrets & secrets , const std::string & sasl_client_config ,
 	const Config & config , bool in_secure_tunnel ) :
 		GNet::TimerBase(es) ,
@@ -523,7 +523,7 @@ GStore::StoredMessage & GSmtp::ClientProtocol::message()
 	return *m_message_p ;
 }
 
-GAuth::SaslClient::Response GSmtp::ClientProtocol::initialResponse( const GAuth::SaslClient & sasl , G::string_view selector )
+GAuth::SaslClient::Response GSmtp::ClientProtocol::initialResponse( const GAuth::SaslClient & sasl , std::string_view selector )
 {
 	return sasl.initialResponse( selector , 450U ) ; // RFC-2821 total command line length of 512
 }
@@ -803,12 +803,12 @@ void GSmtp::ClientProtocol::sendCommandLines( const std::string & lines )
 	sendImp( lines.data() ) ;
 }
 
-void GSmtp::ClientProtocol::send( G::string_view s )
+void GSmtp::ClientProtocol::send( std::string_view s )
 {
 	sendImp( s ) ;
 }
 
-void GSmtp::ClientProtocol::send( G::string_view s0 , G::string_view s1 , G::string_view s2 , G::string_view s3 , bool s2_sensitive )
+void GSmtp::ClientProtocol::send( std::string_view s0 , std::string_view s1 , std::string_view s2 , std::string_view s3 , bool s2_sensitive )
 {
 	std::string line = std::string(s0.data(),s0.size()).append(s1.data(),s1.size()).append(s2.data(),s2.size()).append(s3.data(),s3.size()) ;
 	sendImp( line , ( s2_sensitive && !s2.empty() ) ? (s0.size()+s1.size()) : std::string::npos ) ;
@@ -872,7 +872,7 @@ bool GSmtp::ClientProtocol::sendBdatAndChunk( std::size_t size , const std::stri
 
 void GSmtp::ClientProtocol::sendChunkImp( const char * p , std::size_t n )
 {
-	G::string_view sv( p , n ) ;
+	std::string_view sv( p , n ) ;
 
 	if( m_config.response_timeout != 0U )
 		startTimer( m_config.response_timeout ) ; // response timer on every bdat block
@@ -880,10 +880,10 @@ void GSmtp::ClientProtocol::sendChunkImp( const char * p , std::size_t n )
 	if( G::Log::atVerbose() )
 	{
 		std::size_t pos = sv.find( "\r\n"_sv ) ;
-		G::string_view cmd = G::Str::headView( sv , pos , {p,std::size_t(0U)} ) ;
+		std::string_view cmd = G::Str::headView( sv , pos , {p,std::size_t(0U)} ) ;
 		G::StringTokenView t( cmd , " "_sv ) ;
-		G::string_view count = t.next()() ;
-		G::string_view end = count.size() == 1U && count[0] == '1' ? "]"_sv : "s]"_sv ;
+		std::string_view count = t.next()() ;
+		std::string_view end = count.size() == 1U && count[0] == '1' ? "]"_sv : "s]"_sv ;
 		G_LOG( "GSmtp::ClientProtocol: tx>>: \"" << cmd << "\" [" << count << " byte" << end ) ;
 	}
 
@@ -898,7 +898,7 @@ bool GSmtp::ClientProtocol::sendContentLineImp( const std::string & line , std::
 	return all_sent ;
 }
 
-bool GSmtp::ClientProtocol::sendImp( G::string_view line , std::size_t sensitive_from )
+bool GSmtp::ClientProtocol::sendImp( std::string_view line , std::size_t sensitive_from )
 {
 	G_ASSERT( line.size() > 2U && line.rfind('\n') == (line.size()-1U) ) ;
 
@@ -908,7 +908,7 @@ bool GSmtp::ClientProtocol::sendImp( G::string_view line , std::size_t sensitive
 		startTimer( m_config.response_timeout ) ; // response timer on every smtp command
 
 	std::size_t pos = 0U ;
-	for( G::StringFieldT<G::string_view> f(line,"\r\n",2U) ; f && !f.last() ; pos += (f.size()+2U) , ++f )
+	for( G::StringFieldT<std::string_view> f(line,"\r\n",2U) ; f && !f.last() ; pos += (f.size()+2U) , ++f )
 	{
 		if( sensitive_from == std::string::npos || (pos+f.size()) < sensitive_from )
 			G_LOG( "GSmtp::ClientProtocol: tx>>: "

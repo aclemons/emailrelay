@@ -426,7 +426,7 @@ int GStore::FileStore::FileOp::fdopen( const G::Path & path )
 {
 	FileReader claim_reader ;
 	errno_() = 0 ;
-	int fd = G::File::open( path.cstr() , G::File::InOutAppend::In ) ;
+	int fd = G::File::open( path , G::File::InOutAppend::In ) ;
 	errno_() = G::Process::errno_() ;
 	return fd ;
 }

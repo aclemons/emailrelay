@@ -28,7 +28,16 @@
 #include "glog.h"
 #include <fstream>
 #include <string>
-#include <array>
+
+namespace G
+{
+	namespace PidFileImp
+	{
+		Process::Id read( SignalSafe , const char * path ) ;
+		bool cleanup( const Cleanup::Arg & ) noexcept ;
+		bool cleanup( const Path & ) noexcept ;
+	}
+}
 
 #ifndef G_LIB_SMALL
 G::PidFile::PidFile()
@@ -42,13 +51,17 @@ G::PidFile::PidFile( const Path & path ) :
 
 G::PidFile::~PidFile()
 {
+	static_assert( noexcept(m_path.cstr()) , "" ) ;
+	static_assert( noexcept(m_path.empty()) , "" ) ;
+	static_assert( noexcept(PidFileImp::cleanup(m_path)), "" ) ;
+	static_assert( noexcept(Root::atExit()) , "" ) ;
 	if( !m_path.empty() )
 	{
-		bool done = cleanup( SignalSafe() , m_path.cstr() ) ;
+		bool done = PidFileImp::cleanup( m_path ) ;
 		if( !done )
 		{
 			Root::atExit() ;
-			cleanup( SignalSafe() , m_path.cstr() ) ;
+			PidFileImp::cleanup( m_path ) ;
 		}
 	}
 }
@@ -75,54 +88,7 @@ void G::PidFile::create( const Path & pid_file )
 		if( file.fail() )
 			throw Error( "cannot write file" , pid_file.str() ) ;
 
-		// (leak only if necessary)
-		static constexpr std::size_t buffer_size = 60U ; // eg. "/var/run/whatever/whatever.pid"
-		static std::array<char,buffer_size> buffer {} ;
-		const char * cleanup_arg = buffer.data() ;
-		if( buffer[0] == '\0' && pid_file.size() < buffer.size() )
-			G::Str::strncpy_s( buffer.data() , buffer.size() , pid_file.cstr() , pid_file.size() ) ;
-		else
-			cleanup_arg = Cleanup::strdup( pid_file.str() ) ;
-
-		Cleanup::add( cleanup , cleanup_arg ) ;
-	}
-}
-
-G::Process::Id G::PidFile::read( SignalSafe , const char * path ) noexcept
-{
-	int fd = File::open( path , File::InOutAppend::In ) ;
-	if( fd < 0 )
-		return Process::Id::invalid() ;
-
-	constexpr std::size_t buffer_size = 11U ;
-	std::array<char,buffer_size> buffer {} ;
-	buffer[0U] = '\0' ;
-
-	ssize_t rc = File::read( fd , buffer.data() , buffer_size-1U ) ;
-	File::close( fd ) ;
-	if( rc <= 0 )
-		return Process::Id::invalid() ;
-
-	return Process::Id( buffer.data() , buffer.data()+static_cast<std::size_t>(rc) ) ;
-}
-
-bool G::PidFile::cleanup( SignalSafe safe , const char * path ) noexcept
-{
-	try
-	{
-		if( path == nullptr || *path == '\0' )
-			return true ; // nothing to do
-
-		Process::Id this_pid ;
-		Process::Id file_pid = read( safe , path ) ;
-		if( this_pid != file_pid )
-			return false ; // try again in case we didnt have read permission
-
-		return 0 == std::remove( path ) ;
-	}
-	catch(...)
-	{
-		return false ;
+		Cleanup::add( PidFileImp::cleanup , Cleanup::arg(pid_file) ) ;
 	}
 }
 
@@ -143,5 +109,50 @@ bool G::PidFile::committed() const
 G::Path G::PidFile::path() const
 {
 	return m_path ;
+}
+
+// --
+
+bool G::PidFileImp::cleanup( const Path & path ) noexcept
+{
+	try
+	{
+		int fd = File::open( path , File::InOutAppend::In ) ;
+		if( fd < 0 )
+			return false ;
+
+		constexpr std::size_t buffer_size = 11U ;
+		std::array<char,buffer_size> buffer {} ;
+		buffer[0U] = '\0' ;
+
+		ssize_t rc = File::read( fd , buffer.data() , buffer_size-1U ) ;
+		File::close( fd ) ;
+		if( rc <= 0 )
+			return false ;
+
+		Process::Id file_pid( buffer.data() , buffer.data()+static_cast<std::size_t>(rc) ) ;
+
+		Process::Id this_pid ;
+		if( this_pid != file_pid )
+			return false ; // not our pid file -- false => try again
+
+		return File::remove( path , std::nothrow ) ;
+	}
+	catch(...)
+	{
+		return false ;
+	}
+}
+
+bool G::PidFileImp::cleanup( const Cleanup::Arg & arg ) noexcept
+{
+	try
+	{
+		return cleanup( Path(arg.path()) ) ;
+	}
+	catch(...)
+	{
+		return false ;
+	}
 }
 

@@ -50,6 +50,8 @@ GetOptions( \%opt , "quiet" , "debug" , "undo=s" , "in=s" , "out=s" , "append" ,
 
 if( $opt{in} )
 {
+	# apply edits to all the files listed in the reduce file
+
 	my $reduce = new Reduce() ;
 	$reduce->read( $opt{in} ) ;
 	my @basenames = sort $reduce->basenames() ;
@@ -72,6 +74,8 @@ if( $opt{in} )
 }
 elsif( $opt{undo} )
 {
+	# remove any 'reduce' edits found in all source files
+
 	sub _undo_file
 	{
 		my $path = $File::Find::name ;
@@ -118,6 +122,8 @@ elsif( $opt{undo} )
 }
 elsif( $opt{sources} )
 {
+	# parse a makefile and list the source files
+
 	my $makefile_dir = $opt{sources} ;
 	die "no makefile" if ! -e "${makefile_dir}/Makefile.am" ;
 	my $cs = new ConfigStatus() ;
@@ -130,11 +136,14 @@ elsif( $opt{sources} )
 }
 elsif( scalar(@ARGV) >= 2 )
 {
+	# do trial edits and test builds on the source file and append to a reduce file
+
 	my $arg_src = shift @ARGV ;
 	my @arg_make_commands = @ARGV ;
 	my $fh_out ;
 	if( $opt{out} ) { $fh_out = new FileHandle( $opt{out} , $opt{append} ? "a" : "w" ) or die }
 	my $reduce = new Reduce( \@arg_make_commands , {debug=>$opt{debug}} ) ;
+	die if !$reduce->safe( $arg_src ) ; # too strict?
 	$reduce->check( $arg_src , !$opt{out} ) ;
 	$reduce->emit( $fh_out ) if($fh_out) ;
 }

@@ -73,7 +73,7 @@ GVerifiers::VerifierFactory::Spec GVerifiers::VerifierFactory::parse( const std:
 	return result ;
 }
 
-std::unique_ptr<GSmtp::Verifier> GVerifiers::VerifierFactory::newVerifier( GNet::ExceptionSink es ,
+std::unique_ptr<GSmtp::Verifier> GVerifiers::VerifierFactory::newVerifier( GNet::EventState es ,
 	const GSmtp::Verifier::Config & config , const Spec & spec )
 {
 	if( spec.first == "exit" )
@@ -122,7 +122,7 @@ void GVerifiers::VerifierFactory::checkRange( Spec & result )
 {
 	try
 	{
-		G::string_view spec_view( result.second ) ;
+		std::string_view spec_view( result.second ) ;
 		for( G::StringTokenView t( spec_view , ";" , 1U ) ; t ; ++t )
 		{
 			if( !t().empty() && G::Str::isNumeric(t().substr(0U,1U)) )

@@ -41,14 +41,14 @@ namespace GSmtp
 /// are trimmed from the input.
 ///
 /// The received network responses are delivered via the GNet::Client
-/// class's event signal.
+/// class's event signal (GNet::Client::eventSignal()).
 ///
 class GSmtp::RequestClient : public GNet::Client
 {
 public:
 	G_EXCEPTION( ProtocolError , tx("protocol error") ) ;
 
-	RequestClient( GNet::ExceptionSink , const std::string & key , const std::string & ok ,
+	RequestClient( GNet::EventState , const std::string & key , const std::string & ok ,
 		const GNet::Location & host_and_service , unsigned int connection_timeout ,
 		unsigned int response_timeout , unsigned int idle_timeout ) ;
 			///< Constructor.  The 'key' parameter is used in the callback

@@ -27,6 +27,7 @@
 #include "gmapfile.h"
 #include "gexecutablecommand.h"
 #include <string>
+#include <memory>
 
 class InstallerImp ;
 

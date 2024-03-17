@@ -37,7 +37,7 @@ std::unique_ptr<GAuth::SaslServerSecrets> GPop::newSecrets( const std::string & 
 	return {} ;
 }
 
-std::unique_ptr<GPop::Server> GPop::newServer( GNet::ExceptionSink , Store & ,
+std::unique_ptr<GPop::Server> GPop::newServer( GNet::EventState , Store & ,
 	const GAuth::SaslServerSecrets & , const Server::Config & )
 {
 	return {} ;

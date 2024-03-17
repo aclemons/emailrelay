@@ -41,7 +41,7 @@ namespace GFilters
 class GFilters::SpamFilter : public GSmtp::Filter
 {
 public:
-	SpamFilter( GNet::ExceptionSink , GStore::FileStore & ,
+	SpamFilter( GNet::EventState , GStore::FileStore & ,
 		Filter::Type , const Filter::Config & ,
 		const std::string & server_location ,
 		bool read_only , bool always_pass ) ;
@@ -75,7 +75,7 @@ private:
 	void onDoneTimeout() ;
 
 private:
-	GNet::ExceptionSink m_es ;
+	GNet::EventState m_es ;
 	GNet::Timer<SpamFilter> m_done_timer ;
 	G::Slot::Signal<int> m_done_signal ;
 	GStore::FileStore & m_file_store ;

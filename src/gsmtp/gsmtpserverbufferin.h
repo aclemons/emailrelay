@@ -23,7 +23,7 @@
 
 #include "gdef.h"
 #include "gsmtpserverprotocol.h"
-#include "gexceptionsink.h"
+#include "geventstate.h"
 #include "glinebuffer.h"
 #include "gtimer.h"
 #include "gexception.h"
@@ -83,7 +83,7 @@ public:
 		Config & set_input_buffer_hard_limit( std::size_t ) noexcept ;
 	} ;
 
-	ServerBufferIn( GNet::ExceptionSink , ServerProtocol & , const Config & ) ;
+	ServerBufferIn( GNet::EventState , ServerProtocol & , const Config & ) ;
 		///< Constructor.
 
 	~ServerBufferIn() ;

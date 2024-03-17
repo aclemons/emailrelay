@@ -94,7 +94,7 @@ public:
 		Config & set_domain( const std::string & ) ;
 	} ;
 
-	Server( GNet::ExceptionSink es , GStore::MessageStore & ,
+	Server( GNet::EventState es , GStore::MessageStore & ,
 		FilterFactoryBase & , VerifierFactoryBase & , const GAuth::SaslClientSecrets & ,
 		const GAuth::SaslServerSecrets & , const Config & server_config ,
 		const std::string & forward_to , int forward_to_family ,
@@ -120,7 +120,7 @@ public:
 	G::Slot::Signal<const std::string&,const std::string&> & eventSignal() noexcept ;
 		///< Returns a signal that indicates that something has happened.
 
-	std::unique_ptr<ProtocolMessage> newProtocolMessage( GNet::ExceptionSink ) ;
+	std::unique_ptr<ProtocolMessage> newProtocolMessage( GNet::EventState ) ;
 		///< Called by GSmtp::ServerPeer to construct a ProtocolMessage.
 
 	Config & config() ;
@@ -135,7 +135,7 @@ public:
 		///< disabled in some way.
 
 private: // overrides
-	std::unique_ptr<GNet::ServerPeer> newPeer( GNet::ExceptionSinkUnbound ,
+	std::unique_ptr<GNet::ServerPeer> newPeer( GNet::EventStateUnbound ,
 		GNet::ServerPeerInfo && , GNet::MultiServer::ServerInfo ) override ; // Override from GNet::MultiServer.
 
 public:
@@ -145,9 +145,9 @@ public:
 	Server & operator=( Server && ) = delete ;
 
 private:
-	std::unique_ptr<Filter> newFilter( GNet::ExceptionSink ) const ;
+	std::unique_ptr<Filter> newFilter( GNet::EventState ) const ;
 	std::unique_ptr<ProtocolMessage> newProtocolMessageStore( std::unique_ptr<Filter> ) ;
-	std::unique_ptr<ProtocolMessage> newProtocolMessageForward( GNet::ExceptionSink , std::unique_ptr<ProtocolMessage> ) ;
+	std::unique_ptr<ProtocolMessage> newProtocolMessageForward( GNet::EventState , std::unique_ptr<ProtocolMessage> ) ;
 	std::unique_ptr<ServerProtocol::Text> newProtocolText( bool , bool , const GNet::Address & , const std::string & domain ) const ;
 	Config serverConfig() const ;
 
@@ -178,7 +178,7 @@ public:
 	G_EXCEPTION( Error , tx("smtp server error") ) ;
 	G_EXCEPTION( SendError , tx("failed to send smtp response") ) ;
 
-	ServerPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo && peer_info , Server & server ,
+	ServerPeer( GNet::EventStateUnbound , GNet::ServerPeerInfo && peer_info , Server & server ,
 		bool enabled , VerifierFactoryBase & vf , const GAuth::SaslServerSecrets & server_secrets ,
 		const Server::Config & server_config , std::unique_ptr<ServerProtocol::Text> ptext ) ;
 			///< Constructor.

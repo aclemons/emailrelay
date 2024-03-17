@@ -44,7 +44,7 @@ GSmtp::ServerParser::MailboxStyle GSmtp::ServerParser::mailboxStyle( const std::
 		return MailboxStyle::Utf8 ;
 }
 
-std::pair<std::size_t,bool> GSmtp::ServerParser::parseBdatSize( G::string_view bdat_line )
+std::pair<std::size_t,bool> GSmtp::ServerParser::parseBdatSize( std::string_view bdat_line )
 {
 	G::StringTokenView token( bdat_line , "\t "_sv ) ;
 	std::size_t size = 0U ;
@@ -60,7 +60,7 @@ std::pair<std::size_t,bool> GSmtp::ServerParser::parseBdatSize( G::string_view b
 	return {size,ok} ;
 }
 
-std::pair<bool,bool> GSmtp::ServerParser::parseBdatLast( G::string_view bdat_line )
+std::pair<bool,bool> GSmtp::ServerParser::parseBdatLast( std::string_view bdat_line )
 {
 	G::StringTokenView token( bdat_line , "\t "_sv ) ;
 	bool last = false ;
@@ -74,7 +74,7 @@ std::pair<bool,bool> GSmtp::ServerParser::parseBdatLast( G::string_view bdat_lin
 	return {last,ok} ;
 }
 
-GSmtp::ServerParser::AddressCommand GSmtp::ServerParser::parseMailFrom( G::string_view line )
+GSmtp::ServerParser::AddressCommand GSmtp::ServerParser::parseMailFrom( std::string_view line )
 {
 	G::StringTokenView t( line , " \t"_sv ) ;
 	if( !G::Str::imatch("MAIL"_sv,t()) || G::Str::ifind(t.next()(),"FROM:"_sv) != 0U )
@@ -99,7 +99,7 @@ GSmtp::ServerParser::AddressCommand GSmtp::ServerParser::parseMailFrom( G::strin
 	return result ;
 }
 
-GSmtp::ServerParser::AddressCommand GSmtp::ServerParser::parseRcptTo( G::string_view line )
+GSmtp::ServerParser::AddressCommand GSmtp::ServerParser::parseRcptTo( std::string_view line )
 {
 	G::StringTokenView t( line , " \t"_sv ) ;
 	if( !G::Str::imatch("RCPT"_sv,t()) || G::Str::ifind(t.next()(),"TO:"_sv) != 0U )
@@ -108,7 +108,7 @@ GSmtp::ServerParser::AddressCommand GSmtp::ServerParser::parseRcptTo( G::string_
 	return parseAddressPart( line ) ;
 }
 
-GSmtp::ServerParser::AddressCommand GSmtp::ServerParser::parseAddressPart( G::string_view line )
+GSmtp::ServerParser::AddressCommand GSmtp::ServerParser::parseAddressPart( std::string_view line )
 {
 	// RFC-5321 4.1.2
 	// eg. MAIL FROM:<>
@@ -187,7 +187,7 @@ GSmtp::ServerParser::AddressCommand GSmtp::ServerParser::parseAddressPart( G::st
 	return result ;
 }
 
-std::size_t GSmtp::ServerParser::parseMailNumericValue( G::string_view line , G::string_view key_eq , AddressCommand & out )
+std::size_t GSmtp::ServerParser::parseMailNumericValue( std::string_view line , std::string_view key_eq , AddressCommand & out )
 {
 	std::size_t result = 0U ;
 	if( out.error.empty() && out.tailpos != std::string::npos && out.tailpos < line.size() )
@@ -199,12 +199,12 @@ std::size_t GSmtp::ServerParser::parseMailNumericValue( G::string_view line , G:
 	return result ;
 }
 
-std::string GSmtp::ServerParser::parseMailStringValue( G::string_view line , G::string_view key_eq , AddressCommand & out , Conversion conversion )
+std::string GSmtp::ServerParser::parseMailStringValue( std::string_view line , std::string_view key_eq , AddressCommand & out , Conversion conversion )
 {
 	std::string result ;
 	if( out.error.empty() && out.tailpos != std::string::npos && out.tailpos < line.size() )
 	{
-		G::string_view tail = G::sv_substr( G::string_view(line) , out.tailpos ) ;
+		std::string_view tail = G::sv_substr_noexcept( std::string_view(line) , out.tailpos ) ;
 		G::StringTokenView word( tail , " \t"_sv ) ;
 		for( ; word ; ++word )
 		{
@@ -222,12 +222,12 @@ std::string GSmtp::ServerParser::parseMailStringValue( G::string_view line , G::
 	return result ;
 }
 
-bool GSmtp::ServerParser::parseMailBoolean( G::string_view line , G::string_view key , AddressCommand & out )
+bool GSmtp::ServerParser::parseMailBoolean( std::string_view line , std::string_view key , AddressCommand & out )
 {
 	bool result = false ;
 	if( out.error.empty() && out.tailpos != std::string::npos && out.tailpos < line.size() )
 	{
-		G::string_view tail = G::sv_substr( line , out.tailpos ) ;
+		std::string_view tail = G::sv_substr_noexcept( line , out.tailpos ) ;
 		G::StringTokenView word( tail , " \t"_sv ) ;
 		for( ; word && !result ; ++word )
 		{

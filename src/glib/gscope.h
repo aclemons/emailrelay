@@ -28,7 +28,8 @@
 namespace G
 {
 	class ScopeExit ;
-	class ScopeExitSetFalse ;
+	template <typename T,T Value> class ScopeExitSet ;
+	using ScopeExitSetFalse = ScopeExitSet<bool,false> ;
 }
 
 //| \class G::ScopeExit
@@ -65,37 +66,38 @@ private:
 	std::function<void()> m_fn ;
 } ;
 
-//| \class G::ScopeExitSetFalse
-/// A class that sets a boolean variable to false at the
-/// end of its scope.
+//| \class G::ScopeExitSet
+/// A class that sets a simple variable to a particular value
+/// at the end of its scope.
 /// Eg:
 /// \code
 /// {
-///   ScopeExitSetFalse _( m_busy = true ) ;
+///   ScopeExitSet<bool,false> _( m_busy = true ) ;
 ///   ...
 /// }
 /// \endcode
 ///
-class G::ScopeExitSetFalse
+template <typename T,T Value>
+class G::ScopeExitSet
 {
 public:
-	explicit ScopeExitSetFalse( bool & bref ) noexcept ;
+	explicit ScopeExitSet( T & ref ) noexcept ;
 		///< Constructor.
 
-	~ScopeExitSetFalse() noexcept ;
-		///< Destructor, sets the bound value to false.
+	~ScopeExitSet() noexcept ;
+		///< Destructor, sets the bound value.
 
 	void release() noexcept ;
 		///< Deactivates the exit function.
 
 public:
-	ScopeExitSetFalse( const ScopeExitSetFalse & ) = delete ;
-	ScopeExitSetFalse( ScopeExitSetFalse && ) = delete ;
-	ScopeExitSetFalse & operator=( const ScopeExitSetFalse & ) = delete ;
-	ScopeExitSetFalse & operator=( ScopeExitSetFalse && ) = delete ;
+	ScopeExitSet( const ScopeExitSet & ) = delete ;
+	ScopeExitSet( ScopeExitSet && ) = delete ;
+	ScopeExitSet & operator=( const ScopeExitSet & ) = delete ;
+	ScopeExitSet & operator=( ScopeExitSet && ) = delete ;
 
 private:
-	bool * m_ptr ;
+	T * m_ptr ;
 } ;
 
 inline
@@ -123,23 +125,26 @@ G::ScopeExit::~ScopeExit()
 	}
 }
 
-inline
-G::ScopeExitSetFalse::ScopeExitSetFalse( bool & bref ) noexcept :
-	m_ptr(&bref)
+template <typename T,T Value>
+G::ScopeExitSet<T,Value>::ScopeExitSet( T & ref ) noexcept :
+	m_ptr(&ref)
 {
 }
 
-inline
-void G::ScopeExitSetFalse::release() noexcept
+template <typename T,T Value>
+void G::ScopeExitSet<T,Value>::release() noexcept
 {
 	m_ptr = nullptr ;
 }
 
-inline
-G::ScopeExitSetFalse::~ScopeExitSetFalse() noexcept
+namespace G
 {
-	if( m_ptr )
-		*m_ptr = false ;
+	template <typename T,T Value>
+	ScopeExitSet<T,Value>::~ScopeExitSet() noexcept
+	{
+		if( m_ptr )
+			*m_ptr = Value ;
+	}
 }
 
 #endif

@@ -56,7 +56,7 @@ class GSmtp::Forward
 public:
 	using Config = GSmtp::Client::Config ;
 
-	Forward( GNet::ExceptionSink , GStore::MessageStore & store ,
+	Forward( GNet::EventState , GStore::MessageStore & store ,
 		FilterFactoryBase & , const GNet::Location & forward_to_default ,
 		const GAuth::SaslClientSecrets & , const Config & config ) ;
 			///< Constructor. Starts sending the first message from the
@@ -68,7 +68,7 @@ public:
 			///< Do not use sendMessage(). The messageDoneSignal()
 			///< is not emitted.
 
-	Forward( GNet::ExceptionSink ,
+	Forward( GNet::EventState ,
 		FilterFactoryBase & , const GNet::Location & forward_to_default ,
 		const GAuth::SaslClientSecrets & , const Config & config ) ;
 			///< Constructor. Use sendMessage() immediately after
@@ -90,8 +90,8 @@ public:
 		///< message filtering has finished or failed.
 		///<
 		///< The message is fail()ed if it cannot be sent. If this
-		///< Client object is deleted before the message is sent
-		///< the message is neither fail()ed or destroy()ed.
+		///< object is deleted before the message is sent the message
+		///< is neither fail()ed or destroy()ed.
 		///<
 		///< Does nothing if there are no message recipients.
 
@@ -139,7 +139,7 @@ private:
 	static std::string messageInfo( const GStore::StoredMessage & ) ;
 
 private:
-	GNet::ExceptionSink m_es ;
+	GNet::EventState m_es ;
 	GStore::MessageStore * m_store ;
 	FilterFactoryBase & m_ff ;
 	GNet::Location m_forward_to_default ;

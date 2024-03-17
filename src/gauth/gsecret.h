@@ -44,16 +44,16 @@ class GAuth::Secret
 public:
 	G_EXCEPTION( Error , tx("invalid authorisation secret") ) ;
 	G_EXCEPTION( BadId , tx("invalid authorisation id") ) ;
-	using Value = std::pair<G::string_view,G::string_view> ; // encoded value and encoding
+	using Value = std::pair<std::string_view,std::string_view> ; // encoded value and encoding
 
-	Secret( Value id , Value secret , G::string_view masking_hash_function = {} ,
-		G::string_view context = {} ) ;
+	Secret( Value id , Value secret , std::string_view masking_hash_function = {} ,
+		std::string_view context = {} ) ;
 			///< Constructor used by the SecretsFile class. Throws on error,
 			///< including if the encodings are invalid. Encodings should be
 			///< empty (raw) or "xtext" or "base64" or "dotted".
 
 	static std::string check( Value id , Value secret ,
-		G::string_view masking_hash_function ) ;
+		std::string_view masking_hash_function ) ;
 			///< Does a non-throwing check of the constructor parameters,
 			///< returning an error message or the empty string.
 
@@ -82,7 +82,7 @@ public:
 		///< Returns information for logging, excluding anything
 		///< sensitive. The secret may be in-valid().
 
-	static bool isDotted( G::string_view ) ;
+	static bool isDotted( std::string_view ) ;
 		///< Returns true if the given secret string looks like it is in
 		///< the old dotted format rather than base64.
 
@@ -92,7 +92,7 @@ public:
 private:
 	enum class Encoding { xtext , base64 , raw , dotted } ;
 	Secret() ; // Secret::none()
-	static std::string undotted( G::string_view ) ;
+	static std::string undotted( std::string_view ) ;
 	static bool validEncodingType( Value ) ;
 	static bool validEncoding( Value ) ;
 	static Encoding encoding( Value ) ;

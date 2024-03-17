@@ -28,6 +28,7 @@
 #include "gassert.h"
 #include <algorithm>
 #include <vector>
+#include <limits>
 #include <sys/epoll.h>
 
 namespace GNet
@@ -47,13 +48,13 @@ private: // overrides
 	bool running() const override ;
 	void quit( const std::string & ) override ;
 	void quit( const G::SignalSafe & ) override ;
-	void addRead( Descriptor fd , EventHandler & , ExceptionSink ) override ;
-	void addWrite( Descriptor fd , EventHandler & , ExceptionSink ) override ;
-	void addOther( Descriptor fd , EventHandler & , ExceptionSink ) override ;
-	void dropRead( Descriptor fd ) noexcept override ;
-	void dropWrite( Descriptor fd ) noexcept override ;
-	void dropOther( Descriptor fd ) noexcept override ;
-	void drop( Descriptor fd ) noexcept override ;
+	void addRead( Descriptor , EventHandler & , EventState ) override ;
+	void addWrite( Descriptor , EventHandler & , EventState ) override ;
+	void addOther( Descriptor , EventHandler & , EventState ) override ;
+	void dropRead( Descriptor ) noexcept override ;
+	void dropWrite( Descriptor ) noexcept override ;
+	void dropOther( Descriptor ) noexcept override ;
+	void drop( Descriptor ) noexcept override ;
 	void disarm( ExceptionHandler * ) noexcept override ;
 
 public:
@@ -66,32 +67,40 @@ private:
 	struct ListItem
 	{
 		unsigned int m_events {0U} ;
-		EventEmitter m_read_emitter ;
-		EventEmitter m_write_emitter ;
+		EventHandler * m_handler {nullptr} ;
+		EventState m_es {EventState::Private(),nullptr,nullptr} ;
+		int m_suppress_read {-1} ;
+		int m_suppress_write {-1} ;
+		void update( EventHandler * handler , EventState es ) noexcept { m_handler = handler ; m_es = es ; }
+		void disarm( ExceptionHandler * eh ) noexcept { if( m_es.eh() == eh ) m_es.disarm() ; }
+		void reset() noexcept { m_handler = nullptr ; }
 	} ;
 	using List = std::vector<ListItem> ;
 
 private:
 	void runOnce() ;
-	ListItem * find( Descriptor fd ) noexcept ;
-	ListItem & findOrCreate( Descriptor fd ) ;
+	ListItem * find( Descriptor ) noexcept ;
+	ListItem & findOrCreate( Descriptor ) ;
 	int ms() const ;
 	static int ms( unsigned int , unsigned int ) ;
-	void fdupdate( int fd , unsigned int old_events , unsigned int new_events ) ;
-	void fdupdate( int fd , unsigned int old_events , unsigned int new_events , std::nothrow_t ) noexcept ;
-	void fdadd( int fd , unsigned int events ) ;
-	void fdmodify( int fd , unsigned int events ) ;
-	int fdmodify( int fd , unsigned int events , std::nothrow_t ) noexcept ;
-	void fdremove( int fd ) noexcept ;
+	static void fdupdate( int , int fd , unsigned int old_events , unsigned int new_events ) ;
+	static void fdupdate( int , int fd , unsigned int old_events , unsigned int new_events , std::nothrow_t ) noexcept ;
+	static void fdadd( int , int fd , unsigned int events ) ;
+	static void fdmodify( int , int fd , unsigned int events ) ;
+	static int fdmodify( int , int fd , unsigned int events , std::nothrow_t ) noexcept ;
+	static void fdremove( int , int fd ) noexcept ;
 
 private:
 	std::vector<struct epoll_event> m_wait_events ;
-	int m_wait_rc {0} ;
+	int m_epoll_fd {-1} ;
+	bool m_running {false} ;
 	bool m_quit {false} ;
 	std::string m_quit_reason ;
-	bool m_running {false} ;
-	int m_fd {-1} ;
 	List m_list ;
+	int m_wait_rc {0} ;
+	int m_index {-1} ;
+	int m_suppress_seq {0} ;
+	EventState m_es_current ;
 } ;
 
 // ===
@@ -104,24 +113,17 @@ std::unique_ptr<GNet::EventLoop> GNet::EventLoop::create()
 // ===
 
 GNet::EventLoopImp::EventLoopImp() :
-	m_fd(epoll_create1(EPOLL_CLOEXEC))
+	m_epoll_fd(epoll_create1(EPOLL_CLOEXEC)) ,
+	m_es_current(EventState::Private(),nullptr,nullptr)
 {
-	if( m_fd == -1 )
+	if( m_epoll_fd == -1 )
 		throw Error( "epoll_create" ) ;
+	m_list.reserve( 1024U ) ;
 }
 
 GNet::EventLoopImp::~EventLoopImp()
 {
-	close( m_fd ) ;
-}
-
-void GNet::EventLoopImp::disarm( ExceptionHandler * p ) noexcept
-{
-	for( auto & item : m_list )
-	{
-		item.m_read_emitter.disarm( p ) ;
-		item.m_write_emitter.disarm( p ) ;
-	}
+	close( m_epoll_fd ) ;
 }
 
 bool GNet::EventLoopImp::running() const
@@ -151,7 +153,7 @@ void GNet::EventLoopImp::runOnce()
 
 	// extract the pending events
 	int timeout_ms = ms() ;
-	m_wait_rc = epoll_wait( m_fd , m_wait_events.data() , m_wait_events.size() , timeout_ms ) ; // NOLINT narrowing
+	m_wait_rc = epoll_wait( m_epoll_fd , m_wait_events.data() , m_wait_events.size() , timeout_ms ) ; // NOLINT narrowing
 	if( m_wait_rc < 0 )
 	{
 		int e = G::Process::errno_() ;
@@ -165,22 +167,39 @@ void GNet::EventLoopImp::runOnce()
 		TimerList::instance().doTimeouts() ;
 	}
 
-	// handle i/o events
-	for( int i = 0 ; m_wait_rc > 0 && i < m_wait_rc ; i++ )
+	// shenanigans for O(1) callback suppression after drop()
+	m_suppress_seq++ ;
+	if( m_suppress_seq == std::numeric_limits<int>::max() )
 	{
-		unsigned int e = m_wait_events[i].events ;
-		Descriptor fd( m_wait_events[i].data.fd ) ;
-		if( e & EPOLLIN )
+		m_suppress_seq = 0 ;
+		std::for_each( m_list.begin() , m_list.end() ,
+			[](ListItem & i_){ i_.m_suppress_read = i_.m_suppress_write = -1 ; } ) ;
+	}
+
+	// handle i/o events
+	G_ASSERT( m_index == -1 ) ;
+	G::ScopeExitSet<int,-1> resetter( m_index ) ;
+	auto wait_event = m_wait_events.begin() ;
+	for( m_index = 0 ; m_wait_rc > 0 && m_index < m_wait_rc ; m_index++ , ++wait_event )
+	{
+		Descriptor fdd( wait_event->data.fd ) ;
+		if( wait_event->events & EPOLLIN )
 		{
-			ListItem * item = find( fd ) ;
-			if( item )
-				item->m_read_emitter.raiseReadEvent( fd ) ;
+			ListItem * item = find( fdd ) ;
+			if( item && item->m_suppress_read != m_suppress_seq && item->m_handler != nullptr )
+			{
+				m_es_current = item->m_es ; // see disarm()
+				EventEmitter::raiseReadEvent( item->m_handler , m_es_current ) ;
+			}
 		}
-		if( e & EPOLLOUT )
+		if( wait_event->events & EPOLLOUT )
 		{
-			ListItem * item = find( fd ) ; // again
-			if( item )
-				item->m_write_emitter.raiseWriteEvent( fd ) ;
+			ListItem * item = find( fdd ) ; // again
+			if( item && item->m_suppress_write != m_suppress_seq && item->m_handler != nullptr )
+			{
+				m_es_current = item->m_es ; // see disarm()
+				EventEmitter::raiseWriteEvent( item->m_handler , m_es_current ) ;
+			}
 		}
 	}
 }
@@ -225,18 +244,18 @@ void GNet::EventLoopImp::quit( const G::SignalSafe & )
 	m_quit = true ;
 }
 
-GNet::EventLoopImp::ListItem * GNet::EventLoopImp::find( Descriptor fd ) noexcept
+GNet::EventLoopImp::ListItem * GNet::EventLoopImp::find( Descriptor fdd ) noexcept
 {
-	std::size_t ufd = static_cast<unsigned int>(fd.fd()) ;
-	return fd.valid() && ufd < m_list.size() ? &m_list[ufd] : nullptr ;
+	std::size_t ufd = static_cast<unsigned int>(fdd.fd()) ;
+	return fdd.fd() >= 0 && ufd < m_list.size() ? &m_list[ufd] : nullptr ;
 }
 
-GNet::EventLoopImp::ListItem & GNet::EventLoopImp::findOrCreate( Descriptor fd )
+GNet::EventLoopImp::ListItem & GNet::EventLoopImp::findOrCreate( Descriptor fdd )
 {
-	ListItem * p = find( fd ) ;
+	ListItem * p = find( fdd ) ;
 	if( p == nullptr )
 	{
-		std::size_t ufd = static_cast<unsigned int>(fd.fd()) ;
+		std::size_t ufd = static_cast<unsigned int>(fdd.fd()) ;
 		m_list.resize( std::max(m_list.size(),ufd+1U) ) ; // grow, not shrink
 		p = &m_list[ufd] ;
 		*p = ListItem() ;
@@ -244,52 +263,54 @@ GNet::EventLoopImp::ListItem & GNet::EventLoopImp::findOrCreate( Descriptor fd )
 	return *p ;
 }
 
-void GNet::EventLoopImp::addRead( Descriptor fd , EventHandler & handler , ExceptionSink es )
+void GNet::EventLoopImp::addRead( Descriptor fdd , EventHandler & handler , EventState es )
 {
-	G_ASSERT( fd.valid() ) ;
-	handler.setDescriptor( fd ) ; // see EventHandler::dtor
+	G_ASSERT( fdd.fd() >= 0 ) ;
+	handler.setDescriptor( fdd ) ; // see EventHandler::dtor
 	unsigned int new_events = EPOLLIN ;
-	ListItem & item = findOrCreate( Descriptor(fd) ) ;
-	fdupdate( fd.fd() , item.m_events , item.m_events | new_events ) ;
+	ListItem & item = findOrCreate( fdd ) ;
+	fdupdate( m_epoll_fd , fdd.fd() , item.m_events , item.m_events | new_events ) ;
 	item.m_events |= new_events ;
-	item.m_read_emitter.update( &handler , es ) ;
+	item.update( &handler , es ) ;
 }
 
-void GNet::EventLoopImp::addWrite( Descriptor fd , EventHandler & handler , ExceptionSink es )
+void GNet::EventLoopImp::addWrite( Descriptor fdd , EventHandler & handler , EventState es )
 {
-	G_ASSERT( fd.valid() ) ;
-	handler.setDescriptor( fd ) ; // see EventHandler::dtor
+	G_ASSERT( fdd.fd() >= 0 ) ;
+	handler.setDescriptor( fdd ) ; // see EventHandler::dtor
 	unsigned int new_events = EPOLLOUT ;
-	ListItem & item = findOrCreate( Descriptor(fd) ) ;
-	fdupdate( fd.fd() , item.m_events , item.m_events | new_events ) ;
+	ListItem & item = findOrCreate( fdd ) ;
+	fdupdate( m_epoll_fd , fdd.fd() , item.m_events , item.m_events | new_events ) ;
 	item.m_events |= new_events ;
-	item.m_write_emitter.update( &handler , es ) ;
+	item.update( &handler , es ) ;
 }
 
-void GNet::EventLoopImp::addOther( Descriptor , EventHandler & , ExceptionSink )
+void GNet::EventLoopImp::addOther( Descriptor , EventHandler & , EventState )
 {
 	// no-op
 }
 
-void GNet::EventLoopImp::dropRead( Descriptor fd ) noexcept
+void GNet::EventLoopImp::dropRead( Descriptor fdd ) noexcept
 {
-	ListItem * item = find( Descriptor(fd) ) ;
+	ListItem * item = find( fdd ) ;
 	if( item && ( item->m_events & EPOLLIN ) )
 	{
 		unsigned int new_events = item->m_events & ~EPOLLIN ;
-		fdupdate( fd.fd() , item->m_events , new_events , std::nothrow ) ;
+		fdupdate( m_epoll_fd , fdd.fd() , item->m_events , new_events , std::nothrow ) ;
 		item->m_events = new_events ;
+		item->m_suppress_read = m_suppress_seq ;
 	}
 }
 
-void GNet::EventLoopImp::dropWrite( Descriptor fd ) noexcept
+void GNet::EventLoopImp::dropWrite( Descriptor fdd ) noexcept
 {
-	ListItem * item = find( Descriptor(fd) ) ;
+	ListItem * item = find( fdd ) ;
 	if( item && ( item->m_events & EPOLLOUT ) )
 	{
 		unsigned int new_events = item->m_events & ~EPOLLOUT ;
-		fdupdate( fd.fd() , item->m_events , new_events , std::nothrow ) ;
+		fdupdate( m_epoll_fd , fdd.fd() , item->m_events , new_events , std::nothrow ) ;
 		item->m_events = new_events ;
+		item->m_suppress_write = m_suppress_seq ;
 	}
 }
 
@@ -298,43 +319,55 @@ void GNet::EventLoopImp::dropOther( Descriptor ) noexcept
 	// no-op
 }
 
-void GNet::EventLoopImp::drop( Descriptor fd ) noexcept
+void GNet::EventLoopImp::drop( Descriptor fdd ) noexcept
 {
-	ListItem * item = find( fd ) ;
+	ListItem * item = find( fdd ) ;
 	if( item )
 	{
 		if( item->m_events )
-			fdremove( fd.fd() ) ;
+			fdremove( m_epoll_fd , fdd.fd() ) ;
 		item->m_events = 0U ;
-		item->m_read_emitter.reset() ;
-		item->m_write_emitter.reset() ;
+		item->reset() ;
+		item->m_suppress_read = m_suppress_seq ;
+		item->m_suppress_write = m_suppress_seq ;
 	}
 }
 
-void GNet::EventLoopImp::fdupdate( int fd , unsigned int old_events , unsigned int new_events )
+void GNet::EventLoopImp::disarm( ExceptionHandler * eh ) noexcept
+{
+	if( m_es_current.eh() == eh )
+		m_es_current.disarm() ;
+
+	for( auto & list_item : m_list )
+		list_item.disarm( eh ) ;
+}
+
+// --
+
+void GNet::EventLoopImp::fdupdate( int epoll_fd , int fd , unsigned int old_events , unsigned int new_events )
 {
 	if( new_events == 0U )
-		fdremove( fd ) ;
+		fdremove( epoll_fd , fd ) ;
 	else if( old_events == 0U )
-		fdadd( fd , new_events ) ;
+		fdadd( epoll_fd , fd , new_events ) ;
 	else
-		fdmodify( fd , new_events ) ;
+		fdmodify( epoll_fd , fd , new_events ) ;
 }
 
-void GNet::EventLoopImp::fdupdate( int fd , unsigned int /*old_events*/ , unsigned int new_events , std::nothrow_t ) noexcept
+void GNet::EventLoopImp::fdupdate( int epoll_fd , int fd , unsigned int , unsigned int new_events , std::nothrow_t ) noexcept
 {
 	if( new_events == 0U )
-		fdremove( fd ) ;
+		fdremove( epoll_fd , fd ) ;
 	else
-		fdmodify( fd , new_events , std::nothrow ) ;
+		fdmodify( epoll_fd , fd , new_events , std::nothrow ) ;
 }
 
-void GNet::EventLoopImp::fdadd( int fd , unsigned int events )
+void GNet::EventLoopImp::fdadd( int epoll_fd , int fd , unsigned int events )
 {
 	epoll_event event {} ;
 	event.data.fd = fd ;
 	event.events = events ;
-	int rc = epoll_ctl( m_fd , EPOLL_CTL_ADD , fd , &event ) ;
+	int rc = epoll_ctl( epoll_fd , EPOLL_CTL_ADD , fd , &event ) ;
 	if( rc == -1 )
 	{
 		int e = G::Process::errno_() ;
@@ -342,12 +375,12 @@ void GNet::EventLoopImp::fdadd( int fd , unsigned int events )
 	}
 }
 
-void GNet::EventLoopImp::fdmodify( int fd , unsigned int events )
+void GNet::EventLoopImp::fdmodify( int epoll_fd , int fd , unsigned int events )
 {
 	epoll_event event {} ;
 	event.data.fd = fd ;
 	event.events = events ;
-	int rc = epoll_ctl( m_fd , EPOLL_CTL_MOD , fd , &event ) ;
+	int rc = epoll_ctl( epoll_fd , EPOLL_CTL_MOD , fd , &event ) ;
 	if( rc == -1 )
 	{
 		int e = G::Process::errno_() ;
@@ -355,19 +388,19 @@ void GNet::EventLoopImp::fdmodify( int fd , unsigned int events )
 	}
 }
 
-int GNet::EventLoopImp::fdmodify( int fd , unsigned int events , std::nothrow_t ) noexcept
+int GNet::EventLoopImp::fdmodify( int epoll_fd , int fd , unsigned int events , std::nothrow_t ) noexcept
 {
 	epoll_event event {} ;
 	event.data.fd = fd ;
 	event.events = events ;
-	int rc = epoll_ctl( m_fd , EPOLL_CTL_MOD , fd , &event ) ;
+	int rc = epoll_ctl( epoll_fd , EPOLL_CTL_MOD , fd , &event ) ;
 	int e = G::Process::errno_() ;
 	return rc == -1 ? e : 0 ;
 }
 
-void GNet::EventLoopImp::fdremove( int fd ) noexcept
+void GNet::EventLoopImp::fdremove( int epoll_fd , int fd ) noexcept
 {
 	epoll_event event {} ;
-	epoll_ctl( m_fd , EPOLL_CTL_DEL , fd , &event ) ;
+	epoll_ctl( epoll_fd , EPOLL_CTL_DEL , fd , &event ) ;
 }
 

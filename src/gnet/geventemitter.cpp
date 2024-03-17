@@ -24,100 +24,81 @@
 #include "geventloggingcontext.h"
 #include "glog.h"
 #include "gassert.h"
+#include <functional>
 
-GNet::EventEmitter::EventEmitter() noexcept
-= default ;
-
-GNet::EventEmitter::EventEmitter( EventHandler * handler , ExceptionSink es ) noexcept :
-	m_handler(handler) ,
-	m_es(es)
+namespace GNet
 {
+	namespace EventEmitterImp
+	{
+		template <typename T> void raiseEvent( T handler , EventState & es ) ;
+
+		// for cleaner stack traces compared to std::bind ...
+		struct Binder1
+		{
+			using Method = void (GNet::EventHandler::*)() ;
+			Method m_method ;
+			EventHandler * m_handler ;
+			void operator()() { (m_handler->*m_method)() ; }
+		} ;
+		struct Binder2
+		{
+			using Method = void (GNet::EventHandler::*)( EventHandler::Reason ) ;
+			Method m_method ;
+			EventHandler * m_handler ;
+			EventHandler::Reason m_reason ;
+			void operator()() { (m_handler->*m_method)( m_reason ) ; }
+		} ;
+		Binder1 bind( Binder1::Method method , EventHandler * handler ) { return {method,handler} ; }
+		Binder2 bind( Binder2::Method method , EventHandler * handler , EventHandler::Reason reason ) { return {method,handler,reason} ; }
+	}
 }
 
-void GNet::EventEmitter::update( EventHandler * handler , ExceptionSink es ) noexcept
-{
-	m_handler = handler ;
-	m_es = es ;
-}
-
-void GNet::EventEmitter::raiseReadEvent( Descriptor fd )
-{
-	raiseEvent( &EventHandler::readEvent , fd ) ;
-}
-
-void GNet::EventEmitter::raiseWriteEvent( Descriptor fd )
-{
-	raiseEvent( &EventHandler::writeEvent , fd ) ;
-}
-
-void GNet::EventEmitter::raiseOtherEvent( Descriptor fd , EventHandler::Reason reason )
-{
-	raiseEvent( &EventHandler::otherEvent , fd , reason ) ;
-}
-
-void GNet::EventEmitter::raiseEvent( void (EventHandler::*method)() , Descriptor )
+template <typename T>
+void GNet::EventEmitterImp::raiseEvent( T handler , EventState & es )
 {
 	// see also: std::make_exception_ptr, std::rethrow_exception
 
-	EventLoggingContext set_logging_context( m_es.esrc() ) ;
-	m_es_saved = m_es ; // in case the fd gets closed and re-opened when calling the event handler
+	EventLoggingContext set_logging_context( es ) ;
 	try
 	{
-		if( m_handler != nullptr )
-			(m_handler->*method)() ; // EventHandler::readEvent()/writeEvent()
+		handler() ; // eg. EventHandler::readEvent()
 	}
 	catch( GNet::Done & e )
 	{
-		if( m_es_saved.set() )
-			m_es_saved.call( e , true ) ; // ExceptionHandler::onException()
+		if( es.hasExceptionHandler() )
+			es.doOnException( e , true ) ;
 		else
 			throw ;
 	}
 	catch( std::exception & e )
 	{
-		if( m_es_saved.set() )
-			m_es_saved.call( e , false ) ; // ExceptionHandler::onException()
+		if( es.hasExceptionHandler() )
+			es.doOnException( e , false ) ;
 		else
 			throw ;
 	}
 }
 
-void GNet::EventEmitter::raiseEvent( void (EventHandler::*method)(EventHandler::Reason) ,
-	Descriptor , EventHandler::Reason reason )
+// --
+
+void GNet::EventEmitter::raiseReadEvent( EventHandler * handler , EventState & es )
 {
-	EventLoggingContext set_logging_context( m_handler && m_es.set() ? m_es.esrc() : nullptr ) ;
-	m_es_saved = m_es ; // (fd might get closed and reopened with a different exception sink)
-	try
-	{
-		if( m_handler != nullptr )
-			(m_handler->*method)( reason ) ; // EventHandler::otherEvent()
-	}
-	catch( GNet::Done & e )
-	{
-		if( m_es_saved.set() )
-			m_es_saved.call( e , true ) ; // ExceptionHandler::onException()
-		else
-			throw ;
-	}
-	catch( std::exception & e )
-	{
-		if( m_es_saved.set() )
-			m_es_saved.call( e , false ) ; // ExceptionHandler::onException()
-		else
-			throw ;
-	}
+	namespace imp = EventEmitterImp ;
+	if( handler )
+		imp::raiseEvent( imp::bind(&EventHandler::readEvent,handler) , es ) ;
 }
 
-void GNet::EventEmitter::reset() noexcept
+void GNet::EventEmitter::raiseWriteEvent( EventHandler * handler , EventState & es )
 {
-	m_handler = nullptr ;
+	namespace imp = EventEmitterImp ;
+	if( handler )
+		imp::raiseEvent( imp::bind(&EventHandler::writeEvent,handler) , es ) ;
 }
 
-void GNet::EventEmitter::disarm( ExceptionHandler * eh ) noexcept
+void GNet::EventEmitter::raiseOtherEvent( EventHandler * handler , EventState & es , EventHandler::Reason reason )
 {
-	if( m_es.eh() == eh )
-		m_es.reset() ;
-	if( m_es_saved.eh() == eh )
-		m_es_saved.reset() ;
+	namespace imp = EventEmitterImp ;
+	if( handler )
+		imp::raiseEvent( imp::bind(&EventHandler::otherEvent,handler,reason) , es ) ;
 }
 

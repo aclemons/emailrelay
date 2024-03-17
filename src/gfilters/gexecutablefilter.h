@@ -43,7 +43,7 @@ namespace GFilters
 class GFilters::ExecutableFilter : public GSmtp::Filter, private GNet::TaskCallback
 {
 public:
-	ExecutableFilter( GNet::ExceptionSink , GStore::FileStore & , Filter::Type ,
+	ExecutableFilter( GNet::EventState , GStore::FileStore & , Filter::Type ,
 		const Filter::Config & , const std::string & path ) ;
 			///< Constructor.
 

@@ -34,8 +34,7 @@ namespace GNet
 
 //| \class GNet::LineStore
 /// A pair of character buffers, one kept by value and the other being
-/// an ephemeral extension. An iterator class can iterate over the
-/// combined data. Used in the implementation of GNet::LineBuffer
+/// an ephemeral extension. Used in the implementation of GNet::LineBuffer
 /// as a zero-copy optimisation.
 ///
 class GNet::LineStore
@@ -117,8 +116,8 @@ private:
 
 private:
 	std::string m_store ;
-	const char * m_extra_data{nullptr} ;
-	std::size_t m_extra_size{0U} ;
+	const char * m_extra_data {nullptr} ;
+	std::size_t m_extra_size {0U} ;
 } ;
 
 inline

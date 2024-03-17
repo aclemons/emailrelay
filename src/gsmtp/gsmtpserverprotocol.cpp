@@ -254,7 +254,7 @@ bool GSmtp::ServerProtocol::apply( const ApplyArgsTuple & args )
 {
 	G_ASSERT( std::get<2>(args) == 2U || ( inDataState() && std::get<2>(args) == 0U ) ) ; // eolsize 0 or 2
 	G_DEBUG( "GSmtp::ServerProtocol::apply: apply "
-		"[" << G::Str::printable(G::sv_substr(G::string_view(std::get<0>(args),std::get<1>(args)),0U,10U))
+		"[" << G::Str::printable(G::sv_substr_noexcept(std::string_view(std::get<0>(args),std::get<1>(args)),0U,10U))
 		<< (std::get<1>(args)>10U?"...":"") << "] "
 		"state=" << static_cast<int>(m_fsm.state()) << " "
 		"more=" << std::get<5>(args) << " "
@@ -429,7 +429,7 @@ void GSmtp::ServerProtocol::doBdatMoreLastZero( EventData event_data , bool & ok
 	doBdatImp( event_data , ok , false , true , true ) ;
 }
 
-void GSmtp::ServerProtocol::doBdatImp( G::string_view bdat_line , bool & ok , bool first , bool last , bool zero )
+void GSmtp::ServerProtocol::doBdatImp( std::string_view bdat_line , bool & ok , bool first , bool last , bool zero )
 {
 	G_ASSERT( !zero || last ) ;
 	if( first )
@@ -580,12 +580,6 @@ void GSmtp::ServerProtocol::doNoop( EventData , bool & )
 {
 	sendOk( "noop" ) ;
 }
-
-#ifndef G_LIB_SMALL
-void GSmtp::ServerProtocol::doNothing( EventData , bool & )
-{
-}
-#endif
 
 void GSmtp::ServerProtocol::doExpn( EventData , bool & )
 {
@@ -814,7 +808,7 @@ void GSmtp::ServerProtocol::doAuthData( EventData event_data , bool & predicate 
 
 void GSmtp::ServerProtocol::doMail( EventData event_data , bool & predicate )
 {
-	G::string_view mail_line = event_data ;
+	std::string_view mail_line = event_data ;
 	m_pm.clear() ;
 	if( !m_enabled )
 	{
@@ -869,7 +863,7 @@ void GSmtp::ServerProtocol::doMail( EventData event_data , bool & predicate )
 
 void GSmtp::ServerProtocol::doRcpt( EventData event_data , bool & predicate )
 {
-	G::string_view rcpt_line = event_data ;
+	std::string_view rcpt_line = event_data ;
 	auto rcpt_command = parseRcptTo( rcpt_line ) ;
 	if( !rcpt_command.error.empty() )
 	{
@@ -965,10 +959,10 @@ bool GSmtp::ServerProtocol::isEscaped( const ApplyArgsTuple & args ) const
 	return size > 1U && size == linesize && c0 == '.' ;
 }
 
-GSmtp::ServerProtocol::Event GSmtp::ServerProtocol::commandEvent( G::string_view line ) const
+GSmtp::ServerProtocol::Event GSmtp::ServerProtocol::commandEvent( std::string_view line ) const
 {
 	G::StringTokenView t( line , " \t"_sv ) ;
-	G::string_view word = t() ;
+	std::string_view word = t() ;
 	if( G::Str::imatch(word,"QUIT"_sv) ) return Event::Quit ;
 	if( G::Str::imatch(word,"HELO"_sv) ) return Event::Helo ;
 	if( G::Str::imatch(word,"EHLO"_sv) ) return Event::Ehlo ;
@@ -986,7 +980,7 @@ GSmtp::ServerProtocol::Event GSmtp::ServerProtocol::commandEvent( G::string_view
 	return Event::Unknown ;
 }
 
-GSmtp::ServerProtocol::Event GSmtp::ServerProtocol::dataEvent( G::string_view ) const
+GSmtp::ServerProtocol::Event GSmtp::ServerProtocol::dataEvent( std::string_view ) const
 {
 	// RFC-3030 p6 ("BINARYMIME cannot be used with the DATA command...")
 	if( G::Str::imatch( m_pm.bodyType() , "BINARYMIME" ) )
@@ -995,7 +989,7 @@ GSmtp::ServerProtocol::Event GSmtp::ServerProtocol::dataEvent( G::string_view ) 
 	return Event::Data ;
 }
 
-GSmtp::ServerProtocol::Event GSmtp::ServerProtocol::bdatEvent( G::string_view line ) const
+GSmtp::ServerProtocol::Event GSmtp::ServerProtocol::bdatEvent( std::string_view line ) const
 {
 	bool last = parseBdatLast(line).second ? parseBdatLast(line).first : false ;
 	std::size_t size = parseBdatSize(line).second ? parseBdatSize(line).first : 0L ;

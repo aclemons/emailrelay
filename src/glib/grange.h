@@ -30,7 +30,7 @@ namespace G
 {
 	namespace Range /// Utility functions for pair-of-integer ranges.
 	{
-		inline std::pair<int,int> range( string_view spec_part )
+		inline std::pair<int,int> range( std::string_view spec_part )
 		{
 			if( spec_part.empty() )
 			{
@@ -61,7 +61,7 @@ namespace G
 		{
 			return n >= 0 && n >= range.first && ( range.second < 0 || n <= range.second ) ;
 		}
-		inline void check( string_view spec )
+		inline void check( std::string_view spec )
 		{
     		if( !spec.empty() )
     		{

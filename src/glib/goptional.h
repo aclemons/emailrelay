@@ -22,12 +22,24 @@
 #define G_OPTIONAL_H
 
 #include "gdef.h"
+
+#if GCONFIG_HAVE_CXX_OPTIONAL
+
+#include <optional>
+
+#else
+
 #include <utility>
 #include <stdexcept>
 
 namespace G
 {
 	template <typename T> class optional ;
+}
+
+namespace std /// NOLINT
+{
+	using G::optional ;
 }
 
 //| \class G::optional
@@ -43,11 +55,8 @@ public:
 	explicit optional( const T & ) ;
 		///< Constructor for a defined value.
 
-	optional( bool has_value , const T & value ) ;
-		///< Constructor. Not in std::optional.
-
-	void clear() ;
-		///< Clears the value. Not in std::optional.
+	void reset() ;
+		///< Clears the value.
 
 	bool has_value() const noexcept ;
 		///< Returns true if a defined value.
@@ -91,14 +100,7 @@ G::optional<T>::optional( const T & t ) :
 }
 
 template <typename T>
-G::optional<T>::optional( bool has_value , const T & value ) :
-	m_value(value) ,
-	m_has_value(has_value)
-{
-}
-
-template <typename T>
-void G::optional<T>::clear()
+void G::optional<T>::reset()
 {
 	m_has_value = false ;
 }
@@ -141,5 +143,7 @@ G::optional<T> & G::optional<T>::operator=( const T & t )
 	m_has_value = true ;
 	return *this ;
 }
+
+#endif
 
 #endif

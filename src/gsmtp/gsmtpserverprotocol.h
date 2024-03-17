@@ -39,6 +39,7 @@
 #include "glimits.h"
 #include <utility>
 #include <memory>
+#include <tuple>
 
 namespace GSmtp
 {
@@ -270,7 +271,7 @@ private:
 		s_Any ,
 		s_Same
 	} ;
-	using EventData = G::string_view ;
+	using EventData = std::string_view ;
 	using Fsm = G::StateMachine<ServerProtocol,State,Event,EventData> ;
 
 private: // overrides
@@ -291,9 +292,9 @@ private:
 	static int code( EventData ) ;
 	static std::string str( EventData ) ;
 	void applyEvent( Event , EventData = {} ) ;
-	Event commandEvent( G::string_view ) const ;
-	Event dataEvent( G::string_view ) const ;
-	Event bdatEvent( G::string_view ) const ;
+	Event commandEvent( std::string_view ) const ;
+	Event dataEvent( std::string_view ) const ;
+	Event bdatEvent( std::string_view ) const ;
 	G::StringArray mechanisms() const ;
 	G::StringArray mechanisms( bool ) const ;
 	void clear() ;
@@ -307,7 +308,6 @@ private:
 	bool isEscaped( const ApplyArgsTuple & ) const ;
 	void doNoop( EventData , bool & ) ;
 	void doIgnore( EventData , bool & ) ;
-	void doNothing( EventData , bool & ) ;
 	void doHelp( EventData , bool & ) ;
 	void doExpn( EventData , bool & ) ;
 	void doQuit( EventData , bool & ) ;
@@ -330,7 +330,7 @@ private:
 	void doBdatMore( EventData , bool & ) ;
 	void doBdatMoreLast( EventData , bool & ) ;
 	void doBdatMoreLastZero( EventData , bool & ) ;
-	void doBdatImp( G::string_view , bool & , bool , bool , bool ) ;
+	void doBdatImp( std::string_view , bool & , bool , bool , bool ) ;
 	void doBdatContent( EventData , bool & ) ;
 	void doBdatContentLast( EventData , bool & ) ;
 	void doBdatCheck( EventData , bool & ) ;

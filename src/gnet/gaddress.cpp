@@ -90,7 +90,7 @@ GNet::Address::Address( const AddressStorage & storage ) :
 {
 }
 
-GNet::Address::Address( const std::string & s , bool with_local )
+GNet::Address::Address( std::string_view s , bool with_local )
 {
 	if( s.empty() )
 		throw Address::Error( "empty string" ) ;
@@ -107,7 +107,7 @@ GNet::Address::Address( const std::string & s , bool with_local )
 		throw Address::Error( r1 , r1==r2?std::string():r2 , G::Str::printable(s) ) ;
 }
 
-GNet::Address::Address( const std::string & host_part , const std::string & port_part )
+GNet::Address::Address( std::string_view host_part , std::string_view port_part )
 {
 	if( host_part.empty() )
 		throw Address::Error( "empty string" ) ;
@@ -124,7 +124,7 @@ GNet::Address::Address( const std::string & host_part , const std::string & port
 		throw Address::Error( r1 , r1==r2?std::string():r2 , G::Str::printable(host_part) , G::Str::printable(port_part) ) ;
 }
 
-GNet::Address::Address( const std::string & host_part , unsigned int port ) :
+GNet::Address::Address( std::string_view host_part , unsigned int port ) :
 	Address(host_part,G::Str::fromUInt(port))
 {
 }
@@ -175,27 +175,27 @@ GNet::Address & GNet::Address::operator=( const Address & other )
 GNet::Address & GNet::Address::operator=( Address && other ) noexcept
 = default ;
 
-GNet::Address GNet::Address::parse( const std::string & s )
+GNet::Address GNet::Address::parse( std::string_view s )
 {
 	return { s , true } ;
 }
 
-GNet::Address GNet::Address::parse( const std::string & s , Address::NotLocal )
+GNet::Address GNet::Address::parse( std::string_view s , Address::NotLocal )
 {
 	return { s , false } ;
 }
 
-GNet::Address GNet::Address::parse( const std::string & host_part , unsigned int port )
+GNet::Address GNet::Address::parse( std::string_view host_part , unsigned int port )
 {
 	return { host_part , port } ;
 }
 
-GNet::Address GNet::Address::parse( const std::string & host_part , const std::string & port_part )
+GNet::Address GNet::Address::parse( std::string_view host_part , std::string_view port_part )
 {
 	return { host_part , port_part } ;
 }
 
-bool GNet::Address::isFamilyLocal( const std::string & s ) noexcept
+bool GNet::Address::isFamilyLocal( std::string_view s ) noexcept
 {
 	return supports( Family::local ) && !s.empty() && s[0] == '/' ;
 }
@@ -224,7 +224,6 @@ GNet::Address & GNet::Address::setPort( unsigned int port )
 	return *this ;
 }
 
-#ifndef G_LIB_SMALL
 bool GNet::Address::setZone( const std::string & ipv6_zone )
 {
 	G_ASSERT( m_ipv4 || m_ipv6 || m_local ) ;
@@ -233,7 +232,6 @@ bool GNet::Address::setZone( const std::string & ipv6_zone )
 	if( m_local ) m_local->setZone( ipv6_zone ) ;
 	return true ;
 }
-#endif
 
 GNet::Address & GNet::Address::setScopeId( unsigned long ipv6_scope_id )
 {
@@ -280,7 +278,6 @@ bool GNet::Address::isLinkLocal() const
 		( m_local && m_local->isLinkLocal() ) ;
 }
 
-#ifndef G_LIB_SMALL
 bool GNet::Address::isMulticast() const
 {
 	G_ASSERT( m_ipv4 || m_ipv6 || m_local ) ;
@@ -289,7 +286,6 @@ bool GNet::Address::isMulticast() const
 		( m_ipv6 && m_ipv6->isMulticast() ) ||
 		( m_local && m_local->isMulticast() ) ;
 }
-#endif
 
 bool GNet::Address::isUniqueLocal() const
 {
@@ -342,7 +338,6 @@ bool GNet::Address::operator!=( const Address & other ) const
 	return !( *this == other ) ;
 }
 
-#ifndef G_LIB_SMALL
 bool GNet::Address::sameHostPart( const Address & other ) const
 {
 	G_ASSERT( m_ipv4 || m_ipv6 || m_local ) ;
@@ -351,7 +346,6 @@ bool GNet::Address::sameHostPart( const Address & other ) const
 		( m_ipv6 && other.m_ipv6 && m_ipv6->sameHostPart(*other.m_ipv6) ) ||
 		( m_local && other.m_local && m_local->sameHostPart(*other.m_local) ) ;
 }
-#endif
 
 std::string GNet::Address::displayString( bool ipv6_with_scope_id ) const
 {
@@ -380,7 +374,7 @@ std::string GNet::Address::queryString() const
 	return {} ;
 }
 
-bool GNet::Address::validString( const std::string & s , std::string * reason_p )
+bool GNet::Address::validString( std::string_view s , std::string * reason_p )
 {
 	return
 		Address4::validString( s , reason_p ) ||
@@ -388,14 +382,14 @@ bool GNet::Address::validString( const std::string & s , std::string * reason_p 
 		AddressLocal::validString( s , reason_p ) ;
 }
 
-bool GNet::Address::validString( const std::string & s , NotLocal , std::string * reason_p )
+bool GNet::Address::validString( std::string_view s , NotLocal , std::string * reason_p )
 {
 	return
 		Address4::validString( s , reason_p ) ||
 		Address6::validString( s , reason_p ) ;
 }
 
-bool GNet::Address::validStrings( const std::string & s1 , const std::string & s2 , std::string * reason_p )
+bool GNet::Address::validStrings( std::string_view s1 , std::string_view s2 , std::string * reason_p )
 {
 	return
 		Address4::validStrings( s1 , s2 , reason_p ) ||
@@ -403,7 +397,6 @@ bool GNet::Address::validStrings( const std::string & s1 , const std::string & s
 		AddressLocal::validStrings( s1 , s2 , reason_p ) ;
 }
 
-#ifndef G_LIB_SMALL
 sockaddr * GNet::Address::address()
 {
 	G_ASSERT( m_ipv4 || m_ipv6 || m_local ) ;
@@ -412,7 +405,6 @@ sockaddr * GNet::Address::address()
 	if( m_local ) return m_local->address() ;
 	return nullptr ;
 }
-#endif
 
 const sockaddr * GNet::Address::address() const
 {
@@ -551,7 +543,6 @@ socklen_t GNet::AddressStorage::n() const
 
 #if ! GCONFIG_HAVE_INET_PTON
 // fallback implementation for inet_pton() using getaddrinfo() -- see gdef.h
-#ifndef G_LIB_SMALL
 int GNet::inet_pton_imp( int f , const char * p , void * result )
 {
 	if( p == nullptr || result == nullptr ) return 0 ; // just in case
@@ -587,11 +578,9 @@ int GNet::inet_pton_imp( int f , const char * p , void * result )
 	return ok ? 1 : 0 ;
 }
 #endif
-#endif
 
 #if ! GCONFIG_HAVE_INET_NTOP
 // fallback implementation for inet_ntop() using inet_ntoa() for ipv4 and by hand for ipv6 -- see gdef.h
-#ifndef G_LIB_SMALL
 const char * GNet::inet_ntop_imp( int f , void * ap , char * buffer , std::size_t n )
 {
 	std::string s ;
@@ -653,6 +642,5 @@ const char * GNet::inet_ntop_imp( int f , void * ap , char * buffer , std::size_
 	std::strncpy( buffer , s.c_str() , n ) ;
 	return buffer ;
 }
-#endif
 #endif
 

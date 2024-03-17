@@ -347,7 +347,7 @@
 # Name: client-auth
 # Format: client-auth <file>
 # Description: Enables SMTP client authentication with the remote server,
-# using the client account details taken from the specified secrets file. The
+# using the account details taken from the specified secrets file. The
 # secrets file should normally contain one line having between four and five
 # space-separated fields. The first field must be "client", the second field
 # is the password type ("plain" or "md5"), the third is the xtext-encoded
@@ -621,7 +621,7 @@
 # Name: log-address
 # Format: log-address
 # Description: Adds the network address of remote clients to the logging
-# output.
+# output. Equivalent to ""--log-format=address"".
 #
 #log-address
 
@@ -634,10 +634,18 @@
 #
 #log-file /var/log/emailrelay-%d
 
+# Name: log-format
+# Format: log-format
+# Description: Adds one or more fields to the logging output. The field names
+# can include "time", "unit", "address", "port", "msgid". The ordering is not
+# significant.
+#
+#log-format time,address
+
 # Name: log-time
 # Format: log-time
 # Description: Adds a timestamp to the logging output using the local
-# timezone.
+# timezone. Equivalent to ""--log-format=time"".
 #
 #log-time
 

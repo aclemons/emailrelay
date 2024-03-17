@@ -418,8 +418,8 @@ G::Options Main::Options::spec( bool is_windows )
 				//example: C:/ProgramData/E-MailRelay/emailrelay.auth
 				//example: plain:bWU:c2VjcmV0
 				// Enables SMTP client authentication with the remote server, using the
-				// client account details taken from the specified secrets file.
-				// The secrets file should normally contain one line having between four
+				// account details taken from the specified secrets file. The
+				// secrets file should normally contain one line having between four
 				// and five space-separated fields. The first field must be "client",
 				// the second field is the password type ("plain" or "md5"), the
 				// third is the xtext-encoded user-id and the fourth is the xtext-encoded
@@ -452,12 +452,23 @@ G::Options Main::Options::spec( bool is_windows )
 			M::zero , "" , 30 ,
 			t_logging ) ;
 				// Adds a timestamp to the logging output using the local timezone.
+				// Equivalent to "--log-format=time".
 
 		G::Options::add( opt , '\0' , "log-address" ,
 			tx("adds the network address of remote clients to the logging output") , "" ,
 			M::zero , "" , 30 ,
 			t_logging ) ;
 				// Adds the network address of remote clients to the logging output.
+				// Equivalent to "--log-format=address".
+
+		G::Options::add( opt , '\0' , "log-format" ,
+			tx("adds additional items to the logging output") , "" ,
+			M::many , "" , 30 ,
+			t_logging ) ;
+				//example: time,address
+				// Adds one or more fields to the logging output. The field names
+				// can include "time", "unit", "address", "port", "msgid". The
+				// ordering is not significant.
 
 		G::Options::add( opt , 'N' , "log-file" ,
 			tx("log to file instead of stderr! "

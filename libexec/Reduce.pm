@@ -26,7 +26,7 @@
 # Synposis:
 #   use Reduce ;
 #   my $reduce = new Reduce( ['make foo','make bar'] , {quiet=>1,debug=>1} ) ;
-#   $reduce->check( "foo.cpp" ) ;
+#   $reduce->check( "foo.cpp" ) if $reduce->safe( "foo.cpp" ) ;
 #   $reduce->check( "bar.cpp" ) ;
 #   $reduce->emit( new FileHandle("reduce.dat","w") ) ;
 #   #later...
@@ -97,11 +97,27 @@ sub read
 	return $this ;
 }
 
+sub safe
+{
+	# Returns true if the source file looks like it can be safely reduced.
+
+	my ( $this , $file ) = @_ ;
+
+	return 1 ;
+
+	# this is too picky...
+	#my $fh = new FileHandle( $file , "r" ) or die ;
+	#my $contents = eval { local $/ = undef ; <$fh> } ;
+	#my $unsafe = ( $contents =~ m/#if/m ) ;
+	#$this->_log( "reduce: cannot reduce [$file] safely" ) if $unsafe ;
+	#return !$unsafe ;
+}
+
 sub check
 {
-	# Checks the source file for unused functions and accumulates the results
-	# for emit(). Optionally keeps the edits so that emit() and edit() are
-	# not needed.
+	# Checks a source file for unused functions and accumulates the results
+	# for emit(). Optionally keeps the file edits so that emit() and edit()
+	# are not needed.
 	my ( $this , $file_in , $keep_edits ) = @_ ;
 
 	my $basename = File::Basename::basename( $file_in ) ;

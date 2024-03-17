@@ -23,7 +23,7 @@
 #include "glog.h"
 #include "gassert.h"
 
-GSmtp::ServerBufferIn::ServerBufferIn( GNet::ExceptionSink es , ServerProtocol & protocol ,
+GSmtp::ServerBufferIn::ServerBufferIn( GNet::EventState es , ServerProtocol & protocol ,
 	const Config & config ) :
 		m_protocol(protocol) ,
 		m_config(config) ,

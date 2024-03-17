@@ -58,17 +58,6 @@ class G::PidFile
 public:
 	G_EXCEPTION( Error , tx("invalid pid file") ) ;
 
-	static bool cleanup( SignalSafe , const char * path ) noexcept ;
-		///< Deletes the specified pid file if it contains this
-		///< process's id. Claims root privilege to read and
-		///< delete the pid file (see G::Root::atExit()).
-		///<
-		///< This is not normally needed by client code since it
-		///< is installed as a signal handler (see G::Cleanup)
-		///< and called from the destructor.
-		///<
-		///< Signal-safe, reentrant implementation.
-
 	explicit PidFile( const Path & pid_file_path ) ;
 		///< Constructor. A relative path is converted to
 		///< an absolute path using the cwd. Use commit()
@@ -79,7 +68,7 @@ public:
 		///< object.
 
 	~PidFile() ;
-		///< Destructor. Calls cleanup() to delete the file.
+		///< Destructor. Deletes the file.
 
 	void mkdir() ;
 		///< Creates the directory if it does not already exist.
@@ -89,9 +78,8 @@ public:
 
 	void commit() ;
 		///< Creates the pid file if a path has been defined.
-		///< Also installs signal handlers to cleanup() the
-		///< file on abnormal process termination. Throws
-		///< on error.
+		///< Also installs signal handlers to cleanup the file on
+		///< abnormal process termination. Throws on error.
 		///<
 		///< The caller should switch effective user-id and
 		///< umask as necessary.
@@ -111,12 +99,11 @@ public:
 
 private:
 	static void create( const Path & pid_file ) ;
-	static Process::Id read( SignalSafe , const char * path ) noexcept ;
 	bool valid() const ;
 
 private:
 	Path m_path ;
-	bool m_committed{false} ;
+	bool m_committed {false} ;
 } ;
 
 #endif

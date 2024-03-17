@@ -34,7 +34,7 @@
 #include <sstream>
 #include <cstdlib>
 
-GNet::Client::Client( ExceptionSink es , const Location & remote , const Config & config ) :
+GNet::Client::Client( EventState es , const Location & remote , const Config & config ) :
 	m_es(es) ,
 	m_config(config) ,
 	m_line_buffer(config.line_buffer_config) ,
@@ -487,7 +487,7 @@ bool GNet::Client::send( const std::string & data )
 	return m_sp->send( data , 0U ) ;
 }
 
-bool GNet::Client::send( G::string_view data )
+bool GNet::Client::send( std::string_view data )
 {
 	if( m_config.response_timeout )
 		m_response_timer.startTimer( m_config.response_timeout ) ;
@@ -495,10 +495,10 @@ bool GNet::Client::send( G::string_view data )
 }
 
 #ifndef G_LIB_SMALL
-bool GNet::Client::send( const std::vector<G::string_view> & data , std::size_t offset )
+bool GNet::Client::send( const std::vector<std::string_view> & data , std::size_t offset )
 {
     std::size_t total_size = std::accumulate( data.begin() , data.end() , std::size_t(0) ,
-        [](std::size_t n,G::string_view s){return n+s.size();} ) ;
+        [](std::size_t n,std::string_view s){return n+s.size();} ) ;
 	if( m_config.response_timeout && offset < total_size )
 		m_response_timer.startTimer( m_config.response_timeout ) ;
 	return m_sp->send( data , offset ) ;

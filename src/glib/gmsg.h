@@ -49,7 +49,7 @@ public:
 		int fd_to_send ) ;
 			///< A sendmsg() wrapper. Not always implemented.
 
-	static ssize_t sendto( SOCKET , const std::vector<string_view> & , int flags , const sockaddr * , socklen_t ) ;
+	static ssize_t sendto( SOCKET , const std::vector<std::string_view> & , int flags , const sockaddr * , socklen_t ) ;
 		///< A sendto() wrapper with scatter-gather data chunks. Not always implemented.
 
 	static ssize_t recv( SOCKET , void * , std::size_t , int flags ) noexcept ;

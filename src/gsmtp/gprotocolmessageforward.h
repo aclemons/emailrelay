@@ -55,7 +55,7 @@ namespace GSmtp
 class GSmtp::ProtocolMessageForward : public ProtocolMessage
 {
 public:
-	ProtocolMessageForward( GNet::ExceptionSink ,
+	ProtocolMessageForward( GNet::EventState ,
 		GStore::MessageStore & store , FilterFactoryBase & ,
 		std::unique_ptr<ProtocolMessage> pm ,
 		const GSmtp::Client::Config & client_config ,
@@ -94,7 +94,7 @@ private:
 	std::string forward( const GStore::MessageId & , bool & ) ;
 
 private:
-	GNet::ExceptionSink m_es ;
+	GNet::EventState m_es ;
 	GStore::MessageStore & m_store ;
 	FilterFactoryBase & m_ff ;
 	G::CallStack m_call_stack ;

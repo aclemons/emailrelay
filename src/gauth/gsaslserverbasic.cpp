@@ -68,12 +68,12 @@ private:
 	bool m_authenticated {false} ;
 	std::string m_id ;
 	std::string m_trustee ;
-	static G::string_view login_challenge_1 ;
-	static G::string_view login_challenge_2 ;
+	static std::string_view login_challenge_1 ;
+	static std::string_view login_challenge_2 ;
 } ;
 
-G::string_view GAuth::SaslServerBasicImp::login_challenge_1 {"Username:",9U} ;
-G::string_view GAuth::SaslServerBasicImp::login_challenge_2 {"Password:",9U} ;
+std::string_view GAuth::SaslServerBasicImp::login_challenge_1 {"Username:",9U} ;
+std::string_view GAuth::SaslServerBasicImp::login_challenge_2 {"Password:",9U} ;
 
 // ===
 
@@ -136,8 +136,8 @@ GAuth::SaslServerBasicImp::SaslServerBasicImp( const SaslServerSecrets & secrets
 	std::string x = G::StringList::headMatchResidue( config_list , "X:" ) ;
 	std::string a = G::StringList::headMatchResidue( config_list , "A:" ) ;
 	std::string d = G::StringList::headMatchResidue( config_list , "D:" ) ;
-	G::optional<std::string> m_( have_m , m ) ;
-	G::optional<std::string> a_( have_a , a ) ;
+	auto m_ = have_m ? std::optional<std::string>(m) : std::optional<std::string>() ;
+	auto a_ = have_a ? std::optional<std::string>(a) : std::optional<std::string>() ;
 	if( have_a || have_d )
 	{
 		G::StringList::Filter(m_mechanisms_insecure).allow(m_).deny(x) ;
@@ -267,10 +267,10 @@ std::string GAuth::SaslServerBasicImp::apply( const std::string & response , boo
 	else if( m_mechanism == "PLAIN" )
 	{
 		// PLAIN has a single response containing three nul-separated fields
-		G::string_view sep( "\0" , 1U ) ;
-		G::string_view id_pwd_in = G::Str::tailView( response , sep ) ;
+		std::string_view sep( "\0" , 1U ) ;
+		std::string_view id_pwd_in = G::Str::tailView( response , sep ) ;
 		id = G::Str::head( id_pwd_in , sep ) ;
-		G::string_view pwd_in = G::Str::tailView( id_pwd_in , sep ) ;
+		std::string_view pwd_in = G::Str::tailView( id_pwd_in , sep ) ;
 		secret = m_secrets.serverSecret( "plain"_sv , id ) ;
 
 		m_authenticated = secret.valid() && !id.empty() && !pwd_in.empty() && pwd_in == secret.secret() ;

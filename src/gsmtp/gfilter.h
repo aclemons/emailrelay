@@ -117,7 +117,7 @@ public:
 		///< Returns a diagnostic string for logging, including the
 		///< filter result.
 
-	static G::string_view strtype( Type type ) noexcept ;
+	static std::string_view strtype( Type type ) noexcept ;
 		///< Returns a type string for logging: "filter",
 		///< "client-filter" or "routing-filter".
 

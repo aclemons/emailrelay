@@ -41,9 +41,10 @@ namespace G
 		G_EXCEPTION_CLASS( DevNullError , tx("cannot open /dev/null") ) ;
 		G_EXCEPTION_CLASS( IdentityError , tx("cannot change process identity") ) ;
 		void noCloseOnExec( int fd ) noexcept ;
-		void reopen( int fd , int mode ) ;
+		enum class Mode { read_only , write_only } ;
+		void reopen( int fd , Mode mode ) ;
 		mode_t umaskValue( G::Process::Umask::Mode mode ) ;
-		bool readlink_( string_view path , std::string & value ) ;
+		bool readlink_( std::string_view path , std::string & value ) ;
 		bool setRealUser( Identity id , std::nothrow_t ) noexcept ;
 		bool setRealGroup( Identity id , std::nothrow_t ) noexcept ;
 		void setEffectiveUser( Identity id ) ;
@@ -83,7 +84,7 @@ bool G::Process::cd( const Path & dir , std::nothrow_t )
 
 void G::Process::closeStderr()
 {
-	ProcessImp::reopen( STDERR_FILENO , O_WRONLY ) ;
+	ProcessImp::reopen( STDERR_FILENO , ProcessImp::Mode::write_only ) ;
 }
 
 void G::Process::closeFiles( bool keep_stderr )
@@ -91,10 +92,10 @@ void G::Process::closeFiles( bool keep_stderr )
 	std::cout << std::flush ;
 	std::cerr << std::flush ;
 
-	ProcessImp::reopen( STDIN_FILENO , O_RDONLY ) ;
-	ProcessImp::reopen( STDOUT_FILENO , O_WRONLY ) ;
+	ProcessImp::reopen( STDIN_FILENO , ProcessImp::Mode::read_only ) ;
+	ProcessImp::reopen( STDOUT_FILENO , ProcessImp::Mode::write_only ) ;
 	if( !keep_stderr )
-		ProcessImp::reopen( STDERR_FILENO , O_WRONLY ) ;
+		ProcessImp::reopen( STDERR_FILENO , ProcessImp::Mode::write_only ) ;
 
 	closeOtherFiles() ;
 }
@@ -180,19 +181,15 @@ void G::Process::beOrdinaryForExec( Identity run_as_id ) noexcept
 	ProcessImp::beOrdinaryForExec( run_as_id ) ;
 }
 
-#ifndef G_LIB_SMALL
 void G::Process::setEffectiveUser( Identity id )
 {
 	G::ProcessImp::setEffectiveUser( id ) ;
 }
-#endif
 
-#ifndef G_LIB_SMALL
 void G::Process::setEffectiveGroup( Identity id )
 {
 	G::ProcessImp::setEffectiveGroup( id ) ;
 }
-#endif
 
 std::string G::Process::cwd( bool no_throw )
 {
@@ -264,12 +261,10 @@ std::string G::Process::Id::str() const
 	return ss.str() ;
 }
 
-#ifndef G_LIB_SMALL
 bool G::Process::Id::operator==( const Id & other ) const noexcept
 {
 	return m_pid == other.m_pid ;
 }
-#endif
 
 bool G::Process::Id::operator!=( const Id & other ) const noexcept
 {
@@ -321,19 +316,15 @@ void G::Process::Umask::set( Mode mode )
 	UmaskImp::set( mode ) ;
 }
 
-#ifndef G_LIB_SMALL
 void G::Process::Umask::tightenOther()
 {
 	set( Mode::TightenOther ) ;
 }
-#endif
 
-#ifndef G_LIB_SMALL
 void G::Process::Umask::loosenGroup()
 {
 	set( Mode::LoosenGroup ) ;
 }
-#endif
 
 // ==
 
@@ -342,15 +333,15 @@ void G::ProcessImp::noCloseOnExec( int fd ) noexcept
 	::fcntl( fd , F_SETFD , 0 ) ;
 }
 
-void G::ProcessImp::reopen( int fd , int mode )
+void G::ProcessImp::reopen( int fd , Mode mode_in )
 {
-	int fd_null = ::open( Path::nullDevice().cstr() , mode ) ; // NOLINT
+	auto mode = mode_in == Mode::read_only ? File::InOutAppend::In : File::InOutAppend::OutNoCreate ;
+	int fd_null = File::open( Path::nullDevice() , mode ) ;
 	if( fd_null < 0 ) throw DevNullError() ;
 	::dup2( fd_null , fd ) ;
 	::close( fd_null ) ;
 }
 
-#ifndef G_LIB_SMALL
 mode_t G::ProcessImp::umaskValue( Process::Umask::Mode mode )
 {
 	mode_t m = 0 ;
@@ -360,9 +351,8 @@ mode_t G::ProcessImp::umaskValue( Process::Umask::Mode mode )
 	if( mode == Process::Umask::Mode::GroupOpen ) m = 0113 ;// -rw-rw-r--
 	return m ;
 }
-#endif
 
-bool G::ProcessImp::readlink_( string_view path , std::string & value )
+bool G::ProcessImp::readlink_( std::string_view path , std::string & value )
 {
 	Path target = File::readlink( Path(path) , std::nothrow ) ;
 	if( !target.empty() ) value = target.str() ;

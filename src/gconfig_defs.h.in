@@ -18,6 +18,9 @@
 /* Define true if compiler has std::make_unique */
 #undef GCONFIG_HAVE_CXX_MAKE_UNIQUE
 
+/* Define true if compiler supports c++ optional */
+#undef GCONFIG_HAVE_CXX_OPTIONAL
+
 /* Define true if compiler has std::thread */
 #undef GCONFIG_HAVE_CXX_STD_THREAD
 
@@ -104,9 +107,6 @@
 
 /* Define true if inttypes.h is available */
 #undef GCONFIG_HAVE_INTTYPES_H
-
-/* Define true if struct iovec has a simple layout */
-#undef GCONFIG_HAVE_IOVEC_SIMPLE
 
 /* Define true if ipv6 is available */
 #undef GCONFIG_HAVE_IPV6

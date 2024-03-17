@@ -67,7 +67,7 @@ public:
 	explicit MapFile( const StringMap & map ) ;
 		///< Constructor that initialises from a string map.
 
-	explicit MapFile( const OptionMap & map , string_view yes = {} ) ;
+	explicit MapFile( const OptionMap & map , std::string_view yes = {} ) ;
 		///< Constructor that initialises from an option value map,
 		///< typically parsed out from a command-line. Unvalued 'on'
 		///< options in the option value map are loaded into this
@@ -76,7 +76,7 @@ public:
 		///< Multi-valued options are loaded as a comma-separated
 		///< list.
 
-	explicit MapFile( const Path & , string_view kind = {} ) ;
+	explicit MapFile( const Path & , std::string_view kind = {} ) ;
 		///< Constructor that reads from a file. Lines can have a key
 		///< and no value (see booleanValue()). Comments must be at
 		///< the start of the line. Values are left and right-trimmed,
@@ -90,20 +90,20 @@ public:
 	const StringArray & keys() const ;
 		///< Returns a reference to the internal ordered list of keys.
 
-	static void check( const Path & , string_view kind = {} ) ;
+	static void check( const Path & , std::string_view kind = {} ) ;
 		///< Throws if the file is invalid. This is equivalent to
 		///< constructing a temporary MapFile object, but it
 		///< specifically does not do any logging.
 
-	void add( string_view key , string_view value , bool clear = false ) ;
+	void add( std::string_view key , std::string_view value , bool clear = false ) ;
 		///< Adds or updates a single item in the map.
 		///< If updating then by default the new value
 		///< is appended with a comma separator.
 
-	void writeItem( std::ostream & , string_view key ) const ;
+	void writeItem( std::ostream & , std::string_view key ) const ;
 		///< Writes a single item from this map to the stream.
 
-	static void writeItem( std::ostream & , string_view key , string_view value ) ;
+	static void writeItem( std::ostream & , std::string_view key , std::string_view value ) ;
 		///< Writes an arbitrary item to the stream.
 
 	void editInto( const Path & path , bool make_backup ,
@@ -111,29 +111,29 @@ public:
 			///< Edits an existing file so that its contents
 			///< reflect this map.
 
-	bool contains( string_view key ) const ;
+	bool contains( std::string_view key ) const ;
 		///< Returns true if the map contains the given key.
 
-	Path pathValue( string_view key ) const ;
+	Path pathValue( std::string_view key ) const ;
 		///< Returns a mandatory path value from the map.
 		///< Throws if it does not exist.
 
-	Path pathValue( string_view key , const Path & default_ ) const ;
+	Path pathValue( std::string_view key , const Path & default_ ) const ;
 		///< Returns a path value from the map.
 
-	unsigned int numericValue( string_view key , unsigned int default_ ) const ;
+	unsigned int numericValue( std::string_view key , unsigned int default_ ) const ;
 		///< Returns a numeric value from the map.
 
-	std::string value( string_view key , string_view default_ = {} ) const ;
+	std::string value( std::string_view key , std::string_view default_ = {} ) const ;
 		///< Returns a string value from the map. Returns the default
 		///< if there is no such key or if the value is empty.
 
-	bool booleanValue( string_view key , bool default_ ) const ;
+	bool booleanValue( std::string_view key , bool default_ ) const ;
 		///< Returns a boolean value from the map. Returns true if
 		///< the key exists with an empty value. Returns the default
 		///< if no such key.
 
-	void remove( string_view key ) ;
+	void remove( std::string_view key ) ;
 		///< Removes a value (if it exists).
 
 	const StringMap & map() const ;
@@ -142,7 +142,7 @@ public:
 	void log( const std::string & prefix = {} ) const ;
 		///< Logs the contents.
 
-	std::string expand( string_view value ) const ;
+	std::string expand( std::string_view value ) const ;
 		///< Does one-pass variable substitution for the given string.
 		///< Sub-strings like "%xyz%" are replaced by 'value("xyz")'
 		///< and "%%" is replaced by "%". If there is no appropriate
@@ -150,34 +150,34 @@ public:
 		///< (so "%xyz%" remains as "%xyz%" if there is no "xyz"
 		///< map item).
 
-	Path expandedPathValue( string_view key ) const ;
+	Path expandedPathValue( std::string_view key ) const ;
 		///< Returns a mandatory path value from the map
 		///< with expand(). Throws if it does not exist.
 
-	Path expandedPathValue( string_view key , const Path & default_ ) const ;
+	Path expandedPathValue( std::string_view key , const Path & default_ ) const ;
 		///< Returns a path value from the map with expand().
 
 private:
 	using List = std::list<std::string> ;
-	void readFrom( const Path & , string_view ) ;
+	void readFrom( const Path & , std::string_view ) ;
 	void readFrom( std::istream & ss ) ;
 	static std::string quote( const std::string & ) ;
-	List read( const Path & , string_view , bool ) const ;
+	List read( const Path & , std::string_view , bool ) const ;
 	void commentOut( List & ) const ;
 	void replace( List & ) const ;
 	bool expand_( std::string & ) const ;
-	std::string expandAll( string_view ) const ;
+	std::string expandAll( std::string_view ) const ;
 	static void backup( const Path & ) ;
 	static void save( const Path & , List & , bool ) ;
-	std::string mandatoryValue( string_view ) const ;
+	std::string mandatoryValue( std::string_view ) const ;
 	bool ignore( const std::string & ) const ;
-	static std::string ekind( string_view ) ;
+	static std::string ekind( std::string_view ) ;
 	static std::string epath( const Path & ) ;
-	static Error readError( const Path & , string_view ) ;
-	static Error writeError( const Path & , string_view = {} ) ;
+	static Error readError( const Path & , std::string_view ) ;
+	static Error writeError( const Path & , std::string_view = {} ) ;
 	static Error missingValueError( const Path & , const std::string & , const std::string & ) ;
-	StringMap::const_iterator find( string_view ) const ;
-	StringMap::iterator find( string_view ) ;
+	StringMap::const_iterator find( std::string_view ) const ;
+	StringMap::iterator find( std::string_view ) ;
 
 private:
 	Path m_path ; // if any

@@ -164,7 +164,7 @@ public:
 		///< An initialiser that is to be used after default construction.
 		///< Reads all files in the directory.
 
-	std::size_t readType( const Path & dir , string_view suffix , unsigned int limit = 0U ) ;
+	std::size_t readType( const Path & dir , std::string_view suffix , unsigned int limit = 0U ) ;
 		///< An initialiser that is to be used after default
 		///< construction. Reads all files that have the given
 		///< suffix (unsorted).
@@ -194,7 +194,7 @@ public:
 		///< of Items, sorted by name.
 
 private:
-	void readImp( const Path & , bool , string_view , unsigned int ) ;
+	void readImp( const Path & , bool , std::string_view , unsigned int ) ;
 
 private:
 	bool m_first{true} ;

@@ -57,7 +57,7 @@ class GNet::InterfacesNotifierImp : public InterfacesNotifier
 {
 public:
 	static bool active() ;
-	InterfacesNotifierImp( Interfaces * , ExceptionSink es ) ;
+	InterfacesNotifierImp( Interfaces * , EventState es ) ;
 	template <typename T> std::pair<T*,std::size_t> readSocket() ;
 
 public: // overrides
@@ -76,7 +76,7 @@ bool GNet::Interfaces::active()
 	return InterfacesNotifierImp::active() ;
 }
 
-void GNet::Interfaces::loadImp( ExceptionSink es , std::vector<Item> & list )
+void GNet::Interfaces::loadImp( EventState es , std::vector<Item> & list )
 {
 	if( !m_notifier )
 		m_notifier = std::make_unique<InterfacesNotifierImp>( this , es ) ;
@@ -187,7 +187,7 @@ bool GNet::InterfacesNotifierImp::active()
 	return true ;
 }
 
-GNet::InterfacesNotifierImp::InterfacesNotifierImp( Interfaces * outer , ExceptionSink es )
+GNet::InterfacesNotifierImp::InterfacesNotifierImp( Interfaces * outer , EventState es )
 {
 	if( EventLoop::exists() )
 	{
@@ -267,7 +267,7 @@ bool GNet::InterfacesNotifierImp::active()
 	return true ;
 }
 
-GNet::InterfacesNotifierImp::InterfacesNotifierImp( Interfaces * outer , ExceptionSink es )
+GNet::InterfacesNotifierImp::InterfacesNotifierImp( Interfaces * outer , EventState es )
 {
 	if( EventLoop::exists() )
 	{
@@ -306,7 +306,7 @@ bool GNet::InterfacesNotifierImp::active()
 	return false ;
 }
 
-GNet::InterfacesNotifierImp::InterfacesNotifierImp( Interfaces * , ExceptionSink )
+GNet::InterfacesNotifierImp::InterfacesNotifierImp( Interfaces * , EventState )
 {
 }
 

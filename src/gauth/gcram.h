@@ -57,25 +57,25 @@ public:
 	G_EXCEPTION( InvalidState , tx("invalid hash function intermediate state") ) ;
 	G_EXCEPTION( NoTls , tx("no tls library") ) ;
 
-	static std::string response( G::string_view hash_type , bool hmac ,
-		const Secret & secret , G::string_view challenge ,
-		G::string_view response_prefix ) ;
+	static std::string response( std::string_view hash_type , bool hmac ,
+		const Secret & secret , std::string_view challenge ,
+		std::string_view response_prefix ) ;
 			///< Constructs a response to a challenge comprising the
 			///< response-prefix, space, and digest-or-hmac of
 			///< secretkey-plus-challenge. Returns an empty string on
 			///< error; does not throw.
 
-	static std::string id( G::string_view response ) ;
+	static std::string id( std::string_view response ) ;
 		///< Returns the leading id part of the response. Returns
 		///< the empty string on error.
 
-	static bool validate( G::string_view hash_type , bool hmac ,
-		const Secret & secret , G::string_view challenge ,
-		G::string_view response ) ;
+	static bool validate( std::string_view hash_type , bool hmac ,
+		const Secret & secret , std::string_view challenge ,
+		std::string_view response ) ;
 			///< Validates the response with respect to the original
 			///< challenge. Returns false on error; does not throw.
 
-	static G::StringArray hashTypes( G::string_view prefix = {} , bool require_state = false ) ;
+	static G::StringArray hashTypes( std::string_view prefix = {} , bool require_state = false ) ;
 		///< Returns a list of supported hash types, such as "MD5"
 		///< and "SHA1", ordered with the strongest first. Optionally
 		///< adds a prefix to each type, and optionally limits the
@@ -90,7 +90,7 @@ public:
 	Cram() = delete ;
 
 private:
-	static std::string responseImp( G::string_view , bool , const Secret & , G::string_view ) ;
+	static std::string responseImp( std::string_view , bool , const Secret & , std::string_view ) ;
 } ;
 
 #endif

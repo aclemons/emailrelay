@@ -26,7 +26,7 @@
 #include "gfilterfactory.h"
 #include "gtimer.h"
 #include "gslot.h"
-#include "gexceptionsink.h"
+#include "geventstate.h"
 #include <memory>
 #include <vector>
 
@@ -42,7 +42,7 @@ namespace GFilters
 class GFilters::FilterChain : public GSmtp::Filter
 {
 public:
-	FilterChain( GNet::ExceptionSink , GSmtp::FilterFactoryBase & , Filter::Type ,
+	FilterChain( GNet::EventState , GSmtp::FilterFactoryBase & , Filter::Type ,
 		const Filter::Config & , const GSmtp::FilterFactoryBase::Spec & spec ) ;
 			///< Constructor.
 
@@ -68,7 +68,7 @@ private: // overrides
 	bool special() const override ; // GSmtp::Filter
 
 private:
-	void add( GNet::ExceptionSink , GSmtp::FilterFactoryBase & , Filter::Type ,
+	void add( GNet::EventState , GSmtp::FilterFactoryBase & , Filter::Type ,
 		const Filter::Config & , const GSmtp::FilterFactoryBase::Spec & ) ;
 	void onFilterDone( int ) ;
 

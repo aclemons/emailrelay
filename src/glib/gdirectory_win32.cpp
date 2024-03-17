@@ -54,7 +54,7 @@ int G::Directory::usable( bool /*for_creation*/ ) const
 bool G::Directory::writeable( const std::string & filename ) const
 {
 	Path path( m_path , filename.empty() ? tmp() : filename ) ;
-	return File::probe( path.cstr() ) ;
+	return File::probe( path ) ;
 }
 
 // ===

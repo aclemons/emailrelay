@@ -23,7 +23,7 @@
 
 #include "gdef.h"
 #include "gaddress.h"
-#include "gexceptionsink.h"
+#include "geventstate.h"
 #include "gexception.h"
 #include "gevent.h"
 #include "gdescriptor.h"
@@ -98,7 +98,7 @@ public:
 		///< Returns true if the previous socket operation
 		///< failed with the ENOTCONN error status, or similar.
 
-	void addReadHandler( EventHandler & , ExceptionSink ) ;
+	void addReadHandler( EventHandler & , EventState ) ;
 		///< Adds this socket to the event source list so that
 		///< the given handler receives read events.
 
@@ -106,7 +106,7 @@ public:
 		///< Reverses addReadHandler(). Does nothing if no
 		///< read handler is currently installed.
 
-	void addWriteHandler( EventHandler & , ExceptionSink ) ;
+	void addWriteHandler( EventHandler & , EventState ) ;
 		///< Adds this socket to the event source list so that
 		///< the given handler receives write events when flow
 		///< control is released. (Not used for datagram
@@ -116,7 +116,7 @@ public:
 		///< Reverses addWriteHandler(). Does nothing if no
 		///< write handler is currently installed.
 
-	void addOtherHandler( EventHandler & , ExceptionSink ) ;
+	void addOtherHandler( EventHandler & , EventState ) ;
 		///< Adds this socket to the event source list so that
 		///< the given handler receives exception events.
 		///< A TCP exception event should be treated as a
@@ -438,7 +438,7 @@ public:
 		///< Sends a datagram to the given address. This should be used
 		///< if there is no connect() assocation in effect.
 
-	ssize_type writeto( const std::vector<G::string_view> & , const Address & dst ) ;
+	ssize_type writeto( const std::vector<std::string_view> & , const Address & dst ) ;
 		///< Sends a datagram to the given address, overloaded for
 		///< scatter-gather data chunks.
 

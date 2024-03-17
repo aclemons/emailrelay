@@ -220,7 +220,7 @@ GSsl::Digester::Digester( std::unique_ptr<DigesterImpBase> p ) :
 {
 }
 
-void GSsl::Digester::add( G::string_view sv )
+void GSsl::Digester::add( std::string_view sv )
 {
 	m_imp->add( sv ) ;
 }
@@ -252,7 +252,7 @@ std::size_t GSsl::Digester::statesize() const noexcept
 
 // ==
 
-bool GSsl::LibraryImpBase::consume( G::StringArray & list , G::string_view key )
+bool GSsl::LibraryImpBase::consume( G::StringArray & list , std::string_view key )
 {
 	auto p = std::find( list.begin() , list.end() , G::sv_to_string(key) ) ;
 	if( p != list.end() )

@@ -71,7 +71,7 @@ public:
 private:
 	struct Config ;
 	class WordWrapper ;
-	static std::size_t wordsize( G::string_view mbcs , const std::locale & ) ;
+	static std::size_t wordsize( std::string_view mbcs , const std::locale & ) ;
 	static void wrap( std::istream & , WordWrapper & ) ;
 } ;
 

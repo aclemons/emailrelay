@@ -25,6 +25,7 @@
 #include "gclient.h"
 #include "gnetdone.h"
 #include "gexception.h"
+#include "geventlogging.h"
 #include "gexceptionsource.h"
 #include "geventhandler.h"
 #include "gscope.h"
@@ -42,27 +43,15 @@ namespace GNet
 {
 	namespace ClientPtrImp /// An implementation namespace for GNet::ClientPtr.
 	{
-		template <typename T,
-			typename std::conditional<std::is_base_of<GNet::ExceptionSource,T>::value,bool,void>::type = true>
-		std::string exceptionSourceId( T * p )
-		{
-			return p ? static_cast<ExceptionSource*>(p)->exceptionSourceId() : std::string() ;
-		}
-		template <typename T,
-			typename std::conditional<std::is_base_of<GNet::ExceptionSource,T>::value,void,bool>::type = false>
-		std::string exceptionSourceId( T * )
-		{
-			return {} ;
-		}
-		template <typename T,
-			typename std::conditional<std::is_base_of<GNet::Client,T>::value,bool,void>::type = true>
-		bool hasConnected( T * p )
+		template <typename T>
+		bool hasConnected( T * p ,
+			typename std::enable_if<std::is_convertible<T*,Client*>::value>::type * = nullptr )
 		{
 			return p ? static_cast<Client*>(p)->hasConnected() : false ;
 		}
-		template <typename T,
-			typename std::conditional<std::is_base_of<GNet::Client,T>::value,void,bool>::type = false>
-		bool hasConnected( T * )
+		template <typename T>
+		bool hasConnected( T * ,
+			typename std::enable_if<!std::is_convertible<T*,Client*>::value>::type * = nullptr )
 		{
 			return false ;
 		}
@@ -113,10 +102,10 @@ private:
 //| \class GNet::ClientPtr
 /// A smart pointer class for GNet::Client or similar.
 ///
-/// The ClientPtr is-a ExceptionHandler, so it should normally be used
-/// as the Client's ExceptionSink:
+/// The ClientPtr is-a ExceptionHandler, so it should be the ExceptionHandler
+/// part of the Client's EventState:
 /// \code
-/// m_client_ptr.reset( new Client( ExceptionSink(m_client_ptr,m_es.esrc()) , ... ) ) ;
+/// m_client_ptr.reset( new Client( m_es.eh(m_client_ptr) , ... ) ) ;
 /// \endcode
 ///
 /// If that is done then the contained Client object will get deleted as
@@ -126,18 +115,18 @@ private:
 /// deleteSignal(). If the Client is deleted from the smart pointer's
 /// destructor then there are no notifications.
 ///
-/// If the Client is given some higher-level object as its ExceptionSink
+/// If the Client is given some higher-level object as its ExceptionHandler
 /// then the ClientPtr will not do any notification and the higher-level
 /// object must ensure that the Client object is deleted or disconnected
 /// when an exception is thrown:
 /// \code
 /// void Foo::fn()
 /// {
-///   m_client_ptr.reset( new Client( ExceptionSink(*this,&m_client_ptr) , ... ) ) ;
+///   m_client_ptr.reset( new Client( m_es.eh(this,&m_client_ptr) , ... ) ) ;
 /// }
 /// void Foo::onException( ExceptionSource * esrc , std::exception & e , bool done )
 /// {
-///   if( esrc == m_client_ptr.get() )
+///   if( esrc == &m_client_ptr )
 ///   {
 ///     m_client_ptr->doOnDelete( e.what() , done ) ;
 ///     m_client_ptr.reset() ; // or m_client_ptr->disconnect() ;
@@ -148,11 +137,6 @@ private:
 /// Failure to delete the client from within the higher-level object's
 /// exception handler will result in bad event handling, with the event
 /// loop raising events that are never cleared.
-///
-/// Note that the ClientPtr exception handler ignores the ExceptionSource
-/// pointer, so it can be set to be the same as the higher-level object,
-/// for better event logging (as shown above) (see
-/// GNet::ExceptionSource::exceptionSourceId()).
 ///
 template <typename T>
 class GNet::ClientPtr : public ClientPtrBase , public ExceptionHandler , public ExceptionSource
@@ -199,8 +183,7 @@ public:
 		///< is-not-a Client.
 
 private: // overrides
-	void onException( ExceptionSource * , std::exception & , bool ) override ; // Override from GNet::ExceptionHandler.
-	std::string exceptionSourceId() const override ; // Override from GNet::ExceptionSource.
+	void onException( ExceptionSource * , std::exception & , bool ) override ; // GNet::ExceptionHandler
 
 public:
 	ClientPtr( const ClientPtr & ) = delete ;
@@ -349,12 +332,6 @@ const T * GNet::ClientPtr<T>::operator->() const
 	if( m_p == nullptr )
 		throw InvalidState() ;
 	return m_p ;
-}
-
-template <typename T>
-std::string GNet::ClientPtr<T>::exceptionSourceId() const
-{
-	return GNet::ClientPtrImp::exceptionSourceId<T>( m_p ) ;
 }
 
 template <typename T>

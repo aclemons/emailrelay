@@ -359,7 +359,7 @@ GStore::StoredFile::Stream::Stream( const G::Path & path ) :
 void GStore::StoredFile::Stream::open( const G::Path & path )
 {
 	// (because on windows we want _O_NOINHERIT and _SH_DENYNO)
-	int fd = FileOp::fdopen( path.cstr() ) ;
+	int fd = FileOp::fdopen( path ) ;
 	if( fd >= 0 )
 	{
 		StreamBuf::open( fd ) ;

@@ -72,12 +72,10 @@ void G::File::open( std::ifstream & ifstream , const Path & path )
 	ifstream.open( path.cstr() , std::ios_base::in | std::ios_base::binary ) ;
 }
 
-#ifndef G_LIB_SMALL
 void G::File::open( std::ifstream & ifstream , const Path & path , Text )
 {
 	ifstream.open( path.cstr() , std::ios_base::in ) ;
 }
-#endif
 
 std::filebuf * G::File::open( std::filebuf & fb , const Path & path , InOut inout )
 {
@@ -87,41 +85,45 @@ std::filebuf * G::File::open( std::filebuf & fb , const Path & path , InOut inou
 			fb.open( path.cstr() , std::ios_base::out | std::ios_base::binary ) ;
 }
 
-int G::File::open( const char * path , InOutAppend mode ) noexcept
+int G::File::open( const Path & path , InOutAppend mode ) noexcept
 {
+	static_assert( noexcept(path.cstr()) , "" ) ;
+	const char * path_cstr = path.cstr() ;
 	if( mode == InOutAppend::In )
-		return ::open( path , O_RDONLY ) ; // NOLINT
+		return ::open( path_cstr , O_RDONLY ) ; // NOLINT
 	else if( mode == InOutAppend::Out )
-		return ::open( path , O_WRONLY|O_CREAT|O_TRUNC , 0666 ) ; // NOLINT
+		return ::open( path_cstr , O_WRONLY|O_CREAT|O_TRUNC , 0666 ) ; // NOLINT
+	else if( mode == InOutAppend::OutNoCreate )
+		return ::open( path_cstr , O_WRONLY , 0666 ) ; // NOLINT
 	else
-		return ::open( path , O_WRONLY|O_CREAT|O_APPEND , 0666 ) ; // NOLINT
+		return ::open( path_cstr , O_WRONLY|O_CREAT|O_APPEND , 0666 ) ; // NOLINT
 }
 
-#ifndef G_LIB_SMALL
-int G::File::open( const char * path , CreateExclusive ) noexcept
+int G::File::open( const Path & path , CreateExclusive ) noexcept
 {
-	return ::open( path , O_WRONLY|O_CREAT|O_EXCL , 0666 ) ; // NOLINT
+	static_assert( noexcept(path.cstr()) , "" ) ;
+	return ::open( path.cstr() , O_WRONLY|O_CREAT|O_EXCL , 0666 ) ; // NOLINT
 }
-#endif
 
-#ifndef G_LIB_SMALL
-std::FILE * G::File::fopen( const char * path , const char * mode ) noexcept
+std::FILE * G::File::fopen( const Path & path , const char * mode ) noexcept
 {
-	return std::fopen( path , mode ) ;
+	return std::fopen( path.cstr() , mode ) ;
 }
-#endif
 
-bool G::File::probe( const char * path ) noexcept
+bool G::File::probe( const Path & path ) noexcept
 {
-	int fd = ::open( path , O_WRONLY|O_CREAT|O_EXCL , 0666 ) ; // NOLINT
+	static_assert( noexcept(path.cstr()) , "" ) ;
+	static_assert( noexcept(File::remove(path,std::nothrow)) , "" ) ;
+
+	int fd = ::open( path.cstr() , O_WRONLY|O_CREAT|O_EXCL , 0666 ) ; // NOLINT
 	if( fd < 0 )
 		return false ;
-	std::remove( path ) ; // NOLINT ignore result
+
+	File::remove( path , std::nothrow ) ;
 	::close( fd ) ;
 	return true ;
 }
 
-#ifndef G_LIB_SMALL
 void G::File::create( const Path & path )
 {
 	int fd = ::open( path.cstr() , O_RDONLY|O_CREAT , 0666 ) ; // NOLINT
@@ -129,7 +131,6 @@ void G::File::create( const Path & path )
 		throw CannotCreate( path.str() ) ;
 	::close( fd ) ;
 }
-#endif
 
 bool G::File::renameOnto( const Path & from , const Path & to , std::nothrow_t ) noexcept
 {
@@ -228,13 +229,11 @@ bool G::File::chmodx( const Path & path , bool do_throw )
 	return ok ;
 }
 
-#ifndef G_LIB_SMALL
 void G::File::chmod( const Path & path , const std::string & spec )
 {
 	if( !chmod( path , spec , std::nothrow ) )
 		throw CannotChmod( path.str() ) ;
 }
-#endif
 
 bool G::File::chmod( const Path & path , const std::string & spec , std::nothrow_t )
 {
@@ -326,21 +325,17 @@ std::pair<bool,mode_t> G::FileImp::newmode( mode_t mode , const std::string & sp
 	return { ok , mode } ;
 }
 
-#ifndef G_LIB_SMALL
 void G::File::chgrp( const Path & path , const std::string & group )
 {
 	bool ok = 0 == ::chown( path.cstr() , -1 , Identity::lookupGroup(group) ) ;
 	if( !ok )
 		throw CannotChgrp( path.str() ) ;
 }
-#endif
 
-#ifndef G_LIB_SMALL
 bool G::File::chgrp( const Path & path , const std::string & group , std::nothrow_t )
 {
 	return 0 == ::chown( path.cstr() , -1 , Identity::lookupGroup(group) ) ;
 }
-#endif
 
 bool G::File::chgrp( const Path & path , gid_t group_id , std::nothrow_t )
 {
@@ -352,14 +347,13 @@ bool G::File::hardlink( const Path & src , const Path & dst , std::nothrow_t )
 	return 0 == ::link( src.cstr() , dst.cstr() ) ;
 }
 
-#ifndef G_LIB_SMALL
 void G::File::link( const Path & target , const Path & new_link )
 {
 	if( linked(target,new_link) ) // optimisation
 		return ;
 
 	if( exists(new_link) )
-		remove( new_link , std::nothrow ) ;
+		File::remove( new_link , std::nothrow ) ;
 
 	int error = linkImp( target.cstr() , new_link.cstr() ) ;
 
@@ -370,20 +364,17 @@ void G::File::link( const Path & target , const Path & new_link )
 		throw CannotLink( ss.str() ) ;
 	}
 }
-#endif
 
-#ifndef G_LIB_SMALL
 bool G::File::link( const Path & target , const Path & new_link , std::nothrow_t )
 {
 	if( linked(target,new_link) ) // optimisation
 		return true ;
 
 	if( exists(new_link) )
-		remove( new_link , std::nothrow ) ;
+		File::remove( new_link , std::nothrow ) ;
 
 	return 0 == linkImp( target.cstr() , new_link.cstr() ) ;
 }
-#endif
 
 int G::File::linkImp( const char * target , const char * new_link )
 {
@@ -392,7 +383,6 @@ int G::File::linkImp( const char * target , const char * new_link )
 	return rc == 0 ? 0 : (error?error:EINVAL) ;
 }
 
-#ifndef G_LIB_SMALL
 G::Path G::File::readlink( const Path & link )
 {
 	Path result = readlink( link , std::nothrow ) ;
@@ -400,7 +390,6 @@ G::Path G::File::readlink( const Path & link )
 		throw CannotReadLink( link.str() ) ;
 	return result ;
 }
-#endif
 
 G::Path G::File::readlink( const Path & link , std::nothrow_t )
 {
@@ -436,12 +425,13 @@ std::streamoff G::File::seek( int fd , std::streamoff offset , Seek origin ) noe
 	return static_cast<std::streamoff>(rc) ;
 }
 
-#ifndef G_LIB_SMALL
 void G::File::setNonBlocking( int fd ) noexcept
 {
 	int flags = ::fcntl( fd , F_GETFL ) ; // NOLINT
-	flags |= O_NONBLOCK ; // NOLINT
-	GDEF_IGNORE_RETURN ::fcntl( fd , F_SETFL , flags ) ; // NOLINT
+	if( flags != -1 )
+	{
+		flags |= O_NONBLOCK ; // NOLINT
+		GDEF_IGNORE_RETURN ::fcntl( fd , F_SETFL , flags ) ; // NOLINT
+	}
 }
-#endif
 

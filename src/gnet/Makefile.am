@@ -41,14 +41,16 @@ COMMON_SOURCES = \
 	geventemitter.h \
 	geventhandler.cpp \
 	geventhandler.h \
+	geventlogging.cpp \
+	geventlogging.h \
 	geventloggingcontext.cpp \
 	geventloggingcontext.h \
 	geventloop.cpp \
 	geventloop.h \
 	gexceptionhandler.cpp \
 	gexceptionhandler.h \
-	gexceptionsink.cpp \
-	gexceptionsink.h \
+	geventstate.cpp \
+	geventstate.h \
 	gexceptionsource.cpp \
 	gexceptionsource.h \
 	gfutureevent.h \
@@ -259,7 +261,7 @@ if GCONFIG_WINDOWS
 
 EVENTLOOP_SOURCES = \
 	geventloophandles.h \
-	geventloophandles_st.cpp
+	geventloophandles.cpp
 
 EVENTLOOP_EXTRA_SOURCES =
 
@@ -280,7 +282,7 @@ EVENTLOOP_EXTRA_SOURCES = \
 EVENTLOOP_EXTRA_DIST = \
 	geventloop_select.cpp \
 	geventloophandles.h \
-	geventloophandles_st.cpp
+	geventloophandles.cpp
 
 else
 
@@ -293,7 +295,7 @@ EVENTLOOP_EXTRA_SOURCES = \
 EVENTLOOP_EXTRA_DIST = \
 	geventloop_epoll.cpp \
 	geventloophandles.h \
-	geventloophandles_st.cpp
+	geventloophandles.cpp
 
 endif
 

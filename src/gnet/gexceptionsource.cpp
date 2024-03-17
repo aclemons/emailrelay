@@ -20,16 +20,7 @@
 
 #include "gdef.h"
 #include "gexceptionsource.h"
-#include "glogoutput.h"
-
-std::string GNet::ExceptionSource::exceptionSourceId() const
-{
-	return {} ;
-}
 
 GNet::ExceptionSource::~ExceptionSource()
-{
-	if( G::LogOutput::contextarg() == this )
-		G::LogOutput::context() ;
-}
+= default ;
 

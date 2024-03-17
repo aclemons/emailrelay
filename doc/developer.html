@@ -177,7 +177,7 @@
     <p>
      The protocol, processor and message-store interfaces are brought together by
      the high-level <em>GSmtp::Server</em> and <em>GSmtp::Client</em> classes. Dependency
-     injection is used to create the concrete instances of the <em>MessageStore</em>,
+     injection is used to provide them with concrete instances of the <em>MessageStore</em>,
      <em>Filter</em> and <em>Verifier</em> interfaces.
     </p>
    <h2><a class="a-header" name="SH_1_6">Event handling and exceptions</a></h2> <!-- index:2:SH:1:6:Event handling and exceptions -->
@@ -196,19 +196,25 @@
      the <em>FutureEventCallback</em> interface. If any of the these event handlers throws
      an exception then the event loop catches it and delivers it back to an
      exception handler through the <em>onException()</em> method of an associated
-     <em>ExceptionHandler</em> interface. If an exception is thrown out of _this_ callback
-     then the event loop code lets it propagate back to <em>main()</em>, typically
-     terminating the program.
+     <em>ExceptionHandler</em> interface.
+    </p>
+
+    <p>
+     ExceptionHandler interface pointers are passed around in <em>EventState</em>
+     structures. All event-handling classes generally accept an EventState in their
+     constructor and they pass a copy to all base classes and contained sub-objects.
+     The default ExceptionHandler just rethrows the current exception, which
+     typically propagates back to <em>main()</em> and terminates the program.
     </p>
 
     <p>
      However, sometimes there are objects that need to be more resilient to
      exceptions. In particular, a network server should not terminate just because
-     one of its connections fails unexpectedly. In these cases the owning parent
-     object receives the exception notification together with an <em>ExceptionSource</em>
-     pointer that identifies the child object that threw the exception. This allows
-     the parent object to absorb the exception and delete the child, without the
-     exception killing the whole server.
+     one of its connections fails unexpectedly and a network client should not
+     terminate just because the peer disconnects. In these cases the ExceptionHandler
+     can be set up to be the owning parent object, which can can choose to simply
+     delete the child object without rethrowing and killing the whole program. The
+     GNet::Server and GNet::ClientPtr classes do this.
     </p>
 
     <p>
@@ -216,6 +222,15 @@
      windows event handle, together known as a <em>Descriptor</em>. Event loop
      implementations typically watch a set of Descriptors for events and call the
      relevant EventHandler/ExceptionHandler code via the <em>EventEmitter</em> class.
+    </p>
+
+    <p>
+     EventState objects also contain a pointer to an EventLogging interface. This
+     interface provides a string that describes some key attribute of the event
+     handling object that implements the interface. EventLogging objects are arranged
+     in a linked list that runs through the assemblage of event handling objects.
+     Before delivering an event the EventEmitter combines the strings returned by
+     this linked list and applies the result to the G::LogOutput singleton.
     </p>
    <h2><a class="a-header" name="SH_1_7">Multi-threading</a></h2> <!-- index:2:SH:1:7:Multi-threading -->
     <p>
@@ -295,15 +310,15 @@
     <p>
      The mbedtls code is built if necessary by running <em>cmake</em> and <em>cmake --build</em> in
      a <em>mbedtls-x64</em> build sub-directory. The mbedtls headers are copied into the
-     build tree. The mbedtls configuration header (mbedtls_config.h) is optionally
-     edited to enable TLS v1.3. If necessary delete the <em>mbedtls-x64</em> build directory
-     to trigger a rebuild.
+     mbedtls build tree. The mbedtls configuration header (mbedtls_config.h) is
+     optionally edited to enable TLS v1.3. If necessary delete the <em>mbedtls-x64</em>
+     build directory to trigger a rebuild.
     </p>
 
     <p>
      A release assembly can be created by running <em>winbuild-install.bat</em> or
      <em>perl winbuild.pl install</em>. This makes use of the Qt <em>windeployqt</em> utility to
-     assemble DLLs and it also generates the Qt translation files (<em>*.qm</em>).
+     assemble DLLs and it also generates the Qt <em>.qm</em> translation files.
     </p>
 
     <p>
@@ -350,9 +365,9 @@
     </p>
    <h2><a class="a-header" name="SH_1_12">Unix packaging</a></h2> <!-- index:2:SH:1:12:Unix packaging -->
     <p>
-     On Unix-like operating systems it is more natural to use some sort of package
-     derived from the <em>make install</em> process rather than an installer program, so
-     the emailrelay GUI is not normally used.
+     On Unix-like operating systems the native packaging system is normally used
+     rather than the E-MailRelay GUI installer, so the configure script should be
+     given the <em>--disable-gui</em> command-line option.
     </p>
 
     <p>
@@ -376,8 +391,8 @@
     </p>
 
     <p>
-     On Windows the main server executable has a tabbed dialog-box as its user
-     interface, but that does not have any support for i18n.
+     On Windows the main server executable <em>emailrelay.exe</em> has a tabbed dialog-box
+     as its user interface, but that does not have any support for i18n.
     </p>
    <h2><a class="a-header" name="SH_1_14">Source control</a></h2> <!-- index:2:SH:1:14:Source control -->
     <p>

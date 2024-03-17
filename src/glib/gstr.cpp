@@ -38,7 +38,7 @@ namespace G
 {
 	namespace StrImp
 	{
-		string_view hexmap() noexcept ;
+		std::string_view hexmap() noexcept ;
 		bool isDigit( char c ) noexcept ;
 		bool isHex( char c ) noexcept ;
 		bool isPrintableAscii( char c ) noexcept ;
@@ -46,41 +46,41 @@ namespace G
 		bool isSimple( char c ) noexcept ;
 		char toLower( char c ) noexcept ;
 		char toUpper( char c ) noexcept ;
-		unsigned short toUShort( string_view , bool & overflow , bool & invalid ) noexcept ;
-		unsigned long toULong( string_view , bool & overflow , bool & invalid ) noexcept ;
-		unsigned long toULongHex( string_view , bool limited ) ;
-		unsigned int toUInt( string_view , bool & overflow , bool & invalid ) noexcept ;
-		short toShort( string_view , bool & overflow , bool & invalid ) noexcept ;
-		long toLong( string_view , bool & overflow , bool & invalid ) noexcept ;
-		int toInt( string_view , bool & overflow , bool & invalid ) noexcept ;
-		template <typename U> string_view fromUnsignedToHex( U u , char * out_p ) noexcept ;
+		unsigned short toUShort( std::string_view , bool & overflow , bool & invalid ) noexcept ;
+		unsigned long toULong( std::string_view , bool & overflow , bool & invalid ) noexcept ;
+		unsigned long toULongHex( std::string_view , bool limited ) ;
+		unsigned int toUInt( std::string_view , bool & overflow , bool & invalid ) noexcept ;
+		short toShort( std::string_view , bool & overflow , bool & invalid ) noexcept ;
+		long toLong( std::string_view , bool & overflow , bool & invalid ) noexcept ;
+		int toInt( std::string_view , bool & overflow , bool & invalid ) noexcept ;
+		template <typename U> std::string_view fromUnsignedToHex( U u , char * out_p ) noexcept ;
 		void strncpy( char * , const char * , std::size_t ) noexcept ;
 		template <typename Tstr, typename Fn> bool readLine( std::istream & , Tstr & , char * , std::size_t , Fn ) ;
 		template <typename S, typename T, typename SV> void splitIntoTokens( const S & in , T & out , const SV & ws ) ;
 		template <typename S, typename T> void splitIntoTokens( const S & in , T & out , const S & ws , typename S::value_type esc ) ;
-		template <typename T> void splitIntoFields( string_view in , T & out , string_view ws ) ;
-		template <typename T> void splitIntoFields( string_view in_in , T & out , string_view ws , char escape , bool remove_escapes ) ;
+		template <typename T> void splitIntoFields( std::string_view in , T & out , std::string_view ws ) ;
+		template <typename T> void splitIntoFields( std::string_view in_in , T & out , std::string_view ws , char escape , bool remove_escapes ) ;
 		bool ilessc( char c1 , char c2 ) noexcept ;
 		bool imatchc( char c1 , char c2 ) noexcept ;
 		bool imatch( const std::string & a , const std::string & b ) ;
 		template <typename T, typename V> T unique( T in , T end , V repeat , V replacement ) ;
 		bool inList( StringArray::const_iterator begin , StringArray::const_iterator end , const std::string & s , bool i ) ;
 		bool notInList( StringArray::const_iterator begin , StringArray::const_iterator end , const std::string & s , bool i ) ;
-		void join( string_view , std::string & , string_view ) ;
+		void join( std::string_view , std::string & , std::string_view ) ;
 		template <typename Tout> std::size_t outputHex( Tout out , char c ) ;
 		template <typename Tout> std::size_t outputHex( Tout out , wchar_t c ) ;
 		template <typename Tout, typename Tchar> std::size_t outputPrintable( Tout , Tchar , Tchar , char , bool ) ;
-		bool allOf( string_view s , bool (*fn)(char) ) noexcept ;
+		bool allOf( std::string_view s , bool (*fn)(char) ) noexcept ;
 	}
 }
 
-bool G::StrImp::allOf( string_view s , bool (*fn)(char) ) noexcept
+bool G::StrImp::allOf( std::string_view s , bool (*fn)(char) ) noexcept
 {
 	return std::all_of( s.begin() , s.end() , fn ) ; // (true if empty)
 }
 
 #ifndef G_LIB_SMALL
-std::string G::Str::escaped( string_view s_in )
+std::string G::Str::escaped( std::string_view s_in )
 {
 	if( s_in.empty() ) return {} ;
 	std::string s( s_in.data() , s_in.size() ) ;
@@ -89,7 +89,7 @@ std::string G::Str::escaped( string_view s_in )
 }
 #endif
 
-std::string G::Str::escaped( string_view s_in , char c_escape , string_view specials_in , string_view specials_out )
+std::string G::Str::escaped( std::string_view s_in , char c_escape , std::string_view specials_in , std::string_view specials_out )
 {
 	if( s_in.empty() ) return {} ;
 	std::string s( s_in.data() , s_in.size() ) ;
@@ -97,7 +97,7 @@ std::string G::Str::escaped( string_view s_in , char c_escape , string_view spec
 	return s ;
 }
 
-void G::Str::escape( std::string & s , char c_escape , string_view specials_in , string_view specials_out )
+void G::Str::escape( std::string & s , char c_escape , std::string_view specials_in , std::string_view specials_out )
 {
 	G_ASSERT( specials_in.size() == specials_out.size() ) ;
 	std::size_t pos = 0U ;
@@ -125,7 +125,7 @@ void G::Str::escape( std::string & s )
 	Str::escape( s , '\\' , "\0\\\r\n\t"_sv , "0\\rnt"_sv ) ;
 }
 
-std::string G::Str::dequote( const std::string & s , char qq , char esc , string_view ws , string_view nbws )
+std::string G::Str::dequote( const std::string & s , char qq , char esc , std::string_view ws , std::string_view nbws )
 {
 	G_ASSERT( ws.size() == nbws.size() ) ;
 	std::string result ;
@@ -177,7 +177,7 @@ void G::Str::unescape( std::string & s )
 	unescape( s , '\\' , "0rnt"_sv , "\0\r\n\t"_sv ) ;
 }
 
-void G::Str::unescape( std::string & s , char c_escape , string_view specials_in , string_view specials_out )
+void G::Str::unescape( std::string & s , char c_escape , std::string_view specials_in , std::string_view specials_out )
 {
 	G_ASSERT( specials_in.size() == specials_out.size() ) ;
 	bool escaped = false ;
@@ -223,7 +223,7 @@ void G::Str::replace( StringArray & a , char from , char to )
 		replace( s , from , to ) ;
 }
 
-bool G::Str::replace( std::string & s , string_view from , string_view to , std::size_t * pos_p )
+bool G::Str::replace( std::string & s , std::string_view from , std::string_view to , std::size_t * pos_p )
 {
 	if( from.empty() )
 		return false ;
@@ -244,7 +244,7 @@ bool G::Str::replace( std::string & s , string_view from , string_view to , std:
 	return true ;
 }
 
-unsigned int G::Str::replaceAll( std::string & s , string_view from , string_view to )
+unsigned int G::Str::replaceAll( std::string & s , std::string_view from , std::string_view to )
 {
 	unsigned int count = 0U ;
 	for( std::size_t pos = 0U ; replace(s,from,to,&pos) ; count++ )
@@ -273,7 +273,7 @@ std::string G::Str::removedAll( const std::string & s_in , char c )
 }
 #endif
 
-std::string G::Str::only( string_view chars , string_view s )
+std::string G::Str::only( std::string_view chars , std::string_view s )
 {
 	std::string result ;
 	result.reserve( s.size() ) ;
@@ -285,7 +285,7 @@ std::string G::Str::only( string_view chars , string_view s )
 	return result ;
 }
 
-std::string & G::Str::trimLeft( std::string & s , string_view ws , std::size_t limit )
+std::string & G::Str::trimLeft( std::string & s , std::string_view ws , std::size_t limit )
 {
 	std::size_t n = s.find_first_not_of( ws.data() , 0U , ws.size() ) ;
 	if( limit != 0U && ( n == std::string::npos || n > limit ) )
@@ -297,20 +297,20 @@ std::string & G::Str::trimLeft( std::string & s , string_view ws , std::size_t l
 	return s ;
 }
 
-G::string_view G::Str::trimLeftView( string_view sv , string_view ws , std::size_t limit ) noexcept
+std::string_view G::Str::trimLeftView( std::string_view sv , std::string_view ws , std::size_t limit ) noexcept
 {
 	std::size_t n = sv.find_first_not_of( ws ) ;
 	if( limit != 0U && ( n == std::string::npos || n > limit ) )
 		n = limit >= sv.size() ? std::string::npos : limit ;
 	if( n == std::string::npos )
-		return sv_substr( sv , 0U , 0U ) ;
+		return sv_substr_noexcept( sv , 0U , 0U ) ;
 	else if( n != 0U )
-		return sv_substr( sv , n ) ;
+		return sv_substr_noexcept( sv , n ) ;
 	else
 		return sv ;
 }
 
-std::string & G::Str::trimRight( std::string & s , string_view ws , std::size_t limit )
+std::string & G::Str::trimRight( std::string & s , std::string_view ws , std::size_t limit )
 {
 	std::size_t n = s.find_last_not_of( ws.data() , std::string::npos , ws.size() ) ;
 	if( limit != 0U && ( n == std::string::npos || s.size() > (limit+n+1U) ) )
@@ -322,36 +322,36 @@ std::string & G::Str::trimRight( std::string & s , string_view ws , std::size_t 
 	return s ;
 }
 
-G::string_view G::Str::trimRightView( string_view sv , string_view ws , std::size_t limit ) noexcept
+std::string_view G::Str::trimRightView( std::string_view sv , std::string_view ws , std::size_t limit ) noexcept
 {
 	std::size_t n = sv.find_last_not_of( ws ) ;
 	if( limit != 0U && ( n == std::string::npos || sv.size() > (limit+n+1U) ) )
 		n = limit >= sv.size() ? std::string::npos : (sv.size()-limit-1U) ;
 	if( n == std::string::npos )
-		return sv_substr( sv , 0U , 0U ) ;
+		return sv_substr_noexcept( sv , 0U , 0U ) ;
 	else if( (n+1U) != sv.size() )
-		return sv_substr( sv , 0U , n+1U ) ;
+		return sv_substr_noexcept( sv , 0U , n+1U ) ;
 	else
 		return sv ;
 }
 
-std::string & G::Str::trim( std::string & s , string_view ws )
+std::string & G::Str::trim( std::string & s , std::string_view ws )
 {
 	return trimLeft( trimRight(s,ws) , ws ) ;
 }
 
-std::string G::Str::trimmed( const std::string & s_in , string_view ws )
+std::string G::Str::trimmed( const std::string & s_in , std::string_view ws )
 {
 	std::string s( s_in ) ;
 	return trim( s , ws ) ;
 }
 
-std::string G::Str::trimmed( std::string && s , string_view ws )
+std::string G::Str::trimmed( std::string && s , std::string_view ws )
 {
 	return std::move( trimLeft(trimRight(s,ws),ws) ) ;
 }
 
-G::string_view G::Str::trimmedView( string_view s , string_view ws ) noexcept
+std::string_view G::Str::trimmedView( std::string_view s , std::string_view ws ) noexcept
 {
 	return trimLeftView( trimRightView(s,ws) , ws ) ;
 }
@@ -400,35 +400,35 @@ char G::StrImp::toUpper( char c ) noexcept
 	return ( uc >= 97U && uc <= 122U ) ? static_cast<char>(c-'\x20') : c ;
 }
 
-bool G::Str::isNumeric( string_view s , bool allow_minus_sign ) noexcept
+bool G::Str::isNumeric( std::string_view s , bool allow_minus_sign ) noexcept
 {
 	bool bump = allow_minus_sign && s.size() > 1U && s[0] == '-' ;
-	return StrImp::allOf( bump?sv_substr(s,1U):s , StrImp::isDigit ) ; // (true if empty)
+	return StrImp::allOf( bump?sv_substr_noexcept(s,1U):s , StrImp::isDigit ) ; // (true if empty)
 }
 
 #ifndef G_LIB_SMALL
-bool G::Str::isHex( string_view s ) noexcept
+bool G::Str::isHex( std::string_view s ) noexcept
 {
 	return StrImp::allOf( s , StrImp::isHex ) ;
 }
 #endif
 
-bool G::Str::isPrintableAscii( string_view s ) noexcept
+bool G::Str::isPrintableAscii( std::string_view s ) noexcept
 {
 	return StrImp::allOf( s , StrImp::isPrintableAscii ) ;
 }
 
-bool G::Str::isPrintable( string_view s ) noexcept
+bool G::Str::isPrintable( std::string_view s ) noexcept
 {
 	return StrImp::allOf( s , StrImp::isPrintable ) ;
 }
 
-bool G::Str::isSimple( string_view s ) noexcept
+bool G::Str::isSimple( std::string_view s ) noexcept
 {
 	return StrImp::allOf( s , StrImp::isSimple ) ;
 }
 
-bool G::Str::isInt( string_view s ) noexcept
+bool G::Str::isInt( std::string_view s ) noexcept
 {
 	bool overflow = false ;
 	bool invalid = false ;
@@ -437,7 +437,7 @@ bool G::Str::isInt( string_view s ) noexcept
 }
 
 #ifndef G_LIB_SMALL
-bool G::Str::isUShort( string_view s ) noexcept
+bool G::Str::isUShort( std::string_view s ) noexcept
 {
 	bool overflow = false ;
 	bool invalid = false ;
@@ -446,7 +446,7 @@ bool G::Str::isUShort( string_view s ) noexcept
 }
 #endif
 
-bool G::Str::isUInt( string_view s ) noexcept
+bool G::Str::isUInt( std::string_view s ) noexcept
 {
 	bool overflow = false ;
 	bool invalid = false ;
@@ -454,7 +454,7 @@ bool G::Str::isUInt( string_view s ) noexcept
 	return !overflow && !invalid ;
 }
 
-bool G::Str::isULong( string_view s ) noexcept
+bool G::Str::isULong( std::string_view s ) noexcept
 {
 	bool overflow = false ;
 	bool invalid = false ;
@@ -481,7 +481,7 @@ std::string G::Str::fromDouble( double d )
 #endif
 
 #ifndef G_LIB_SMALL
-bool G::Str::toBool( string_view s )
+bool G::Str::toBool( std::string_view s )
 {
 	bool result = true ;
 	if( imatch( s , "true"_sv ) )
@@ -538,7 +538,7 @@ float G::Str::toFloat( const std::string & s )
 }
 #endif
 
-int G::Str::toInt( string_view s )
+int G::Str::toInt( std::string_view s )
 {
 	bool overflow = false ;
 	bool invalid = false ;
@@ -551,13 +551,13 @@ int G::Str::toInt( string_view s )
 }
 
 #ifndef G_LIB_SMALL
-int G::Str::toInt( string_view s1 , string_view s2 )
+int G::Str::toInt( std::string_view s1 , std::string_view s2 )
 {
 	return !s1.empty() && isInt(s1) ? toInt(s1) : toInt(s2) ;
 }
 #endif
 
-int G::StrImp::toInt( string_view s , bool & overflow , bool & invalid ) noexcept
+int G::StrImp::toInt( std::string_view s , bool & overflow , bool & invalid ) noexcept
 {
 	long long_val = toLong( s , overflow , invalid ) ;
 	int result = static_cast<int>( long_val ) ;
@@ -567,7 +567,7 @@ int G::StrImp::toInt( string_view s , bool & overflow , bool & invalid ) noexcep
 }
 
 #ifndef G_LIB_SMALL
-long G::Str::toLong( string_view s )
+long G::Str::toLong( std::string_view s )
 {
 	bool overflow = false ;
 	bool invalid = false ;
@@ -580,7 +580,7 @@ long G::Str::toLong( string_view s )
 }
 #endif
 
-long G::StrImp::toLong( string_view s , bool & overflow , bool & invalid ) noexcept
+long G::StrImp::toLong( std::string_view s , bool & overflow , bool & invalid ) noexcept
 {
 	bool negative = !s.empty() && s[0] == '-' ;
 	bool positive = !s.empty() && s[0] == '+' ;
@@ -589,7 +589,7 @@ long G::StrImp::toLong( string_view s , bool & overflow , bool & invalid ) noexc
 		invalid = true ;
 		return 0L ;
 	}
-	unsigned long ul = toULong( sv_substr(s,(negative||positive)?1U:0U) , overflow , invalid ) ;
+	unsigned long ul = toULong( sv_substr_noexcept(s,(negative||positive)?1U:0U) , overflow , invalid ) ;
 	static constexpr long long_max = std::numeric_limits<long>::max() ;
 	if( ul > long_max || (negative && (ul==long_max)) )
 	{
@@ -600,7 +600,7 @@ long G::StrImp::toLong( string_view s , bool & overflow , bool & invalid ) noexc
 }
 
 #ifndef G_LIB_SMALL
-short G::Str::toShort( string_view s )
+short G::Str::toShort( std::string_view s )
 {
 	bool overflow = false ;
 	bool invalid = false ;
@@ -613,7 +613,7 @@ short G::Str::toShort( string_view s )
 }
 #endif
 
-short G::StrImp::toShort( string_view s , bool & overflow , bool & invalid ) noexcept
+short G::StrImp::toShort( std::string_view s , bool & overflow , bool & invalid ) noexcept
 {
 	long long_val = toLong( s , overflow , invalid ) ;
 	auto result = static_cast<short>( long_val ) ;
@@ -622,20 +622,20 @@ short G::StrImp::toShort( string_view s , bool & overflow , bool & invalid ) noe
 	return result ;
 }
 
-unsigned int G::Str::toUInt( string_view s1 , string_view s2 )
+unsigned int G::Str::toUInt( std::string_view s1 , std::string_view s2 )
 {
 	return !s1.empty() && isUInt(s1) ? toUInt(s1) : toUInt(s2) ;
 }
 
 #ifndef G_LIB_SMALL
-unsigned int G::Str::toUInt( string_view s , unsigned int default_ )
+unsigned int G::Str::toUInt( std::string_view s , unsigned int default_ )
 {
 	return !s.empty() && isUInt(s) ? toUInt(s) : default_ ;
 }
 #endif
 
 #ifndef G_LIB_SMALL
-unsigned int G::Str::toUInt( string_view s , Limited )
+unsigned int G::Str::toUInt( std::string_view s , Limited )
 {
 	bool overflow = false ;
 	bool invalid = false ;
@@ -648,7 +648,7 @@ unsigned int G::Str::toUInt( string_view s , Limited )
 }
 #endif
 
-unsigned int G::Str::toUInt( string_view s )
+unsigned int G::Str::toUInt( std::string_view s )
 {
 	bool overflow = false ;
 	bool invalid = false ;
@@ -660,7 +660,7 @@ unsigned int G::Str::toUInt( string_view s )
 	return result ;
 }
 
-unsigned int G::StrImp::toUInt( string_view s , bool & overflow , bool & invalid ) noexcept
+unsigned int G::StrImp::toUInt( std::string_view s , bool & overflow , bool & invalid ) noexcept
 {
 	unsigned long ulong_val = toULong( s , overflow , invalid ) ;
 	auto result = static_cast<unsigned int>( ulong_val ) ;
@@ -669,7 +669,7 @@ unsigned int G::StrImp::toUInt( string_view s , bool & overflow , bool & invalid
 	return result ;
 }
 
-unsigned long G::Str::toULong( string_view s , Limited )
+unsigned long G::Str::toULong( std::string_view s , Limited )
 {
 	bool overflow = false ;
 	bool invalid = false ;
@@ -682,20 +682,20 @@ unsigned long G::Str::toULong( string_view s , Limited )
 }
 
 #ifndef G_LIB_SMALL
-unsigned long G::Str::toULong( string_view s , Hex , Limited )
+unsigned long G::Str::toULong( std::string_view s , Hex , Limited )
 {
 	return StrImp::toULongHex( s , true ) ;
 }
 #endif
 
 #ifndef G_LIB_SMALL
-unsigned long G::Str::toULong( string_view s , Hex )
+unsigned long G::Str::toULong( std::string_view s , Hex )
 {
 	return StrImp::toULongHex( s , false ) ;
 }
 #endif
 
-unsigned long G::StrImp::toULongHex( string_view s , bool limited )
+unsigned long G::StrImp::toULongHex( std::string_view s , bool limited )
 {
 	unsigned long n = 0U ;
 	if( s.empty() ) return 0U ;
@@ -719,7 +719,7 @@ unsigned long G::StrImp::toULongHex( string_view s , bool limited )
 	return n ;
 }
 
-unsigned long G::Str::toULong( string_view s )
+unsigned long G::Str::toULong( std::string_view s )
 {
 	bool overflow = false ;
 	bool invalid = false ;
@@ -732,25 +732,25 @@ unsigned long G::Str::toULong( string_view s )
 }
 
 #ifndef G_LIB_SMALL
-unsigned long G::Str::toULong( string_view s1 , string_view s2 )
+unsigned long G::Str::toULong( std::string_view s1 , std::string_view s2 )
 {
 	return !s1.empty() && isULong(s1) ? toULong(s1) : toULong(s2) ;
 }
 #endif
 
-unsigned long G::StrImp::toULong( string_view s , bool & overflow , bool & invalid ) noexcept
+unsigned long G::StrImp::toULong( std::string_view s , bool & overflow , bool & invalid ) noexcept
 {
 	// note that stoul()/strtoul() do too much in that they skip leading
 	// spaces, allow initial +/- even for unsigned, and are C-locale
-	// dependent -- also there is no string_view version of std::stol()
+	// dependent -- also there is no std::string_view version of std::stol()
 	// and std::strtol() requires a null-terminated string and so cannot
-	// take string_view::data()
+	// take std::string_view::data()
 
 	return Str::toUnsigned<unsigned long>( s.data() , s.data()+s.size() , overflow , invalid ) ;
 }
 
 #ifndef G_LIB_SMALL
-unsigned short G::Str::toUShort( string_view s , Limited )
+unsigned short G::Str::toUShort( std::string_view s , Limited )
 {
 	bool overflow = false ;
 	bool invalid = false ;
@@ -764,7 +764,7 @@ unsigned short G::Str::toUShort( string_view s , Limited )
 #endif
 
 #ifndef G_LIB_SMALL
-unsigned short G::Str::toUShort( string_view s )
+unsigned short G::Str::toUShort( std::string_view s )
 {
 	bool overflow = false ;
 	bool invalid = false ;
@@ -777,7 +777,7 @@ unsigned short G::Str::toUShort( string_view s )
 }
 #endif
 
-unsigned short G::StrImp::toUShort( string_view s , bool & overflow , bool & invalid ) noexcept
+unsigned short G::StrImp::toUShort( std::string_view s , bool & overflow , bool & invalid ) noexcept
 {
 	unsigned long ulong_val = toULong( s , overflow , invalid ) ;
 	auto result = static_cast<unsigned short>( ulong_val ) ;
@@ -787,21 +787,21 @@ unsigned short G::StrImp::toUShort( string_view s , bool & overflow , bool & inv
 }
 
 #ifndef G_LIB_SMALL
-G::string_view G::Str::fromULongToHex( unsigned long u , char * out_p ) noexcept
+std::string_view G::Str::fromULongToHex( unsigned long u , char * out_p ) noexcept
 {
 	return StrImp::fromUnsignedToHex( u , out_p ) ;
 }
 #endif
 
 #ifndef G_LIB_SMALL
-G::string_view G::Str::fromULongLongToHex( unsigned long long u , char * out_p ) noexcept
+std::string_view G::Str::fromULongLongToHex( unsigned long long u , char * out_p ) noexcept
 {
 	return StrImp::fromUnsignedToHex( u , out_p ) ;
 }
 #endif
 
 template <typename U>
-G::string_view G::StrImp::fromUnsignedToHex( U u , char * out_p ) noexcept
+std::string_view G::StrImp::fromUnsignedToHex( U u , char * out_p ) noexcept
 {
 	// (std::to_chars() is c++17 so do it long-hand)
 	static constexpr unsigned bytes = sizeof(U) ;
@@ -815,8 +815,8 @@ G::string_view G::StrImp::fromUnsignedToHex( U u , char * out_p ) noexcept
 		*out++ = map[(u>>shift) & 0xfUL] ;
 		shift -= 4U ;
 	}
-	string_view sv( out_p , buffer_size ) ;
-	return sv_substr( sv , std::min( sv.find_first_not_of('0') , static_cast<std::size_t>(buffer_size-1U) ) ) ;
+	std::string_view sv( out_p , buffer_size ) ;
+	return sv_substr_noexcept( sv , std::min( sv.find_first_not_of('0') , static_cast<std::size_t>(buffer_size-1U) ) ) ;
 }
 
 void G::Str::toLower( std::string & s )
@@ -824,7 +824,7 @@ void G::Str::toLower( std::string & s )
 	std::transform( s.begin() , s.end() , s.begin() , StrImp::toLower ) ;
 }
 
-std::string G::Str::lower( G::string_view in )
+std::string G::Str::lower( std::string_view in )
 {
 	std::string out = sv_to_string( in ) ;
 	toLower( out ) ;
@@ -836,16 +836,16 @@ void G::Str::toUpper( std::string & s )
 	std::transform( s.begin() , s.end() , s.begin() , StrImp::toUpper ) ;
 }
 
-std::string G::Str::upper( G::string_view in )
+std::string G::Str::upper( std::string_view in )
 {
 	std::string out = sv_to_string( in ) ;
 	toUpper( out ) ;
 	return out ;
 }
 
-G::string_view G::StrImp::hexmap() noexcept
+std::string_view G::StrImp::hexmap() noexcept
 {
-	static constexpr string_view chars_hexmap = "0123456789abcdef"_sv ;
+	static constexpr std::string_view chars_hexmap = "0123456789abcdef"_sv ;
 	static_assert( chars_hexmap.size() == 16U , "" ) ;
 	return chars_hexmap ;
 }
@@ -922,7 +922,7 @@ std::string G::Str::printable( const std::string & in , char escape )
 	return result ;
 }
 
-std::string G::Str::printable( G::string_view in , char escape )
+std::string G::Str::printable( std::string_view in , char escape )
 {
 	std::string result ;
 	result.reserve( in.length()*2U + 1U ) ;
@@ -951,14 +951,14 @@ std::string G::Str::toPrintableAscii( const std::wstring & in , wchar_t escape )
 }
 #endif
 
-std::string G::Str::readLineFrom( std::istream & stream , string_view eol )
+std::string G::Str::readLineFrom( std::istream & stream , std::string_view eol )
 {
 	std::string result ;
 	readLine( stream , result , eol , false , 0U ) ;
 	return result ;
 }
 
-std::istream & G::Str::readLine( std::istream & stream , std::string & line , string_view eol ,
+std::istream & G::Str::readLine( std::istream & stream , std::string & line , std::string_view eol ,
 	bool pre_erase , std::size_t limit )
 {
 	if( !stream.good() ) // (new)
@@ -977,7 +977,7 @@ std::istream & G::Str::readLine( std::istream & stream , std::string & line , st
 	}
 	else
 	{
-		if( eol.empty() ) eol = string_view( "\n" , 1U ) ; // new
+		if( eol.empty() ) eol = std::string_view( "\n" , 1U ) ; // new
 		const char eol_last = eol.at( eol.size()-1U ) ;
 		const std::size_t eol_size = eol.size() ;
 		bool got_eol = StrImp::readLine( stream , line , nullptr , limit ? limit : line.max_size() ,
@@ -1119,7 +1119,7 @@ void G::StrImp::splitIntoTokens( const S & in , T & out , const S & ws , typenam
 	}
 }
 
-void G::Str::splitIntoTokens( const std::string & in , StringArray & out , string_view ws , char esc )
+void G::Str::splitIntoTokens( const std::string & in , StringArray & out , std::string_view ws , char esc )
 {
 	if( esc && in.find(esc) != std::string::npos )
 		StrImp::splitIntoTokens( in , out , sv_to_string(ws) , esc ) ;
@@ -1127,7 +1127,7 @@ void G::Str::splitIntoTokens( const std::string & in , StringArray & out , strin
 		StrImp::splitIntoTokens( in , out , ws ) ;
 }
 
-G::StringArray G::Str::splitIntoTokens( const std::string & in , string_view ws , char esc )
+G::StringArray G::Str::splitIntoTokens( const std::string & in , std::string_view ws , char esc )
 {
 	StringArray out ;
 	splitIntoTokens( in , out , ws , esc ) ;
@@ -1135,7 +1135,7 @@ G::StringArray G::Str::splitIntoTokens( const std::string & in , string_view ws 
 }
 
 template <typename T>
-void G::StrImp::splitIntoFields( string_view in , T & out , string_view ws )
+void G::StrImp::splitIntoFields( std::string_view in , T & out , std::string_view ws )
 {
 	if( !in.empty() )
 	{
@@ -1155,7 +1155,7 @@ void G::StrImp::splitIntoFields( string_view in , T & out , string_view ws )
 }
 
 template <typename T>
-void G::StrImp::splitIntoFields( string_view in_in , T & out , string_view ws ,
+void G::StrImp::splitIntoFields( std::string_view in_in , T & out , std::string_view ws ,
 	char escape , bool remove_escapes )
 {
 	std::string ews ; // escape+whitespace
@@ -1191,22 +1191,22 @@ void G::StrImp::splitIntoFields( string_view in_in , T & out , string_view ws ,
 	}
 }
 
-void G::Str::splitIntoFields( string_view in , StringArray & out , char sep ,
+void G::Str::splitIntoFields( std::string_view in , StringArray & out , char sep ,
 	char escape , bool remove_escapes )
 {
-	StrImp::splitIntoFields( in , out , string_view(&sep,1U) , escape , remove_escapes ) ;
+	StrImp::splitIntoFields( in , out , std::string_view(&sep,1U) , escape , remove_escapes ) ;
 }
 
-G::StringArray G::Str::splitIntoFields( string_view in , char sep )
+G::StringArray G::Str::splitIntoFields( std::string_view in , char sep )
 {
 	G::StringArray out ;
-	StrImp::splitIntoFields( in , out , string_view(&sep,1U) ) ;
+	StrImp::splitIntoFields( in , out , std::string_view(&sep,1U) ) ;
 	return out ;
 }
 
 #ifndef G_LIB_SMALL
-std::string G::Str::join( string_view sep , const StringMap & map , string_view pre ,
-	string_view post )
+std::string G::Str::join( std::string_view sep , const StringMap & map , std::string_view pre ,
+	std::string_view post )
 {
 	std::string result ;
 	int n = 0 ;
@@ -1221,7 +1221,7 @@ std::string G::Str::join( string_view sep , const StringMap & map , string_view 
 }
 #endif
 
-std::string G::Str::join( string_view sep , const StringArray & strings )
+std::string G::Str::join( std::string_view sep , const StringArray & strings )
 {
 	std::string result ;
 	int n = 0 ;
@@ -1232,9 +1232,9 @@ std::string G::Str::join( string_view sep , const StringArray & strings )
 	return result ;
 }
 
-std::string G::Str::join( string_view sep , string_view s1 , string_view s2 ,
-	string_view s3 , string_view s4 , string_view s5 , string_view s6 ,
-	string_view s7 , string_view s8 , string_view s9 )
+std::string G::Str::join( std::string_view sep , std::string_view s1 , std::string_view s2 ,
+	std::string_view s3 , std::string_view s4 , std::string_view s5 , std::string_view s6 ,
+	std::string_view s7 , std::string_view s8 , std::string_view s9 )
 {
 	std::string result ;
 	StrImp::join( sep , result , s1 ) ;
@@ -1249,7 +1249,7 @@ std::string G::Str::join( string_view sep , string_view s1 , string_view s2 ,
 	return result ;
 }
 
-void G::StrImp::join( string_view sep , std::string & result , string_view s )
+void G::StrImp::join( std::string_view sep , std::string & result , std::string_view s )
 {
 	if( !result.empty() && !s.empty() )
 		result.append( sep.data() , sep.size() ) ;
@@ -1265,36 +1265,36 @@ G::StringArray G::Str::keys( const StringMap & map )
 	return result ;
 }
 
-G::string_view G::Str::ws() noexcept
+std::string_view G::Str::ws() noexcept
 {
-	static constexpr string_view chars_ws = " \t\n\r"_sv ;
+	static constexpr std::string_view chars_ws = " \t\n\r"_sv ;
 	static_assert( chars_ws.size() == 4U , "" ) ;
 	return chars_ws ;
 }
 
 #ifndef G_LIB_SMALL
-G::string_view G::Str::alnum() noexcept
+std::string_view G::Str::alnum() noexcept
 {
-	return sv_substr( alnum_() , 0U , alnum_().size()-1U ) ;
+	return sv_substr_noexcept( alnum_() , 0U , alnum_().size()-1U ) ;
 }
 #endif
 
-G::string_view G::Str::alnum_() noexcept
+std::string_view G::Str::alnum_() noexcept
 {
-	static constexpr string_view chars_alnum_ = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz_"_sv ;
+	static constexpr std::string_view chars_alnum_ = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz_"_sv ;
 	static_assert( chars_alnum_.size() == 26U+10U+26U+1U , "" ) ;
 	return chars_alnum_ ;
 }
 
 #ifndef G_LIB_SMALL
-G::string_view G::Str::meta() noexcept
+std::string_view G::Str::meta() noexcept
 {
-	static constexpr string_view chars_meta = "~<>[]*$|?\\(){}\"`'&;="_sv ; // bash meta-chars plus "~"
+	static constexpr std::string_view chars_meta = "~<>[]*$|?\\(){}\"`'&;="_sv ; // bash meta-chars plus "~"
 	return chars_meta ;
 }
 #endif
 
-std::string G::Str::head( string_view in , std::size_t pos , string_view default_ )
+std::string G::Str::head( std::string_view in , std::size_t pos , std::string_view default_ )
 {
 	return
 		pos == std::string::npos ?
@@ -1302,27 +1302,27 @@ std::string G::Str::head( string_view in , std::size_t pos , string_view default
 			( pos == 0U ? std::string() : sv_to_string( pos >= in.size() ? in : in.substr(0U,pos) ) ) ;
 }
 
-std::string G::Str::head( string_view in , string_view sep , bool default_empty )
+std::string G::Str::head( std::string_view in , std::string_view sep , bool default_empty )
 {
 	std::size_t pos = sep.empty() ? std::string::npos : in.find( sep ) ;
-	return head( in , pos , default_empty ? string_view() : in ) ;
+	return head( in , pos , default_empty ? std::string_view() : in ) ;
 }
 
-G::string_view G::Str::headView( string_view in , std::size_t pos , string_view default_ ) noexcept
+std::string_view G::Str::headView( std::string_view in , std::size_t pos , std::string_view default_ ) noexcept
 {
 	return
 		pos == std::string::npos ?
 			default_ :
-			( pos == 0U ? string_view(in.data(),std::size_t(0U)) : ( pos >= in.size() ? in : sv_substr(in,0U,pos) ) ) ;
+			( pos == 0U ? std::string_view(in.data(),std::size_t(0U)) : ( pos >= in.size() ? in : sv_substr_noexcept(in,0U,pos) ) ) ;
 }
 
-G::string_view G::Str::headView( string_view in , string_view sep , bool default_empty ) noexcept
+std::string_view G::Str::headView( std::string_view in , std::string_view sep , bool default_empty ) noexcept
 {
 	std::size_t pos = sep.empty() ? std::string::npos : in.find( sep ) ;
-	return headView( in , pos , default_empty ? string_view(in.data(),std::size_t(0U)) : in ) ;
+	return headView( in , pos , default_empty ? std::string_view(in.data(),std::size_t(0U)) : in ) ;
 }
 
-std::string G::Str::tail( string_view in , std::size_t pos , string_view default_ )
+std::string G::Str::tail( std::string_view in , std::size_t pos , std::string_view default_ )
 {
 	return
 		pos == std::string::npos ?
@@ -1330,36 +1330,36 @@ std::string G::Str::tail( string_view in , std::size_t pos , string_view default
 			( (pos+1U) >= in.size() ? std::string() : sv_to_string(in.substr(pos+1U)) ) ;
 }
 
-std::string G::Str::tail( string_view in , string_view sep , bool default_empty )
+std::string G::Str::tail( std::string_view in , std::string_view sep , bool default_empty )
 {
 	std::size_t pos = sep.empty() ? std::string::npos : in.find(sep) ;
 	if( pos != std::string::npos ) pos += (sep.size()-1U) ;
-	return tail( in , pos , default_empty ? string_view() : in ) ;
+	return tail( in , pos , default_empty ? std::string_view() : in ) ;
 }
 
-G::string_view G::Str::tailView( string_view in , std::size_t pos , string_view default_ ) noexcept
+std::string_view G::Str::tailView( std::string_view in , std::size_t pos , std::string_view default_ ) noexcept
 {
 	return
 		pos == std::string::npos ?
 			default_ :
-			( (pos+1U) >= in.size() ? string_view() : sv_substr(in,pos+1U) ) ;
+			( (pos+1U) >= in.size() ? std::string_view() : sv_substr_noexcept(in,pos+1U) ) ;
 }
 
-G::string_view G::Str::tailView( string_view in , string_view sep , bool default_empty ) noexcept
+std::string_view G::Str::tailView( std::string_view in , std::string_view sep , bool default_empty ) noexcept
 {
 	std::size_t pos = sep.empty() ? std::string::npos : in.find(sep) ;
 	if( pos != std::string::npos ) pos += (sep.size()-1U) ;
-	return tailView( in , pos , default_empty ? string_view() : in ) ;
+	return tailView( in , pos , default_empty ? std::string_view() : in ) ;
 }
 
-bool G::Str::tailMatch( const std::string & in , string_view tail ) noexcept
+bool G::Str::tailMatch( const std::string & in , std::string_view tail ) noexcept
 {
 	return
 		tail.empty() ||
 		( in.size() >= tail.size() && 0 == in.compare(in.size()-tail.size(),tail.size(),tail.data()) ) ;
 }
 
-bool G::Str::headMatch( const std::string & in , string_view head ) noexcept
+bool G::Str::headMatch( const std::string & in , std::string_view head ) noexcept
 {
 	return
 		head.empty() ||
@@ -1376,23 +1376,23 @@ std::string G::Str::negative()
 	return "no" ;
 }
 
-bool G::Str::isPositive( string_view s_in ) noexcept
+bool G::Str::isPositive( std::string_view s_in ) noexcept
 {
-	string_view s = trimmedView( s_in , ws() ) ;
+	std::string_view s = trimmedView( s_in , ws() ) ;
 	return !s.empty() && (
 		sv_imatch(s,"y"_sv) || sv_imatch(s,"yes"_sv) || sv_imatch(s,"t"_sv) ||
 		sv_imatch(s,"true"_sv) || sv_imatch(s,"1"_sv) || sv_imatch(s,"on"_sv) ) ;
 }
 
-bool G::Str::isNegative( string_view s_in ) noexcept
+bool G::Str::isNegative( std::string_view s_in ) noexcept
 {
-	string_view s = trimmedView( s_in , ws() ) ;
+	std::string_view s = trimmedView( s_in , ws() ) ;
 	return !s.empty() && (
 		sv_imatch(s,"n"_sv) || sv_imatch(s,"no"_sv) || sv_imatch(s,"f"_sv) ||
 		sv_imatch(s,"false"_sv) || sv_imatch(s,"0"_sv) || sv_imatch(s,"off"_sv) ) ;
 }
 
-bool G::Str::match( string_view a , string_view b ) noexcept
+bool G::Str::match( std::string_view a , std::string_view b ) noexcept
 {
 	return a == b ;
 }
@@ -1404,14 +1404,14 @@ bool G::StrImp::ilessc( char c1 , char c2 ) noexcept
 	return c1 < c2 ;
 }
 
-bool G::Str::iless( string_view a , string_view b ) noexcept
+bool G::Str::iless( std::string_view a , std::string_view b ) noexcept
 {
 	return std::lexicographical_compare( a.begin() , a.end() , b.begin() , b.end() , StrImp::ilessc ) ; // noexcept?
 }
 
 bool G::StrImp::imatchc( char c1 , char c2 ) noexcept
 {
-	return sv_imatch( string_view(&c1,1U) , string_view(&c2,1U) ) ;
+	return sv_imatch( std::string_view(&c1,1U) , std::string_view(&c2,1U) ) ;
 }
 
 #ifndef G_LIB_SMALL
@@ -1421,7 +1421,7 @@ bool G::Str::imatch( char c1 , char c2 ) noexcept
 }
 #endif
 
-bool G::Str::imatch( string_view a , string_view b ) noexcept
+bool G::Str::imatch( std::string_view a , std::string_view b ) noexcept
 {
 	return sv_imatch( a , b ) ;
 }
@@ -1429,20 +1429,20 @@ bool G::Str::imatch( string_view a , string_view b ) noexcept
 #ifndef G_LIB_SMALL
 bool G::StrImp::imatch( const std::string & a , const std::string & b )
 {
-	return sv_imatch( string_view(a) , string_view(b) ) ;
+	return sv_imatch( std::string_view(a) , std::string_view(b) ) ;
 }
 #endif
 
-std::size_t G::Str::ifind( string_view s , string_view key )
+std::size_t G::Str::ifind( std::string_view s , std::string_view key )
 {
 	return ifindat( s , key , 0U ) ;
 }
 
-std::size_t G::Str::ifindat( string_view s , string_view key , std::size_t pos )
+std::size_t G::Str::ifindat( std::string_view s , std::string_view key , std::size_t pos )
 {
 	if( s.empty() || key.empty() || pos >= s.size() ) return std::string::npos ;
-	auto p = std::search( s.data()+pos , s.data()+s.size() , key.data() , key.data()+key.size() , StrImp::imatchc ) ; // NOLINT narrowing
-	return p == s.end() ? std::string::npos : std::distance(s.begin(),p) ;
+	const char * p = std::search( s.data()+pos , s.data()+s.size() , key.data() , key.data()+key.size() , StrImp::imatchc ) ; // NOLINT narrowing
+	return p == (s.data()+s.size()) ? std::string::npos : std::distance(s.data(),p) ;
 }
 
 template <typename T, typename V>

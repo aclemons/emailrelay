@@ -26,6 +26,7 @@
 #include "gexception.h"
 #include "gstringarray.h"
 #include <string>
+#include <memory>
 
 namespace Gui
 {

@@ -96,12 +96,13 @@
 ./src/gnet/geventemitter.cpp
 ./src/gnet/geventhandler.cpp
 ./src/gnet/geventloggingcontext.cpp
+./src/gnet/geventlogging.cpp
 ./src/gnet/geventloop.cpp
 ./src/gnet/geventloop_epoll.cpp
-./src/gnet/geventloophandles_st.cpp
+./src/gnet/geventloophandles.cpp
 ./src/gnet/geventloop_select.cpp
+./src/gnet/geventstate.cpp
 ./src/gnet/gexceptionhandler.cpp
-./src/gnet/gexceptionsink.cpp
 ./src/gnet/gexceptionsource.cpp
 ./src/gnet/gfutureevent_unix.cpp
 ./src/gnet/ginterfaces_common.cpp

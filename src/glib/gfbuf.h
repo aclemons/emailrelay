@@ -116,6 +116,7 @@ G::fbuf<T,N>::fbuf( G::fbuf<T,N>::read_fn_t read , G::fbuf<T,N>::write_fn_t writ
 	m_file_open(false) ,
 	m_file()
 {
+	static_assert( N > 0 , "" ) ;
 }
 
 template <typename T,int N>
@@ -128,6 +129,7 @@ G::fbuf<T,N>::fbuf( T file , G::fbuf<T,N>::read_fn_t read , G::fbuf<T,N>::write_
 	m_file_open(false) ,
 	m_file()
 {
+	static_assert( N > 0 , "" ) ;
 	open( file ) ;
 }
 

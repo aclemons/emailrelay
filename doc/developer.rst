@@ -39,7 +39,7 @@ The E-MailRelay server uses non-blocking socket i/o, with a select() or epoll()
 event loop. This event model means that the server can handle multiple network
 connections simultaneously from a single thread, and even if multi-threading is
 disabled at build-time the only blocking occurs when external programs are
-executed (see *-\ -filter* and *-\ -address-verifier*).
+executed (see *--filter* and *--address-verifier*).
 
 The advantages of a non-blocking event model are discussed in the well-known
 `C10K Problem <http://www.kegel.com/c10k.html>`_ document.
@@ -124,7 +124,7 @@ The message-store functionality uses three abstract interfaces: *MessageStore*,
 messages within the store, and the *StoredMessage* interface is used for
 reading and extracting messages from the store. The concrete implementation
 classes based on these interfaces are respectively *FileStore*, *NewFile* and
-*StoredFile*.
+\ *StoredFile*\ .
 
 Protocol classes such as *GSmtp::ServerProtocol* receive network and timer
 events from their container and use an abstract *Sender* interface to send
@@ -139,18 +139,18 @@ pattern is used whereby the forwarding class uses an instance of the storage
 class to do the message storing and filtering, while adding in an instance
 of the *GSmtp::Client* class to do the forwarding.
 
-Message filtering (\ *-\ -filter*\ ) is implemented via an abstract *GSmtp::Filter*
+Message filtering (\ *--filter*\ ) is implemented via an abstract *GSmtp::Filter*
 interface. Concrete implementations in the *GFilters* namespace are provided for
 doing nothing, running an external executable program, talking to an external
 network server, etc.
 
-Address verifiers (\ *-\ -address-verifier*\ ) are implemented via an abstract
+Address verifiers (\ *--address-verifier*\ ) are implemented via an abstract
 *GSmtp::Verifier* interface, with concrete implementations in the *GVerifiers*
 namespace.
 
 The protocol, processor and message-store interfaces are brought together by
 the high-level *GSmtp::Server* and *GSmtp::Client* classes. Dependency
-injection is used to create the concrete instances of the *MessageStore*,
+injection is used to provide them with concrete instances of the *MessageStore*,
 *Filter* and *Verifier* interfaces.
 
 Event handling and exceptions
@@ -167,22 +167,33 @@ interface, timer events to the *TimerBase* interface, and 'future' events to
 the *FutureEventCallback* interface. If any of the these event handlers throws
 an exception then the event loop catches it and delivers it back to an
 exception handler through the *onException()* method of an associated
-*ExceptionHandler* interface. If an exception is thrown out of _this_ callback
-then the event loop code lets it propagate back to *main()*, typically
-terminating the program.
+*ExceptionHandler* interface.
+
+ExceptionHandler interface pointers are passed around in *EventState*
+structures. All event-handling classes generally accept an EventState in their
+constructor and they pass a copy to all base classes and contained sub-objects.
+The default ExceptionHandler just rethrows the current exception, which
+typically propagates back to *main()* and terminates the program.
 
 However, sometimes there are objects that need to be more resilient to
 exceptions. In particular, a network server should not terminate just because
-one of its connections fails unexpectedly. In these cases the owning parent
-object receives the exception notification together with an *ExceptionSource*
-pointer that identifies the child object that threw the exception. This allows
-the parent object to absorb the exception and delete the child, without the
-exception killing the whole server.
+one of its connections fails unexpectedly and a network client should not
+terminate just because the peer disconnects. In these cases the ExceptionHandler
+can be set up to be the owning parent object, which can can choose to simply
+delete the child object without rethrowing and killing the whole program. The
+GNet::Server and GNet::ClientPtr classes do this.
 
 Event sources in the event loop are typically held as a file descriptor and a
 windows event handle, together known as a *Descriptor*. Event loop
 implementations typically watch a set of Descriptors for events and call the
 relevant EventHandler/ExceptionHandler code via the *EventEmitter* class.
+
+EventState objects also contain a pointer to an EventLogging interface. This
+interface provides a string that describes some key attribute of the event
+handling object that implements the interface. EventLogging objects are arranged
+in a linked list that runs through the assemblage of event handling objects.
+Before delivering an event the EventEmitter combines the strings returned by
+this linked list and applies the result to the G::LogOutput singleton.
 
 Multi-threading
 ===============
@@ -191,7 +202,7 @@ unless disabled at build-time std::thread is used in a future/promise pattern to
 wrap up *getaddrinfo()* and *waitpid()* system calls. The shared state comprises
 only the parameters and return results from these system calls, and
 synchronisation back to the main thread uses the main event loop (see
-*GNet::FutureEvent*). Threading is not used elsewhere so the C/C++ run-time
+\ *GNet::FutureEvent*\ ). Threading is not used elsewhere so the C/C++ run-time
 library does not need to be thread-safe.
 
 E-MailRelay GUI
@@ -204,7 +215,7 @@ the comments in *src/gui/guimain.cpp* for more details.
 The user interface runs as a stack of dialog-box pages with forward and back
 buttons at the bottom. Once the stack has been completed by the user then each
 page is asked to dump out its state as a set of key-value pairs (see
-*src/gui/pages.cpp*). These key-value pairs are processed by an installer class
+\ *src/gui/pages.cpp*\ ). These key-value pairs are processed by an installer class
 into a list of action objects (in the *Command* design pattern) and then the
 action objects are run in turn. In order to display the progress of the
 installation each action object is run within a timer callback so that the Qt
@@ -244,15 +255,15 @@ sibling directory and Qt libraries under *c:\\qt*, but refer to *winbuild.pm* fo
 the details. The build proceeds using *cmake* and *msbuild* resulting in
 statically-linked executables but with the GUI typically dynamically-linked.
 
-The mbedtls code is built if necessary by running *cmake* and *cmake -\ -build* in
+The mbedtls code is built if necessary by running *cmake* and *cmake --build* in
 a *mbedtls-x64* build sub-directory. The mbedtls headers are copied into the
-build tree. The mbedtls configuration header (mbedtls_config.h) is optionally
-edited to enable TLS v1.3. If necessary delete the *mbedtls-x64* build directory
-to trigger a rebuild.
+mbedtls build tree. The mbedtls configuration header (mbedtls_config.h) is
+optionally edited to enable TLS v1.3. If necessary delete the *mbedtls-x64*
+build directory to trigger a rebuild.
 
 A release assembly can be created by running *winbuild-install.bat* or
-*perl winbuild.pl install*. This makes use of the Qt *windeployqt* utility to
-assemble DLLs and it also generates the Qt translation files (\ **.qm*\ ).
+\ *perl winbuild.pl install*\ . This makes use of the Qt *windeployqt* utility to
+assemble DLLs and it also generates the Qt *.qm* translation files.
 
 For public release builds the E-MailRelay GUI must be statically linked. Start
 with a normal build with a dynamically-linked GUI and use *winbuild.pl install*
@@ -269,7 +280,7 @@ copy the built executables. Any extra run-time files can be identified by
 running *dumpbin /dependents* in the normal way.
 
 To target ancient versions of Windows start with a MinGW cross-build for 32-bit
-(\ *./configure.sh -m -w32 -\ -disable-gui*\ ). Then *winbuild.pl install_winxp* can
+(\ *./configure.sh -m -w32 --disable-gui*\ ). Then *winbuild.pl install_winxp* can
 be used to make a simplified distribution assembly, without a GUI.
 
 Windows packaging
@@ -291,9 +302,9 @@ it can itself be generated by running the *bootstrap* script.
 
 Unix packaging
 ==============
-On Unix-like operating systems it is more natural to use some sort of package
-derived from the *make install* process rather than an installer program, so
-the emailrelay GUI is not normally used.
+On Unix-like operating systems the native packaging system is normally used
+rather than the E-MailRelay GUI installer, so the configure script should be
+given the *--disable-gui* command-line option.
 
 Top-level makefile targets *dist*, *deb* and *rpm* can be used to create a
 binary tarball, debian package, and RPM package respectively.
@@ -303,7 +314,7 @@ Internationalisation
 The GUI code has i18n support using the Qt framework, with the tr() function
 used throughout the GUI source code. The GUI main() function loads translations
 from the *translations* sub-directory (relative to the executable), although
-that can be overridden with the *-\ -qm* command-line option. Qt's *-reverse*
+that can be overridden with the *--qm* command-line option. Qt's *-reverse*
 option can also be used to reverse the widgets when using RTL languages.
 
 The non-GUI code has some i18n support by using gettext() via the inline txt()
@@ -311,8 +322,8 @@ and tx() functions defined in *src/glib/ggettext.h*. The configure script
 detects gettext support in the C run-time library, but without trying different
 compile and link options. See also *po/Makefile.am*.
 
-On Windows the main server executable has a tabbed dialog-box as its user
-interface, but that does not have any support for i18n.
+On Windows the main server executable *emailrelay.exe* has a tabbed dialog-box
+as its user interface, but that does not have any support for i18n.
 
 Source control
 ==============
@@ -335,21 +346,21 @@ or
 
 Code that has been formally released will be tagged with a tag like *V_2_5_2*
 and any post-release or back-ported fixes will be on a *fixes* branch like
-*V_2_5_2_fixes*.
+\ *V_2_5_2_fixes*\ .
 
 Compile-time features
 =====================
 Compile-time features can be selected with options passed to the *configure*
 script. These include the following:
 
-* Configuration GUI (\ *-\ -enable-gui*\ )
-* Multi-threading (\ *-\ -enable-std-thread*\ )
-* TLS library (\ *-\ -with-openssl*\ , *-\ -with-mbedtls*)
-* Debug-level logging (\ *-\ -enable-debug*\ )
-* Event loop using epoll (\ *-\ -enable-epoll*\ )
-* PAM_ support (\ *-\ -with-pam*\ )
+* Configuration GUI (\ *--enable-gui*\ )
+* Multi-threading (\ *--enable-std-thread*\ )
+* TLS library (\ *--with-openssl*\ , *--with-mbedtls*)
+* Debug-level logging (\ *--enable-debug*\ )
+* Event loop using epoll (\ *--enable-epoll*\ )
+* PAM_ support (\ *--with-pam*\ )
 
-Use *./configure -\ -help* to see a complete list of options.
+Use *./configure --help* to see a complete list of options.
 
 
 

@@ -39,7 +39,7 @@ class GNet::SocketProtocolImp
 {
 public:
 	using Result = GSsl::Protocol::Result ;
-	using Segment = G::string_view ;
+	using Segment = std::string_view ;
 	using Segments = std::vector<Segment> ;
 	struct Position /// A pointer into the scatter/gather payload of GNet::SocketProtocolImp::send().
 	{
@@ -50,13 +50,13 @@ public:
 	} ;
 
 public:
-	SocketProtocolImp( EventHandler & , ExceptionSink , SocketProtocol::Sink & ,
+	SocketProtocolImp( EventHandler & , EventState , SocketProtocol::Sink & ,
 		StreamSocket & , const SocketProtocol::Config & ) ;
 	~SocketProtocolImp() ;
 	bool readEvent( bool ) ;
 	bool writeEvent() ;
 	void otherEvent( EventHandler::Reason , bool ) ;
-	bool send( G::string_view data , std::size_t offset ) ;
+	bool send( std::string_view data , std::size_t offset ) ;
 	bool send( const Segments & , std::size_t ) ;
 	void shutdown() ;
 	void secureConnect() ;
@@ -97,12 +97,12 @@ private:
 	static bool finished( const Segments & , Position ) ;
 	static Position firstPosition( const Segments & , std::size_t ) ;
 	static Position newPosition( const Segments & , Position , std::size_t ) ;
-	static G::string_view chunk( const Segments & , Position ) ;
+	static std::string_view chunk( const Segments & , Position ) ;
 	friend std::ostream & operator<<( std::ostream & , State ) ;
 
 private:
 	EventHandler & m_handler ;
-	ExceptionSink m_es ;
+	EventState m_es ;
 	SocketProtocol::Sink & m_sink ;
 	StreamSocket & m_socket ;
 	G::CallStack m_stack ;
@@ -142,7 +142,7 @@ namespace GNet
 	}
 }
 
-GNet::SocketProtocolImp::SocketProtocolImp( EventHandler & handler , ExceptionSink es ,
+GNet::SocketProtocolImp::SocketProtocolImp( EventHandler & handler , EventState es ,
 	SocketProtocol::Sink & sink , StreamSocket & socket , const SocketProtocol::Config & config ) :
 		m_handler(handler) ,
 		m_es(es) ,
@@ -230,7 +230,7 @@ void GNet::SocketProtocolImp::otherEvent( EventHandler::Reason reason , bool no_
 std::size_t GNet::SocketProtocolImp::size( const Segments & segments )
 {
 	return std::accumulate( segments.begin() , segments.end() , std::size_t(0) ,
-		[](std::size_t n,G::string_view s){return n+s.size();} ) ;
+		[](std::size_t n,std::string_view s){return n+s.size();} ) ;
 }
 
 GNet::SocketProtocolImp::Position GNet::SocketProtocolImp::firstPosition( const Segments & s , std::size_t offset )
@@ -249,14 +249,14 @@ GNet::SocketProtocolImp::Position GNet::SocketProtocolImp::newPosition( const Se
 	return pos ;
 }
 
-G::string_view GNet::SocketProtocolImp::chunk( const Segments & s , Position pos )
+std::string_view GNet::SocketProtocolImp::chunk( const Segments & s , Position pos )
 {
 	G_ASSERT( pos.segment < s.size() ) ;
 	G_ASSERT( pos.offset < s[pos.segment].size() ) ;
 	return s.at(pos.segment).substr( pos.offset ) ;
 }
 
-bool GNet::SocketProtocolImp::send( G::string_view data , std::size_t offset )
+bool GNet::SocketProtocolImp::send( std::string_view data , std::size_t offset )
 {
 	if( data.empty() || offset >= data.size() )
 		return true ;
@@ -285,7 +285,7 @@ bool GNet::SocketProtocolImp::send( G::string_view data , std::size_t offset )
 		// make a copy here because we have to do retries with the same pointer
 		m_data_copy.assign( data.data()+offset , data.size()-offset ) ;
 		G_ASSERT( m_one_segment.size() == 1U ) ;
-		m_one_segment[0] = G::string_view( m_data_copy.data() , m_data_copy.size() ) ;
+		m_one_segment[0] = std::string_view( m_data_copy.data() , m_data_copy.size() ) ;
 		rc = sslSend( m_one_segment , Position() ) ;
 	}
 	return rc ;
@@ -523,7 +523,7 @@ bool GNet::SocketProtocolImp::sslSendImp( const Segments & segments , Position p
 	while( !finished(segments,pos) )
 	{
 		ssize_t nsent = 0 ;
-		G::string_view c = chunk( segments , pos ) ;
+		std::string_view c = chunk( segments , pos ) ;
 		GSsl::Protocol::Result result = m_ssl->write( c.data() , c.size() , nsent ) ;
 		if( result == Result::error )
 		{
@@ -689,7 +689,7 @@ bool GNet::SocketProtocolImp::rawSend( const Segments & segments , Position pos 
 		G_ASSERT( pos_out.offset < segments[0].size() ) ; // since not all sent
 		m_segments = segments ;
 		m_data_copy.assign( segments[0].data()+pos_out.offset , segments[0].size()-pos_out.offset ) ;
-		m_segments[0] = G::string_view( m_data_copy.data() , m_data_copy.size() ) ;
+		m_segments[0] = std::string_view( m_data_copy.data() , m_data_copy.size() ) ;
 		m_position = Position() ;
 
 		m_socket.addWriteHandler( m_handler , m_es ) ;
@@ -734,7 +734,7 @@ bool GNet::SocketProtocolImp::rawSendImp( const Segments & segments , Position p
 {
 	while( !finished(segments,pos) )
 	{
-		G::string_view c = chunk( segments , pos ) ;
+		std::string_view c = chunk( segments , pos ) ;
 		ssize_t rc = m_socket.write( c.data() , c.size() ) ;
 		if( rc < 0 && ! m_socket.eWouldBlock() )
 		{
@@ -814,7 +814,7 @@ void GNet::SocketProtocolImp::logSecure( const std::string & protocol , const st
 
 //
 
-GNet::SocketProtocol::SocketProtocol( EventHandler & handler , ExceptionSink es ,
+GNet::SocketProtocol::SocketProtocol( EventHandler & handler , EventState es ,
 	Sink & sink , StreamSocket & socket , const Config & config ) :
 		m_imp(std::make_unique<SocketProtocolImp>(handler,es,sink,socket,config))
 {
@@ -840,15 +840,15 @@ void GNet::SocketProtocol::otherEvent( EventHandler::Reason reason , bool no_thr
 
 bool GNet::SocketProtocol::send( const std::string & data , std::size_t offset )
 {
-	return m_imp->send( G::string_view(data.data(),data.size()) , offset ) ;
+	return m_imp->send( std::string_view(data.data(),data.size()) , offset ) ;
 }
 
-bool GNet::SocketProtocol::send( G::string_view data )
+bool GNet::SocketProtocol::send( std::string_view data )
 {
 	return m_imp->send( data , 0U ) ;
 }
 
-bool GNet::SocketProtocol::send( const std::vector<G::string_view> & data , std::size_t offset )
+bool GNet::SocketProtocol::send( const std::vector<std::string_view> & data , std::size_t offset )
 {
 	return m_imp->send( data , offset ) ;
 }

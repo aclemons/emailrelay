@@ -20,11 +20,12 @@
 
 #include "gdef.h"
 #include "gsmtpforward.h"
+#include "geventloggingcontext.h"
 #include "gcall.h"
 #include <algorithm>
 #include <sstream>
 
-GSmtp::Forward::Forward( GNet::ExceptionSink es , GStore::MessageStore & store ,
+GSmtp::Forward::Forward( GNet::EventState es , GStore::MessageStore & store ,
 	FilterFactoryBase & ff , const GNet::Location & forward_to_default ,
 	const GAuth::SaslClientSecrets & secrets , const Config & config ) :
 		Forward( es , ff , forward_to_default , secrets , config )
@@ -34,7 +35,7 @@ GSmtp::Forward::Forward( GNet::ExceptionSink es , GStore::MessageStore & store ,
 	m_continue_timer.startTimer( 0U ) ;
 }
 
-GSmtp::Forward::Forward( GNet::ExceptionSink es ,
+GSmtp::Forward::Forward( GNet::EventState es ,
 	FilterFactoryBase & ff , const GNet::Location & forward_to_default ,
 	const GAuth::SaslClientSecrets & secrets , const Config & config ) :
 		m_es(es) ,
@@ -83,10 +84,12 @@ bool GSmtp::Forward::sendNext()
 	{
 		std::unique_ptr<GStore::StoredMessage> message( ++m_iter ) ;
 		if( message == nullptr )
-		{
 			break ;
-		}
-		else if( message->toCount() == 0U && m_config.fail_if_no_remote_recipients )
+
+		// change the logging context asap to reflect the new message being forwarded
+		GNet::EventLoggingContext inner( m_es , Client::eventLoggingString(message.get(),m_config) ) ;
+
+		if( message->toCount() == 0U && m_config.fail_if_no_remote_recipients )
 		{
 			G_WARNING( "GSmtp::Forward::sendNext: forwarding [" << message->id().str() << "]: failing message with no remote recipients" ) ;
 			message->fail( "no remote recipients" , 0 ) ;
@@ -226,7 +229,7 @@ void GSmtp::Forward::newClient( const GStore::StoredMessage & message )
 	else
 		m_forward_to_location = GNet::Location( m_forward_to_address ) ;
 
-	m_client_ptr.reset( std::make_unique<GSmtp::Client>( GNet::ExceptionSink(&m_client_ptr,nullptr) ,
+	m_client_ptr.reset( std::make_unique<GSmtp::Client>( m_es.eh(m_client_ptr) ,
 		m_ff , m_forward_to_location , m_secrets , m_config ) ) ;
 
 	m_client_ptr->messageDoneSignal().connect( G::Slot::slot(*this,&Forward::onMessageDoneSignal) ) ;

@@ -40,7 +40,7 @@ HANDLE CreateEventEx( LPSECURITY_ATTRIBUTES sec , LPCTSTR name , DWORD flags , D
 class GNet::FutureEventImp : public EventHandler
 {
 public:
-	FutureEventImp( FutureEventHandler & handler , ExceptionSink es ) ;
+	FutureEventImp( FutureEventHandler & handler , EventState es ) ;
 		// Constructor.
 
 	~FutureEventImp() override ;
@@ -80,12 +80,12 @@ private:
 
 private:
 	FutureEventHandler & m_handler ;
-	ExceptionSink m_es ;
+	EventState m_es ;
 	Handle m_h ;
 	Handle m_h2 ;
 } ;
 
-GNet::FutureEventImp::FutureEventImp( FutureEventHandler & handler , ExceptionSink es ) :
+GNet::FutureEventImp::FutureEventImp( FutureEventHandler & handler , EventState es ) :
 	m_handler(handler) ,
 	m_es(es)
 {
@@ -145,7 +145,7 @@ void GNet::FutureEventImp::readEvent()
 
 // ==
 
-GNet::FutureEvent::FutureEvent( FutureEventHandler & handler , ExceptionSink es ) :
+GNet::FutureEvent::FutureEvent( FutureEventHandler & handler , EventState es ) :
 	m_imp(std::make_unique<FutureEventImp>(handler,es))
 {
 }

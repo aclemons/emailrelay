@@ -30,10 +30,8 @@ GNet::EventHandler::EventHandler()
 GNet::EventHandler::~EventHandler()
 {
 	EventLoop * event_loop = EventLoop::ptr() ;
-	if( event_loop != nullptr && m_fd.valid() )
-	{
+	if( event_loop != nullptr )
 		event_loop->drop( m_fd ) ;
-	}
 }
 
 void GNet::EventHandler::readEvent()

@@ -23,7 +23,7 @@
 
 #include "gdef.h"
 #include "gverifier.h"
-#include "gexceptionsink.h"
+#include "geventstate.h"
 #include <string>
 #include <utility>
 #include <memory>
@@ -47,7 +47,7 @@ public:
 		std::string second ; // reason on error, or eg. "/bin/a" if "file"
 	} ;
 
-	virtual std::unique_ptr<Verifier> newVerifier( GNet::ExceptionSink ,
+	virtual std::unique_ptr<Verifier> newVerifier( GNet::EventState ,
 		const Verifier::Config & config , const Spec & spec ) = 0 ;
 			///< Returns a Verifier on the heap. Throws if an invalid
 			///< or unsupported specification.

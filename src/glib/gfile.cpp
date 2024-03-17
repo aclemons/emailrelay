@@ -26,45 +26,60 @@
 #include <iostream>
 #include <cstdio>
 
+bool G::File::removeImp( const char * path , int * e ) noexcept
+{
+	bool ok = path && 0 == std::remove( path ) ;
+	if( e )
+		*e = ok ? 0 : ( path ? Process::errno_() : EINVAL ) ;
+	return ok ;
+}
+
 bool G::File::remove( const Path & path , std::nothrow_t ) noexcept
 {
-	int rc = std::remove( path.cstr() ) ;
-	return rc == 0 ;
+	static_assert( noexcept(path.cstr()) , "" ) ;
+	return removeImp( path.cstr() , nullptr ) ;
+}
+
+bool G::File::cleanup( const Cleanup::Arg & arg ) noexcept
+{
+	return removeImp( arg.path() , nullptr ) ;
 }
 
 void G::File::remove( const Path & path )
 {
-	int rc = std::remove( path.cstr() ) ;
-	int e = Process::errno_() ;
-	if( rc != 0 )
+	int e = 0 ;
+	bool ok = removeImp( path.cstr() , &e ) ;
+	if( !ok )
 	{
 		G_WARNING( "G::File::remove: cannot delete file [" << path << "]: " << Process::strerror(e) ) ;
 		throw CannotRemove( path.str() , Process::strerror(e) ) ;
 	}
 }
 
+bool G::File::renameImp( const char * from , const char * to , int * e ) noexcept
+{
+	bool ok = from && to && 0 == std::rename( from , to ) ;
+	if( e )
+		*e = ok ? 0 : ( (from && to) ? Process::errno_() : EINVAL ) ;
+	return ok ;
+}
+
 bool G::File::rename( const Path & from , const Path & to , std::nothrow_t ) noexcept
 {
-	return 0 == std::rename( from.cstr() , to.cstr() ) ;
+	static_assert( noexcept(from.cstr()) , "" ) ;
+	return renameImp( from.cstr() , to.cstr() , nullptr ) ;
 }
 
 void G::File::rename( const Path & from , const Path & to , bool ignore_missing )
 {
-	bool is_missing = false ;
-	bool ok = rename( from.cstr() , to.cstr() , is_missing ) ;
+	int e = 0 ;
+	bool ok = renameImp( from.cstr() , to.cstr() , &e ) ;
+	bool is_missing = !ok && e == ENOENT ;
 	if( !ok && !(is_missing && ignore_missing) )
 	{
 		throw CannotRename( std::string() + "[" + from.str() + "] to [" + to.str() + "]" ) ;
 	}
 	G_DEBUG( "G::File::rename: \"" << from << "\" -> \"" << to << "\": success=" << ok ) ;
-}
-
-bool G::File::rename( const char * from , const char * to , bool & enoent ) noexcept
-{
-	bool ok = 0 == std::rename( from , to ) ;
-	int error = Process::errno_() ;
-	enoent = ( !ok && error == ENOENT ) ;
-	return ok ;
 }
 
 #ifndef G_LIB_SMALL
@@ -256,35 +271,37 @@ void G::File::mkdir( const Path & dir )
 }
 #endif
 
-bool G::File::mkdirsr( const Path & path , int & e , int & limit )
+bool G::File::mkdirsImp( const Path & path_in , int & e , int limit )
 {
-	// (recursive)
-
-	if( exists(path) )
+	if( path_in.empty() )
 		return true ;
 
-	if( path.str().empty() )
-		return true ;
-
-	bool ok = mkdirsr( path.dirname() , e , limit ) ; // (recursion)
-	if( !ok )
-		return false ;
-
-	e = mkdirImp( path ) ;
-	if( e == 0 && --limit < 0 )
+	auto parts = path_in.split() ;
+	Path path ;
+	for( const auto & part : parts )
 	{
-		e = ENOENT ; // sort of
-		return false ;
+		path.pathAppend( part ) ;
+		if( path.isRoot() )
+			continue ;
+		e = mkdirImp( path ) ;
+		if( e == EEXIST )
+			continue ;
+		else if( e )
+			break ;
+		if( --limit <= 0 )
+		{
+			e = E2BIG ;
+			break ;
+		}
 	}
-
-	return e == 0 ;
+	return e == 0 || e == EEXIST ;
 }
 
 #ifndef G_LIB_SMALL
 bool G::File::mkdirs( const Path & path , std::nothrow_t , int limit )
 {
 	int e = 0 ;
-	return mkdirsr( path , e , limit ) ;
+	return mkdirsImp( path , e , limit ) ;
 }
 #endif
 
@@ -292,7 +309,7 @@ bool G::File::mkdirs( const Path & path , std::nothrow_t , int limit )
 void G::File::mkdirs( const Path & path , int limit )
 {
 	int e = 0 ;
-	if( !mkdirsr(path,e,limit) && e != EEXIST )
+	if( !mkdirsImp(path,e,limit) )
 		throw CannotMkdir( path.str() , e ? G::Process::strerror(e) : std::string() ) ;
 }
 #endif

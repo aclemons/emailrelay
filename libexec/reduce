@@ -43,8 +43,10 @@ cfg_dirs="glib gssl gnet gauth gpop gstore gfilters gverifiers gsmtp"
 
 cfg_exclude_files="__none__"
 cfg_exclude_files="${cfg_exclude_files}|geventemitter.cpp" # used differently for select vs epoll
-cfg_exclude_files="${cfg_exclude_files}|gtest.cpp" # preprocessor shenanigans
-cfg_exclude_files="${cfg_exclude_files}|ginterfaces_unix.cpp" # preprocessor shenanigans
+cfg_exclude_files="${cfg_exclude_files}|gtest.cpp" # preprocessor use
+cfg_exclude_files="${cfg_exclude_files}|ginterfaces_unix.cpp" # preprocessor use
+cfg_exclude_files="${cfg_exclude_files}|gstringview.cpp" # preprocessor use
+cfg_exclude_files="${cfg_exclude_files}|goptions.cpp" # preprocessor use
 
 cfg_exclude_functions="__none__"
 cfg_exclude_functions="${cfg_exclude_function} GNet::inet_pton_imp" # see gdef.h

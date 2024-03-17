@@ -25,7 +25,7 @@
 #include "gaddress.h"
 #include "gdatetime.h"
 #include "geventhandler.h"
-#include "gexceptionsink.h"
+#include "geventstate.h"
 #include "gexception.h"
 #include "gstringarray.h"
 #include "gtimer.h"
@@ -152,7 +152,7 @@ public:
 	G_EXCEPTION( BadDnsResponse , tx("invalid dns response") ) ;
 	using ResultList = std::vector<DnsBlockServerResult> ;
 
-	DnsBlock( DnsBlockCallback & , ExceptionSink , G::string_view config = {} ) ;
+	DnsBlock( DnsBlockCallback & , EventState , std::string_view config = {} ) ;
 		///< Constructor. Use configure() if necessary and then start(),
 		///< one time only.
 
@@ -160,7 +160,7 @@ public:
 		bool allow_on_timeout , G::TimeInterval timeout , const G::StringArray & servers ) ;
 			///< Configures the object after construction.
 
-	void configure( G::string_view ) ;
+	void configure( std::string_view ) ;
 		///< Configuration overload taking a configuration string containing
 		///< comma-separated fields of: dns-server-address, timeout-ms,
 		///< threshold, dnsbl-server-list.
@@ -186,20 +186,20 @@ private: // overrides
 	void readEvent() override ; // Override from GNet::EventHandler.
 
 private:
-	static void configureImp( G::string_view , DnsBlock * ) ;
+	static void configureImp( std::string_view , DnsBlock * ) ;
 	void onTimeout() ;
 	static std::string queryString( const Address & ) ;
 	static std::size_t countResponders( const ResultList & ) ;
 	static std::size_t countDeniers( const ResultList & ) ;
 	static Address nameServerAddress() ;
 	static Address nameServerAddress( const std::string & ) ;
-	static bool isDomain( G::string_view ) noexcept ;
-	static bool isPositive( G::string_view ) noexcept ;
-	static unsigned int ms( G::string_view ) ;
+	static bool isDomain( std::string_view ) noexcept ;
+	static bool isPositive( std::string_view ) noexcept ;
+	static unsigned int ms( std::string_view ) ;
 
 private:
 	DnsBlockCallback & m_callback ;
-	ExceptionSink m_es ;
+	EventState m_es ;
 	Timer<DnsBlock> m_timer ;
 	G::StringArray m_servers ;
 	std::size_t m_threshold {1U} ;

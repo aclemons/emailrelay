@@ -65,7 +65,7 @@ public:
 		///< Constructor. The delivery base directory is an attribute of
 		///< the FileStore.
 
-	static void deliverTo( FileStore & , G::string_view prefix ,
+	static void deliverTo( FileStore & , std::string_view prefix ,
 		const G::Path & dst_dir , const G::Path & envelope_path , const G::Path & content_path ,
 		bool hardlink = false , bool pop_by_name = false ) ;
 			///< Low-level function to copy a single message into a mailbox

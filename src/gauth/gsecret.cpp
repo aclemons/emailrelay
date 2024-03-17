@@ -28,8 +28,8 @@
 #include "gassert.h"
 #include <sstream>
 
-GAuth::Secret::Secret( Value id , Value secret , G::string_view hash_function ,
-	G::string_view context ) :
+GAuth::Secret::Secret( Value id , Value secret , std::string_view hash_function ,
+	std::string_view context ) :
 		m_hash_function(G::Str::lower(hash_function)) ,
 		m_context(G::sv_to_string(context))
 {
@@ -46,7 +46,7 @@ GAuth::Secret::Secret() // private -- see Secret::none()
 	G_ASSERT( !valid() ) ;
 }
 
-std::string GAuth::Secret::check( Value id , Value secret , G::string_view hash_function )
+std::string GAuth::Secret::check( Value id , Value secret , std::string_view hash_function )
 {
 	if( id.first.empty() )
 		return "empty id" ;
@@ -121,7 +121,7 @@ std::string GAuth::Secret::info( const std::string & id_in ) const
 	return ss.str() ;
 }
 
-bool GAuth::Secret::isDotted( G::string_view s )
+bool GAuth::Secret::isDotted( std::string_view s )
 {
 	return
 		s.size() >= 15U &&
@@ -129,13 +129,13 @@ bool GAuth::Secret::isDotted( G::string_view s )
 		G::StringFieldView(s,'.').count() == 8U ;
 }
 
-std::string GAuth::Secret::undotted( G::string_view s )
+std::string GAuth::Secret::undotted( std::string_view s )
 {
 	std::string result ;
 	for( G::StringFieldView decimal(s,".",1U) ; decimal ; ++decimal )
 	{
 		G::Md5::big_t n = 0U ;
-		G::string_view d = decimal() ;
+		std::string_view d = decimal() ;
 		for( const char & c : d )
 		{
 			n *= 10U ;

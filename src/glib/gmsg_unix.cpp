@@ -36,7 +36,11 @@ namespace G
 	namespace MsgImp
 	{
 		template <typename Tin, typename Tout, typename Fn1, typename Fn2>
-		std::size_t copy( Tin , Tin , Tout , Tout , Fn1 fn_convert , Fn2 fn_empty ) ;
+		std::size_t copy( Tin in , Tout out , Fn1 fn_convert , Fn2 fn_empty )
+		{
+			return std::distance( out.begin() ,
+				std::remove_if( out.begin() , std::transform( in.begin() , in.end() , out.begin() , fn_convert ) , fn_empty ) ) ;
+		}
 		ssize_t sendmsg( int fd , const iovec * , std::size_t , int flags ,
 			const sockaddr * address_p , socklen_t address_n , int fd_to_send ) noexcept ;
 	}
@@ -54,7 +58,7 @@ ssize_t G::Msg::sendto( int fd , const void * buffer , std::size_t size , int fl
 		const_cast<sockaddr*>(address_p) , address_n ) ;
 }
 
-ssize_t G::Msg::sendto( int fd , const std::vector<string_view> & data , int flags ,
+ssize_t G::Msg::sendto( int fd , const std::vector<std::string_view> & data , int flags ,
 	const sockaddr * address_p , socklen_t address_n )
 {
 	if( data.empty() )
@@ -67,26 +71,20 @@ ssize_t G::Msg::sendto( int fd , const std::vector<string_view> & data , int fla
 	}
 	else
 	{
-		#if GCONFIG_HAVE_IOVEC_SIMPLE
-			// struct iovec is the same as string_view so we can cast
-			const ::iovec * io_p = reinterpret_cast<const ::iovec*>( data.data() ) ;
-			return MsgImp::sendmsg( fd , io_p , data.size() , flags , address_p , address_n , -1 ) ;
- 		#else
-			std::array<::iovec,40> iovec_array ;
-			auto fn_convert = [](string_view sv){ ::iovec i; i.iov_len=sv.size(); i.iov_base=sv.empty()?nullptr:const_cast<char*>(sv.data()); return i; } ;
-			auto fn_empty = [](const ::iovec &i){ return i.iov_base == nullptr; } ;
-			if( data.size() <= iovec_array.size() )
-			{
-				std::size_t n = MsgImp::copy( data.begin() , data.end() , iovec_array.begin() , iovec_array.end() , fn_convert , fn_empty ) ;
-				return n ? MsgImp::sendmsg( fd , iovec_array.data() , n , flags , address_p , address_n , -1 ) : 0U ;
-			}
-			else
-			{
-				std::vector<::iovec> iovec_vector( data.size() ) ;
-				std::size_t n = MsgImp::copy( data.begin() , data.end() , iovec_vector.begin() , iovec_vector.end() , fn_convert , fn_empty ) ;
-				return n ? MsgImp::sendmsg( fd , iovec_vector.data() , n , flags , address_p , address_n , -1 ) : 0U ;
-			}
-		#endif
+		std::array<::iovec,40> iovec_array ;
+		auto fn_convert = [](std::string_view sv){ ::iovec i; i.iov_len=sv.size(); i.iov_base=sv.empty()?nullptr:const_cast<char*>(sv.data()); return i; } ;
+		auto fn_empty = [](const ::iovec &i){ return i.iov_base == nullptr; } ;
+		if( data.size() <= iovec_array.size() )
+		{
+			std::size_t n = MsgImp::copy( data , iovec_array , fn_convert , fn_empty ) ;
+			return n ? MsgImp::sendmsg( fd , iovec_array.data() , n , flags , address_p , address_n , -1 ) : 0U ;
+		}
+		else
+		{
+			std::vector<::iovec> iovec_vector( data.size() ) ;
+			std::size_t n = MsgImp::copy( data , iovec_vector , fn_convert , fn_empty ) ;
+			return n ? MsgImp::sendmsg( fd , iovec_vector.data() , n , flags , address_p , address_n , -1 ) : 0U ;
+		}
 	}
 }
 
@@ -202,18 +200,6 @@ bool G::Msg::fatal( int error ) noexcept
 		error == EMSGSIZE || // moot
 		error == ENOBUFS ||
 		error == ENOMEM ) ;
-}
-#endif
-
-#ifndef G_LIB_SMALL
-template <typename Tin, typename Tout, typename Fn1, typename Fn2>
-std::size_t G::MsgImp::copy( Tin in_begin , Tin in_end , Tout out_begin , Tout /*out_end*/ ,
-	Fn1 fn_convert , Fn2 fn_empty )
-{
-	return std::distance( out_begin ,
-		std::remove_if( out_begin ,
-			std::transform( in_begin , in_end , out_begin , fn_convert ) ,
-			fn_empty ) ) ;
 }
 #endif
 

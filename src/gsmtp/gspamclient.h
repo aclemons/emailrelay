@@ -27,7 +27,7 @@
 #include "gpath.h"
 #include "gslot.h"
 #include "gexception.h"
-#include "gexceptionsink.h"
+#include "geventstate.h"
 #include <fstream>
 #include <vector>
 
@@ -48,7 +48,7 @@ class GSmtp::SpamClient : public GNet::Client
 public:
 	G_EXCEPTION( Error , tx("spam client error") ) ;
 
-	SpamClient( GNet::ExceptionSink , const GNet::Location & host_and_service ,
+	SpamClient( GNet::EventState , const GNet::Location & host_and_service ,
 		bool read_only , unsigned int connection_timeout , unsigned int response_timeout ) ;
 			///< Constructor.
 

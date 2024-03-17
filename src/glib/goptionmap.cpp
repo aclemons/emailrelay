@@ -28,23 +28,23 @@ void G::OptionMap::insert( const Map::value_type & value )
 	m_map.insert( value ) ;
 }
 
-G::OptionMap::Range G::OptionMap::findRange( string_view key ) const
+G::OptionMap::Range G::OptionMap::findRange( std::string_view key ) const
 {
-	return m_map.equal_range( sv_to_string(key) ) ; // or c++14 'generic associative lookup' of string_view
+	return m_map.equal_range( sv_to_string(key) ) ; // or c++14 'generic associative lookup' of std::string_view
 }
 
-G::OptionMap::Map::iterator G::OptionMap::findFirst( string_view key )
+G::OptionMap::Map::iterator G::OptionMap::findFirst( std::string_view key )
 {
-	return m_map.find( sv_to_string(key) ) ; // or c++14 'generic associative lookup' of string_view
+	return m_map.find( sv_to_string(key) ) ; // or c++14 'generic associative lookup' of std::string_view
 }
 
-G::OptionMap::const_iterator G::OptionMap::find( string_view key ) const
+G::OptionMap::const_iterator G::OptionMap::find( std::string_view key ) const
 {
 	auto pair = findRange( key ) ;
 	return pair.first == pair.second ? m_map.end() : pair.first ;
 }
 
-void G::OptionMap::replace( string_view key , const std::string & value )
+void G::OptionMap::replace( std::string_view key , const std::string & value )
 {
 	auto pair = findRange( key ) ;
 	if( pair.first != pair.second )
@@ -52,7 +52,7 @@ void G::OptionMap::replace( string_view key , const std::string & value )
 	m_map.insert( Map::value_type(sv_to_string(key),OptionValue(value)) ) ;
 }
 
-void G::OptionMap::increment( string_view key )
+void G::OptionMap::increment( std::string_view key )
 {
 	auto p = findFirst( key ) ;
 	if( p != m_map.end() )
@@ -88,7 +88,7 @@ void G::OptionMap::clear()
 	m_map.clear() ;
 }
 
-bool G::OptionMap::contains( string_view key ) const
+bool G::OptionMap::contains( std::string_view key ) const
 {
 	auto range = findRange( key ) ;
 	for( auto p = range.first ; p != range.second ; ++p )
@@ -102,15 +102,15 @@ bool G::OptionMap::contains( string_view key ) const
 
 bool G::OptionMap::contains( const char * key ) const
 {
-	return contains( string_view(key) ) ;
+	return contains( std::string_view(key) ) ;
 }
 
 bool G::OptionMap::contains( const std::string & key ) const
 {
-	return contains( string_view(key) ) ;
+	return contains( std::string_view(key) ) ;
 }
 
-std::size_t G::OptionMap::count( string_view key ) const
+std::size_t G::OptionMap::count( std::string_view key ) const
 {
 	std::size_t n = 0U ;
 	auto pair = findRange( key ) ;
@@ -119,7 +119,7 @@ std::size_t G::OptionMap::count( string_view key ) const
 	return n ;
 }
 
-std::string G::OptionMap::value( string_view key , string_view default_ ) const
+std::string G::OptionMap::value( std::string_view key , std::string_view default_ ) const
 {
 	auto range = findRange( key ) ;
 	if( range.first == range.second )
@@ -128,7 +128,7 @@ std::string G::OptionMap::value( string_view key , string_view default_ ) const
 		return join( range.first , range.second , default_ ) ;
 }
 
-std::string G::OptionMap::join( Map::const_iterator p , Map::const_iterator end , string_view off_value ) const
+std::string G::OptionMap::join( Map::const_iterator p , Map::const_iterator end , std::string_view off_value ) const
 {
 	std::string result ;
 	const char * sep = "" ;
@@ -144,7 +144,7 @@ std::string G::OptionMap::join( Map::const_iterator p , Map::const_iterator end 
 	return result ;
 }
 
-unsigned int G::OptionMap::number( string_view key , unsigned int default_ ) const
+unsigned int G::OptionMap::number( std::string_view key , unsigned int default_ ) const
 {
 	G_ASSERT( !G::Str::isUInt("") ) ;
 	return G::Str::isUInt(value(key)) ? G::Str::toUInt(value(key)) : default_ ;

@@ -26,7 +26,7 @@ class GNet::DnsblImp
 {
 } ;
 
-GNet::Dnsbl::Dnsbl( std::function<void(bool)> callback , ExceptionSink , G::string_view ) :
+GNet::Dnsbl::Dnsbl( std::function<void(bool)> callback , EventState , std::string_view ) :
 	m_callback(callback)
 {
 }

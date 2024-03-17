@@ -39,7 +39,7 @@ namespace G
 /// Eg:
 /// \code
 /// std::array<char,10> buffer ;
-/// G::imembuf sb( &buffer[0] , buffer.size() ) ;
+/// G::basic_imembuf<char> sb( buffer.data() , buffer.size() ) ;
 /// std::istream in( &sb ) ;
 /// \endcode
 ///

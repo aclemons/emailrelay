@@ -63,41 +63,41 @@ namespace G
 class G::Exception : public std::runtime_error
 {
 public:
-	Exception( std::initializer_list<string_view> ) ;
+	Exception( std::initializer_list<std::string_view> ) ;
 		///< Constructor.
 
-	explicit Exception( string_view what ) ;
+	explicit Exception( std::string_view what ) ;
 		///< Constructor.
 
-	Exception( string_view what , string_view more ) ;
+	Exception( std::string_view what , std::string_view more ) ;
 		///< Constructor.
 
-	Exception( string_view what , string_view more1 , string_view more2 ) ;
+	Exception( std::string_view what , std::string_view more1 , std::string_view more2 ) ;
 		///< Constructor.
 
-	Exception( string_view what , string_view more1 , string_view more2 , string_view more3 ) ;
+	Exception( std::string_view what , std::string_view more1 , std::string_view more2 , std::string_view more3 ) ;
 		///< Constructor.
 
-	Exception( string_view what , string_view more1 , string_view more2 , string_view more3 , string_view more4 ) ;
+	Exception( std::string_view what , std::string_view more1 , std::string_view more2 , std::string_view more3 , std::string_view more4 ) ;
 		///< Constructor.
 
 private:
-	static std::string join( std::initializer_list<string_view> ) ;
+	static std::string join( std::initializer_list<std::string_view> ) ;
 } ;
 
 #define G_EXCEPTION_CLASS_( class_name , description ) \
 	class class_name : public G::Exception { public: /* NOLINT bugprone-macro-parentheses */ \
 	class_name() : G::Exception(description) {} \
-	explicit class_name( G::string_view more ) : G::Exception(description,more) {} \
-	class_name( G::string_view more1 , G::string_view more2 ) : G::Exception(description,more1,more2) {} \
-	class_name( G::string_view more1 , G::string_view more2 , G::string_view more3 ) : G::Exception(description,more1,more2,more3) {} }
+	explicit class_name( std::string_view more ) : G::Exception(description,more) {} \
+	class_name( std::string_view more1 , std::string_view more2 ) : G::Exception(description,more1,more2) {} \
+	class_name( std::string_view more1 , std::string_view more2 , std::string_view more3 ) : G::Exception(description,more1,more2,more3) {} }
 
 #define G_EXCEPTION_FUNCTION_( name , description ) \
 	inline static G::Exception name() { return G::Exception((description)) ; } \
-	inline static G::Exception name( G::string_view s ) { return G::Exception(description,s) ; } \
-	inline static G::Exception name( G::string_view s1 , G::string_view s2 ) { return G::Exception(description,s1,s2) ; } \
-	inline static G::Exception name( G::string_view s1 , G::string_view s2 , G::string_view s3 ) { return G::Exception(description,s1,s2,s3) ; } \
-	inline static G::Exception name( G::string_view s1 , G::string_view s2 , G::string_view s3 , G::string_view s4 ) { return G::Exception(description,s1,s2,s3,s4) ; }
+	inline static G::Exception name( std::string_view s ) { return G::Exception(description,s) ; } \
+	inline static G::Exception name( std::string_view s1 , std::string_view s2 ) { return G::Exception(description,s1,s2) ; } \
+	inline static G::Exception name( std::string_view s1 , std::string_view s2 , std::string_view s3 ) { return G::Exception(description,s1,s2,s3) ; } \
+	inline static G::Exception name( std::string_view s1 , std::string_view s2 , std::string_view s3 , std::string_view s4 ) { return G::Exception(description,s1,s2,s3,s4) ; }
 
 #define G_EXCEPTION_CLASS( class_name , tx_description ) G_EXCEPTION_CLASS_( class_name , G::tx_description )
 #define G_EXCEPTION_FUNCTION( name , tx_description ) G_EXCEPTION_FUNCTION_( name , G::tx_description )

@@ -74,7 +74,7 @@ namespace G
 	}
 }
 
-bool G::Xtext::valid( string_view s , bool strict )
+bool G::Xtext::valid( std::string_view s , bool strict )
 {
 	namespace imp = XtextImp ;
 	if( !Str::isPrintableAscii(s) || ( strict && s.find_first_of("= ") != std::string::npos ) )
@@ -94,7 +94,7 @@ bool G::Xtext::valid( string_view s , bool strict )
 	}
 }
 
-std::string G::Xtext::encode( string_view s )
+std::string G::Xtext::encode( std::string_view s )
 {
 	namespace imp = XtextImp ;
 	std::string result ;
@@ -116,7 +116,7 @@ std::string G::Xtext::encode( string_view s )
 	return result ;
 }
 
-std::string G::Xtext::decode( string_view s )
+std::string G::Xtext::decode( std::string_view s )
 {
 	namespace imp = XtextImp ;
 	std::string result ;

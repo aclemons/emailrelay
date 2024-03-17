@@ -24,7 +24,7 @@
 #include "gassert.h"
 #include "glog.h"
 
-GFilters::NetworkFilter::NetworkFilter( GNet::ExceptionSink es ,
+GFilters::NetworkFilter::NetworkFilter( GNet::EventState es ,
 	GStore::FileStore & file_store , Filter::Type , const Filter::Config & config ,
 	const std::string & server ) :
 		m_es(es) ,
@@ -55,14 +55,14 @@ bool GFilters::NetworkFilter::quiet() const
 
 void GFilters::NetworkFilter::start( const GStore::MessageId & message_id )
 {
-	m_text.clear() ;
+	m_text.reset() ;
 	m_timer.cancelTimer() ;
 	m_done_signal.reset() ;
 	if( m_client_ptr.get() == nullptr || m_client_ptr->busy() )
 	{
 		unsigned int idle_timeout = 0U ;
 		m_client_ptr.reset( std::make_unique<GSmtp::RequestClient>(
-			GNet::ExceptionSink(*this,&m_client_ptr),
+			m_es.eh(this) ,
 			"scanner" , "ok" ,
 			m_location , m_connection_timeout , m_response_timeout ,
 			idle_timeout ) ) ;
@@ -116,7 +116,7 @@ bool GFilters::NetworkFilter::special() const
 std::pair<std::string,int> GFilters::NetworkFilter::responsePair() const
 {
 	// "[<response-code> ]<response>[<tab><reason>]"
-	std::string s = G::Str::printable( G::Str::head( m_text.value_or({}) , "\t" , false ) ) ;
+	std::string s = G::Str::printable( G::Str::head( m_text.value_or(std::string()) , "\t" , false ) ) ;
 	int n = 0 ;
 	if( s.size() >= 3U &&
 		( s[0] == '4' || s[0] == '5' ) &&
@@ -142,7 +142,7 @@ int GFilters::NetworkFilter::responseCode() const
 
 std::string GFilters::NetworkFilter::reason() const
 {
-	return G::Str::printable( G::Str::tail( m_text.value_or({}) , "\t" , false ) ) ;
+	return G::Str::printable( G::Str::tail( m_text.value_or(std::string()) , "\t" , false ) ) ;
 }
 
 G::Slot::Signal<int> & GFilters::NetworkFilter::doneSignal() noexcept
@@ -152,7 +152,7 @@ G::Slot::Signal<int> & GFilters::NetworkFilter::doneSignal() noexcept
 
 void GFilters::NetworkFilter::cancel()
 {
-	m_text.clear() ;
+	m_text.reset() ;
 	m_timer.cancelTimer() ;
 	m_done_signal.emitted( true ) ;
 	m_client_ptr.reset() ;

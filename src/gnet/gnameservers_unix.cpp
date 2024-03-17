@@ -32,7 +32,7 @@ std::vector<GNet::Address> GNet::nameservers( unsigned int port )
 	std::ifstream f( "/etc/resolv.conf" ) ;
 	while( G::Str::readLine( f , line ) )
 	{
-		G::string_view sv( line ) ;
+		std::string_view sv( line ) ;
 		G::StringTokenView t( sv , " \t" ) ;
 		if( t && G::Str::imatch(t(),"nameserver") )
 		{

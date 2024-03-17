@@ -37,15 +37,15 @@ namespace G
 class G::Xtext
 {
 public:
-	static std::string encode( string_view ) ;
+	static std::string encode( std::string_view ) ;
 		///< Encodes the given string.
 
-	static std::string decode( string_view ) ;
+	static std::string decode( std::string_view ) ;
 		///< Decodes the given string. Input strings must be
 		///< un-strictly valid(), otherwise the result is
 		///< undefined.
 
-	static bool valid( string_view , bool strict = false ) ;
+	static bool valid( std::string_view , bool strict = false ) ;
 		///< Returns true if a valid encoding, or empty. If
 		///< strict then 'equals' and 'space' are disallowed
 		///< and hex characters must be uppercase (eg. "+1A").

@@ -27,7 +27,7 @@ GNet::Descriptor::Descriptor() noexcept :
 {
 }
 
-bool GNet::Descriptor::valid() const noexcept
+bool GNet::Descriptor::validfd() const noexcept
 {
 	return m_fd != INVALID_SOCKET ;
 }

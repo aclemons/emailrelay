@@ -25,7 +25,7 @@
 #include "gfilter.h"
 #include "gsimplefilterbase.h"
 #include "gfilestore.h"
-#include "gexceptionsink.h"
+#include "geventstate.h"
 
 namespace GFilters
 {
@@ -43,7 +43,7 @@ namespace GFilters
 class GFilters::DeliveryFilter : public SimpleFilterBase
 {
 public:
-	DeliveryFilter( GNet::ExceptionSink es , GStore::FileStore & ,
+	DeliveryFilter( GNet::EventState es , GStore::FileStore & ,
 		Filter::Type , const Filter::Config & , const std::string & spec ) ;
 			///< Constructor.
 

@@ -90,9 +90,9 @@ public:
 	SecretsFileClient & operator=( SecretsFileClient && ) = delete ;
 
 private: // overrides
-	bool validSelector( G::string_view selector ) const override ;
-	bool mustAuthenticate( G::string_view selector ) const override ;
-	Secret clientSecret( G::string_view type , G::string_view selector ) const override ;
+	bool validSelector( std::string_view selector ) const override ;
+	bool mustAuthenticate( std::string_view selector ) const override ;
+	Secret clientSecret( std::string_view type , std::string_view selector ) const override ;
 
 private:
 	bool m_id_pwd ; // first
@@ -122,10 +122,10 @@ public:
 
 private: // overrides
 	bool valid() const override ;
-	Secret serverSecret( G::string_view type , G::string_view id ) const override ;
+	Secret serverSecret( std::string_view type , std::string_view id ) const override ;
 	std::pair<std::string,std::string> serverTrust( const std::string & address_range ) const override ;
 	std::string source() const override ;
-	bool contains( G::string_view type , G::string_view id ) const override ;
+	bool contains( std::string_view type , std::string_view id ) const override ;
 
 private:
 	bool m_pam ; // first

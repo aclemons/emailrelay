@@ -24,7 +24,7 @@
 #include "gdef.h"
 #include "gfilter.h"
 #include "gfilestore.h"
-#include "gexceptionsink.h"
+#include "geventstate.h"
 #include "gexception.h"
 #include <string>
 #include <utility>
@@ -50,7 +50,7 @@ public:
 		std::string second ; // reason on error, or eg. "/bin/a" if "file", eg. "file:/bin/a,file:/bin/b" if "chain"
 	} ;
 
-	virtual std::unique_ptr<Filter> newFilter( GNet::ExceptionSink ,
+	virtual std::unique_ptr<Filter> newFilter( GNet::EventState ,
 		Filter::Type , const Filter::Config & , const Spec & spec ) = 0 ;
 			///< Returns a Filter on the heap. Optionally throws if
 			///< an invalid or unsupported filter specification.

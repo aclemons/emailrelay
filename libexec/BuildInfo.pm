@@ -103,7 +103,7 @@ sub read_makefiles
 		$m->{e_qmake_out} = $m->{e_is_top_dir} ? "$$m{e_project}.pro" : "$$m{e_dir}/$$m{e_dirname}.pro" ;
 		if( $opt_for_windows )
 		{
-			$m->{e_compile_options} = "" ;
+			$m->{e_compile_options} = "" ; # /std:c++17
 		}
 		else
 		{
@@ -179,7 +179,7 @@ sub read_makefiles
 		}
 		$m->{e_definitions} = \@definitions ;
 
-		my @includes = ( "." , ".." , $m->includes($m->base()) ) ;
+		my @includes = ( "." , $m->includes($m->base()) ) ;
 		$m->{e_includes} = \@includes ;
 
 		if( !$cfg_with_qt )

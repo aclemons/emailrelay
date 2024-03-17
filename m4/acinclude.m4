@@ -40,6 +40,7 @@ AC_DEFUN([GCONFIG_FN_CHECK_CXX],[
 	AC_REQUIRE([GCONFIG_FN_CXX_MAKE_UNIQUE])
 	AC_REQUIRE([GCONFIG_FN_CXX_STD_THREAD])
 	AC_REQUIRE([GCONFIG_FN_CXX_STRING_VIEW])
+	AC_REQUIRE([GCONFIG_FN_CXX_OPTIONAL])
 ])
 
 dnl GCONFIG_FN_CHECK_FUNCTIONS
@@ -184,7 +185,6 @@ AC_DEFUN([GCONFIG_FN_CHECK_TYPES],[
 		AC_DEFINE([GCONFIG_HAVE_GID_T],0,[Define true if gid_t is a type]))
 	AC_REQUIRE([GCONFIG_FN_STATBUF_TIMESPEC])
 	AC_REQUIRE([GCONFIG_FN_STATBUF_NSEC])
-	AC_REQUIRE([GCONFIG_FN_IOVEC_SIMPLE])
 ])
 
 dnl GCONFIG_FN_CXX_ALIGNMENT
@@ -240,6 +240,31 @@ AC_DEFUN([GCONFIG_FN_CXX_MAKE_UNIQUE],
 		AC_DEFINE(GCONFIG_HAVE_CXX_MAKE_UNIQUE,1,[Define true if compiler has std::make_unique])
 	else
 		AC_DEFINE(GCONFIG_HAVE_CXX_MAKE_UNIQUE,0,[Define true if compiler has std::make_unique])
+	fi
+])
+
+dnl GCONFIG_FN_CXX_OPTIONAL
+dnl -----------------------
+dnl Tests for std::optional.
+dnl
+AC_DEFUN([GCONFIG_FN_CXX_OPTIONAL],
+[AC_CACHE_CHECK([for c++ std::optional],[gconfig_cv_cxx_optional],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#include <optional>]
+			[std::optional<int> opt(123) ;]
+		],
+		[
+			[opt.value() = opt.value_or(99) ;]
+		])],
+		gconfig_cv_cxx_optional=yes ,
+		gconfig_cv_cxx_optional=no )
+])
+	if test "$gconfig_cv_cxx_optional" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_CXX_OPTIONAL,1,[Define true if compiler supports c++ optional])
+	else
+		AC_DEFINE(GCONFIG_HAVE_CXX_OPTIONAL,0,[Define true if compiler supports c++ optional])
 	fi
 ])
 
@@ -1288,39 +1313,6 @@ AC_DEFUN([GCONFIG_FN_INET_PTON],
 		AC_DEFINE(GCONFIG_HAVE_INET_PTON,1,[Define true if inet_pton() is available])
 	else
 		AC_DEFINE(GCONFIG_HAVE_INET_PTON,0,[Define true if inet_pton() is available])
-	fi
-])
-
-dnl GCONFIG_FN_IOVEC_SIMPLE
-dnl -----------------------
-dnl Tests whether struct iovec is available and matches
-dnl the layout of a trivial {char*,size_t} structure.
-dnl
-AC_DEFUN([GCONFIG_FN_IOVEC_SIMPLE],
-[AC_CACHE_CHECK([for iovec layout],[gconfig_cv_iovec_is_simple],
-[
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-		[
-			[#include <cstddef>]
-			[#include <sys/types.h>]
-			[#include <sys/uio.h>]
-			[struct simple { const char * p ; std::size_t n ; } ;]
-		],
-		[
-            static_assert( sizeof(simple) == sizeof(::iovec) , "" ) ;
-            static_assert( alignof(simple) == alignof(::iovec) , "" ) ;
-            static_assert( sizeof(simple::p) == sizeof(::iovec::iov_base) , "" ) ;
-            static_assert( sizeof(simple::n) == sizeof(::iovec::iov_len) , "" ) ;
-            static_assert( offsetof(simple,p) == offsetof(::iovec,iov_base) , "" ) ;
-            static_assert( offsetof(simple,n) == offsetof(::iovec,iov_len) , "" ) ;
-		])],
-		gconfig_cv_iovec_is_simple=yes ,
-		gconfig_cv_iovec_is_simple=no )
-])
-	if test "$gconfig_cv_iovec_is_simple" = "yes" ; then
-		AC_DEFINE(GCONFIG_HAVE_IOVEC_SIMPLE,1,[Define true if struct iovec has a simple layout])
-	else
-		AC_DEFINE(GCONFIG_HAVE_IOVEC_SIMPLE,0,[Define true if struct iovec has a simple layout])
 	fi
 ])
 

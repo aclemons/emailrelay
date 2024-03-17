@@ -176,7 +176,7 @@ std::time_t G::BrokenDownTime::epochTimeFromUtc() const
 {
 	std::time_t t0 = DateTimeImp::mktimelocal( m_tm ) ;
 
-	static optional<std::time_t> memo ;
+	static std::optional<std::time_t> memo ;
 	if( memo.has_value() )
 	{
 		std::tm tm {} ;

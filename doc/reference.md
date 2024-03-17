@@ -264,19 +264,19 @@ The `emailrelay` program supports the following command-line usage:
 
 *   \-\-client-auth &lt;file&gt; (-C)
 
-    Enables SMTP client authentication with the remote server, using the client
-    account details taken from the specified secrets file. The secrets file
-    should normally contain one line having between four and five
-    space-separated fields. The first field must be `client`, the second field
-    is the password type (`plain` or `md5`), the third is the [xtext][]-encoded
-    user-id and the fourth is the xtext-encoded password. Alternatively, the
-    user-id and password fields can be [Base64][] encoded if the second field is
-    `plain:b`. It is also possible to do without a secrets file and give the
-    Base64 encoded user-id and password directly on the command-line or in the
-    configuration file formatted as `plain:<base64-user-id>:<base64-password>`.
-    Note that putting these account details on the command-line is not
-    recommended because it will make the password easily visible to all users
-    on the local machine.
+    Enables SMTP client authentication with the remote server, using the account
+    details taken from the specified secrets file. The secrets file should
+    normally contain one line having between four and five space-separated
+    fields. The first field must be `client`, the second field is the password
+    type (`plain` or `md5`), the third is the [xtext][]-encoded user-id and the
+    fourth is the xtext-encoded password. Alternatively, the user-id and
+    password fields can be [Base64][] encoded if the second field is `plain:b`. It
+    is also possible to do without a secrets file and give the Base64 encoded
+    user-id and password directly on the command-line or in the configuration
+    file formatted as `plain:<base64-user-id>:<base64-password>`. Note that
+    putting these account details on the command-line is not recommended
+    because it will make the password easily visible to all users on the local
+    machine.
 
 *   \-\-client-auth-config &lt;config&gt;
 
@@ -478,7 +478,8 @@ The `emailrelay` program supports the following command-line usage:
 
 *   \-\-log-address
 
-    Adds the network address of remote clients to the logging output.
+    Adds the network address of remote clients to the logging output. Equivalent
+    to ``--log-format=address``.
 
 *   \-\-log-file &lt;file&gt; (-N)
 
@@ -487,9 +488,16 @@ The `emailrelay` program supports the following command-line usage:
     get daily log files; the `%d` is replaced by the current date in the local
     timezone using a `YYYYMMDD` format.
 
+*   \-\-log-format
+
+    Adds one or more fields to the logging output. The field names can include
+    `time`, `unit`, `address`, `port`, `msgid`. The ordering is not
+    significant.
+
 *   \-\-log-time (-L)
 
-    Adds a timestamp to the logging output using the local timezone.
+    Adds a timestamp to the logging output using the local timezone. Equivalent
+    to ``--log-format=time``.
 
 *   \-\-no-syslog (-n)
 
@@ -804,7 +812,7 @@ overridden with the `--delivery-dir` option:
 
 Optional semi-colon separated parameters can be used to modify its behaviour:
 
-        --filter="deliver:hardlink;no_delete"
+        --filter="deliver:hardlink;nodelete"
 
 See `Delivery` below for more details.
 
@@ -843,7 +851,7 @@ The `split:` and `mx:` filters work together to implement message routing:
 By running as a client filter the `mx:` filter will pick up any new messages
 created by `split:`.
 
-The filter can be configured with optional address for the DNS server after
+The filter can be configured with an optional address for the DNS server after
 the `mx:` string:
 
         --client-filter="mx:127.0.0.1:53"

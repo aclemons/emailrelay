@@ -23,7 +23,7 @@
 
 #include "gdef.h"
 #include "gverifier.h"
-#include "gexceptionsink.h"
+#include "geventstate.h"
 #include "gslot.h"
 #include "gtimer.h"
 #include <utility>
@@ -55,7 +55,7 @@ namespace GVerifiers
 class GVerifiers::UserVerifier : public GSmtp::Verifier
 {
 public:
-	UserVerifier( GNet::ExceptionSink es ,
+	UserVerifier( GNet::EventState es ,
 		const GSmtp::Verifier::Config & config , const std::string & spec ) ;
 			///< Constructor. The spec string is semi-colon separated list
 			///< of values including a uid range and "lc"/"lowercase"

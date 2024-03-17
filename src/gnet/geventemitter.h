@@ -23,7 +23,7 @@
 
 #include "gdef.h"
 #include "geventhandler.h"
-#include "gexceptionsink.h"
+#include "geventstate.h"
 
 namespace GNet
 {
@@ -31,77 +31,36 @@ namespace GNet
 }
 
 //| \class GNet::EventEmitter
-/// An EventHandler and ExceptionSink tuple, with methods to raise an
-/// event and handle any exceptions. Used in EventLoop implementations.
-/// Also sets an appropriate G::LogOutput context while events are
-/// being handled.
+/// Provides static methods to raise an EventHandler event, as used
+/// by the various event loop implementations.
 ///
-/// The event loop should normally instantiate a read emitter and
-/// a write emitter for each new file descriptor; any existing
-/// emitters should be update()d rather than destructed and
-/// constructed, with garbage collection once all the events
-/// have been handled.
+/// Any exceptions thrown by an event handler are caught and delivered
+/// to the associated exception handler.
+///
+/// Event loop implementations are required to keep the EventState
+/// object valid when using this interface, even if the event handler
+/// deletes the target object(s) (see EventLoop::disarm()).
 ///
 class GNet::EventEmitter
 {
 public:
-	EventEmitter() noexcept ;
-		///< Default constructor. The raise methods do nothing and
-		///< consequently the exception sink is not used.
-		///< Postcondition: !handler()
+	static void raiseReadEvent( EventHandler * , EventState & ) ;
+		///< Calls readEvent() on the event handler and catches any
+		///< exceptions and delivers them to the EventState exception
+		///< handler.
 
-	EventEmitter( EventHandler * , ExceptionSink ) noexcept ;
-		///< Constructor.
+	static void raiseWriteEvent( EventHandler * , EventState & ) ;
+		///< Calls writeEvent() on the event handler and catches any
+		///< exceptions and delivers them to the EventState exception
+		///< handler.
 
-	void raiseReadEvent( Descriptor ) ;
-		///< Calls the EventHandler readEvent() method.
+	static void raiseOtherEvent( EventHandler * , EventState & , EventHandler::Reason ) ;
+		///< Calls otherEvent() on the event handler and catches any
+		///< exceptions and delivers them to the EventState exception
+		///< handler.
 
-	void raiseWriteEvent( Descriptor ) ;
-		///< Calls the EventHandler writeEvent() method.
-
-	void raiseOtherEvent( Descriptor , EventHandler::Reason ) ;
-		///< Calls the EventHandler otherEvent() method.
-
-	EventHandler * handler() const ;
-		///< Returns the handler, as passed to the ctor.
-
-	ExceptionSink es() const ;
-		///< Returns the exception sink, as passed to the ctor.
-
-	void update( EventHandler * , ExceptionSink ) noexcept ;
-		///< Sets the event handler and the exception sink.
-
-	void reset() noexcept ;
-		///< Resets the EventHandler so that the raise methods
-		///< do nothing.
-		///< Postcondition: !handler()
-
-	void disarm( ExceptionHandler * ) noexcept ;
-		///< If the exception handler matches then reset it
-		///< so that it is not called. Any exceptions will be
-		///< thrown out of of the event loop and back to
-		///< main().
-
-private:
-	void raiseEvent( void (EventHandler::*method)() , Descriptor ) ;
-	void raiseEvent( void (EventHandler::*method)(EventHandler::Reason) , Descriptor , EventHandler::Reason ) ;
-
-private:
-	EventHandler * m_handler {nullptr} ; // handler for the event
-	ExceptionSink m_es ; // handler for any thrown exception
-	ExceptionSink m_es_saved ; // in case disarm()ed but still needed
+public:
+	EventEmitter() = delete ;
 } ;
-
-inline
-GNet::EventHandler * GNet::EventEmitter::handler() const
-{
-	return m_handler ;
-}
-
-inline
-GNet::ExceptionSink GNet::EventEmitter::es() const
-{
-	return m_es ;
-}
 
 #endif

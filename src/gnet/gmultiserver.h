@@ -58,7 +58,7 @@ public:
 		Address m_address ; ///< The server address that the peer connected to.
 	} ;
 
-	MultiServer( ExceptionSink listener_exception_sink , const G::StringArray & listen_list ,
+	MultiServer( EventState es_listener , const G::StringArray & listen_list ,
 		unsigned int port , const std::string & server_type ,
 		ServerPeer::Config server_peer_config , Server::Config server_config ) ;
 			///< Constructor. The server listens on inherited file descriptors
@@ -79,12 +79,14 @@ public:
 
 	std::vector<std::weak_ptr<ServerPeer>> peers() ;
 		///< Returns the list of ServerPeer-derived objects.
+		///< Do not allow the returned ServerPeer objects to
+		///< outlive this MultiServer.
 
-	std::unique_ptr<ServerPeer> doNewPeer( ExceptionSinkUnbound , ServerPeerInfo && , const ServerInfo & ) ;
+	std::unique_ptr<ServerPeer> doNewPeer( EventStateUnbound , ServerPeerInfo && , const ServerInfo & ) ;
 		///< Pseudo-private method used by the pimple class.
 
 protected:
-	virtual std::unique_ptr<ServerPeer> newPeer( ExceptionSinkUnbound , ServerPeerInfo && , ServerInfo ) = 0 ;
+	virtual std::unique_ptr<ServerPeer> newPeer( EventStateUnbound , ServerPeerInfo && , ServerInfo ) = 0 ;
 		///< A factory method which creates a ServerPeer-derived
 		///< object. See GNet::Server for the details.
 
@@ -120,7 +122,7 @@ private:
 	ServerList::iterator removeServer( ServerList::iterator ) ;
 
 private:
-	ExceptionSink m_es ;
+	EventState m_es ;
 	G::StringArray m_listener_list ;
 	unsigned int m_port ;
 	std::string m_server_type ;
@@ -137,16 +139,16 @@ private:
 class GNet::MultiServerImp : public GNet::Server
 {
 public:
-	MultiServerImp( MultiServer & , ExceptionSink , bool fixed , const Address & , ServerPeer::Config , Server::Config ) ;
+	MultiServerImp( MultiServer & , EventState , bool fixed , const Address & , ServerPeer::Config , Server::Config ) ;
 		///< Constructor.
 
-	MultiServerImp( MultiServer & , ExceptionSink , Descriptor , ServerPeer::Config , Server::Config ) ;
+	MultiServerImp( MultiServer & , EventState , Descriptor , ServerPeer::Config , Server::Config ) ;
 		///< Constructor.
 
 	~MultiServerImp() override ;
 		///< Destructor.
 
-	std::unique_ptr<ServerPeer> newPeer( ExceptionSinkUnbound , ServerPeerInfo&& ) final ;
+	std::unique_ptr<ServerPeer> newPeer( EventStateUnbound , ServerPeerInfo&& ) final ;
 		///< Called by the base class to create a new ServerPeer.
 
 	void cleanup() ;

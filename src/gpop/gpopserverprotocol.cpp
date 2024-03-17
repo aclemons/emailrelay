@@ -212,7 +212,7 @@ std::string GPop::ServerProtocol::commandWord( const std::string & line ) const
 
 std::string GPop::ServerProtocol::commandPart( const std::string & line , std::size_t index ) const
 {
-	G::string_view line_sv( line ) ;
+	std::string_view line_sv( line ) ;
 	G::StringTokenView t( line_sv , G::Str::ws() ) ;
 	for( std::size_t i = 0 ; i < index ; ++t , i++ )
 		{;}
@@ -224,7 +224,7 @@ std::string GPop::ServerProtocol::commandParameter( const std::string & line_in 
 	return commandPart( line_in , index ) ;
 }
 
-GPop::ServerProtocol::Event GPop::ServerProtocol::commandEvent( G::string_view command ) const
+GPop::ServerProtocol::Event GPop::ServerProtocol::commandEvent( std::string_view command ) const
 {
 	if( command == "QUIT"_sv ) return Event::eQuit ;
 	if( command == "STAT"_sv ) return Event::eStat ;
@@ -595,7 +595,7 @@ void GPop::ServerProtocol::doApop( const std::string & line , bool & ok )
 	}
 }
 
-void GPop::ServerProtocol::sendLine( G::string_view line , bool has_crlf )
+void GPop::ServerProtocol::sendLine( std::string_view line , bool has_crlf )
 {
 	if( has_crlf )
 	{

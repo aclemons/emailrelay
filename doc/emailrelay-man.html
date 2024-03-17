@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <HTML><HEAD><TITLE>Man page of EMAILRELAY</TITLE>
 </HEAD><BODY>
 <H1>EMAILRELAY</H1>
@@ -250,7 +251,7 @@ Enables the <I>terminate</I> command in the administration interface.
 <DT><B>-C, --client-auth </B><I>&lt;file&gt;</I>
 
 <DD>
-Enables SMTP client authentication with the remote server, using the client account details taken from the specified secrets file. The secrets file should normally contain one line having between four and five space-separated fields. The first field must be <I>client</I>, the second field is the password type (<I>plain</I> or <I>md5</I>), the third is the xtext-encoded user-id and the fourth is the xtext-encoded password. Alternatively, the user-id and password fields can be Base64 encoded if the second field is <I>plain:b</I>. It is also possible to do without a secrets file and give the Base64 encoded user-id and password directly on the command-line or in the configuration file formatted as <I>plain:&lt;base64-user-id&gt;:&lt;base64-password&gt;</I>. Note that putting these account details on the command-line is not recommended because it will make the password easily visible to all users on the local machine.
+Enables SMTP client authentication with the remote server, using the account details taken from the specified secrets file. The secrets file should normally contain one line having between four and five space-separated fields. The first field must be <I>client</I>, the second field is the password type (<I>plain</I> or <I>md5</I>), the third is the xtext-encoded user-id and the fourth is the xtext-encoded password. Alternatively, the user-id and password fields can be Base64 encoded if the second field is <I>plain:b</I>. It is also possible to do without a secrets file and give the Base64 encoded user-id and password directly on the command-line or in the configuration file formatted as <I>plain:&lt;base64-user-id&gt;:&lt;base64-password&gt;</I>. Note that putting these account details on the command-line is not recommended because it will make the password easily visible to all users on the local machine.
 <DT><B>--client-auth-config </B><I>&lt;config&gt;</I>
 
 <DD>
@@ -377,15 +378,19 @@ Enables debug level logging, if built in. Debug messages are usually only useful
 <DT><B>--log-address</B>
 
 <DD>
-Adds the network address of remote clients to the logging output.
+Adds the network address of remote clients to the logging output. Equivalent to <I></I><I>--log-format</I>=address<I></I>.
 <DT><B>-N, --log-file </B><I>&lt;file&gt;</I>
 
 <DD>
 Redirects standard-error logging to the specified file. Logging to the log file is not affected by <I>--close-stderr</I>. The filename can include <I>%d</I> to get daily log files; the <I>%d</I> is replaced by the current date in the local timezone using a <I>YYYYMMDD</I> format.
+<DT><B>--log-format</B>
+
+<DD>
+Adds one or more fields to the logging output. The field names can include <I>time</I>, <I>unit</I>, <I>address</I>, <I>port</I>, <I>msgid</I>. The ordering is not significant.
 <DT><B>-L, --log-time</B>
 
 <DD>
-Adds a timestamp to the logging output using the local timezone.
+Adds a timestamp to the logging output using the local timezone. Equivalent to <I></I><I>--log-format</I>=time<I></I>.
 <DT><B>-n, --no-syslog</B>
 
 <DD>
@@ -409,7 +414,7 @@ Causes the standard error stream to be closed soon after start-up. This is usefu
 <A NAME="lbAP">&nbsp;</A>
 <H2>AUTHOR</H2>
 
-Graeme Walker, mailto:<A HREF="mailto:graeme_walker@users.sourceforge.net">graeme_walker@users.sourceforge.net</A>
+Graeme Walker, <A HREF="https://sourceforge.net/projects/emailrelay">https://sourceforge.net/projects/emailrelay</A>
 <P>
 
 <HR>
@@ -439,4 +444,3 @@ This document was created by
 using the manual pages.<BR>
 </BODY>
 </HTML>
-<!-- Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->

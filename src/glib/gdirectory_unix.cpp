@@ -97,7 +97,7 @@ int G::Directory::usable( bool for_creation ) const
 bool G::Directory::writeable( const std::string & filename ) const
 {
 	Path path( m_path , filename.empty() ? tmp() : filename ) ;
-	return File::probe( path.cstr() ) ;
+	return File::probe( path ) ;
 }
 
 // ===
@@ -140,12 +140,10 @@ bool G::DirectoryIterator::isDir() const
 	return m_imp->isDir() ;
 }
 
-#ifndef G_LIB_SMALL
 std::string G::DirectoryIterator::sizeString() const
 {
 	return m_imp->sizeString() ;
 }
-#endif
 
 // ===
 

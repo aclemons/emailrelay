@@ -22,10 +22,11 @@
 #define G_NET_DNSBL_H
 
 #include "gdef.h"
-#include "gexceptionsink.h"
+#include "geventstate.h"
 #include "gaddress.h"
 #include "gstringview.h"
 #include <functional>
+#include <memory>
 
 namespace GNet
 {
@@ -39,7 +40,7 @@ namespace GNet
 class GNet::Dnsbl
 {
 public:
-	Dnsbl( std::function<void(bool)> callback , ExceptionSink , G::string_view config = {} ) ;
+	Dnsbl( std::function<void(bool)> callback , EventState , std::string_view config = {} ) ;
 		///< Constructor. See DnsBlock::DnsBlock().
 
 	~Dnsbl() ;

@@ -63,7 +63,7 @@ namespace Main
 class Main::VerifierPeer : public GNet::ServerPeer
 {
 public:
-	VerifierPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo && ) ;
+	VerifierPeer( GNet::EventStateUnbound , GNet::ServerPeerInfo && ) ;
 private:
 	void onDelete( const std::string & ) override ;
 	bool onReceive( const char * , std::size_t , std::size_t , std::size_t , char ) override ;
@@ -72,8 +72,8 @@ private:
 	bool processLine( std::string ) ;
 } ;
 
-Main::VerifierPeer::VerifierPeer( GNet::ExceptionSinkUnbound ebu , GNet::ServerPeerInfo && peer_info ) :
-	GNet::ServerPeer( ebu.bind(this) , std::move(peer_info) , GNet::LineBuffer::Config::autodetect() )
+Main::VerifierPeer::VerifierPeer( GNet::EventStateUnbound esu , GNet::ServerPeerInfo && peer_info ) :
+	GNet::ServerPeer( esbind(esu,this) , std::move(peer_info) , GNet::LineBuffer::Config::autodetect() )
 {
 	G_LOG_S( "VerifierPeer::ctor: new connection from " << peerAddress().displayString() ) ;
 }
@@ -167,7 +167,7 @@ bool Main::VerifierPeer::processLine( std::string line )
 	}
 	else
 	{
-		G_LOG_S( "VerifierPeer::processLine: sending error" ) ;
+		G_LOG_S( "VerifierPeer::processLine: no special directives: sending error response code 2" ) ;
 		send( std::string("2|VerifierError\n") ) ; // GNet::ServerPeer::send()
 	}
 	return true ;
@@ -178,12 +178,12 @@ bool Main::VerifierPeer::processLine( std::string line )
 class Main::Verifier : public GNet::Server
 {
 public:
-	Verifier( GNet::ExceptionSink , bool ipv6 , unsigned int port , unsigned int idle_timeout ) ;
+	Verifier( GNet::EventState , bool ipv6 , unsigned int port , unsigned int idle_timeout ) ;
 	~Verifier() override ;
-	std::unique_ptr<GNet::ServerPeer> newPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo && ) override ;
+	std::unique_ptr<GNet::ServerPeer> newPeer( GNet::EventStateUnbound , GNet::ServerPeerInfo && ) override ;
 } ;
 
-Main::Verifier::Verifier( GNet::ExceptionSink es , bool ipv6 , unsigned int port , unsigned int idle_timeout ) :
+Main::Verifier::Verifier( GNet::EventState es , bool ipv6 , unsigned int port , unsigned int idle_timeout ) :
 	GNet::Server(es,
 		GNet::Address(ipv6?GNet::Address::Family::ipv6:GNet::Address::Family::ipv4,port),
 		GNet::ServerPeer::Config()
@@ -197,11 +197,11 @@ Main::Verifier::~Verifier()
 	serverCleanup() ; // base class early cleanup
 }
 
-std::unique_ptr<GNet::ServerPeer> Main::Verifier::newPeer( GNet::ExceptionSinkUnbound ebu , GNet::ServerPeerInfo && peer_info )
+std::unique_ptr<GNet::ServerPeer> Main::Verifier::newPeer( GNet::EventStateUnbound esu , GNet::ServerPeerInfo && peer_info )
 {
 	try
 	{
-		return std::unique_ptr<GNet::ServerPeer>( new VerifierPeer( ebu , std::move(peer_info) ) ) ;
+		return std::unique_ptr<GNet::ServerPeer>( new VerifierPeer( esu , std::move(peer_info) ) ) ;
 	}
 	catch( std::exception & e )
 	{
@@ -214,8 +214,8 @@ std::unique_ptr<GNet::ServerPeer> Main::Verifier::newPeer( GNet::ExceptionSinkUn
 
 static int run( bool ipv6 , unsigned int port , unsigned int idle_timeout )
 {
-	std::unique_ptr<GNet::EventLoop> loop = GNet::EventLoop::create() ;
-	GNet::ExceptionSink es ;
+	auto loop = GNet::EventLoop::create() ;
+	auto es = GNet::EventState::create() ;
 	GNet::TimerList timer_list ;
 	Main::Verifier verifier( es , ipv6 , port , idle_timeout ) ;
 	loop->run() ;

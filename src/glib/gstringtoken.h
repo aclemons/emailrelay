@@ -32,7 +32,7 @@ namespace G
 {
 	template <typename T> class StringTokenT ;
 	using StringToken = StringTokenT<std::string> ;
-	using StringTokenView = StringTokenT<string_view> ;
+	using StringTokenView = StringTokenT<std::string_view> ;
 }
 
 //| \class G::StringTokenT
@@ -61,11 +61,11 @@ public:
 		///<
 		///< The rvalue overload is deleted to avoid passing a
 		///< temporary T that has been implicitly constructed from
-		///< something else. Temporary string_views constructed
+		///< something else. Temporary std::string_views constructed
 		///< from a string would be safe, but might be unsafe for
 		///< other types.
 
-	StringTokenT( const T & s , string_view ws ) noexcept ;
+	StringTokenT( const T & s , std::string_view ws ) noexcept ;
 		///< Constructor. The parameters must stay valid
 		///< for the object lifefime.
 
@@ -84,7 +84,7 @@ public:
 	std::size_t pos() const noexcept ;
 		///< Returns the offset of data().
 
-	T operator()() const noexcept(std::is_same<T,string_view>::value) ;
+	T operator()() const noexcept(std::is_same<T,std::string_view>::value) ;
 		///< Returns the current token substring or T() if
 		///< not valid().
 
@@ -97,7 +97,7 @@ public:
 public:
 	~StringTokenT() = default ;
 	StringTokenT( T && s , const char_type * , std::size_t ) = delete ;
-	StringTokenT( T && s , string_view ) = delete ;
+	StringTokenT( T && s , std::string_view ) = delete ;
 	StringTokenT( const StringTokenT<T> & ) = delete ;
 	StringTokenT( StringTokenT<T> && ) = delete ;
 	StringTokenT<T> & operator=( const StringTokenT<T> & ) = delete ;
@@ -117,17 +117,15 @@ namespace G
 	namespace StringTokenImp /// An implementation namespace for G::StringToken.
 	{
 		template <typename T> inline T substr( const T & s ,
-			std::size_t pos , std::size_t len ) noexcept(std::is_same<T,string_view>::value)
-		{
-			return s.substr( pos , len ) ;
-		}
-		template <> inline string_view substr<string_view>( const string_view & s ,
 			std::size_t pos , std::size_t len ) noexcept
 		{
-			return sv_substr( s , pos , len ) ;
+			try { return s.substr( pos , len ) ; } catch(...) { return {} ; }
 		}
-		static_assert( !noexcept(std::string().substr(0,0)) , "" ) ;
-		static_assert( noexcept(sv_substr(string_view(),0,0)) , "" ) ;
+		template <> inline std::string_view substr<std::string_view>( const std::string_view & s ,
+			std::size_t pos , std::size_t len ) noexcept
+		{
+			return sv_substr_noexcept( s , pos , len ) ;
+		}
 	}
 }
 
@@ -145,7 +143,7 @@ G::StringTokenT<T>::StringTokenT( const T & s , const char_type * ws , std::size
 }
 
 template <typename T>
-G::StringTokenT<T>::StringTokenT( const T & s , string_view ws ) noexcept :
+G::StringTokenT<T>::StringTokenT( const T & s , std::string_view ws ) noexcept :
 	m_s(s) ,
 	m_ws(ws.data()) ,
 	m_wsn(ws.size()) ,
@@ -186,7 +184,7 @@ bool G::StringTokenT<T>::valid() const noexcept
 }
 
 template <typename T>
-T G::StringTokenT<T>::operator()() const noexcept(std::is_same<T,string_view>::value)
+T G::StringTokenT<T>::operator()() const noexcept(std::is_same<T,std::string_view>::value)
 {
 	using string_type = T ;
 	return m_pos == npos ? string_type{} : StringTokenImp::substr( m_s , m_pos , size() ) ;

@@ -27,14 +27,14 @@
 #include "glog.h"
 #include <sstream>
 
-GVerifiers::UserVerifier::UserVerifier( GNet::ExceptionSink es ,
+GVerifiers::UserVerifier::UserVerifier( GNet::EventState es ,
 	const GSmtp::Verifier::Config & config , const std::string & spec ) :
 		m_config(config) ,
 		m_timer(*this,&UserVerifier::onTimeout,es) ,
 		m_result(GSmtp::VerifierStatus::invalid({})) ,
 		m_range(G::Range::range(1000,32767))
 {
-	G::string_view spec_view( spec ) ;
+	std::string_view spec_view( spec ) ;
 	for( G::StringTokenView t( spec_view , ";" , 1U ) ; t ; ++t )
 	{
 		if( !t().empty() && G::Str::isNumeric(t().substr(0U,1U)) )
@@ -52,7 +52,6 @@ GVerifiers::UserVerifier::UserVerifier( GNet::ExceptionSink es ,
 void GVerifiers::UserVerifier::verify( Command command , const std::string & rcpt_to_parameter ,
 	const GSmtp::Verifier::Info & )
 {
-	using namespace G::Range ; // within()
 	m_command = command ;
 
 	std::string user = dequote( G::Str::head( dequote(rcpt_to_parameter) , "@" , false ) ) ;

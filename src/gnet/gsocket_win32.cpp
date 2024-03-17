@@ -37,7 +37,7 @@ bool GNet::SocketBase::supports( Address::Family af , int type , int protocol )
 bool GNet::SocketBase::create( int domain , int type , int protocol )
 {
 	m_fd = Descriptor( ::socket( domain , type , protocol ) , 0 ) ;
-	if( !m_fd.valid() )
+	if( !m_fd.validfd() )
 	{
 		saveReason() ;
 		return false ;
@@ -80,7 +80,7 @@ void GNet::SocketBase::destroy() noexcept
 	if( m_fd.h() != HNULL )
 		WSACloseEvent( m_fd.h() ) ;
 
-	if( m_fd.valid() )
+	if( m_fd.validfd() )
 		::closesocket( m_fd.fd() ) ;
 }
 

@@ -29,7 +29,7 @@
 #include <fstream>
 #include <sstream>
 
-GFilters::MessageIdFilter::MessageIdFilter( GNet::ExceptionSink es , GStore::FileStore & store ,
+GFilters::MessageIdFilter::MessageIdFilter( GNet::EventState es , GStore::FileStore & store ,
 	Filter::Type filter_type , const Filter::Config & config , const std::string & ) :
 		SimpleFilterBase(es,filter_type,"msgid:") ,
 		m_store(store) ,
@@ -100,9 +100,9 @@ std::string GFilters::MessageIdFilter::process( const G::Path & path_in , const 
 	return {} ;
 }
 
-bool GFilters::MessageIdFilter::isId( G::string_view line ) noexcept
+bool GFilters::MessageIdFilter::isId( std::string_view line ) noexcept
 {
-	return line.find(':') != std::string::npos && G::sv_imatch( G::sv_substr(line,0U,line.find(':')) , "message-id"_sv ) ;
+	return line.find(':') != std::string::npos && G::sv_imatch( G::sv_substr_noexcept(line,0U,line.find(':')) , "message-id"_sv ) ;
 }
 
 std::string GFilters::MessageIdFilter::newId( const std::string & domain )

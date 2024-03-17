@@ -23,14 +23,17 @@
 #include "gnetdone.h"
 #include "gmonitor.h"
 #include "geventloggingcontext.h"
+#include "gfile.h"
 #include "gcleanup.h"
 #include "glimits.h"
 #include "groot.h"
+#include "gscope.h"
+#include "gtest.h"
 #include "glog.h"
 #include "gassert.h"
 #include <algorithm>
 
-GNet::Server::Server( ExceptionSink es , Descriptor fd ,
+GNet::Server::Server( EventState es , Descriptor fd ,
 	const ServerPeer::Config & server_peer_config , const Config & server_config ) :
 		m_es(es) ,
 		m_config(server_config) ,
@@ -44,7 +47,7 @@ GNet::Server::Server( ExceptionSink es , Descriptor fd ,
 	Monitor::addServer( *this ) ;
 }
 
-GNet::Server::Server( ExceptionSink es , const Address & listening_address ,
+GNet::Server::Server( EventState es , const Address & listening_address ,
 	const ServerPeer::Config & server_peer_config , const Config & server_config ) :
 		m_es(es) ,
 		m_config(server_config) ,
@@ -78,7 +81,7 @@ GNet::Server::Server( ExceptionSink es , const Address & listening_address ,
 		std::string path = listening_address.hostPartString() ;
 		if( path.size() > 1U && path.at(0U) == '/' )
 		{
-			G::Cleanup::add( &Server::unlink , G::Cleanup::strdup(path) ) ;
+			G::Cleanup::add( G::File::cleanup , G::Cleanup::arg(G::Path(path)) ) ;
 		}
 	}
 }
@@ -107,24 +110,23 @@ void GNet::Server::readEvent()
 	ServerPeerInfo peer_info( this , m_server_peer_config ) ;
 	accept( peer_info ) ;
 	Address peer_address = peer_info.m_address ;
-
-	// do an early set of the logging context so that it applies
-	// during the newPeer() construction process -- it is then set
-	// more normally by the event emitter when handing out events
-	// with a well-defined ExceptionSource
-	//
-	EventLoggingContext event_logging_context( peer_address.hostPartString() ) ;
 	G_DEBUG( "GNet::Server::readEvent: new connection from " << peer_address.displayString()
 		<< " on " << peer_info.m_socket->asString() ) ;
 
+	// change the logging context asap to reflect the server peer object
+	// being created (esp. if it sends an initial server greeting)
+	//
+	GNet::EventLoggingContext inner( m_es ,
+		ServerPeer::eventLoggingString(peer_address,m_server_peer_config) ) ;
+
 	// create the peer object -- newPeer() implementations will normally catch
 	// their exceptions and return null to avoid terminating the server -- peer
-	// objects are given this object as their exception sink so we get
-	// to delete them when they throw -- the exception sink is passed as
+	// objects are given this object as their exception handler so we get
+	// to delete them when they throw -- the EventState tuple is passed as
 	// 'unbound' to force the peer object to set themselves as the exception
 	// source
 	//
-	std::unique_ptr<ServerPeer> peer = newPeer( ExceptionSinkUnbound(this) , std::move(peer_info) ) ;
+	std::unique_ptr<ServerPeer> peer = newPeer( m_es.eh(this).unbound() , std::move(peer_info) ) ;
 
 	// commit or roll back
 	if( peer == nullptr )
@@ -197,11 +199,6 @@ std::vector<std::weak_ptr<GNet::ServerPeer>> GNet::Server::peers()
 void GNet::Server::writeEvent()
 {
 	G_DEBUG( "GNet::Server::writeEvent" ) ;
-}
-
-bool GNet::Server::unlink( G::SignalSafe , const char * path ) noexcept
-{
-	return path ? ( std::remove(path) == 0 ) : true ;
 }
 
 // ===

@@ -60,7 +60,7 @@ namespace Main
 class Main::ScannerPeer : public GNet::ServerPeer
 {
 public:
-	ScannerPeer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo && ) ;
+	ScannerPeer( GNet::EventStateUnbound esu , GNet::ServerPeerInfo && ) ;
 private:
 	void onDelete( const std::string & ) override ;
 	bool onReceive( const char * , std::size_t , std::size_t , std::size_t , char ) override ;
@@ -69,8 +69,8 @@ private:
 	bool processFile( std::string , std::string ) ;
 } ;
 
-Main::ScannerPeer::ScannerPeer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo && peer_info ) :
-	ServerPeer(esu.bind(this),std::move(peer_info),GNet::LineBuffer::Config::autodetect())
+Main::ScannerPeer::ScannerPeer( GNet::EventStateUnbound esu , GNet::ServerPeerInfo && peer_info ) :
+	ServerPeer(esbind(esu,this),std::move(peer_info),GNet::LineBuffer::Config::autodetect())
 {
 	G_LOG_S( "ScannerPeer::ctor: new connection from " << peerAddress().displayString() ) ;
 }
@@ -184,12 +184,12 @@ bool Main::ScannerPeer::processFile( std::string path , std::string eol )
 class Main::Scanner : public GNet::Server
 {
 public:
-	Scanner( GNet::ExceptionSink , const GNet::Address & , unsigned int idle_timeout ) ;
+	Scanner( GNet::EventState , const GNet::Address & , unsigned int idle_timeout ) ;
 	~Scanner() override ;
-	std::unique_ptr<GNet::ServerPeer> newPeer( GNet::ExceptionSinkUnbound ebu , GNet::ServerPeerInfo && ) override ;
+	std::unique_ptr<GNet::ServerPeer> newPeer( GNet::EventStateUnbound ebu , GNet::ServerPeerInfo && ) override ;
 } ;
 
-Main::Scanner::Scanner( GNet::ExceptionSink es , const GNet::Address & address , unsigned int idle_timeout ) :
+Main::Scanner::Scanner( GNet::EventState es , const GNet::Address & address , unsigned int idle_timeout ) :
 	GNet::Server(es,address,
 		GNet::ServerPeer::Config().set_idle_timeout(idle_timeout),
 		GNet::Server::Config().set_uds_open_permissions())
@@ -202,11 +202,11 @@ Main::Scanner::~Scanner()
 	serverCleanup() ; // base class early cleanup
 }
 
-std::unique_ptr<GNet::ServerPeer> Main::Scanner::newPeer( GNet::ExceptionSinkUnbound ebu , GNet::ServerPeerInfo && peer_info )
+std::unique_ptr<GNet::ServerPeer> Main::Scanner::newPeer( GNet::EventStateUnbound esu , GNet::ServerPeerInfo && peer_info )
 {
 	try
 	{
-		return std::unique_ptr<GNet::ServerPeer>( new ScannerPeer( ebu , std::move(peer_info) ) ) ;
+		return std::unique_ptr<GNet::ServerPeer>( new ScannerPeer( esu , std::move(peer_info) ) ) ;
 	}
 	catch( std::exception & e )
 	{
@@ -219,8 +219,8 @@ std::unique_ptr<GNet::ServerPeer> Main::Scanner::newPeer( GNet::ExceptionSinkUnb
 
 static int run( const GNet::Address & address , unsigned int idle_timeout )
 {
-	std::unique_ptr<GNet::EventLoop> event_loop= GNet::EventLoop::create() ;
-	GNet::ExceptionSink es ;
+	auto event_loop= GNet::EventLoop::create() ;
+	auto es = GNet::EventState::create() ;
 	GNet::TimerList timer_list ;
 	Main::Scanner scanner( es , address , idle_timeout ) ;
 	event_loop->run() ;

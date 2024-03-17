@@ -50,17 +50,17 @@ namespace GStore
 		void readClientSocketName( std::istream & , Envelope & ) ;
 		void readClientCertificate( std::istream & , Envelope & ) ;
 		void readEnd( std::istream & , Envelope & ) ;
-		G::string_view bodyTypeName( MessageStore::BodyType ) ;
-		MessageStore::BodyType parseSmtpBodyType( G::string_view , MessageStore::BodyType ) ;
-		G::string_view smtpBodyType( MessageStore::BodyType ) ;
+		std::string_view bodyTypeName( MessageStore::BodyType ) ;
+		MessageStore::BodyType parseSmtpBodyType( std::string_view , MessageStore::BodyType ) ;
+		std::string_view smtpBodyType( MessageStore::BodyType ) ;
 	}
 }
 
 std::size_t GStore::Envelope::write( std::ostream & stream , const GStore::Envelope & e )
 {
 	namespace imp = GStore::EnvelopeImp ;
-	const std::string x( GStore::FileStore::x() ) ;
-	G::string_view crlf = "\r\n"_sv ;
+	const std::string x = GStore::FileStore::x() ;
+	std::string_view crlf = "\r\n"_sv ;
 
 	std::streampos pos = stream.tellp() ;
 	if( pos < 0 )
@@ -359,7 +359,7 @@ std::string GStore::EnvelopeImp::value( const std::string & line )
 	return G::Str::trimmed( G::Str::tail( line , line.find(':') , std::string() ) , G::Str::ws() ) ;
 }
 
-G::string_view GStore::EnvelopeImp::bodyTypeName( MessageStore::BodyType type )
+std::string_view GStore::EnvelopeImp::bodyTypeName( MessageStore::BodyType type )
 {
 	if( type == MessageStore::BodyType::EightBitMime )
 		return "8bit"_sv ;
@@ -371,7 +371,7 @@ G::string_view GStore::EnvelopeImp::bodyTypeName( MessageStore::BodyType type )
 		return "unknown"_sv ;
 }
 
-GStore::MessageStore::BodyType GStore::EnvelopeImp::parseSmtpBodyType( G::string_view s , MessageStore::BodyType default_ )
+GStore::MessageStore::BodyType GStore::EnvelopeImp::parseSmtpBodyType( std::string_view s , MessageStore::BodyType default_ )
 {
 	if( s.empty() )
 		return default_ ;
@@ -385,7 +385,7 @@ GStore::MessageStore::BodyType GStore::EnvelopeImp::parseSmtpBodyType( G::string
 		return MessageStore::BodyType::Unknown ;
 }
 
-G::string_view GStore::EnvelopeImp::smtpBodyType( MessageStore::BodyType type )
+std::string_view GStore::EnvelopeImp::smtpBodyType( MessageStore::BodyType type )
 {
 	if( type == MessageStore::BodyType::EightBitMime )
 		return "8BITMIME"_sv ;

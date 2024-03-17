@@ -22,39 +22,39 @@
 #include "gexception.h"
 #include "gstr.h"
 
-G::Exception::Exception( std::initializer_list<string_view> args ) :
+G::Exception::Exception( std::initializer_list<std::string_view> args ) :
 	std::runtime_error(join(args))
 {
 }
 
-G::Exception::Exception( string_view what ) :
+G::Exception::Exception( std::string_view what ) :
 	Exception{what}
 {
 }
 
-G::Exception::Exception( string_view what , string_view more ) :
+G::Exception::Exception( std::string_view what , std::string_view more ) :
 	Exception{what,more}
 {
 }
 
-G::Exception::Exception( string_view what , string_view more1 , string_view more2 ) :
+G::Exception::Exception( std::string_view what , std::string_view more1 , std::string_view more2 ) :
 	Exception{what,more1,more2}
 {
 }
 
-G::Exception::Exception( string_view what , string_view more1 , string_view more2 ,
-	string_view more3 ) :
+G::Exception::Exception( std::string_view what , std::string_view more1 , std::string_view more2 ,
+	std::string_view more3 ) :
 		Exception{what,more1,more2,more3}
 {
 }
 
-G::Exception::Exception( string_view what , string_view more1 , string_view more2 ,
-	string_view more3 , string_view more4 ) :
+G::Exception::Exception( std::string_view what , std::string_view more1 , std::string_view more2 ,
+	std::string_view more3 , std::string_view more4 ) :
 		Exception{what,more1,more2,more3,more4}
 {
 }
 
-std::string G::Exception::join( std::initializer_list<string_view> args )
+std::string G::Exception::join( std::initializer_list<std::string_view> args )
 {
 	std::string result ;
 	for( auto arg : args )

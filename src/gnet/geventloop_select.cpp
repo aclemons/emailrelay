@@ -25,15 +25,12 @@
 #include "gprocess.h"
 #include "gexception.h"
 #include "gstr.h"
-#include "gfile.h"
 #include "gtimer.h"
 #include "gtimerlist.h"
 #include "gtest.h"
 #include "glog.h"
 #include "gassert.h"
 #include <memory>
-#include <tuple>
-#include <sstream>
 #include <sys/types.h>
 #include <sys/time.h>
 
@@ -53,13 +50,13 @@ private: // overrides
 	bool running() const override ;
 	void quit( const std::string & ) override ;
 	void quit( const G::SignalSafe & ) override ;
-	void addRead( Descriptor fd , EventHandler & , ExceptionSink ) override ;
-	void addWrite( Descriptor fd , EventHandler & , ExceptionSink ) override ;
-	void addOther( Descriptor fd , EventHandler & , ExceptionSink ) override ;
-	void dropRead( Descriptor fd ) noexcept override ;
-	void dropWrite( Descriptor fd ) noexcept override ;
-	void dropOther( Descriptor fd ) noexcept override ;
-	void drop( Descriptor fd ) noexcept override ;
+	void addRead( Descriptor , EventHandler & , EventState ) override ;
+	void addWrite( Descriptor , EventHandler & , EventState ) override ;
+	void addOther( Descriptor , EventHandler & , EventState ) override ;
+	void dropRead( Descriptor ) noexcept override ;
+	void dropWrite( Descriptor ) noexcept override ;
+	void dropOther( Descriptor ) noexcept override ;
+	void drop( Descriptor ) noexcept override ;
 	void disarm( ExceptionHandler * ) noexcept override ;
 
 public:
@@ -70,27 +67,39 @@ public:
 	EventLoopImp & operator=( EventLoopImp && ) = delete ;
 
 private:
-	using Emitters = std::vector<EventEmitter> ;
+	struct ListItem
+	{
+		EventHandler * m_handler {nullptr} ;
+		EventState m_es {EventState::Private(),nullptr,nullptr} ;
+		void update( EventHandler * handler , EventState es ) noexcept { m_handler = handler ; m_es = es ; }
+	} ;
+	using List = std::vector<ListItem> ; // indexed by fd
 	void runOnce() ;
-	void addImp( int fd , Emitters & , EventHandler & , ExceptionSink ) ;
-	void dropImp( int fd , Emitters & ) noexcept ;
-	void disarmImp( Emitters & , ExceptionHandler * ) noexcept ;
+	static void addImp( int fd , EventHandler & , EventState , fd_set & , List & , int & ) ;
+	static void disarmImp( List & , ExceptionHandler * ) noexcept ;
+	static void disarmImp( EventState & , ExceptionHandler * ) noexcept ;
+	static void dropImp( int fd , fd_set & , fd_set & , int & ) noexcept ;
 	static int events( int nfds , fd_set * ) ;
+	static int fdmaxof( int nfds , fd_set * ) ;
+	static int fdmaxof( std::size_t nfds , fd_set * sp ) ;
 
 private:
 	bool m_quit {false} ;
 	std::string m_quit_reason ;
 	bool m_running {false} ;
-	int m_nfds {0} ;
-	fd_set m_read_set ; // NOLINT cppcoreguidelines-pro-type-member-init
-	fd_set m_write_set ; // NOLINT cppcoreguidelines-pro-type-member-init
-	fd_set m_other_set ; // NOLINT cppcoreguidelines-pro-type-member-init
-	Emitters m_read_emitters ;
-	Emitters m_write_emitters ;
-	Emitters m_other_emitters ;
+	fd_set m_read_set ;
+	fd_set m_write_set ;
+	fd_set m_other_set ;
+	int m_read_fdmax {-1} ;
+	int m_write_fdmax {-1} ;
+	int m_other_fdmax {-1} ;
 	fd_set m_read_set_copy ;
 	fd_set m_write_set_copy ;
 	fd_set m_other_set_copy ;
+	List m_read_list ;
+	List m_write_list ;
+	List m_other_list ;
+	EventState m_es_current {EventState::Private(),nullptr,nullptr} ;
 } ;
 
 // ===
@@ -110,6 +119,9 @@ GNet::EventLoopImp::EventLoopImp() // NOLINT cppcoreguidelines-pro-type-member-i
 	FD_ZERO( &m_read_set_copy ) ; // NOLINT
 	FD_ZERO( &m_write_set_copy ) ; // NOLINT
 	FD_ZERO( &m_other_set_copy ) ; // NOLINT
+	m_read_list.reserve( FD_SETSIZE ) ;
+	m_write_list.reserve( FD_SETSIZE ) ;
+	m_other_list.reserve( FD_SETSIZE ) ;
 }
 
 std::string GNet::EventLoopImp::run()
@@ -160,22 +172,30 @@ void GNet::EventLoopImp::runOnce()
 		immediate = !infinite && interval.s() == 0 && interval.us() == 0U ;
 	}
 
-	if( G::Test::enabled("event-loop-quitfile") ) // esp. for profiling
-	{
-		if( G::File::remove(".quit",std::nothrow) )
-			m_quit = true ;
-		if( timeout_p == nullptr || timeout.tv_sec > 0 )
-		{
-			timeout.tv_sec = 0 ;
-			timeout.tv_usec = 999999U ;
-		}
-		timeout_p = &timeout ;
-	}
-
-	// do the select()
+	// find the highest fd value to pass to select() -- probably unnecessary
+	// that that this is the exact maximum rather than an upper bound, but
+	// that's what is specified -- the fdmax data members are maintained by
+	// addImp() but invalidated by dropImp() so we need to re-evaluate if
+	// invalid -- we can use the size of the list as as upper bound for
+	// the required fd_set tests
 	//
-	int nfds = m_nfds ; // make copies since modified via event handling
-	m_read_set_copy = m_read_set ;
+	if( m_read_fdmax == -1 ) m_read_fdmax = fdmaxof( m_read_list.size() , &m_read_set ) ;
+	if( m_write_fdmax == -1 ) m_write_fdmax = fdmaxof( m_write_list.size() , &m_write_set ) ;
+	if( m_other_fdmax == -1 ) m_other_fdmax = fdmaxof( m_other_list.size() , &m_other_set ) ;
+	int nfds = 1 + std::max( {m_read_fdmax,m_write_fdmax,m_other_fdmax} ) ;
+
+	G_ASSERT( fdmaxof(FD_SETSIZE,&m_read_set) == m_read_fdmax ) ;
+	G_ASSERT( fdmaxof(FD_SETSIZE,&m_write_set) == m_write_fdmax ) ;
+	G_ASSERT( fdmaxof(FD_SETSIZE,&m_other_set) == m_other_fdmax ) ;
+	G_ASSERT( m_read_list.size() >= std::size_t(m_read_fdmax+1) ) ;
+	G_ASSERT( m_write_list.size() >= std::size_t(m_write_fdmax+1) ) ;
+	G_ASSERT( m_other_list.size() >= std::size_t(m_other_fdmax+1) ) ;
+
+	// do the select() -- use fd_set copies for the select() parameters because select()
+	// modifies them, and in any case our originals can be modified as we iterate over
+	// the results and call event handlers
+	//
+	m_read_set_copy = m_read_set ; // (fast)
 	m_write_set_copy = m_write_set ;
 	m_other_set_copy = m_other_set ;
 	int rc = ::select( nfds , &m_read_set_copy , &m_write_set_copy , &m_other_set_copy , timeout_p ) ;
@@ -195,56 +215,37 @@ void GNet::EventLoopImp::runOnce()
 		TimerList::instance().doTimeouts() ;
 	}
 
-	// call the fd event handlers -- note that event handlers can
-	// remove fds from the 'copy' sets but not add them -- that means
-	// that ecount might be smaller that expected, but it still
-	// serves as a valid optimisation
+	// call the fd event handlers -- count them as we go (ecount) so that we don't
+	// have to iterate over the whole set if we have handled the expected number
+	// as returned by select() -- note that event handlers can remove fds from
+	// the 'copy' sets (see dropRead() etc) but not add them -- that means ecount
+	// might never reach the expected value and we do end up iterating over the
+	// whole set, but it still works as an optimisation in the common case
 	//
-	int ecount = 0 ; // optimisation to stop when all events accounted for
+	int ecount = 0 ;
 	for( int fd = 0 ; ecount < rc && fd < nfds ; fd++ )
 	{
 		if( FD_ISSET(fd,&m_read_set_copy) )
 		{
+			G_ASSERT( static_cast<unsigned int>(fd) < m_read_list.size() ) ;
 			ecount++ ;
-			G_ASSERT( static_cast<unsigned int>(fd) < m_read_emitters.size() ) ;
-			m_read_emitters[fd].raiseReadEvent( Descriptor(fd) ) ;
+			m_es_current = m_read_list[fd].m_es ; // see disarm()
+			EventEmitter::raiseReadEvent( m_read_list[fd].m_handler , m_es_current ) ;
 		}
 		if( FD_ISSET(fd,&m_write_set_copy) )
 		{
+			G_ASSERT( static_cast<unsigned int>(fd) < m_write_list.size() ) ;
 			ecount++ ;
-			G_ASSERT( static_cast<unsigned int>(fd) < m_write_emitters.size() ) ;
-			m_write_emitters[fd].raiseWriteEvent( Descriptor(fd) ) ;
+			m_es_current = m_write_list[fd].m_es ; // see disarm()
+			EventEmitter::raiseWriteEvent( m_write_list[fd].m_handler , m_es_current ) ;
 		}
 		if( FD_ISSET(fd,&m_other_set_copy) )
 		{
+			G_ASSERT( static_cast<unsigned int>(fd) < m_other_list.size() ) ;
 			ecount++ ;
-			G_ASSERT( static_cast<unsigned int>(fd) < m_other_emitters.size() ) ;
-			m_other_emitters[fd].raiseOtherEvent( Descriptor(fd) , EventHandler::Reason::other ) ;
+			m_es_current = m_other_list[fd].m_es ; // see disarm()
+			EventEmitter::raiseOtherEvent( m_other_list[fd].m_handler , m_es_current , EventHandler::Reason::other ) ;
 		}
-	}
-
-	// collect garbage
-	int fd_max = 0 ;
-	for( int fd = 0 ; fd < m_nfds ; fd++ )
-	{
-		if( FD_ISSET(fd,&m_read_set) ||
-			FD_ISSET(fd,&m_write_set) ||
-			FD_ISSET(fd,&m_other_set) )
-		{
-			fd_max = fd ;
-		}
-	}
-	m_nfds = fd_max + 1 ;
-	m_read_emitters.resize( m_nfds ) ;
-	m_write_emitters.resize( m_nfds ) ;
-	m_other_emitters.resize( m_nfds ) ;
-
-	if( G::Test::enabled("event-loop-slow") )
-	{
-		Timeval timeout_slow ;
-		timeout_slow.tv_sec = 0 ;
-		timeout_slow.tv_usec = 100000 ;
-		::select( 0 , nullptr , nullptr , nullptr , &timeout_slow ) ;
 	}
 }
 
@@ -259,99 +260,139 @@ int GNet::EventLoopImp::events( int nfds , fd_set * sp )
 	return n ;
 }
 
-void GNet::EventLoopImp::addRead( Descriptor fd , EventHandler & handler , ExceptionSink es )
+inline int GNet::EventLoopImp::fdmaxof( std::size_t nfds , fd_set * sp )
 {
-	if( fd.valid() )
-	{
-		handler.setDescriptor( fd ) ; // see EventHandler::dtor
-		addImp( fd.fd() , m_read_emitters , handler , es ) ;
-		FD_SET( fd.fd() , &m_read_set ) ;
-	}
+	return fdmaxof( static_cast<int>(nfds) , sp ) ;
 }
 
-void GNet::EventLoopImp::addWrite( Descriptor fd , EventHandler & handler , ExceptionSink es )
+int GNet::EventLoopImp::fdmaxof( int nfds , fd_set * sp )
 {
-	if( fd.valid() )
+	int fdmax = -1 ;
+	for( int fd = 0 ; fd < nfds ; fd++ )
 	{
-		handler.setDescriptor( fd ) ; // see EventHandler::dtor
-		addImp( fd.fd() , m_write_emitters , handler , es ) ;
-		FD_SET( fd.fd() , &m_write_set ) ;
+		if( FD_ISSET(fd,sp) )
+			fdmax = fd ;
 	}
+	return fdmax ;
 }
 
-void GNet::EventLoopImp::addOther( Descriptor fd , EventHandler & handler , ExceptionSink es )
+void GNet::EventLoopImp::addRead( Descriptor fdd , EventHandler & handler , EventState es )
 {
-	if( fd.valid() )
-	{
-		handler.setDescriptor( fd ) ; // see EventHandler::dtor
-		addImp( fd.fd() , m_other_emitters , handler , es ) ;
-		FD_SET( fd.fd() , &m_other_set ) ;
-	}
+	if( fdd.fd() >= 0 )
+		addImp( fdd.fd() , handler , es , m_read_set , m_read_list , m_read_fdmax ) ;
 }
 
-void GNet::EventLoopImp::addImp( int fd , Emitters & emitters , EventHandler & handler , ExceptionSink es )
+void GNet::EventLoopImp::addWrite( Descriptor fdd , EventHandler & handler , EventState es )
 {
+	if( fdd.fd() >= 0 )
+		addImp( fdd.fd() , handler , es , m_write_set , m_write_list , m_write_fdmax ) ;
+}
+
+void GNet::EventLoopImp::addOther( Descriptor fdd , EventHandler & handler , EventState es )
+{
+	if( fdd.fd() >= 0 )
+		addImp( fdd.fd() , handler , es , m_other_set , m_other_list , m_other_fdmax ) ;
+}
+
+void GNet::EventLoopImp::addImp( int fd , EventHandler & handler , EventState es , fd_set & set , List & list , int & fdmax )
+{
+	G_ASSERT( fd >= 0 ) ;
+	G_ASSERT( fdmax >= -1 ) ;
 	if( fd >= FD_SETSIZE )
 		throw EventLoop::Overflow( "too many open file descriptors for select()" ) ;
 
-	m_nfds = std::max( m_nfds , fd+1 ) ;
-	emitters.resize( m_nfds ) ;
-	emitters[fd].update( &handler , es ) ;
+	// make sure drop() is called if the EventHandler goes away -- see EventHandler::dtor
+	handler.setDescriptor( Descriptor(fd) ) ;
+
+	// update the list
+	if( list.size() < std::size_t(fd+1) )
+		list.resize( fd+1 ) ;
+	list[fd].update( &handler , es ) ;
+
+	// update the set
+	FD_SET( fd , &set ) ;
+	fdmax = std::max( fdmax , fd ) ;
+
+	G_ASSERT( list.size() >= static_cast<std::size_t>(fdmax+1) ) ;
 }
 
-void GNet::EventLoopImp::dropRead( Descriptor fd ) noexcept
+void GNet::EventLoopImp::dropRead( Descriptor fdd ) noexcept
 {
-	if( fd.valid() )
+	if( fdd.fd() >= 0 )
+		dropImp( fdd.fd() , m_read_set , m_read_set_copy , m_read_fdmax ) ;
+}
+
+void GNet::EventLoopImp::dropWrite( Descriptor fdd ) noexcept
+{
+	if( fdd.fd() >= 0 )
+		dropImp( fdd.fd() , m_write_set , m_write_set_copy , m_write_fdmax ) ;
+}
+
+void GNet::EventLoopImp::dropOther( Descriptor fdd ) noexcept
+{
+	if( fdd.fd() >= 0 )
+		dropImp( fdd.fd() , m_read_set , m_read_set_copy , m_read_fdmax ) ;
+}
+
+void GNet::EventLoopImp::dropImp( int fd , fd_set & set , fd_set & set_copy , int & fdmax ) noexcept
+{
+	G_ASSERT( fd >= 0 ) ;
+	G_ASSERT( fdmax >= -1 ) ;
+
+	// update the set
+	FD_CLR( fd , &set ) ;
+	FD_CLR( fd , &set_copy ) ; // dont deliver from the current result set
+	if( fd == fdmax )
+		fdmax = -1 ; // invalidate, force a re-evaluation before next use
+}
+
+void GNet::EventLoopImp::drop( Descriptor fdd ) noexcept
+{
+	if( fdd.fd() >= 0 )
 	{
-		FD_CLR( fd.fd() , &m_read_set ) ;
-		FD_CLR( fd.fd() , &m_read_set_copy ) ;
+		// update the sets
+		dropImp( fdd.fd() , m_read_set , m_read_set_copy , m_read_fdmax ) ;
+		dropImp( fdd.fd() , m_write_set , m_write_set_copy , m_write_fdmax ) ;
+		dropImp( fdd.fd() , m_other_set , m_other_set_copy , m_other_fdmax ) ;
+
+		// update the lists since the handler is going away
+		std::size_t ufd = static_cast<unsigned int>(fdd.fd()) ;
+		if( ufd < m_read_list.size() )
+			m_read_list[ufd].m_handler = nullptr ;
+		if( ufd < m_write_list.size() )
+			m_write_list[ufd].m_handler = nullptr ;
+		if( ufd < m_other_list.size() )
+			m_other_list[ufd].m_handler = nullptr ;
 	}
 }
 
-void GNet::EventLoopImp::dropWrite( Descriptor fd ) noexcept
+void GNet::EventLoopImp::disarm( ExceptionHandler * eh ) noexcept
 {
-	if( fd.valid() )
+	// stop EventEmitter calling the specified exception handler
+	disarmImp( m_es_current , eh ) ;
+
+	// remove any other references -- this is overkill is most cases
+	// because if the exception handler is going away then all
+	// event handlers that might refer to it will have already
+	// been dropped -- exception handlers tend to be long-lived
+	// so any performance penalty is likely insignificant
+	disarmImp( m_read_list , eh ) ;
+	disarmImp( m_write_list , eh ) ;
+	disarmImp( m_other_list , eh ) ;
+}
+
+void GNet::EventLoopImp::disarmImp( List & list , ExceptionHandler * eh ) noexcept
+{
+	for( auto & list_item : list )
 	{
-		FD_CLR( fd.fd() , &m_write_set ) ;
-		FD_CLR( fd.fd() , &m_write_set_copy ) ;
+		if( list_item.m_es.eh() == eh )
+			list_item.m_es.disarm() ;
 	}
 }
 
-void GNet::EventLoopImp::dropOther( Descriptor fd ) noexcept
+void GNet::EventLoopImp::disarmImp( EventState & es , ExceptionHandler * eh ) noexcept
 {
-	if( fd.valid() )
-	{
-		FD_CLR( fd.fd() , &m_other_set ) ;
-		FD_CLR( fd.fd() , &m_other_set_copy ) ;
-	}
-}
-
-void GNet::EventLoopImp::drop( Descriptor fd ) noexcept
-{
-	dropRead( fd ) ;
-	dropWrite( fd ) ;
-	dropOther( fd ) ;
-	std::size_t ufd = static_cast<unsigned int>(fd.fd()) ;
-	if( ufd < m_read_emitters.size() )
-		m_read_emitters[ufd].reset() ;
-	if( ufd < m_write_emitters.size() )
-		m_write_emitters[ufd].reset() ;
-	if( ufd < m_other_emitters.size() )
-		m_other_emitters[ufd].reset() ;
-}
-
-void GNet::EventLoopImp::disarm( ExceptionHandler * p ) noexcept
-{
-	disarmImp( m_read_emitters , p ) ;
-	disarmImp( m_write_emitters , p ) ;
-	disarmImp( m_other_emitters , p ) ;
-}
-
-void GNet::EventLoopImp::disarmImp( Emitters & emitters , ExceptionHandler * p ) noexcept
-{
-	for( auto & emitter : emitters )
-	{
-		emitter.disarm( p ) ;
-	}
+	if( es.eh() == eh )
+		es.disarm() ;
 }
 

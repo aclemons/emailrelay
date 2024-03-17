@@ -25,8 +25,9 @@
 #include "geventloop.h"
 #include "geventhandler.h"
 #include "geventemitter.h"
+#include "geventstate.h"
+#include "geventlogging.h"
 #include "gexceptionhandler.h"
-#include "gexceptionsink.h"
 #include "gexceptionsource.h"
 
 #endif

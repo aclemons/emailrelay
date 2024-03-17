@@ -24,7 +24,7 @@
 #include "gdef.h"
 #include "glocation.h"
 #include "geventhandler.h"
-#include "gexceptionsink.h"
+#include "geventstate.h"
 #include "gexception.h"
 #include "gaddress.h"
 #include <vector>
@@ -57,7 +57,7 @@ public:
 			///< Called on completion of GNet::Resolver name resolution.
 	} ;
 
-	Resolver( Callback & , ExceptionSink ) ;
+	Resolver( Callback & , EventState ) ;
 		///< Constructor taking a callback interface reference.
 		///< The exception sink is called if an exception is thrown
 		///< out of Callback::onResolved().
@@ -100,7 +100,7 @@ private:
 
 private:
 	Callback & m_callback ;
-	ExceptionSink m_es ;
+	EventState m_es ;
 	std::unique_ptr<ResolverImp> m_imp ;
 } ;
 

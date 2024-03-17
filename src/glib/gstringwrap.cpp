@@ -34,8 +34,8 @@
 
 struct G::StringWrap::Config /// Private implementation structure for G::StringWrap.
 {
-	string_view prefix_first ;
-	string_view prefix_other ;
+	std::string_view prefix_first ;
+	std::string_view prefix_other ;
 	std::size_t width_first ;
 	std::size_t width_other ;
 	bool preserve_spaces ;
@@ -55,7 +55,7 @@ public:
 	WordWrapper & operator=( WordWrapper && ) = delete ;
 
 private:
-	string_view prefix() const ;
+	std::string_view prefix() const ;
 
 private:
 	std::size_t m_lines {0U} ;
@@ -74,7 +74,7 @@ G::StringWrap::WordWrapper::WordWrapper( std::ostream & out , Config config , co
 {
 }
 
-G::string_view G::StringWrap::WordWrapper::prefix() const
+std::string_view G::StringWrap::WordWrapper::prefix() const
 {
 	return m_lines ? m_config.prefix_other : m_config.prefix_first ;
 }
@@ -196,10 +196,10 @@ std::locale G::StringWrap::defaultLocale()
 
 std::size_t G::StringWrap::wordsize( const std::string & s , const std::locale & loc )
 {
-	return wordsize( string_view(s.data(),s.size()) , loc ) ;
+	return wordsize( std::string_view(s.data(),s.size()) , loc ) ;
 }
 
-std::size_t G::StringWrap::wordsize( G::string_view s , const std::locale & loc )
+std::size_t G::StringWrap::wordsize( std::string_view s , const std::locale & loc )
 {
 	try
 	{
@@ -215,7 +215,7 @@ std::size_t G::StringWrap::wordsize( G::string_view s , const std::locale & loc 
 		const char * cnext = nullptr ;
 		char32_t * wnext = nullptr ;
 		auto rc = codecvt.in( state ,
-			s.data() , s.end() , cnext ,
+			s.data() , s.data()+s.size() , cnext ,
 			warray.data() , warray.data()+warray.size() , wnext ) ;
 		std::size_t din = cnext ? std::distance( s.data() , cnext ) : 0U ;
 		std::size_t dout = wnext ? std::distance( warray.data() , wnext ) : 0U ;

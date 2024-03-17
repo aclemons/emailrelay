@@ -25,7 +25,7 @@
 #include "gdatetime.h"
 #include "geventhandler.h"
 #include "gexception.h"
-#include "gexceptionsink.h"
+#include "geventstate.h"
 
 namespace GNet
 {
@@ -41,8 +41,8 @@ namespace GNet
 class GNet::TimerBase
 {
 protected:
-	explicit TimerBase( ExceptionSink es ) ;
-		///< Constructor. The ExceptionSink receives an onException()
+	explicit TimerBase( EventState es ) ;
+		///< Constructor. The EventState receives an onException()
 		///< call if the onTimeout() implementation throws.
 
 public:
@@ -131,7 +131,7 @@ bool GNet::TimerBase::active() const noexcept
 /// struct Foo
 /// {
 ///   Timer<Foo> m_timer ;
-///   Foo( ExceptionSink es ) : m_timer(*this,&Foo::onTimeout,es) {}
+///   Foo( EventState es ) : m_timer(*this,&Foo::onTimeout,es) {}
 ///   void onTimeout() { throw "oops" ; }
 /// } ;
 /// \endcode
@@ -142,7 +142,7 @@ class GNet::Timer : private TimerBase
 public:
 	using method_type = void (T::*)() ;
 
-	Timer( T & t , method_type m , ExceptionSink ) ;
+	Timer( T & t , method_type m , EventState ) ;
 		///< Constructor.
 
 	void startTimer( unsigned int interval_s , unsigned int interval_us = 0U ) ;
@@ -175,7 +175,7 @@ private:
 } ;
 
 template <typename T>
-GNet::Timer<T>::Timer( T & t , method_type m , GNet::ExceptionSink es ) :
+GNet::Timer<T>::Timer( T & t , method_type m , GNet::EventState es ) :
 	TimerBase(es) ,
 	m_t(t) ,
 	m_m(m)

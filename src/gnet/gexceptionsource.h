@@ -30,8 +30,7 @@ namespace GNet
 
 //| \class GNet::ExceptionSource
 /// A mixin base class that identifies the source of an exception
-/// when delivered to GNet::ExceptionHandler and optionally provides
-/// an indentifier for logging purposes.
+/// when delivered to GNet::ExceptionHandler.
 ///
 /// The primary motivation is to allow a Server to manage its
 /// ServerPeer list when one of them throws an exception.
@@ -39,12 +38,6 @@ namespace GNet
 class GNet::ExceptionSource
 {
 public:
-	virtual std::string exceptionSourceId() const ;
-		///< Returns an identifying string for logging purposes,
-		///< or the empty string. This typically provides the
-		///< remote peer's network address. The default
-		///< implementation returns the empty string.
-
 	virtual ~ExceptionSource() ;
 		///< Destructor.
 

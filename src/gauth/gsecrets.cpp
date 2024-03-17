@@ -94,7 +94,7 @@ GAuth::SecretsFileClient::SecretsFileClient( const std::string & path , const st
 GAuth::SecretsFileClient::~SecretsFileClient()
 = default ;
 
-bool GAuth::SecretsFileClient::validSelector( G::string_view selector ) const
+bool GAuth::SecretsFileClient::validSelector( std::string_view selector ) const
 {
 	if( m_id_pwd )
 		return selector.empty() ;
@@ -104,7 +104,7 @@ bool GAuth::SecretsFileClient::validSelector( G::string_view selector ) const
 		return m_file.containsClientSelector( selector ) ;
 }
 
-bool GAuth::SecretsFileClient::mustAuthenticate( G::string_view selector ) const
+bool GAuth::SecretsFileClient::mustAuthenticate( std::string_view selector ) const
 {
 	if( m_id_pwd )
 		return true ;
@@ -114,7 +114,7 @@ bool GAuth::SecretsFileClient::mustAuthenticate( G::string_view selector ) const
 		return m_file.containsClientSecret( selector ) ;
 }
 
-GAuth::Secret GAuth::SecretsFileClient::clientSecret( G::string_view type , G::string_view selector ) const
+GAuth::Secret GAuth::SecretsFileClient::clientSecret( std::string_view type , std::string_view selector ) const
 {
 	if( m_id_pwd && type == "plain"_sv )
 	{
@@ -151,7 +151,7 @@ bool GAuth::SecretsFileServer::valid() const
 	return m_pam || m_file.valid() ;
 }
 
-GAuth::Secret GAuth::SecretsFileServer::serverSecret( G::string_view type , G::string_view id ) const
+GAuth::Secret GAuth::SecretsFileServer::serverSecret( std::string_view type , std::string_view id ) const
 {
 	G_ASSERT( !m_pam ) ;
 	return m_file.serverSecret( type , id ) ;
@@ -163,7 +163,7 @@ std::pair<std::string,std::string> GAuth::SecretsFileServer::serverTrust( const 
 	return m_file.serverTrust( address_range ) ;
 }
 
-bool GAuth::SecretsFileServer::contains( G::string_view type , G::string_view id ) const
+bool GAuth::SecretsFileServer::contains( std::string_view type , std::string_view id ) const
 {
 	G_ASSERT( !m_pam ) ;
 	return m_file.containsServerSecret( type , id ) ;

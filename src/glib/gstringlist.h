@@ -57,15 +57,15 @@ namespace G
 				///< in the deny list. Optionally uses a case-insensitive
 				///< match.
 
-		bool headMatch( const StringArray & list , string_view head ) ;
+		bool headMatch( const StringArray & list , std::string_view head ) ;
 			///< Returns true if any string in the array has the given start
 			///< (or 'head' is empty).
 
-		bool tailMatch( const StringArray & list , string_view ending ) ;
+		bool tailMatch( const StringArray & list , std::string_view ending ) ;
 			///< Returns true if any string in the array has the given ending
 			///< (or the given ending is empty).
 
-		std::string headMatchResidue( const StringArray & list , string_view head ) ;
+		std::string headMatchResidue( const StringArray & list , std::string_view head ) ;
 			///< Returns the unmatched part of the first string in the array that has
 			///< the given start. Returns the empty string if nothing matches or if
 			///< the first match is an exact match for the whole string.
@@ -84,9 +84,9 @@ namespace G
 				m_ignore(ignore)
 			{
 			}
-			Filter & allow( const optional<std::string> & a )
+			Filter & allow( const std::optional<std::string> & a )
 			{
-				auto a_list = Str::splitIntoTokens( a.value_or({}) , "," ) ;
+				auto a_list = Str::splitIntoTokens( a.value_or(std::string()) , "," ) ;
 				if( a.has_value() && a_list.empty() )
 					m_list.clear() ;
 				else

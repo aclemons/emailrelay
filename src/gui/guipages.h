@@ -30,6 +30,7 @@
 #include "gpath.h"
 #include "gstringarray.h"
 #include <fstream>
+#include <memory>
 
 class QCheckBox;
 class QComboBox;

@@ -59,37 +59,27 @@ namespace GSmtp
 ///
 /// \see GSmtp::Forward
 ///
-class GSmtp::Client : public GNet::Client , private ClientProtocol::Sender
+class GSmtp::Client : public GNet::Client , private ClientProtocol::Sender , private GNet::EventLogging
 {
 public:
 	struct Config /// A structure containing GSmtp::Client configuration parameters.
 	{
-		GNet::StreamSocket::Config stream_socket_config ;
 		ClientProtocol::Config client_protocol_config ;
+		GNet::Client::Config net_client_config ;
 		Filter::Config filter_config ;
 		FilterFactoryBase::Spec filter_spec ;
-		bool bind_local_address {false} ;
-		GNet::Address local_address ;
-		unsigned int connection_timeout {0U} ;
-		unsigned int secure_connection_timeout {0U} ;
 		bool secure_tunnel {false} ;
 		std::string sasl_client_config ;
-		std::string client_tls_profile ;
 		bool fail_if_no_remote_recipients {true} ; // used by GSmtp::Forward
-
-		Config() ;
-		Config & set_stream_socket_config( const GNet::StreamSocket::Config & ) ;
+		bool log_msgid {false} ;
 		Config & set_client_protocol_config( const ClientProtocol::Config & ) ;
+		Config & set_net_client_config( const GNet::Client::Config & ) ;
 		Config & set_filter_config( const Filter::Config & ) ;
 		Config & set_filter_spec( const FilterFactoryBase::Spec & ) ;
-		Config & set_bind_local_address( bool = true ) noexcept ;
-		Config & set_local_address( const GNet::Address & ) ;
-		Config & set_connection_timeout( unsigned int ) noexcept ;
-		Config & set_secure_connection_timeout( unsigned int ) noexcept ;
 		Config & set_secure_tunnel( bool = true ) noexcept ;
 		Config & set_sasl_client_config( const std::string & ) ;
-		Config & set_client_tls_profile( const std::string & ) ;
 		Config & set_fail_if_no_remote_recipients( bool = true ) noexcept ;
+		Config & set_log_msgid( bool = true ) noexcept ;
 	} ;
 
 	struct MessageDoneInfo /// Signal parameters for GNet::Client::messageDoneSignal()
@@ -99,7 +89,7 @@ public:
 		bool filter_special ;
 	} ;
 
-	Client( GNet::ExceptionSink ,
+	Client( GNet::EventState ,
 		FilterFactoryBase & , const GNet::Location & remote ,
 		const GAuth::SaslClientSecrets & , const Config & config ) ;
 			///< Constructor. Expects sendMessage() immediately after
@@ -133,13 +123,17 @@ public:
 		///< Returns a signal that indicates that sendMessage()
 		///< has completed or failed.
 
+	static std::string eventLoggingString( const GStore::StoredMessage * , const Config & ) ;
+		///< Returns an event logging string for the given message.
+
 private: // overrides
 	void onConnect() override ; // GNet::Client
 	bool onReceive( const char * , std::size_t , std::size_t , std::size_t , char ) override ; // GNet::Client
 	void onDelete( const std::string & ) override ; // GNet::Client
 	void onSendComplete() override ; // GNet::Client
 	void onSecure( const std::string & , const std::string & , const std::string & ) override ; // GNet::SocketProtocol
-	bool protocolSend( G::string_view , std::size_t , bool ) override ; // ClientProtocol::Sender
+	bool protocolSend( std::string_view , std::size_t , bool ) override ; // ClientProtocol::Sender
+	std::string_view eventLoggingString() const noexcept override ; // GNet::EventLogging
 
 public:
 	Client( const Client & ) = delete ;
@@ -148,6 +142,7 @@ public:
 	Client & operator=( Client && ) = delete ;
 
 private:
+	GNet::EventState m_es ;
 	std::shared_ptr<GStore::StoredMessage> message() ;
 	void protocolDone( const ClientProtocol::DoneInfo & ) ; // GSmtp::ClientProtocol::doneSignal()
 	void filterStart() ;
@@ -157,7 +152,7 @@ private:
 	void messageFail( int = 0 , const std::string & = {} ) ;
 	void messageDestroy() ;
 	void onNoFilterTimeout() ;
-	static GNet::Client::Config netConfig( const Config & smtp_config ) ;
+	static GNet::Client::Config normalise( GNet::Client::Config ) ;
 
 private:
 	Config m_config ;
@@ -169,19 +164,16 @@ private:
 	bool m_secure {false} ;
 	bool m_filter_special {false} ;
 	G::CallStack m_stack ;
+	std::string m_event_logging_string ;
 } ;
 
-inline GSmtp::Client::Config & GSmtp::Client::Config::set_stream_socket_config( const GNet::StreamSocket::Config & c ) { stream_socket_config = c ; return *this ; }
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_client_protocol_config( const ClientProtocol::Config & c ) { client_protocol_config = c ; return *this ; }
+inline GSmtp::Client::Config & GSmtp::Client::Config::set_net_client_config( const GNet::Client::Config & c ) { net_client_config = c ; return *this ; }
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_filter_spec( const FilterFactoryBase::Spec & r ) { filter_spec = r ; return *this ; }
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_filter_config( const Filter::Config & c ) { filter_config = c ; return *this ; }
-inline GSmtp::Client::Config & GSmtp::Client::Config::set_bind_local_address( bool b ) noexcept { bind_local_address = b ; return *this ; }
-inline GSmtp::Client::Config & GSmtp::Client::Config::set_local_address( const GNet::Address & a ) { local_address = a ; return *this ; }
-inline GSmtp::Client::Config & GSmtp::Client::Config::set_connection_timeout( unsigned int t ) noexcept { connection_timeout = t ; return *this ; }
-inline GSmtp::Client::Config & GSmtp::Client::Config::set_secure_connection_timeout( unsigned int t ) noexcept { secure_connection_timeout = t ; return *this ; }
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_secure_tunnel( bool b ) noexcept { secure_tunnel = b ; return *this ; }
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_sasl_client_config( const std::string & s ) { sasl_client_config = s ; return *this ; }
-inline GSmtp::Client::Config & GSmtp::Client::Config::set_client_tls_profile( const std::string & s ) { client_tls_profile = s ; return *this ; }
 inline GSmtp::Client::Config & GSmtp::Client::Config::set_fail_if_no_remote_recipients( bool b ) noexcept { fail_if_no_remote_recipients = b ; return *this ; }
+inline GSmtp::Client::Config & GSmtp::Client::Config::set_log_msgid( bool b ) noexcept { log_msgid = b ; return *this ; }
 
 #endif

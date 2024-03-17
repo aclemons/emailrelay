@@ -64,16 +64,16 @@ public:
 		///< Classifies the given mailbox name.
 		///< See also RFC-5198.
 
-	static AddressCommand parseMailFrom( G::string_view ) ;
+	static AddressCommand parseMailFrom( std::string_view ) ;
 		///< Parses a MAIL-FROM command.
 
-	static AddressCommand parseRcptTo( G::string_view ) ;
+	static AddressCommand parseRcptTo( std::string_view ) ;
 		///< Parses a RCPT-TO command.
 
-	static std::pair<std::size_t,bool> parseBdatSize( G::string_view ) ;
+	static std::pair<std::size_t,bool> parseBdatSize( std::string_view ) ;
 		///< Parses a BDAT command.
 
-	static std::pair<bool,bool> parseBdatLast( G::string_view ) ;
+	static std::pair<bool,bool> parseBdatLast( std::string_view ) ;
 		///< Parses a BDAT LAST command.
 
 	static std::string parseHeloPeerName( const std::string & ) ;
@@ -89,10 +89,10 @@ private:
 		ValidXtext ,
 		Upper
 	} ;
-	static AddressCommand parseAddressPart( G::string_view ) ;
-	static std::size_t parseMailNumericValue( G::string_view , G::string_view , AddressCommand & ) ;
-	static std::string parseMailStringValue( G::string_view , G::string_view , AddressCommand & , Conversion = Conversion::None ) ;
-	static bool parseMailBoolean( G::string_view , G::string_view , AddressCommand & ) ;
+	static AddressCommand parseAddressPart( std::string_view ) ;
+	static std::size_t parseMailNumericValue( std::string_view , std::string_view , AddressCommand & ) ;
+	static std::string parseMailStringValue( std::string_view , std::string_view , AddressCommand & , Conversion = Conversion::None ) ;
+	static bool parseMailBoolean( std::string_view , std::string_view , AddressCommand & ) ;
 } ;
 
 #endif

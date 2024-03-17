@@ -42,7 +42,7 @@ class GFilters::CopyFilter : public SimpleFilterBase
 public:
 	G_EXCEPTION( Error , tx("copy filter failed to copy message files into sub-directory") ) ;
 
-	CopyFilter( GNet::ExceptionSink es , GStore::FileStore & ,
+	CopyFilter( GNet::EventState es , GStore::FileStore & ,
 		Filter::Type , const Filter::Config & , const std::string & spec ) ;
 			///< Constructor.
 

@@ -47,12 +47,12 @@ namespace G
 		constexpr std::size_t margin = 7U ;
 		constexpr std::size_t buffer_base_size = Limits<>::log + 40U ;
 		std::array<char,buffer_base_size+margin> buffer {} ;
-		struct ostream : std::ostream /// An ostream using G::omembuf.
+		struct ostream : std::ostream /// An ostream using an extrinsic G::omembuf.
 		{
 			explicit ostream( G::omembuf * p ) : std::ostream(p) {}
 			void reset() { clear() ; seekp(0) ; }
 		} ;
-		LogStream & ostream1()
+		LogStream & ostream1() // Returns a reference to an internal static LogStream.
 		{
 			static G::omembuf buf( buffer.data() , buffer.size() ) ; // bogus clang-tidy cert-err58-cpp
 			static ostream s( &buf ) ;
@@ -60,10 +60,10 @@ namespace G
 			s.reset() ;
 			return logstream ;
 		}
-		LogStream & ostream2() noexcept
+		LogStream & ostream2() noexcept // Returns a reference to an internal static LogStream used as a bit bucket.
 		{
-			// an ostream for junk that gets discarded
-			static LogStream logstream( nullptr ) ; // is noexcept
+			static_assert( noexcept(LogStream(nullptr)) , "" ) ;
+			static LogStream logstream( nullptr ) ;
 			return logstream ;
 		}
 		std::size_t tellp( LogStream & logstream )
@@ -72,22 +72,22 @@ namespace G
 			logstream.m_ostream->clear() ;
 			return static_cast<std::size_t>( std::max( std::streampos(0) , logstream.m_ostream->tellp() ) ) ;
 		}
-		G::string_view info()
+		std::string_view info()
 		{
 			static std::string s( txt("info: ") ) ;
 			return {s.data(),s.size()} ;
 		}
-		G::string_view warning()
+		std::string_view warning()
 		{
 			static std::string s( txt("warning: ") ) ;
 			return {s.data(),s.size()} ;
 		}
-		G::string_view error()
+		std::string_view error()
 		{
 			static std::string s( txt("error: ") ) ;
 			return {s.data(),s.size()} ;
 		}
-		G::string_view fatal()
+		std::string_view fatal()
 		{
 			static std::string s( txt("fatal: ") ) ;
 			return {s.data(),s.size()} ;
@@ -96,7 +96,7 @@ namespace G
 }
 
 G::LogOutput::LogOutput( const std::string & exename , const Config & config ,
-	const std::string & path ) :
+	const Path & path ) :
 		m_exename(exename) ,
 		m_config(config) ,
 		m_path(path)
@@ -111,7 +111,7 @@ G::LogOutput::LogOutput( const std::string & exename , const Config & config ,
 
 #ifndef G_LIB_SMALL
 G::LogOutput::LogOutput( bool output_enabled_and_summary_info ,
-	bool verbose_info_and_debug , const std::string & path ) :
+	bool verbose_info_and_debug , const Path & path ) :
 		m_path(path)
 {
 	m_config = Config()
@@ -160,7 +160,7 @@ G::LogOutput * G::LogOutput::instance() noexcept
 	return LogOutputImp::this_ ;
 }
 
-void G::LogOutput::context( std::string (*fn)(void *) , void * fn_arg ) noexcept
+void G::LogOutput::context( std::string_view (*fn)(void *) , void * fn_arg ) noexcept
 {
 	LogOutput * p = instance() ;
 	if( p )
@@ -170,11 +170,13 @@ void G::LogOutput::context( std::string (*fn)(void *) , void * fn_arg ) noexcept
 	}
 }
 
+#ifndef G_LIB_SMALL
 void * G::LogOutput::contextarg() noexcept
 {
 	LogOutput * p = instance() ;
 	return p ? p->m_context_fn_arg : nullptr ;
 }
+#endif
 
 bool G::LogOutput::at( Log::Severity severity ) const noexcept
 {
@@ -217,37 +219,30 @@ void G::LogOutput::output( LogStream & s ) noexcept
 	}
 }
 
-bool G::LogOutput::updatePath( const std::string & path_in , std::string & path_out ) const
+bool G::LogOutput::updatePath( const Path & path_in , Path & path_out ) const
 {
 	bool changed = false ;
 	if( !path_in.empty() )
 	{
-		std::string new_path_out = makePath( path_in ) ;
+		Path new_path_out = makePath( path_in ) ;
 		changed = new_path_out != path_out ;
 		path_out.swap( new_path_out ) ;
 	}
 	return changed ;
 }
 
-std::string G::LogOutput::makePath( const std::string & path_in ) const
+G::Path G::LogOutput::makePath( const Path & path_in ) const
 {
-	// this is called at most hourly, so not optimised
-	std::string path_out = path_in ;
-	std::size_t pos = 0U ;
-	if( (pos=path_out.find("%d")) != std::string::npos ) // NOLINT assignment
-	{
-		std::string yyyymmdd( m_time_buffer.data() , 8U ) ;
-		path_out.replace( pos , 2U , yyyymmdd ) ;
-	}
-	if( (pos=path_out.find("%h")) != std::string::npos ) // NOLINT assignment
-	{
-		path_out[pos] = m_time_buffer[9] ;
-		path_out[pos+1U] = m_time_buffer[10] ;
-	}
+	// this is called at most hourly (see updateTime()), so not optimised
+	std::string_view yyyymmdd( m_time_buffer.data() , 8U ) ;
+	std::string_view hh( m_time_buffer.data()+9 , 2U ) ;
+	Path path_out = path_in ;
+	path_out.replace( "%d" , yyyymmdd ) ;
+	path_out.replace( "%h" , hh ) ;
 	return path_out ;
 }
 
-void G::LogOutput::open( const std::string & path , bool do_throw )
+void G::LogOutput::open( const Path & path , bool do_throw )
 {
 	if( path.empty() )
 	{
@@ -259,9 +254,9 @@ void G::LogOutput::open( const std::string & path , bool do_throw )
 		{
 			Process::Umask set_umask( m_config.m_umask ) ;
 			Root claim_root ;
-			fd = File::open( path.c_str() , File::InOutAppend::Append ) ;
+			fd = File::open( path , File::InOutAppend::Append ) ;
 			if( fd < 0 && do_throw )
-				throw LogFileError( path ) ;
+				throw LogFileError( path.str() ) ;
 		}
 		if( fd >= 0 )
 		{
@@ -405,7 +400,7 @@ const char * G::LogOutput::basename( const char * file ) noexcept
 	return p1 > p2 ? (p1+1) : (p2?(p2+1):file) ;
 }
 
-G::string_view G::LogOutput::levelString( Log::Severity s ) noexcept
+std::string_view G::LogOutput::levelString( Log::Severity s ) noexcept
 {
 	namespace imp = LogOutputImp ;
 	if( s == Log::Severity::Debug ) return "debug: " ;

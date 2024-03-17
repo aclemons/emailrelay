@@ -30,15 +30,14 @@ bool GSmtp::AdminServer::enabled()
 	return false ;
 }
 
-GSmtp::AdminServer::AdminServer( GNet::ExceptionSink , GStore::MessageStore & ,
+GSmtp::AdminServer::AdminServer( GNet::EventState , GStore::MessageStore & ,
 	FilterFactoryBase & , const GAuth::SaslClientSecrets & ,
 	const G::StringArray & , const Config & )
 {
 }
 
 GSmtp::AdminServer::~AdminServer()
-{
-}
+= default ;
 
 void GSmtp::AdminServer::emitCommand( Command , unsigned int )
 {

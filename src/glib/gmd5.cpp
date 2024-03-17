@@ -60,7 +60,7 @@ public:
 		// message string. Do not use add() with this
 		// constructor.
 
-	explicit digest( G::string_view ) ;
+	explicit digest( std::string_view ) ;
 		// Constuctor. Calculates a digest for the given
 		// message data. Do not use add() with this
 		// constructor.
@@ -200,7 +200,7 @@ G::Md5Imp::digest::digest( const std::string & s ) :
 	}
 }
 
-G::Md5Imp::digest::digest( string_view sv ) :
+G::Md5Imp::digest::digest( std::string_view sv ) :
 	digest_state{}
 {
 	init() ;
@@ -571,7 +571,7 @@ std::string G::Md5::digest( const std::string & input )
 #endif
 
 #ifndef G_LIB_SMALL
-std::string G::Md5::digest( string_view input )
+std::string G::Md5::digest( std::string_view input )
 {
 	Md5Imp::digest dd( input ) ;
 	return Md5Imp::format::encode( dd.state() ) ;
@@ -586,7 +586,7 @@ std::string G::Md5::digest( const std::string & input_1 , const std::string & in
 	return x.value() ;
 }
 
-std::string G::Md5::digest( G::string_view input_1 , G::string_view input_2 )
+std::string G::Md5::digest( std::string_view input_1 , std::string_view input_2 )
 {
 	G::Md5 x ;
 	x.add( input_1.data() , input_1.size() ) ;

@@ -82,7 +82,7 @@ public:
 	} ;
 
 public:
-	Server( GNet::ExceptionSink es , Config ) ;
+	Server( GNet::EventState es , Config ) ;
 	~Server() override ;
 
 private: // overrides
@@ -90,12 +90,12 @@ private: // overrides
 	void sendResponse( const GNet::Address & , GNet::DnsMessage ) ;
 
 private:
-	GNet::ExceptionSink m_es ;
+	GNet::EventState m_es ;
 	Config m_config ;
 	GNet::DatagramSocket m_socket ;
 } ;
 
-Server::Server( GNet::ExceptionSink es , Config config ) :
+Server::Server( GNet::EventState es , Config config ) :
 	m_es(es) ,
 	m_config(config) ,
 	m_socket(m_config.family,0,m_config.socket_config)
@@ -298,8 +298,8 @@ int main( int argc , char * argv [] )
 			pid_file << G::Process::Id().str() << std::endl ;
 		}
 
-		std::unique_ptr<GNet::EventLoop> event_loop = GNet::EventLoop::create() ;
-		GNet::ExceptionSink es ;
+		auto event_loop = GNet::EventLoop::create() ;
+		auto es = GNet::EventState::create() ;
 		GNet::TimerList timer_list ;
 		Server server( es , config ) ;
 

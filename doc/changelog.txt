@@ -1,6 +1,10 @@
 E-MailRelay Change Log
 ======================
 
+2.5.2 -> 2.5.3
+--------------
+* New "--log-format" option (eg. "--log-format=address,port") (see NEWS file).
+
 2.5.1 -> 2.5.2
 --------------
 * Windows build scripts reworked.

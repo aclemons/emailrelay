@@ -31,7 +31,6 @@
 namespace G
 {
 	class Path ;
-	class PathFriend ;
 }
 
 //| \class G::Path
@@ -57,7 +56,11 @@ namespace G
 /// in the degenerate case.
 ///
 /// This class is agnostic on the choice of UTF-8 or eight-bit characters since
-/// the delimiters are all seven-bit ascii.
+/// the delimiters are all seven-bit ascii. Wide characters are not supported,
+/// but to allow migration to std::filesystem::path all Path objects should be
+/// constructed and used in o/s-aware source, such as "gfile_win32.cpp",
+/// "genvironment_win32.cpp" and "gprocess_win32.cpp", and std::fstream objects
+/// should be initialised using G::Path::iopath().
 ///
 /// Both posix and windows behaviours are available at run-time; the default
 /// behaviour is the native behaviour, but this can be overridden, typically
@@ -72,6 +75,9 @@ namespace G
 class G::Path
 {
 public:
+	using value_type = char ;
+	using string_type = std::string ;
+
 	Path() ;
 		///< Default constructor for a zero-length path.
 		///< Postcondition: empty()
@@ -79,7 +85,7 @@ public:
 	Path( const std::string & path ) ;
 		///< Implicit constructor from a string.
 
-	Path( string_view path ) ;
+	Path( std::string_view path ) ;
 		///< Implicit constructor from a string view.
 
 	Path( const char * path ) ;
@@ -94,22 +100,20 @@ public:
 	Path( const Path & path , const std::string & tail_1 , const std::string & tail_2 , const std::string & tail_3 ) ;
 		///< Constructor with three implicit pathAppend()s.
 
-	Path( std::initializer_list<std::string> ) ;
-		///< Constructor with implicit pathAppend()s. (Recall that this
-		///< overload will be strongly preferred when using curly-brace
-		///< initialisation.)
-
-	std::size_t size() const noexcept ;
-		///< Returns the length of the path string.
-
 	bool empty() const noexcept ;
-		///< Returns true if size() is zero.
+		///< Returns true if the path is empty.
 
 	std::string str() const ;
 		///< Returns the path string.
 
-	const char * cstr() const noexcept ;
-		///< Returns the path string.
+	const string_type & iopath() const noexcept ;
+		///< Returns the path's native string by reference, suitable for
+		///< initialising c++ streams.
+
+	const value_type * cstr() const noexcept ;
+		///< Returns the path's native string, suitable for low-level
+		///< functions like std::fopen(), std::rename() and stat().
+		///< Typically used by o/s-aware code such as G::File.
 
 	bool simple() const ;
 		///< Returns true if the path has a single component (ignoring "." parts),
@@ -145,6 +149,10 @@ public:
 		///< Returns a path without the root part. This has no effect
 		///< if the path isRelative().
 
+	bool isRoot() const noexcept ;
+		///< Returns true if the path is a root, like "/", "c:",
+		///< "c:/", "\\server\volume" etc.
+
 	bool isAbsolute() const noexcept ;
 		///< Returns !isRelative().
 
@@ -153,6 +161,10 @@ public:
 
 	Path & pathAppend( const std::string & tail ) ;
 		///< Appends a filename or a relative path to this path.
+
+	bool replace( const std::string_view & from , const std::string_view & to ) ;
+		///< Replaces the first occurrence of 'from' with 'to',
+		///< excluding the root part. Returns true if replaced.
 
 	StringArray split() const ;
 		///< Spits the path into a list of component parts (ignoring "." parts
@@ -184,10 +196,10 @@ public:
 	void swap( Path & other ) noexcept ;
 		///< Swaps this with other.
 
-	bool operator==( const Path & path ) const ;
+	bool operator==( const Path & path ) const noexcept(noexcept(std::string().compare(std::string()))) ;
 		///< Comparison operator.
 
-	bool operator!=( const Path & path ) const ;
+	bool operator!=( const Path & path ) const noexcept(noexcept(std::string().compare(std::string()))) ;
 		///< Comparison operator.
 
 	static void setPosixStyle() ;
@@ -204,7 +216,6 @@ public:
 		///< UTF-8 paths.
 
 private:
-	friend class G::PathFriend ;
 	std::string m_str ;
 } ;
 
@@ -215,13 +226,13 @@ bool G::Path::empty() const noexcept
 }
 
 inline
-std::size_t G::Path::size() const noexcept
+std::string G::Path::str() const
 {
-	return m_str.size() ;
+	return m_str ;
 }
 
 inline
-std::string G::Path::str() const
+const std::string & G::Path::iopath() const noexcept
 {
 	return m_str ;
 }
@@ -229,7 +240,7 @@ std::string G::Path::str() const
 inline
 const char * G::Path::cstr() const noexcept
 {
-	return m_str.c_str() ;
+	return iopath().c_str() ;
 }
 
 namespace G

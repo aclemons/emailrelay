@@ -28,6 +28,7 @@
 #include "gcall.h"
 #include <functional>
 #include <string>
+#include <tuple>
 
 namespace GNet
 {
@@ -197,7 +198,7 @@ public:
 			///< function on the sink object, allowing the flag to change
 			///< dynamically as each line is delivered.
 
-	bool apply( SinkFn sink_fn , G::string_view data , FragmentsFn fragments_fn ) ;
+	bool apply( SinkFn sink_fn , std::string_view data , FragmentsFn fragments_fn ) ;
 		///< Overload for std::function.
 		///<
 		///< This overload provides extra parameter 'more' to the
@@ -473,7 +474,7 @@ void GNet::LineBuffer::apply( Tsink sink_p , Tmemfun memfun , const char * data_
 }
 
 inline
-bool GNet::LineBuffer::apply( SinkFn sink_fn , G::string_view data_in , FragmentsFn fragments_fn ) // NOLINT performance-unnecessary-value-param
+bool GNet::LineBuffer::apply( SinkFn sink_fn , std::string_view data_in , FragmentsFn fragments_fn ) // NOLINT performance-unnecessary-value-param
 {
 	Extension e( this , data_in.data() , data_in.size() ) ;
 	while( e.valid() && more( fragments_fn() ) )

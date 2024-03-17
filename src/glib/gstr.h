@@ -64,9 +64,9 @@ public:
 		Cr_Lf_CrLf
 	} ;
 
-	static bool replace( std::string & s , string_view from , string_view to ,
+	static bool replace( std::string & s , std::string_view from , std::string_view to ,
 		std::size_t * pos_p = nullptr ) ;
-			///< A string_view overload. Replaces 'from' with 'to', starting at
+			///< A std::string_view overload. Replaces 'from' with 'to', starting at
 			///< offset '*pos_p'. Returns true if a substitution was made,
 			///< and adjusts '*pos_p' by to.length().
 
@@ -76,7 +76,7 @@ public:
 	static void replace( StringArray & , char from , char to ) ;
 		///< Replaces 'from' characters with 'to' in all the strings in the array.
 
-	static unsigned int replaceAll( std::string & s , string_view from , string_view to ) ;
+	static unsigned int replaceAll( std::string & s , std::string_view from , std::string_view to ) ;
 		///< Does a global replace on string 's', replacing all occurrences
 		///< of sub-string 'from' with 'to'. Returns the number of substitutions
 		///< made. Consider using in a while loop if 'from' is more than one
@@ -92,69 +92,69 @@ public:
 		///< Removes all occurrences of the character from the string and returns
 		///< the result. See also only().
 
-	static std::string & trimLeft( std::string & s , string_view ws , std::size_t limit = 0U ) ;
+	static std::string & trimLeft( std::string & s , std::string_view ws , std::size_t limit = 0U ) ;
 		///< Trims the lhs of s, taking off up to 'limit' of the 'ws' characters.
 		///< Returns s.
 
-	static string_view trimLeftView( string_view , string_view ws , std::size_t limit = 0U ) noexcept ;
+	static std::string_view trimLeftView( std::string_view , std::string_view ws , std::size_t limit = 0U ) noexcept ;
 		///< Trims the lhs of s, taking off up to 'limit' of the 'ws' characters.
 		///< Returns a view into the input string.
 
-	static std::string & trimRight( std::string & s , string_view ws , std::size_t limit = 0U ) ;
+	static std::string & trimRight( std::string & s , std::string_view ws , std::size_t limit = 0U ) ;
 		///< Trims the rhs of s, taking off up to 'limit' of the 'ws' characters.
 		///< Returns s.
 
-	static string_view trimRightView( string_view sv , string_view ws , std::size_t limit = 0U ) noexcept ;
+	static std::string_view trimRightView( std::string_view sv , std::string_view ws , std::size_t limit = 0U ) noexcept ;
 		///< Trims the rhs of s, taking off up to 'limit' of the 'ws' characters.
 		///< Returns a view into the input string.
 
-	static std::string & trim( std::string & s , string_view ws ) ;
+	static std::string & trim( std::string & s , std::string_view ws ) ;
 		///< Trims both ends of s, taking off any of the 'ws' characters.
 		///< Returns s.
 
-	static std::string trimmed( const std::string & s , string_view ws ) ;
+	static std::string trimmed( const std::string & s , std::string_view ws ) ;
 		///< Returns a trim()med version of s.
 
-	static std::string trimmed( std::string && s , string_view ws ) ;
+	static std::string trimmed( std::string && s , std::string_view ws ) ;
 		///< Returns a trim()med version of s.
 
-	static string_view trimmedView( string_view s , string_view ws ) noexcept ;
+	static std::string_view trimmedView( std::string_view s , std::string_view ws ) noexcept ;
 		///< Returns a trim()med view of the input view.
 
-	static bool isNumeric( string_view s , bool allow_minus_sign = false ) noexcept ;
+	static bool isNumeric( std::string_view s , bool allow_minus_sign = false ) noexcept ;
 		///< Returns true if every character is a decimal digit.
 		///< Empty strings return true.
 
-	static bool isHex( string_view s ) noexcept ;
+	static bool isHex( std::string_view s ) noexcept ;
 		///< Returns true if every character is a hexadecimal digit.
 		///< Empty strings return true.
 
-	static bool isPrintableAscii( string_view s ) noexcept ;
+	static bool isPrintableAscii( std::string_view s ) noexcept ;
 		///< Returns true if every character is a 7-bit, non-control
 		///< character (ie. 0x20<=c<0x7f). Empty strings return true.
 
-	static bool isPrintable( string_view s ) noexcept ;
+	static bool isPrintable( std::string_view s ) noexcept ;
 		///< Returns true if every character is a non-control
 		///< character (ie. 0x20<=c<0x7f || 0xa0<=c<0xff).
 		///< Empty strings return true.
 
-	static bool isSimple( string_view s ) noexcept ;
+	static bool isSimple( std::string_view s ) noexcept ;
 		///< Returns true if every character is alphanumeric or
 		///< "-" or "_". Empty strings return true.
 
-	static bool isUShort( string_view s ) noexcept ;
+	static bool isUShort( std::string_view s ) noexcept ;
 		///< Returns true if the string can be converted into
 		///< an unsigned short without throwing an exception.
 
-	static bool isUInt( string_view s ) noexcept ;
+	static bool isUInt( std::string_view s ) noexcept ;
 		///< Returns true if the string can be converted into
 		///< an unsigned integer without throwing an exception.
 
-	static bool isULong( string_view s ) noexcept ;
+	static bool isULong( std::string_view s ) noexcept ;
 		///< Returns true if the string can be converted into
 		///< an unsigned long without throwing an exception.
 
-	static bool isInt( string_view s ) noexcept ;
+	static bool isInt( std::string_view s ) noexcept ;
 		///< Returns true if the string can be converted into
 		///< an integer without throwing an exception.
 
@@ -190,17 +190,17 @@ public:
 		///< Converts an unsigned value to a lower-case
 		///< hex string with no leading zeros.
 
-	static string_view fromULongToHex( unsigned long , char * out ) noexcept ;
+	static std::string_view fromULongToHex( unsigned long , char * out ) noexcept ;
 		///< Low-level conversion from an unsigned value
 		///< to a lower-case hex string with no leading zeros.
 		///< The output buffer must be sizeof(long)*2.
 
-	static string_view fromULongLongToHex( unsigned long long , char * out ) noexcept ;
+	static std::string_view fromULongLongToHex( unsigned long long , char * out ) noexcept ;
 		///< Low-level conversion from an unsigned value
 		///< to a lower-case hex string with no leading zeros.
 		///< The output buffer must be sizeof(long long)*2.
 
-	static bool toBool( string_view s ) ;
+	static bool toBool( std::string_view s ) ;
 		///< Converts string 's' to a bool.
 		///<
 		///< Exception: InvalidFormat
@@ -217,35 +217,35 @@ public:
 		///< Exception: Overflow
 		///< Exception: InvalidFormat
 
-	static int toInt( string_view s ) ;
+	static int toInt( std::string_view s ) ;
 		///< Converts string 's' to an int.
 		///<
 		///< Exception: Overflow
 		///< Exception: InvalidFormat
 
-	static long toLong( string_view s ) ;
+	static long toLong( std::string_view s ) ;
 		///< Converts string 's' to a long.
 		///<
 		///< Exception: Overflow
 		///< Exception: InvalidFormat
 
-	static short toShort( string_view s ) ;
+	static short toShort( std::string_view s ) ;
 		///< Converts string 's' to a short.
 		///<
 		///< Exception: Overflow
 		///< Exception: InvalidFormat
 
-	static unsigned int toUInt( string_view s ) ;
+	static unsigned int toUInt( std::string_view s ) ;
 		///< Converts string 's' to an unsigned int.
 		///<
 		///< Exception: Overflow
 		///< Exception: InvalidFormat
 
-	static int toInt( string_view s1 , string_view s2 ) ;
+	static int toInt( std::string_view s1 , std::string_view s2 ) ;
 		///< Overload that converts the first string if it can be converted
 		///< without throwing, or otherwise the second string.
 
-	static unsigned int toUInt( string_view s , Limited ) ;
+	static unsigned int toUInt( std::string_view s , Limited ) ;
 		///< Converts string 's' to an unsigned int.
 		///<
 		///< Very large numeric strings are limited to the maximum
@@ -253,15 +253,15 @@ public:
 		///<
 		///< Exception: InvalidFormat
 
-	static unsigned int toUInt( string_view s1 , string_view s2 ) ;
+	static unsigned int toUInt( std::string_view s1 , std::string_view s2 ) ;
 		///< Overload that converts the first string if it can be converted
 		///< without throwing, or otherwise the second string.
 
-	static unsigned int toUInt( string_view s1 , unsigned int default_ ) ;
+	static unsigned int toUInt( std::string_view s1 , unsigned int default_ ) ;
 		///< Overload that converts the string if it can be converted
 		///< without throwing, or otherwise returns the default value.
 
-	static unsigned long toULong( string_view s , Limited ) ;
+	static unsigned long toULong( std::string_view s , Limited ) ;
 		///< Converts string 's' to an unsigned long.
 		///<
 		///< Very large numeric strings are limited to the maximum value
@@ -269,11 +269,11 @@ public:
 		///<
 		///< Exception: InvalidFormat
 
-	static unsigned long toULong( string_view s , Hex ) ;
+	static unsigned long toULong( std::string_view s , Hex ) ;
 		///< An overload for hexadecimal strings. To avoid exceptions
 		///< use isHex() and check the string length.
 
-	static unsigned long toULong( string_view s , Hex , Limited ) ;
+	static unsigned long toULong( std::string_view s , Hex , Limited ) ;
 		///< An overload for hexadecimal strings where overflow
 		///< results in the return of the maximum value. To avoid
 		///< exceptions use isHex().
@@ -289,17 +289,17 @@ public:
 			///< Low-level conversion from an unsigned decimal string to a number.
 			///< Consumes characters until the first invalid character.
 
-	static unsigned long toULong( string_view s ) ;
+	static unsigned long toULong( std::string_view s ) ;
 		///< Converts string 's' to an unsigned long.
 		///<
 		///< Exception: Overflow
 		///< Exception: InvalidFormat
 
-	static unsigned long toULong( string_view s1 , string_view s2 ) ;
+	static unsigned long toULong( std::string_view s1 , std::string_view s2 ) ;
 		///< Overload that converts the first string if it can be converted
 		///< without throwing, or otherwise the second string.
 
-	static unsigned short toUShort( string_view s , Limited ) ;
+	static unsigned short toUShort( std::string_view s , Limited ) ;
 		///< Converts string 's' to an unsigned short.
 		///<
 		///< Very large numeric strings are limited to the maximum value
@@ -307,7 +307,7 @@ public:
 		///<
 		///< Exception: InvalidFormat
 
-	static unsigned short toUShort( string_view s ) ;
+	static unsigned short toUShort( std::string_view s ) ;
 		///< Converts string 's' to an unsigned short.
 		///<
 		///< Exception: Overflow
@@ -321,11 +321,11 @@ public:
 		///< Replaces all seven-bit upper-case characters in string 's' by
 		///< lower-case characters.
 
-	static std::string upper( string_view ) ;
+	static std::string upper( std::string_view ) ;
 		///< Returns a copy of 's' in which all seven-bit lower-case characters
 		///< have been replaced by upper-case characters.
 
-	static std::string lower( string_view ) ;
+	static std::string lower( std::string_view ) ;
 		///< Returns a copy of 's' in which all seven-bit upper-case characters
 		///< have been replaced by lower-case characters.
 
@@ -340,17 +340,17 @@ public:
 		///< chacter code ranges 0x20 to 0x7e and 0xa0 to 0xfe inclusive.
 		///< Typically used to prevent escape sequences getting into log files.
 
-	static std::string printable( string_view in , char escape = '\\' ) ;
+	static std::string printable( std::string_view in , char escape = '\\' ) ;
 		///< Returns a printable representation of the given input string, using
 		///< chacter code ranges 0x20 to 0x7e and 0xa0 to 0xfe inclusive.
 		///< Typically used to prevent escape sequences getting into log files.
 
-	static std::string only( string_view allow_chars , string_view s ) ;
+	static std::string only( std::string_view allow_chars , std::string_view s ) ;
 		///< Returns the 's' with all occurrences of the characters not appearing in
 		///< the first string deleted.
 
-	static void escape( std::string & s , char c_escape , string_view specials_in ,
-		string_view specials_out ) ;
+	static void escape( std::string & s , char c_escape , std::string_view specials_in ,
+		std::string_view specials_out ) ;
 			///< Prefixes each occurrence of one of the special-in characters with
 			///< the escape character and its corresponding special-out character.
 			///<
@@ -362,14 +362,14 @@ public:
 	static void escape( std::string & s ) ;
 		///< Overload for 'normal' backslash escaping of whitespace.
 
-	static std::string escaped( string_view , char c_escape , string_view specials_in ,
-		string_view specials_out ) ;
+	static std::string escaped( std::string_view , char c_escape , std::string_view specials_in ,
+		std::string_view specials_out ) ;
 			///< Returns the escape()d string.
 
-	static std::string escaped( string_view ) ;
+	static std::string escaped( std::string_view ) ;
 		///< Returns the escape()d string.
 
-	static void unescape( std::string & s , char c_escape , string_view specials_in , string_view specials_out ) ;
+	static void unescape( std::string & s , char c_escape , std::string_view specials_in , std::string_view specials_out ) ;
 		///< Unescapes the string by replacing e-e with e, e-special-in with
 		///< special-out, and e-other with other. The specials-in and
 		///< specials-out strings must be the same length.
@@ -381,12 +381,12 @@ public:
 	static std::string unescaped( const std::string & s ) ;
 		///< Returns the unescape()d version of s.
 
-	static string_view meta() noexcept ;
+	static std::string_view meta() noexcept ;
 		///< Returns a list of shell meta-characters with a tilde as the
 		///< first character. Does not contain the nul character. This is
 		///< typically used with escape().
 
-	static std::string readLineFrom( std::istream & stream , string_view eol = {} ) ;
+	static std::string readLineFrom( std::istream & stream , std::string_view eol = {} ) ;
 		///< Reads a line from the stream using the given line terminator.
 		///< The line terminator is not part of the returned string.
 		///< The terminator defaults to the newline.
@@ -415,7 +415,7 @@ public:
 		///< \endcode
 
 	static std::istream & readLine( std::istream & stream , std::string & result ,
-		string_view eol = {} , bool pre_erase_result = true , std::size_t limit = 0U ) ;
+		std::string_view eol = {} , bool pre_erase_result = true , std::size_t limit = 0U ) ;
 			///< Reads a line from the stream using the given line
 			///< terminator, which may be multi-character. Behaves like
 			///< std::getline() when the trailing parameters are defaulted.
@@ -428,7 +428,7 @@ public:
 			///< An overload where lines are terminated with some
 			///< enumerated combination of CR, LF or CRLF.
 
-	static void splitIntoTokens( const std::string & in , StringArray & out , string_view ws , char esc = '\0' ) ;
+	static void splitIntoTokens( const std::string & in , StringArray & out , std::string_view ws , char esc = '\0' ) ;
 		///< Splits the string into 'ws'-delimited tokens. The behaviour is like
 		///< strtok() in that adjacent delimiters count as one and leading and
 		///< trailing delimiters are ignored. The output array is _not_ cleared
@@ -439,10 +439,10 @@ public:
 		///< before splitIntoTokens(), and revert the non-breaking spaces
 		///< afterwards.
 
-	static StringArray splitIntoTokens( const std::string & in , string_view ws = Str::ws() , char esc = '\0' ) ;
+	static StringArray splitIntoTokens( const std::string & in , std::string_view ws = Str::ws() , char esc = '\0' ) ;
 		///< Overload that returns by value.
 
-	static void splitIntoFields( string_view in , StringArray & out ,
+	static void splitIntoFields( std::string_view in , StringArray & out ,
 		char sep , char escape = '\0' ,
 		bool remove_escapes = true ) ;
 			///< Splits the string into fields. Duplicated, leading and trailing
@@ -457,73 +457,73 @@ public:
 			///< unescaped escapes are used to prevent splitting but they remain
 			///< in the output.
 
-	static StringArray splitIntoFields( string_view in , char sep ) ;
+	static StringArray splitIntoFields( std::string_view in , char sep ) ;
 		///< Overload that returns by value.
 
 	static std::string dequote( const std::string & , char qq = '\"' , char esc = '\\' ,
-		string_view ws = Str::ws() , string_view nbws = Str::ws() ) ;
+		std::string_view ws = Str::ws() , std::string_view nbws = Str::ws() ) ;
 			///< Dequotes a string by removing unescaped quotes and escaping
 			///< quoted whitespace, so "qq-aaa-esc-qq-bbb-ws-ccc-qq" becomes
 			///< "aaa-qq-bbb-esc-ws-ccc". Escaped whitespace characters within
 			///< quotes can optionally be converted to non-breaking equivalents.
 
-	static std::string join( string_view sep , const StringArray & strings ) ;
+	static std::string join( std::string_view sep , const StringArray & strings ) ;
 		///< Concatenates an array of strings with separators.
 
-	static std::string join( string_view sep , string_view s1 , string_view s2 ,
-		string_view s3 = {} , string_view s4 = {} , string_view s5 = {} ,
-		string_view s6 = {} , string_view s7 = {} , string_view s8 = {} ,
-		string_view s9 = {} ) ;
+	static std::string join( std::string_view sep , std::string_view s1 , std::string_view s2 ,
+		std::string_view s3 = {} , std::string_view s4 = {} , std::string_view s5 = {} ,
+		std::string_view s6 = {} , std::string_view s7 = {} , std::string_view s8 = {} ,
+		std::string_view s9 = {} ) ;
 			///< Concatenates a small number of strings with separators.
 			///< In this overload empty strings are ignored.
 
-	static std::string join( string_view sep , const StringMap & , string_view eq ,
-		string_view tail = {} ) ;
+	static std::string join( std::string_view sep , const StringMap & , std::string_view eq ,
+		std::string_view tail = {} ) ;
 			///< Concatenates entries in a map, where an entry is "<key><eq><value><tail>".
 
 	static StringArray keys( const StringMap & string_map ) ;
 		///< Extracts the keys from a map of strings.
 
-	static std::string head( string_view in , std::size_t pos , string_view default_ = {} ) ;
+	static std::string head( std::string_view in , std::size_t pos , std::string_view default_ = {} ) ;
 			///< Returns the first part of the string up to just before the given position.
 			///< The character at pos is not returned. Returns the supplied default
 			///< if pos is npos. Returns the whole string if pos is one-or-more
 			///< off the end.
 
-	static std::string head( string_view , string_view sep , bool default_empty = true ) ;
+	static std::string head( std::string_view , std::string_view sep , bool default_empty = true ) ;
 		///< Overload taking a separator string, and with the default
 		///< as either the input string or the empty string. If the
 		///< separator occurs more than once in the input then only the
 		///< first occurrence is relevant.
 
-	static string_view headView( string_view in , std::size_t pos , string_view default_ = {} ) noexcept ;
+	static std::string_view headView( std::string_view in , std::size_t pos , std::string_view default_ = {} ) noexcept ;
 		///< Like head() but returning a view into the input string.
 
-	static string_view headView( string_view in , string_view sep , bool default_empty = true ) noexcept ;
+	static std::string_view headView( std::string_view in , std::string_view sep , bool default_empty = true ) noexcept ;
 		///< Like head() but returning a view into the input string.
 
-	static std::string tail( string_view in , std::size_t pos , string_view default_ = {} ) ;
+	static std::string tail( std::string_view in , std::size_t pos , std::string_view default_ = {} ) ;
 			///< Returns the last part of the string after the given position.
 			///< The character at pos is not returned. Returns the supplied default
 			///< if pos is npos. Returns the empty string if pos is one-or-more
 			///< off the end.
 
-	static std::string tail( string_view in , string_view sep , bool default_empty = true ) ;
+	static std::string tail( std::string_view in , std::string_view sep , bool default_empty = true ) ;
 		///< Overload taking a separator string, and with the default
 		///< as either the input string or the empty string. If the
 		///< separator occurs more than once in the input then only the
 		///< first occurrence is relevant.
 
-	static string_view tailView( string_view in , std::size_t pos , string_view default_ = {} ) noexcept ;
+	static std::string_view tailView( std::string_view in , std::size_t pos , std::string_view default_ = {} ) noexcept ;
 		///< Like tail() but returning a view into the input string.
 
-	static string_view tailView( string_view in , string_view sep , bool default_empty = true ) noexcept ;
+	static std::string_view tailView( std::string_view in , std::string_view sep , bool default_empty = true ) noexcept ;
 		///< Like tail() but returning a view into the input string.
 
-	static bool match( string_view , string_view ) noexcept ;
+	static bool match( std::string_view , std::string_view ) noexcept ;
 		///< Returns true if the two strings are the same.
 
-	static bool iless( string_view , string_view ) noexcept ;
+	static bool iless( std::string_view , std::string_view ) noexcept ;
 		///< Returns true if the first string is lexicographically less
 		///< than the first, after seven-bit lower-case letters have been
 		///< folded to upper-case.
@@ -531,32 +531,32 @@ public:
 	static bool imatch( char , char ) noexcept ;
 		///< Returns true if the two characters are the same, ignoring seven-bit case.
 
-	static bool imatch( string_view , string_view ) noexcept ;
+	static bool imatch( std::string_view , std::string_view ) noexcept ;
 		///< Returns true if the two strings are the same, ignoring seven-bit case.
 		///< The locale is ignored.
 
-	static std::size_t ifind( string_view s , string_view key ) ;
+	static std::size_t ifind( std::string_view s , std::string_view key ) ;
 			///< Returns the position of the key in 's' using a seven-bit case-insensitive
 			///< search. Returns std::string::npos if not found. The locale is ignored.
 
-	static std::size_t ifindat( string_view s , string_view key , std::size_t pos ) ;
+	static std::size_t ifindat( std::string_view s , std::string_view key , std::size_t pos ) ;
 			///< Returns the position of the key in 's' at of after position 'pos'
 			///< using a seven-bit case-insensitive search. Returns std::string::npos
 			///< if not found. The locale is ignored.
 
-	static bool tailMatch( const std::string & in , string_view ending ) noexcept ;
+	static bool tailMatch( const std::string & in , std::string_view ending ) noexcept ;
 		///< Returns true if the string has the given ending (or the given ending is empty).
 
-	static bool headMatch( const std::string & in , string_view head ) noexcept ;
+	static bool headMatch( const std::string & in , std::string_view head ) noexcept ;
 		///< Returns true if the string has the given start (or head is empty).
 
-	static string_view ws() noexcept ;
+	static std::string_view ws() noexcept ;
 		///< Returns a string of standard whitespace characters.
 
-	static string_view alnum() noexcept ;
+	static std::string_view alnum() noexcept ;
 		///< Returns a string of seven-bit alphanumeric characters, ie A-Z, a-z and 0-9.
 
-	static string_view alnum_() noexcept ;
+	static std::string_view alnum_() noexcept ;
 		///< Returns alnum() with an additional trailing underscore character.
 
 	static std::string positive() ;
@@ -565,10 +565,10 @@ public:
 	static std::string negative() ;
 		///< Returns a default negative string. See isNegative().
 
-	static bool isPositive( string_view ) noexcept ;
+	static bool isPositive( std::string_view ) noexcept ;
 		///< Returns true if the string has a positive meaning, such as "1", "true", "yes".
 
-	static bool isNegative( string_view ) noexcept ;
+	static bool isNegative( std::string_view ) noexcept ;
 		///< Returns true if the string has a negative meaning, such as "0", "false", "no".
 
 	static std::string unique( const std::string & s , char c , char r ) ;

@@ -151,7 +151,7 @@ GNet::SocketBase::ssize_type GNet::SocketBase::writeImp( const char * buffer , s
 	return nsent;
 }
 
-void GNet::SocketBase::addReadHandler( EventHandler & handler , ExceptionSink es )
+void GNet::SocketBase::addReadHandler( EventHandler & handler , EventState es )
 {
 	G_DEBUG( "GNet::SocketBase::addReadHandler: fd " << m_fd ) ;
 	if( !m_read_added )
@@ -159,7 +159,7 @@ void GNet::SocketBase::addReadHandler( EventHandler & handler , ExceptionSink es
 	m_read_added = true ;
 }
 
-void GNet::SocketBase::addWriteHandler( EventHandler & handler , ExceptionSink es )
+void GNet::SocketBase::addWriteHandler( EventHandler & handler , EventState es )
 {
 	G_DEBUG( "GNet::SocketBase::addWriteHandler: fd " << m_fd ) ;
 	if( !m_write_added )
@@ -167,7 +167,7 @@ void GNet::SocketBase::addWriteHandler( EventHandler & handler , ExceptionSink e
 	m_write_added = true ;
 }
 
-void GNet::SocketBase::addOtherHandler( EventHandler & handler , ExceptionSink es )
+void GNet::SocketBase::addOtherHandler( EventHandler & handler , EventState es )
 {
 	G_DEBUG( "GNet::SocketBase::addOtherHandler: fd " << m_fd ) ;
 	if( !m_other_added )
@@ -520,7 +520,7 @@ GNet::AcceptInfo GNet::StreamSocket::accept()
 {
 	AddressStorage addr ;
 	Descriptor new_fd( ::accept(fd(),addr.p1(),addr.p2()) ) ;
-	if( ! new_fd.valid() )
+	if( !new_fd.validfd() )
 	{
 		saveReason() ;
 		if( eTooMany() )

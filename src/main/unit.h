@@ -23,6 +23,7 @@
 
 #include "gdef.h"
 #include "configuration.h"
+#include "geventlogging.h"
 #include "gclientptr.h"
 #include "gslot.h"
 #include "gsecrets.h"
@@ -45,13 +46,13 @@ namespace Main
 /// An agglomeration of things that surround a spool directory, including
 /// an SMTP server and SMTP client.
 ///
-class Main::Unit
+class Main::Unit : private GNet::EventLogging
 {
 public:
 	Unit( Run & , unsigned int unit_id , const std::string & version ) ;
 		///< Constructor.
 
-	~Unit() ;
+	~Unit() override ;
 		///< Destructor.
 
 	unsigned int id() const ;
@@ -106,6 +107,9 @@ public:
 	G::Path spoolDir() const ;
 		///< Returns the spool directory.
 
+private: //overrides
+	std::string_view eventLoggingString() const noexcept override ;
+
 public:
 	Unit( const Unit & ) = delete ;
 	Unit( Unit && ) = delete ;
@@ -136,6 +140,7 @@ private:
 	Configuration m_configuration ;
 	std::string m_version_number ;
 	unsigned int m_unit_id ;
+	std::string m_event_logging_string ;
 	mutable std::string m_domain ;
 	bool m_serving {false} ;
 	bool m_forwarding {false} ;
@@ -143,8 +148,8 @@ private:
 	bool m_quit_when_sent {false} ;
 	bool m_forwarding_pending {false} ;
 	std::string m_forwarding_reason ;
-	GNet::ExceptionSink m_es_log_only ;
-	GNet::ExceptionSink m_es_rethrow ;
+	GNet::EventState m_es_log_only ;
+	GNet::EventState m_es_rethrow ;
 	G::Slot::Signal<unsigned,std::string,bool> m_client_done_signal ;
 	G::Slot::Signal<unsigned,std::string,std::string,std::string> m_event_signal ;
 	std::unique_ptr<GNet::Timer<Unit>> m_forwarding_timer ;

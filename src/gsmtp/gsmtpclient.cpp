@@ -31,13 +31,15 @@
 #include "glog.h"
 #include <utility>
 
-GSmtp::Client::Client( GNet::ExceptionSink es , FilterFactoryBase & ff , const GNet::Location & remote ,
+GSmtp::Client::Client( GNet::EventState es , FilterFactoryBase & ff , const GNet::Location & remote ,
 	const GAuth::SaslClientSecrets & secrets , const Config & config ) :
-		GNet::Client(es,remote,netConfig(config)) ,
+		GNet::Client(es.logging(this),remote,normalise(config.net_client_config)) ,
+		GNet::EventLogging(es.logging()) ,
+		m_es(es.logging(this)) ,
 		m_config(config) ,
-		m_nofilter_timer(*this,&Client::onNoFilterTimeout,es) ,
-		m_filter(ff.newFilter(es,Filter::Type::client,config.filter_config,config.filter_spec)) ,
-		m_protocol(es,*this,secrets,config.sasl_client_config,config.client_protocol_config,config.secure_tunnel)
+		m_nofilter_timer(*this,&Client::onNoFilterTimeout,m_es) ,
+		m_filter(ff.newFilter(m_es,Filter::Type::client,config.filter_config,config.filter_spec)) ,
+		m_protocol(m_es,*this,secrets,config.sasl_client_config,config.client_protocol_config,config.secure_tunnel)
 {
 	G_ASSERT( m_filter.get() != nullptr ) ;
 	m_protocol.doneSignal().connect( G::Slot::slot(*this,&Client::protocolDone) ) ;
@@ -52,21 +54,9 @@ GSmtp::Client::~Client()
 	m_protocol.doneSignal().disconnect() ;
 }
 
-GNet::Client::Config GSmtp::Client::netConfig( const Config & smtp_config )
+GNet::Client::Config GSmtp::Client::normalise( GNet::Client::Config net_client_config )
 {
-	return
-		GNet::Client::Config()
-			.set_stream_socket_config( smtp_config.stream_socket_config )
-			.set_line_buffer_config( GNet::LineBuffer::Config::smtp() )
-			.set_bind_local_address( smtp_config.bind_local_address )
-			.set_local_address( smtp_config.local_address )
-			.set_connection_timeout( smtp_config.connection_timeout )
-			.set_socket_protocol_config(
-				GNet::SocketProtocol::Config()
-					.set_client_tls_profile( smtp_config.client_tls_profile )
-					.set_secure_connection_timeout( smtp_config.secure_connection_timeout ) ) ;
-			//.set_response_timeout() // the protocol class does this
-			//.set_idle_timeout() // not needed
+	return net_client_config.set_line_buffer_config( GNet::LineBuffer::Config::smtp() ) ;
 }
 
 G::Slot::Signal<const GSmtp::Client::MessageDoneInfo&> & GSmtp::Client::messageDoneSignal() noexcept
@@ -78,6 +68,7 @@ void GSmtp::Client::sendMessage( std::unique_ptr<GStore::StoredMessage> message 
 {
 	G_ASSERT( message.get() != nullptr ) ;
 	m_message = std::move( message ) ;
+	m_event_logging_string = eventLoggingString( m_message.get() , m_config ) ;
 	if( ready() )
 		start() ;
 }
@@ -121,10 +112,10 @@ std::shared_ptr<GStore::StoredMessage> GSmtp::Client::message()
 	return m_message ;
 }
 
-bool GSmtp::Client::protocolSend( G::string_view line , std::size_t offset , bool go_secure )
+bool GSmtp::Client::protocolSend( std::string_view line , std::size_t offset , bool go_secure )
 {
 	offset = std::min( offset , line.size() ) ;
-	G::string_view data( line.data()+offset , line.size()-offset ) ;
+	std::string_view data( line.data()+offset , line.size()-offset ) ;
 	bool rc = data.empty() ? true : send( data ) ;
 	if( go_secure )
 		secureConnect() ; // GNet::Client -> GNet::SocketProtocol
@@ -226,6 +217,8 @@ void GSmtp::Client::protocolDone( const ClientProtocol::DoneInfo & info )
 		messageFail( info.response_code , reason ) ;
 	}
 
+	m_event_logging_string.clear() ;
+
 	G::CallFrame this_( m_stack ) ;
 	eventSignal().emit( "sent" , message_id , short_reason ) ;
 	if( this_.deleted() ) return ; // just in case
@@ -286,10 +279,15 @@ void GSmtp::Client::onSendComplete()
 	m_protocol.sendComplete() ;
 }
 
-// ==
-
-GSmtp::Client::Config::Config() :
-	local_address(GNet::Address::defaultAddress())
+std::string GSmtp::Client::eventLoggingString( const GStore::StoredMessage * msg , const Config & config )
 {
+	if( !msg || !config.log_msgid ) return {} ;
+	return std::string(1U,'(').append(G::Str::tail(msg->id().str(),"."_sv,false)).append(") ",2U) ;
+}
+
+std::string_view GSmtp::Client::eventLoggingString() const noexcept
+{
+	if( m_event_logging_string.empty() ) return {} ;
+	return m_event_logging_string ;
 }
 

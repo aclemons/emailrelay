@@ -29,6 +29,7 @@
 namespace G
 {
 	class Cleanup ;
+	class CleanupImp ;
 }
 
 //| \class G::Cleanup
@@ -50,15 +51,31 @@ public:
 		Block & operator=( const Block & ) = delete ;
 		Block & operator=( Block && ) = delete ;
 	} ;
+	struct Arg /// Opaque leaky string pointer wrapper created by G::Cleanup::arg().
+	{
+		const char * str() const noexcept ;
+		const Path::value_type * path() const noexcept ;
+		private:
+		friend class G::CleanupImp ;
+		const char * m_ptr {nullptr} ;
+	} ;
+	using Fn = bool (*)(const Arg &) GDEF_FSIG_NOEXCEPT ; // noexcept if c++17
 
 	static void init() ;
 		///< An optional early-initialisation function. May be called more than once.
 
-	static void add( bool (*fn)(SignalSafe,const char*) , const char * arg ) ;
+	static void add( Fn , Arg arg ) ;
 		///< Adds the given handler to the list of handlers that are to be called
-		///< when the process terminates abnormally. The handler function must be
-		///< fully reentrant, hence the SignalSafe dummy parameter. The 'arg'
-		///< pointer is kept.
+		///< when the process terminates abnormally. In principle the handler
+		///< function should be fully reentrant and signal-safe.
+		///<
+		///< The 'arg' value should come from arg(). The Arg object contains a
+		///< copy of the data passed to it. It uses memory allocated on the heap
+		///< which is never freed because it has to remain valid even as the
+		///< process is terminating.
+		///<
+		///< Once the handler returns true it is removed from the list of
+		///< handlers; if it returns false then it may be retried.
 
 	static void atexit( bool active = true ) ;
 		///< Ensures that the cleanup functions are also called via atexit(), in
@@ -76,13 +93,20 @@ public:
 	static void release() noexcept ;
 		///< Releases block()ed signals.
 
-	static const char * strdup( const char * ) ;
-		///< A strdup() function that makes it clear in the stack trace
-		///< that leaks are expected.
+	static Arg arg( const char * ) ;
+		///< Duplicates a c-string for add(). The duped pointer will be passed
+		///< to the handler.
 
-	static const char * strdup( const std::string & ) ;
-		///< A strdup() function that makes it clear in the stack trace
-		///< that leaks are expected.
+	static Arg arg( const std::string & ) ;
+		///< Duplicates a string for add(). The duplicate's data() pointer will
+		///< be passed to the handler.
+
+	static Arg arg( const Path & ) ;
+		///< Duplicates a path for add(). The path's native string pointer will
+		///< be passed to the handler.
+
+	static Arg arg( std::nullptr_t ) ;
+		///< Duplicates an empty string for add().
 
 public:
 	Cleanup() = delete ;

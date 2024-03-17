@@ -40,15 +40,15 @@ class G::Base64
 public:
 	G_EXCEPTION( Error , tx("base64 encoding error") ) ;
 
-	static std::string encode( string_view , string_view line_break = {} ) ;
+	static std::string encode( std::string_view , std::string_view line_break = {} ) ;
 		///< Encodes the given string, optionally inserting line-breaks
 		///< to limit the line length.
 
-	static std::string decode( string_view , bool throw_on_invalid = false , bool strict = true ) ;
+	static std::string decode( std::string_view , bool throw_on_invalid = false , bool strict = true ) ;
 		///< Decodes the given string. Either throws an exception if
 		///< not a valid() encoding, or returns the empty string.
 
-	static bool valid( string_view , bool strict = true ) ;
+	static bool valid( std::string_view , bool strict = true ) ;
 		///< Returns true if the string is a valid base64 encoding,
 		///< possibly allowing for embedded newlines, carriage returns,
 		///< and space characters. Strict checking permits one or

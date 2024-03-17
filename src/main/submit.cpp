@@ -63,7 +63,7 @@
 
 std::string versionNumber()
 {
-	return "2.5.2" ;
+	return "2.5.3dev1" ;
 }
 
 static std::pair<G::Path,G::Path> writeFiles( const G::Path & spool_dir ,
@@ -304,7 +304,7 @@ static void run( const G::Arg & arg )
 		bool opt_add_content_date = opt.contains( "content-date" ) ;
 		bool opt_add_content_from = opt.contains( "content-from" ) ;
 		bool opt_add_content_to = opt.contains( "content-to" ) ;
-		G::optional<std::string> opt_add_content_id = opt.optional( "content-message-id" ) ;
+		std::optional<std::string> opt_add_content_id = opt.optional( "content-message-id" ) ;
 		std::string opt_from_auth_in = opt.contains("from-auth-in") ?
 			( opt.value("from-auth-in","").empty() ? std::string("<>") : G::Xtext::encode(opt.value("from-auth-in","")) ) :
 			std::string() ;

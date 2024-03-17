@@ -37,7 +37,7 @@ namespace GFilters
 
 //| \class GFilters::FilterFactory
 /// A FilterFactory implementation. It holds a GSmtp::FileStore reference
-/// so that it can instantiate filters that operate messages stored as
+/// so that it can instantiate filters that operate on messages stored as
 /// files.
 ///
 class GFilters::FilterFactory : public GSmtp::FilterFactoryBase
@@ -72,7 +72,7 @@ public:
 			///< as missing files.
 
 protected: // overrides
-	std::unique_ptr<GSmtp::Filter> newFilter( GNet::ExceptionSink ,
+	std::unique_ptr<GSmtp::Filter> newFilter( GNet::EventState ,
 		GSmtp::Filter::Type , const GSmtp::Filter::Config & ,
 		const Spec & ) override ;
 

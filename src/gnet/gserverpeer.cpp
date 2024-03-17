@@ -21,31 +21,31 @@
 #include "gdef.h"
 #include "gserver.h"
 #include "gmonitor.h"
-#include "gtest.h"
 #include "glog.h"
 #include "gassert.h"
 #include <sstream>
 #include <utility>
 
-GNet::ServerPeer::ServerPeer( ExceptionSink es , ServerPeerInfo && peer_info , const LineBuffer::Config & line_buffer_config ) :
-	m_es(es) ,
+GNet::ServerPeer::ServerPeer( EventState es , ServerPeerInfo && peer_info , const LineBuffer::Config & line_buffer_config ) :
+	EventLogging(es.logging()) ,
+	m_es(es.logging(this)) ,
 	m_address(peer_info.m_address) ,
 	m_socket(std::move(peer_info.m_socket)) ,
-	m_sp(*this,es,*this,*m_socket,peer_info.m_server_peer_config.socket_protocol_config) ,
+	m_sp(*this,m_es,*this,*m_socket,peer_info.m_server_peer_config.socket_protocol_config) ,
 	m_line_buffer(line_buffer_config) ,
 	m_config(peer_info.m_server_peer_config) ,
-	m_idle_timer(*this,&ServerPeer::onIdleTimeout,es)
+	m_idle_timer(*this,&ServerPeer::onIdleTimeout,m_es) ,
+	m_event_logging_string(eventLoggingString(peerAddress(),peer_info.m_server_peer_config))
 {
 	G_ASSERT( peer_info.m_server != nullptr ) ;
 	G_ASSERT( m_socket.get() ) ;
-	//G_ASSERT( es.esrc() != nullptr ) ; // moot
 	G_DEBUG( "GNet::ServerPeer::ctor: [" << this << "]: port " << m_address.port() ) ;
 
 	if( m_config.idle_timeout )
 		m_idle_timer.startTimer( m_config.idle_timeout ) ;
 
-	m_socket->addReadHandler( *this , es ) ;
-	m_socket->addOtherHandler( *this , es ) ;
+	m_socket->addReadHandler( *this , m_es ) ;
+	m_socket->addOtherHandler( *this , m_es ) ;
 	Monitor::addServerPeer( *this ) ;
 }
 
@@ -53,6 +53,19 @@ GNet::ServerPeer::~ServerPeer()
 {
 	G_DEBUG( "GNet::ServerPeer::dtor: [" << this << "]: port " << m_address.port() ) ;
 	Monitor::removeServerPeer( *this ) ;
+}
+
+std::string GNet::ServerPeer::eventLoggingString( const Address & a , const Config & config )
+{
+	// (semi-colon to simplify fail2ban regexes)
+	if( config.log_address && config.log_port )
+		return a.hostPartString().append(1U,';').append(std::to_string(a.port())).append(": ",2U) ;
+	else if( config.log_address )
+		return a.hostPartString().append("; ",2U) ;
+	else if( config.log_port )
+		return std::to_string(a.port()).append(": ",2U) ;
+	else
+		return {} ;
 }
 
 void GNet::ServerPeer::secureAccept()
@@ -127,7 +140,7 @@ bool GNet::ServerPeer::send( const std::string & data )
 	return m_sp.send( data , 0U ) ;
 }
 
-bool GNet::ServerPeer::send( G::string_view data )
+bool GNet::ServerPeer::send( std::string_view data )
 {
 	if( m_config.kick_idle_timer_on_send && m_config.idle_timeout )
 		m_idle_timer.startTimer( m_config.idle_timeout ) ;
@@ -135,7 +148,7 @@ bool GNet::ServerPeer::send( G::string_view data )
 }
 
 #ifndef G_LIB_SMALL
-bool GNet::ServerPeer::send( const std::vector<G::string_view> & segments , std::size_t offset )
+bool GNet::ServerPeer::send( const std::vector<std::string_view> & segments , std::size_t offset )
 {
 	if( m_config.kick_idle_timer_on_send && m_config.idle_timeout )
 		m_idle_timer.startTimer( m_config.idle_timeout ) ;
@@ -182,15 +195,10 @@ GNet::LineBufferState GNet::ServerPeer::lineBuffer() const
 	return LineBufferState( m_line_buffer ) ;
 }
 
-std::string GNet::ServerPeer::exceptionSourceId() const
+std::string_view GNet::ServerPeer::eventLoggingString() const
 {
-	if( m_exception_source_id.empty() )
-	{
-		m_exception_source_id = peerAddress().hostPartString() ; // GNet::Connection
-		if( G::Test::enabled("log-full-address") )
-			m_exception_source_id = peerAddress().displayString() ;
-	}
-	return m_exception_source_id ;
+	if( m_event_logging_string.empty() ) return {} ;
+	return m_event_logging_string ;
 }
 
 void GNet::ServerPeer::setIdleTimeout( unsigned int s )

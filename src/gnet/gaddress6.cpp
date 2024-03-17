@@ -99,32 +99,32 @@ GNet::Address6::Address6( const sockaddr * addr , socklen_t len , bool ipv6_scop
 	}
 }
 
-GNet::Address6::Address6( const std::string & host_part , const std::string & port_part ) :
+GNet::Address6::Address6( std::string_view host_part , std::string_view port_part ) :
 	Address6(nullptr)
 {
 	const char * reason = setHostAddress( m_inet , host_part ) ;
 	if( !reason )
 		reason = setPort( m_inet , port_part ) ;
 	if( reason )
-		throw Address::BadString( std::string(reason) + ": [" + host_part + "][" + port_part + "]" ) ;
+		throw Address::BadString( std::string(reason).append(": [").append(host_part.data(),host_part.size()).append("][").append(port_part.data(),port_part.size()).append(1U,']') ) ;
 }
 
-GNet::Address6::Address6( const std::string & display_string ) :
+GNet::Address6::Address6( std::string_view display_string ) :
 	Address6(nullptr)
 {
 	const char * reason = setAddress( m_inet , display_string ) ;
 	if( reason )
-		throw Address::BadString( std::string(reason) + ": " + display_string ) ;
+		throw Address::BadString( std::string(reason).append(": ").append(display_string.data(),display_string.size()) ) ;
 }
 
-const char * GNet::Address6::setAddress( sockaddr_type & inet , const std::string & display_string )
+const char * GNet::Address6::setAddress( sockaddr_type & inet , std::string_view display_string )
 {
 	const std::string::size_type pos = display_string.find_last_of( Address6Imp::port_separators ) ;
 	if( pos == std::string::npos )
 		return "no port separator" ;
 
-	std::string host_part = G::Str::head( display_string , pos ) ;
-	std::string port_part = G::Str::tail( display_string , pos ) ;
+	std::string_view host_part = G::Str::headView( display_string , pos ) ;
+	std::string_view port_part = G::Str::tailView( display_string , pos ) ;
 
 	const char * reason = setHostAddress( inet , host_part ) ;
 	if( !reason )
@@ -132,7 +132,7 @@ const char * GNet::Address6::setAddress( sockaddr_type & inet , const std::strin
 	return reason ;
 }
 
-const char * GNet::Address6::setHostAddress( sockaddr_type & inet , const std::string & host_part )
+const char * GNet::Address6::setHostAddress( sockaddr_type & inet , std::string_view host_part )
 {
 	// wikipedia: "because all link-local addresses in a host have a common prefix, normal routing
 	// procedures cannot be used to choose the outgoing interface when sending packets
@@ -144,10 +144,10 @@ const char * GNet::Address6::setHostAddress( sockaddr_type & inet , const std::s
 	//
 	// see also RFC-2553 section 4
 	//
-	std::string zone = G::Str::tail( host_part , host_part.find('%') , std::string() ) ;
-	std::string host_part_head = G::Str::head( host_part , host_part.find('%') , host_part ) ;
+	std::string_view zone = G::Str::tailView( host_part , host_part.find('%') ) ;
+	std::string_view host_part_head = G::Str::headView( host_part , host_part.find('%') , host_part ) ;
 
-	int rc = inet_pton( af() , host_part_head.c_str() , &inet.sin6_addr ) ;
+	int rc = inet_pton( af() , G::sv_to_string(host_part_head).c_str() , &inet.sin6_addr ) ;
 
 	if( rc == 1 && !zone.empty() )
 	{
@@ -165,9 +165,9 @@ void GNet::Address6::setPort( unsigned int port )
 		throw Address::Error( "invalid port number" ) ;
 }
 
-const char * GNet::Address6::setPort( sockaddr_type & inet , const std::string & port_part )
+const char * GNet::Address6::setPort( sockaddr_type & inet , std::string_view port_part )
 {
-	if( port_part.length() == 0U ) return "empty port string" ;
+	if( port_part.empty() ) return "empty port string" ;
 	if( !G::Str::isNumeric(port_part) || !G::Str::isUInt(port_part) ) return "non-numeric port string" ;
 	return setPort( inet , G::Str::toUInt(port_part) ) ;
 }
@@ -180,12 +180,12 @@ const char * GNet::Address6::setPort( sockaddr_type & inet , unsigned int port )
 	return nullptr ;
 }
 
-bool GNet::Address6::setZone( const std::string & zone )
+bool GNet::Address6::setZone( std::string_view zone )
 {
 	return setZone( m_inet , zone ) ;
 }
 
-bool GNet::Address6::setZone( sockaddr_type & inet , const std::string & zone )
+bool GNet::Address6::setZone( sockaddr_type & inet , std::string_view zone )
 {
 	unsigned long scope_id = 0UL ; // uint on unix, ULONG on windows
 	if( G::Str::isULong(zone) )
@@ -194,7 +194,7 @@ bool GNet::Address6::setZone( sockaddr_type & inet , const std::string & zone )
 	}
 	else
 	{
-		scope_id = gdef_if_nametoindex( zone.c_str() ) ; // see gdef.h
+		scope_id = gdef_if_nametoindex( G::sv_to_string(zone).c_str() ) ; // see gdef.h
 		if( scope_id == 0U )
 			return false ;
 	}
@@ -226,7 +226,7 @@ std::string GNet::Address6::hostPartString() const
 	if( p == nullptr )
 		throw Address::Error( "inet_ntop() failure" ) ;
 	buffer[buffer.size()-1U] = '\0' ;
-	return { buffer.data() } ; // sic
+	return { buffer.data() } ; // sic no .size()
 }
 
 std::string GNet::Address6::queryString() const
@@ -246,7 +246,7 @@ bool GNet::Address6::validData( const sockaddr * addr , socklen_t len )
 	return addr != nullptr && addr->sa_family == af() && len == sizeof(sockaddr_type) ;
 }
 
-bool GNet::Address6::validString( const std::string & s , std::string * reason_p )
+bool GNet::Address6::validString( std::string_view s , std::string * reason_p )
 {
 	sockaddr_type inet {} ;
 	const char * reason = setAddress( inet , s ) ;
@@ -255,7 +255,7 @@ bool GNet::Address6::validString( const std::string & s , std::string * reason_p
 	return reason == nullptr ;
 }
 
-bool GNet::Address6::validStrings( const std::string & host_part , const std::string & port_part ,
+bool GNet::Address6::validStrings( std::string_view host_part , std::string_view port_part ,
 	std::string * reason_p )
 {
 	sockaddr_type inet {} ;

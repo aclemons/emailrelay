@@ -67,7 +67,7 @@ namespace G
 	constexpr const char * tx( const char * p ) ;
 		///< A briefer alternative to G::gettext_noop().
 
-	constexpr string_view tx( string_view sv ) ;
+	constexpr std::string_view tx( std::string_view sv ) ;
 		///< String view overload.
 }
 
@@ -86,7 +86,7 @@ constexpr const char * G::tx( const char * p )
 	return p ;
 }
 
-constexpr G::string_view G::tx( string_view sv )
+constexpr std::string_view G::tx( std::string_view sv )
 {
 	return sv ;
 }

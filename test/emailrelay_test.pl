@@ -269,7 +269,7 @@ sub _testServerStartsAndStops
 	Check::ok( $smtp_client->open(0) , "cannot connect for smtp" , $server->smtpPort() ) ;
 	$server->kill() ;
 	Check::notRunning( $server->pid() ) ;
-	Check::fileDeleted( $server->pidFile() , "pid file" ) if System::unix() ;
+	Check::fileDeleted( $server->pidFile() , "pid file" ) ; # was if System::unix()
 	Check::fileEmpty( $server->stdout() ) ;
 	Check::fileEmpty( $server->stderr() ) if System::unix() ;
 	Check::fileContains( $server->log() , "smtp server on" , "log" ) ;

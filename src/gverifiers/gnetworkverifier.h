@@ -35,10 +35,10 @@ namespace GVerifiers
 //| \class GVerifiers::NetworkVerifier
 /// A Verifier that talks to a remote address verifier over the network.
 ///
-class GVerifiers::NetworkVerifier : public GSmtp::Verifier
+class GVerifiers::NetworkVerifier : public GSmtp::Verifier , private GNet::ExceptionHandler
 {
 public:
-	NetworkVerifier( GNet::ExceptionSink , const GSmtp::Verifier::Config & config ,
+	NetworkVerifier( GNet::EventState , const GSmtp::Verifier::Config & config ,
 		const std::string & server ) ;
 			///< Constructor.
 
@@ -50,6 +50,7 @@ private: // overrides
 		const GSmtp::Verifier::Info & ) override ; // GSmtp::Verifier
 	G::Slot::Signal<GSmtp::Verifier::Command,const GSmtp::VerifierStatus&> & doneSignal() override ; // GSmtp::Verifier
 	void cancel() override ; // GSmtp::Verifier
+	void onException( GNet::ExceptionSource * , std::exception & , bool ) override ; // GNet::ExceptionHandler
 
 public:
 	NetworkVerifier( const NetworkVerifier & ) = delete ;
@@ -58,11 +59,10 @@ public:
 	NetworkVerifier & operator=( NetworkVerifier && ) = delete ;
 
 private:
-	void clientEvent( const std::string & , const std::string & , const std::string & ) ;
-	void clientDeleted( const std::string & ) ;
+	void clientEvent( const std::string & s1 , const std::string & s2 , const std::string & ) ;
 
 private:
-	GNet::ExceptionSink m_es ;
+	GNet::EventState m_es ;
 	G::Slot::Signal<GSmtp::Verifier::Command,const GSmtp::VerifierStatus&> m_done_signal ;
 	GNet::Location m_location ;
 	unsigned int m_connection_timeout ;

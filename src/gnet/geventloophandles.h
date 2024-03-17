@@ -35,12 +35,7 @@
 namespace GNet
 {
 	class EventLoopHandles ;
-	class EventLoopHandlesMt ;
-	class EventLoopHandlesMtImp ;
-
 	static constexpr std::size_t LIMIT = (MAXIMUM_WAIT_OBJECTS-1) ; // sic (beware bad documentation)
-	static constexpr std::size_t THREADS = 20U ;
-	static constexpr DWORD STACK_SIZE = 64000 ;
 }
 
 //| \class GNet::EventLoopHandles
@@ -75,12 +70,6 @@ namespace GNet
 /// }
 /// \endcode
 ///
-/// This class allows for a multi-threaded implementation supporting
-/// more than 63 handles by initially using a trivial single-threaded
-/// implementation (with a null 'm_mt' data member) and then switching
-/// to a multi-threaded implementation when there are too many open
-/// handles, if enabled.
-///
 class GNet::EventLoopHandles
 {
 public:
@@ -91,7 +80,7 @@ public:
 		message ,
 		failed ,
 		other
-	}  ;
+	} ;
 	struct Rc /// A structure for the return code from WaitForMultipleObjects().
 	{
 		Rc( RcType type , std::size_t index = 0U , std::size_t extra_1 = 0U , std::size_t extra_2 = 0U ) noexcept ;
@@ -107,8 +96,7 @@ public:
 
 public:
 	EventLoopHandles() ;
-		///< Constructor. The implementation immediately after construction
-		///< is single-threaded.
+		///< Constructor.
 
 	~EventLoopHandles() ;
 		///< Destructor.
@@ -161,26 +149,10 @@ public:
 		///< Returns a helpful explanation for overflow().
 
 private:
-	Rc wait_MT( DWORD ms ) ;
-	template <typename TList> void init_MT( const TList & , bool (*fn)(const typename TList::value_type&) ) ;
-	template <typename TList> void update_MT( const TList & , bool updated , std::size_t thread_index ) ;
-	template <typename TList> std::size_t shuffle_MT( TList & , Rc ) ;
-	template <typename TList> bool overflow_MT( TList & , bool (*fn)(const typename TList::value_type&) ) ;
-	bool overflow_MT( std::size_t ) const ;
-	template <typename TList> std::string help_MT( const TList & , bool ) const ;
-
-private:
 	std::vector<HANDLE> m_handles ;
-	std::unique_ptr<EventLoopHandlesMt> m_mt ;
 } ;
 
-class GNet::EventLoopHandlesMt
-{
-public:
-	static bool enabled() noexcept ;
-} ;
-
-// ===
+// ==
 
 inline
 GNet::EventLoopHandles::Rc::Rc( RcType type , std::size_t index , std::size_t extra_1 , std::size_t extra_2 ) noexcept :
@@ -208,7 +180,6 @@ std::size_t GNet::EventLoopHandles::Rc::index() const noexcept
 template <typename TList>
 void GNet::EventLoopHandles::init( TList & list )
 {
-	G_ASSERT( m_mt.get() == nullptr ) ;
 	m_handles.resize( list.size() ) ;
 	std::size_t i = 0U ;
 	for( const auto & list_item : list )
@@ -218,184 +189,75 @@ void GNet::EventLoopHandles::init( TList & list )
 inline
 GNet::EventLoopHandles::Rc GNet::EventLoopHandles::wait( DWORD ms )
 {
-	if( m_mt )
+	DWORD handles_n = static_cast<DWORD>( m_handles.size() ) ;
+	HANDLE * handles_p = m_handles.empty() ? nullptr : &m_handles[0] ;
+	DWORD rc = MsgWaitForMultipleObjectsEx( handles_n , handles_p , ms , QS_ALLINPUT , 0 ) ;
+
+	if( rc == WAIT_TIMEOUT )
 	{
-		return wait_MT( ms ) ;
+		return { RcType::timeout } ;
+	}
+	else if( rc >= WAIT_OBJECT_0 && rc < (WAIT_OBJECT_0+handles_n) )
+	{
+		return { RcType::event , static_cast<std::size_t>(rc-WAIT_OBJECT_0) } ;
+	}
+	else if( rc == (WAIT_OBJECT_0+handles_n) )
+	{
+		return { RcType::message } ;
+	}
+	else if( rc == WAIT_FAILED )
+	{
+		return { RcType::failed } ;
 	}
 	else
 	{
-		DWORD handles_n = static_cast<DWORD>( m_handles.size() ) ;
-		HANDLE * handles_p = m_handles.empty() ? nullptr : &m_handles[0] ;
-		DWORD rc = MsgWaitForMultipleObjectsEx( handles_n , handles_p , ms , QS_ALLINPUT , 0 ) ;
-
-		if( rc == WAIT_TIMEOUT )
-		{
-			return { RcType::timeout } ;
-		}
-		else if( rc >= WAIT_OBJECT_0 && rc < (WAIT_OBJECT_0+handles_n) )
-		{
-			return { RcType::event , static_cast<std::size_t>(rc-WAIT_OBJECT_0) } ;
-		}
-		else if( rc == (WAIT_OBJECT_0+handles_n) )
-		{
-			return { RcType::message } ;
-		}
-		else if( rc == WAIT_FAILED )
-		{
-			return { RcType::failed } ;
-		}
-		else
-		{
-			return { RcType::other } ;
-		}
+		return { RcType::other } ;
 	}
 }
 
 template <typename TList>
 std::size_t GNet::EventLoopHandles::shuffle( TList & list , Rc rc )
 {
-	if( m_mt )
+	G_ASSERT( !m_handles.empty() ) ;
+	G_ASSERT( list.size() == m_handles.size() ) ;
+	G_ASSERT( rc.index() < m_handles.size() ) ;
+	std::size_t index = rc.index() ;
+	std::vector<HANDLE> & handles = m_handles ;
+	if( (index+1U) < handles.size() ) // if not already rightmost
 	{
-		return shuffle_MT( list , rc ) ;
+		std::size_t index_1 = index + 1U ;
+		std::rotate( handles.begin()+index , handles.begin()+index_1 , handles.end() ) ;
+		std::rotate( list.begin()+index , list.begin()+index_1 , list.end() ) ;
+		index = handles.size() - 1U ;
 	}
-	else
-	{
-		G_ASSERT( !m_handles.empty() ) ;
-		G_ASSERT( list.size() == m_handles.size() ) ;
-		G_ASSERT( rc.index() < m_handles.size() ) ;
-		std::size_t index = rc.index() ;
-		std::vector<HANDLE> & handles = m_handles ;
-		if( (index+1U) < handles.size() ) // if not already rightmost
-		{
-			std::size_t index_1 = index + 1U ;
-			std::rotate( handles.begin()+index , handles.begin()+index_1 , handles.end() ) ;
-			std::rotate( list.begin()+index , list.begin()+index_1 , list.end() ) ;
-			index = handles.size() - 1U ;
-		}
-		return index ;
-	}
+	return index ;
 }
 
 template <typename TList>
-void GNet::EventLoopHandles::update( const TList & list , bool updated , Rc rc )
+void GNet::EventLoopHandles::update( const TList & list , bool updated , Rc )
 {
-	if( m_mt )
-	{
-		std::size_t thread_index = rc.m_extra_tid ;
-		update_MT( list , updated , thread_index ) ;
-	}
-	else
-	{
-		if( updated )
-		{
-			m_handles.resize( list.size() ) ;
-			std::size_t i = 0U ;
-			for( const auto & list_item : list )
-				m_handles[i++] = list_item.m_handle ;
-		}
-	}
+	if( updated )
+		init( list ) ;
 }
 
 inline
 bool GNet::EventLoopHandles::overflow( std::size_t n ) const
 {
-	if( m_mt )
-	{
-		return overflow_MT( n ) ;
-	}
-	else
-	{
-		return n > LIMIT ;
-	}
+	return n > LIMIT ;
 }
 
 template <typename TList>
 bool GNet::EventLoopHandles::overflow( TList & list , bool (*fn)(const typename TList::value_type&) )
 {
-	if( m_mt )
-	{
-		return overflow_MT( list , fn ) ;
-	}
-	else
-	{
-		bool is_overflow =
-			list.size() > LIMIT &&
-			static_cast<std::size_t>(1+std::count_if(list.cbegin(),list.cbegin()+list.size()-1U,fn)) > LIMIT ;
-
-		if( is_overflow && !EventLoopHandlesMt::enabled() )
-		{
-			return true ;
-		}
-		else if( is_overflow )
-		{
-			// automatic implementation switcheroo on first overflow
-			G_LOG( "GNet::EventLoopHandles: large number of open handles: switching event-loop" ) ;
-			m_mt = std::make_unique<EventLoopHandlesMt>() ;
-			init_MT( list , fn ) ;
-			return false ;
-		}
-		else
-		{
-			return false ;
-		}
-	}
+	return
+		list.size() > LIMIT &&
+		static_cast<std::size_t>(1+std::count_if(list.cbegin(),list.cbegin()+list.size()-1U,fn)) > LIMIT ;
 }
 
 template <typename TList>
-std::string GNet::EventLoopHandles::help( const TList & list , bool on_add ) const
+std::string GNet::EventLoopHandles::help( const TList & , bool /*on_add*/ ) const
 {
-	if( m_mt )
-	{
-		return help_MT( list , on_add ) ;
-	}
-	else
-	{
-		return "too many open handles" ;
-	}
-}
-
-// ==
-
-template <typename TList>
-void GNet::EventLoopHandles::init_MT( const TList & /*list*/ , bool (*)(const typename TList::value_type&) )
-{
-	///< not implemented
-}
-
-template <typename TList>
-void GNet::EventLoopHandles::update_MT( const TList & /*list*/ , bool /*updated*/ , std::size_t /*thread_index*/ )
-{
-	///< not implemented
-}
-
-template <typename TList>
-bool GNet::EventLoopHandles::overflow_MT( TList & /*list*/ , bool (*)(const typename TList::value_type&) )
-{
-	return false ; // not implemented
-}
-
-inline
-bool GNet::EventLoopHandles::overflow_MT( std::size_t ) const
-{
-	return false ; // not implemented
-}
-
-template <typename TList>
-std::string GNet::EventLoopHandles::help_MT( const TList & /*list*/ , bool /*on_add*/ ) const
-{
-	return {} ; // not implemented
-}
-
-template <typename TList>
-std::size_t GNet::EventLoopHandles::shuffle_MT( TList & , Rc /*rc*/ )
-{
-	return 0U ; // not implemented
-}
-
-inline
-GNet::EventLoopHandles::Rc GNet::EventLoopHandles::wait_MT( DWORD /*ms*/ )
-{
-	return Rc( RcType::other ) ;
+	return "too many open handles" ;
 }
 
 #endif

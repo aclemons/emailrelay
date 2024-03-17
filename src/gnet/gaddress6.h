@@ -39,8 +39,8 @@ public:
 	using sockaddr_type = sockaddr_in6 ;
 
 	explicit Address6( unsigned int ) ;
-	explicit Address6( const std::string & ) ;
-	Address6( const std::string & , const std::string & ) ;
+	explicit Address6( std::string_view ) ;
+	Address6( std::string_view , std::string_view ) ;
 	Address6( unsigned int port , int /*for overload resolution*/ ) ; // canonical loopback address
 	Address6( const sockaddr * addr , socklen_t len , bool ipv6_scope_id_fixup = false ) ;
 
@@ -52,10 +52,10 @@ public:
 	unsigned long scopeId( unsigned long default_ = 0UL ) const ;
 	unsigned int port() const ;
 	void setPort( unsigned int port ) ;
-	bool setZone( const std::string & ipv6_zone_name_or_scope_id ) ;
+	bool setZone( std::string_view ipv6_zone_name_or_scope_id ) ;
 	void setScopeId( unsigned long ipv6_scope_id ) ;
-	static bool validString( const std::string & , std::string * = nullptr ) ;
-	static bool validStrings( const std::string & , const std::string & , std::string * = nullptr ) ;
+	static bool validString( std::string_view , std::string * = nullptr ) ;
+	static bool validStrings( std::string_view , std::string_view , std::string * = nullptr ) ;
 	static bool validPort( unsigned int port ) ;
 	static bool validData( const sockaddr * addr , socklen_t len ) ;
 
@@ -75,12 +75,12 @@ public:
 
 private:
 	explicit Address6( std::nullptr_t ) ;
-	static const char * setAddress( sockaddr_type & , const std::string & ) ;
-	static const char * setHostAddress( sockaddr_type & , const std::string & ) ;
+	static const char * setAddress( sockaddr_type & , std::string_view ) ;
+	static const char * setHostAddress( sockaddr_type & , std::string_view ) ;
 	static const char * setPort( sockaddr_type & , unsigned int ) ;
-	static const char * setPort( sockaddr_type & , const std::string & ) ;
+	static const char * setPort( sockaddr_type & , std::string_view ) ;
 	static bool sameAddr( const ::in6_addr & a , const ::in6_addr & b ) ;
-	static bool setZone( sockaddr_type & , const std::string & ) ;
+	static bool setZone( sockaddr_type & , std::string_view ) ;
 
 private:
 	sockaddr_type m_inet ;

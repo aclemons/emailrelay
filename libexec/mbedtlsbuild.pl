@@ -256,8 +256,8 @@ sub configure
 
 	if( $tls13 )
 	{
-		$config_out =~ s;^//\s*(#define\s+MBEDTLS_SSL_PROTO_TLS1_3) *([\r]?)$;//\1\2\n// $message\2\n\1\2\n;m ;
-		$config_out =~ s;^//\s*(#define\s+MBEDTLS_SSL_TLS1_3_COMPATIBILITY_MODE) *([\r]?)$;//\1\2\n// $message\2\n\1\2\n;m ;
+		$config_out =~ s;^//\s*(#define\s+MBEDTLS_SSL_PROTO_TLS1_3) *([\r]?)$;//$1$2\n// $message$2\n$1$2\n;m ;
+		$config_out =~ s;^//\s*(#define\s+MBEDTLS_SSL_TLS1_3_COMPATIBILITY_MODE) *([\r]?)$;//$1$2\n// $message$2\n$1$2\n;m ;
 	}
 
 	if( $config_file_in eq $config_file_out && $config_in eq $config_out )
@@ -337,7 +337,6 @@ use Getopt::Long ;
 if( basename($0) eq "mbedtlsbuild.pl" )
 {
 	my $prefix = File::Basename::basename($0) ;
-	my $arch = $ENV{Platform} ;
 
 	my %opt = () ;
 	if( !GetOptions( \%opt , "help|h" , "config=s" , "arch=s" , "tls13" , "quiet|q" , "cflags-extra=s" , "as-windows" ) ||
@@ -347,7 +346,7 @@ if( basename($0) eq "mbedtlsbuild.pl" )
 		exit( $opt{help} ? 0 : 1 ) ;
 	}
 
-	my $arch = $opt{arch} || "x64" ;
+	my $arch = $opt{arch} || $ENV{Platform} || "x64" ;
 	my $config = $opt{config} || "release" ;
 	my $tls13 = $opt{tls13} ;
 	my $src_dir = $ARGV[0] || MbedtlsBuild::find("mbedtls") ;

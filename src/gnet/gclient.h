@@ -28,6 +28,7 @@
 #include "gexception.h"
 #include "gexceptionsource.h"
 #include "geventhandler.h"
+#include "geventlogging.h"
 #include "gresolver.h"
 #include "glocation.h"
 #include "glinebuffer.h"
@@ -67,10 +68,11 @@ namespace GNet
 ///
 /// Clients should normally be instantiated on the heap and managed by a
 /// ClientPtr so that the onDelete() mechanism works as advertised: the
-/// ExceptionHandler passed to the Client constructor via the ExceptionSink
+/// ExceptionHandler passed to the Client constructor via the EventState
 /// object should be the ClientPtr instance. Clients that decide to
 /// terminate themselves cleanly should call Client::finish() and then throw
-/// a GNet::Done exception.
+/// a GNet::Done exception. If finish() has not been called then a
+/// disconnection results in an exception being thrown.
 ///
 class GNet::Client : private EventHandler, public Connection, private SocketProtocolSink, private Resolver::Callback , public ExceptionSource
 {
@@ -93,7 +95,7 @@ public:
 		unsigned int connection_timeout {0U} ;
 		unsigned int response_timeout {0U} ;
 		unsigned int idle_timeout {0U} ;
-		bool no_throw_on_peer_disconnect {false} ; // see SocketProtocolSink::onPeerDisconnect()
+		bool no_throw_on_peer_disconnect {false} ; // call SocketProtocolSink::onPeerDisconnect() instead
 
 		Config & set_stream_socket_config( const StreamSocket::Config & ) ;
 		Config & set_line_buffer_config( const LineBuffer::Config & ) ;
@@ -103,18 +105,17 @@ public:
 		Config & set_bind_local_address( bool = true ) noexcept ;
 		Config & set_local_address( const Address & ) ;
 		Config & set_connection_timeout( unsigned int ) noexcept ;
-		Config & set_secure_connection_timeout( unsigned int ) noexcept ;
 		Config & set_response_timeout( unsigned int ) noexcept ;
 		Config & set_idle_timeout( unsigned int ) noexcept ;
 		Config & set_all_timeouts( unsigned int ) noexcept ;
 		Config & set_no_throw_on_peer_disconnect( bool = true ) noexcept ;
 	} ;
 
-	Client( ExceptionSink , const Location & remote_location , const Config & ) ;
+	Client( EventState , const Location & remote_location , const Config & ) ;
 		///< Constructor. If not auto-starting then connect()
-		///< is required to start connecting. The ExceptionSink
-		///< should delete this Client object when an exception is
-		///< delivered to it, otherwise the the underlying socket
+		///< is required to start connecting. The EventState exception
+		///< handler should delete this Client object when an exception
+		///< is delivered to it, otherwise the the underlying socket
 		///< might continue to raise events.
 
 	~Client() override ;
@@ -168,10 +169,10 @@ public:
 		///< case the unsent portion is copied internally and
 		///< onSendComplete() called when complete. Throws on error.
 
-	bool send( G::string_view data ) ;
+	bool send( std::string_view data ) ;
 		///< Overload for string_view.
 
-	bool send( const std::vector<G::string_view> & data , std::size_t offset = 0 ) ;
+	bool send( const std::vector<std::string_view> & data , std::size_t offset = 0 ) ;
 		///< Overload for scatter/gather segments.
 
 	G::Slot::Signal<const std::string&,const std::string&,const std::string&> & eventSignal() noexcept ;
@@ -239,13 +240,14 @@ protected:
 		///< Called when all residual data from send() has been sent.
 
 	virtual void onDelete( const std::string & reason ) = 0 ;
-		///< Called just before ClientPtr destroys the Client as the
-		///< result of handling an exception. The reason is the empty
-		///< string if caused by a GNet::Done exception, or after
-		///< finish() or disconnect(). Consider making the
-		///< implementation non-throwing, in the spirit of a
-		///< destructor, since the Client object is about to be
-		///< deleted.
+		///< Called from doOnDelete(), typically just before a
+		///< ClientPtr destroys the Client as the result of handling
+		///< an exception. The reason parameter will be forced to
+		///< be the empty string rather than the doOnDelete() value
+		///< if caused by a GNet::Done exception or after finish()
+		///< or disconnect(). Consider making the implementation
+		///< non-throwing, in the spirit of a destructor, since
+		///< the Client object is about to be deleted.
 
 	void secureConnect() ;
 		///< Starts TLS/SSL client-side negotiation. Uses a profile
@@ -254,12 +256,12 @@ protected:
 		///< triggered when the secure session is established.
 
 private: // overrides
-	void readEvent() override ; // Override from GNet::EventHandler.
-	void writeEvent() override ; // Override from GNet::EventHandler.
-	void otherEvent( EventHandler::Reason ) override ; // Override from GNet::EventHandler.
-	void onResolved( std::string , Location ) override ; // Override from GNet::Resolver.
-	void onData( const char * , std::size_t ) override ; // Override from GNet::SocketProtocolSink.
-	void onPeerDisconnect() override ; // Override from GNet::SocketProtocolSink.
+	void readEvent() override ; // GNet::EventHandler
+	void writeEvent() override ; // GNet::EventHandler
+	void otherEvent( EventHandler::Reason ) override ; // GNet::EventHandler
+	void onResolved( std::string , Location ) override ; // GNet::Resolver
+	void onData( const char * , std::size_t ) override ; // GNet::SocketProtocolSink
+	void onPeerDisconnect() override ; // GNet::SocketProtocolSink
 
 public:
 	Client( const Client & ) = delete ;
@@ -295,7 +297,7 @@ private:
 	void doOnConnect() ;
 
 private:
-	ExceptionSink m_es ;
+	EventState m_es ;
 	const Config m_config ;
 	G::CallStack m_call_stack ;
 	std::unique_ptr<StreamSocket> m_socket ;
@@ -313,6 +315,7 @@ private:
 	Timer<Client> m_response_timer ;
 	Timer<Client> m_idle_timer ;
 	G::Slot::Signal<const std::string&,const std::string&,const std::string&> m_event_signal ;
+	std::string m_event_logging_string ;
 } ;
 
 inline GNet::Client::Config & GNet::Client::Config::set_stream_socket_config( const StreamSocket::Config & cfg ) { stream_socket_config = cfg ; return *this ; }
@@ -323,7 +326,6 @@ inline GNet::Client::Config & GNet::Client::Config::set_auto_start( bool b ) noe
 inline GNet::Client::Config & GNet::Client::Config::set_bind_local_address( bool b ) noexcept { bind_local_address = b ; return *this ; }
 inline GNet::Client::Config & GNet::Client::Config::set_local_address( const Address & a ) { local_address = a ; return *this ; }
 inline GNet::Client::Config & GNet::Client::Config::set_connection_timeout( unsigned int t ) noexcept { connection_timeout = t ; return *this ; }
-inline GNet::Client::Config & GNet::Client::Config::set_secure_connection_timeout( unsigned int t ) noexcept { socket_protocol_config.secure_connection_timeout = t ; return *this ; }
 inline GNet::Client::Config & GNet::Client::Config::set_response_timeout( unsigned int t ) noexcept { response_timeout = t ; return *this ; }
 inline GNet::Client::Config & GNet::Client::Config::set_idle_timeout( unsigned int t ) noexcept { idle_timeout = t ; return *this ; }
 inline GNet::Client::Config & GNet::Client::Config::set_no_throw_on_peer_disconnect( bool b ) noexcept { no_throw_on_peer_disconnect = b ; return *this ; }

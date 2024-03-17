@@ -57,7 +57,7 @@ public:
 	using sockaddr_type = sockaddr_un ;
 
 	explicit AddressLocal( unsigned int ) ;
-	explicit AddressLocal( const std::string & ) ;
+	explicit AddressLocal( std::string_view ) ;
 	AddressLocal( unsigned int port , int /*for overload resolution*/ ) ;
 	AddressLocal( const sockaddr * addr , socklen_t len ) ;
 
@@ -69,10 +69,10 @@ public:
 	unsigned long scopeId( unsigned long default_ = 0UL ) const ;
 	unsigned int port() const ;
 	void setPort( unsigned int port ) ;
-	bool setZone( const std::string & ipv6_zone_name_or_scope_id ) ;
+	bool setZone( std::string_view ipv6_zone_name_or_scope_id ) ;
 	void setScopeId( unsigned long ipv6_scope_id ) ;
-	static bool validString( const std::string & , std::string * = nullptr ) ;
-	static bool validStrings( const std::string & , const std::string & , std::string * = nullptr ) ;
+	static bool validString( std::string_view , std::string * = nullptr ) ;
+	static bool validStrings( std::string_view , std::string_view , std::string * = nullptr ) ;
 	static bool validPort( unsigned int port ) ;
 	static bool validData( const sockaddr * addr , socklen_t len ) ;
 

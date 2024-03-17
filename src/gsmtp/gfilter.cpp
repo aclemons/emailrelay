@@ -46,7 +46,7 @@ std::string GSmtp::Filter::str( Filter::Type type ) const
 	return ss.str() ;
 }
 
-G::string_view GSmtp::Filter::strtype( Filter::Type type ) noexcept
+std::string_view GSmtp::Filter::strtype( Filter::Type type ) noexcept
 {
 	return type == Type::server ? "filter"_sv :
 		( type == Type::client ? "client-filter"_sv : "routing-filter"_sv ) ;

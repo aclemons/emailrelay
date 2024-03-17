@@ -24,21 +24,22 @@
 #include "gdef.h"
 #include <streambuf>
 #include <algorithm>
-#include <cstring>
 
 namespace G
 {
-	class omembuf ;
+	template <typename Tchar> class basic_omembuf ;
+	using omembuf = basic_omembuf<char> ;
+	using womembuf = basic_omembuf<wchar_t> ;
 }
 
-//| \class G::omembuf
+//| \class G::basic_omembuf
 /// An output streambuf that writes to a fixed-size char buffer.
 /// Does not support seeking.
 ///
 /// Eg:
 /// \code
 /// std::array<char,10> buffer ;
-/// G::omembuf sb( &buffer[0] , buffer.size() ) ;
+/// G::basic_omembuf<char> sb( buffer.data() , buffer.size() ) ;
 /// std::ostream out( &sb ) ;
 /// \endcode
 ///
@@ -46,14 +47,17 @@ namespace G
 /// pubsetbuf() but there is no guarantee that the std::stringbuf
 /// implementation has a useful override of setbuf() (ie. msvc).
 ///
-class G::omembuf : public std::streambuf
+template <typename Tchar>
+class G::basic_omembuf : public std::basic_streambuf<Tchar,std::char_traits<Tchar>>
 {
 public:
-	omembuf( char * p , std::size_t n ) ;
+	using base_type = std::basic_streambuf<Tchar,std::char_traits<Tchar>> ;
+
+	basic_omembuf( Tchar * p , std::size_t n ) ;
 		///< Constructor.
 
 private: // overrides
-	std::streambuf * setbuf( char * p , std::streamsize n ) override ;
+	std::streambuf * setbuf( Tchar * p , std::streamsize n ) override ;
 		///< Overridden because we can. Called by streambuf::pubsetbuf().
 
 	std::streampos seekoff( std::streamoff , std::ios_base::seekdir , std::ios_base::openmode ) override ;
@@ -65,46 +69,46 @@ private: // overrides
 		///< Overridden with only a partial implementation for seekp(0),
 		///< so not fully seekable. Called by streambuf::pubseekpos().
 
-	std::streamsize xsputn( const char * p , std::streamsize n ) override ;
+	std::streamsize xsputn( const Tchar * p , std::streamsize n ) override ;
 		///< Overridden for efficiency compared to multiple sputc()s.
 		///< Called by streambuf::sputn().
 
 public:
-	~omembuf() override = default ;
-	omembuf( const omembuf & ) = delete ;
-	omembuf( omembuf && ) = delete ;
-	omembuf & operator=( const omembuf & ) = delete ;
-	omembuf & operator=( omembuf && ) = delete ;
+	~basic_omembuf() override = default ;
+	basic_omembuf( const basic_omembuf<Tchar> & ) = delete ;
+	basic_omembuf( basic_omembuf<Tchar> && ) = delete ;
+	basic_omembuf<Tchar> & operator=( const basic_omembuf<Tchar> & ) = delete ;
+	basic_omembuf<Tchar> & operator=( basic_omembuf<Tchar> && ) = delete ;
 } ;
 
-inline
-G::omembuf::omembuf( char * p , std::size_t n )
+template <typename Tchar>
+G::basic_omembuf<Tchar>::basic_omembuf( Tchar * p , std::size_t n )
 {
-	setp( p , p+n ) ;
+	base_type::setp( p , p+n ) ;
 }
 
-inline
-std::streambuf * G::omembuf::setbuf( char * p , std::streamsize n )
+template <typename Tchar>
+std::streambuf * G::basic_omembuf<Tchar>::setbuf( Tchar * p , std::streamsize n )
 {
-	setp( p , p+n ) ;
+	base_type::setp( p , p+n ) ;
 	return this ;
 }
 
-inline
-std::streampos G::omembuf::seekoff( std::streamoff off , std::ios_base::seekdir way , std::ios_base::openmode which )
+template <typename Tchar>
+std::streampos G::basic_omembuf<Tchar>::seekoff( std::streamoff off , std::ios_base::seekdir way , std::ios_base::openmode which )
 {
 	if( off == 0 && way == std::ios_base::cur && ( which & std::ios_base::out ) )
-		return pptr() - pbase() ;
+		return base_type::pptr() - base_type::pbase() ;
 	else
 		return -1 ;
 }
 
-inline
-std::streampos G::omembuf::seekpos( std::streampos pos , std::ios_base::openmode which )
+template <typename Tchar>
+std::streampos G::basic_omembuf<Tchar>::seekpos( std::streampos pos , std::ios_base::openmode which )
 {
 	if( pos == 0 && ( which & std::ios_base::out ) )
 	{
-		setp( pbase() , epptr() ) ;
+		base_type::setp( base_type::pbase() , base_type::epptr() ) ;
 		return 0 ;
 	}
 	else
@@ -113,15 +117,15 @@ std::streampos G::omembuf::seekpos( std::streampos pos , std::ios_base::openmode
 	}
 }
 
-inline
-std::streamsize G::omembuf::xsputn( const char * p , std::streamsize n )
+template <typename Tchar>
+std::streamsize G::basic_omembuf<Tchar>::xsputn( const Tchar * p , std::streamsize n )
 {
-	char * start = pptr() ;
+	Tchar * start = base_type::pptr() ;
 	if( start == nullptr ) return 0 ;
-	std::streamsize space = epptr() - start ;
+	std::streamsize space = base_type::epptr() - start ;
 	std::streamsize ncopy = std::min( space , n ) ;
-	std::memcpy( start , p , static_cast<std::size_t>(ncopy) ) ;
-	pbump( static_cast<int>(ncopy) ) ;
+	std::copy_n( p , static_cast<std::size_t>(ncopy) , start ) ;
+	base_type::pbump( static_cast<int>(ncopy) ) ;
 	return ncopy ;
 }
 

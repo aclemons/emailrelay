@@ -25,7 +25,7 @@
 #include "gfilter.h"
 #include "gfilestore.h"
 #include "genvelope.h"
-#include "gexceptionsink.h"
+#include "geventstate.h"
 #include "gslot.h"
 #include "gtimer.h"
 #include "gstringview.h"
@@ -42,7 +42,7 @@ namespace GFilters
 class GFilters::SimpleFilterBase : public GSmtp::Filter
 {
 public:
-	SimpleFilterBase( GNet::ExceptionSink , Filter::Type , G::string_view id ) ;
+	SimpleFilterBase( GNet::EventState , Filter::Type , std::string_view id ) ;
 		///< Constructor.
 
 	virtual Result run( const GStore::MessageId & , bool & special_out ,

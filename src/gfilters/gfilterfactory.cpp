@@ -119,7 +119,7 @@ GFilters::FilterFactory::Spec GFilters::FilterFactory::parse( const std::string 
 	return result ;
 }
 
-std::unique_ptr<GSmtp::Filter> GFilters::FilterFactory::newFilter( GNet::ExceptionSink es ,
+std::unique_ptr<GSmtp::Filter> GFilters::FilterFactory::newFilter( GNet::EventState es ,
 	GSmtp::Filter::Type filter_type , const GSmtp::Filter::Config & filter_config ,
 	const FilterFactory::Spec & spec )
 {

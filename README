@@ -136,4 +136,4 @@ Source code documentation will be generated when building from source if
 Feedback
 --------
 To give feedback, including reviews, bug reports and feature requests, please
-use the SourceForge project website at https://sourceforge.net/p/emailrelay
+use the SourceForge project website at https://sourceforge.net/projects/emailrelay

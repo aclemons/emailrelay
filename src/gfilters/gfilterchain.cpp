@@ -27,7 +27,7 @@
 #include <utility>
 #include <algorithm>
 
-GFilters::FilterChain::FilterChain( GNet::ExceptionSink es , GSmtp::FilterFactoryBase & ff ,
+GFilters::FilterChain::FilterChain( GNet::EventState es , GSmtp::FilterFactoryBase & ff ,
 	Filter::Type filter_type , const Filter::Config & filter_config ,
 	const GSmtp::FilterFactoryBase::Spec & spec ) :
 		m_message_id(GStore::MessageId::none())
@@ -45,7 +45,7 @@ GFilters::FilterChain::FilterChain( GNet::ExceptionSink es , GSmtp::FilterFactor
 		add( es , ff , filter_type , filter_config , {"exit","0"} ) ;
 }
 
-void GFilters::FilterChain::add( GNet::ExceptionSink es , GSmtp::FilterFactoryBase & ff ,
+void GFilters::FilterChain::add( GNet::EventState es , GSmtp::FilterFactoryBase & ff ,
 	Filter::Type filter_type , const Filter::Config & filter_config ,
 	const GSmtp::FilterFactoryBase::Spec & spec )
 {

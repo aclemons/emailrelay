@@ -217,8 +217,8 @@ const char * G::Arg::prefix( char ** argv ) noexcept
 
 void G::Arg::parseImp( const std::string & command_line )
 {
-	string_view ws( " \t" ) ;
-	string_view nbws( "\0\0" , 2U ) ;
+	std::string_view ws( " \t" ) ;
+	std::string_view nbws( "\0\0" , 2U ) ;
 	const char esc = '\\' ;
 	const char qq = '\"' ;
 	Str::splitIntoTokens( Str::dequote(command_line,qq,esc,ws,nbws) , m_array , ws , esc ) ;

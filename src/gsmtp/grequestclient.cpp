@@ -22,7 +22,7 @@
 #include "gstr.h"
 #include "grequestclient.h"
 
-GSmtp::RequestClient::RequestClient( GNet::ExceptionSink es , const std::string & key , const std::string & ok ,
+GSmtp::RequestClient::RequestClient( GNet::EventState es , const std::string & key , const std::string & ok ,
 	const GNet::Location & location , unsigned int connection_timeout , unsigned int response_timeout ,
 	unsigned int idle_timeout ) :
 		GNet::Client(es,location,

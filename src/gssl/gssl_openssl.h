@@ -107,7 +107,7 @@ public:
 	bool noverify() const ;
 
 private:
-	static bool consume( G::StringArray & , G::string_view ) ;
+	static bool consume( G::StringArray & , std::string_view ) ;
 	static int map( int , int ) ;
 
 private:
@@ -304,7 +304,7 @@ public:
 	~DigesterImp() override ;
 
 private: // overrides
-	void add( G::string_view ) override ;
+	void add( std::string_view ) override ;
 	std::string value() override ;
 	std::string state() override ;
 	std::size_t blocksize() const noexcept override ;

@@ -46,13 +46,13 @@ bool GFilters::MxLookup::enabled()
 }
 
 #ifndef G_LIB_SMALL
-GFilters::MxLookup::MxLookup( GNet::ExceptionSink es , Config config ) :
+GFilters::MxLookup::MxLookup( GNet::EventState es , Config config ) :
 	MxLookup(es,config,GNet::nameservers(53U))
 {
 }
 #endif
 
-GFilters::MxLookup::MxLookup( GNet::ExceptionSink es , Config config ,
+GFilters::MxLookup::MxLookup( GNet::EventState es , Config config ,
 	const std::vector<GNet::Address> & nameservers ) :
 		m_es(es) ,
 		m_config(config) ,
@@ -175,7 +175,6 @@ std::pair<GFilters::MxLookupImp::Result,std::string> GFilters::MxLookupImp::pars
 		std::string cname_result ;
 		std::string mx_result ;
 		unsigned int mx_pr = 0U ;
-		G::optional<unsigned int> mx_prmin ;
 
 		unsigned int offset = response.QDCOUNT() ;
 		for( unsigned int i = 0 ; i < response.ANCOUNT() ; i++ )

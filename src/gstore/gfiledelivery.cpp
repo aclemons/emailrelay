@@ -95,7 +95,7 @@ bool GStore::FileDelivery::deliverToMailboxes( const G::Path & delivery_dir , co
 	}
 }
 
-void GStore::FileDelivery::deliverTo( FileStore & /*store*/ , G::string_view prefix ,
+void GStore::FileDelivery::deliverTo( FileStore & /*store*/ , std::string_view prefix ,
 	const G::Path & dst_dir , const G::Path & envelope_path , const G::Path & content_path ,
 	bool hardlink , bool pop_by_name )
 {

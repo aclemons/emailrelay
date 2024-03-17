@@ -53,7 +53,7 @@ public:
 	class Sender /// An interface used by ServerProtocol to send protocol replies.
 	{
 	public:
-		virtual bool protocolSend( G::string_view , std::size_t offset ) = 0 ;
+		virtual bool protocolSend( std::string_view , std::size_t offset ) = 0 ;
 		virtual ~Sender() = default ;
 	} ;
 
@@ -181,7 +181,7 @@ private:
 	void sendError() ;
 	void sendError( const std::string & ) ;
 	void sendOk() ;
-	Event commandEvent( G::string_view ) const ;
+	Event commandEvent( std::string_view ) const ;
 	int commandNumber( const std::string & , int , std::size_t index = 1U ) const ;
 	void sendList( const std::string & , bool ) ;
 	std::string commandWord( const std::string & ) const ;
@@ -189,7 +189,7 @@ private:
 	std::string commandPart( const std::string & , std::size_t index ) const ;
 	void sendContent() ;
 	bool sendContentLine( std::string & , bool & ) ;
-	void sendLine( G::string_view , bool has_crlf = false ) ;
+	void sendLine( std::string_view , bool has_crlf = false ) ;
 	void sendLine( std::string && ) ;
 	void sendLines( std::ostringstream & ) ;
 	void readStore( const std::string & ) ;

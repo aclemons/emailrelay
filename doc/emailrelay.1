@@ -173,7 +173,7 @@ Enables the \fIterminate\fR command in the administration interface.
 .SS Authentication options
 .TP
 .B \-C, --client-auth \fI<file>\fR
-Enables SMTP client authentication with the remote server, using the client account details taken from the specified secrets file. The secrets file should normally contain one line having between four and five space-separated fields. The first field must be \fIclient\fR, the second field is the password type (\fIplain\fR or \fImd5\fR), the third is the xtext-encoded user-id and the fourth is the xtext-encoded password. Alternatively, the user-id and password fields can be Base64 encoded if the second field is \fIplain:b\fR. It is also possible to do without a secrets file and give the Base64 encoded user-id and password directly on the command-line or in the configuration file formatted as \fIplain:<base64-user-id>:<base64-password>\fR. Note that putting these account details on the command-line is not recommended because it will make the password easily visible to all users on the local machine.
+Enables SMTP client authentication with the remote server, using the account details taken from the specified secrets file. The secrets file should normally contain one line having between four and five space-separated fields. The first field must be \fIclient\fR, the second field is the password type (\fIplain\fR or \fImd5\fR), the third is the xtext-encoded user-id and the fourth is the xtext-encoded password. Alternatively, the user-id and password fields can be Base64 encoded if the second field is \fIplain:b\fR. It is also possible to do without a secrets file and give the Base64 encoded user-id and password directly on the command-line or in the configuration file formatted as \fIplain:<base64-user-id>:<base64-password>\fR. Note that putting these account details on the command-line is not recommended because it will make the password easily visible to all users on the local machine.
 .TP
 .B --client-auth-config \fI<config>\fR
 Configures the SMTP client authentication module using a semicolon-separated list of configuration items. Each item is a single-character key, followed by a colon and then a comma-separated list. A 'm' character introduces an ordered list of preferred authentication mechanisms and an 'x' introduces a list of mechanisms to avoid. An 'a' list and a 'd' list can be used similarly to prefer and avoid certain mechanisms once the session is encrypted with TLS.
@@ -260,13 +260,16 @@ Enables logging to the standard error stream and to the syslog. The \fI--close-s
 Enables debug level logging, if built in. Debug messages are usually only useful when cross-referenced with the source code and they may expose plain-text passwords and mail message content.
 .TP
 .B --log-address
-Adds the network address of remote clients to the logging output.
+Adds the network address of remote clients to the logging output. Equivalent to \fI\fR\fI--log-format\fR=address\fI\fR.
 .TP
 .B \-N, --log-file \fI<file>\fR
 Redirects standard-error logging to the specified file. Logging to the log file is not affected by \fI--close-stderr\fR. The filename can include \fI%d\fR to get daily log files; the \fI%d\fR is replaced by the current date in the local timezone using a \fIYYYYMMDD\fR format.
 .TP
+.B --log-format
+Adds one or more fields to the logging output. The field names can include \fItime\fR, \fIunit\fR, \fIaddress\fR, \fIport\fR, \fImsgid\fR. The ordering is not significant.
+.TP
 .B \-L, --log-time
-Adds a timestamp to the logging output using the local timezone.
+Adds a timestamp to the logging output using the local timezone. Equivalent to \fI\fR\fI--log-format\fR=time\fI\fR.
 .TP
 .B \-n, --no-syslog
 Disables logging to the syslog. Note that \fI--as-client\fR implies \fI--no-syslog\fR.
@@ -280,4 +283,4 @@ Causes the standard error stream to be closed soon after start-up. This is usefu
 .BR emailrelay-submit (1),
 .BR emailrelay-passwd (1),
 .SH AUTHOR
-Graeme Walker, mailto:graeme_walker@users.sourceforge.net
+Graeme Walker, https://sourceforge.net/projects/emailrelay

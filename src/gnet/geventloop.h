@@ -23,7 +23,7 @@
 
 #include "gdef.h"
 #include "geventhandler.h"
-#include "gexceptionsink.h"
+#include "geventstate.h"
 #include "gexception.h"
 #include "gdescriptor.h"
 #include "gsignalsafe.h"
@@ -108,17 +108,17 @@ public:
 	virtual void quit( const G::SignalSafe & ) = 0 ;
 		///< A signal-safe overload to quit() the event loop.
 
-	virtual void addRead( Descriptor fd , EventHandler & , ExceptionSink ) = 0 ;
+	virtual void addRead( Descriptor fd , EventHandler & , EventState ) = 0 ;
 		///< Adds the given event source descriptor and associated
 		///< handler to the read list.
 		///< See also Socket::addReadHandler().
 
-	virtual void addWrite( Descriptor fd , EventHandler & , ExceptionSink ) = 0 ;
+	virtual void addWrite( Descriptor fd , EventHandler & , EventState ) = 0 ;
 		///< Adds the given event source descriptor and associated
 		///< handler to the write list.
 		///< See also Socket::addWriteHandler().
 
-	virtual void addOther( Descriptor fd , EventHandler & , ExceptionSink ) = 0 ;
+	virtual void addOther( Descriptor fd , EventHandler & , EventState ) = 0 ;
 		///< Adds the given event source descriptor and associated
 		///< handler to the exception list.
 		///< See also Socket::addOtherHandler().

@@ -24,7 +24,7 @@
 #include "gdef.h"
 #include "gverifierfactorybase.h"
 #include "gverifier.h"
-#include "gexceptionsink.h"
+#include "geventstate.h"
 #include "gstringarray.h"
 #include <string>
 #include <utility>
@@ -65,7 +65,7 @@ public:
 			///< as missing files.
 
 protected: // overrides
-	std::unique_ptr<GSmtp::Verifier> newVerifier( GNet::ExceptionSink ,
+	std::unique_ptr<GSmtp::Verifier> newVerifier( GNet::EventState ,
 		const GSmtp::Verifier::Config & config ,
 		const GSmtp::VerifierFactoryBase::Spec & spec ) override ;
 

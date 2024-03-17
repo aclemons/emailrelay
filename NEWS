@@ -1,12 +1,29 @@
 News
 ====
 
-2.5.2
+2.5.3
 -----
-The E-MailRelay 2.5.2 release has very few code changes compared to the 2.5.1a
-source tarball. The biggest change is to the Windows build scripts so that it
-is now possible to build using "nmake" without needing "cmake" or Visual Studio,
-and it is easier to use LibreSSL as the TLS library. Also, the "make2cmake"
-script can now be run on Windows to create cmake files.
+The E-MailRelay 2.5.3 point release is to extend the "--log-address" mechanism,
+replacing it with "--log-format".
 
-Refer to the developer document for more information.
+The "--log-format" keywords are:
+* time -- timestamp, like "--log-time"
+* address -- smtp server remote network address, like "--log-address"
+* port -- smtp server remote port
+* unit -- configuration name, eg. "--in-spool-dir" logged as "in"
+* msgid -- smtp client message file id
+
+Incedental low-level code improvements include:
+* use std::string_view and std::optional if c++17
+* rework event loops to better suppress events going to reused file descriptors
+* decouple ExceptionSource from event logging
+* rename ExceptionSink to EventState
+* better propagate ExceptionHandler pointers through containment hierarchies
+* possible future migration of G::Path to std::filesystem::path
+-   less implicit string/Path conversion
+-   path usage pushed down into o/s-aware source files
+-   streams initialised with G::Path::iopath()
+* G::Cleanup handlers now 'noexcept'
+* G::Cleanup's deliberately-leaky strdup()s better encapsulated
+* G::File::mkdirs() without recursion
+

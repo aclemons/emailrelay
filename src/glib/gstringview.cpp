@@ -20,38 +20,63 @@
 
 #include "gdef.h"
 #include "gstringview.h"
+#include <algorithm>
+#include <iterator> // std::distance
 
-bool G::sv_imatch( string_view a , string_view b ) noexcept
+namespace G
 {
-	if( a.empty() || b.empty() ) return a.empty() && b.empty() ;
-	if( a.size() != b.size() ) return false ;
-	const char * const end = a.data() + a.size() ;
-	const char * q = b.data() ;
-	for( const char * p = a.data() ; p != end ; ++p , ++q )
+	namespace StringViewImp
 	{
-		char c1 = *p ;
-		char c2 = *q ;
-		if( c1 >= 'A' && c1 <= 'Z' ) c1 += '\x20' ;
-		if( c2 >= 'A' && c2 <= 'Z' ) c2 += '\x20' ;
-		if( c1 != c2 ) return false ;
+		template <typename Tsv>
+		bool sv_imatch( Tsv a , Tsv b ) noexcept
+		{
+			if( a.empty() || b.empty() ) return a.empty() && b.empty() ;
+			if( a.size() != b.size() ) return false ;
+			const char * const end = a.data() + a.size() ;
+			const char * q = b.data() ;
+			for( const char * p = a.data() ; p != end ; ++p , ++q )
+			{
+				char c1 = *p ;
+				char c2 = *q ;
+				if( c1 >= 'A' && c1 <= 'Z' ) c1 += '\x20' ;
+				if( c2 >= 'A' && c2 <= 'Z' ) c2 += '\x20' ;
+				if( c1 != c2 ) return false ;
+			}
+			return true ;
+		}
+		template <typename Tsv>
+		Tsv sv_substr( Tsv sv , std::size_t pos , std::size_t count ) noexcept
+		{
+			if( pos >= sv.size() )
+				return { sv.data() , std::size_t(0U) } ;
+			else
+				return { sv.data() + pos , std::min(sv.size()-pos,count) } ;
+		}
 	}
-	return true ;
 }
 
-G::string_view G::sv_substr( string_view sv , std::size_t pos , std::size_t count ) noexcept
+#if GCONFIG_HAVE_CXX_STRING_VIEW
+
+bool G::sv_imatch( std::string_view a , std::string_view b ) noexcept
 {
-	if( pos >= sv.size() )
-		return { sv.data() , std::size_t(0U) } ;
-	else
-		return { sv.data() + pos , std::min(sv.size()-pos,count) } ;
+	return StringViewImp::sv_imatch<std::string_view>( a , b ) ;
 }
 
-// ==
-
-int G::string_view::compare( const string_view & other ) const noexcept
+std::string_view G::sv_substr_noexcept( std::string_view a , std::size_t pos , std::size_t count ) noexcept
 {
-	int rc = ( empty() || other.empty() ) ? 0 : std::char_traits<char>::compare( m_p , other.m_p , std::min(m_n,other.m_n) ) ;
-	return rc == 0 ? ( m_n < other.m_n ? -1 : (m_n==other.m_n?0:1) ) : rc ;
+	return StringViewImp::sv_substr<std::string_view>( a , pos , count ) ;
+}
+
+#else
+
+bool G::sv_imatch( G::string_view a , G::string_view b ) noexcept
+{
+	return StringViewImp::sv_imatch<G::string_view>( a , b ) ;
+}
+
+G::string_view G::sv_substr_noexcept( G::string_view a , std::size_t pos , std::size_t count ) noexcept
+{
+	return StringViewImp::sv_substr<G::string_view>( a , pos , count ) ;
 }
 
 G::string_view G::string_view::substr( std::size_t pos , std::size_t count ) const
@@ -151,12 +176,10 @@ std::size_t G::string_view::find_first_not_of( string_view chars , std::size_t p
 	return std::string::npos ;
 }
 
-#ifndef G_LIB_SMALL
 std::size_t G::string_view::find_last_of( const char * chars , std::size_t pos , std::size_t chars_size ) const noexcept
 {
 	return find_last_of( string_view(chars,chars_size) , pos ) ;
 }
-#endif
 
 std::size_t G::string_view::find_last_of( string_view chars , std::size_t pos ) const noexcept
 {
@@ -179,12 +202,10 @@ std::size_t G::string_view::find_last_of( string_view chars , std::size_t pos ) 
 	return std::string::npos ;
 }
 
-#ifndef G_LIB_SMALL
 std::size_t G::string_view::find_last_not_of( const char * chars , std::size_t pos , std::size_t chars_size ) const noexcept
 {
 	return find_last_not_of( string_view(chars,chars_size) , pos ) ;
 }
-#endif
 
 std::size_t G::string_view::find_last_not_of( string_view chars , std::size_t pos ) const noexcept
 {
@@ -221,3 +242,4 @@ std::size_t G::string_view::rfind( char c , std::size_t pos ) const noexcept
 	return std::string::npos ;
 }
 
+#endif

@@ -42,7 +42,7 @@ namespace G
 template <>
 struct G::PathImp::PathPlatform<G::PathImp::Platform::Windows>
 {
-	static string_view sep() noexcept
+	static std::string_view sep() noexcept
 	{
 		return { "\\" , 1U } ;
 	}
@@ -60,16 +60,15 @@ struct G::PathImp::PathPlatform<G::PathImp::Platform::Windows>
 	}
 	static bool absolute( const std::string & s ) noexcept
 	{
-		// TODO use rootsize()
 		return
 			( s.length() >= 3U && s[1] == ':' && s[2] == '\\' ) ||
 			( s.length() >= 1U && s[0] == '\\' ) ;
 	}
-	static std::size_t rootsizeImp( const std::string & s , std::size_t chars , std::size_t parts ) noexcept
+	static std::size_t rootsizeImp( const std::string & s , std::size_t offset , std::size_t parts ) noexcept
 	{
-		G_ASSERT( s.length() >= chars ) ;
+		G_ASSERT( s.length() >= offset ) ;
 		G_ASSERT( parts == 1U || parts == 2U ) ;
-		std::size_t pos = s.find( '\\' , chars ) ;
+		std::size_t pos = s.find( '\\' , offset ) ;
 		if( parts == 2U && pos != std::string::npos )
 			pos = s.find( '\\' , pos+1U ) ;
 		return pos == std::string::npos ? s.length() : pos ;
@@ -121,7 +120,7 @@ struct G::PathImp::PathPlatform<G::PathImp::Platform::Windows>
 template <>
 struct G::PathImp::PathPlatform<G::PathImp::Platform::Unix> /// A unix specialisation of G::PathImp::PathPlatform used by G::Path.
 {
-	static string_view sep() noexcept
+	static std::string_view sep() noexcept
 	{
 		return { "/" , 1U } ;
 	}
@@ -163,7 +162,7 @@ namespace G
 		static bool use_posix = !G::is_windows() ; // gdef.h // NOLINT bogus cert-err58-cpp
 		using U = PathPlatform<Platform::Unix> ;
 		using W = PathPlatform<Platform::Windows> ;
-		string_view sep() { return use_posix ? U::sep() : W::sep() ; }
+		std::string_view sep() { return use_posix ? U::sep() : W::sep() ; }
 		void normalise( std::string & s ) { use_posix ? U::normalise(s) : W::normalise(s) ; }
 		bool simple( const std::string & s ) { return use_posix ? U::simple(s) : W::simple(s) ; }
 		bool isdrive( const std::string & s ) { return use_posix ? U::isdrive(s) : W::isdrive(s) ; }
@@ -277,7 +276,7 @@ G::Path::Path( const char * path ) :
 	PathImp::normalise( m_str ) ;
 }
 
-G::Path::Path( string_view path ) :
+G::Path::Path( std::string_view path ) :
 	m_str(sv_to_string(path))
 {
 	PathImp::normalise( m_str ) ;
@@ -312,17 +311,6 @@ G::Path::Path( const Path & path , const std::string & tail_1 , const std::strin
 }
 #endif
 
-G::Path::Path( std::initializer_list<std::string> args )
-{
-	if( args.size() )
-	{
-		m_str = *args.begin() ;
-		for( const auto * p = args.begin()+1 ; p != args.end() ; ++p )
-			pathAppend( *p ) ;
-		PathImp::normalise( m_str ) ;
-	}
-}
-
 G::Path G::Path::nullDevice()
 {
 	return { PathImp::null() } ;
@@ -331,6 +319,11 @@ G::Path G::Path::nullDevice()
 bool G::Path::simple() const
 {
 	return dirname().empty() ;
+}
+
+bool G::Path::isRoot() const noexcept
+{
+	return !empty() && m_str.size() <= PathImp::rootsize(m_str) ;
 }
 
 bool G::Path::isAbsolute() const noexcept
@@ -410,18 +403,8 @@ G::Path G::Path::withoutRoot() const
 
 G::Path & G::Path::pathAppend( const std::string & tail )
 {
-	if( tail.empty() )
-	{
-	}
-	else if( PathImp::simple(tail) )
-	{
-		m_str.append( sv_to_string(PathImp::sep()) + tail ) ;
-	}
-	else
-	{
-		Path result = join( *this , tail ) ;
-		result.swap( *this ) ;
-	}
+	Path result = join( *this , tail ) ;
+	result.swap( *this ) ;
 	return *this ;
 }
 
@@ -432,6 +415,12 @@ std::string G::Path::extension() const
 		pos == std::string::npos || (pos+1U) == m_str.length() ?
 			std::string() :
 			m_str.substr( pos+1U ) ;
+}
+
+bool G::Path::replace( const std::string_view & from , const std::string_view & to )
+{
+	std::size_t startpos = PathImp::rootsize( m_str ) ;
+	return G::Str::replace( m_str , from , to , &startpos ) ;
 }
 
 G::StringArray G::Path::split() const
@@ -504,14 +493,14 @@ G::Path G::Path::collapsed() const
 	return join( a ) ;
 }
 
-bool G::Path::operator==( const Path & other ) const
+bool G::Path::operator==( const Path & other ) const noexcept(noexcept(std::string().compare(std::string())))
 {
-	return m_str == other.m_str ; // noexcept only in c++14
+	return 0 == m_str.compare( other.m_str ) ; // noexcept since c++14 // NOLINT readability-string-compare
 }
 
-bool G::Path::operator!=( const Path & other ) const
+bool G::Path::operator!=( const Path & other ) const noexcept(noexcept(std::string().compare(std::string())))
 {
-	return m_str != other.m_str ; // noexcept only in c++14
+	return 0 != m_str.compare( other.m_str ) ; // noexcept since c++14 // NOLINT readability-string-compare
 }
 
 void G::Path::swap( Path & other ) noexcept

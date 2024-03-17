@@ -22,6 +22,7 @@
 #define G_NET_ADDRESS_H
 
 #include "gdef.h"
+#include "gstringview.h"
 #include "gstringarray.h"
 #include "gbasicaddress.h"
 #include "gexception.h"
@@ -124,23 +125,23 @@ public:
 	struct NotLocal /// Overload discriminator for Address::parse()
 		{} ;
 
-	static Address parse( const std::string & display_string ) ;
+	static Address parse( std::string_view display_string ) ;
 		///< Factory function for any address family. Throws if
 		///< an invalid string. See also validString().
 
-	static Address parse( const std::string & display_string , NotLocal ) ;
+	static Address parse( std::string_view display_string , NotLocal ) ;
 		///< Factory function for Family::ipv4 or Family::ipv6.
 		///< Throws if an invalid string. See also validString().
 
-	static Address parse( const std::string & host_part_string , unsigned int port ) ;
+	static Address parse( std::string_view host_part_string , unsigned int port ) ;
 		///< Factory function for Family::ipv4 or Family::ipv6.
 		///< Throws if an invalid string. See also validStrings().
 
-	static Address parse( const std::string & host_part_string , const std::string & port ) ;
+	static Address parse( std::string_view host_part_string , std::string_view port ) ;
 		///< Factory function for Family::ipv4 or Family::ipv6.
 		///< Throws if an invalid string. See also validStrings().
 
-	static bool isFamilyLocal( const std::string & display_string ) noexcept ;
+	static bool isFamilyLocal( std::string_view display_string ) noexcept ;
 		///< Returns true if the given address display string looks
 		///< will parse to Family::local and Family::local is
 		///< supported. The address may still fail to parse if
@@ -193,15 +194,15 @@ public:
 		///< Returns true if the port number is within the valid range. This
 		///< can be used to avoid exceptions from the relevant constructors.
 
-	static bool validString( const std::string & display_string , std::string * reason = nullptr ) ;
+	static bool validString( std::string_view display_string , std::string * reason = nullptr ) ;
 		///< Returns true if the transport-address display string is valid.
 		///< This can be used to avoid exceptions from the relevant constructor.
 
-	static bool validString( const std::string & display_string , NotLocal , std::string * reason = nullptr ) ;
+	static bool validString( std::string_view display_string , NotLocal , std::string * reason = nullptr ) ;
 		///< Returns true if the transport-address display string is valid.
 		///< This can be used to avoid exceptions from the relevant constructor.
 
-	static bool validStrings( const std::string & ip , const std::string & port_string , std::string * reason = nullptr ) ;
+	static bool validStrings( std::string_view ip , std::string_view port_string , std::string * reason = nullptr ) ;
 		///< Returns true if the combined network-address string and port string
 		///< is valid. This can be used to avoid exceptions from the relevant
 		///< constructor.
@@ -283,9 +284,9 @@ public:
 
 private:
 	Address( Family , unsigned int , int ) ; // loopback()
-	Address( const std::string & display_string , bool with_local ) ; // parse(), parse(NotLocal)
-	Address( const std::string & ip , const std::string & port ) ; // parse(ip,port)
-	Address( const std::string & ip , unsigned int port ) ; // parse(ip,port)
+	Address( std::string_view display_string , bool with_local ) ; // parse(), parse(NotLocal)
+	Address( std::string_view ip , std::string_view port ) ; // parse(ip,port)
+	Address( std::string_view ip , unsigned int port ) ; // parse(ip,port)
 
 private:
 	std::unique_ptr<Address4> m_ipv4 ;

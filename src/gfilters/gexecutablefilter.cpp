@@ -29,7 +29,7 @@
 #include "gassert.h"
 #include <tuple>
 
-GFilters::ExecutableFilter::ExecutableFilter( GNet::ExceptionSink es ,
+GFilters::ExecutableFilter::ExecutableFilter( GNet::EventState es ,
 	GStore::FileStore & file_store , Filter::Type filter_type ,
 	const Filter::Config & filter_config ,
 	const std::string & path ) :

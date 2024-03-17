@@ -409,22 +409,22 @@ bool DirectoryPage::isComplete()
 
 G::Path DirectoryPage::installDir() const
 {
-	return normalise( G::Str::trimmed( value(m_install_dir_edit_box) , G::string_view(" ",1U) ) ) ;
+	return normalise( G::Str::trimmed( value(m_install_dir_edit_box) , std::string_view(" ",1U) ) ) ;
 }
 
 G::Path DirectoryPage::spoolDir() const
 {
-	return normalise( G::Str::trimmed( value(m_spool_dir_edit_box) , G::string_view(" ",1U) ) ) ;
+	return normalise( G::Str::trimmed( value(m_spool_dir_edit_box) , std::string_view(" ",1U) ) ) ;
 }
 
 G::Path DirectoryPage::runtimeDir() const
 {
-	return normalise( G::Str::trimmed( value(m_runtime_dir_edit_box) , G::string_view(" ",1U) ) ) ;
+	return normalise( G::Str::trimmed( value(m_runtime_dir_edit_box) , std::string_view(" ",1U) ) ) ;
 }
 
 G::Path DirectoryPage::configDir() const
 {
-	return normalise( G::Str::trimmed( value(m_config_dir_edit_box) , G::string_view(" ",1U) ) ) ;
+	return normalise( G::Str::trimmed( value(m_config_dir_edit_box) , std::string_view(" ",1U) ) ) ;
 }
 
 // ==
@@ -1816,14 +1816,14 @@ void ReadyPage::dump( std::ostream & s , bool for_install ) const
 LogWatchThread::LogWatchThread( G::Path path ) :
 	m_path(path)
 {
-	m_stream.open( m_path.cstr() , std::ios_base::ate ) ;
+	m_stream.open( m_path.iopath() , std::ios_base::ate ) ;
 }
 
 void LogWatchThread::run()
 {
 	while( !m_stream.is_open() )
 	{
-		m_stream.open( m_path.cstr() ) ;
+		m_stream.open( m_path.iopath() ) ;
 		if( !m_stream.is_open() )
 			msleep( 100 ) ;
 	}

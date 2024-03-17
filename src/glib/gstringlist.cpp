@@ -53,7 +53,7 @@ bool G::StringListImp::notInList( StringArray::const_iterator begin , StringArra
 
 bool G::StringListImp::match( const std::string & a , const std::string & b , bool ignore_case )
 {
-	return ignore_case ? sv_imatch(string_view(a),string_view(b)) : (a==b) ;
+	return ignore_case ? sv_imatch(std::string_view(a),std::string_view(b)) : (a==b) ;
 }
 
 void G::StringList::keepMatch( StringArray & list , const StringArray & match_list , Ignore ignore )
@@ -75,21 +75,21 @@ void G::StringList::removeMatch( StringArray & list , const StringArray & deny_l
 		list.end() ) ;
 }
 
-bool G::StringList::headMatch( const StringArray & in , string_view head )
+bool G::StringList::headMatch( const StringArray & in , std::string_view head )
 {
 	return std::any_of( in.begin() , in.end() ,
 		[&head](const std::string &x){return Str::headMatch(x,head);} ) ;
 }
 
 #ifndef G_LIB_SMALL
-bool G::StringList::tailMatch( const StringArray & in , string_view tail )
+bool G::StringList::tailMatch( const StringArray & in , std::string_view tail )
 {
 	return std::any_of( in.begin() , in.end() ,
 		[&tail](const std::string &x){return Str::tailMatch(x,tail);} ) ;
 }
 #endif
 
-std::string G::StringList::headMatchResidue( const StringArray & in , string_view head )
+std::string G::StringList::headMatchResidue( const StringArray & in , std::string_view head )
 {
 	const auto end = in.end() ;
 	for( auto p = in.begin() ; p != end ; ++p )
@@ -108,7 +108,7 @@ bool G::StringList::match( const StringArray & a , const std::string & b )
 bool G::StringList::imatch( const StringArray & a , const std::string & b )
 {
 	using namespace std::placeholders ;
-	string_view b_sv( b ) ;
+	std::string_view b_sv( b ) ;
 	return std::any_of( a.begin() , a.end() ,
 		[b_sv](const std::string & a_str){ return Str::imatch(a_str,b_sv) ; } ) ;
 }

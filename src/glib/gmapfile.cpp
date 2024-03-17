@@ -38,7 +38,7 @@
 G::MapFile::MapFile()
 = default;
 
-G::MapFile::MapFile( const Path & path , string_view kind ) :
+G::MapFile::MapFile( const Path & path , std::string_view kind ) :
 	m_kind(sv_to_string(kind))
 {
 	if( !path.empty() )
@@ -61,7 +61,7 @@ G::MapFile::MapFile( const StringMap & map ) :
 		m_keys.push_back( p.first ) ;
 }
 
-G::MapFile::MapFile( const OptionMap & map , string_view yes )
+G::MapFile::MapFile( const OptionMap & map , std::string_view yes )
 {
 	for( auto p = map.begin() ; p != map.end() ; )
 	{
@@ -76,7 +76,7 @@ G::MapFile::MapFile( const OptionMap & map , string_view yes )
 	}
 }
 
-void G::MapFile::readFrom( const Path & path , string_view kind )
+void G::MapFile::readFrom( const Path & path , std::string_view kind )
 {
 	std::ifstream stream ;
 	File::open( stream , path , File::Text() ) ;
@@ -94,7 +94,7 @@ void G::MapFile::readFrom( std::istream & stream )
 	while( stream.good() )
 	{
 		Str::readLine( stream , line ) ;
-		Str::trimRight( line , "\r"_sv ) ;
+		Str::trimRight( line , std::string_view("\r",1U) ) ;
 		if( line.empty() )
 			continue ;
 		if( !stream )
@@ -104,15 +104,15 @@ void G::MapFile::readFrom( std::istream & stream )
 
 		// no escaping here -- just strip quotes if the value starts and ends with them
 
-		G::string_view line_sv( line ) ;
-		StringTokenView t( line_sv , " =\t"_sv ) ;
+		std::string_view line_sv( line ) ;
+		StringTokenView t( line_sv , std::string_view(" =\t",3U) ) ;
 		if( !t.valid() )
 			continue ;
 
-		string_view key = t() ;
+		std::string_view key = t() ;
 		auto pos = line.find( key.data() , 0U , key.size() ) + key.size() ;
-		string_view value = Str::tailView( line , pos ) ;
-		value = Str::trimLeftView( value , " =\t"_sv ) ;
+		std::string_view value = Str::tailView( line , pos ) ;
+		value = Str::trimLeftView( value , std::string_view(" =\t",3U) ) ;
 		value = Str::trimRightView( value , Str::ws() ) ;
 		if( value.size() >= 2U && value.at(0U) == '"' && value.at(value.size()-1U) == '"' )
 			value = value.substr(1U,value.length()-2U) ;
@@ -131,7 +131,7 @@ bool G::MapFile::ignore( const std::string & line ) const
 	return pos_hash != std::string::npos && pos_hash < pos_interesting ;
 }
 
-void G::MapFile::check( const Path & path , string_view kind )
+void G::MapFile::check( const Path & path , std::string_view kind )
 {
 	MapFile tmp ;
 	tmp.readFrom( path , kind ) ;
@@ -153,7 +153,7 @@ void G::MapFile::log( const std::string & prefix_in ) const
 	}
 }
 
-void G::MapFile::writeItem( std::ostream & stream , string_view key ) const
+void G::MapFile::writeItem( std::ostream & stream , std::string_view key ) const
 {
 	auto p = find( key ) ;
 	if( p == m_map.end() )
@@ -162,7 +162,7 @@ void G::MapFile::writeItem( std::ostream & stream , string_view key ) const
 		writeItem( stream , key , (*p).second ) ;
 }
 
-void G::MapFile::writeItem( std::ostream & stream , string_view key , string_view value )
+void G::MapFile::writeItem( std::ostream & stream , std::string_view key , std::string_view value )
 {
 	const char * qq = value.find(' ') == std::string::npos ? "" : "\"" ;
 	stream << key << "=" << qq << value << qq << "\n" ;
@@ -183,7 +183,7 @@ void G::MapFile::editInto( const Path & path , bool make_backup ,
 	save( path , lines , allow_write_error ) ;
 }
 
-G::MapFile::List G::MapFile::read( const Path & path , string_view kind , bool allow_read_error ) const
+G::MapFile::List G::MapFile::read( const Path & path , std::string_view kind , bool allow_read_error ) const
 {
 	List line_list ;
 	std::ifstream file_in ;
@@ -193,7 +193,7 @@ G::MapFile::List G::MapFile::read( const Path & path , string_view kind , bool a
 	while( file_in.good() )
 	{
 		std::string line = Str::readLineFrom( file_in ) ;
-		Str::trimRight( line , "\r"_sv ) ;
+		Str::trimRight( line , std::string_view("\r",1U) ) ;
 		if( !file_in ) break ;
 		line_list.push_back( line ) ;
 	}
@@ -218,8 +218,8 @@ void G::MapFile::replace( List & line_list ) const
 		for( auto & line : line_list )
 		{
 			if( line.empty() ) continue ;
-			G::string_view line_sv( line ) ;
-			StringTokenView t( line_sv , " \r\n\t=#"_sv ) ;
+			std::string_view line_sv( line ) ;
+			StringTokenView t( line_sv , std::string_view(" \r\n\t=#",6U) ) ;
 			if( !t ) continue ;
 			if( G::Str::match( map_item.first , t() ) )
 			{
@@ -258,7 +258,7 @@ void G::MapFile::save( const Path & path , List & line_list , bool allow_write_e
 		throw writeError( path ) ;
 }
 
-bool G::MapFile::booleanValue( string_view key , bool default_ ) const
+bool G::MapFile::booleanValue( std::string_view key , bool default_ ) const
 {
 	auto p = find( key ) ;
 	if( p == m_map.end() )
@@ -275,45 +275,45 @@ bool G::MapFile::booleanValue( string_view key , bool default_ ) const
 	}
 }
 
-std::string G::MapFile::value( string_view key , string_view default_ ) const
+std::string G::MapFile::value( std::string_view key , std::string_view default_ ) const
 {
 	auto p = find( key ) ;
 	return ( p == m_map.end() || (*p).second.empty() ) ? sv_to_string(default_) : (*p).second ;
 }
 
-std::string G::MapFile::mandatoryValue( string_view key ) const
+std::string G::MapFile::mandatoryValue( std::string_view key ) const
 {
 	if( find(key) == m_map.end() )
 		throw missingValueError( m_path , m_kind , sv_to_string(key) ) ;
 	return value( key ) ;
 }
 
-G::Path G::MapFile::expandedPathValue( string_view key , const Path & default_ ) const
+G::Path G::MapFile::expandedPathValue( std::string_view key , const Path & default_ ) const
 {
 	return { expand(value(key,default_.str())) } ;
 }
 
-G::Path G::MapFile::expandedPathValue( string_view key ) const
+G::Path G::MapFile::expandedPathValue( std::string_view key ) const
 {
 	return { expand(mandatoryValue(key)) } ;
 }
 
-G::Path G::MapFile::pathValue( string_view key , const Path & default_ ) const
+G::Path G::MapFile::pathValue( std::string_view key , const Path & default_ ) const
 {
 	return { value(key,default_.str()) } ;
 }
 
-G::Path G::MapFile::pathValue( string_view key ) const
+G::Path G::MapFile::pathValue( std::string_view key ) const
 {
 	return { mandatoryValue(key) } ;
 }
 
-unsigned int G::MapFile::numericValue( string_view key , unsigned int default_ ) const
+unsigned int G::MapFile::numericValue( std::string_view key , unsigned int default_ ) const
 {
 	return Str::toUInt( value(key,{}) , default_ ) ;
 }
 
-void G::MapFile::remove( string_view key )
+void G::MapFile::remove( std::string_view key )
 {
 	auto p = find( key ) ;
 	if( p != m_map.end() )
@@ -324,7 +324,7 @@ void G::MapFile::remove( string_view key )
 	}
 }
 
-std::string G::MapFile::expand( string_view value_in ) const
+std::string G::MapFile::expand( std::string_view value_in ) const
 {
 	std::string value = sv_to_string(value_in) ;
 	expand_( value ) ;
@@ -394,7 +394,7 @@ bool G::MapFile::expand_( std::string & value ) const
 	return changed ;
 }
 
-void G::MapFile::add( string_view key_in , string_view value , bool clear )
+void G::MapFile::add( std::string_view key_in , std::string_view value , bool clear )
 {
 	std::string key = sv_to_string( key_in ) ;
 	if( find(key) == m_map.end() )
@@ -413,17 +413,17 @@ void G::MapFile::add( string_view key_in , string_view value , bool clear )
 	}
 }
 
-G::StringMap::iterator G::MapFile::find( string_view key )
+G::StringMap::iterator G::MapFile::find( std::string_view key )
 {
-	return m_map.find( sv_to_string(key) ) ; // or c++14 'generic associative lookup' of string_view
+	return m_map.find( sv_to_string(key) ) ; // or c++14 'generic associative lookup' of std::string_view
 }
 
-G::StringMap::const_iterator G::MapFile::find( string_view key ) const
+G::StringMap::const_iterator G::MapFile::find( std::string_view key ) const
 {
-	return m_map.find( sv_to_string(key) ) ; // or c++14 'generic associative lookup' of string_view
+	return m_map.find( sv_to_string(key) ) ; // or c++14 'generic associative lookup' of std::string_view
 }
 
-bool G::MapFile::contains( string_view key ) const
+bool G::MapFile::contains( std::string_view key ) const
 {
 	return find( key ) != m_map.end() ;
 }
@@ -438,7 +438,7 @@ const G::StringArray & G::MapFile::keys() const
 	return m_keys ;
 }
 
-std::string G::MapFile::ekind( string_view kind )
+std::string G::MapFile::ekind( std::string_view kind )
 {
 	return kind.empty() ? std::string("map") : sv_to_string(kind) ;
 }
@@ -448,13 +448,13 @@ std::string G::MapFile::epath( const Path & path_in )
 	return path_in.empty() ? std::string() : (" ["+path_in.str()+"]") ;
 }
 
-G::MapFile::Error G::MapFile::readError( const Path & path , string_view kind )
+G::MapFile::Error G::MapFile::readError( const Path & path , std::string_view kind )
 {
 	std::string description = "cannot read " + ekind(kind) + " file" + epath(path) ;
 	return Error( description ) ;
 }
 
-G::MapFile::Error G::MapFile::writeError( const Path & path , string_view kind )
+G::MapFile::Error G::MapFile::writeError( const Path & path , std::string_view kind )
 {
 	return Error( std::string("cannot create ").append(ekind(kind)).append(" file ").append(epath(path)) ) ;
 }

@@ -31,13 +31,13 @@
 #include <algorithm>
 #include <iterator>
 
-GFilters::SplitFilter::SplitFilter( GNet::ExceptionSink es , GStore::FileStore & store ,
+GFilters::SplitFilter::SplitFilter( GNet::EventState es , GStore::FileStore & store ,
 	Filter::Type filter_type , const Filter::Config & filter_config , const std::string & spec ) :
 		SimpleFilterBase(es,filter_type,"split:") ,
 		m_store(store) ,
 		m_filter_config(filter_config)
 {
-	G::string_view spec_sv = spec ;
+	std::string_view spec_sv = spec ;
 	for( G::StringTokenView t(spec_sv,";",1U) ; t ; ++t )
 	{
 		if( t() == "raw"_sv ) m_raw = true ; // case-sensitive domain names

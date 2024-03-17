@@ -67,7 +67,7 @@ private:
 	std::vector<int> m_fds ;
 } ;
 
-GNet::MultiServer::MultiServer( ExceptionSink es , const G::StringArray & listener_list , unsigned int port ,
+GNet::MultiServer::MultiServer( EventState es , const G::StringArray & listener_list , unsigned int port ,
 	const std::string & server_type , ServerPeer::Config server_peer_config , Server::Config server_config ) :
 		m_es(es) ,
 		m_listener_list(listener_list) ,
@@ -148,7 +148,7 @@ void GNet::MultiServer::createServer( const Address & address , bool fixed , std
 		// (can fail here if notified too soon, but succeeds later)
 		G_LOG( "GNet::MultiServer::createServer: failed to bind " << displayString(address)
 			<< " for new " << m_server_type << " server:"
-			<< G::Str::tail(e.what(),G::string_view(e.what()).rfind(':')) ) ;
+			<< G::Str::tail(e.what(),std::string_view(e.what()).rfind(':')) ) ;
 	}
 }
 
@@ -237,7 +237,7 @@ void GNet::MultiServer::serverReport( const std::string & group ) const
 	}
 }
 
-std::unique_ptr<GNet::ServerPeer> GNet::MultiServer::doNewPeer( ExceptionSinkUnbound esu ,
+std::unique_ptr<GNet::ServerPeer> GNet::MultiServer::doNewPeer( EventStateUnbound esu ,
 	ServerPeerInfo && pi , const ServerInfo & si )
 {
 	return newPeer( esu , std::move(pi) , si ) ;
@@ -271,7 +271,7 @@ std::vector<std::weak_ptr<GNet::ServerPeer>> GNet::MultiServer::peers()
 
 // ==
 
-GNet::MultiServerImp::MultiServerImp( MultiServer & ms , ExceptionSink es , bool fixed , const Address & address ,
+GNet::MultiServerImp::MultiServerImp( MultiServer & ms , EventState es , bool fixed , const Address & address ,
 	ServerPeer::Config server_peer_config , Server::Config server_config ) :
 		GNet::Server(es,address,server_peer_config,server_config) ,
 		m_ms(ms) ,
@@ -279,7 +279,7 @@ GNet::MultiServerImp::MultiServerImp( MultiServer & ms , ExceptionSink es , bool
 {
 }
 
-GNet::MultiServerImp::MultiServerImp( MultiServer & ms , ExceptionSink es , Descriptor fd ,
+GNet::MultiServerImp::MultiServerImp( MultiServer & ms , EventState es , Descriptor fd ,
 	ServerPeer::Config server_peer_config , Server::Config server_config ) :
 		GNet::Server(es,fd,server_peer_config,server_config) ,
 		m_ms(ms) ,
@@ -300,7 +300,7 @@ void GNet::MultiServerImp::cleanup()
 	serverCleanup() ;
 }
 
-std::unique_ptr<GNet::ServerPeer> GNet::MultiServerImp::newPeer( ExceptionSinkUnbound esu , ServerPeerInfo && peer_info )
+std::unique_ptr<GNet::ServerPeer> GNet::MultiServerImp::newPeer( EventStateUnbound esu , ServerPeerInfo && peer_info )
 {
 	MultiServer::ServerInfo server_info ;
 	server_info.m_address = address() ; // GNet::Server::address()

@@ -22,7 +22,7 @@
 #define G_NET_FUTURE_EVENT_H
 
 #include "gdef.h"
-#include "gexceptionsink.h"
+#include "geventstate.h"
 #include "geventhandler.h"
 #include "gexception.h"
 #include <memory>
@@ -83,7 +83,7 @@ class GNet::FutureEvent
 public:
 	G_EXCEPTION( Error , tx("FutureEvent error") ) ;
 
-	FutureEvent( FutureEventHandler & , ExceptionSink ) ;
+	FutureEvent( FutureEventHandler & , EventState ) ;
 		///< Constructor. Installs itself in the event loop.
 
 	~FutureEvent() ;

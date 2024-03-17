@@ -24,7 +24,7 @@
 #include "gstr.h"
 
 #ifndef G_LIB_SMALL
-GFilters::NullFilter::NullFilter( GNet::ExceptionSink es , GStore::FileStore & ,
+GFilters::NullFilter::NullFilter( GNet::EventState es , GStore::FileStore & ,
 	Filter::Type filter_type , const Filter::Config & ) :
 		m_id("exit") ,
 		m_exit(0,filter_type) ,
@@ -35,7 +35,7 @@ GFilters::NullFilter::NullFilter( GNet::ExceptionSink es , GStore::FileStore & ,
 }
 #endif
 
-GFilters::NullFilter::NullFilter( GNet::ExceptionSink es , GStore::FileStore & ,
+GFilters::NullFilter::NullFilter( GNet::EventState es , GStore::FileStore & ,
 	Filter::Type filter_type , const Filter::Config & ,
 	unsigned int exit_code ) :
 		m_id("exit:"+G::Str::fromUInt(exit_code)) ,
@@ -46,7 +46,7 @@ GFilters::NullFilter::NullFilter( GNet::ExceptionSink es , GStore::FileStore & ,
 {
 }
 
-GFilters::NullFilter::NullFilter( GNet::ExceptionSink es , GStore::FileStore & ,
+GFilters::NullFilter::NullFilter( GNet::EventState es , GStore::FileStore & ,
 	Filter::Type filter_type , const Filter::Config & , G::TimeInterval sleep_time ) :
 		m_id("sleep") ,
 		m_exit(0,filter_type) ,

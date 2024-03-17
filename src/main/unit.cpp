@@ -32,15 +32,20 @@
 #include <functional>
 
 Main::Unit::Unit( Run & run , unsigned int unit_id , const std::string & version_number ) :
+	GNet::EventLogging(nullptr) ,
 	m_run(run) ,
 	m_configuration(run.configuration(unit_id)) ,
 	m_version_number(version_number) ,
 	m_unit_id(unit_id) ,
-	m_es_log_only(GNet::ExceptionSink::logOnly())
+	m_es_log_only(GNet::EventState::create(std::nothrow).logging(this)) ,
+	m_es_rethrow(GNet::EventState::create().logging(this))
 {
 	G_ASSERT( GSsl::Library::instance() != nullptr ) ;
 	using G::format ;
 	using G::txt ;
+
+	if( !m_configuration.name().empty() && m_configuration.logFormatContains("unit") )
+		m_event_logging_string = std::string(1U,'[').append(m_configuration.name().append("] ",2U)) ;
 
 	// cache the forwarding address's address family
 	//
@@ -210,6 +215,12 @@ std::string Main::Unit::name( const std::string & default_ ) const
 	return m_configuration.name().empty() ? default_ : m_configuration.name() ;
 }
 
+std::string_view Main::Unit::eventLoggingString() const noexcept
+{
+	if( m_event_logging_string.empty() ) return {} ;
+	return m_event_logging_string ;
+}
+
 void Main::Unit::onClientEvent( const std::string & p1 , const std::string & p2 , const std::string & p3 )
 {
 	// p1: connecting, resolving, connected, sending, sent
@@ -306,7 +317,7 @@ std::string Main::Unit::startForwarding()
 	{
 		G_ASSERT( m_client_secrets != nullptr ) ;
 		m_client_ptr.reset( std::make_unique<GSmtp::Forward>(
-			GNet::ExceptionSink(m_client_ptr,nullptr) ,
+			m_es_rethrow.eh(m_client_ptr) ,
 			*m_file_store ,
 			*m_filter_factory ,
 			GNet::Location(m_configuration.serverAddress(),m_resolver_family) ,

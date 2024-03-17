@@ -25,7 +25,7 @@
 #include "gstringfield.h"
 #include "glog.h"
 
-GVerifiers::NetworkVerifier::NetworkVerifier( GNet::ExceptionSink es , const GSmtp::Verifier::Config & config ,
+GVerifiers::NetworkVerifier::NetworkVerifier( GNet::EventState es , const GSmtp::Verifier::Config & config ,
 	const std::string & server ) :
 		m_es(es) ,
 		m_location(server) ,
@@ -34,7 +34,6 @@ GVerifiers::NetworkVerifier::NetworkVerifier( GNet::ExceptionSink es , const GSm
 {
 	G_DEBUG( "GVerifiers::NetworkVerifier::ctor: " << server ) ;
 	m_client_ptr.eventSignal().connect( G::Slot::slot(*this,&GVerifiers::NetworkVerifier::clientEvent) ) ;
-	m_client_ptr.deletedSignal().connect( G::Slot::slot(*this,&GVerifiers::NetworkVerifier::clientDeleted) ) ;
 }
 
 GVerifiers::NetworkVerifier::~NetworkVerifier()
@@ -51,7 +50,7 @@ void GVerifiers::NetworkVerifier::verify( Command command , const std::string & 
 	{
 		unsigned int idle_timeout = 0U ;
 		m_client_ptr.reset( std::make_unique<GSmtp::RequestClient>(
-			GNet::ExceptionSink(m_client_ptr,m_es.esrc()),
+			m_es.eh(this) ,
 			"verify" , "" ,
 			m_location , m_connection_timeout , m_response_timeout ,
 			idle_timeout ) ) ;
@@ -72,15 +71,18 @@ void GVerifiers::NetworkVerifier::verify( Command command , const std::string & 
 	m_client_ptr->request( G::Str::join("|",args) ) ;
 }
 
-void GVerifiers::NetworkVerifier::clientDeleted( const std::string & reason )
+void GVerifiers::NetworkVerifier::onException( GNet::ExceptionSource * , std::exception & e , bool done )
 {
-	G_DEBUG( "GVerifiers::NetworkVerifier::clientDeleted: reason=[" << reason << "]" ) ;
-	if( !reason.empty() )
+	bool was_busy = m_client_ptr.get() && m_client_ptr->busy() ;
+	if( m_client_ptr.get() )
+		m_client_ptr->doOnDelete( e.what() , done ) ;
+	m_client_ptr.reset() ;
+
+	if( was_busy )
 	{
 		std::string to_address = m_to_address ;
 		m_to_address.erase() ;
-
-		auto status = GSmtp::VerifierStatus::invalid( to_address , true , "cannot verify" , reason ) ;
+		auto status = GSmtp::VerifierStatus::invalid( to_address , true , "cannot verify" , "network verifier peer disconnected" ) ;
 		doneSignal().emit( m_command , status ) ;
 	}
 }
@@ -95,12 +97,12 @@ void GVerifiers::NetworkVerifier::clientEvent( const std::string & s1 , const st
 		// parse the output from the remote verifier using pipe-delimited
 		// fields based on the script-based verifier interface, but backwards
 		//
-		G::string_view s2_sv( s2 ) ;
+		std::string_view s2_sv( s2 ) ;
 		G::StringFieldView f( s2_sv , '|' ) ;
 		std::size_t part_count = f.count() ;
-		G::string_view part_0 = f() ;
-		G::string_view part_1 = (++f)() ;
-		G::string_view part_2 = (++f)() ;
+		std::string_view part_0 = f() ;
+		std::string_view part_1 = (++f)() ;
+		std::string_view part_2 = (++f)() ;
 
 		auto status = GSmtp::VerifierStatus::invalid( m_to_address ) ;
 		if( part_count && part_0 == "100"_sv )

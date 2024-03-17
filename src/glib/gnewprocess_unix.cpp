@@ -315,7 +315,8 @@ bool G::NewProcessImp::duplicate( Fd fd , int fd_std )
 	G_ASSERT( !(fd==Fd::pipe()) ) ;
 	if( fd == Fd::devnull() )
 	{
-		int fd_null = ::open( G::Path::nullDevice().cstr() , fd_std == STDIN_FILENO ? O_RDONLY : O_WRONLY ) ; // NOLINT
+		auto mode = fd_std == STDIN_FILENO ? G::File::InOutAppend::In : G::File::InOutAppend::OutNoCreate ;
+		int fd_null = File::open( G::Path::nullDevice() , mode ) ;
 		if( fd_null < 0 ) throw NewProcess::Error( "failed to open /dev/null" ) ;
 		::dup2( fd_null , fd_std ) ;
 		return true ;
@@ -383,7 +384,6 @@ G::NewProcessWaitable::NewProcessWaitable() :
 {
 }
 
-#ifndef G_LIB_SMALL
 G::NewProcessWaitable::NewProcessWaitable( pid_t pid , int fd ) :
 	m_buffer(1024U) ,
 	m_pid(pid) ,
@@ -391,7 +391,6 @@ G::NewProcessWaitable::NewProcessWaitable( pid_t pid , int fd ) :
 	m_test_mode(G::Test::enabled("waitpid-slow"))
 {
 }
-#endif
 
 void G::NewProcessWaitable::assign( pid_t pid , int fd )
 {
@@ -406,7 +405,6 @@ void G::NewProcessWaitable::assign( pid_t pid , int fd )
 	m_read_error = 0 ;
 }
 
-#ifndef G_LIB_SMALL
 void G::NewProcessWaitable::waitp( std::promise<std::pair<int,std::string>> p ) noexcept
 {
 	try
@@ -420,7 +418,6 @@ void G::NewProcessWaitable::waitp( std::promise<std::pair<int,std::string>> p ) 
 		try { p.set_exception( std::current_exception() ) ; } catch(...) {}
 	}
 }
-#endif
 
 G::NewProcessWaitable & G::NewProcessWaitable::wait()
 {

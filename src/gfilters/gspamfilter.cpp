@@ -23,7 +23,7 @@
 #include "gstr.h"
 #include "glog.h"
 
-GFilters::SpamFilter::SpamFilter( GNet::ExceptionSink es , GStore::FileStore & file_store ,
+GFilters::SpamFilter::SpamFilter( GNet::EventState es , GStore::FileStore & file_store ,
 	Filter::Type , const Filter::Config & config , const std::string & server ,
 	bool read_only , bool always_pass ) :
 		m_es(es) ,
@@ -59,7 +59,7 @@ bool GFilters::SpamFilter::quiet() const
 void GFilters::SpamFilter::start( const GStore::MessageId & message_id )
 {
 	// the spam client can do more than one request, but it is simpler to start fresh
-	m_client_ptr.reset( std::make_unique<GSmtp::SpamClient>( GNet::ExceptionSink(m_client_ptr,m_es.esrc()) ,
+	m_client_ptr.reset( std::make_unique<GSmtp::SpamClient>( m_es.eh(m_client_ptr) ,
 		m_location , m_read_only , m_connection_timeout , m_response_timeout ) ) ;
 
 	m_done_signal.emitted( false ) ;

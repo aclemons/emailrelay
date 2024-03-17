@@ -23,10 +23,13 @@
 #include "gstr.h"
 #include "gassert.h"
 
-GNet::Interfaces::Interfaces()
-= default;
+GNet::Interfaces::Interfaces( EventState es ) :
+	m_es(es)
+{
+}
 
-GNet::Interfaces::Interfaces( ExceptionSink , InterfacesHandler & )
+GNet::Interfaces::Interfaces( EventState es , InterfacesHandler & ) :
+	m_es(es)
 {
 }
 

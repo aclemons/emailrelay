@@ -53,10 +53,10 @@ public:
 		///< in the map with the same key is in the order of insert()ion
 		///< (as guaranteed by std::multimap since c++ 2011).
 
-	void replace( string_view key , const std::string & value ) ;
+	void replace( std::string_view key , const std::string & value ) ;
 		///< Replaces all matching values with a single value.
 
-	void increment( string_view key ) ;
+	void increment( std::string_view key ) ;
 		///< Increments the repeat count for the given entry.
 
 	const_iterator begin() const ;
@@ -71,13 +71,13 @@ public:
 	const_iterator cend() const ;
 		///< Returns the off-the-end iterator.
 
-	const_iterator find( string_view ) const ;
+	const_iterator find( std::string_view ) const ;
 		///< Finds the map entry with the given key.
 
 	void clear() ;
 		///< Clears the map.
 
-	bool contains( string_view ) const ;
+	bool contains( std::string_view ) const ;
 		///< Returns true if the map contains the given key, but ignoring 'off'
 		///< option-values.
 
@@ -87,25 +87,25 @@ public:
 	bool contains( const std::string & ) const ;
 		///< Overload for std-string.
 
-	std::size_t count( string_view key ) const ;
+	std::size_t count( std::string_view key ) const ;
 		///< Returns the total repeat count for all matching entries.
 		///< See G::OptionValue::count().
 
-	std::string value( string_view key , string_view default_ = {} ) const ;
+	std::string value( std::string_view key , std::string_view default_ = {} ) const ;
 		///< Returns the matching value, with concatentation into a comma-separated
 		///< list if multivalued (with no escaping). If there are any on/off
 		///< option-values matching the key then a single value is returned
 		///< corresponding to the first one, being G::Str::positive() if 'on'
 		///< or the supplied default if 'off'.
 
-	unsigned int number( string_view key , unsigned int default_ ) const ;
+	unsigned int number( std::string_view key , unsigned int default_ ) const ;
 		///< Returns the matching value as a number.
 
 private:
 	using Range = std::pair<Map::const_iterator,Map::const_iterator> ;
-	Range findRange( string_view key ) const ;
-	Map::iterator findFirst( string_view key ) ;
-	std::string join( Map::const_iterator , Map::const_iterator , string_view ) const ;
+	Range findRange( std::string_view key ) const ;
+	Map::iterator findFirst( std::string_view key ) ;
+	std::string join( Map::const_iterator , Map::const_iterator , std::string_view ) const ;
 
 private:
 	Map m_map ;

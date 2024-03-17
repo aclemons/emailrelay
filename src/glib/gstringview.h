@@ -22,21 +22,41 @@
 #define G_STRING_VIEW_H
 
 #include "gdef.h"
-#include <algorithm>
-#include <stdexcept>
-#include <ostream>
 #include <string>
 #include <cstring>
-#include <new>
 
 #if GCONFIG_HAVE_CXX_STRING_VIEW
+
 #include <string_view>
-// etc
-#endif
+
+namespace G
+{
+	std::string_view sv_substr_noexcept( std::string_view sv , std::size_t pos , std::size_t count = std::string::npos ) noexcept ;
+	bool sv_imatch( std::string_view , std::string_view ) noexcept ;
+	inline std::string sv_to_string( std::string_view sv ) { return std::string(sv) ; }
+}
+
+constexpr std::string_view operator "" _sv( const char * p , std::size_t n ) noexcept
+{
+	return {p,n} ;
+}
+
+#else
+
+#include <stdexcept>
+#include <ostream>
+#include <algorithm> // std::min()
 
 namespace G
 {
 	class string_view ;
+	G::string_view sv_substr_noexcept( G::string_view sv , std::size_t pos , std::size_t count = std::string::npos ) noexcept ;
+	bool sv_imatch( G::string_view , G::string_view ) noexcept ;
+}
+
+namespace std /// NOLINT
+{
+	using string_view = G::string_view ;
 }
 
 //| \class G::string_view
@@ -44,8 +64,6 @@ namespace G
 ///
 /// There is an implicit conversion constructor from std::string
 /// since std::string has its convertion operator "operator sv()".
-/// Some sv_*() free functions and an operator""_sv are also
-/// provided.
 ///
 class G::string_view
 {
@@ -73,6 +91,10 @@ public:
 	const char * cbegin() const noexcept { return empty() ? nullptr : m_p ; }
 	const char * end() const noexcept { return empty() ? nullptr : (m_p+m_n) ; }
 	const char * cend() const noexcept { return empty() ? nullptr : (m_p+m_n) ; }
+	int compare( const string_view & other ) const noexcept {
+    	int rc = ( empty() || other.empty() ) ? 0 : std::char_traits<char>::compare( m_p , other.m_p , std::min(m_n,other.m_n) ) ;
+    	return rc == 0 ? ( m_n < other.m_n ? -1 : (m_n==other.m_n?0:1) ) : rc ;
+	}
 	bool operator==( const string_view & other ) const noexcept { return compare(other) == 0 ; }
 	bool operator!=( const string_view & other ) const noexcept { return compare(other) != 0 ; }
 	bool operator<( const string_view & other ) const noexcept { return compare(other) < 0 ; }
@@ -80,7 +102,6 @@ public:
 	bool operator>( const string_view & other ) const noexcept { return compare(other) > 0 ; }
 	bool operator>=( const string_view & other ) const noexcept { return compare(other) >= 0 ; }
 
-	int compare( const string_view & other ) const noexcept ;
 	string_view substr( std::size_t pos , std::size_t count = npos ) const ;
 	std::size_t find( char c , std::size_t pos = 0U ) const noexcept ;
 	std::size_t find( const char * substr_p , std::size_t pos , std::size_t substr_n ) const ;
@@ -103,8 +124,6 @@ private:
 
 namespace G
 {
-	string_view sv_substr( string_view sv , std::size_t pos , std::size_t count = std::string::npos ) noexcept ;
-	bool sv_imatch( string_view , string_view ) noexcept ;
 	inline std::ostream & operator<<( std::ostream & stream , const string_view & sv )
 	{
 		if( !sv.empty() )
@@ -131,6 +150,10 @@ namespace G
 	{
 		return !(sv == s) ;
 	}
+	inline std::string sv_to_string( string_view sv )
+	{
+		return sv.empty() ? std::string() : std::string( sv.data() , sv.size() ) ;
+	}
 }
 
 namespace std /// NOLINT
@@ -146,12 +169,6 @@ constexpr G::string_view operator "" _sv( const char * p , std::size_t n ) noexc
 	return {p,n} ;
 }
 
-namespace G
-{
-	inline std::string sv_to_string( string_view sv )
-	{
-		return sv.empty() ? std::string() : std::string( sv.data() , sv.size() ) ;
-	}
-}
+#endif
 
 #endif

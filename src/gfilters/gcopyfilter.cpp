@@ -27,14 +27,14 @@
 #include "gfile.h"
 #include "glog.h"
 
-GFilters::CopyFilter::CopyFilter( GNet::ExceptionSink es , GStore::FileStore & store ,
+GFilters::CopyFilter::CopyFilter( GNet::EventState es , GStore::FileStore & store ,
 	Filter::Type filter_type , const Filter::Config & filter_config , const std::string & spec ) :
 		SimpleFilterBase(es,filter_type,"copy:") ,
 		m_store(store) ,
 		m_filter_config(filter_config) ,
 		m_spec(spec)
 {
-	G::string_view spec_sv = spec ;
+	std::string_view spec_sv = spec ;
 	for( G::StringTokenView t( spec_sv , ";" , 1U ) ; t ; ++t )
 	{
 		if( t() == "p"_sv || t() == "pop"_sv ) m_pop_by_name = true ;

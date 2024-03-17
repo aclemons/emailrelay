@@ -34,7 +34,7 @@ namespace G
 	template <typename T> class StringFieldT ;
 	template <typename T> class StringFieldIteratorT ;
 	using StringField = StringFieldT<std::string> ;
-	using StringFieldView = StringFieldT<string_view> ;
+	using StringFieldView = StringFieldT<std::string_view> ;
 }
 
 //| \class G::StringFieldT
@@ -60,7 +60,7 @@ public:
 		///<
 		///< The rvalue overload is deleted to avoid passing a
 		///< temporary T that has been implicitly constructed from
-		///< something else. Temporary string_views constructed
+		///< something else. Temporary std::string_views constructed
 		///< from a string would be safe, but might be unsafe for
 		///< other types.
 
@@ -74,7 +74,7 @@ public:
 	bool valid() const noexcept ;
 		///< Returns true if a valid field.
 
-	static constexpr bool deref_operator_noexcept = std::is_same<T,string_view>::value ;
+	static constexpr bool deref_operator_noexcept = std::is_same<T,std::string_view>::value ;
 
 	T operator()() const noexcept(deref_operator_noexcept) ;
 		///< Returns the current field substring. Prefer data()
@@ -121,7 +121,7 @@ private:
 /// \code
 /// StringFieldView f( "foo,bar"_sv , "," , 1U ) ;
 /// std::copy( begin(f) , end(f) , std::back_inserter(list) ) ; // or...
-/// for( string_view sv : f ) list.push_back( sv ) ;
+/// for( std::string_view sv : f ) list.push_back( sv ) ;
 /// \endcode
 ///
 template <typename T>
@@ -148,17 +148,15 @@ namespace G
 	namespace StringFieldImp /// An implementation namespace for G::StringField.
 	{
 		template <typename T> inline T substr( const T & s ,
-			std::size_t pos , std::size_t len ) noexcept(std::is_same<T,string_view>::value)
-		{
-			return s.substr( pos , len ) ;
-		}
-		template <> string_view inline substr<string_view>( const string_view & s ,
 			std::size_t pos , std::size_t len ) noexcept
 		{
-			return sv_substr( s , pos , len ) ;
+			try { return s.substr( pos , len ) ; } catch(...) { return {} ; }
 		}
-		static_assert( !noexcept(std::string().substr(0,0)) , "" ) ;
-		static_assert( noexcept(sv_substr(string_view(),0,0)) , "" ) ;
+		template <> std::string_view inline substr<std::string_view>( const std::string_view & s ,
+			std::size_t pos , std::size_t len ) noexcept
+		{
+			return sv_substr_noexcept( s , pos , len ) ;
+		}
 	}
 }
 

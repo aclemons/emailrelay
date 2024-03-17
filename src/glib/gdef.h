@@ -82,6 +82,13 @@
 
 	/* Apply GCONFIG defaults in case of no autoconf
 	 */
+	#if defined(_MSC_VER) && defined(__cplusplus)
+		#if defined(__has_include)
+			#if __has_include(<version>)
+				#include <version>
+			#endif
+		#endif
+	#endif
 	#if !defined(GCONFIG_HAVE_CXX_ALIGNMENT)
 		#define GCONFIG_HAVE_CXX_ALIGNMENT 1
 	#endif
@@ -97,7 +104,31 @@
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_CXX_STRING_VIEW)
-		#define GCONFIG_HAVE_CXX_STRING_VIEW 0
+		#if defined(_MSC_VER) && defined(__cplusplus)
+			#include <string>
+			#if defined(__cpp_lib_string_view)
+				#define GCONFIG_HAVE_CXX_STRING_VIEW 1
+			#else
+				#define GCONFIG_HAVE_CXX_STRING_VIEW 0
+			#endif
+		#else
+			#if __cplusplus >= 201700L
+				#define GCONFIG_HAVE_CXX_STRING_VIEW 1
+			#else
+				#define GCONFIG_HAVE_CXX_STRING_VIEW 0
+			#endif
+		#endif
+	#endif
+	#if !defined(GCONFIG_HAVE_CXX_OPTIONAL)
+		#if defined(_MSC_VER) && defined(__cplusplus) && _MSVC_LANG >= 201700L
+			#define GCONFIG_HAVE_CXX_OPTIONAL 1
+		#else
+			#if __cplusplus >= 201700L
+				#define GCONFIG_HAVE_CXX_OPTIONAL 1
+			#else
+				#define GCONFIG_HAVE_CXX_OPTIONAL 0
+			#endif
+		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_SYS_UTSNAME_H)
 		#ifdef G_UNIX
@@ -699,13 +730,6 @@
 			#define GCONFIG_HAVE_DIRENT_D_TYPE 0
 		#endif
 	#endif
-	#if !defined(GCONFIG_HAVE_IOVEC_SIMPLE)
-		#ifdef G_UNIX
-			#define GCONFIG_HAVE_IOVEC_SIMPLE 1
-		#else
-			#define GCONFIG_HAVE_IOVEC_SIMPLE 0
-		#endif
-	#endif
 	#if !defined(GCONFIG_HAVE_UDS)
 		#ifdef G_UNIX
 			#define GCONFIG_HAVE_UDS 1
@@ -970,6 +994,11 @@
 				#define GDEF_NORETURN_LHS __declspec(noreturn)
 			#endif
 		#endif
+		#if __cplusplus >= 201700L || _MSVC_LANG >= 201700L
+			#define GDEF_FSIG_NOEXCEPT noexcept
+		#else
+			#define GDEF_FSIG_NOEXCEPT
+		#endif
 		#ifndef GDEF_NORETURN_LHS
 			#define GDEF_NORETURN_LHS
 		#endif
@@ -1067,34 +1096,34 @@
 		namespace G
 		{
 			#ifdef G_WINDOWS
-				inline constexpr bool is_windows() { return true ; }
+				constexpr bool is_windows() { return true ; }
 			#else
-				inline constexpr bool is_windows() { return false ; }
+				constexpr bool is_windows() { return false ; }
 			#endif
 			#ifdef G_MINGW
-				inline constexpr bool is_wine() { return true ; }
+				constexpr bool is_wine() { return true ; }
 			#else
-				inline constexpr bool is_wine() { return false ; }
+				constexpr bool is_wine() { return false ; }
 			#endif
 			#ifdef G_UNIX_LINUX
-				inline constexpr bool is_linux() { return true ; }
+				constexpr bool is_linux() { return true ; }
 			#else
-				inline constexpr bool is_linux() { return false ; }
+				constexpr bool is_linux() { return false ; }
 			#endif
 			#ifdef G_UNIX_FREEBSD
-				inline constexpr bool is_free_bsd() { return true ; }
+				constexpr bool is_free_bsd() { return true ; }
 			#else
-				inline constexpr bool is_free_bsd() { return false ; }
+				constexpr bool is_free_bsd() { return false ; }
 			#endif
 			#ifdef G_UNIX_OPENBSD
-				inline constexpr bool is_open_bsd() { return true ; }
+				constexpr bool is_open_bsd() { return true ; }
 			#else
-				inline constexpr bool is_open_bsd() { return false ; }
+				constexpr bool is_open_bsd() { return false ; }
 			#endif
 			#ifdef G_UNIX_BSD
-				inline constexpr bool is_bsd() { return true ; }
+				constexpr bool is_bsd() { return true ; }
 			#else
-				inline constexpr bool is_bsd() { return false ; }
+				constexpr bool is_bsd() { return false ; }
 			#endif
 		}
 

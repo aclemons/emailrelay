@@ -26,7 +26,7 @@
 #include "gassert.h"
 #include <algorithm>
 
-GNet::TimerBase::TimerBase( ExceptionSink es ) :
+GNet::TimerBase::TimerBase( EventState es ) :
 	m_time(G::TimerTime::zero())
 {
 	TimerList::instance().add( *this , es ) ;

@@ -91,13 +91,13 @@ std::size_t G::DirectoryList::readDirectories( const G::Path & dir , unsigned in
 	return m_list.size() ;
 }
 
-std::size_t G::DirectoryList::readType( const G::Path & dir , G::string_view suffix , unsigned int limit )
+std::size_t G::DirectoryList::readType( const G::Path & dir , std::string_view suffix , unsigned int limit )
 {
 	readImp( dir , false , suffix , limit ) ;
 	return m_list.size() ;
 }
 
-void G::DirectoryList::readImp( const G::Path & dir , bool sub_dirs , G::string_view suffix , unsigned int limit )
+void G::DirectoryList::readImp( const G::Path & dir , bool sub_dirs , std::string_view suffix , unsigned int limit )
 {
 	Directory directory( dir ) ;
 	DirectoryIterator iter( directory ) ;

@@ -8,6 +8,7 @@ Checks: "\
 bugprone-*,-bugprone-branch-clone,-bugprone-suspicious-include,-bugprone-easily-swappable-parameters,-bugprone-throw-keyword-missing,\
 cert-*,\
 cppcoreguidelines-*,-cppcoreguidelines-avoid-magic-numbers,-cppcoreguidelines-pro-*,-cppcoreguidelines-avoid-non-const-global-variables,-cppcoreguidelines-macro-usage,-cppcoreguidelines-owning-memory,-cppcoreguidelines-avoid-const-or-ref-data-members,-cppcoreguidelines-avoid-do-while,\
+-clang-diagnostic-c++17-compat-mangling,\
 misc-*,-misc-non-private-member-variables-in-classes,-misc-no-recursion,-misc-const-correctness,\
 modernize-*,-modernize-use-trailing-return-type,-modernize-pass-by-value,-modernize-use-auto,-modernize-raw-string-literal,-modernize-use-nodiscard,-modernize-avoid-bind,-modernize-unary-static-assert,-modernize-macro-to-enum,\
 performance-*,-performance-unnecessary-value-param,\

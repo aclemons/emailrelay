@@ -33,22 +33,22 @@
 #include <string>
 #include <functional>
 
-GSmtp::ServerPeer::ServerPeer( GNet::ExceptionSinkUnbound esu ,
+GSmtp::ServerPeer::ServerPeer( GNet::EventStateUnbound esu ,
 	GNet::ServerPeerInfo && peer_info , Server & server , bool enabled , VerifierFactoryBase & vf ,
 	const GAuth::SaslServerSecrets & server_secrets , const Server::Config & server_config ,
 	std::unique_ptr<ServerProtocol::Text> ptext ) :
-		GNet::ServerPeer(esu.bind(this),std::move(peer_info),GNet::LineBuffer::Config::transparent()) ,
+		GNet::ServerPeer(esbind(esu,this),std::move(peer_info),GNet::LineBuffer::Config::transparent()) ,
 		m_server(server) ,
 		m_server_config(server_config) ,
-		m_block(std::bind(&ServerPeer::onDnsBlockResult,this,std::placeholders::_1),esu.bind(this),server_config.dnsbl_config) ,
-		m_check_timer(*this,&ServerPeer::onCheckTimeout,esu.bind(this)) ,
-		m_verifier(vf.newVerifier(esu.bind(this),server_config.verifier_config,server_config.verifier_spec)) ,
-		m_pmessage(server.newProtocolMessage(esu.bind(this))) ,
+		m_block(std::bind(&ServerPeer::onDnsBlockResult,this,std::placeholders::_1),esbind(esu,this),server_config.dnsbl_config) ,
+		m_check_timer(*this,&ServerPeer::onCheckTimeout,esbind(esu,this)) ,
+		m_verifier(vf.newVerifier(esbind(esu,this),server_config.verifier_config,server_config.verifier_spec)) ,
+		m_pmessage(server.newProtocolMessage(esbind(esu,this))) ,
 		m_ptext(ptext.release()) ,
 		m_protocol(*this,*m_verifier,*m_pmessage,server_secrets,
 			*m_ptext,peerAddress(),
 			server_config.protocol_config,enabled) ,
-		m_input_buffer(esu.bind(this),m_protocol,server_config.buffer_config)
+		m_input_buffer(esbind(esu,this),m_protocol,server_config.buffer_config)
 {
 	G_LOG_S( "GSmtp::ServerPeer: smtp connection from " << peerAddress().displayString() ) ;
 
@@ -172,7 +172,7 @@ void GSmtp::ServerPeer::onCheckTimeout()
 
 // ===
 
-GSmtp::Server::Server( GNet::ExceptionSink es , GStore::MessageStore & store , FilterFactoryBase & ff ,
+GSmtp::Server::Server( GNet::EventState es , GStore::MessageStore & store , FilterFactoryBase & ff ,
 	VerifierFactoryBase & vf , const GAuth::SaslClientSecrets & client_secrets ,
 	const GAuth::SaslServerSecrets & server_secrets , const Config & server_config ,
 	const std::string & forward_to , int forward_to_family ,
@@ -215,7 +215,7 @@ void GSmtp::Server::report( const std::string & group ) const
 	serverReport( group ) ; // base class
 }
 
-std::unique_ptr<GNet::ServerPeer> GSmtp::Server::newPeer( GNet::ExceptionSinkUnbound esu ,
+std::unique_ptr<GNet::ServerPeer> GSmtp::Server::newPeer( GNet::EventStateUnbound esu ,
 	GNet::ServerPeerInfo && peer_info , GNet::MultiServer::ServerInfo )
 {
 	using G::format ;
@@ -241,7 +241,7 @@ std::unique_ptr<GNet::ServerPeer> GSmtp::Server::newPeer( GNet::ExceptionSinkUnb
 	{
 		G_WARNING( "GSmtp::Server: new connection error: " << e.what() ) ;
 	}
-	return std::unique_ptr<GNet::ServerPeer>( ptr.release() ) ; // up-cast
+	return ptr ;
 }
 
 GSmtp::Server::Config GSmtp::Server::serverConfig() const
@@ -270,7 +270,7 @@ std::unique_ptr<GSmtp::ServerProtocol::Text> GSmtp::Server::newProtocolText( boo
 		domain , peer_address ) ;
 }
 
-std::unique_ptr<GSmtp::Filter> GSmtp::Server::newFilter( GNet::ExceptionSink es ) const
+std::unique_ptr<GSmtp::Filter> GSmtp::Server::newFilter( GNet::EventState es ) const
 {
 	return m_ff.newFilter( es , Filter::Type::server , m_server_config.filter_config ,
 		m_server_config.filter_spec ) ;
@@ -281,7 +281,7 @@ std::unique_ptr<GSmtp::ProtocolMessage> GSmtp::Server::newProtocolMessageStore( 
 	return std::make_unique<ProtocolMessageStore>( m_store , std::move(filter) ) ;
 }
 
-std::unique_ptr<GSmtp::ProtocolMessage> GSmtp::Server::newProtocolMessageForward( GNet::ExceptionSink es ,
+std::unique_ptr<GSmtp::ProtocolMessage> GSmtp::Server::newProtocolMessageForward( GNet::EventState es ,
 	std::unique_ptr<ProtocolMessage> pm )
 {
 	// wrap the given 'store' object in a 'forward' one
@@ -289,7 +289,7 @@ std::unique_ptr<GSmtp::ProtocolMessage> GSmtp::Server::newProtocolMessageForward
 		m_client_secrets , m_forward_to , m_forward_to_family ) ; // up-cast
 }
 
-std::unique_ptr<GSmtp::ProtocolMessage> GSmtp::Server::newProtocolMessage( GNet::ExceptionSink es )
+std::unique_ptr<GSmtp::ProtocolMessage> GSmtp::Server::newProtocolMessage( GNet::EventState es )
 {
 	const bool do_forward = ! m_forward_to.empty() ;
 	return do_forward ?

@@ -25,7 +25,7 @@
 #include "gstr.h"
 #include "glog.h"
 
-GSmtp::ProtocolMessageForward::ProtocolMessageForward( GNet::ExceptionSink es ,
+GSmtp::ProtocolMessageForward::ProtocolMessageForward( GNet::EventState es ,
 	GStore::MessageStore & store , FilterFactoryBase & ff , std::unique_ptr<ProtocolMessage> pm ,
 	const GSmtp::Client::Config & client_config ,
 	const GAuth::SaslClientSecrets & client_secrets ,
@@ -167,7 +167,7 @@ std::string GSmtp::ProtocolMessageForward::forward( const GStore::MessageId & id
 		{
 			if( m_client_ptr.get() == nullptr )
 			{
-				m_client_ptr.reset( std::make_unique<Forward>( GNet::ExceptionSink(m_client_ptr,m_es.esrc()),
+				m_client_ptr.reset( std::make_unique<Forward>( m_es.eh(m_client_ptr) ,
 					m_ff , m_client_location , m_client_secrets , m_client_config ) ) ;
 
 				m_client_ptr->messageDoneSignal().connect( G::Slot::slot( *this ,

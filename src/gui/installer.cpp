@@ -813,7 +813,7 @@ void CreateSecrets::run()
 	{
 		if( !m_template.empty() && G::File::exists(m_template) )
 		{
-			std::ifstream file( m_template.cstr() ) ;
+			std::ifstream file( m_template.iopath() ) ;
 			while( file.good() )
 			{
 				std::string line = G::Str::readLineFrom( file ) ;

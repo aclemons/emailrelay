@@ -83,7 +83,7 @@ struct TestServerConfig
 class Peer : public GNet::ServerPeer
 {
 public:
-	Peer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo && , TestServerConfig ) ;
+	Peer( GNet::EventStateUnbound , GNet::ServerPeerInfo && , TestServerConfig ) ;
 	void onDelete( const std::string & ) override ;
 	void onSendComplete() override ;
 	bool onReceive( const char * , std::size_t , std::size_t , std::size_t , char ) override ;
@@ -94,7 +94,7 @@ private:
 	void onPauseTimeout() ;
 
 private:
-	GNet::ExceptionSink m_es ;
+	GNet::EventState m_es ;
 	TestServerConfig m_config ;
 	GNet::Timer<Peer> m_pause_timer ;
 	bool m_in_data ;
@@ -106,9 +106,9 @@ private:
 class Server : public GNet::Server
 {
 public:
-	Server( GNet::ExceptionSink , TestServerConfig ) ;
+	Server( GNet::EventState , TestServerConfig ) ;
 	~Server() override ;
-	std::unique_ptr<GNet::ServerPeer> newPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo && ) override ;
+	std::unique_ptr<GNet::ServerPeer> newPeer( GNet::EventStateUnbound , GNet::ServerPeerInfo && ) override ;
 	TestServerConfig m_config ;
 	static GNet::Address address( const TestServerConfig & config )
 	{
@@ -118,7 +118,7 @@ public:
 	}
 } ;
 
-Server::Server( GNet::ExceptionSink es , TestServerConfig config ) :
+Server::Server( GNet::EventState es , TestServerConfig config ) :
 	GNet::Server(es,
 		GNet::Address(address(config)) ,
 		GNet::ServerPeer::Config()
@@ -134,7 +134,7 @@ Server::~Server()
 	serverCleanup() ; // base class early cleanup
 }
 
-std::unique_ptr<GNet::ServerPeer> Server::newPeer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo && peer_info )
+std::unique_ptr<GNet::ServerPeer> Server::newPeer( GNet::EventStateUnbound esu , GNet::ServerPeerInfo && peer_info )
 {
 	try
 	{
@@ -150,9 +150,9 @@ std::unique_ptr<GNet::ServerPeer> Server::newPeer( GNet::ExceptionSinkUnbound es
 
 //
 
-Peer::Peer( GNet::ExceptionSinkUnbound esu , GNet::ServerPeerInfo && peer_info , TestServerConfig config ) :
-	GNet::ServerPeer(esu.bind(this),std::move(peer_info),GNet::LineBuffer::Config::smtp()) ,
-	m_es(esu.bind(this)) ,
+Peer::Peer( GNet::EventStateUnbound esu , GNet::ServerPeerInfo && peer_info , TestServerConfig config ) :
+	GNet::ServerPeer(esbind(esu,this),std::move(peer_info),GNet::LineBuffer::Config::smtp()) ,
+	m_es(esbind(esu,this)) ,
 	m_config(config) ,
 	m_pause_timer(*this,&Peer::onPauseTimeout,m_es) ,
 	m_in_data(false) ,
@@ -419,7 +419,7 @@ int main( int argc , char * argv [] )
 			}
 
 			auto event_loop = GNet::EventLoop::create() ;
-			GNet::ExceptionSink es ;
+			auto es = GNet::EventState::create() ;
 			GNet::TimerList timer_list ;
 			Server server( es , test_config ) ;
 

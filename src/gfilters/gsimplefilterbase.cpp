@@ -22,8 +22,8 @@
 #include "gsimplefilterbase.h"
 #include "gfilestore.h"
 
-GFilters::SimpleFilterBase::SimpleFilterBase( GNet::ExceptionSink es ,
-	Filter::Type filter_type , G::string_view id ) :
+GFilters::SimpleFilterBase::SimpleFilterBase( GNet::EventState es ,
+	Filter::Type filter_type , std::string_view id ) :
 		m_filter_type(filter_type) ,
 		m_id(G::sv_to_string(id)) ,
 		m_timer(*this,&SimpleFilterBase::onTimeout,es)

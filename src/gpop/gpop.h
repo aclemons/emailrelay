@@ -25,7 +25,7 @@
 #include "gpopstore.h"
 #include "gpopserver.h"
 #include "gsecrets.h"
-#include "gexceptionsink.h"
+#include "geventstate.h"
 #include "gpath.h"
 #include <memory>
 
@@ -41,7 +41,7 @@ namespace GPop
 	std::unique_ptr<GAuth::SaslServerSecrets> newSecrets( const std::string & path ) ;
 		///< Creates a new SaslServerSecrets for newStore().
 
-	std::unique_ptr<Server> newServer( GNet::ExceptionSink , Store & ,
+	std::unique_ptr<Server> newServer( GNet::EventState , Store & ,
 		const GAuth::SaslServerSecrets & , const Server::Config & ) ;
 			///< Creates a new server.
 

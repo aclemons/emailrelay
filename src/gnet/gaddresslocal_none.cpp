@@ -54,7 +54,7 @@ GNet::AddressLocal::AddressLocal( const sockaddr * /*addr*/ , socklen_t /*len*/ 
 {
 }
 
-GNet::AddressLocal::AddressLocal( const std::string & /*host_part*/ ) :
+GNet::AddressLocal::AddressLocal( std::string_view /*host_part*/ ) :
 	m_size(0U)
 {
 }
@@ -63,7 +63,7 @@ void GNet::AddressLocal::setPort( unsigned int /*port*/ )
 {
 }
 
-bool GNet::AddressLocal::setZone( const std::string & /*ipv6_zone_name_or_scope_id*/ )
+bool GNet::AddressLocal::setZone( std::string_view /*ipv6_zone_name_or_scope_id*/ )
 {
 	return true ;
 }
@@ -97,17 +97,17 @@ bool GNet::AddressLocal::validData( const sockaddr * /*addr*/ , socklen_t /*len*
 	return false ;
 }
 
-bool GNet::AddressLocal::validString( const std::string & /*path*/ , std::string * reason_p )
+bool GNet::AddressLocal::validString( std::string_view /*path*/ , std::string * reason_p )
 {
 	if( reason_p )
 		*reason_p = "not implemented" ;
 	return false ;
 }
 
-bool GNet::AddressLocal::validStrings( const std::string & /*host_part*/ , const std::string & /*port_part*/ ,
+bool GNet::AddressLocal::validStrings( std::string_view /*host_part*/ , std::string_view /*port_part*/ ,
 	std::string * reason_p )
 {
-	return validString( std::string() , reason_p ) ;
+	return validString( {} , reason_p ) ;
 }
 
 bool GNet::AddressLocal::validPort( unsigned int /*port*/ )

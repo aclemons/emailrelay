@@ -55,24 +55,24 @@ public:
 	~SaslClient() ;
 		///< Destructor.
 
-	bool validSelector( G::string_view selector ) const ;
+	bool validSelector( std::string_view selector ) const ;
 		///< Returns true if the selector is valid.
 
-	bool mustAuthenticate( G::string_view selector ) const ;
+	bool mustAuthenticate( std::string_view selector ) const ;
 		///< Returns true if authentication is required.
 
-	Response response( G::string_view mechanism , G::string_view challenge , G::string_view selector ) const ;
+	Response response( std::string_view mechanism , std::string_view challenge , std::string_view selector ) const ;
 		///< Returns a response to the given challenge. The mechanism is
 		///< used to choose the appropriate entry in the secrets file.
 
-	Response initialResponse( G::string_view selector , std::size_t limit = 0U ) const ;
+	Response initialResponse( std::string_view selector , std::size_t limit = 0U ) const ;
 		///< Returns an optional initial response. Always returns the empty
 		///< string if the mechanism is 'server-first'. Returns the empty
 		///< string, with no side-effects, if the initial response is longer
 		///< than the specified limit. Zero-length initial-responses are not
 		///< distinguishable from absent initial-responses.
 
-	std::string mechanism( const G::StringArray & mechanisms , G::string_view selector ) const ;
+	std::string mechanism( const G::StringArray & mechanisms , std::string_view selector ) const ;
 		///< Returns the name of the preferred mechanism taken from the given
 		///< set, taking into account what client secrets are available.
 		///< Returns the empty string if none is supported or if not active().

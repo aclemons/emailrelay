@@ -29,7 +29,7 @@
 #include "gstringtoken.h"
 #include "glog.h"
 
-GFilters::MxFilter::MxFilter( GNet::ExceptionSink es , GStore::FileStore & store ,
+GFilters::MxFilter::MxFilter( GNet::EventState es , GStore::FileStore & store ,
 	Filter::Type filter_type , const Filter::Config & filter_config , const std::string & spec ) :
 		m_es(es) ,
 		m_store(store) ,
@@ -39,7 +39,9 @@ GFilters::MxFilter::MxFilter( GNet::ExceptionSink es , GStore::FileStore & store
 		m_id("mx:") ,
 		m_timer(*this,&MxFilter::onTimeout,es)
 {
-	if( !MxLookup::enabled() )
+	if( MxLookup::enabled() )
+		m_mxlookup_config = parseSpec( m_spec , m_mxlookup_nameservers ) ;
+	else
 		throw G::Exception( "mx: not enabled at build time" ) ;
 }
 
@@ -65,7 +67,7 @@ void GFilters::MxFilter::start( const GStore::MessageId & message_id )
 		G_LOG( "GFilters::MxFilter::start: " << prefix() << " looking up [" << domain << "]" ) ;
 
 		if( m_lookup ) m_lookup->doneSignal().disconnect() ;
-		m_lookup = std::make_unique<MxLookup>( m_es , mxconfig(m_spec) , mxnameservers(m_spec) ) ;
+		m_lookup = std::make_unique<MxLookup>( m_es , m_mxlookup_config , m_mxlookup_nameservers ) ;
 		m_lookup->doneSignal().connect( G::Slot::slot(*this,&MxFilter::lookupDone) ) ;
 
 		m_lookup->start( message_id , domain , port ) ;
@@ -156,35 +158,25 @@ GStore::FileStore::State GFilters::MxFilter::storestate() const
 		GStore::FileStore::State::Locked ;
 }
 
-// TODO combine mxconfig() and mxnameservers() to better report errors (fr #36)
 
-GFilters::MxLookup::Config GFilters::MxFilter::mxconfig( const std::string & spec )
+GFilters::MxLookup::Config GFilters::MxFilter::parseSpec( std::string_view spec , std::vector<GNet::Address> & nameservers_out )
 {
 	MxLookup::Config config ;
-	G::string_view spec_sv = spec ;
-	for( G::StringTokenView t(spec_sv,";",1U) ; t ; ++t )
+	for( G::StringTokenView t(spec,";",1U) ; t ; ++t )
 	{
-		if( t().find("nst=") == 0U && t().size() > 4U )
-			config.ns_timeout = G::TimeInterval( G::Str::toUInt(t().substr(4U),"1") ) ;
-		else if( t().find("rt=") == 0U && t().size() > 3U )
-			config.restart_timeout = G::TimeInterval( G::Str::toUInt(t().substr(3U),"15") ) ;
+		std::string_view s = t() ;
+		if( s.find("nst=") == 0U && s.size() > 4U && G::Str::isUInt(s.substr(4U)) )
+			config.ns_timeout = G::TimeInterval( G::Str::toUInt(s.substr(4U)) ) ;
+		else if( s.find("rt=") == 0U && s.size() > 3U && G::Str::isUInt(s.substr(3U)) )
+			config.restart_timeout = G::TimeInterval( G::Str::toUInt(s.substr(3U)) ) ;
+		else if( GNet::Address::validString( s ) )
+			nameservers_out.push_back( GNet::Address::parse( s ) ) ;
+		else if( GNet::Address::validStrings( s , "53" ) )
+			nameservers_out.push_back( GNet::Address::parse( s , "53" ) ) ;
+		else
+			G_WARNING_ONCE( "GFilters::MxFilter::parseSpec: invalid mx filter configuration: ignoring [" << G::Str::printable(s) << "]" ) ;
 	}
 	return config ;
-}
-
-std::vector<GNet::Address> GFilters::MxFilter::mxnameservers( const std::string & spec )
-{
-	std::vector<GNet::Address> result ;
-	G::string_view spec_sv = spec ;
-	for( G::StringTokenView t(spec_sv,";",1U) ; t ; ++t )
-	{
-		std::string s = G::sv_to_string( t() ) ;
-		if( GNet::Address::validString( s ) )
-			result.push_back( GNet::Address::parse( s ) ) ;
-		else if( GNet::Address::validStrings( s , "53" ) )
-			result.push_back( GNet::Address::parse( s , "53" ) ) ;
-	}
-	return result.empty() ? GNet::nameservers(53U) : result ;
 }
 
 std::string GFilters::MxFilter::parseForwardToDomain( const std::string & forward_to )

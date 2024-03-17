@@ -49,13 +49,13 @@ class GPop::ServerPeer : public GNet::ServerPeer , private ServerProtocol::Sende
 public:
 	G_EXCEPTION( SendError , tx("network send error") ) ;
 
-	ServerPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo && , Store & ,
+	ServerPeer( GNet::EventStateUnbound , GNet::ServerPeerInfo && , Store & ,
 		const GAuth::SaslServerSecrets & , const std::string & sasl_server_config ,
 		std::unique_ptr<ServerProtocol::Text> ptext , const ServerProtocol::Config & ) ;
 			///< Constructor.
 
 private: // overrides
-	bool protocolSend( G::string_view , std::size_t ) override ; // Override from GPop::ServerProtocol::Sender.
+	bool protocolSend( std::string_view , std::size_t ) override ; // Override from GPop::ServerProtocol::Sender.
 	void onDelete( const std::string & ) override ; // Override from GNet::ServerPeer.
 	bool onReceive( const char * , std::size_t , std::size_t , std::size_t , char ) override ; // Override from GNet::ServerPeer.
 	void onSecure( const std::string & , const std::string & , const std::string & ) override ; // Override from GNet::SocketProtocolSink.
@@ -104,7 +104,7 @@ public:
 		Config & set_sasl_server_challenge_domain( const std::string & ) ;
 	} ;
 
-	Server( GNet::ExceptionSink , Store & store , const GAuth::SaslServerSecrets & , const Config & ) ;
+	Server( GNet::EventState , Store & store , const GAuth::SaslServerSecrets & , const Config & ) ;
 		///< Constructor. The 'secrets' reference is kept.
 
 	~Server() override ;
@@ -114,7 +114,7 @@ public:
 		///< Generates helpful diagnostics after construction.
 
 private: // overrides
-	std::unique_ptr<GNet::ServerPeer> newPeer( GNet::ExceptionSinkUnbound , GNet::ServerPeerInfo && , GNet::MultiServer::ServerInfo ) override ;
+	std::unique_ptr<GNet::ServerPeer> newPeer( GNet::EventStateUnbound , GNet::ServerPeerInfo && , GNet::MultiServer::ServerInfo ) override ;
 
 public:
 	Server( const Server & ) = delete ;

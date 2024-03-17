@@ -113,10 +113,11 @@ am__libgnet_a_SOURCES_DIST = gaddress.cpp gaddress.h gaddress4.h \
 	gclient.cpp gclient.h gclientptr.cpp gclientptr.h \
 	gconnection.cpp gconnection.h gdescriptor.h gdnsmessage.h \
 	gdnsmessage.cpp gevent.h geventemitter.cpp geventemitter.h \
-	geventhandler.cpp geventhandler.h geventloggingcontext.cpp \
+	geventhandler.cpp geventhandler.h geventlogging.cpp \
+	geventlogging.h geventloggingcontext.cpp \
 	geventloggingcontext.h geventloop.cpp geventloop.h \
-	gexceptionhandler.cpp gexceptionhandler.h gexceptionsink.cpp \
-	gexceptionsink.h gexceptionsource.cpp gexceptionsource.h \
+	gexceptionhandler.cpp gexceptionhandler.h geventstate.cpp \
+	geventstate.h gexceptionsource.cpp gexceptionsource.h \
 	gfutureevent.h ginterfaces.h glinebuffer.cpp glinebuffer.h \
 	glinestore.cpp glinestore.h glistener.h glocal.cpp glocal.h \
 	glocation.cpp glocation.h gmonitor.cpp gmonitor.h \
@@ -128,25 +129,26 @@ am__libgnet_a_SOURCES_DIST = gaddress.cpp gaddress.h gaddress4.h \
 	gtimer.cpp gtimer.h gtimerlist.cpp gtimerlist.h gdnsbl.h \
 	gdnsbl_disabled.cpp gdnsbl_enabled.cpp gdnsblock.h \
 	gdnsblock.cpp geventloop_select.cpp geventloop_epoll.cpp \
-	geventloophandles.h geventloophandles_st.cpp \
-	ginterfaces_none.cpp ginterfaces_unix.cpp \
-	ginterfaces_common.cpp ginterfaces_win32.cpp \
-	gdescriptor_unix.cpp gfutureevent_unix.cpp \
-	gnameservers_unix.cpp gsocket_unix.cpp gdescriptor_win32.cpp \
-	geventloop_win32.cpp gfutureevent_win32.cpp \
-	gnameservers_win32.cpp gsocket_win32.cpp \
-	gaddresslocal_none.cpp gaddresslocal_unix.cpp
+	geventloophandles.h geventloophandles.cpp ginterfaces_none.cpp \
+	ginterfaces_unix.cpp ginterfaces_common.cpp \
+	ginterfaces_win32.cpp gdescriptor_unix.cpp \
+	gfutureevent_unix.cpp gnameservers_unix.cpp gsocket_unix.cpp \
+	gdescriptor_win32.cpp geventloop_win32.cpp \
+	gfutureevent_win32.cpp gnameservers_win32.cpp \
+	gsocket_win32.cpp gaddresslocal_none.cpp \
+	gaddresslocal_unix.cpp
 am__objects_1 = gaddress.$(OBJEXT) gaddress4.$(OBJEXT) \
 	gaddress6.$(OBJEXT) gclient.$(OBJEXT) gclientptr.$(OBJEXT) \
 	gconnection.$(OBJEXT) gdnsmessage.$(OBJEXT) \
 	geventemitter.$(OBJEXT) geventhandler.$(OBJEXT) \
-	geventloggingcontext.$(OBJEXT) geventloop.$(OBJEXT) \
-	gexceptionhandler.$(OBJEXT) gexceptionsink.$(OBJEXT) \
-	gexceptionsource.$(OBJEXT) glinebuffer.$(OBJEXT) \
-	glinestore.$(OBJEXT) glocal.$(OBJEXT) glocation.$(OBJEXT) \
-	gmonitor.$(OBJEXT) gmultiserver.$(OBJEXT) gnetdone.$(OBJEXT) \
-	gresolver.$(OBJEXT) gresolverfuture.$(OBJEXT) \
-	gserver.$(OBJEXT) gserverpeer.$(OBJEXT) gsocket.$(OBJEXT) \
+	geventlogging.$(OBJEXT) geventloggingcontext.$(OBJEXT) \
+	geventloop.$(OBJEXT) gexceptionhandler.$(OBJEXT) \
+	geventstate.$(OBJEXT) gexceptionsource.$(OBJEXT) \
+	glinebuffer.$(OBJEXT) glinestore.$(OBJEXT) glocal.$(OBJEXT) \
+	glocation.$(OBJEXT) gmonitor.$(OBJEXT) gmultiserver.$(OBJEXT) \
+	gnetdone.$(OBJEXT) gresolver.$(OBJEXT) \
+	gresolverfuture.$(OBJEXT) gserver.$(OBJEXT) \
+	gserverpeer.$(OBJEXT) gsocket.$(OBJEXT) \
 	gsocketprotocol.$(OBJEXT) gsocks.$(OBJEXT) gtask.$(OBJEXT) \
 	gtimer.$(OBJEXT) gtimerlist.$(OBJEXT)
 @GCONFIG_DNSBL_FALSE@am__objects_2 = gdnsbl_disabled.$(OBJEXT)
@@ -154,7 +156,7 @@ am__objects_1 = gaddress.$(OBJEXT) gaddress4.$(OBJEXT) \
 @GCONFIG_DNSBL_TRUE@	gdnsblock.$(OBJEXT)
 @GCONFIG_EPOLL_FALSE@@GCONFIG_WINDOWS_FALSE@am__objects_3 = geventloop_select.$(OBJEXT)
 @GCONFIG_EPOLL_TRUE@@GCONFIG_WINDOWS_FALSE@am__objects_3 = geventloop_epoll.$(OBJEXT)
-@GCONFIG_WINDOWS_TRUE@am__objects_3 = geventloophandles_st.$(OBJEXT)
+@GCONFIG_WINDOWS_TRUE@am__objects_3 = geventloophandles.$(OBJEXT)
 @GCONFIG_INTERFACE_NAMES_FALSE@am__objects_4 =  \
 @GCONFIG_INTERFACE_NAMES_FALSE@	ginterfaces_none.$(OBJEXT)
 @GCONFIG_INTERFACE_NAMES_TRUE@@GCONFIG_WINDOWS_FALSE@am__objects_4 = ginterfaces_unix.$(OBJEXT) \
@@ -224,12 +226,13 @@ am__depfiles_remade = ./$(DEPDIR)/gaddress.Po ./$(DEPDIR)/gaddress4.Po \
 	./$(DEPDIR)/gdnsbl_disabled.Po ./$(DEPDIR)/gdnsbl_enabled.Po \
 	./$(DEPDIR)/gdnsblock.Po ./$(DEPDIR)/gdnsmessage.Po \
 	./$(DEPDIR)/geventemitter.Po ./$(DEPDIR)/geventhandler.Po \
+	./$(DEPDIR)/geventlogging.Po \
 	./$(DEPDIR)/geventloggingcontext.Po ./$(DEPDIR)/geventloop.Po \
 	./$(DEPDIR)/geventloop_epoll.Po \
 	./$(DEPDIR)/geventloop_select.Po \
 	./$(DEPDIR)/geventloop_win32.Po \
-	./$(DEPDIR)/geventloophandles_st.Po \
-	./$(DEPDIR)/gexceptionhandler.Po ./$(DEPDIR)/gexceptionsink.Po \
+	./$(DEPDIR)/geventloophandles.Po ./$(DEPDIR)/geventstate.Po \
+	./$(DEPDIR)/gexceptionhandler.Po \
 	./$(DEPDIR)/gexceptionsource.Po \
 	./$(DEPDIR)/gfutureevent_unix.Po \
 	./$(DEPDIR)/gfutureevent_win32.Po \
@@ -454,14 +457,16 @@ COMMON_SOURCES = \
 	geventemitter.h \
 	geventhandler.cpp \
 	geventhandler.h \
+	geventlogging.cpp \
+	geventlogging.h \
 	geventloggingcontext.cpp \
 	geventloggingcontext.h \
 	geventloop.cpp \
 	geventloop.h \
 	gexceptionhandler.cpp \
 	gexceptionhandler.h \
-	gexceptionsink.cpp \
-	gexceptionsink.h \
+	geventstate.cpp \
+	geventstate.h \
 	gexceptionsource.cpp \
 	gexceptionsource.h \
 	gfutureevent.h \
@@ -635,7 +640,7 @@ COMMON_SOURCES = \
 # -- EVENTLOOP
 @GCONFIG_WINDOWS_TRUE@EVENTLOOP_SOURCES = \
 @GCONFIG_WINDOWS_TRUE@	geventloophandles.h \
-@GCONFIG_WINDOWS_TRUE@	geventloophandles_st.cpp
+@GCONFIG_WINDOWS_TRUE@	geventloophandles.cpp
 
 @GCONFIG_EPOLL_FALSE@@GCONFIG_WINDOWS_FALSE@EVENTLOOP_EXTRA_SOURCES = \
 @GCONFIG_EPOLL_FALSE@@GCONFIG_WINDOWS_FALSE@	geventloop_epoll.cpp
@@ -647,12 +652,12 @@ COMMON_SOURCES = \
 @GCONFIG_EPOLL_FALSE@@GCONFIG_WINDOWS_FALSE@EVENTLOOP_EXTRA_DIST = \
 @GCONFIG_EPOLL_FALSE@@GCONFIG_WINDOWS_FALSE@	geventloop_epoll.cpp \
 @GCONFIG_EPOLL_FALSE@@GCONFIG_WINDOWS_FALSE@	geventloophandles.h \
-@GCONFIG_EPOLL_FALSE@@GCONFIG_WINDOWS_FALSE@	geventloophandles_st.cpp
+@GCONFIG_EPOLL_FALSE@@GCONFIG_WINDOWS_FALSE@	geventloophandles.cpp
 
 @GCONFIG_EPOLL_TRUE@@GCONFIG_WINDOWS_FALSE@EVENTLOOP_EXTRA_DIST = \
 @GCONFIG_EPOLL_TRUE@@GCONFIG_WINDOWS_FALSE@	geventloop_select.cpp \
 @GCONFIG_EPOLL_TRUE@@GCONFIG_WINDOWS_FALSE@	geventloophandles.h \
-@GCONFIG_EPOLL_TRUE@@GCONFIG_WINDOWS_FALSE@	geventloophandles_st.cpp
+@GCONFIG_EPOLL_TRUE@@GCONFIG_WINDOWS_FALSE@	geventloophandles.cpp
 
 @GCONFIG_WINDOWS_TRUE@EVENTLOOP_EXTRA_DIST = \
 @GCONFIG_WINDOWS_TRUE@	geventloop_epoll.cpp \
@@ -751,14 +756,15 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdnsmessage.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geventemitter.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geventhandler.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geventlogging.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geventloggingcontext.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geventloop.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geventloop_epoll.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geventloop_select.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geventloop_win32.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geventloophandles_st.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geventloophandles.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geventstate.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gexceptionhandler.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gexceptionsink.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gexceptionsource.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfutureevent_unix.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfutureevent_win32.Po@am__quote@ # am--include-marker
@@ -949,14 +955,15 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/gdnsmessage.Po
 	-rm -f ./$(DEPDIR)/geventemitter.Po
 	-rm -f ./$(DEPDIR)/geventhandler.Po
+	-rm -f ./$(DEPDIR)/geventlogging.Po
 	-rm -f ./$(DEPDIR)/geventloggingcontext.Po
 	-rm -f ./$(DEPDIR)/geventloop.Po
 	-rm -f ./$(DEPDIR)/geventloop_epoll.Po
 	-rm -f ./$(DEPDIR)/geventloop_select.Po
 	-rm -f ./$(DEPDIR)/geventloop_win32.Po
-	-rm -f ./$(DEPDIR)/geventloophandles_st.Po
+	-rm -f ./$(DEPDIR)/geventloophandles.Po
+	-rm -f ./$(DEPDIR)/geventstate.Po
 	-rm -f ./$(DEPDIR)/gexceptionhandler.Po
-	-rm -f ./$(DEPDIR)/gexceptionsink.Po
 	-rm -f ./$(DEPDIR)/gexceptionsource.Po
 	-rm -f ./$(DEPDIR)/gfutureevent_unix.Po
 	-rm -f ./$(DEPDIR)/gfutureevent_win32.Po
@@ -1050,14 +1057,15 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/gdnsmessage.Po
 	-rm -f ./$(DEPDIR)/geventemitter.Po
 	-rm -f ./$(DEPDIR)/geventhandler.Po
+	-rm -f ./$(DEPDIR)/geventlogging.Po
 	-rm -f ./$(DEPDIR)/geventloggingcontext.Po
 	-rm -f ./$(DEPDIR)/geventloop.Po
 	-rm -f ./$(DEPDIR)/geventloop_epoll.Po
 	-rm -f ./$(DEPDIR)/geventloop_select.Po
 	-rm -f ./$(DEPDIR)/geventloop_win32.Po
-	-rm -f ./$(DEPDIR)/geventloophandles_st.Po
+	-rm -f ./$(DEPDIR)/geventloophandles.Po
+	-rm -f ./$(DEPDIR)/geventstate.Po
 	-rm -f ./$(DEPDIR)/gexceptionhandler.Po
-	-rm -f ./$(DEPDIR)/gexceptionsink.Po
 	-rm -f ./$(DEPDIR)/gexceptionsource.Po
 	-rm -f ./$(DEPDIR)/gfutureevent_unix.Po
 	-rm -f ./$(DEPDIR)/gfutureevent_win32.Po

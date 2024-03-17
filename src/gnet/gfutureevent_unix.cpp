@@ -34,7 +34,7 @@
 class GNet::FutureEventImp : public EventHandler
 {
 public:
-	FutureEventImp( FutureEventHandler & , ExceptionSink ) ;
+	FutureEventImp( FutureEventHandler & , EventState ) ;
 		// Constructor.
 
 	~FutureEventImp() override ;
@@ -81,7 +81,7 @@ private:
 	bool m_triggered {false} ;
 } ;
 
-GNet::FutureEventImp::FutureEventImp( FutureEventHandler & handler , ExceptionSink es ) :
+GNet::FutureEventImp::FutureEventImp( FutureEventHandler & handler , EventState es ) :
 	m_handler(handler)
 {
 	std::array<int,2U> fds {{ -1 , -1 }} ;
@@ -147,7 +147,7 @@ void GNet::FutureEventImp::readEvent()
 
 // ==
 
-GNet::FutureEvent::FutureEvent( FutureEventHandler & handler , ExceptionSink es ) :
+GNet::FutureEvent::FutureEvent( FutureEventHandler & handler , EventState es ) :
 	m_imp(std::make_unique<FutureEventImp>(handler,es))
 {
 }

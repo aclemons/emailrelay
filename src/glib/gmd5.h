@@ -100,7 +100,7 @@ public:
 		///< A convenience function that returns a digest from
 		///< one input.
 
-	static std::string digest( G::string_view input ) ;
+	static std::string digest( std::string_view input ) ;
 		///< A convenience function that returns a digest from
 		///< one input.
 
@@ -108,7 +108,7 @@ public:
 		///< A convenience function that returns a digest from
 		///< two inputs.
 
-	static std::string digest( G::string_view input_1 , G::string_view input_2 ) ;
+	static std::string digest( std::string_view input_1 , std::string_view input_2 ) ;
 		///< A convenience function that returns a digest from
 		///< two inputs.
 

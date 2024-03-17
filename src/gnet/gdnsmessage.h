@@ -184,11 +184,11 @@ private:
 class GNet::DnsMessageRecordType
 {
 public:
-	static unsigned int value( G::string_view type_name ) ;
+	static unsigned int value( std::string_view type_name ) ;
 		///< Returns the type value for the given type name.
 		///< Throws on error.
 
-	static unsigned int value( G::string_view type_name , std::nothrow_t ) noexcept ;
+	static unsigned int value( std::string_view type_name , std::nothrow_t ) noexcept ;
 		///< Returns the type value for the given type name,
 		///< or zero on error.
 
@@ -248,7 +248,7 @@ public:
 		///< DnsMessage reference, which is then passed
 		///< to copies.
 
-	bool isa( G::string_view ) const noexcept ;
+	bool isa( std::string_view ) const noexcept ;
 		///< Returns true if the type() has the given name().
 
 	unsigned int type() const ;
@@ -363,7 +363,7 @@ public:
 
 private:
 	void addDomainName( const std::string & domain , char sep ) ;
-	void addLabel( G::string_view ) ;
+	void addLabel( std::string_view ) ;
 	void addWord( unsigned int ) ;
 	void addByte( unsigned int ) ;
 

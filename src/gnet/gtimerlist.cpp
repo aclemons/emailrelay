@@ -30,32 +30,29 @@
 #include <functional>
 #include <sstream>
 
-#ifndef G_LIB_SMALL
-GNet::TimerList::Value::Value()
-= default;
-#endif
-
-GNet::TimerList::Value::Value( TimerBase * t , ExceptionSink es ) :
+GNet::TimerList::ListItem::ListItem( TimerBase * t , EventState es ) :
 	m_timer(t) ,
 	m_es(es)
 {
 }
 
-inline bool GNet::TimerList::Value::operator==( const Value & v ) const noexcept
+#ifndef G_LIB_SMALL
+inline bool GNet::TimerList::ListItem::operator==( const ListItem & rhs ) const noexcept
 {
-	return m_timer == v.m_timer ;
+	return m_timer == rhs.m_timer ;
 }
+#endif
 
-inline void GNet::TimerList::Value::resetIf( TimerBase * p ) noexcept
+inline void GNet::TimerList::ListItem::resetIf( TimerBase * p ) noexcept
 {
 	if( m_timer == p )
 		m_timer = nullptr ;
 }
 
-void GNet::TimerList::Value::disarmIf( ExceptionHandler * eh ) noexcept
+void GNet::TimerList::ListItem::disarmIf( ExceptionHandler * eh ) noexcept
 {
 	if( m_es.eh() == eh )
-		m_es.reset() ;
+		m_es.disarm() ;
 }
 
 // ==
@@ -87,7 +84,7 @@ GNet::TimerList::~TimerList()
 		m_this = nullptr ;
 }
 
-void GNet::TimerList::add( TimerBase & t , ExceptionSink es )
+void GNet::TimerList::add( TimerBase & t , EventState es )
 {
 	(m_locked?m_list_added:m_list).emplace_back( &t , es ) ;
 }
@@ -102,8 +99,8 @@ void GNet::TimerList::remove( TimerBase & timer ) noexcept
 
 void GNet::TimerList::removeFrom( List & list , TimerBase * timer_p ) noexcept
 {
-	for( auto & value : list )
-		value.resetIf( timer_p ) ;
+	for( auto & list_item : list )
+		list_item.resetIf( timer_p ) ;
 }
 
 void GNet::TimerList::disarm( ExceptionHandler * eh ) noexcept
@@ -114,8 +111,8 @@ void GNet::TimerList::disarm( ExceptionHandler * eh ) noexcept
 
 void GNet::TimerList::disarmIn( List & list , ExceptionHandler * eh ) noexcept
 {
-	for( auto & value : list )
-		value.disarmIf( eh ) ;
+	for( auto & list_item : list )
+		list_item.disarmIf( eh ) ;
 }
 
 void GNet::TimerList::updateOnStart( TimerBase & timer )
@@ -208,6 +205,14 @@ void GNet::TimerList::mergeAdded()
 {
 	if( !m_list_added.empty() )
 	{
+		// soonest will always be null here because it is reset earlier in
+		// doTimeouts() -- it might not have been reset if there were
+		// no timeouts, but then nothing could have added to the
+		// merge list
+		G_ASSERT( m_soonest == nullptr ) ;
+		if( m_soonest != nullptr && (m_list.size()+m_list_added.size()) > m_list.capacity() )
+			m_soonest = nullptr ; // invalidated by m_list.insert() -- never gets here
+
 		m_list.reserve( m_list.size() + m_list_added.size() ) ;
 		m_list.insert( m_list.end() , m_list_added.begin() , m_list_added.end() ) ;
 		m_list_added.clear() ;
@@ -219,7 +224,13 @@ void GNet::TimerList::purgeRemoved()
 	if( m_removed )
 	{
 		m_removed = false ;
-		m_list.erase( std::remove( m_list.begin() , m_list.end() , Value(nullptr,{}) ) , m_list.end() ) ;
+
+		G_ASSERT( m_soonest == nullptr ) ; // as above
+		if( m_soonest != nullptr )
+			m_soonest = nullptr ; // invalidated by m_list.erase() -- never gets here
+
+		m_list.erase( std::remove_if( m_list.begin() , m_list.end() ,
+			[](const ListItem &v_){ return v_.m_timer == nullptr ; } ) , m_list.end() ) ;
 	}
 }
 
@@ -230,45 +241,51 @@ void GNet::TimerList::doTimeouts()
 	m_adjust = 0 ;
 	G::TimerTime now = G::TimerTime::zero() ; // lazy initialisation to G::TimerTime::now() in G::Timer::expired()
 
+	// move expired timers to the front
 	auto expired_end = std::partition( m_list.begin() , m_list.end() ,
-		[&now](const Value &value){ return value.m_timer != nullptr && value.m_timer->active() && value.m_timer->expired(now) ; } ) ;
+		[&now](const ListItem &li_){ return li_.m_timer != nullptr && li_.m_timer->active() && li_.m_timer->expired(now) ; } ) ;
 
+	// sort expired timers so that they are handled in time order
 	std::sort( m_list.begin() , expired_end ,
-		[](const Value &a,const Value &b){ return a.m_timer->tref() < b.m_timer->tref() ; } ) ;
+		[](const ListItem &a,const ListItem &b){ return a.m_timer->tref() < b.m_timer->tref() ; } ) ;
 
+	// invalidate the soonest pointer, except in the degenerate case where nothing changes
 	if( expired_end != m_list.begin() )
-		m_soonest = nullptr ; // the soonest timer will in the expired list, so invalidate it
+		m_soonest = nullptr ;
 
-	for( List::iterator value_p = m_list.begin() ; value_p != expired_end ; ++value_p )
+	// call each expired timer's handler
+	for( List::iterator item_p = m_list.begin() ; item_p != expired_end ; ++item_p )
 	{
-		if( value_p->m_timer != nullptr && value_p->m_timer->active() && value_p->m_timer->expired(now) ) // still
-			doTimeout( *value_p ) ;
+		// (make sure the timer is still valid and expired in case another timer's handler has changed it)
+		if( item_p->m_timer != nullptr && item_p->m_timer->active() && item_p->m_timer->expired(now) )
+			doTimeout( *item_p ) ;
 	}
 
-	unlock() ; // avoid doing possibly-throwing operations in Lock dtor
+	// unlock the list explicitly to avoid the Lock dtor throwing
+	unlock() ;
 }
 
-void GNet::TimerList::doTimeout( Value & value )
+void GNet::TimerList::doTimeout( ListItem & item )
 {
 	// see also GNet::EventEmitter::raiseEvent()
-	EventLoggingContext set_logging_context( value.m_es.esrc() ) ;
+	EventLoggingContext set_logging_context( item.m_es ) ;
 	try
 	{
-		value.m_timer->doTimeout() ;
+		item.m_timer->doTimeout() ;
 	}
 	catch( GNet::Done & e ) // (caught separately to avoid requiring rtti)
 	{
-		if( value.m_es.set() )
-			value.m_es.call( e , true ) ; // call onException()
+		if( item.m_es.hasExceptionHandler() )
+			item.m_es.doOnException( e , true ) ;
 		else
-			throw ; // (new)
+			throw ;
 	}
 	catch( std::exception & e )
 	{
-		if( value.m_es.set() )
-			value.m_es.call( e , false ) ; // call onException()
+		if( item.m_es.hasExceptionHandler() )
+			item.m_es.doOnException( e , false ) ;
 		else
-			throw ; // (new)
+			throw ;
 	}
 }
 

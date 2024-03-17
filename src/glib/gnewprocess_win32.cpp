@@ -606,7 +606,7 @@ G::NewProcessWaitable::NewProcessWaitable() :
 }
 
 G::NewProcessWaitable::NewProcessWaitable( HANDLE hprocess , HANDLE hpipe , int ) :
-	m_buffer(1024U) ,
+	m_buffer(1024U*4U) ,
 	m_hprocess(hprocess),
 	m_hpipe(hpipe),
 	m_pid(0),
@@ -619,7 +619,7 @@ G::NewProcessWaitable::NewProcessWaitable( HANDLE hprocess , HANDLE hpipe , int 
 
 void G::NewProcessWaitable::assign( HANDLE hprocess , HANDLE hpipe , int )
 {
-	m_buffer.resize( 1024U ) ;
+	m_buffer.resize( 1024U * 4U ) ;
 	m_data_size = 0U ;
 	m_hprocess = hprocess ;
 	m_hpipe = hpipe ;

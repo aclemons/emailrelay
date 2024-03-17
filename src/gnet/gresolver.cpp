@@ -41,7 +41,7 @@
 class GNet::ResolverImp : private FutureEventHandler
 {
 public:
-	ResolverImp( Resolver & , ExceptionSink , const Location & ) ;
+	ResolverImp( Resolver & , EventState , const Location & ) ;
 		// Constructor.
 
 	~ResolverImp() override ;
@@ -86,7 +86,7 @@ private:
 
 std::size_t GNet::ResolverImp::m_zcount = 0U ;
 
-GNet::ResolverImp::ResolverImp( Resolver & resolver , ExceptionSink es , const Location & location ) :
+GNet::ResolverImp::ResolverImp( Resolver & resolver , EventState es , const Location & location ) :
 	m_resolver(&resolver) ,
 	m_future_event(std::make_unique<FutureEvent>(static_cast<FutureEventHandler&>(*this),es)) ,
 	m_timer(*this,&ResolverImp::onTimeout,es) ,
@@ -171,7 +171,7 @@ void GNet::ResolverImp::onTimeout()
 
 // ==
 
-GNet::Resolver::Resolver( Resolver::Callback & callback , ExceptionSink es ) :
+GNet::Resolver::Resolver( Resolver::Callback & callback , EventState es ) :
 	m_callback(callback) ,
 	m_es(es)
 {

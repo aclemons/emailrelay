@@ -25,6 +25,7 @@
 #include "glog.h"
 #include "glogstream.h"
 #include "gprocess.h"
+#include "gpath.h"
 #include "gexception.h"
 #include "gstringview.h"
 #include <string>
@@ -109,7 +110,7 @@ public:
 	} ;
 
 	LogOutput( const std::string & exename , const Config & config ,
-		const std::string & filename = {} ) ;
+		const Path & logfile = {} ) ;
 			///< Constructor. If there is no LogOutput object, or if
 			///< 'config.output_enabled' is false, then there is no
 			///< output at all except for assertions to stderr in a
@@ -134,7 +135,7 @@ public:
 
 	explicit LogOutput( bool output_enabled_and_summary_info ,
 		bool verbose_info_and_debug = true ,
-		const std::string & filename = {} ) ;
+		const Path & logfile = {} ) ;
 			///< Constructor for test programs. Only generates output if the
 			///< first parameter is true. Never uses syslog.
 
@@ -154,7 +155,7 @@ public:
 	bool at( Log::Severity ) const noexcept ;
 		///< Returns true if logging should occur for the given severity level.
 
-	static void context( std::string (*fn)(void*) = nullptr , void * fn_arg = nullptr ) noexcept ;
+	static void context( std::string_view (*fn)(void*) = nullptr , void * fn_arg = nullptr ) noexcept ;
 		///< Sets a functor that is used to provide a context string for
 		///< every log line, if configured. The functor should return
 		///< the context string with trailing punctuation, typically
@@ -201,16 +202,16 @@ public:
 
 private:
 	void osinit() ;
-	void open( const std::string & , bool ) ;
+	void open( const Path & , bool ) ;
 	LogStream & start( Log::Severity ) ;
 	void output( LogStream & , int ) ;
 	void osoutput( int , Log::Severity , char * , std::size_t ) ;
 	void oscleanup() const noexcept ;
 	bool updateTime() ;
-	bool updatePath( const std::string & , std::string & ) const ;
-	std::string makePath( const std::string & ) const ;
+	bool updatePath( const Path & , Path & ) const ;
+	Path makePath( const Path & ) const ;
 	void appendTimeTo( LogStream & ) ;
-	static G::string_view levelString( Log::Severity ) noexcept ;
+	static std::string_view levelString( Log::Severity ) noexcept ;
 	static const char * basename( const char * ) noexcept ;
 
 private:
@@ -221,13 +222,13 @@ private:
 	std::array<char,17U> m_time_buffer {} ;
 	std::array<char,17U> m_time_change_buffer {} ;
 	HANDLE m_handle{0} ; // windows
-	std::string m_path ; // with %d etc
-	std::string m_real_path ;
+	Path m_path ; // with %d etc
+	Path m_real_path ;
 	int m_fd{-1} ;
 	unsigned int m_depth{0U} ;
 	Log::Severity m_severity{Log::Severity::Debug} ;
 	std::size_t m_start_pos{0U} ;
-	std::string (*m_context_fn)(void *){nullptr} ;
+	std::string_view (*m_context_fn)(void *){nullptr} ;
 	void * m_context_fn_arg{nullptr} ;
 } ;
 

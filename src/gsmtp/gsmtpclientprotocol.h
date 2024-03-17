@@ -57,7 +57,7 @@ public:
 	class Sender /// An interface used by ClientProtocol to send protocol messages.
 	{
 	public:
-		virtual bool protocolSend( G::string_view , std::size_t offset , bool go_secure ) = 0 ;
+		virtual bool protocolSend( std::string_view , std::size_t offset , bool go_secure ) = 0 ;
 			///< Called by the Protocol class to send network data to
 			///< the peer.
 			///<
@@ -118,7 +118,7 @@ public:
 		G::StringArray rejects ; // rejected RCPT-TO addresses
 	} ;
 
-	ClientProtocol( GNet::ExceptionSink , Sender & sender ,
+	ClientProtocol( GNet::EventState , Sender & sender ,
 		const GAuth::SaslClientSecrets & secrets , const std::string & sasl_client_config ,
 		const Config & config , bool in_secure_tunnel ) ;
 			///< Constructor. The Sender interface is used to send protocol
@@ -251,13 +251,13 @@ private:
 	bool applyEvent( const ClientReply & event ) ;
 	void raiseDoneSignal( int , const std::string & , const std::string & = {} ) ;
 	void startFiltering() ;
-	static GAuth::SaslClient::Response initialResponse( const GAuth::SaslClient & , G::string_view ) ;
+	static GAuth::SaslClient::Response initialResponse( const GAuth::SaslClient & , std::string_view ) ;
 	//
 	void sendEot() ;
 	void sendCommandLines( const std::string & ) ;
 	void sendRsp( const GAuth::SaslClient::Response & ) ;
-	void send( G::string_view ) ;
-	void send( G::string_view , G::string_view , G::string_view = {} , G::string_view = {} , bool = false ) ;
+	void send( std::string_view ) ;
+	void send( std::string_view , std::string_view , std::string_view = {} , std::string_view = {} , bool = false ) ;
 	std::size_t sendContentLines() ;
 	bool sendNextContentLine( std::string & ) ;
 	void sendEhlo() ;
@@ -268,7 +268,7 @@ private:
 	//
 	bool sendContentLineImp( const std::string & , std::size_t ) ;
 	void sendChunkImp( const char * , std::size_t ) ;
-	bool sendImp( G::string_view , std::size_t sensitive_from = std::string::npos ) ;
+	bool sendImp( std::string_view , std::size_t sensitive_from = std::string::npos ) ;
 
 private:
 	Sender & m_sender ;

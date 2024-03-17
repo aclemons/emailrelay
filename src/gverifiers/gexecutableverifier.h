@@ -38,7 +38,7 @@ namespace GVerifiers
 class GVerifiers::ExecutableVerifier : public GSmtp::Verifier, private GNet::TaskCallback
 {
 public:
-	ExecutableVerifier( GNet::ExceptionSink , const G::Path & , unsigned int timeout ) ;
+	ExecutableVerifier( GNet::EventState , const G::Path & , unsigned int timeout ) ;
 		///< Constructor.
 
 private: // overrides

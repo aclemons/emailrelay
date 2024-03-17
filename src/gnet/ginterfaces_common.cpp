@@ -25,11 +25,13 @@
 #include <algorithm>
 
 #ifndef G_LIB_SMALL
-GNet::Interfaces::Interfaces()
-= default;
+GNet::Interfaces::Interfaces( EventState es ) :
+	m_es(es)
+{
+}
 #endif
 
-GNet::Interfaces::Interfaces( ExceptionSink es , InterfacesHandler & handler ) :
+GNet::Interfaces::Interfaces( EventState es , InterfacesHandler & handler ) :
 	m_es(es) ,
 	m_handler(&handler)
 {
