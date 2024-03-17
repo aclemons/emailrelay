@@ -15,18 +15,11 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // ===
 ///
-/// \file geventloophandles_st.cpp
+/// \file geventloophandles.cpp
 ///
 
 #include "gdef.h"
 #include "geventloophandles.h"
-
-// stubs for no multi-threading...
-
-bool GNet::EventLoopHandlesMt::enabled() noexcept
-{
-	return false ;
-}
 
 GNet::EventLoopHandles::EventLoopHandles()
 = default ;
