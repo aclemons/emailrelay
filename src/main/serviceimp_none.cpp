@@ -24,22 +24,23 @@
 #include "gdef.h"
 #include "serviceimp.h"
 #include "servicecontrol.h"
+#include "gconvert.h"
 #include <iostream>
 
 namespace ServiceImp
 {
-	std::string name_ ;
+	std::string m_name ;
 	constexpr DWORD SERVICE_STOPPED = 1 ; // see winsvc.h
 	constexpr DWORD SERVICE_START_PENDING = 2 ;
 	constexpr DWORD SERVICE_STOP_PENDING = 3 ;
 	constexpr DWORD SERVICE_RUNNING = 4 ;
 }
 
-std::string ServiceImp::install( const std::string & , const std::string & name , const std::string & ,
-	const std::string & )
+std::string ServiceImp::install( const std::string & , const std::string & name ,
+	const std::string & , const std::string & )
 {
 	std::cout << "ServiceImp::install: " << name << std::endl ;
-	name_ = name ;
+	m_name = name ;
 	return {} ;
 }
 
@@ -58,7 +59,7 @@ std::pair<ServiceImp::StatusHandle,DWORD> ServiceImp::statusHandle( const std::s
 DWORD ServiceImp::dispatch( ServiceMainFn fn )
 {
 	sleep( 1 ) ;
-	fn( 1 , name_.c_str() ) ;
+	fn( {m_name} ) ;
 	while( true )
 		sleep( 1 ) ;
 	return 0 ;

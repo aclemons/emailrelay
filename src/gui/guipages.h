@@ -103,6 +103,8 @@ private slots:
 private:
 	QString browse( QString ) ;
 	G::Path normalise( const G::Path & ) const ;
+	void checkCharacterSets() ;
+	bool checkCharacterSet( QString ) ;
 
 private:
 	bool m_installing ;
@@ -122,6 +124,7 @@ private:
 	QString m_runtime_dir_start ;
 	QLineEdit * m_runtime_dir_edit_box ;
 	QPushButton * m_runtime_dir_browse_button ;
+	QLabel * m_notice_label ;
 	bool m_is_mac ;
 	bool m_other_dir_changed ;
 } ;
@@ -418,8 +421,8 @@ private slots:
 
 private:
 	QString format( const Installer::Output & ) ;
-	void addOutput( const Installer::Output & ) ;
-	void replaceOutput( const Installer::Output & ) ;
+	void addLineFromOutput( const Installer::Output & ) ;
+	void replaceLineFromOutput( const Installer::Output & ) ;
 	void addLine( const QString & text ) ;
 	void addText( const QString & text ) ;
 

@@ -48,10 +48,10 @@ dnl --------------------------
 dnl Checks for various functions.
 dnl
 AC_DEFUN([GCONFIG_FN_CHECK_FUNCTIONS],[
-	AC_REQUIRE([GCONFIG_FN_GETPWNAM])
-	AC_REQUIRE([GCONFIG_FN_GETPWNAM_R])
 	AC_REQUIRE([GCONFIG_FN_GETGRNAM])
 	AC_REQUIRE([GCONFIG_FN_GETGRNAM_R])
+	AC_REQUIRE([GCONFIG_FN_GETPWNAM])
+	AC_REQUIRE([GCONFIG_FN_GETPWNAM_R])
 	AC_REQUIRE([GCONFIG_FN_GETTEXT])
 	AC_REQUIRE([GCONFIG_FN_GMTIME_R])
 	AC_REQUIRE([GCONFIG_FN_GMTIME_S])
@@ -72,10 +72,14 @@ AC_DEFUN([GCONFIG_FN_CHECK_FUNCTIONS],[
 	AC_REQUIRE([GCONFIG_FN_EXECVPE])
 	AC_REQUIRE([GCONFIG_FN_SIGPROCMASK])
 	AC_REQUIRE([GCONFIG_FN_PTHREAD_SIGMASK])
+	AC_REQUIRE([GCONFIG_FN_WCSERROR_S])
+	AC_REQUIRE([GCONFIG_FN_WGETENV_S])
 	AC_REQUIRE([GCONFIG_FN_WINDOWS_CREATE_WAITABLE_TIMER_EX])
 	AC_REQUIRE([GCONFIG_FN_WINDOWS_CREATE_EVENT_EX])
 	AC_REQUIRE([GCONFIG_FN_WINDOWS_INIT_COMMON_CONTROLS_EX])
 	AC_REQUIRE([GCONFIG_FN_WINDOWS_STARTUP_INFO_EX])
+	AC_REQUIRE([GCONFIG_FN_WPUTENV_S])
+	AC_REQUIRE([GCONFIG_FN_WSOPEN_S])
 ])
 
 dnl GCONFIG_FN_CHECK_HEADERS
@@ -167,6 +171,7 @@ dnl ----------------------
 dnl Does AC_CHECK_TYPE for common types.
 dnl
 AC_DEFUN([GCONFIG_FN_CHECK_TYPES],[
+	AC_REQUIRE([GCONFIG_FN_TYPE_CHAR8_T])
 	AC_REQUIRE([GCONFIG_FN_TYPE_SOCKLEN_T])
 	AC_REQUIRE([GCONFIG_FN_TYPE_ERRNO_T])
 	AC_REQUIRE([GCONFIG_FN_TYPE_SSIZE_T])
@@ -677,6 +682,21 @@ AC_DEFUN([GCONFIG_FN_ENABLE_WINDOWS],
 		AC_DEFINE(GCONFIG_MINGW,0,[Define true for a windows build using the mingw tool chain])
 	fi
 	AM_CONDITIONAL([GCONFIG_WINDOWS],test "$enable_windows" = "yes" -o "`uname -o 2>/dev/null`" = "Msys")
+])
+
+dnl GCONFIG_FN_ENABLE_WINXP
+dnl -----------------------
+dnl Enables extra tweaks if "--enable-winxp" is used with "--enable-windows".
+dnl Typically used after AC_ARG_ENABLE(winxp).
+dnl
+AC_DEFUN([GCONFIG_FN_ENABLE_WINXP],
+[
+	if test "$enable_winxp" = "yes"
+	then
+		AC_DEFINE(GCONFIG_WINXP,1,[Define true for a winxp windows build])
+	else
+		AC_DEFINE(GCONFIG_WINXP,0,[Define true for a winxp windows build])
+	fi
 ])
 
 dnl GCONFIG_FN_EPOLL
@@ -2480,6 +2500,29 @@ AC_DEFUN([GCONFIG_FN_TLS_OPENSSL],
 	fi
 ])
 
+dnl GCONFIG_FN_TYPE_CHAR8_T
+dnl -----------------------
+dnl Tests for c++20 char8_t.
+dnl
+AC_DEFUN([GCONFIG_FN_TYPE_CHAR8_T],
+[AC_CACHE_CHECK([for char8_t],[gconfig_cv_type_char8_t],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[char8_t c = 0 ;]
+		],
+		[
+		])],
+		gconfig_cv_type_char8_t=yes,
+		gconfig_cv_type_char8_t=no )
+])
+	if test "$gconfig_cv_type_char8_t" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_CHAR8_T,1,[Define true if c++20 char8_t type is defined])
+	else
+		AC_DEFINE(GCONFIG_HAVE_CHAR8_T,0,[Define true if c++20 char8_t type is defined])
+	fi
+])
+
 dnl GCONFIG_FN_TYPE_ERRNO_T
 dnl -----------------------
 dnl Tests for errno_t.
@@ -2755,6 +2798,67 @@ AC_DEFUN([GCONFIG_FN_WARNINGS],
 	done
 ])
 
+dnl GCONFIG_FN_WCSERROR_S
+dnl ---------------------
+dnl Tests for _wcserror_s().
+dnl
+AC_DEFUN([GCONFIG_FN_WCSERROR_S],
+[AC_CACHE_CHECK([for _wcserror_s],[gconfig_cv_wcserror_s],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#ifdef _WIN32]
+				[#include <windows.h>]
+			[#endif]
+			[#include <string.h>]
+			[static wchar_t buffer[2] ;]
+			[static errno_t rc ;]
+			[static int errno = 2 ;]
+		],
+		[
+			[e = _wcserror( buffer , size_t(2U) , errno ) ;]
+		])],
+		gconfig_cv_wcserror_s=yes ,
+		gconfig_cv_wcserror_s=no )
+])
+	if test "$gconfig_cv_wcserror_s" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_WCSERROR_S,1,[Define true if _wcserror_s is available])
+	else
+		AC_DEFINE(GCONFIG_HAVE_WCSERROR_S,0,[Define true if _wcserror_s is available])
+	fi
+])
+
+dnl GCONFIG_FN_WGETENV_S
+dnl --------------------
+dnl Tests for _wgetenv_s().
+dnl
+AC_DEFUN([GCONFIG_FN_WGETENV_S],
+[AC_CACHE_CHECK([for _wgetenv_s],[gconfig_cv_wgetenv_s],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#ifdef _WIN32]
+				[#include <winsock2.h>]
+				[#include <windows.h>]
+				[#include <ws2tcpip.h>]
+			[#endif]
+			[#include <stdlib.h>]
+			[size_t n = 10 ;]
+			[wchar_t buf[10] ;]
+		],
+		[
+			[_wgetenv_s( &n , buf , 10U , L"foo" ) ;]
+		])],
+		gconfig_cv_wgetenv_s=yes ,
+		gconfig_cv_wgetenv_s=no )
+])
+	if test "$gconfig_cv_wgetenv_s" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_WGETENV_S,1,[Define true if _wgetenv_s is available])
+	else
+		AC_DEFINE(GCONFIG_HAVE_WGETENV_S,0,[Define true if _wgetenv_s is available])
+	fi
+])
+
 dnl GCONFIG_FN_WINDOWS_CREATE_EVENT_EX
 dnl -------------------------------------------
 dnl Tests for CreateEventEx().
@@ -2984,5 +3088,63 @@ AC_DEFUN([GCONFIG_FN_WITH_PAM],
 		AC_DEFINE(GCONFIG_HAVE_PAM,0,[Define true to use pam])
 	fi
 	AM_CONDITIONAL([GCONFIG_PAM],[test "$gconfig_use_pam" = "yes"])
+])
+
+dnl GCONFIG_FN_WPUTENV_S
+dnl --------------------
+dnl Tests for _wputenv_s().
+dnl
+AC_DEFUN([GCONFIG_FN_WPUTENV_S],
+[AC_CACHE_CHECK([for _wputenv_s],[gconfig_cv_wputenv_s],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#ifdef _WIN32]
+				[#include <winsock2.h>]
+				[#include <windows.h>]
+				[#include <ws2tcpip.h>]
+			[#endif]
+			[#include <stdlib.h>]
+		],
+		[
+			[_wputenv_s( L"name" , L"value" ) ;]
+		])],
+		gconfig_cv_wputenv_s=yes ,
+		gconfig_cv_wputenv_s=no )
+])
+	if test "$gconfig_cv_wputenv_s" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_WPUTENV_S,1,[Define true if _wputenv_s in stdlib.h])
+	else
+		AC_DEFINE(GCONFIG_HAVE_WPUTENV_S,0,[Define true if _wputenv_s in stdlib.h])
+	fi
+])
+
+dnl GCONFIG_FN_WSOPEN_S
+dnl -------------------
+dnl Defines GCONFIG_HAVE_WSOPEN if _wsopen_s() is available.
+dnl
+AC_DEFUN([GCONFIG_FN_WSOPEN_S],
+[AC_CACHE_CHECK([for _wsopen_s()],[gconfig_cv_wsopen_s],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#include <io.h>]
+			[#include <share.h>]
+			[#include <fcntl.h>]
+			[#include <sys/stat.h>]
+			[int fd = 0 ;]
+		],
+		[
+			[errno_t e = _wsopen_s(&fd,L"foo",_O_WRONLY,_SH_DENYNO,_S_IWRITE) ;]
+			[if( e ) return 1 ;]
+		])],
+		gconfig_cv_wsopen_s=yes ,
+		gconfig_cv_wsopen_s=no )
+])
+	if test "$gconfig_cv_wsopen_s" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_WSOPEN_S,1,[Define true if _wsopen_s() is available])
+	else
+		AC_DEFINE(GCONFIG_HAVE_WSOPEN_S,0,[Define true if _wsopen_s() is available])
+	fi
 ])
 

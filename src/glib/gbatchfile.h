@@ -46,10 +46,13 @@ namespace G
 ///  start "my app" "c:\my app\run.exe" arg-one "arg two"
 /// \endcode
 ///
+/// Batch files always use the OEM code page on Windows but at
+/// this interface it's all UTF-8.
+///
 class G::BatchFile
 {
 public:
-	G_EXCEPTION( Error , tx("batch file error") ) ;
+	G_EXCEPTION_CLASS( Error , tx("batch file error") ) ;
 
 	explicit BatchFile( const Path & ) ;
 		///< Constructor that reads from a file.
@@ -57,9 +60,6 @@ public:
 	BatchFile( const Path & , std::nothrow_t ) ;
 		///< Constructor that reads from a file that might be missing
 		///< or empty.
-
-	explicit BatchFile( std::istream & , const std::string & stream_name = {} ) ;
-		///< Constructor that reads from a stream.
 
 	std::string line() const ;
 		///< Returns the main command-line from within the batchfile, with normalised
@@ -84,10 +84,11 @@ public:
 			///< is the target executable.
 
 private:
+	void init( const Path & ) ;
 	static std::string quote( const std::string & ) ;
 	static std::string percents( const std::string & ) ;
 	static void dequote( std::string & ) ;
-	std::string readFrom( std::istream & , const std::string & , bool ) ;
+	std::string readFrom( std::istream & , const std::string & ) ;
 	static StringArray split( const std::string & ) ;
 	static bool ignorable( const std::string & line ) ;
 	static bool relevant( const std::string & line ) ;

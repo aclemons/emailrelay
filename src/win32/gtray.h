@@ -22,6 +22,7 @@
 #define G_GUI_TRAY_H
 
 #include "gdef.h"
+#include "gnowide.h"
 #include "gwinbase.h"
 #include "gcracker.h"
 #include "gexception.h"
@@ -59,7 +60,7 @@ public:
 	Tray( Tray && ) = delete ;
 
 private:
-	NOTIFYICONDATAA m_info ;
+	G::nowide::NOTIFYICONDATA_type m_info ;
 } ;
 
 #endif

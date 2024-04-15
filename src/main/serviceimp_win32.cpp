@@ -19,42 +19,71 @@
 ///
 
 #include "gdef.h"
+#include "gnowide.h"
 #include "serviceimp.h"
 #include "servicecontrol.h"
 #include <fstream>
 
+namespace ServiceImp
+{
+	ServiceMainFn m_service_main_fn ;
+	HandlerFn m_handler_fn ;
+	void WINAPI Handler( DWORD arg ) ;
+	void WINAPI ServiceMainW( DWORD argc , wchar_t ** argv ) ;
+}
+
+void WINAPI ServiceImp::Handler( DWORD arg )
+{
+	if( ServiceImp::m_handler_fn )
+		ServiceImp::m_handler_fn( arg ) ;
+}
+
+void WINAPI ServiceImp::ServiceMainW( DWORD argc , wchar_t ** argv )
+{
+	G::StringArray args ;
+	for( DWORD i = 0 ; argv != nullptr && i < argc ; i++ )
+	{
+		if( argv[i] )
+			args.push_back( G::Convert::narrow(std::wstring(argv[i])) ) ;
+	}
+	if( ServiceImp::m_service_main_fn )
+		ServiceImp::m_service_main_fn( args ) ;
+}
+
 std::string ServiceImp::install( const std::string & commandline , const std::string & name ,
 	const std::string & display_name , const std::string & description )
 {
+	// see servicecontrol_win32.cpp
 	return service_install( commandline , name , display_name , description , true ) ;
 }
 
 std::string ServiceImp::remove( const std::string & service_name )
 {
+	// see servicecontrol_win32.cpp
 	return service_remove( service_name ) ;
 }
 
 std::pair<ServiceImp::StatusHandle,DWORD> ServiceImp::statusHandle( const std::string & service_name , HandlerFn fn )
 {
+	m_handler_fn = fn ;
+	StatusHandle h = G::nowide::registerServiceCtrlHandlerW( service_name , ServiceImp::Handler ) ;
 	DWORD e = 0 ;
-	StatusHandle h = RegisterServiceCtrlHandlerA( service_name.c_str() , fn ) ;
 	if( h == 0 )
 		e = GetLastError() ;
 	return { h , e } ;
 }
 
-DWORD ServiceImp::dispatch( ServiceMainFn fn )
+DWORD ServiceImp::dispatch( ServiceMainFn service_main_fn )
 {
-	static TCHAR empty[] = { 0 } ;
-	static SERVICE_TABLE_ENTRY table [] = { { empty , fn } , { nullptr , nullptr } } ;
-	bool ok = !! StartServiceCtrlDispatcher( table ) ; // this doesn't return until the service is stopped
+	m_service_main_fn = service_main_fn ;
+	bool ok = G::nowide::startServiceCtrlDispatcherW( ServiceImp::ServiceMainW ) ;
 	DWORD e = GetLastError() ;
 	return ok ? DWORD(0) : e ;
 }
 
 DWORD ServiceImp::setStatus( StatusHandle hservice , DWORD new_state , DWORD timeout_ms ) noexcept
 {
-	SERVICE_STATUS s{} ;
+	SERVICE_STATUS s {} ;
 	s.dwServiceType = SERVICE_WIN32_OWN_PROCESS ;
 	s.dwCurrentState = new_state ;
 	s.dwControlsAccepted = SERVICE_ACCEPT_STOP ;

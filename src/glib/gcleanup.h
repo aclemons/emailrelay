@@ -54,10 +54,11 @@ public:
 	struct Arg /// Opaque leaky string pointer wrapper created by G::Cleanup::arg().
 	{
 		const char * str() const noexcept ;
-		const Path::value_type * path() const noexcept ;
+		bool isPath() const noexcept ;
 		private:
 		friend class G::CleanupImp ;
 		const char * m_ptr {nullptr} ;
+		bool m_is_path {false} ;
 	} ;
 	using Fn = bool (*)(const Arg &) GDEF_FSIG_NOEXCEPT ; // noexcept if c++17
 
@@ -102,8 +103,8 @@ public:
 		///< be passed to the handler.
 
 	static Arg arg( const Path & ) ;
-		///< Duplicates a path for add(). The path's native string pointer will
-		///< be passed to the handler.
+		///< Duplicates a path for add(). The path's string pointer will be
+		///< passed to the handler.
 
 	static Arg arg( std::nullptr_t ) ;
 		///< Duplicates an empty string for add().

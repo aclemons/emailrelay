@@ -71,8 +71,9 @@ sub find_cmake
 
 sub find_qt_x86
 {
-	my $parent_dir = File::Basename::dirname( File::Basename::dirname($0) ) ;
-	my $qt = _find_basic( "find-qt(x86)" , "qt-x86" , $parent_dir ) ; # see qtbuild.pl
+	my $up_dir = File::Basename::dirname( Cwd::realpath(File::Basename::dirname($0)) ) ;
+	my $up_up_dir = File::Basename::dirname( $up_dir ) ;
+	my $qt = _find_basic( "find-qt(x86)" , "qt-bin-x86" , $up_dir , $up_up_dir ) ; # see qtbuild.pl
 	return $qt if $qt ;
 	my @dirs = ( "$ENV{HOMEDRIVE}$ENV{HOMEPATH}/qt" , "$ENV{SystemDrive}/qt" ) ;
 	my $qt_include =
@@ -85,8 +86,9 @@ sub find_qt_x86
 
 sub find_qt_x64
 {
-	my $parent_dir = File::Basename::dirname( File::Basename::dirname($0) ) ;
-	my $qt = _find_basic( "find-qt(x64)" , "qt-x64" , $parent_dir ) ; # see qtbuild.pl
+	my $up_dir = File::Basename::dirname( Cwd::realpath(File::Basename::dirname($0)) ) ;
+	my $up_up_dir = File::Basename::dirname( $up_dir ) ;
+	my $qt = _find_basic( "find-qt(x64)" , "qt-bin-x64" , $up_dir , $up_up_dir ) ; # see qtbuild.pl
 	return $qt if $qt ;
 	my @dirs = ( "$ENV{HOMEDRIVE}$ENV{HOMEPATH}/qt" , "$ENV{SystemDrive}/qt" ) ;
 	my $qt_include =

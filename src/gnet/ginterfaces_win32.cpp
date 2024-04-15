@@ -103,9 +103,7 @@ void GNet::Interfaces::loadImp( EventState es , std::vector<Item> & list )
 		{
 			Item item ;
 			item.name = std::string( p->AdapterName ) ;
-			G::Convert::utf8 altname ;
-			G::Convert::convert( altname , std::wstring(p->FriendlyName) ) ;
-			item.altname = altname.s ;
+			item.altname = G::Convert::narrow( std::wstring(p->FriendlyName) ) ;
 			item.up = p->OperStatus == IfOperStatusUp ;
 			item.loopback = p->IfType == IF_TYPE_SOFTWARE_LOOPBACK ;
 

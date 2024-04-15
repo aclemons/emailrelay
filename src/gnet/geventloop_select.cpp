@@ -79,9 +79,9 @@ private:
 	static void disarmImp( List & , ExceptionHandler * ) noexcept ;
 	static void disarmImp( EventState & , ExceptionHandler * ) noexcept ;
 	static void dropImp( int fd , fd_set & , fd_set & , int & ) noexcept ;
-	static int events( int nfds , fd_set * ) ;
-	static int fdmaxof( int nfds , fd_set * ) ;
-	static int fdmaxof( std::size_t nfds , fd_set * sp ) ;
+	static int events( int nfds , fd_set * ) noexcept ;
+	static int fdmaxof( int nfds , fd_set * ) noexcept ;
+	static int fdmaxof( std::size_t nfds , fd_set * sp ) noexcept ;
 
 private:
 	bool m_quit {false} ;
@@ -192,7 +192,7 @@ void GNet::EventLoopImp::runOnce()
 	G_ASSERT( m_other_list.size() >= std::size_t(m_other_fdmax+1) ) ;
 
 	// do the select() -- use fd_set copies for the select() parameters because select()
-	// modifies them, and in any case our originals can be modified as we iterate over
+	// modifies them, and in any case our originals might be modified as we iterate over
 	// the results and call event handlers
 	//
 	m_read_set_copy = m_read_set ; // (fast)
@@ -249,7 +249,7 @@ void GNet::EventLoopImp::runOnce()
 	}
 }
 
-int GNet::EventLoopImp::events( int nfds , fd_set * sp )
+int GNet::EventLoopImp::events( int nfds , fd_set * sp ) noexcept
 {
 	int n = 0 ;
 	for( int fd = 0 ; fd < nfds ; fd++ )
@@ -260,12 +260,12 @@ int GNet::EventLoopImp::events( int nfds , fd_set * sp )
 	return n ;
 }
 
-inline int GNet::EventLoopImp::fdmaxof( std::size_t nfds , fd_set * sp )
+inline int GNet::EventLoopImp::fdmaxof( std::size_t nfds , fd_set * sp ) noexcept
 {
 	return fdmaxof( static_cast<int>(nfds) , sp ) ;
 }
 
-int GNet::EventLoopImp::fdmaxof( int nfds , fd_set * sp )
+int GNet::EventLoopImp::fdmaxof( int nfds , fd_set * sp ) noexcept
 {
 	int fdmax = -1 ;
 	for( int fd = 0 ; fd < nfds ; fd++ )

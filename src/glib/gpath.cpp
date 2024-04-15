@@ -261,7 +261,7 @@ void G::Path::setWindowsStyle()
 }
 #endif
 
-G::Path::Path()
+G::Path::Path() noexcept(noexcept(std::string()))
 = default;
 
 G::Path::Path( const std::string & path ) :
@@ -417,9 +417,9 @@ std::string G::Path::extension() const
 			m_str.substr( pos+1U ) ;
 }
 
-bool G::Path::replace( const std::string_view & from , const std::string_view & to )
+bool G::Path::replace( const std::string_view & from , const std::string_view & to , bool ex_root )
 {
-	std::size_t startpos = PathImp::rootsize( m_str ) ;
+	std::size_t startpos = ex_root ? PathImp::rootsize(m_str) : 0U ;
 	return G::Str::replace( m_str , from , to , &startpos ) ;
 }
 
@@ -431,13 +431,13 @@ G::StringArray G::Path::split() const
 	return a ;
 }
 
-G::Path G::Path::join( const G::StringArray & a )
+G::Path G::Path::join( const StringArray & a )
 {
 	if( a.empty() ) return {} ;
 	return { PathImp::join(a) } ;
 }
 
-G::Path G::Path::join( const G::Path & p1 , const G::Path & p2 )
+G::Path G::Path::join( const Path & p1 , const Path & p2 )
 {
 	if( p1.empty() )
 	{
@@ -458,7 +458,7 @@ G::Path G::Path::join( const G::Path & p1 , const G::Path & p2 )
 
 G::Path G::Path::collapsed() const
 {
-	const std::string dots = ".." ;
+	auto two_dots = [](const std::string &s_){ return s_.size()==2U && s_[0] == '.' && s_[1] == '.' ; } ;
 
 	StringArray a = split() ;
 	auto start = a.begin() ;
@@ -468,19 +468,19 @@ G::Path G::Path::collapsed() const
 
 	while( start != end )
 	{
-		// step over leading dots -- cannot collapse
-		while( start != end && *start == dots )
+		// step over leading double-dots -- cannot collapse
+		while( start != end && two_dots(*start) )
 			++start ;
 
-		// find collapsable dots
-		auto p_dots = std::find( start , end , dots ) ;
+		// find collapsible double-dots
+		auto p_dots = std::find_if( start , end , two_dots ) ;
 		if( p_dots == end )
-			break ; // no collapsable dots remaining
+			break ; // no collapsible double-dots remaining
 
 		G_ASSERT( p_dots != a.begin() ) ;
 		G_ASSERT( a.size() >= 2U ) ;
 
-		// remove the preceding element and then the dots
+		// remove the preceding element and then the double-dots
 		bool at_start = std::next(start) == p_dots ;
 		auto p = a.erase( a.erase(--p_dots) ) ;
 
@@ -509,8 +509,7 @@ void G::Path::swap( Path & other ) noexcept
 	swap( m_str , other.m_str ) ;
 }
 
-#ifndef G_LIB_SMALL
-bool G::Path::less( const G::Path & a , const G::Path & b )
+bool G::Path::less( const Path & a , const Path & b )
 {
 	StringArray a_parts = a.split() ;
 	StringArray b_parts = b.split() ;
@@ -519,10 +518,8 @@ bool G::Path::less( const G::Path & a , const G::Path & b )
 		b_parts.begin() , b_parts.end() ,
 		[](const std::string & a_,const std::string & b_){return a_.compare(b_) < 0;} ) ;
 }
-#endif
 
-#ifndef G_LIB_SMALL
-G::Path G::Path::difference( const G::Path & root_in , const G::Path & path_in )
+G::Path G::Path::difference( const Path & root_in , const Path & path_in )
 {
 	StringArray path_parts ;
 	StringArray root_parts ;
@@ -543,5 +540,4 @@ G::Path G::Path::difference( const G::Path & root_in , const G::Path & path_in )
 	else
 		return { PathImp::join(p.second,path_parts.end()) } ;
 }
-#endif
 

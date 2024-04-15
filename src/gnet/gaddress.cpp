@@ -224,6 +224,7 @@ GNet::Address & GNet::Address::setPort( unsigned int port )
 	return *this ;
 }
 
+#ifndef G_LIB_SMALL
 bool GNet::Address::setZone( const std::string & ipv6_zone )
 {
 	G_ASSERT( m_ipv4 || m_ipv6 || m_local ) ;
@@ -232,6 +233,7 @@ bool GNet::Address::setZone( const std::string & ipv6_zone )
 	if( m_local ) m_local->setZone( ipv6_zone ) ;
 	return true ;
 }
+#endif
 
 GNet::Address & GNet::Address::setScopeId( unsigned long ipv6_scope_id )
 {
@@ -278,6 +280,7 @@ bool GNet::Address::isLinkLocal() const
 		( m_local && m_local->isLinkLocal() ) ;
 }
 
+#ifndef G_LIB_SMALL
 bool GNet::Address::isMulticast() const
 {
 	G_ASSERT( m_ipv4 || m_ipv6 || m_local ) ;
@@ -286,6 +289,7 @@ bool GNet::Address::isMulticast() const
 		( m_ipv6 && m_ipv6->isMulticast() ) ||
 		( m_local && m_local->isMulticast() ) ;
 }
+#endif
 
 bool GNet::Address::isUniqueLocal() const
 {
@@ -338,6 +342,7 @@ bool GNet::Address::operator!=( const Address & other ) const
 	return !( *this == other ) ;
 }
 
+#ifndef G_LIB_SMALL
 bool GNet::Address::sameHostPart( const Address & other ) const
 {
 	G_ASSERT( m_ipv4 || m_ipv6 || m_local ) ;
@@ -346,6 +351,7 @@ bool GNet::Address::sameHostPart( const Address & other ) const
 		( m_ipv6 && other.m_ipv6 && m_ipv6->sameHostPart(*other.m_ipv6) ) ||
 		( m_local && other.m_local && m_local->sameHostPart(*other.m_local) ) ;
 }
+#endif
 
 std::string GNet::Address::displayString( bool ipv6_with_scope_id ) const
 {
@@ -397,6 +403,7 @@ bool GNet::Address::validStrings( std::string_view s1 , std::string_view s2 , st
 		AddressLocal::validStrings( s1 , s2 , reason_p ) ;
 }
 
+#ifndef G_LIB_SMALL
 sockaddr * GNet::Address::address()
 {
 	G_ASSERT( m_ipv4 || m_ipv6 || m_local ) ;
@@ -405,6 +412,7 @@ sockaddr * GNet::Address::address()
 	if( m_local ) return m_local->address() ;
 	return nullptr ;
 }
+#endif
 
 const sockaddr * GNet::Address::address() const
 {
@@ -543,6 +551,7 @@ socklen_t GNet::AddressStorage::n() const
 
 #if ! GCONFIG_HAVE_INET_PTON
 // fallback implementation for inet_pton() using getaddrinfo() -- see gdef.h
+#ifndef G_LIB_SMALL
 int GNet::inet_pton_imp( int f , const char * p , void * result )
 {
 	if( p == nullptr || result == nullptr ) return 0 ; // just in case
@@ -578,9 +587,11 @@ int GNet::inet_pton_imp( int f , const char * p , void * result )
 	return ok ? 1 : 0 ;
 }
 #endif
+#endif
 
 #if ! GCONFIG_HAVE_INET_NTOP
 // fallback implementation for inet_ntop() using inet_ntoa() for ipv4 and by hand for ipv6 -- see gdef.h
+#ifndef G_LIB_SMALL
 const char * GNet::inet_ntop_imp( int f , void * ap , char * buffer , std::size_t n )
 {
 	std::string s ;
@@ -642,5 +653,6 @@ const char * GNet::inet_ntop_imp( int f , void * ap , char * buffer , std::size_
 	std::strncpy( buffer , s.c_str() , n ) ;
 	return buffer ;
 }
+#endif
 #endif
 

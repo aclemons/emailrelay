@@ -19,6 +19,7 @@
 ///
 
 #include "gdef.h"
+#include "gnowide.h"
 #include "gdialog.h"
 #include "glog.h"
 #include "gassert.h"
@@ -63,7 +64,7 @@ GGui::Dialog::Dialog( const ApplicationBase & app , bool top_level ) :
 void GGui::Dialog::privateInit( HWND hwnd )
 {
 	setHandle( hwnd ) ;
-	SetWindowTextA( handle() , m_title.c_str() ) ;
+	G::nowide::setWindowText( handle() , m_title ) ;
 }
 
 GGui::Dialog::~Dialog()
@@ -86,7 +87,7 @@ void GGui::Dialog::cleanup()
 		G_DEBUG( "GGui::Dialog::cleanup" ) ;
 
 		// reset the object pointer
-		SetWindowLongPtr( handle() , DWLP_USER , LONG_PTR(0) ) ;
+		G::nowide::setWindowLongPtr( handle() , DWLP_USER , LONG_PTR(0) ) ;
 
 		// remove from the modeless list
 		if( !m_modal && find(handle()) != m_list.end() )
@@ -112,7 +113,7 @@ void GGui::Dialog::setFocus( int control )
 LRESULT GGui::Dialog::sendMessage( int control , unsigned int message , WPARAM wparam , LPARAM lparam ) const
 {
 	HWND hwnd_control = GetDlgItem( handle() , control ) ;
-	return SendMessage( hwnd_control , message , wparam , lparam ) ;
+	return G::nowide::sendMessage( hwnd_control , message , wparam , lparam ) ;
 }
 
 INT_PTR GGui::Dialog::dlgProc( HWND hwnd , UINT message , WPARAM wparam , LPARAM lparam )
@@ -120,7 +121,7 @@ INT_PTR GGui::Dialog::dlgProc( HWND hwnd , UINT message , WPARAM wparam , LPARAM
 	if( message == WM_INITDIALOG )
 	{
 		Dialog * dialog = fromLongParam( lparam ) ;
-		SetWindowLongPtr( hwnd , DWLP_USER , toLongPtr(dialog) ) ;
+		G::nowide::setWindowLongPtr( hwnd , DWLP_USER , toLongPtr(dialog) ) ;
 		dialog->privateInit( hwnd ) ;
 		G_DEBUG( "GGui::Dialog::dlgProc: WM_INITDIALOG" ) ;
 		if( !dialog->onInit() )
@@ -141,7 +142,7 @@ INT_PTR GGui::Dialog::dlgProc( HWND hwnd , UINT message , WPARAM wparam , LPARAM
 	}
 	else
 	{
-		Dialog * dialog = fromLongPtr( GetWindowLongPtr(hwnd,DWLP_USER) ) ;
+		Dialog * dialog = fromLongPtr( G::nowide::getWindowLongPtr(hwnd,DWLP_USER) ) ;
 		if( dialog != nullptr )
 			return dialog->dlgProcImp( message , wparam , lparam ) ;
 		else
@@ -293,10 +294,10 @@ void GGui::Dialog::onCommand( UINT id )
 
 bool GGui::Dialog::run( int resource_id )
 {
-	return runStart() && runCore( MAKEINTRESOURCE(resource_id) ) ;
+	return runStart() && runCore( resource_id ) ;
 }
 
-bool GGui::Dialog::run( const char * template_name )
+bool GGui::Dialog::run( std::string_view template_name )
 {
 	return runStart() && runCore( template_name ) ;
 }
@@ -312,20 +313,22 @@ bool GGui::Dialog::runStart()
 	return true ;
 }
 
-bool GGui::Dialog::runCore( const char * resource )
+bool GGui::Dialog::runCore( int resource_id )
 {
 	m_modal = true ;
-	INT_PTR end_dialog_value = DialogBoxParamA( m_hinstance , resource ,
-		m_hwnd_parent , toDlgProc(gdialog_export) , toLongParam(this) ) ;
+	INT_PTR end_dialog_value = G::nowide::dialogBoxParam( m_hinstance ,
+		resource_id , m_hwnd_parent ,
+		toDlgProc(gdialog_export) , toLongParam(this) ) ;
 	int rc = static_cast<int>(end_dialog_value) ;
 	return runEnd( rc ) ;
 }
 
-bool GGui::Dialog::runCore( const wchar_t * resource )
+bool GGui::Dialog::runCore( std::string_view resource )
 {
 	m_modal = true ;
-	INT_PTR end_dialog_value = DialogBoxParamW( m_hinstance , resource ,
-		m_hwnd_parent , toDlgProc(gdialog_export) , toLongParam(this) ) ;
+	INT_PTR end_dialog_value = G::nowide::dialogBoxParam( m_hinstance ,
+		G::sv_to_string(resource) , m_hwnd_parent ,
+		toDlgProc(gdialog_export) , toLongParam(this) ) ;
 	int rc = static_cast<int>(end_dialog_value) ;
 	return runEnd( rc ) ;
 }
@@ -350,26 +353,26 @@ bool GGui::Dialog::runEnd( int rc )
 
 bool GGui::Dialog::runModeless( int resource_id , bool visible )
 {
-	return runStart() && runModelessCore( MAKEINTRESOURCE(resource_id) , visible ) ;
+	return runStart() && runModelessCore( resource_id , visible ) ;
 }
 
-bool GGui::Dialog::runModeless( const char * resource_name , bool visible )
+bool GGui::Dialog::runModeless( std::string_view resource_name , bool visible )
 {
 	return runStart() && runModelessCore( resource_name , visible ) ;
 }
 
-bool GGui::Dialog::runModelessCore( const char * resource , bool visible )
+bool GGui::Dialog::runModelessCore( int resource_id , bool visible )
 {
 	m_modal = false ;
-	HWND hwnd = CreateDialogParamA( m_hinstance , resource ,
+	HWND hwnd = G::nowide::createDialogParam( m_hinstance , resource_id ,
 		m_hwnd_parent , toDlgProc(gdialog_export) , toLongParam(this) ) ;
 	return runModelessEnd( hwnd , visible ) ;
 }
 
-bool GGui::Dialog::runModelessCore( const wchar_t * resource , bool visible )
+bool GGui::Dialog::runModelessCore( std::string_view resource , bool visible )
 {
 	m_modal = false ;
-	HWND hwnd = CreateDialogParamW( m_hinstance , resource ,
+	HWND hwnd = G::nowide::createDialogParam( m_hinstance , G::sv_to_string(resource) ,
 		m_hwnd_parent , toDlgProc(gdialog_export) , toLongParam(this) ) ;
 	return runModelessEnd( hwnd , visible ) ;
 }
@@ -394,7 +397,7 @@ bool GGui::Dialog::dialogMessage( MSG & msg )
 {
 	for( HWND hdialog : m_list )
 	{
-		if( IsDialogMessage( hdialog , &msg ) )
+		if( G::nowide::isDialogMessage( hdialog , &msg ) )
 			return true ;
 	}
 	return false ;
@@ -405,22 +408,16 @@ GGui::SubClassMap & GGui::Dialog::map()
 	return m_map ;
 }
 
-bool GGui::Dialog::registerNewClass( HICON hicon , const std::string & new_class_name ) const
+bool GGui::Dialog::registerNewClass( HICON hicon , std::string_view new_class_name ) const
 {
 	std::string old_class_name = windowClass() ;
 	HINSTANCE hinstance = windowInstanceHandle() ;
 
-	// get our class info
-	//
-	WNDCLASSA class_info ;
-	GetClassInfoA( hinstance , old_class_name.c_str() , &class_info ) ;
+	G::nowide::WNDCLASS_type class_info ;
+	G::nowide::getClassInfo( hinstance , old_class_name , &class_info ) ;
 
-	// register a new class
-	//
 	class_info.hIcon = hicon ;
-	class_info.lpszClassName = new_class_name.c_str() ;
-	ATOM rc = RegisterClassA( &class_info ) ;
-
+	ATOM rc = G::nowide::registerClass( class_info , G::sv_to_string(new_class_name) ) ;
 	return rc != 0 ;
 }
 
@@ -476,5 +473,4 @@ GGui::Dialog * GGui::Dialog::fromLongPtr( LONG_PTR p )
 {
 	return static_cast<Dialog*>( reinterpret_cast<void*>(p) ) ;
 }
-
 

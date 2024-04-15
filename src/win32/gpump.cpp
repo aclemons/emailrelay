@@ -19,6 +19,7 @@
 ///
 
 #include "gdef.h"
+#include "gnowide.h"
 #include "gpump.h"
 #include "gcracker.h"
 #include "gdialog.h"
@@ -44,21 +45,21 @@ void GGui::Pump::quit( const std::string & reason )
 {
 	G_DEBUG( "GGui::Pump::quit: quit-reason=[" << reason << "] run-id=" << m_run_id ) ;
 	m_quit_reason = reason ;
-	PostMessage( 0 , Cracker::wm_quit() , m_run_id , 0 ) ; // not PostQuitMessage()
+	G::nowide::postMessage( 0 , Cracker::wm_quit() , m_run_id , 0 ) ; // PostMessage(), not PostQuitMessage()
 }
 
 bool GGui::Pump::getMessage( MSG * msg_p , bool block )
 {
 	if( block )
 	{
-		BOOL rc = GetMessage( msg_p , HNULL , 0 , 0 ) ;
+		BOOL rc = G::nowide::getMessage( msg_p , HNULL , 0 , 0 ) ;
 		if( rc == -1 )
 			throw std::runtime_error( "GetMessage error" ) ;
 		return true ; // crack WM_QUIT as normal, quit on our wm_quit()
 	}
 	else
 	{
-		BOOL rc = PeekMessage( msg_p , HNULL , 0 , 0 , PM_REMOVE ) ;
+		BOOL rc = G::nowide::peekMessage( msg_p , HNULL , 0 , 0 , PM_REMOVE ) ;
 		return rc != 0 ;
 	}
 }
@@ -92,7 +93,7 @@ std::pair<bool,std::string> GGui::Pump::runImp( bool run_to_empty )
 			else
 			{
 				TranslateMessage( &msg ) ;
-				DispatchMessage( &msg ) ;
+				G::nowide::dispatchMessage( &msg ) ;
 			}
 		}
 		else if( seen_quit || run_to_empty )

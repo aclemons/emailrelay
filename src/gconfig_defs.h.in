@@ -12,6 +12,9 @@
 /* Define true if arpa/inet.h is available */
 #undef GCONFIG_HAVE_ARPA_INET_H
 
+/* Define true if c++20 char8_t type is defined */
+#undef GCONFIG_HAVE_CHAR8_T
+
 /* Define true if compiler has std::align() */
 #undef GCONFIG_HAVE_CXX_ALIGNMENT
 
@@ -249,6 +252,12 @@
 /* Define true if unistd.h is available */
 #undef GCONFIG_HAVE_UNISTD_H
 
+/* Define true if _wcserror_s is available */
+#undef GCONFIG_HAVE_WCSERROR_S
+
+/* Define true if _wgetenv_s is available */
+#undef GCONFIG_HAVE_WGETENV_S
+
 /* Define true if windows CreateEventEx is available */
 #undef GCONFIG_HAVE_WINDOWS_CREATE_EVENT_EX
 
@@ -267,6 +276,12 @@
 /* Define true if versionhelpers.h is available */
 #undef GCONFIG_HAVE_WINDOWS_VERSIONHELPERS_H
 
+/* Define true if _wputenv_s in stdlib.h */
+#undef GCONFIG_HAVE_WPUTENV_S
+
+/* Define true if _wsopen_s() is available */
+#undef GCONFIG_HAVE_WSOPEN_S
+
 /* Define true for a windows build using the mingw tool chain */
 #undef GCONFIG_MINGW
 
@@ -279,11 +294,14 @@
 /* Define true for a windows build */
 #undef GCONFIG_WINDOWS
 
+/* Define true for a winxp windows build */
+#undef GCONFIG_WINXP
+
 /* Define to enable debug messages at compile-time */
 #undef G_WITH_DEBUG
 
-/* define if the compiler supports basic C++11 syntax */
-#undef HAVE_CXX11
+/* define if the compiler supports basic C++17 syntax */
+#undef HAVE_CXX17
 
 /* Define to 1 if the system has the type `gid_t'. */
 #undef HAVE_GID_T

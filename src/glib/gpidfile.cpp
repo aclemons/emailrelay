@@ -148,7 +148,7 @@ bool G::PidFileImp::cleanup( const Cleanup::Arg & arg ) noexcept
 {
 	try
 	{
-		return cleanup( Path(arg.path()) ) ;
+		return cleanup( Path(arg.str()) ) ;
 	}
 	catch(...)
 	{

@@ -40,9 +40,9 @@
 # On Windows use from a 'vcvars' "developer command prompt".
 #
 # Download qt5 source with:
-#    $ git clone https://code.qt.io/qt/qt5.git qt5
-#    $ git -C qt5 checkout 5.15
-#    $ cd qt5 && perl init-repository --module-subset=qtbase,qttools,qttranslations
+#    $ git clone https://code.qt.io/qt/qt5.git qt-src
+#    $ git -C qt-src checkout 5.15
+#    $ cd qt-src && perl init-repository --module-subset=qtbase,qttools,qttranslations
 #
 # Only the "qtbase" module is required to build the libraries, but
 # "qttools" and "qttranslations" are needed for building the "windeployqt"
@@ -50,13 +50,13 @@
 # windows. It is best to initialise all three when downloading and then
 # use "-skip" options on the "configure" command-line as appropriate.
 #
-# If this script is run without options then a "qt5" sub-directory is
+# If this script is run without options then a "qt-src" sub-directory is
 # expected, an empty sub-directory is created for the build and the
-# install goes into the qt-<arch> sub-directory:
+# install goes into the qt-bin-<arch> sub-directory:
 #
-#  source   - qt5/
+#  source   - qt-src/
 #  build    - qt-build-<arch>-<config>/
-#  install  - qt-<arch>/
+#  install  - qt-bin-<arch>/
 #
 # Delete the build directory tree for a clean build ("rmdir /q /s" on
 # windows).
@@ -81,9 +81,9 @@ my $cfg_static = !$opt{dynamic} ;
 my $cfg_config = $opt{config} || "release" ;
 my $cfg_build_more = $opt{dynamic} ; # build more stuff so that windeployqt works
 my $cfg_arch = $opt{arch} || $ENV{Platform} || "x64" ;
-my $cfg_source_dir_ = $ARGV[0] || _find($cfg_qt6?"qt6":"qt5") ;
+my $cfg_source_dir_ = $ARGV[0] || _find("qt-src") ;
 my $cfg_build_dir = $ARGV[1] || "qt-build-${cfg_arch}-${cfg_config}" ;
-my $cfg_install_dir = $ARGV[2] || "qt-${cfg_arch}" ;
+my $cfg_install_dir = $ARGV[2] || "qt-bin-${cfg_arch}" ;
 my $cfg_source_dir = Cwd::realpath( $cfg_source_dir_ ) ;
 my $cfg_verbose = $opt{verbose} ; # (verbose make)
 my $cfg_quiet = $opt{quiet} ; # (this script)

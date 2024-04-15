@@ -124,7 +124,7 @@ public:
 			///< A null menu handle means that the window-class menu is used,
 			///< as defined through registerWindowClass().
 			///<
-			///< See also ::CreateWindow().
+			/// \see CreateWindow()
 
 	void update() ;
 		///< Does ::UpdateWindow().

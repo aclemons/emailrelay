@@ -120,8 +120,8 @@ am__libglib_a_SOURCES_DIST = gmsg.h gmsg_unix.cpp gmsg_mac.cpp \
 	ghashstate.h ghostname.h gidentity.h gimembuf.h glimits.h \
 	glog.h glog.cpp glogstream.h glogstream.cpp glogoutput.h \
 	glogoutput.cpp gstrmacros.h gmd5.h gmd5.cpp gnewprocess.h \
-	gomembuf.h goptional.h goption.h goption.cpp goptionmap.h \
-	goptionmap.cpp goptionparser.h goptionparser.cpp \
+	gnowide.h gomembuf.h goptional.h goption.h goption.cpp \
+	goptionmap.h goptionmap.cpp goptionparser.h goptionparser.cpp \
 	goptionreader.h goptionreader.cpp goptions.h goptions.cpp \
 	goptionsusage.h goptionsusage.cpp goptionvalue.h gpath.h \
 	gpath.cpp gpidfile.h gpidfile.cpp gprocess.h grandom.h \
@@ -135,12 +135,12 @@ am__libglib_a_SOURCES_DIST = gmsg.h gmsg_unix.cpp gmsg_mac.cpp \
 	gdaemon_unix.cpp gdirectory_unix.cpp genvironment_unix.cpp \
 	gfile_unix.cpp ghostname_unix.cpp gidentity_unix.cpp \
 	glogoutput_unix.cpp gnewprocess_unix.cpp gprocess_unix.cpp \
-	gbatchfile.cpp gbatchfile.h gmapfile.cpp gmapfile.h \
-	gcleanup_win32.cpp gconvert.h gconvert.cpp gconvert_win32.cpp \
-	gdaemon_win32.cpp gdirectory_win32.cpp genvironment_win32.cpp \
-	gfile_win32.cpp ghostname_win32.cpp gidentity_win32.cpp \
-	glogoutput_win32.cpp gnewprocess_win32.cpp gprocess_win32.cpp \
-	gpam.h gpam_none.cpp gpam_linux.cpp
+	gbatchfile.cpp gbatchfile.h gcodepage.cpp gcodepage.h \
+	gconvert.cpp gconvert.h gmapfile.cpp gmapfile.h \
+	gcleanup_win32.cpp gdaemon_win32.cpp gdirectory_win32.cpp \
+	genvironment_win32.cpp gfile_win32.cpp ghostname_win32.cpp \
+	gidentity_win32.cpp glogoutput_win32.cpp gnewprocess_win32.cpp \
+	gprocess_win32.cpp gpam.h gpam_none.cpp gpam_linux.cpp
 @GCONFIG_MAC_FALSE@@GCONFIG_WINDOWS_FALSE@am__objects_1 =  \
 @GCONFIG_MAC_FALSE@@GCONFIG_WINDOWS_FALSE@	gmsg_unix.$(OBJEXT)
 @GCONFIG_MAC_TRUE@@GCONFIG_WINDOWS_FALSE@am__objects_1 =  \
@@ -168,13 +168,13 @@ am__objects_4 = gcleanup_unix.$(OBJEXT) gdaemon_unix.$(OBJEXT) \
 	gfile_unix.$(OBJEXT) ghostname_unix.$(OBJEXT) \
 	gidentity_unix.$(OBJEXT) glogoutput_unix.$(OBJEXT) \
 	gnewprocess_unix.$(OBJEXT) gprocess_unix.$(OBJEXT)
-am__objects_5 = gbatchfile.$(OBJEXT) gmapfile.$(OBJEXT) \
-	gcleanup_win32.$(OBJEXT) gconvert.$(OBJEXT) \
-	gconvert_win32.$(OBJEXT) gdaemon_win32.$(OBJEXT) \
-	gdirectory_win32.$(OBJEXT) genvironment_win32.$(OBJEXT) \
-	gfile_win32.$(OBJEXT) ghostname_win32.$(OBJEXT) \
-	gidentity_win32.$(OBJEXT) glogoutput_win32.$(OBJEXT) \
-	gnewprocess_win32.$(OBJEXT) gprocess_win32.$(OBJEXT)
+am__objects_5 = gbatchfile.$(OBJEXT) gcodepage.$(OBJEXT) \
+	gconvert.$(OBJEXT) gmapfile.$(OBJEXT) gcleanup_win32.$(OBJEXT) \
+	gdaemon_win32.$(OBJEXT) gdirectory_win32.$(OBJEXT) \
+	genvironment_win32.$(OBJEXT) gfile_win32.$(OBJEXT) \
+	ghostname_win32.$(OBJEXT) gidentity_win32.$(OBJEXT) \
+	glogoutput_win32.$(OBJEXT) gnewprocess_win32.$(OBJEXT) \
+	gprocess_win32.$(OBJEXT)
 @GCONFIG_WINDOWS_FALSE@am__objects_6 = $(am__objects_3) \
 @GCONFIG_WINDOWS_FALSE@	$(am__objects_4)
 @GCONFIG_WINDOWS_TRUE@am__objects_6 = $(am__objects_3) \
@@ -217,8 +217,8 @@ depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/garg.Po ./$(DEPDIR)/gbase64.Po \
 	./$(DEPDIR)/gbatchfile.Po ./$(DEPDIR)/gcleanup_unix.Po \
-	./$(DEPDIR)/gcleanup_win32.Po ./$(DEPDIR)/gconvert.Po \
-	./$(DEPDIR)/gconvert_win32.Po ./$(DEPDIR)/gdaemon_unix.Po \
+	./$(DEPDIR)/gcleanup_win32.Po ./$(DEPDIR)/gcodepage.Po \
+	./$(DEPDIR)/gconvert.Po ./$(DEPDIR)/gdaemon_unix.Po \
 	./$(DEPDIR)/gdaemon_win32.Po ./$(DEPDIR)/gdate.Po \
 	./$(DEPDIR)/gdatetime.Po ./$(DEPDIR)/gdirectory.Po \
 	./$(DEPDIR)/gdirectory_unix.Po ./$(DEPDIR)/gdirectory_win32.Po \
@@ -341,7 +341,7 @@ GCONFIG_WINDMC = @GCONFIG_WINDMC@
 GCONFIG_WINDRES = @GCONFIG_WINDRES@
 GREP = @GREP@
 GZIP = @GZIP@
-HAVE_CXX11 = @HAVE_CXX11@
+HAVE_CXX17 = @HAVE_CXX17@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -452,12 +452,13 @@ UNIX_SOURCES = \
 WINDOWS_SOURCES = \
 	gbatchfile.cpp \
 	gbatchfile.h \
+	gcodepage.cpp \
+	gcodepage.h \
+	gconvert.cpp \
+	gconvert.h \
 	gmapfile.cpp \
 	gmapfile.h \
 	gcleanup_win32.cpp \
-	gconvert.h \
-	gconvert.cpp \
-	gconvert_win32.cpp \
 	gdaemon_win32.cpp \
 	gdirectory_win32.cpp \
 	genvironment_win32.cpp \
@@ -517,6 +518,7 @@ COMMON_SOURCES = \
 	gmd5.cpp \
 	gmsg.h \
 	gnewprocess.h \
+	gnowide.h \
 	gomembuf.h \
 	goptional.h \
 	goption.h \
@@ -757,8 +759,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gbatchfile.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gcleanup_unix.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gcleanup_win32.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gcodepage.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gconvert.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gconvert_win32.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdaemon_unix.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdaemon_win32.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdate.Po@am__quote@ # am--include-marker
@@ -972,8 +974,8 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/gbatchfile.Po
 	-rm -f ./$(DEPDIR)/gcleanup_unix.Po
 	-rm -f ./$(DEPDIR)/gcleanup_win32.Po
+	-rm -f ./$(DEPDIR)/gcodepage.Po
 	-rm -f ./$(DEPDIR)/gconvert.Po
-	-rm -f ./$(DEPDIR)/gconvert_win32.Po
 	-rm -f ./$(DEPDIR)/gdaemon_unix.Po
 	-rm -f ./$(DEPDIR)/gdaemon_win32.Po
 	-rm -f ./$(DEPDIR)/gdate.Po
@@ -1090,8 +1092,8 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/gbatchfile.Po
 	-rm -f ./$(DEPDIR)/gcleanup_unix.Po
 	-rm -f ./$(DEPDIR)/gcleanup_win32.Po
+	-rm -f ./$(DEPDIR)/gcodepage.Po
 	-rm -f ./$(DEPDIR)/gconvert.Po
-	-rm -f ./$(DEPDIR)/gconvert_win32.Po
 	-rm -f ./$(DEPDIR)/gdaemon_unix.Po
 	-rm -f ./$(DEPDIR)/gdaemon_win32.Po
 	-rm -f ./$(DEPDIR)/gdate.Po

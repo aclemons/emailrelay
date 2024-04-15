@@ -19,12 +19,13 @@
 ///
 
 #include "gdef.h"
+#include "gnowide.h"
 #include "gidentity.h"
 #include "gscope.h"
 #include "gstr.h"
 #include "grange.h"
 #include "gbuffer.h"
-#include <sddl.h> // ConvertSidToStringSid()
+#include "gconvert.h"
 #include <sstream>
 #include <vector>
 #include <algorithm>
@@ -186,12 +187,7 @@ bool G::Identity::match( std::pair<int,int> range ) const
 
 std::string G::IdentityImp::sidstr( PSID sid_p )
 {
-	char * sidstr_p = nullptr ;
-	if( !ConvertSidToStringSidA( sid_p , &sidstr_p ) || sidstr_p == nullptr )
-		return {} ;
-	std::string result( sidstr_p ) ;
-	LocalFree( sidstr_p ) ;
-	return result ;
+	return G::nowide::convertSidToStringSid( sid_p ) ;
 }
 
 std::string G::IdentityImp::sid()
@@ -210,36 +206,9 @@ std::string G::IdentityImp::sid()
 	return sidstr( info_p->User.Sid ) ;
 }
 
-#if 0
-std::string G::IdentityImp::username()
-{
-	std::vector<char> buffer ;
-	buffer.reserve( 100U ) ;
-	buffer.resize( 1U ) ;
-	DWORD size = static_cast<DWORD>( buffer.size() ) ;
-	if( !GetUserNameA( &buffer[0] , &size ) && GetLastError() == ERROR_INSUFFICIENT_BUFFER && size )
-		buffer.resize( static_cast<std::size_t>(size) ) ;
-	if( size == 0 || !GetUserNameA( &buffer[0] , &size ) )
-		return {} ;
-	std::size_t n = std::min( buffer.size() , static_cast<std::size_t>(size) ) ;
-	buffer.at( n-1U ) = '\0' ;
-	return std::string( &buffer[0] ) ;
-}
-#endif
-
 std::string G::IdentityImp::computername()
 {
-	std::vector<char> buffer ;
-	buffer.reserve( 100U ) ;
-	buffer.resize( 1U ) ;
-	DWORD size = static_cast<DWORD>( buffer.size() ) ;
-	if( !GetComputerNameExA( ComputerNameNetBIOS , &buffer[0] , &size ) && GetLastError() == ERROR_MORE_DATA && size )
-		buffer.resize( static_cast<std::size_t>(size) ) ;
-	if( !GetComputerNameExA( ComputerNameNetBIOS , &buffer[0] , &size ) )
-		return {} ;
-	std::size_t n = std::min( buffer.size()-1U , static_cast<std::size_t>(size) ) ;
-	buffer.at( n ) = '\0' ;
-	return std::string( &buffer[0] ) ;
+	return nowide::getComputerNameEx() ;
 }
 
 G::IdentityImp::Account G::IdentityImp::lookup( const std::string & name , bool with_canonical_name )
@@ -251,14 +220,14 @@ G::IdentityImp::Account G::IdentityImp::lookup( const std::string & name , bool 
 	if( domain.empty() )
 		return error ;
 	std::string full_name = domain.append(1U,'\\').append(name) ;
+
 	DWORD sidsize = 0 ;
 	DWORD domainsize = 0 ;
 	SID_NAME_USE type = SidTypeInvalid ;
-	if( LookupAccountNameA( NULL , full_name.c_str() , NULL , &sidsize , NULL , &domainsize , &type ) )
+	if( nowide::lookupAccountName( full_name , NULL , &sidsize , false , &domainsize , &type ) )
 		return error ;
 	G::Buffer<char> sidbuffer( std::max(DWORD(1),sidsize) ) ;
-	std::vector<char> domainbuffer( std::max(DWORD(1),domainsize) ) ;
-	if( !LookupAccountNameA( NULL , full_name.c_str() , &sidbuffer[0] , &sidsize , &domainbuffer[0] , &domainsize , &type ) )
+	if( !nowide::lookupAccountName( full_name , sidbuffer.data() , &sidsize , true , &domainsize , &type ) )
 		return error ;
 	SID * sid_p = G::buffer_cast<SID*>(sidbuffer) ;
 
@@ -267,19 +236,15 @@ G::IdentityImp::Account G::IdentityImp::lookup( const std::string & name , bool 
 	{
 		DWORD namebuffersize = 0 ;
 		DWORD domainbuffersize = 0 ;
-		if( LookupAccountSidA( NULL , sid_p , NULL , &namebuffersize , NULL , &domainbuffersize , &type ) )
+		if( nowide::lookupAccountSid( sid_p , nullptr , false , &namebuffersize , false , &domainbuffersize , &type ) )
 			return error ;
-		std::vector<char> namebuffer( std::max(DWORD(1),namebuffersize) ) ;
-		std::vector<char> domainbuffer2( std::max(DWORD(1),domainbuffersize) ) ; // not used
-		if( !LookupAccountSidA( NULL , sid_p , &namebuffer[0] , &namebuffersize , &domainbuffer2[0] , &domainbuffersize , &type ) )
+		if( !nowide::lookupAccountSid( sid_p , &canonical_name , true , &namebuffersize , true , &domainbuffersize , &type ) )
 			return error ;
-		namebuffer[namebuffer.size()-1U] = '\0' ;
-		canonical_name = std::string( &namebuffer[0] ) ;
 		if( canonical_name.empty() )
 			return error ;
 	}
 
-	return { type , sidstr(sid_p) , &domain[0] , canonical_name } ;
+	return { type , sidstr(sid_p) , domain , canonical_name } ;
 }
 
 std::string G::IdentityImp::rootsid()

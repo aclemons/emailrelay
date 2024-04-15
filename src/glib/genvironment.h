@@ -23,6 +23,7 @@
 
 #include "gdef.h"
 #include "gexception.h"
+#include "gpath.h"
 #include <string>
 #include <vector>
 #include <map>
@@ -43,6 +44,9 @@ public:
 
 	static std::string get( const std::string & name , const std::string & default_ ) ;
 		///< Returns the environment variable value or the given default.
+
+	static G::Path getPath( const std::string & name , const G::Path & = {} ) ;
+		///< Returns the environment variable value as a G::Path object.
 
 	static void put( const std::string & name , const std::string & value ) ;
 		///< Sets the environment variable value.

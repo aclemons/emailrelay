@@ -27,71 +27,57 @@
 #define WC_ERR_INVALID_CHARS 0
 #endif
 
-namespace G
+std::wstring G::Convert::widenImp( const char * p_in , std::size_t n_in )
 {
-	namespace ConvertImp
-	{
-		std::string message( const std::string & context , DWORD e , const std::string & ascii )
-		{
-			std::ostringstream ss ;
-			ss << context << (context.empty()?"":": ") << e << ": [" << ascii << "]" ;
-			return ss.str() ;
-		}
-	}
-}
-
-std::wstring G::Convert::widen( const std::string & s , bool is_utf8 , const std::string & context )
-{
-	unsigned int codepage = is_utf8 ? CP_UTF8 : CP_ACP ;
 	std::wstring result ;
-	if( ! s.empty() )
+	if( p_in && n_in )
 	{
-		DWORD flags = MB_ERR_INVALID_CHARS ;
-		int n = MultiByteToWideChar( codepage , flags , s.c_str() , static_cast<int>(s.size()) , nullptr , 0 ) ;
-		if( n <= 0 )
-		{
-			DWORD e = GetLastError() ;
-			throw Convert::Error( ConvertImp::message(context,e,Str::toPrintableAscii(s)) ) ;
-		}
+		DWORD flags = 0 ; // not MB_ERR_INVALID_CHARS
+		int n_out_1 = MultiByteToWideChar( CP_UTF8 , flags , p_in , static_cast<int>(n_in) ,
+			nullptr , 0 ) ;
+		if( n_out_1 <= 0 )
+			throw Convert::WidenError() ;
 
-		std::vector<wchar_t> buffer( static_cast<std::size_t>(n) ) ;
-		n = MultiByteToWideChar( codepage , flags , s.c_str() , static_cast<int>(s.size()) , &buffer[0] , n ) ;
-		if( n == 0 )
-		{
-			DWORD e = GetLastError() ;
-			throw Convert::Error( ConvertImp::message(context,e,Str::toPrintableAscii(s)) ) ;
-		}
-		result = std::wstring( &buffer[0] , n ) ;
+		std::vector<wchar_t> buffer( static_cast<std::size_t>(n_out_1) ) ;
+		int n_out_2 = MultiByteToWideChar( CP_UTF8 , flags , p_in , static_cast<int>(n_in) ,
+			buffer.data() , static_cast<int>(buffer.size()) ) ;
+		if( n_out_2 != n_out_1 )
+			throw Convert::WidenError() ;
+
+		result = std::wstring( buffer.data() , buffer.size() ) ;
 	}
 	return result ;
 }
 
-std::string G::Convert::narrow( const std::wstring & s , bool is_utf8 , const std::string & context )
+std::string G::Convert::narrowImp( const wchar_t * p_in , std::size_t n_in )
 {
-	unsigned int codepage = is_utf8 ? CP_UTF8 : CP_ACP ;
 	std::string result ;
-	if( ! s.empty() )
+	if( p_in && n_in )
 	{
-		DWORD flags = is_utf8 ? WC_ERR_INVALID_CHARS : 0 ;
-		BOOL defaulted = FALSE ;
-		int n = WideCharToMultiByte( codepage , flags , s.c_str() , static_cast<int>(s.size()) , nullptr , 0 ,
-			nullptr , is_utf8 ? nullptr : &defaulted ) ;
-		if( n <= 0 || defaulted )
-		{
-			DWORD e = n == 0 ? GetLastError() : 0 ;
-			throw Convert::Error( ConvertImp::message(context,e,Str::toPrintableAscii(s)) ) ;
-		}
+		DWORD flags = 0 ; // not MB_ERR_INVALID_CHARS
+		int n_out_1 = WideCharToMultiByte( CP_UTF8 , flags , p_in , static_cast<int>(n_in) ,
+			nullptr , 0 , nullptr , nullptr ) ;
+		if( n_out_1 <= 0 )
+			throw Convert::NarrowError() ;
 
-		std::vector<char> buffer( static_cast<std::size_t>(n) ) ;
-		n = WideCharToMultiByte( codepage , flags , s.c_str() , static_cast<int>(s.size()) , &buffer[0] , n ,
-			nullptr , is_utf8 ? nullptr : &defaulted ) ;
-		if( n == 0 || defaulted )
-		{
-			DWORD e = n == 0 ? GetLastError() : 0 ;
-			throw Convert::Error( ConvertImp::message(context,e,Str::toPrintableAscii(s)) ) ;
-		}
-		result = std::string( &buffer[0] , n ) ;
+		std::vector<char> buffer( static_cast<std::size_t>(n_out_1) ) ;
+		int n_out_2 = WideCharToMultiByte( CP_UTF8 , flags , p_in , static_cast<int>(n_in) ,
+			buffer.data() , static_cast<int>(buffer.size()) , nullptr , nullptr ) ;
+		if( n_out_2 != n_out_1 )
+			throw Convert::NarrowError() ;
+
+		result = std::string( buffer.data() , buffer.size() ) ;
 	}
 	return result ;
+}
+
+bool G::Convert::invalid( const std::wstring & s )
+{
+	return s.find( L'\xFFFD' ) != std::string::npos ;
+}
+
+bool G::Convert::invalid( const std::string & s )
+{
+	return s.find( "\xEF\xBF\xBD" , 0U , 3U ) != std::string::npos ;
 }
 

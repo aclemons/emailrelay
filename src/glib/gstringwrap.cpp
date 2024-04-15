@@ -21,68 +21,69 @@
 #include "gdef.h"
 #include "gstringwrap.h"
 #include "gimembuf.h"
-#include "gstr.h"
 #include <string>
 #include <sstream>
 #include <algorithm>
-#include <clocale>
-#include <locale>
 
 #ifdef emit
 #undef emit
 #endif
 
-struct G::StringWrap::Config /// Private implementation structure for G::StringWrap.
+namespace G
 {
-	std::string_view prefix_first ;
-	std::string_view prefix_other ;
-	std::size_t width_first ;
-	std::size_t width_other ;
-	bool preserve_spaces ;
-} ;
+	namespace StringWrapImp
+	{
+		struct Config
+		{
+			std::string_view prefix_first ;
+			std::string_view prefix_other ;
+			std::size_t width_first ;
+			std::size_t width_other ;
+			bool preserve_spaces ;
+		} ;
+		class WordWrapper
+		{
+		public:
+			WordWrapper( std::ostream & , Config ) ;
+			void emit( const std::string & word , std::size_t newlines , const std::string & prespace ) ;
 
-class G::StringWrap::WordWrapper /// Private implementation structure for G::StringWrap.
-{
-public:
-	WordWrapper( std::ostream & , StringWrap::Config , const std::locale & ) ;
-	void emit( const std::string & word , std::size_t newlines , const std::string & prespace ) ;
+		public:
+			~WordWrapper() = default ;
+			WordWrapper( const WordWrapper & ) = delete ;
+			WordWrapper( WordWrapper && ) = delete ;
+			WordWrapper & operator=( const WordWrapper & ) = delete ;
+			WordWrapper & operator=( WordWrapper && ) = delete ;
 
-public:
-	~WordWrapper() = default ;
-	WordWrapper( const WordWrapper & ) = delete ;
-	WordWrapper( WordWrapper && ) = delete ;
-	WordWrapper & operator=( const WordWrapper & ) = delete ;
-	WordWrapper & operator=( WordWrapper && ) = delete ;
+		private:
+			std::string_view prefix() const ;
 
-private:
-	std::string_view prefix() const ;
-
-private:
-	std::size_t m_lines {0U} ;
-	std::size_t m_w {0U} ;
-	std::ostream & m_out ;
-	StringWrap::Config m_config ;
-	const std::locale & m_loc ;
-} ;
+		private:
+			std::size_t m_lines {0U} ;
+			std::size_t m_w {0U} ;
+			std::ostream & m_out ;
+			Config m_config ;
+		} ;
+		void wrapImp( std::istream & , WordWrapper & ) ;
+	}
+}
 
 // ==
 
-G::StringWrap::WordWrapper::WordWrapper( std::ostream & out , Config config , const std::locale & loc ) :
+G::StringWrapImp::WordWrapper::WordWrapper( std::ostream & out , Config config ) :
 	m_out(out) ,
-	m_config(config) ,
-	m_loc(loc)
+	m_config(config)
 {
 }
 
-std::string_view G::StringWrap::WordWrapper::prefix() const
+std::string_view G::StringWrapImp::WordWrapper::prefix() const
 {
 	return m_lines ? m_config.prefix_other : m_config.prefix_first ;
 }
 
-void G::StringWrap::WordWrapper::emit( const std::string & word , std::size_t newlines , const std::string & prespace )
+void G::StringWrapImp::WordWrapper::emit( const std::string & word , std::size_t newlines , const std::string & prespace )
 {
 	// emit words up to the configured maximum width
-	std::size_t wordsize = StringWrap::wordsize( word , m_loc ) ;
+	std::size_t wordsize = StringWrap::wordsize( word ) ;
 	std::size_t spacesize = m_config.preserve_spaces ? prespace.size() : 1U ;
 	std::size_t width = ( newlines || m_lines > 1 ) ? m_config.width_other : m_config.width_first ;
 	bool start_new_line = newlines || m_w == 0 || (m_w+spacesize+wordsize) > width ;
@@ -118,9 +119,9 @@ void G::StringWrap::WordWrapper::emit( const std::string & word , std::size_t ne
 std::string G::StringWrap::wrap( const std::string & text_in ,
 	const std::string & prefix_first , const std::string & prefix_other ,
 	std::size_t width_first , std::size_t width_other ,
-	bool preserve_spaces , const std::locale & loc )
+	bool preserve_spaces )
 {
-	StringWrap::Config config {
+	StringWrapImp::Config config {
 		prefix_first ,
 		prefix_other ,
 		width_first , width_other?width_other:width_first ,
@@ -128,28 +129,26 @@ std::string G::StringWrap::wrap( const std::string & text_in ,
 	} ;
 
 	std::ostringstream out ;
-	WordWrapper wrapper( out , config , loc ) ;
+	StringWrapImp::WordWrapper wrapper( out , config ) ;
 
 	imembuf buf( text_in.data() , text_in.size() ) ;
 	std::istream in( &buf ) ;
-	in.imbue( loc ) ;
 
-	wrap( in , wrapper ) ;
+	StringWrapImp::wrapImp( in , wrapper ) ;
 
 	return out.str() ;
 }
 
-void G::StringWrap::wrap( std::istream & in , WordWrapper & ww )
+void G::StringWrapImp::wrapImp( std::istream & in , WordWrapper & ww )
 {
 	// extract words while counting newlines within the intervening spaces
-	const auto & cctype = std::use_facet<std::ctype<char>>( in.getloc() ) ;
 	std::string word ;
 	std::size_t newlines = 0U ;
 	std::string prespace ;
 	char c = 0 ;
 	while( in.get(c) )
 	{
-		if( cctype.is( std::ctype_base::space , c ) )
+		if( c == ' ' || c == '\n' )
 		{
 			// spit out the previous word (if any)
 			if( !word.empty() )
@@ -181,49 +180,43 @@ void G::StringWrap::wrap( std::istream & in , WordWrapper & ww )
 		ww.emit( word , newlines , prespace ) ;
 }
 
-std::locale G::StringWrap::defaultLocale()
+std::size_t G::StringWrap::wordsize( const std::string & s )
 {
-	try
+	// (to it ourselves to avoid a dependency on G::Convert and G::Convert::u8parse())
+	const unsigned char * p = reinterpret_cast<const unsigned char*>( s.data() ) ;
+	std::size_t n = s.size() ;
+	std::size_t result = 0U ;
+	std::size_t d = 0U ;
+	for( std::size_t i = 0U ; i < n ; i += d , p += d )
 	{
-		// see also G::gettext_init()
-		return std::locale( std::setlocale(LC_CTYPE,nullptr) ) ;
+		result++ ;
+		if( ( p[0] & 0x80U ) == 0U )
+		{
+			d = 1U ;
+		}
+		else if( ( p[0] & 0xE0U ) == 0xC0U && (i+1U) < n &&
+			( p[1] & 0xC0 ) == 0x80U )
+		{
+			d = 2U ;
+		}
+		else if( ( p[0] & 0xF0U ) == 0xE0U && (i+2U) < n &&
+			( p[1] & 0xC0 ) == 0x80U &&
+			( p[2] & 0xC0 ) == 0x80U )
+		{
+			d = 3U ;
+		}
+		else if( ( p[0] & 0xF8U ) == 0xF0U && (i+3U) < n &&
+			( p[1] & 0xC0 ) == 0x80U &&
+			( p[2] & 0xC0 ) == 0x80U &&
+			( p[3] & 0xC0 ) == 0x80U )
+		{
+			d = 4U ;
+		}
+		else
+		{
+			d = 1U ;
+		}
 	}
-	catch( std::exception & )
-	{
-		return std::locale::classic() ;
-	}
-}
-
-std::size_t G::StringWrap::wordsize( const std::string & s , const std::locale & loc )
-{
-	return wordsize( std::string_view(s.data(),s.size()) , loc ) ;
-}
-
-std::size_t G::StringWrap::wordsize( std::string_view s , const std::locale & loc )
-{
-	try
-	{
-		// convert the input to 32-bit wide characters using codecvt::in() and count
-		// them -- this would be a lot easier if the character set was known to be either
-		// ISO-8859 or UTF-8, but in principle it could be some unknown MBCS set
-		// from the environment -- errors are ignored because returning the
-		// input string length is a good fallback -- note that the 'classic' locale
-		// will result in conversion errors if any character is more than 127
-		const auto & codecvt = std::use_facet<std::codecvt<char32_t,char,std::mbstate_t>>( loc ) ;
-		std::vector<char32_t> warray( s.size() ) ; // 'internal', in()'s 'to'
-		std::mbstate_t state {} ;
-		const char * cnext = nullptr ;
-		char32_t * wnext = nullptr ;
-		auto rc = codecvt.in( state ,
-			s.data() , s.data()+s.size() , cnext ,
-			warray.data() , warray.data()+warray.size() , wnext ) ;
-		std::size_t din = cnext ? std::distance( s.data() , cnext ) : 0U ;
-		std::size_t dout = wnext ? std::distance( warray.data() , wnext ) : 0U ;
-		return ( rc == std::codecvt_base::ok && din == s.size() && dout ) ? dout : s.size() ;
-	}
-	catch( std::exception & )
-	{
-		return s.size() ;
-	}
+	return result ;
 }
 

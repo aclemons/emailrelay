@@ -134,7 +134,8 @@ public:
 			///< help().
 
 	static SortFn sort() ;
-		///< Returns the default sort function.
+		///< Returns the default sort function that sorts by level first
+		///< and then by name.
 
 private:
 	std::string summaryPartOne( const Config & ) const ;

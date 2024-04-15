@@ -28,6 +28,7 @@
 ./src/glib/gbase64.cpp
 ./src/glib/gbatchfile.cpp
 ./src/glib/gcleanup_unix.cpp
+./src/glib/gcodepage.cpp
 ./src/glib/gconvert.cpp
 ./src/glib/gdaemon_unix.cpp
 ./src/glib/gdate.cpp

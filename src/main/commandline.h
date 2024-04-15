@@ -128,7 +128,7 @@ private:
 	void showUds( bool e = false , const std::string & eod = {} ) const ;
 	void showPop( bool e = false , const std::string & eod = {} ) const ;
 	static const G::Option * parserFind( const G::Options & , const std::string & , std::string * = nullptr ) ;
-	static std::string configFile( const std::string & ) ;
+	static G::Path configFile( const std::string & ) ;
 	void dump() const ;
 
 private:

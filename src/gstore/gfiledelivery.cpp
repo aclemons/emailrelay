@@ -70,7 +70,7 @@ bool GStore::FileDelivery::deliverToMailboxes( const G::Path & delivery_dir , co
 	for( const auto & mailbox : mailbox_list )
 	{
 		// create the target directory if necessary
-		G::Path mbox_dir = delivery_dir + mailbox ;
+		G::Path mbox_dir = delivery_dir / mailbox ;
 		if( !FileOp::isdir(mbox_dir) )
 		{
 			G_LOG( "GStore::FileDelivery::deliverToMailboxes: delivery: creating mailbox [" << mailbox << "]" ) ;
@@ -99,14 +99,14 @@ void GStore::FileDelivery::deliverTo( FileStore & /*store*/ , std::string_view p
 	const G::Path & dst_dir , const G::Path & envelope_path , const G::Path & content_path ,
 	bool hardlink , bool pop_by_name )
 {
-	if( FileOp::isdir( dst_dir+"tmp" , dst_dir+"cur" , dst_dir+"new" ) )
+	if( FileOp::isdir( dst_dir/"tmp" , dst_dir/"cur" , dst_dir/"new" ) )
 	{
 		// copy content to maildir's "new" sub-directory via "tmp"
 		static int seq {} ;
 		std::ostringstream ss ;
 		ss << G::SystemTime::now() << "." << G::Process::Id().str() << "." << G::hostname() << "." << seq++ ;
-		G::Path tmp_content_path = dst_dir + "tmp" + ss.str() ;
-		G::Path new_content_path = dst_dir + "new" + ss.str() ;
+		G::Path tmp_content_path = dst_dir/"tmp"/ss.str() ;
+		G::Path new_content_path = dst_dir/"new"/ss.str() ;
 		if( !FileOp::copy( content_path , tmp_content_path , hardlink ) )
 			throw MaildirCopyError( prefix , tmp_content_path.str() , G::Process::strerror(FileOp::errno_()) ) ;
 		if( !FileOp::rename( tmp_content_path , new_content_path ) )
@@ -117,15 +117,15 @@ void GStore::FileDelivery::deliverTo( FileStore & /*store*/ , std::string_view p
 	{
 		// envelope only
 		std::string new_filename = content_path.withoutExtension().basename() ;
-		G::Path new_envelope_path = dst_dir + (new_filename+".envelope") ;
+		G::Path new_envelope_path = dst_dir / (new_filename+".envelope") ;
 		if( !FileOp::copy( envelope_path , new_envelope_path ) )
 			throw EnvelopeWriteError( prefix , new_envelope_path.str() , G::Process::strerror(FileOp::errno_()) ) ;
 	}
 	else
 	{
 		std::string new_filename = content_path.withoutExtension().basename() ;
-		G::Path new_content_path = dst_dir + (new_filename+".content") ;
-		G::Path new_envelope_path = dst_dir + (new_filename+".envelope") ;
+		G::Path new_content_path = dst_dir / (new_filename+".content") ;
+		G::Path new_envelope_path = dst_dir / (new_filename+".envelope") ;
 		G::ScopeExit clean_up_content( [new_content_path](){FileOp::remove(new_content_path);} ) ;
 
 		// copy or link the content -- maybe edit to add "Delivered-To" etc?

@@ -178,6 +178,7 @@ then
 	if test "$opt_win" -eq 32
 	then
 		TARGET="i686-w64-mingw32" # 32-bit binaries
+		enable_winxp="--enable-winxp"
 	else
 		TARGET="x86_64-w64-mingw32" # 64-bit binaries
 	fi
@@ -195,7 +196,7 @@ then
 	echo with-mbedtls 0 >> winbuild.cfg
 	echo with-openssl 0 >> winbuild.cfg
 	$thisdir/configure $enable_debug --host $TARGET \
-		--enable-windows --disable-interface-names \
+		--enable-windows $enable_winxp --disable-interface-names \
 		$configure_mbedtls \
 		--disable-gui --without-pam --without-doxygen \
 		--prefix=/usr --libexecdir=/usr/lib --sysconfdir=/etc \

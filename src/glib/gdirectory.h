@@ -149,8 +149,8 @@ class G::DirectoryList
 public:
 	struct Item /// A directory-entry item for G::DirectoryList.
 	{
-		bool m_is_dir{false} ;
-		bool m_is_link{false} ;
+		bool m_is_dir {false} ;
+		bool m_is_link {false} ;
 		Path m_path ;
 		std::string m_name ;
 		bool operator<( const Item & ) const noexcept ;
@@ -185,9 +185,7 @@ public:
 		///< Returns the current path.
 
 	std::string fileName() const ;
-		///< Returns the current filename. On Windows any characters
-		///< that cannot be represented in the active code page are
-		///< replaced by '?'.
+		///< Returns the current filename.
 
 	static void readAll( const Path & dir , std::vector<Item> & out ) ;
 		///< A static overload returning by reference a collection
@@ -197,8 +195,8 @@ private:
 	void readImp( const Path & , bool , std::string_view , unsigned int ) ;
 
 private:
-	bool m_first{true} ;
-	unsigned int m_index{0U} ;
+	bool m_first {true} ;
+	unsigned int m_index {0U} ;
 	std::vector<Item> m_list ;
 } ;
 

@@ -227,17 +227,18 @@
     <p>
      EventState objects also contain a pointer to an EventLogging interface. This
      interface provides a string that describes some key attribute of the event
-     handling object that implements the interface. EventLogging objects are arranged
-     in a linked list that runs through the assemblage of event handling objects.
-     Before delivering an event the EventEmitter combines the strings returned by
-     this linked list and applies the result to the G::LogOutput singleton.
+     handling object. EventLogging objects are arranged in a linked list that runs
+     through the assemblage of event handling objects. Before delivering an event the
+     EventEmitter combines the strings returned by this linked list and applies the
+     result to the G::LogOutput singleton so that everything logged by the event
+     handling code will have that prefix.
     </p>
    <h2><a class="a-header" name="SH_1_7">Multi-threading</a></h2> <!-- index:2:SH:1:7:Multi-threading -->
     <p>
-     Multi-threading is used to make DNS lookup and external program asynchronous so
-     unless disabled at build-time std::thread is used in a future/promise pattern to
-     wrap up <em>getaddrinfo()</em> and <em>waitpid()</em> system calls. The shared state comprises
-     only the parameters and return results from these system calls, and
+     Multi-threading is used only to make DNS lookup and external program execution
+     asynchronous. A std::thread worker thread is used in a future/promise pattern to
+     wrap up the <em>getaddrinfo()</em> and <em>waitpid()</em> system calls. The shared state
+     comprises only the parameters and return results from these system calls, and
      synchronisation back to the main thread uses the main event loop (see
      <em>GNet::FutureEvent</em>). Threading is not used elsewhere so the C/C++ run-time
      library does not need to be thread-safe.
@@ -289,7 +290,45 @@
      requires that private 'detail' namespaces are named rather than anonymous so
      that there cannot be any name clashes within the combined anonymous namespace.)
     </p>
-   <h2><a class="a-header" name="SH_1_9">Windows build</a></h2> <!-- index:2:SH:1:9:Windows build -->
+   <h2><a class="a-header" name="SH_1_9">Character encoding on Windows</a></h2> <!-- index:2:SH:1:9:Character encoding on Windows -->
+    <p>
+     E-MailRelay on Windows generally holds all its internal strings in UTF-8,
+     independent of the current active code page or locale. This is relevant mostly
+     to file system paths, but also to event viewer output, configuration file
+     contents, command-lines assembled to run external programs, system account
+     information, registry paths and environment variables.
+    </p>
+
+    <p>
+     The header file <em>gnowide.h</em> has inline functions that convert to and from UTF-8
+     before calling the <em>wide</em> Windows API functions. The actual convertion between
+     UTF-8 and UTF-16 wide characters is done by the G::Convert class. As a temporary
+     measure the G_NO_UNICODE preprocessor switch can be defined to go back to using
+     <em>ansi</em> functions.
+    </p>
+
+    <p>
+     The G::Path class holds filesystem paths using UTF-8. Windows-specific source
+     code, such as in <em>gfile_win32.cpp</em>, passes the UTF-8 strings to the <em>nowide</em>
+     inline functions which in turn call wide runtime library functions like
+     _wopen(). The exception is that the G::Path::iopath() method can be used to
+     initialise std::fstreams directly, without being wrapped by <em>nowide</em> functions.
+    </p>
+
+    <p>
+     The G::Arg class can be used to capture the Windows command-line in its wide
+     form and then convert to UTF-8. The main() and WinMain() functions use the
+     G::Arg::windows() factory function to do this.
+    </p>
+
+    <p>
+     Configuration files are expected to use UTF-8 character encoding. The secrets
+     file should also use UTF-8, but Base64 or xtext encoding is used for the account
+     details, so the encoding is less relevant there. The startup batch file
+     (<em>emailrelay-start.bat</em>) uses the OEM code page and the E-MailRelay GUI makes
+     sure that the user's choice of install directory is compatible with this.
+    </p>
+   <h2><a class="a-header" name="SH_1_10">Windows build</a></h2> <!-- index:2:SH:1:10:Windows build -->
     <p>
      E-MailRelay can be built for Windows using the native Visual Studio MSVC
      compiler or using MinGW (mingw-w64) on Linux.
@@ -344,7 +383,7 @@
      (<em>./configure.sh -m -w32 --disable-gui</em>). Then <em>winbuild.pl install_winxp</em> can
      be used to make a simplified distribution assembly, without a GUI.
     </p>
-   <h2><a class="a-header" name="SH_1_10">Windows packaging</a></h2> <!-- index:2:SH:1:10:Windows packaging -->
+   <h2><a class="a-header" name="SH_1_11">Windows packaging</a></h2> <!-- index:2:SH:1:11:Windows packaging -->
     <p>
      On Windows E-MailRelay is packaged as a zip file containing the files assembled
      by <em>winbuild.pl install</em> with a statically-built GUI copied in manually (see
@@ -355,7 +394,7 @@
      The setup program is the emailrelay GUI running in setup mode, with a <em>payload</em>
      directory containing the files to be installed.
     </p>
-   <h2><a class="a-header" name="SH_1_11">Unix build</a></h2> <!-- index:2:SH:1:11:Unix build -->
+   <h2><a class="a-header" name="SH_1_12">Unix build</a></h2> <!-- index:2:SH:1:12:Unix build -->
     <p>
      E-MailRelay uses autoconf and automake, but the <em>libexec/make2cmake</em> script can
      be used to generate cmake files. The generated cmake files incorporate some of
@@ -363,7 +402,7 @@
      before <em>make2cmake</em>. The <em>configure</em> script is normally part of the release but
      it can itself be generated by running the <em>bootstrap</em> script.
     </p>
-   <h2><a class="a-header" name="SH_1_12">Unix packaging</a></h2> <!-- index:2:SH:1:12:Unix packaging -->
+   <h2><a class="a-header" name="SH_1_13">Unix packaging</a></h2> <!-- index:2:SH:1:13:Unix packaging -->
     <p>
      On Unix-like operating systems the native packaging system is normally used
      rather than the E-MailRelay GUI installer, so the configure script should be
@@ -374,7 +413,7 @@
      Top-level makefile targets <em>dist</em>, <em>deb</em> and <em>rpm</em> can be used to create a
      binary tarball, debian package, and RPM package respectively.
     </p>
-   <h2><a class="a-header" name="SH_1_13">Internationalisation</a></h2> <!-- index:2:SH:1:13:Internationalisation -->
+   <h2><a class="a-header" name="SH_1_14">Internationalisation</a></h2> <!-- index:2:SH:1:14:Internationalisation -->
     <p>
      The GUI code has i18n support using the Qt framework, with the tr() function
      used throughout the GUI source code. The GUI main() function loads translations
@@ -394,7 +433,7 @@
      On Windows the main server executable <em>emailrelay.exe</em> has a tabbed dialog-box
      as its user interface, but that does not have any support for i18n.
     </p>
-   <h2><a class="a-header" name="SH_1_14">Source control</a></h2> <!-- index:2:SH:1:14:Source control -->
+   <h2><a class="a-header" name="SH_1_15">Source control</a></h2> <!-- index:2:SH:1:15:Source control -->
     <p>
      The source code is stored in the SourceForge <em>svn</em> and/or <em>git</em> repository.
     </p>
@@ -423,7 +462,7 @@ $ git checkout V_2_5_2
      and any post-release or back-ported fixes will be on a <em>fixes</em> branch like
      <em>V_2_5_2_fixes</em>.
     </p>
-   <h2><a class="a-header" name="SH_1_15">Compile-time features</a></h2> <!-- index:2:SH:1:15:Compile-time features -->
+   <h2><a class="a-header" name="SH_1_16">Compile-time features</a></h2> <!-- index:2:SH:1:16:Compile-time features -->
     <p>
      Compile-time features can be selected with options passed to the <em>configure</em>
      script. These include the following:

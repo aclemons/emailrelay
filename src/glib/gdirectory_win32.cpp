@@ -19,8 +19,10 @@
 ///
 
 #include "gdef.h"
+#include "gnowide.h"
 #include "gdirectory.h"
 #include "gfile.h"
+#include "gconvert.h"
 #include "glog.h"
 #include "gassert.h"
 #include <iomanip>
@@ -38,34 +40,10 @@ namespace G
 	class DirectoryIteratorImp ;
 }
 
-int G::Directory::usable( bool /*for_creation*/ ) const
-{
-	DWORD attributes = ::GetFileAttributesA( m_path.cstr() ) ;
-	if( attributes == INVALID_FILE_ATTRIBUTES )
-	{
-		DWORD e = ::GetLastError() ;
-		if( e == ERROR_ACCESS_DENIED || e == ERROR_NETWORK_ACCESS_DENIED )
-			return EACCES ;
-		return ENOENT ;
-	}
-	return ( attributes & FILE_ATTRIBUTE_DIRECTORY ) ? 0 : ENOTDIR ;
-}
-
-bool G::Directory::writeable( const std::string & filename ) const
-{
-	Path path( m_path , filename.empty() ? tmp() : filename ) ;
-	return File::probe( path ) ;
-}
-
-// ===
-
-//| \class G::DirectoryIteratorImp
-/// A pimple-pattern implementation class for DirectoryIterator.
-///
 class G::DirectoryIteratorImp
 {
 public:
-	explicit DirectoryIteratorImp( const Directory &dir ) ;
+	explicit DirectoryIteratorImp( const Directory & dir ) ;
 	~DirectoryIteratorImp() ;
 	bool isDir() const ;
 	bool more() ;
@@ -81,14 +59,41 @@ public:
 	DirectoryIteratorImp & operator=( DirectoryIteratorImp && ) = delete ;
 
 private:
-	WIN32_FIND_DATAA m_context ;
+	static bool oneDot( const wchar_t * p ) noexcept { return p[0] == L'.' && p[1] == 0 ; }
+	static bool twoDots( const wchar_t * p ) noexcept { return p[0] == L'.' && p[1] == L'.' && p[2] == 0 ; }
+	static bool oneDot( const char * p ) noexcept { return p[0] == '.' && p[1] == 0 ; }
+	static bool twoDots( const char * p ) noexcept { return p[0] == '.' && p[1] == '.' && p[2] == 0 ; }
+
+private:
+	nowide::FIND_DATA_type m_context ;
 	HANDLE m_handle ;
 	Directory m_dir ;
 	bool m_error ;
 	bool m_first ;
 } ;
 
-// ===
+// ==
+
+int G::Directory::usable( bool /*for_creation*/ ) const
+{
+	DWORD attributes = nowide::getFileAttributes( m_path ) ;
+	if( attributes == INVALID_FILE_ATTRIBUTES )
+	{
+		DWORD e = GetLastError() ;
+		if( e == ERROR_ACCESS_DENIED || e == ERROR_NETWORK_ACCESS_DENIED )
+			return EACCES ;
+		return ENOENT ;
+	}
+	return ( attributes & FILE_ATTRIBUTE_DIRECTORY ) ? 0 : ENOTDIR ;
+}
+
+bool G::Directory::writeable( const std::string & filename ) const
+{
+	Path path( m_path , filename.empty() ? tmp() : filename ) ;
+	return File::probe( path ) ;
+}
+
+// ==
 
 G::DirectoryIterator::DirectoryIterator( const Directory & dir ) :
 	m_imp(std::make_unique<DirectoryIteratorImp>(dir))
@@ -140,10 +145,10 @@ G::DirectoryIteratorImp::DirectoryIteratorImp( const Directory & dir ) :
 	m_error(false) ,
 	m_first(true)
 {
-	m_handle = FindFirstFileA( (dir.path()+"*").cstr() , &m_context ) ;
+	m_handle = nowide::findFirstFile( dir.path()/"*" , &m_context ) ;
 	if( m_handle == INVALID_HANDLE_VALUE )
 	{
-		DWORD err = ::GetLastError() ;
+		DWORD err = GetLastError() ;
 		if( err != ERROR_FILE_NOT_FOUND )
 			m_error = true ;
 	}
@@ -162,16 +167,16 @@ bool G::DirectoryIteratorImp::more()
 	if( m_first )
 	{
 		m_first = false ;
-		if( std::string(m_context.cFileName) != "." && std::string(m_context.cFileName) != ".." )
+		if( !oneDot(m_context.cFileName) && !twoDots(m_context.cFileName) )
 			return true ;
 	}
 
 	for(;;)
 	{
-		bool rc = FindNextFileA( m_handle , &m_context ) != 0 ;
+		bool rc = nowide::findNextFile( m_handle , &m_context ) != 0 ;
 		if( !rc )
 		{
-			DWORD err = ::GetLastError() ;
+			DWORD err = GetLastError() ;
 			if( err != ERROR_NO_MORE_FILES )
 				m_error = true ;
 
@@ -181,7 +186,7 @@ bool G::DirectoryIteratorImp::more()
 		}
 
 		// go round again if . or ..
-		if( std::string(m_context.cFileName) != "." && std::string(m_context.cFileName) != ".." )
+		if( !oneDot(m_context.cFileName) && !twoDots(m_context.cFileName) )
 			break ;
 	}
 
@@ -191,13 +196,13 @@ bool G::DirectoryIteratorImp::more()
 G::Path G::DirectoryIteratorImp::filePath() const
 {
 	G_ASSERT( m_handle != INVALID_HANDLE_VALUE ) ;
-	return m_dir.path() + m_context.cFileName ;
+	return m_dir.path() / fileName() ;
 }
 
 std::string G::DirectoryIteratorImp::fileName() const
 {
 	G_ASSERT( m_handle != INVALID_HANDLE_VALUE ) ;
-	return m_context.cFileName ;
+	return nowide::cFileName( m_context ) ;
 }
 
 bool G::DirectoryIteratorImp::isDir() const

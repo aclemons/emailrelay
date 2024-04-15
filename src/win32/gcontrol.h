@@ -102,6 +102,12 @@ public:
 	LRESULT sendMessage( unsigned message , WPARAM wparam = 0 , LPARAM lparam = 0 ) const ;
 		///< Sends a window message to this control.
 
+	LRESULT sendMessageString( unsigned message , WPARAM wparam , const std::string & s ) const ;
+		///< Sends a window message to this control with a string-like lparam.
+
+	std::string sendMessageGetString( unsigned int message , WPARAM wparam ) const ;
+		///< Sends a window message to this control with a string returned via lparam.
+
 	void subClass( SubClassMap & ) ;
 		///< Subclasses the control so that all received messages
 		///< are passed to onMessage(). The parameter should normally
@@ -246,13 +252,7 @@ public:
 	void set( const std::string & string ) ;
 		///< Sets the text of the edit control.
 
-	void set( const std::string & string , int utf8_overload ) ;
-		///< Sets the text of the edit control.
-
 	std::string get() const ;
-		///< Gets the text of a single-line edit control.
-
-	std::string get( int utf8_overload ) const ;
 		///< Gets the text of a single-line edit control.
 
 	unsigned lines() ;

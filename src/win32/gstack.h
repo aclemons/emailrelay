@@ -22,6 +22,7 @@
 #define G_GUI_STACK_H
 
 #include "gdef.h"
+#include "gnowide.h"
 #include "gstr.h"
 #include "gwinbase.h"
 #include <utility>
@@ -63,6 +64,7 @@ public:
 		///< also posted with a wparam of 3 and the id in lparam.
 
 	virtual ~StackPageCallback() ;
+		///< Destructor.
 } ;
 
 //| \class GGui::Stack
@@ -101,7 +103,7 @@ public:
 	static int sheetProc( HWND hwnd , UINT message , LPARAM lparam ) ;
 		///< Implementation window procedure.
 
-	static unsigned int pageProc( HWND hwnd , UINT message , PROPSHEETPAGE * page ) ;
+	static unsigned int pageProc( HWND hwnd , UINT message , G::nowide::PROPSHEETPAGE_type * page ) ;
 		///< Implementation window procedure.
 
 	static bool dlgProc( HWND hwnd , UINT message , WPARAM wparam , LPARAM lparam ) ;

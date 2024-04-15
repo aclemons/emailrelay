@@ -93,7 +93,7 @@ private:
 	G::StringArray statusData() const ;
 	void getStatusData( G::StringArray & out ) const ;
 	G::StringArray licenceData() const ;
-	void addSystemMenuItem( const char * name , unsigned int id ) ;
+	void addSystemMenuItem( std::string_view name , unsigned int id ) ;
 	static std::string timestamp() ;
 
 private:

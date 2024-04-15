@@ -74,9 +74,9 @@ bool Gui::Boot::installable()
 void Gui::Boot::install( const std::string & name , const G::Path & startstop_src , const G::Path & )
 {
 	using namespace BootImp ;
-	if( startstop_src != (dir_boot()+name) )
-		G::File::copy( startstop_src , dir_boot()+name ) ;
-	G::File::chmodx( dir_boot()+name , std::nothrow ) ;
+	if( startstop_src != (dir_boot()/name) )
+		G::File::copy( startstop_src , dir_boot()/name ) ;
+	G::File::chmodx( dir_boot()/name , std::nothrow ) ;
 	bool ok = run( "update-rc.d" , {name,"defaults"} ) == 0 || run( "rc-update" , {"add",name} ) == 0 ;
 	if( !ok )
 		throw std::runtime_error( "failed to run update-rc" ) ;
@@ -85,7 +85,7 @@ void Gui::Boot::install( const std::string & name , const G::Path & startstop_sr
 bool Gui::Boot::uninstall( const std::string & name , const G::Path & , const G::Path & )
 {
 	using namespace BootImp ;
-	G::File::remove( dir_boot()+name , std::nothrow ) ;
+	G::File::remove( dir_boot()/name , std::nothrow ) ;
 	bool ok = run( "update-rc.d" , {"-f",name,"remove"} ) == 0 || run( "rc-update" , {"-a","delete",name} ) == 0 ;
 	return ok ;
 }
@@ -94,8 +94,8 @@ bool Gui::Boot::installed( const std::string & name )
 {
 	using namespace BootImp ;
 	return
-		G::File::exists( dir_boot()+name , std::nothrow ) ||
-		G::File::exists( dir_boot(true)+name , std::nothrow ) ;
+		G::File::exists( dir_boot()/name , std::nothrow ) ||
+		G::File::exists( dir_boot(true)/name , std::nothrow ) ;
 }
 
 bool Gui::Boot::launchable( const std::string & name )

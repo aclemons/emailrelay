@@ -24,6 +24,7 @@
 #include "gdef.h"
 #include "gssl.h"
 #include "gssl_mbedtls_headers.h"
+#include "gpath.h"
 #include <memory>
 #include <stdexcept>
 #include <vector>
@@ -156,7 +157,7 @@ private:
 class GSsl::MbedTls::SecureFile
 {
 public:
-	SecureFile( const std::string & path , bool with_counted_nul ) ;
+	SecureFile( const G::Path & path , bool with_counted_nul ) ;
 	~SecureFile() ;
 	const char * p() const ;
 	const unsigned char * pu() const ;

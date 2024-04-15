@@ -164,7 +164,7 @@ void GNet::ResolverImp::onTimeout()
 	}
 	else
 	{
-		delete this ;
+		delete this ; // (previously unique_ptr<>::release()d)
 		m_zcount-- ;
 	}
 }

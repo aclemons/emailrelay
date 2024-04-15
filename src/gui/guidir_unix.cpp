@@ -84,13 +84,13 @@ G::Path Gui::Dir::pid( const G::Path & )
 
 G::Path Gui::Dir::desktop()
 {
-	return DirImp::desktop( DirImp::home()+"Desktop" ) ;
+	return DirImp::desktop( DirImp::home()/"Desktop" ) ;
 }
 
 G::Path Gui::Dir::menu()
 {
 	// see also "xdg-desktop-menu install"
-	return DirImp::envPath("XDG_DATA_HOME",DirImp::home()+".local"+"share") + "applications" ;
+	return DirImp::envPath("XDG_DATA_HOME",DirImp::home()/".local"/"share") / "applications" ;
 }
 
 G::Path Gui::Dir::autostart()
@@ -147,7 +147,7 @@ G::Path Gui::DirImp::home()
 
 G::Path Gui::DirImp::envPath( const std::string & key , const G::Path & default_ )
 {
-	return G::Path( G::Environment::get( key , default_.str() ) ) ;
+	return G::Environment::getPath( key , default_ ) ;
 }
 
 G::Path Gui::DirImp::oneOf( std::string d1 , std::string d2 , std::string d3 , std::string d4 , std::string d5 )

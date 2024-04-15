@@ -32,11 +32,12 @@ void G::gettext_init( const std::string & localedir , const std::string & appnam
 		if( !localedir.empty() )
             bindtextdomain( appname.c_str() , localedir.c_str() ) ;
 		textdomain( appname.c_str() ) ;
+		// see also bind_textdomain_codeset()
 	}
 }
 
 const char * G::gettext( const char * p ) noexcept
 {
-		return ::gettext( p ) ;
+	return ::gettext( p ) ;
 }
 

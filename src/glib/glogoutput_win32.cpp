@@ -19,7 +19,10 @@
 ///
 
 #include "gdef.h"
+#include "gnowide.h"
 #include "glogoutput.h"
+#include "gprocess.h"
+#include "gconvert.h"
 #include "genvironment.h"
 #include "gfile.h"
 #include <stdexcept>
@@ -29,43 +32,9 @@ namespace G
 {
 	namespace LogOutputWindowsImp
 	{
-		std::string thisExe()
+		bool oldWindows() noexcept
 		{
-			// same code is in G::Process:exe()...
-			std::vector<char> buffer ;
-			std::size_t sizes[] = { 80U , 1024U , 32768U , 0U } ; // documented limit of 32k
-			for( std::size_t * size_p = sizes ; *size_p ; ++size_p )
-			{
-				buffer.resize( *size_p+1U , '\0' ) ;
-				DWORD size = static_cast<DWORD>( buffer.size() ) ;
-				HINSTANCE hinstance = HNULL ;
-				DWORD rc = GetModuleFileNameA( hinstance , &buffer[0] , size ) ;
-				if( rc == 0 ) break ;
-				if( rc < size )
-					return std::string( &buffer[0] , rc ) ;
-			}
-			return std::string() ;
-		}
-		std::string basename( std::string s )
-		{
-			std::string::size_type pos1 = s.find_last_of( "\\" ) ;
-			if( pos1 != std::string::npos )
-				s = s.substr( pos1+1U ) ;
-			std::string::size_type pos2 = s.find_last_of( "." ) ;
-			if( pos2 != std::string::npos )
-				s.resize( pos2 ) ;
-			return s ;
-		}
-		bool oldWindows()
-		{
-			static bool old_windows_set = false ;
-			static bool old_windows = false ;
-			if( !old_windows_set )
-			{
-				old_windows_set = true ;
-				old_windows = !IsWindowsVistaOrGreater() ;
-			}
-			return old_windows ;
+			return !IsWindowsVistaOrGreater() ;
 		}
 	}
 }
@@ -98,9 +67,7 @@ void G::LogOutput::osoutput( int fd , G::Log::Severity severity , char * message
 			id += 10 ;
 
 		message[n] = '\0' ;
-		const char * p[] = { message , nullptr } ;
-		BOOL rc = ReportEventA( m_handle , type , 0 , id , nullptr , 1 , 0 , p , nullptr ) ;
-		GDEF_IGNORE_VARIABLE( rc ) ;
+		nowide::reportEvent( m_handle , id , type , message ) ;
 	}
 
 	// standard error or log file -- note that stderr is not accessible if a gui
@@ -115,44 +82,36 @@ void G::LogOutput::osinit()
 {
 	if( m_config.m_use_syslog )
 	{
-		std::string this_exe = LogOutputWindowsImp::thisExe() ;
+		Path this_exe = G::Process::exe() ;
 		if( !this_exe.empty() )
 		{
-			std::string this_name = LogOutputWindowsImp::basename( this_exe ) ;
 			G::LogOutput::register_( this_exe ) ;
-			m_handle = RegisterEventSourceA( nullptr , this_name.c_str() ) ;
+
+			std::string this_name = this_exe.withoutExtension().basename() ;
+			m_handle = nowide::registerEventSource( this_name ) ;
 			if( m_handle == HNULL && !m_config.m_allow_bad_syslog )
 				throw EventLogError() ;
 		}
 	}
 }
 
-void G::LogOutput::register_( const std::string & exe_path )
+void G::LogOutput::register_( const Path & exe_path )
 {
 	// this method will normally fail because of access rights so it
 	// should also be run as part of the install process
 
-	std::string reg_path =
-		"SYSTEM\\CurrentControlSet\\services\\eventlog\\Application\\" +
-		LogOutputWindowsImp::basename(exe_path) ;
+	std::string reg_path = std::string("SYSTEM/CurrentControlSet/services/eventlog/Application/")
+		.append( exe_path.withoutExtension().basename() ) ;
 
 	HKEY key = 0 ;
-	int sam = KEY_WRITE ;
-	LONG e = RegCreateKeyExA( HKEY_LOCAL_MACHINE , reg_path.c_str() , 0 , NULL , 0 , sam , NULL , &key , NULL ) ;
+	LONG e = nowide::regCreateKey( reg_path , &key ) ;
 	if( e == ERROR_SUCCESS && key != 0 )
 	{
-		DWORD one = 1 ;
 		DWORD types = EVENTLOG_INFORMATION_TYPE | EVENTLOG_WARNING_TYPE | EVENTLOG_ERROR_TYPE ;
-		RegSetValueExA( key , "EventMessageFile" , 0 , REG_SZ ,
-			reinterpret_cast<const BYTE*>(exe_path.c_str()) ,
-			static_cast<DWORD>(exe_path.length())+1U ) ;
-		RegSetValueExA( key , "CategoryCount" , 0 , REG_DWORD ,
-			reinterpret_cast<const BYTE*>(&one) , sizeof(one) ) ;
-		RegSetValueExA( key , "CategoryMessageFile" , 0 , REG_SZ ,
-			reinterpret_cast<const BYTE*>(exe_path.c_str()) ,
-			static_cast<DWORD>(exe_path.length())+1U ) ;
-		RegSetValueExA( key , "TypesSupported" , 0 , REG_DWORD ,
-			reinterpret_cast<const BYTE*>(&types) , sizeof(types) ) ;
+		nowide::regSetValue( key , "EventMessageFile" , exe_path.str() ) ;
+		nowide::regSetValue( key , "CategoryCount" , DWORD(1) ) ;
+		nowide::regSetValue( key , "CategoryMessageFile" , exe_path.str() ) ;
+		nowide::regSetValue( key , "TypesSupported" , types ) ;
 	}
 	if( key != 0 )
 		RegCloseKey( key ) ;

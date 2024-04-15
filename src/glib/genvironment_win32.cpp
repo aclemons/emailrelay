@@ -19,55 +19,17 @@
 ///
 
 #include "gdef.h"
+#include "gnowide.h"
 #include "genvironment.h"
-#include <cstdlib> // _environ
-#include <cstring>
-#include <vector>
-#include <cerrno>
-
-#if ! GCONFIG_HAVE_GETENV_S
-inline errno_t getenv_s( std::size_t * n_out , char * buffer , std::size_t n_in , const char * name )
-{
-	if( n_out == nullptr || name == nullptr || (!buffer&&n_in) )
-		return EINVAL ;
-
-	const char * p = ::getenv( name ) ;
-	if( p == nullptr )
-	{
-		*n_out = 0 ;
-		return 0 ;
-	}
-
-	size_t n = std::strlen( p ) ;
-	*n_out = n + 1U ;
-
-	if( n >= n_in )
-		return ERANGE ;
-
-	if( buffer )
-	{
-		for( ++n ; n ; n-- )
-			*buffer++ = *p++ ;
-	}
-
-	return 0 ;
-}
-#endif
 
 std::string G::Environment::get( const std::string & name , const std::string & default_ )
 {
-	std::size_t n = 0U ;
-	errno_t rc = getenv_s( &n , nullptr , 0U , name.c_str() ) ;
-	if( n == 0U ) // rc will be ERANGE if the environment variable exists
-		return default_ ;
+	return nowide::getenv( name , default_ ) ;
+}
 
-	std::vector<char> buffer( n ) ;
-	rc = getenv_s( &n , &buffer[0] , n , name.c_str() ) ;
-	if( rc != 0 || n == 0U )
-		return default_ ;
-
-	buffer.push_back( '\0' ) ; // just in case
-	return std::string( &buffer[0] ) ;
+G::Path G::Environment::getPath( const std::string & name , const G::Path & default_ )
+{
+	return G::Path( nowide::getenv( name , default_.str() ) ) ;
 }
 
 G::Environment G::Environment::minimal( bool )
@@ -77,10 +39,6 @@ G::Environment G::Environment::minimal( bool )
 
 void G::Environment::put( const std::string & name , const std::string & value )
 {
-	// dont use _putenv_s() here in order to maintain compatibility
-	// with ancient run-times
-	std::string s = name + "=" + value ;
-	char * deliberately_leaky_copy = _strdup( s.c_str() ) ;
-	GDEF_IGNORE_RETURN _putenv( deliberately_leaky_copy ) ;
+	nowide::putenv( name , value ) ;
 }
 

@@ -361,7 +361,7 @@ bool GPop::StoreList::shared( const StoreMessage & message ) const
 			G::Path sub_dir = iter.filePath() ;
 			G_DEBUG( "GPop::StoreList::shared: checking sub-directory: " << sub_dir ) ;
 
-			G::Path epath( message.epath(m_sdir+sub_dir.basename()) ) ;
+			G::Path epath( message.epath(m_sdir/sub_dir.basename()) ) ;
 			found = G::File::exists( epath , std::nothrow ) ;
 			G_DEBUG_IF( found , "GPop::StoreList::shared: content shared: envelope: " << epath ) ;
 		}

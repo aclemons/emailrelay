@@ -19,6 +19,7 @@
 ///
 
 #include "gdef.h"
+#include "gnowide.h"
 #include "gappbase.h"
 #include "gappinst.h"
 #include "gwindow.h"
@@ -40,7 +41,7 @@ GGui::ApplicationBase::~ApplicationBase()
 
 std::string GGui::ApplicationBase::createWindow( int show_style , bool do_show , int dx , int dy , bool no_throw )
 {
-	G_DEBUG( "GGui::ApplicationBase::createWindow" ) ;
+	G_DEBUG( "GGui::ApplicationBase::createWindow: name=" << m_name << " first=" << (m_previous==0) ) ;
 
 	// first => register a window class
 	if( m_previous == 0 )
@@ -82,7 +83,7 @@ void GGui::ApplicationBase::initFirst()
 	G_DEBUG( "GGui::ApplicationBase::initFirst" ) ;
 
 	UINT icon_id = resource() ;
-	HICON icon = icon_id ? LoadIcon(hinstance(),MAKEINTRESOURCE(icon_id)) : 0 ;
+	HICON icon = icon_id ? G::nowide::loadIcon(hinstance(),icon_id) : 0 ;
 	if( icon == 0 )
 		icon = classIcon() ;
 
@@ -103,7 +104,7 @@ void GGui::ApplicationBase::initFirst()
 void GGui::ApplicationBase::close() const
 {
 	G_DEBUG( "GGui::ApplicationBase::close: sending wm-close" ) ;
-	SendMessage( handle() , WM_CLOSE , 0 , 0 ) ;
+	G::nowide::sendMessage( handle() , WM_CLOSE , 0 , 0 ) ;
 }
 
 void GGui::ApplicationBase::run()
@@ -154,34 +155,23 @@ void GGui::ApplicationBase::beep() const
 
 bool GGui::ApplicationBase::messageBoxQuery( const std::string & message )
 {
-	HWND hwnd = messageBoxHandle() ;
+		HWND hwnd = messageBoxHandle() ;
 	unsigned int type = messageBoxType( hwnd , MB_YESNO | MB_ICONQUESTION ) ;
-	return messageBoxCore( hwnd , type , title() , message ) ;
+	return G::nowide::messageBox( hwnd , message , title() , type ) ;
 }
 
 void GGui::ApplicationBase::messageBox( const std::string & message )
 {
-	HWND hwnd = messageBoxHandle() ;
+		HWND hwnd = messageBoxHandle() ;
 	unsigned int type = messageBoxType( hwnd , MB_OK | MB_ICONEXCLAMATION ) ;
-	messageBoxCore( hwnd , type , title() , message ) ;
+	G::nowide::messageBox( hwnd , message , title() , type ) ;
 }
 
 void GGui::ApplicationBase::messageBox( const std::string & title , const std::string & message )
 {
 	HWND hwnd = HNULL ;
 	unsigned int type = messageBoxType( hwnd , MB_OK | MB_ICONEXCLAMATION ) ;
-	messageBoxCore( hwnd , type , title , message ) ;
-}
-
-bool GGui::ApplicationBase::messageBoxCore( HWND parent , unsigned int type ,
-	const std::string & title , const std::string & message )
-{
-	std::wstring wtitle ;
-	std::wstring wmessage ;
-	G::Convert::convert( wtitle , title ) ;
-	G::Convert::convert( wmessage , message ) ;
-	int rc = MessageBoxW( parent , wmessage.c_str() , wtitle.c_str() , type ) ;
-	return rc == IDOK || rc == IDYES ;
+	G::nowide::messageBox( hwnd , message , title , type ) ;
 }
 
 HWND GGui::ApplicationBase::messageBoxHandle() const

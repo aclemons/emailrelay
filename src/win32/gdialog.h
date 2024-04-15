@@ -72,7 +72,7 @@ public:
 		///< Returns false if the dialog could not be created or
 		///< if onInit() returned false.
 
-	bool run( const char * resource_name ) ;
+	bool run( std::string_view resource_name ) ;
 		///< An override taking a resource name rather than a
 		///< resource id.
 
@@ -84,7 +84,7 @@ public:
 		///< Returns false if the dialog could not be created or
 		///< if onInit() returned false.
 
-	bool runModeless( const char * resource_name , bool visible = true ) ;
+	bool runModeless( std::string_view resource_name , bool visible = true ) ;
 		///< An override taking a resource name rather than a
 		///< resource id.
 
@@ -104,7 +104,7 @@ public:
 		///< the control object's address and the address of the super-
 		///< class window procedure.)
 
-	bool registerNewClass( HICON hicon , const std::string & class_name ) const;
+	bool registerNewClass( HICON hicon , std::string_view class_name ) const;
 		///< Registers a new window-class based on this
 		///< dialog box's window-class, but with the specified
 		///< icon. (See "Custom Dialog Boxes" in MSDN.)
@@ -176,11 +176,11 @@ private:
 	DialogList::iterator find( HWND h ) ;
 	INT_PTR onControlColour_( WPARAM wparam , LPARAM lparam , WORD type ) ;
 	bool runStart() ;
-	bool runCore( const char * ) ;
-	bool runCore( const wchar_t * ) ;
+	bool runCore( int ) ;
+	bool runCore( std::string_view ) ;
 	bool runEnd( int ) ;
-	bool runModelessCore( const char * , bool ) ;
-	bool runModelessCore( const wchar_t * , bool ) ;
+	bool runModelessCore( int , bool ) ;
+	bool runModelessCore( std::string_view , bool ) ;
 	bool runModelessEnd( HWND , bool ) ;
 	static LPARAM toLongParam( Dialog * p ) ;
 	static LONG_PTR toLongPtr( Dialog * p ) ;

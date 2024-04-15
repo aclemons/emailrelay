@@ -51,7 +51,7 @@ struct G::Limits
 template <>
 struct G::Limits<G::Scale::Normal> /// Normal specialisation of G::Limits.
 {
-	static constexpr bool small = false ;
+	static constexpr bool is_small = false ;
 	static constexpr int log = 1000 ; // log line limit
 	static constexpr int path_buffer = 1024 ; // getcwd() first-attempt buffer size
 	static constexpr int file_buffer = 8192 ; // read() buffer size for file copying (BUFSIZ)
@@ -64,7 +64,7 @@ struct G::Limits<G::Scale::Normal> /// Normal specialisation of G::Limits.
 template <>
 struct G::Limits<G::Scale::Small> /// Small-memory specialisation of G::Limits.
 {
-	static constexpr bool small = true ;
+	static constexpr bool is_small = true ;
 	static constexpr int log = 120 ;
 	static constexpr int path_buffer = 64 ;
 	static constexpr int file_buffer = 4096 ;

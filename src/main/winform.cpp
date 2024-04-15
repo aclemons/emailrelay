@@ -63,21 +63,12 @@ Main::WinForm::WinForm( HINSTANCE hinstance , const G::StringArray & cfg_data ,
 		addSystemMenuItem( txt("Quit") , 0x10 ) ;
 }
 
-void Main::WinForm::addSystemMenuItem( const char * name , unsigned int id )
+void Main::WinForm::addSystemMenuItem( std::string_view name , unsigned int id )
 {
 	G_ASSERT( id > 2 && (id & 0xf) == 0 && id < 0xf000 ) ;
 	HMENU hmenu = GetSystemMenu( handle() , FALSE ) ;
 	if( hmenu )
-	{
-		MENUITEMINFOA item{} ;
-		item.cbSize = sizeof( item ) ;
-		item.fMask = MIIM_STRING | MIIM_ID ; // setting dwTypeData & wID
-		item.fType = MFT_STRING ;
-		item.wID = id ;
-		item.dwTypeData = const_cast<LPSTR>(name) ;
-		item.cch = static_cast<UINT>( std::strlen(name) ) ;
-		InsertMenuItemA( hmenu , 0 , TRUE , &item ) ;
-	}
+		G::nowide::insertMenuItem( hmenu , id , G::sv_to_string(name) ) ;
 }
 
 void Main::WinForm::minimise()

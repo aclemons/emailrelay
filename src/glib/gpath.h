@@ -24,6 +24,9 @@
 #include "gdef.h"
 #include "gstringarray.h"
 #include "gstringview.h"
+#ifdef G_WINDOWS
+#include "gconvert.h"
+#endif
 #include <string>
 #include <iostream>
 #include <initializer_list>
@@ -56,11 +59,13 @@ namespace G
 /// in the degenerate case.
 ///
 /// This class is agnostic on the choice of UTF-8 or eight-bit characters since
-/// the delimiters are all seven-bit ascii. Wide characters are not supported,
-/// but to allow migration to std::filesystem::path all Path objects should be
-/// constructed and used in o/s-aware source, such as "gfile_win32.cpp",
-/// "genvironment_win32.cpp" and "gprocess_win32.cpp", and std::fstream objects
-/// should be initialised using G::Path::iopath().
+/// the delimiters are all seven-bit ascii. Wide characters are not used,
+/// following "utf8everywhere.org" rather than std::filesystem::path.
+///
+/// Most file operations should be handled in o/s-aware source (see G::File,
+/// G::Environment, G::Process etc) so that the Path character encoding is
+/// opaque. However, std::fstream objects can be initialised directly by
+/// using G::Path::iopath().
 ///
 /// Both posix and windows behaviours are available at run-time; the default
 /// behaviour is the native behaviour, but this can be overridden, typically
@@ -77,8 +82,13 @@ class G::Path
 public:
 	using value_type = char ;
 	using string_type = std::string ;
+	#if defined(G_WINDOWS) && defined(G_UNICODE)
+		using iopath_char_type = wchar_t ;
+	#else
+		using iopath_char_type = char ;
+	#endif
 
-	Path() ;
+	Path() noexcept(noexcept(std::string())) ;
 		///< Default constructor for a zero-length path.
 		///< Postcondition: empty()
 
@@ -106,14 +116,13 @@ public:
 	std::string str() const ;
 		///< Returns the path string.
 
-	const string_type & iopath() const noexcept ;
-		///< Returns the path's native string by reference, suitable for
-		///< initialising c++ streams.
+	const iopath_char_type * iopath() const ;
+		///< Returns the path's string with a type that is suitable for
+		///< initialising std::fstreams.
 
 	const value_type * cstr() const noexcept ;
-		///< Returns the path's native string, suitable for low-level
-		///< functions like std::fopen(), std::rename() and stat().
-		///< Typically used by o/s-aware code such as G::File.
+		///< Returns the path's c-string. Typically used by o/s-aware
+		///< code such as G::File.
 
 	bool simple() const ;
 		///< Returns true if the path has a single component (ignoring "." parts),
@@ -162,9 +171,10 @@ public:
 	Path & pathAppend( const std::string & tail ) ;
 		///< Appends a filename or a relative path to this path.
 
-	bool replace( const std::string_view & from , const std::string_view & to ) ;
+	bool replace( const std::string_view & from , const std::string_view & to , bool ex_root = false ) ;
 		///< Replaces the first occurrence of 'from' with 'to',
-		///< excluding the root part. Returns true if replaced.
+		///< optionally excluding the root part. Returns true
+		///< if replaced.
 
 	StringArray split() const ;
 		///< Spits the path into a list of component parts (ignoring "." parts
@@ -217,6 +227,9 @@ public:
 
 private:
 	std::string m_str ;
+	#if defined(G_WINDOWS) && defined(G_UNICODE)
+		mutable std::wstring m_wstr ;
+	#endif
 } ;
 
 inline
@@ -232,15 +245,20 @@ std::string G::Path::str() const
 }
 
 inline
-const std::string & G::Path::iopath() const noexcept
+const char * G::Path::cstr() const noexcept
 {
-	return m_str ;
+	return m_str.c_str() ;
 }
 
 inline
-const char * G::Path::cstr() const noexcept
+const G::Path::iopath_char_type * G::Path::iopath() const
 {
-	return iopath().c_str() ;
+	#if defined(G_WINDOWS) && defined(G_UNICODE)
+		m_wstr = Convert::widen( m_str ) ;
+		return m_wstr.c_str() ;
+	#else
+		return m_str.c_str() ;
+	#endif
 }
 
 namespace G
@@ -252,17 +270,20 @@ namespace G
 	}
 
 	inline
-	Path & operator+=( Path & p , const std::string & str )
+	Path & operator/=( Path & p , const std::string & str )
 	{
 		p.pathAppend( str ) ;
 		return p ;
 	}
 
 	inline
-	Path operator+( const Path & p , const std::string & str )
+	Path operator/( const Path & p , const std::string & str )
 	{
 		return Path( p , str ) ; // NOLINT not return {...}
 	}
+
+	Path & operator+=( Path & , const std::string & ) = delete ;
+	Path & operator+( const Path & , const std::string & ) = delete ;
 
 	inline
 	void swap( Path & p1 , Path & p2 ) noexcept

@@ -22,8 +22,14 @@
 #define G_CONVERT_H
 
 #include "gdef.h"
+#include "gcodepage.h"
+#include "gstringview.h"
 #include "gexception.h"
 #include <string>
+#include <vector>
+#include <type_traits>
+#include <cstdint> // std::uint_least32_t
+#include <functional>
 
 namespace G
 {
@@ -31,101 +37,70 @@ namespace G
 }
 
 //| \class G::Convert
-/// A static class which provides string encoding conversion functions. Supported
-/// encodings are a 'native' encoding (which might be a SBCS code page, DBCS, or
-/// UTF-8, and possibly related to locale environment variables), UTF-16 wchar,
-/// and UTF-8 multi-byte char.
-///
-/// Conversions that can fail take a ThrowOnError parameter which is used to add
-/// context information to the G::Convert::Error exception that is thrown.
-///
-/// Eg:
-/// \code
-/// std::string to_utf8( const std::wstring & wide_input )
-/// {
-///     G::Convert::utf8 utf8_result ;
-///     G::Convert::convert( utf8_result , wide_input ) ;
-///     return utf8_result.s ;
-/// }
-/// std::string to_native( const std::wstring & wide_input )
-/// {
-///     std::string native_result ;
-///     G::Convert::convert( native_result , wide_input , G::Convert::ThrowOnError("to_native") ) ;
-///     return native_result ;
-/// }
-/// \endcode
+/// A static class which provides string encoding conversion functions between
+/// UTF-8 and wchar_t. On Unix wchar_t strings are unencoded UCS-4; on Windows
+/// wchar_t strings are UTF-16.
 ///
 class G::Convert
 {
 public:
-	G_EXCEPTION_CLASS( Error , tx("string character-set conversion error") ) ;
-	using tstring = std::basic_string<TCHAR> ;
+	G_EXCEPTION_CLASS( NarrowError , tx("string character-set narrowing error") ) ;
+	G_EXCEPTION_CLASS( WidenError , tx("string character-set widening error") ) ;
+	using unicode_type = std::uint_least32_t ;
+	static constexpr unicode_type unicode_error = ~(unicode_type)0 ;
+	using ParseFn = std::function<bool(unicode_type,std::size_t,std::size_t)> ;
 
-	struct utf8 /// A string wrapper that indicates UTF-8 encoding.
-	{
-		utf8() = default;
-		explicit utf8( const std::string & s_ ) : s(s_) {}
-		std::string s ;
-	} ;
+	static std::wstring widen( std::string_view ) ;
+		///< Widens from utf8 to utf16/ucs4 wstring. Invalid input characters
+		///< are substituted with L'\xFFFD'.
 
-	struct ThrowOnError /// Holds context information which convert() adds to the exception when it fails.
-	{
-		ThrowOnError() = default;
-		explicit ThrowOnError( const std::string & context_ ) : context(context_) {}
-		std::string context ;
-	} ;
+	static bool valid( std::string_view ) noexcept ;
+		///< Returns true if the string is valid utf8.
 
-	static void convert( utf8 & utf_out , const std::string & in_ ) ;
-		///< Converts between string types/encodings:
-		///< native to utf8.
+	static std::string narrow( const std::wstring & ) ;
+		///< Narrows from utf16/ucs4 wstring to utf8. Invalid input characters
+		///< are substituted with u8"\uFFFD", ie. "\xEF\xBF\xBD".
 
-	static void convert( utf8 & utf_out , const utf8 & in_ ) ;
-		///< Converts between string types/encodings:
-		///< utf8 to utf8.
+	static std::string narrow( const wchar_t * ) ;
+		///< Pointer overload.
 
-	static void convert( utf8 & utf_out , const std::wstring & in_ ) ;
-		///< Converts between string types/encodings:
-		///< utf16 to utf8.
+	static std::string narrow( const wchar_t * , std::size_t n ) ;
+		///< String-view overload.
 
-	static void convert( std::string & native_out , const std::string & in_ ) ;
-		///< Converts between string types/encodings:
-		///< native to native.
+	static bool invalid( const std::wstring & ) ;
+		///< Returns true if the string contains L'\xFFFD'.
 
-	static void convert( std::string & native_out , const utf8 & in_ , const ThrowOnError & ) ;
-		///< Converts between string types/encodings:
-		///< utf8 to native.
+	static bool invalid( const std::string & ) ;
+		///< Returns true if the string contains u8"\uFFFD".
 
-	static void convert( std::string & native_out , const std::wstring & in_ , const ThrowOnError & ) ;
-		///< Converts between string types/encodings:
-		///< utf16 to native.
+	static std::size_t u8out( unicode_type , char * & ) noexcept ;
+		///< Puts a UTF-8 code into a character buffer. Advances the
+		///< pointer by reference and returns the number of bytes (1..4).
+		///< Returns zero on error, without advancing the pointer.
 
-	static void convert( std::wstring & wide_out , const std::string & native_in ) ;
-		///< Converts between string types/encodings:
-		///< native to utf16.
+	static std::pair<unicode_type,std::size_t> u8in( const unsigned char * , std::size_t n ) noexcept ;
+		///< Reads a unicode character from a UTF-8 buffer together with
+		///< the number of bytes consumed. Returns [unicode_error,1] on
+		///< error.
 
-	static void convert( std::wstring & wide_out , const utf8 & utf_in ) ;
-		///< Converts between string types/encodings:
-		///< utf8 to utf16.
+	static void u8parse( std::string_view , ParseFn ) ;
+		///< Calls a function for each unicode value in the given
+		///< UTF-8 string. Stops if the callback returns false. The
+		///< callback parameters are: unicode value (0xFFFD on
+		///< error), UTF-8 bytes consumed, and UTF-8 byte offset.
 
-	static void convert( std::wstring & wide_out , const std::wstring & wide_in ) ;
-		///< Converts between string types/encodings:
-		///< utf16 to utf16.
-
-	static void convert( std::string & native_out , const std::string & in_ , const ThrowOnError & ) ;
-		///< An overload for TCHAR shenanigans on windows. Note that
-		///< a TCHAR can sometimes be a char, depending on the build
-		///< options, so this three-parameter overload allows for the
-		///< input to be a basic_string<TCHAR>, whatever the build.
-		///<
-		///< Converts between string types/encodings:
-		///< native to native.
+	static bool utf16( bool ) ;
+		///< Forces utf16 even if wchar_t is 4 bytes. Used in testing.
 
 public:
 	Convert() = delete ;
 
 private:
-	static std::string narrow( const std::wstring & s , bool is_utf8 , const std::string & = {} ) ;
-	static std::wstring widen( const std::string & s , bool is_utf8 , const std::string & = {} ) ;
+	static bool m_utf16 ;
+	static std::wstring widenImp( const char * , std::size_t ) ;
+	static std::size_t widenImp( const char * , std::size_t , wchar_t * , bool * = nullptr ) noexcept ;
+	static std::string narrowImp( const wchar_t * , std::size_t ) ;
+	static std::size_t narrowImp( const wchar_t * , std::size_t , char * ) noexcept ;
 } ;
 
 #endif

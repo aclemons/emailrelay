@@ -87,6 +87,8 @@ public:
 
 private: // overrides
 	void readEvent() override ;
+
+private:
 	void sendResponse( const GNet::Address & , GNet::DnsMessage ) ;
 
 private:

@@ -87,7 +87,7 @@ private:
 inline
 bool Gui::Link::exists( const G::Path & dir , const std::string & link_name )
 {
-	return !dir.empty() && !link_name.empty() && exists( dir + link_name ) ;
+	return !dir.empty() && !link_name.empty() && exists( dir / link_name ) ;
 }
 
 #endif

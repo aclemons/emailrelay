@@ -190,17 +190,18 @@ relevant EventHandler/ExceptionHandler code via the *EventEmitter* class.
 
 EventState objects also contain a pointer to an EventLogging interface. This
 interface provides a string that describes some key attribute of the event
-handling object that implements the interface. EventLogging objects are arranged
-in a linked list that runs through the assemblage of event handling objects.
-Before delivering an event the EventEmitter combines the strings returned by
-this linked list and applies the result to the G::LogOutput singleton.
+handling object. EventLogging objects are arranged in a linked list that runs
+through the assemblage of event handling objects. Before delivering an event the
+EventEmitter combines the strings returned by this linked list and applies the
+result to the G::LogOutput singleton so that everything logged by the event
+handling code will have that prefix.
 
 Multi-threading
 ===============
-Multi-threading is used to make DNS lookup and external program asynchronous so
-unless disabled at build-time std::thread is used in a future/promise pattern to
-wrap up *getaddrinfo()* and *waitpid()* system calls. The shared state comprises
-only the parameters and return results from these system calls, and
+Multi-threading is used only to make DNS lookup and external program execution
+asynchronous. A std::thread worker thread is used in a future/promise pattern to
+wrap up the *getaddrinfo()* and *waitpid()* system calls. The shared state
+comprises only the parameters and return results from these system calls, and
 synchronisation back to the main thread uses the main event loop (see
 \ *GNet::FutureEvent*\ ). Threading is not used elsewhere so the C/C++ run-time
 library does not need to be thread-safe.
@@ -241,6 +242,36 @@ options can be used. This is done as a 'unity build', concatenating the shared
 code into one source file and compiling that for the GUI. (This technique
 requires that private 'detail' namespaces are named rather than anonymous so
 that there cannot be any name clashes within the combined anonymous namespace.)
+
+Character encoding on Windows
+=============================
+E-MailRelay on Windows generally holds all its internal strings in UTF-8,
+independent of the current active code page or locale. This is relevant mostly
+to file system paths, but also to event viewer output, configuration file
+contents, command-lines assembled to run external programs, system account
+information, registry paths and environment variables.
+
+The header file *gnowide.h* has inline functions that convert to and from UTF-8
+before calling the *wide* Windows API functions. The actual convertion between
+UTF-8 and UTF-16 wide characters is done by the G::Convert class. As a temporary
+measure the G_NO_UNICODE preprocessor switch can be defined to go back to using
+*ansi* functions.
+
+The G::Path class holds filesystem paths using UTF-8. Windows-specific source
+code, such as in *gfile_win32.cpp*, passes the UTF-8 strings to the *nowide*
+inline functions which in turn call wide runtime library functions like
+_wopen(). The exception is that the G::Path::iopath() method can be used to
+initialise std::fstreams directly, without being wrapped by *nowide* functions.
+
+The G::Arg class can be used to capture the Windows command-line in its wide
+form and then convert to UTF-8. The main() and WinMain() functions use the
+G::Arg::windows() factory function to do this.
+
+Configuration files are expected to use UTF-8 character encoding. The secrets
+file should also use UTF-8, but Base64_ or xtext_ encoding is used for the account
+details, so the encoding is less relevant there. The startup batch file
+(\ *emailrelay-start.bat*\ ) uses the OEM code page and the E-MailRelay GUI makes
+sure that the user's choice of install directory is compatible with this.
 
 Windows build
 =============
@@ -366,8 +397,10 @@ Use *./configure --help* to see a complete list of options.
 
 
 
+.. _Base64: https://en.wikipedia.org/wiki/Base64
 .. _PAM: https://en.wikipedia.org/wiki/Linux_PAM
 .. _SMTP: https://en.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol
 .. _TLS: https://en.wikipedia.org/wiki/Transport_Layer_Security
+.. _xtext: https://tools.ietf.org/html/rfc3461#section-4
 
 .. footer:: Copyright (C) 2001-2023 Graeme Walker

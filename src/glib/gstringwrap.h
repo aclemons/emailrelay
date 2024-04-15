@@ -39,40 +39,19 @@ public:
 	static std::string wrap( const std::string & text ,
 		const std::string & prefix_first , const std::string & prefix_other ,
 		std::size_t width_first = 70U , std::size_t width_other = 0U ,
-		bool preserve_spaces = false , const std::locale & = defaultLocale() ) ;
-			///< Does word-wrapping. The return value is a string with embedded
-			///< newlines. If 'preserve_spaces' is true then all space characters
-			///< between input words that end up in the middle of an output line
-			///< are preserved. There is no special handling of tabs or carriage
-			///< returns. The 'first/other' parameters distinguish between the
-			///< first output line and the rest.
+		bool preserve_spaces = false ) ;
+			///< Does word-wrapping of UTF-8 text. The return value is a string
+			///< with embedded newlines. If 'preserve_spaces' is true then all
+			///< space characters between input words that end up in the middle
+			///< of an output line are preserved. There is no special handling
+			///< of tabs or carriage returns. The 'first/other' parameters
+			///< distinguish between the first output line and the rest.
 
-	static std::locale defaultLocale() ;
-		///< Returns a locale with at least the CTYPE and codecvt facets
-		///< initialised according to the C locale's CTYPE. Returns the
-		///< classic locale on error.
-		///<
-		///< A motivating use-case is where the gettext() library has been
-		///< initialised by setting the C locale's CTYPE and MESSAGES facets,
-		///< meaning that all gettext() strings are automatically converted
-		///< to the relevant character encoding. If the strings from
-		///< gettext() are to be word-wrapped accurately then the
-		///< word-wrapper's CTYPE and codecvt facets need to match the
-		///< C locale's CTYPE.
-
-	static std::size_t wordsize( const std::string & mbcs , const std::locale & ) ;
-		///< Returns the number of wide characters after converting the input
-		///< string using the locale's codecvt facet. Conversion errors are
-		///< ignored.
+	static std::size_t wordsize( const std::string & ) ;
+		///< Returns the number of characters in UTF-8 text.
 
 public:
 	StringWrap() = delete ;
-
-private:
-	struct Config ;
-	class WordWrapper ;
-	static std::size_t wordsize( std::string_view mbcs , const std::locale & ) ;
-	static void wrap( std::istream & , WordWrapper & ) ;
 } ;
 
 #endif

@@ -64,13 +64,16 @@ public:
 	bool next() ;
 		///< Iterator. Returns true if there is something to run().
 
+	// installer progress output -- see also ProgressPage::format() --
+	// eg. "installing a file [somefile] ... nothing to do"
+	//
 	struct Output
 	{
-		std::string action_utf8 ;
-		std::string subject ;
-		std::string result_utf8 ;
-		std::string error ;
-		std::string error_utf8 ;
+		std::string action ; // eg. "installing a file" (translated)
+		std::string subject ; // eg. "somefile"
+		std::string result ; // eg. "nothing to do" (translated)
+		std::string error ; // eg. "could not install" (translated)
+		std::string error_more ; // eg. "file not found"
 	} ;
 
 	Output output() ;

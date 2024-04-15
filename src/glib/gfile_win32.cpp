@@ -19,9 +19,11 @@
 ///
 
 #include "gdef.h"
+#include "gnowide.h"
 #include "gfile.h"
-#include "gassert.h"
+#include "gconvert.h"
 #include "gprocess.h"
+#include "gassert.h"
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <io.h>
@@ -39,28 +41,13 @@ namespace G
 	namespace FileImp
 	{
 		template <typename T>
-		void open( T & io , const char * path , std::ios_base::openmode mode )
+		void open( T & io , const Path & path , std::ios_base::openmode mode )
 		{
-			#if GCONFIG_HAVE_EXTENDED_OPEN
-				io.open( path , mode , _SH_DENYNO ) ; // _fsopen()
-			#else
-				io.open( path , mode ) ;
-			#endif
+			nowide::open( io , path , mode ) ;
 		}
-		int open( const char * path , int flags , int pmode ) noexcept
+		int open( const Path & path , int flags , int pmode )
 		{
-			#if GCONFIG_HAVE_SOPEN_S
-				_set_errno( 0 ) ; // mingw bug
-				int fd = -1 ;
-				errno_t rc = _sopen_s( &fd , path , flags | _O_NOINHERIT , _SH_DENYNO , pmode ) ;
-				return rc == 0 ? fd : -1 ;
-			#else
-				#if GCONFIG_HAVE_SOPEN
-					return _sopen( path , flags | _O_NOINHERIT , _SH_DENYNO , pmode ) ;
-				#else
-					return _open( path , flags | _O_NOINHERIT , pmode ) ;
-				#endif
-			#endif
+			return nowide::open( path , flags , pmode ) ;
 		}
 		void uninherited( HANDLE h )
 		{
@@ -75,20 +62,9 @@ namespace G
 		{
 			return fp ? _fileno( fp ) : -1 ;
 		}
-		std::FILE * fopen( const char * path , const char * mode ) noexcept
+		std::FILE * fopen( const Path & path , const char * mode )
 		{
-			std::FILE * fp = nullptr ;
-			#if GCONFIG_HAVE_FSOPEN
-				fp = _fsopen( path , mode , _SH_DENYNO ) ;
-			#else
-				#if GCONFIG_HAVE_FOPEN_S
-					errno_t e = fopen_s( &fp , path , mode ) ;
-					if( e )
-						fp = nullptr ;
-				#else
-					fp = std::fopen( path , mode ) ;
-				#endif
-			#endif
+			std::FILE * fp = nowide::fopen( path , mode ) ;
 			uninherited( handle(fd(fp)) ) ; // or add "N" to mode
 			return fp ;
 		}
@@ -97,77 +73,102 @@ namespace G
 
 void G::File::open( std::ofstream & ofstream , const Path & path )
 {
-	FileImp::open( ofstream , path.cstr() , std::ios_base::out | std::ios_base::binary ) ;
+	FileImp::open( ofstream , path , std::ios_base::out | std::ios_base::binary ) ;
 }
 
 void G::File::open( std::ofstream & ofstream , const Path & path , Text )
 {
-	FileImp::open( ofstream , path.cstr() , std::ios_base::out ) ;
+	FileImp::open( ofstream , path , std::ios_base::out ) ;
 }
 
 void G::File::open( std::ofstream & ofstream , const Path & path , Append )
 {
-	FileImp::open( ofstream , path.cstr() , std::ios_base::app | std::ios_base::binary ) ;
+	FileImp::open( ofstream , path , std::ios_base::app | std::ios_base::binary ) ;
 }
 
 void G::File::open( std::ifstream & ifstream , const Path & path )
 {
-	FileImp::open( ifstream , path.cstr() , std::ios_base::in | std::ios_base::binary ) ;
+	FileImp::open( ifstream , path , std::ios_base::in | std::ios_base::binary ) ;
 }
 
 void G::File::open( std::ifstream & ifstream , const Path & path , Text )
 {
-	FileImp::open( ifstream , path.cstr() , std::ios_base::in ) ;
+	FileImp::open( ifstream , path , std::ios_base::in ) ;
 }
 
 std::filebuf * G::File::open( std::filebuf & fb , const Path & path , InOut inout )
 {
 	inout == InOut::In ?
-		FileImp::open( fb , path.cstr() , std::ios_base::in | std::ios_base::binary ) :
-		FileImp::open( fb , path.cstr() , std::ios_base::out | std::ios_base::binary ) ;
+		FileImp::open( fb , path , std::ios_base::in | std::ios_base::binary ) :
+		FileImp::open( fb , path , std::ios_base::out | std::ios_base::binary ) ;
 	return fb.is_open() ? &fb : nullptr ;
 }
 
 int G::File::open( const Path & path , InOutAppend mode ) noexcept
 {
-	static_assert( noexcept(path.cstr()) , "" ) ;
-	const char * path_cstr = path.cstr() ;
-	int pmode = _S_IREAD | _S_IWRITE ;
-	if( mode == InOutAppend::In )
-		return FileImp::open( path_cstr , _O_RDONLY|_O_BINARY , pmode ) ;
-	else if( mode == InOutAppend::Out )
-		return FileImp::open( path_cstr , _O_WRONLY|_O_CREAT|_O_TRUNC|_O_BINARY , pmode ) ;
-	else if( mode == InOutAppend::OutNoCreate )
-		return FileImp::open( path_cstr , _O_WRONLY|_O_BINARY , pmode ) ;
-	else
-		return FileImp::open( path_cstr , _O_WRONLY|_O_CREAT|_O_APPEND|_O_BINARY , pmode ) ;
+	try
+	{
+		int pmode = _S_IREAD | _S_IWRITE ;
+		if( mode == InOutAppend::In )
+			return FileImp::open( path , _O_RDONLY|_O_BINARY , pmode ) ;
+		else if( mode == InOutAppend::Out )
+			return FileImp::open( path , _O_WRONLY|_O_CREAT|_O_TRUNC|_O_BINARY , pmode ) ;
+		else if( mode == InOutAppend::OutNoCreate )
+			return FileImp::open( path , _O_WRONLY|_O_BINARY , pmode ) ;
+		else
+			return FileImp::open( path , _O_WRONLY|_O_CREAT|_O_APPEND|_O_BINARY , pmode ) ;
+	}
+	catch(...)
+	{
+		return -1 ;
+	}
 }
 
 int G::File::open( const Path & path , CreateExclusive ) noexcept
 {
-	int pmode = _S_IREAD | _S_IWRITE ;
-	return FileImp::open( path.cstr() , _O_WRONLY|_O_CREAT|_O_EXCL|_O_BINARY , pmode ) ;
+	try
+	{
+		int pmode = _S_IREAD | _S_IWRITE ;
+		return FileImp::open( path , _O_WRONLY|_O_CREAT|_O_EXCL|_O_BINARY , pmode ) ;
+	}
+	catch(...)
+	{
+		return -1 ;
+	}
 }
 
 std::FILE * G::File::fopen( const Path & path , const char * mode ) noexcept
 {
-	G_ASSERT( mode ) ;
-	return FileImp::fopen( path.cstr() , mode ) ;
+	try
+	{
+		G_ASSERT( mode ) ;
+		return FileImp::fopen( path , mode ) ;
+	}
+	catch(...)
+	{
+		return nullptr ;
+	}
 }
 
 bool G::File::probe( const Path & path ) noexcept
 {
-	static_assert( noexcept(path.cstr()) , "" ) ;
-	int pmode = _S_IREAD | _S_IWRITE ;
-	int fd = FileImp::open( path.cstr() , _O_WRONLY|_O_CREAT|_O_EXCL|O_TEMPORARY|_O_BINARY , pmode ) ;
-	if( fd >= 0 )
-		_close( fd ) ; // also deletes
-	return fd >= 0 ;
+	try
+	{
+		int pmode = _S_IREAD | _S_IWRITE ;
+		int fd = FileImp::open( path , _O_WRONLY|_O_CREAT|_O_EXCL|O_TEMPORARY|_O_BINARY , pmode ) ;
+		if( fd >= 0 )
+			_close( fd ) ; // also deletes
+		return fd >= 0 ;
+	}
+	catch(...)
+	{
+		return false ;
+	}
 }
 
 void G::File::create( const Path & path )
 {
-	int fd = FileImp::open( path.cstr() , _O_RDONLY|_O_CREAT , _S_IREAD|_S_IWRITE ) ;
+	int fd = FileImp::open( path , _O_RDONLY|_O_CREAT , _S_IREAD|_S_IWRITE ) ;
 	if( fd < 0 )
 		throw CannotCreate( path.str() ) ;
 	_close( fd ) ;
@@ -175,17 +176,21 @@ void G::File::create( const Path & path )
 
 bool G::File::renameOnto( const Path & from , const Path & to , std::nothrow_t ) noexcept
 {
-	static_assert( noexcept(from.cstr()) , "" ) ;
-	static_assert( noexcept(File::remove(to,std::nothrow)) , "" ) ;
-
-	bool ok = 0 == std::rename( from.cstr() , to.cstr() ) ;
-	int error = Process::errno_() ;
-	if( !ok && error == EEXIST ) // MS documentation says EACCES :-<
+	try
 	{
-		File::remove( to , std::nothrow ) ;
-		ok = 0 == std::rename( from.cstr() , to.cstr() ) ;
+		bool ok = nowide::rename( from , to ) ;
+		int error = Process::errno_() ;
+		if( !ok && error == EEXIST ) // MS documentation says EACCES :-<
+		{
+			File::remove( to , std::nothrow ) ;
+			ok = nowide::rename( from , to ) ;
+		}
+		return ok ;
 	}
-	return ok ;
+	catch(...)
+	{
+		return false ;
+	}
 }
 
 ssize_t G::File::read( int fd , char * p , std::size_t n ) noexcept
@@ -207,59 +212,105 @@ void G::File::close( int fd ) noexcept
 	_close( fd ) ;
 }
 
+bool G::File::remove( const Path & path , std::nothrow_t ) noexcept
+{
+	return nowide::remove( path ) ;
+}
+
+void G::File::remove( const Path & path )
+{
+	bool ok = nowide::remove( path ) ;
+	if( !ok )
+	{
+		int e = Process::errno_() ;
+		G_WARNING( "G::File::remove: cannot delete file [" << path << "]: " << Process::strerror(e) ) ;
+		throw CannotRemove( path.str() , Process::strerror(e) ) ;
+	}
+}
+
+bool G::File::cleanup( const Cleanup::Arg & arg ) noexcept
+{
+	return nowide::remove( Path(arg.str()) ) ; // never gets here
+}
+
 int G::File::mkdirImp( const Path & dir ) noexcept
 {
-	int rc = _mkdir( dir.cstr() ) ;
-	if( rc == 0 )
+	try
 	{
-		return 0 ;
+		int rc = nowide::mkdir( dir ) ;
+		if( rc == 0 )
+		{
+			return 0 ;
+		}
+		else
+		{
+			int e = G::Process::errno_() ;
+			if( e == 0 ) e = EINVAL ;
+			return e ;
+		}
 	}
-	else
+	catch(...)
 	{
-		int e = G::Process::errno_() ;
-		if( e == 0 ) e = EINVAL ;
-		return e ;
+		return EINVAL ;
 	}
 }
 
 G::File::Stat G::File::statImp( const char * path , bool ) noexcept
 {
-	Stat s ;
-	struct _stat64 statbuf {} ;
-	if( 0 == _stat64( path , &statbuf ) )
+	try
 	{
-		s.error = 0 ;
-		s.enoent = false ;
-		s.eaccess = false ;
-		s.is_dir = (statbuf.st_mode & S_IFDIR) ;
-		s.is_link = !s.is_dir ; // good enough for now
-		s.is_executable = (statbuf.st_mode & _S_IEXEC) ; // based on filename extension
-		s.is_empty = statbuf.st_size == 0 ;
-		s.mtime_s = static_cast<std::time_t>(statbuf.st_mtime) ;
-		s.mtime_us = 0 ;
-		s.mode = static_cast<unsigned long>( statbuf.st_mode & 07777 ) ;
-		s.size = static_cast<unsigned long long>( statbuf.st_size ) ;
-		s.blocks = static_cast<unsigned long long>( statbuf.st_size >> 24 ) ;
+		Stat s ;
+		nowide::statbuf_type statbuf {} ;
+		if( 0 == nowide::stat( path , &statbuf ) )
+		{
+			s.error = 0 ;
+			s.enoent = false ;
+			s.eaccess = false ;
+			s.is_dir = (statbuf.st_mode & S_IFDIR) ;
+			s.is_link = !s.is_dir ; // good enough for now
+			s.is_executable = (statbuf.st_mode & _S_IEXEC) ; // based on filename extension
+			s.is_empty = statbuf.st_size == 0 ;
+			s.mtime_s = static_cast<std::time_t>(statbuf.st_mtime) ;
+			s.mtime_us = 0 ;
+			s.mode = static_cast<unsigned long>( statbuf.st_mode & 07777 ) ;
+			s.size = static_cast<unsigned long long>( statbuf.st_size ) ;
+			s.blocks = static_cast<unsigned long long>( statbuf.st_size >> 24 ) ;
+		}
+		else
+		{
+			int error = Process::errno_() ;
+			s.error = error ? error : EINVAL ;
+			s.enoent = true ; // could do better
+			s.eaccess = false ;
+		}
+		return s ;
 	}
-	else
+	catch(...)
 	{
-		int error = Process::errno_() ;
-		s.error = error ? error : EINVAL ;
-		s.enoent = true ; // could do better
+		Stat s ;
+		s.error = EINVAL ;
+		s.enoent = true ;
 		s.eaccess = false ;
+		return s ;
 	}
-	return s ;
 }
 
 bool G::File::existsImp( const char * path , bool & enoent , bool & eaccess ) noexcept
 {
-	Stat s = statImp( path ) ;
-	if( s.error )
+	try
 	{
-		enoent = s.enoent ;
-		eaccess = s.eaccess ;
+		Stat s = statImp( path ) ;
+		if( s.error )
+		{
+			enoent = s.enoent ;
+			eaccess = s.eaccess ;
+		}
+		return s.error == 0 ;
 	}
-	return s.error == 0 ;
+	catch(...)
+	{
+		return false ;
+	}
 }
 
 bool G::File::chmodx( const Path & , bool )

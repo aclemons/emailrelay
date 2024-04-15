@@ -237,8 +237,8 @@ G::Path G::LogOutput::makePath( const Path & path_in ) const
 	std::string_view yyyymmdd( m_time_buffer.data() , 8U ) ;
 	std::string_view hh( m_time_buffer.data()+9 , 2U ) ;
 	Path path_out = path_in ;
-	path_out.replace( "%d" , yyyymmdd ) ;
-	path_out.replace( "%h" , hh ) ;
+	path_out.replace( "%d" , yyyymmdd , /*ex_root=*/true ) ;
+	path_out.replace( "%h" , hh , /*ex_root=*/true ) ;
 	return path_out ;
 }
 

@@ -60,6 +60,11 @@ public:
 	{
 		using Exception::Exception ;
 	} ;
+	enum class Encoding
+	{
+		Utf8 ,
+		Ansi
+	} ;
 
 	MapFile() ;
 		///< Constructor for an empty map.
@@ -76,7 +81,7 @@ public:
 		///< Multi-valued options are loaded as a comma-separated
 		///< list.
 
-	explicit MapFile( const Path & , std::string_view kind = {} ) ;
+	explicit MapFile( const Path & , std::string_view kind = {} , Encoding = Encoding::Utf8 ) ;
 		///< Constructor that reads from a file. Lines can have a key
 		///< and no value (see booleanValue()). Comments must be at
 		///< the start of the line. Values are left and right-trimmed,
@@ -159,8 +164,8 @@ public:
 
 private:
 	using List = std::list<std::string> ;
-	void readFrom( const Path & , std::string_view ) ;
-	void readFrom( std::istream & ss ) ;
+	void readFrom( const Path & , std::string_view , Encoding ) ;
+	void readFrom( std::istream & ss , Encoding ) ;
 	static std::string quote( const std::string & ) ;
 	List read( const Path & , std::string_view , bool ) const ;
 	void commentOut( List & ) const ;
@@ -178,6 +183,7 @@ private:
 	static Error missingValueError( const Path & , const std::string & , const std::string & ) ;
 	StringMap::const_iterator find( std::string_view ) const ;
 	StringMap::iterator find( std::string_view ) ;
+	static Path toPath( std::string_view ) ;
 
 private:
 	Path m_path ; // if any

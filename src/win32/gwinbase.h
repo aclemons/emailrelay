@@ -44,7 +44,7 @@ public:
 	virtual ~WindowBase() ;
 		///< Virtual destructor.
 
-	HWND handle() const ;
+	HWND handle() const noexcept ;
 		///< Returns the window handle.
 
 	Size externalSize() const ;
@@ -76,7 +76,7 @@ private:
 } ;
 
 inline
-HWND GGui::WindowBase::handle() const
+HWND GGui::WindowBase::handle() const noexcept
 {
 	return m_hwnd ;
 }

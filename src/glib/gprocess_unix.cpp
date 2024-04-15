@@ -142,6 +142,13 @@ std::string G::Process::strerror( int errno_ )
 	return Str::isPrintableAscii(s) ? Str::lower(s) : s ;
 }
 
+#ifndef G_LIB_SMALL
+std::string G::Process::errorMessage( DWORD e )
+{
+	return std::string("error ").append( std::to_string(e) ) ;
+}
+#endif
+
 void G::Process::beSpecial( Identity special_identity , bool change_group )
 {
 	ProcessImp::beSpecial( special_identity , change_group ) ;
@@ -181,17 +188,31 @@ void G::Process::beOrdinaryForExec( Identity run_as_id ) noexcept
 	ProcessImp::beOrdinaryForExec( run_as_id ) ;
 }
 
+#ifndef G_LIB_SMALL
 void G::Process::setEffectiveUser( Identity id )
 {
 	G::ProcessImp::setEffectiveUser( id ) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 void G::Process::setEffectiveGroup( Identity id )
 {
 	G::ProcessImp::setEffectiveGroup( id ) ;
 }
+#endif
 
-std::string G::Process::cwd( bool no_throw )
+G::Path G::Process::cwd()
+{
+	return cwdImp( false ) ;
+}
+
+G::Path G::Process::cwd( std::nothrow_t )
+{
+	return cwdImp( true ) ;
+}
+
+G::Path G::Process::cwdImp( bool no_throw )
 {
 	std::string result ;
 	std::array<std::size_t,2U> sizes = {{ G::Limits<>::path_buffer , PATH_MAX+1U }} ;
@@ -213,12 +234,12 @@ std::string G::Process::cwd( bool no_throw )
 	}
 	if( result.empty() && !no_throw )
 		throw GetCwdError() ;
-	return result ;
+	return {result} ;
 }
 
 #ifdef G_UNIX_MAC
 #include <libproc.h>
-std::string G::Process::exe()
+G::Path G::Process::exe()
 {
 	// (see also _NSGetExecutablePath())
 	std::vector<char> buffer( std::max(100,PROC_PIDPATHINFO_MAXSIZE) ) ;
@@ -228,22 +249,22 @@ std::string G::Process::exe()
 	{
 		std::size_t n = static_cast<std::size_t>(rc) ;
 		if( n > buffer.size() ) n = buffer.size() ;
-		return std::string( buffer.data() , n ) ;
+		return Path( buffer.data() , n ) ;
 	}
 	else
 	{
-		return std::string() ;
+		return {} ;
 	}
 }
 #else
-std::string G::Process::exe()
+G::Path G::Process::exe()
 {
 	// best effort, not guaranteed
 	std::string result ;
 	ProcessImp::readlink_( "/proc/self/exe" , result ) ||
 	ProcessImp::readlink_( "/proc/curproc/file" , result ) ||
 	ProcessImp::readlink_( "/proc/curproc/exe" , result ) ;
-	return result ;
+	return {result} ;
 }
 #endif
 
@@ -261,10 +282,12 @@ std::string G::Process::Id::str() const
 	return ss.str() ;
 }
 
+#ifndef G_LIB_SMALL
 bool G::Process::Id::operator==( const Id & other ) const noexcept
 {
 	return m_pid == other.m_pid ;
 }
+#endif
 
 bool G::Process::Id::operator!=( const Id & other ) const noexcept
 {
@@ -316,15 +339,19 @@ void G::Process::Umask::set( Mode mode )
 	UmaskImp::set( mode ) ;
 }
 
+#ifndef G_LIB_SMALL
 void G::Process::Umask::tightenOther()
 {
 	set( Mode::TightenOther ) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 void G::Process::Umask::loosenGroup()
 {
 	set( Mode::LoosenGroup ) ;
 }
+#endif
 
 // ==
 
@@ -342,6 +369,7 @@ void G::ProcessImp::reopen( int fd , Mode mode_in )
 	::close( fd_null ) ;
 }
 
+#ifndef G_LIB_SMALL
 mode_t G::ProcessImp::umaskValue( Process::Umask::Mode mode )
 {
 	mode_t m = 0 ;
@@ -351,6 +379,7 @@ mode_t G::ProcessImp::umaskValue( Process::Umask::Mode mode )
 	if( mode == Process::Umask::Mode::GroupOpen ) m = 0113 ;// -rw-rw-r--
 	return m ;
 }
+#endif
 
 bool G::ProcessImp::readlink_( std::string_view path , std::string & value )
 {

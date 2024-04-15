@@ -210,13 +210,13 @@ G::Path GStore::FileStore::contentPath( const MessageId & id ) const
 G::Path GStore::FileStore::envelopePath( const MessageId & id , State state ) const
 {
 	if( state == State::New )
-		return m_dir + id.str().append(".envelope.new") ;
+		return m_dir / id.str().append(".envelope.new") ;
 	else if( state == State::Locked )
-		return m_dir + id.str().append(".envelope.busy") ;
+		return m_dir / id.str().append(".envelope.busy") ;
 	else if( state == State::Bad )
-		return m_dir + id.str().append(".envelope.bad") ;
+		return m_dir / id.str().append(".envelope.bad") ;
 	else
-		return m_dir + id.str().append(".envelope") ;
+		return m_dir / id.str().append(".envelope") ;
 }
 
 GStore::MessageId GStore::FileStore::newId()

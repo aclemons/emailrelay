@@ -63,7 +63,7 @@
 
 std::string versionNumber()
 {
-	return "2.5.3dev1" ;
+	return "2.5.3dev2" ;
 }
 
 static std::pair<G::Path,G::Path> writeFiles( const G::Path & spool_dir ,
@@ -129,7 +129,7 @@ static void copyIntoSubDirectories( const G::Path & envelope_path )
 {
 	G::Directory spool_dir( envelope_path.simple() ? G::Path(".") : envelope_path.dirname() ) ;
 	std::string envelope_filename = envelope_path.basename() ;
-	G::Path src = spool_dir.path() + envelope_filename ;
+	G::Path src = spool_dir.path() / envelope_filename ;
 
 	G::Process::Umask set_umask( G::Process::Umask::Mode::Tighter ) ; // 0117 => -rw-rw----
 	unsigned int dir_count = 0U ;
@@ -140,7 +140,7 @@ static void copyIntoSubDirectories( const G::Path & envelope_path )
 		if( iter.isDir() )
 		{
 			dir_count++ ;
-			G::Path dst = iter.filePath() + envelope_filename ;
+			G::Path dst = iter.filePath() / envelope_filename ;
 			bool ok = G::File::copy( src , dst , std::nothrow ) ;
 			if( ok ) copy_count++ ;
 		}

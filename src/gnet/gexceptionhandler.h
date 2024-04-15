@@ -44,7 +44,7 @@ class GNet::ExceptionHandler
 {
 public:
 	virtual ~ExceptionHandler() ;
-		///< Destructor. Matching entries in the EventHandlerList and
+		///< Destructor. Matching entries in the EventLoop and
 		///< TimerList are disarm()ed.
 
 	virtual void onException( ExceptionSource * source , std::exception & e , bool done ) = 0 ;

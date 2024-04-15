@@ -47,7 +47,7 @@ namespace GNet
 /// Use "netcat -U" or "socat" to connect to local-domain
 /// sockets, eg:
 /// \code
-/// $ nc -U -C /run/cmd.s
+/// $ nc -U -C /run/cmd.s  # nc.openbsd, not nc.traditional
 /// $ socat -d tcp-listen:8080,fork unix:/run/cmd.s
 /// \endcode
 ///

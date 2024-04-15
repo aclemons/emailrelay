@@ -22,23 +22,22 @@
 #define G_MAIN_SERVICE_IMP_H
 
 #include "gdef.h"
+#include "gstringarray.h"
 #include <string>
+#include <functional>
 
 #ifdef G_UNIX
-using DWORD = g_uint32_t ;
 using SERVICE_STATUS_HANDLE = int ;
-using LPTSTR = const char ;
-#define WINAPI
 #endif
 
 namespace ServiceImp /// A interface used by the service wrapper to talk to the windows service manager.
 {
 	using StatusHandle = SERVICE_STATUS_HANDLE ;
-	using HandlerFn = void (WINAPI *)( DWORD ) ;
-	using ServiceMainFn = void (WINAPI *)( DWORD , LPTSTR * ) ;
+	using HandlerFn = std::function<void(DWORD)> ;
+	using ServiceMainFn = std::function<void(G::StringArray)> ;
 
-	std::string install( const std::string & commandline , const std::string & name , const std::string & display_name ,
-		const std::string & description ) ;
+	std::string install( const std::string & commandline , const std::string & name ,
+		const std::string & display_name , const std::string & description ) ;
 			///< Installs the service. Returns an error string.
 
 	std::string remove( const std::string & service_name ) ;
@@ -49,8 +48,7 @@ namespace ServiceImp /// A interface used by the service wrapper to talk to the 
 		///< callback function.
 
 	DWORD dispatch( ServiceMainFn ) ;
-		///< Dispatches messages from the service sub-system to exported
-		///< handler functions, although in practice only to the given
+		///< Dispatches messages from the service sub-system to the given
 		///< ServiceMain function. Only returns when the service stops.
 
 	DWORD setStatus( StatusHandle hservice , DWORD new_state , DWORD timeout_ms ) noexcept ;

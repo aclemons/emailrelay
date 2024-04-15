@@ -28,6 +28,7 @@
 #include "gdate.h"
 #include "gtime.h"
 #include "gfile.h"
+#include "gcodepage.h"
 #include "glog.h"
 #include "gassert.h"
 #include <algorithm> // std::find
@@ -38,19 +39,19 @@
 G::MapFile::MapFile()
 = default;
 
-G::MapFile::MapFile( const Path & path , std::string_view kind ) :
+G::MapFile::MapFile( const Path & path , std::string_view kind , MapFile::Encoding encoding ) :
 	m_kind(sv_to_string(kind))
 {
 	if( !path.empty() )
 	{
 		m_path = path ;
-		readFrom( path , kind ) ;
+		readFrom( path , kind , encoding ) ;
 	}
 }
 
 G::MapFile::MapFile( std::istream & stream )
 {
-	readFrom( stream ) ;
+	readFrom( stream , Encoding::Utf8 ) ;
 }
 
 G::MapFile::MapFile( const StringMap & map ) :
@@ -76,19 +77,19 @@ G::MapFile::MapFile( const OptionMap & map , std::string_view yes )
 	}
 }
 
-void G::MapFile::readFrom( const Path & path , std::string_view kind )
+void G::MapFile::readFrom( const Path & path , std::string_view kind , Encoding encoding )
 {
 	std::ifstream stream ;
 	File::open( stream , path , File::Text() ) ;
 	if( !stream.good() )
 		throw readError( path , sv_to_string(kind) ) ;
 	G_LOG( "MapFile::read: reading [" << path.str() << "]" ) ;
-	readFrom( stream ) ;
+	readFrom( stream , encoding ) ;
 	if( stream.bad() ) // eg. EISDIR
 		throw readError( path , sv_to_string(kind) ) ;
 }
 
-void G::MapFile::readFrom( std::istream & stream )
+void G::MapFile::readFrom( std::istream & stream , Encoding encoding )
 {
 	std::string line ;
 	while( stream.good() )
@@ -99,21 +100,25 @@ void G::MapFile::readFrom( std::istream & stream )
 			continue ;
 		if( !stream )
 			break ;
+		if( encoding == Encoding::Ansi )
+			line = G::CodePage::fromCodePageAnsi( line ) ;
 		if( ignore(line) )
 			continue ;
 
-		// no escaping here -- just strip quotes if the value starts and ends with them
-
+		// require at least two parts
 		std::string_view line_sv( line ) ;
 		StringTokenView t( line_sv , std::string_view(" =\t",3U) ) ;
 		if( !t.valid() )
 			continue ;
 
+		// split key and value
 		std::string_view key = t() ;
 		auto pos = line.find( key.data() , 0U , key.size() ) + key.size() ;
 		std::string_view value = Str::tailView( line , pos ) ;
 		value = Str::trimLeftView( value , std::string_view(" =\t",3U) ) ;
 		value = Str::trimRightView( value , Str::ws() ) ;
+
+		// strip simple quotes -- no escaping
 		if( value.size() >= 2U && value.at(0U) == '"' && value.at(value.size()-1U) == '"' )
 			value = value.substr(1U,value.length()-2U) ;
 
@@ -134,7 +139,7 @@ bool G::MapFile::ignore( const std::string & line ) const
 void G::MapFile::check( const Path & path , std::string_view kind )
 {
 	MapFile tmp ;
-	tmp.readFrom( path , kind ) ;
+	tmp.readFrom( path , kind , Encoding::Utf8 ) ;
 }
 
 void G::MapFile::log( const std::string & prefix_in ) const
@@ -290,22 +295,32 @@ std::string G::MapFile::mandatoryValue( std::string_view key ) const
 
 G::Path G::MapFile::expandedPathValue( std::string_view key , const Path & default_ ) const
 {
-	return { expand(value(key,default_.str())) } ;
+	return toPath( expand(value(key,default_.str())) ) ;
 }
 
 G::Path G::MapFile::expandedPathValue( std::string_view key ) const
 {
-	return { expand(mandatoryValue(key)) } ;
+	return toPath( expand(mandatoryValue(key)) ) ;
 }
 
 G::Path G::MapFile::pathValue( std::string_view key , const Path & default_ ) const
 {
-	return { value(key,default_.str()) } ;
+	return toPath( value(key,default_.str()) ) ;
 }
 
 G::Path G::MapFile::pathValue( std::string_view key ) const
 {
-	return { mandatoryValue(key) } ;
+	return toPath( mandatoryValue(key) ) ;
+}
+
+G::Path G::MapFile::toPath( std::string_view path_in )
+{
+	// (temporary backwards compatibility in case the file is ansi-encoded)
+	Path path1( path_in ) ;
+	Path path2( CodePage::fromCodePageAnsi(path_in) ) ;
+	if( G::is_windows() && !File::isDirectory(path1,std::nothrow) && File::isDirectory(path2,std::nothrow) )
+		return path2 ;
+	return path1 ;
 }
 
 unsigned int G::MapFile::numericValue( std::string_view key , unsigned int default_ ) const

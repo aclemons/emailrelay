@@ -132,10 +132,12 @@ bool GNet::SocketBase::eInProgress() const
 	return m_reason == EINPROGRESS ;
 }
 
+#ifndef G_LIB_SMALL
 bool GNet::SocketBase::eMsgSize() const
 {
 	return m_reason == EMSGSIZE ;
 }
+#endif
 
 bool GNet::SocketBase::eTooMany() const
 {
@@ -149,6 +151,7 @@ std::string GNet::SocketBase::reasonString( int e )
 
 // ==
 
+#ifndef G_LIB_SMALL
 std::string GNet::Socket::canBindHint( const Address & address , bool stream , const Config & config )
 {
 	if( address.family() == Address::Family::ipv4 || address.family() == Address::Family::ipv6 )
@@ -170,6 +173,7 @@ std::string GNet::Socket::canBindHint( const Address & address , bool stream , c
 		return {} ; // could do better
 	}
 }
+#endif
 
 void GNet::Socket::setOptionReuse()
 {
@@ -232,6 +236,7 @@ GNet::SocketBase::ssize_type GNet::RawSocket::write( const char * buffer , size_
 
 // ==
 
+#ifndef G_LIB_SMALL
 std::size_t GNet::DatagramSocket::limit( std::size_t default_in ) const
 {
 	int value = 0 ;
@@ -242,7 +247,9 @@ std::size_t GNet::DatagramSocket::limit( std::size_t default_in ) const
 	else
 		return default_in ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 GNet::Socket::ssize_type GNet::DatagramSocket::writeto( const std::vector<std::string_view> & data , const Address & dst )
 {
 	ssize_type nsent = G::Msg::sendto( fd() , data , MSG_NOSIGNAL , dst.address() , dst.length() ) ;
@@ -254,4 +261,5 @@ GNet::Socket::ssize_type GNet::DatagramSocket::writeto( const std::vector<std::s
 	}
 	return nsent ;
 }
+#endif
 

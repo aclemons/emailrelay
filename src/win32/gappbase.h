@@ -150,9 +150,8 @@ public:
 	ApplicationBase & operator=( ApplicationBase && ) = delete ;
 
 private:
-	static bool messageBoxCore( HWND , unsigned int , const std::string & , const std::string & ) ;
 	HWND messageBoxHandle() const ;
-	static unsigned int messageBoxType(HWND,unsigned int) ;
+	static unsigned int messageBoxType( HWND , unsigned int ) ;
 
 private:
 	std::string m_name ;

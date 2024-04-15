@@ -188,7 +188,7 @@ public:
 	GDEF_NORETURN_LHS static void assertionAbort() GDEF_NORETURN_RHS ;
 		///< Aborts the program when an assertion has failed.
 
-	static void register_( const std::string & exe ) ;
+	static void register_( const Path & exe ) ;
 		///< Registers the given executable as a source of logging.
 		///< This is called from osinit(), but it might also need to be
 		///< done as a program installation step with the necessary

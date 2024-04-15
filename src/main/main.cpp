@@ -63,7 +63,7 @@ int main( int argc , char * argv [] )
 	bool ok = false ;
 	try
 	{
-		G::Arg arg( argc , argv ) ;
+		G::Arg arg = G::is_windows() ? G::Arg::windows() : G::Arg(argc,argv) ;
 
 		#if GCONFIG_ENABLE_SUBMISSION
 			if( Main::Submission::enabled(arg) )

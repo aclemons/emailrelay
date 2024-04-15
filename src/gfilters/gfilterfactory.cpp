@@ -234,7 +234,7 @@ void GFilters::FilterFactory::fixFile( Spec & result ,
 	}
 	else if( G::Path(result.second).isRelative() && !base_dir.empty() )
 	{
-		result.second = (base_dir+result.second).str() ;
+		result.second = (base_dir/result.second).str() ;
 	}
 }
 

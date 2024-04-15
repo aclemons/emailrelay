@@ -19,6 +19,7 @@
 //
 
 #include "gdef.h"
+#include "gnowide.h"
 #include "guilink.h"
 #include "gconvert.h"
 #include "gstr.h"
@@ -78,39 +79,9 @@ private:
 
 private:
 	GComInit m_com_init ;
-	ComPtr<IShellLink> m_ilink ;
+	ComPtr<G::nowide::IShellLink_type> m_ilink ;
 	ComPtr<IPersistFile> m_ipf ;
-
-private:
-	struct bstr
-	{
-		explicit bstr( const std::string & s ) ;
-		~bstr()  ;
-		BSTR p() ;
-		bstr( const bstr & ) = delete ;
-		bstr( bstr && ) = delete ;
-		bstr & operator=( const bstr & ) = delete ;
-		bstr & operator=( bstr && ) = delete ;
-		private: BSTR m_p ;
-	} ;
 } ;
-
-Gui::LinkImp::bstr::bstr( const std::string & s )
-{
-	std::wstring ws ;
-	G::Convert::convert( ws , s ) ;
-	m_p = SysAllocString( ws.c_str() ) ; // oleaut32.lib
-}
-
-Gui::LinkImp::bstr::~bstr()
-{
-	SysFreeString( m_p ) ; // oleaut32.lib
-}
-
-BSTR Gui::LinkImp::bstr::p()
-{
-	return m_p ;
-}
 
 // ==
 
@@ -145,7 +116,8 @@ void Gui::LinkImp::check( HRESULT hr , const char * op )
 
 void Gui::LinkImp::createInstance()
 {
-	HRESULT hr = CoCreateInstance( CLSID_ShellLink , nullptr , CLSCTX_INPROC_SERVER , IID_IShellLink , m_ilink.vp() ) ;
+	HRESULT hr = CoCreateInstance( CLSID_ShellLink , nullptr , CLSCTX_INPROC_SERVER ,
+		G::nowide::iidShellLink() , m_ilink.vp() ) ;
 	check( hr , "createInstance" ) ;
 }
 
@@ -157,25 +129,19 @@ void Gui::LinkImp::qi()
 
 void Gui::LinkImp::setTargetPath( const G::Path & target_path )
 {
-	std::basic_string<TCHAR> arg ;
-	G::Convert::convert( arg , target_path.str() ) ;
-	HRESULT hr = m_ilink.get()->SetPath( arg.c_str() ) ;
+	HRESULT hr = G::nowide::shellLinkSetPath( m_ilink.get() , target_path ) ;
 	check( hr , "SetPath" ) ;
 }
 
 void Gui::LinkImp::setWorkingDir( const G::Path & working_dir )
 {
-	std::basic_string<TCHAR> arg ;
-	G::Convert::convert( arg , working_dir.str() ) ;
-	HRESULT hr = m_ilink.get()->SetWorkingDirectory( arg.c_str() ) ;
+	HRESULT hr = G::nowide::shellLinkSetWorkingDirectory( m_ilink.get() , working_dir ) ;
 	check( hr , "SetWorkingDirectory" ) ;
 }
 
 void Gui::LinkImp::setDescription( const std::string & s )
 {
-	std::basic_string<TCHAR> arg ;
-	G::Convert::convert( arg , s ) ;
-	HRESULT hr = m_ilink.get()->SetDescription( arg.c_str() ) ;
+	HRESULT hr = G::nowide::shellLinkSetDescription( m_ilink.get() , s ) ;
 	check( hr , "SetDescription" ) ;
 }
 
@@ -188,37 +154,30 @@ void Gui::LinkImp::setArgs( const G::StringArray & args )
 		std::string s = *p ;
 		const char * qq = "" ;
 		if( s.find(' ') != std::string::npos )
-		{
-			G::Str::replaceAll( s , "\"" , "\\\"" ) ; // windows is too stupid for this to work :-<
 			qq = "\"" ;
-		}
 		ss << sep << qq << s << qq ;
 		sep = " " ;
 	}
 
-	std::basic_string<TCHAR> arg ;
-	G::Convert::convert( arg , ss.str() ) ;
-	HRESULT hr = m_ilink.get()->SetArguments( arg.c_str() ) ;
+	HRESULT hr = G::nowide::shellLinkSetArguments( m_ilink.get() , ss.str() ) ;
 	check( hr , "SetArguments" ) ;
 }
 
 void Gui::LinkImp::setIcon( const G::Path & icon_source )
 {
-	std::basic_string<TCHAR> arg ;
-	G::Convert::convert( arg , icon_source.str() ) ;
-	HRESULT hr = m_ilink.get()->SetIconLocation( arg.c_str() , 0U ) ;
+	HRESULT hr = G::nowide::shellLinkSetIconLocation( m_ilink.get() , icon_source , 0U ) ;
 	check( hr , "SetIconLocation" ) ;
 }
 
 void Gui::LinkImp::setShow( int show )
 {
-	HRESULT hr = m_ilink.get()->SetShowCmd( show ) ;
+	HRESULT hr = G::nowide::shellLinkSetShowCmd( m_ilink.get() , show ) ;
 	check( hr , "SetShowCmd" ) ;
 }
 
 void Gui::LinkImp::saveAs( const G::Path & link_path )
 {
-	HRESULT hr = m_ipf.get()->Save( bstr(link_path.str()).p() , TRUE ) ;
+	HRESULT hr = G::nowide::persistFileSave( m_ipf.get() , link_path , TRUE ) ;
 	check( hr , "Save" ) ;
 }
 

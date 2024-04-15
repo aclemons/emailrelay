@@ -19,8 +19,10 @@
 ///
 
 #include "gdef.h"
+#include "gnowide.h"
 #include "gcracker.h"
 #include "gstringarray.h"
+#include "gconvert.h"
 #include "glog.h"
 #include "gassert.h"
 #include <windowsx.h>
@@ -169,19 +171,10 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam , LPARAM lparam , boo
 		{
 			G_DEBUG( "Cracker::onDrop" ) ;
 			HDROP hdrop = hdrop_from( wparam ) ;
-			int count = DragQueryFileA( hdrop , 0xFFFFFFFF , nullptr , 0 ) ;
+			unsigned int count = G::nowide::dragQueryFile( hdrop ) ;
 			G::StringArray list ;
-			std::vector<char> buffer( 32768U , '\0' ) ;
-			for( int i = 0 ; i < count ; i++ )
-			{
-				unsigned int size = static_cast<unsigned int>(buffer.size()) ;
-				if( DragQueryFileA( hdrop , i , &buffer[0] , size ) < size )
-				{
-					buffer.at(buffer.size()-1U) = '\0' ;
-					G_DEBUG( "Cracker::onDrop: \"" << &buffer[0] << "\"" ) ;
-					list.push_back( std::string(&buffer[0]) ) ;
-				}
-			}
+			for( unsigned int i = 0U ; i < count ; i++ )
+				list.push_back( G::nowide::dragQueryFile( hdrop , i ) ) ;
 			DragFinish( hdrop ) ;
 			return !onDrop( list ) ;
 		}
@@ -197,7 +190,7 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam , LPARAM lparam , boo
 				case SIZE_MAXHIDE:
 				case SIZE_MAXSHOW:
 				default:
-					return DefWindowProc( handle() , message , wparam , lparam ) ;
+					return G::nowide::defWindowProc( handle() , message , wparam , lparam ) ;
 			}
 			onSize( type , LOWORD(lparam) , HIWORD(lparam) ) ;
 			return 0 ;
@@ -588,7 +581,7 @@ bool GGui::Cracker::onDeactivateApp( DWORD )
 bool GGui::Cracker::onEraseBackground( HDC hdc )
 {
 	WPARAM wparam = reinterpret_cast<WPARAM>(hdc) ;
-	return !! DefWindowProc( handle() , WM_ERASEBKGND , wparam , 0L ) ;
+	return !! G::nowide::defWindowProc( handle() , WM_ERASEBKGND , wparam , 0L ) ;
 }
 
 void GGui::Cracker::onMouseMove( int /*x*/ , int /*y*/ ,

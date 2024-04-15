@@ -19,7 +19,7 @@ dnl
 dnl Process this file with autoconf to produce a configure script.
 dnl
 
-AC_INIT([E-MailRelay],[2.5.3dev1],[],[emailrelay])
+AC_INIT([E-MailRelay],[2.5.3dev2],[],[emailrelay])
 AC_CONFIG_SRCDIR([src/glib/gdef.h])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([no-define])
@@ -33,7 +33,7 @@ dnl check for programs
 dnl
 AC_PROG_CC([cc gcc clang])
 AC_PROG_CXX([c++ g++ clang++])
-AX_CXX_COMPILE_STDCXX([11],[noext],[mandatory])
+AX_CXX_COMPILE_STDCXX([17],[noext],[optional])
 AC_PROG_INSTALL
 AC_PROG_RANLIB
 AC_PROG_SED
@@ -100,6 +100,8 @@ AC_ARG_ENABLE([verbose],AS_HELP_STRING([--enable-verbose],[enable verbose loggin
 GCONFIG_FN_ENABLE_VERBOSE
 AC_ARG_ENABLE([windows],AS_HELP_STRING([--enable-windows],[enable building for windows (default auto)]))
 GCONFIG_FN_ENABLE_WINDOWS
+AC_ARG_ENABLE([winxp],AS_HELP_STRING([--enable-winxp],[enable building for windows with old runtime (default no)]))
+GCONFIG_FN_ENABLE_WINXP
 AC_ARG_ENABLE([uds],AS_HELP_STRING([--enable-uds],[enable unix domain sockets (default auto)]))
 GCONFIG_FN_ENABLE_UDS
 AC_ARG_ENABLE([dnsbl],AS_HELP_STRING([--enable-dnsbl],[enable DNSBL (default yes)]))

@@ -164,12 +164,12 @@ my $missing_qt =
 	( $cfg_with_gui && $cfg_opt_x64 && ( !$cfg_path_qt_x64 || !-d "$cfg_path_qt_x64/lib" ) ) ;
 my $missing_mbedtls = ( $cfg_with_mbedtls && ( !$cfg_path_mbedtls_src || !-d "$cfg_path_mbedtls_src/include" ) ) ;
 warn "error: cannot find cmake.exe: please download from cmake.org\n" if $missing_cmake ;
-warn "error: cannot find qt libraries: please download from wwww.qt.io or set qt_x64 and/or qt_x86 or with_gui=0 in winbuild.cfg\n" if $missing_qt ;
-warn "error: cannot find mbedtls source: please download from tls.mbed.org or set mbedtls or with_mbedtls=0 in winbuild.cfg\n" if $missing_mbedtls ;
+warn "error: cannot find qt libraries: please download from wwww.qt.io or set with_gui=0 in winbuild.cfg\n" if $missing_qt ;
+warn "error: cannot find mbedtls source: please download from tls.mbed.org or set with_mbedtls=0 in winbuild.cfg\n" if $missing_mbedtls ;
 if( $missing_cmake || $missing_qt || $missing_mbedtls )
 {
 	warn "error: missing prerequisites: please install the missing components " ,
-		"or edit the winbuild.cfg configuration file" , "\n" ;
+		"or edit winbuild.cfg" , "\n" ;
 	die "winbuild: error: missing prerequisites\n" ;
 }
 if( $cfg_with_mbedtls )
@@ -213,7 +213,7 @@ my $cmake_args = {
 	} ;
 
 # project version
-chomp( my $version = eval { FileHandle->new("VERSION")->gets() } || "2.5.3dev1" ) ;
+chomp( my $version = eval { FileHandle->new("VERSION")->gets() } || "2.5.3dev2" ) ;
 my $project = "emailrelay" ;
 my $install_x64 = "$project-$version-w64" ;
 my $install_x86 = "$project-$version-w32" ;

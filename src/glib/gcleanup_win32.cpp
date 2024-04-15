@@ -59,7 +59,9 @@ G::Cleanup::Arg G::Cleanup::arg( const std::string & )
 
 G::Cleanup::Arg G::Cleanup::arg( const Path & )
 {
-	return {} ;
+	Arg arg ;
+	//arg.m_is_path = true ; // fwiw
+	return arg ;
 }
 
 G::Cleanup::Arg G::Cleanup::arg( std::nullptr_t )
@@ -69,11 +71,11 @@ G::Cleanup::Arg G::Cleanup::arg( std::nullptr_t )
 
 const char * G::Cleanup::Arg::str() const noexcept
 {
-	return "" ;
+	return m_ptr ;
 }
 
-const G::Path::value_type * G::Cleanup::Arg::path() const noexcept
+bool G::Cleanup::Arg::isPath() const noexcept
 {
-	return str() ;
+	return m_is_path ;
 }
 

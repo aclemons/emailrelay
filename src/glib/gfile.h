@@ -323,7 +323,6 @@ private:
 	static bool exists( const Path & , bool , bool ) ;
 	static bool existsImp( const char * , bool & , bool & ) noexcept ;
 	static Stat statImp( const char * , bool = false ) noexcept ;
-	static bool removeImp( const char * , int * ) noexcept ;
 	static bool renameImp( const char * , const char * , int * ) noexcept ;
 	static bool chmodx( const Path & file , bool ) ;
 	static int linkImp( const char * , const char * ) ;

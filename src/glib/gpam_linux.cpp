@@ -370,45 +370,60 @@ bool G::Pam::authenticate( bool require_token )
 	return m_imp->authenticate( require_token ) ;
 }
 
+#ifndef G_LIB_SMALL
 void G::Pam::checkAccount( bool require_token )
 {
 	G_DEBUG( "G::Pam::checkAccount" ) ;
 	return m_imp->checkAccount( require_token ) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 void G::Pam::establishCredentials()
 {
 	G_DEBUG( "G::Pam::establishCredentials" ) ;
 	m_imp->setCredentials( PAM_ESTABLISH_CRED ) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 void G::Pam::openSession()
 {
 	G_DEBUG( "G::Pam::openSession" ) ;
 	m_imp->openSession() ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 void G::Pam::closeSession()
 {
 	G_DEBUG( "G::Pam::closeSession" ) ;
 	m_imp->closeSession() ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 void G::Pam::deleteCredentials()
 {
 	m_imp->setCredentials( PAM_DELETE_CRED ) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 void G::Pam::reinitialiseCredentials()
 {
 	m_imp->setCredentials( PAM_REINITIALIZE_CRED ) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 void G::Pam::refreshCredentials()
 {
 	m_imp->setCredentials( PAM_REFRESH_CRED ) ;
 }
+#endif
 
+#ifndef G_LIB_SMALL
 void G::Pam::delay( unsigned int usec )
 {
 	// this is the default implementation, usually overridden
@@ -422,9 +437,12 @@ void G::Pam::delay( unsigned int usec )
 		::select( 0 , nullptr , nullptr , nullptr , &timeout ) ;
 	}
 }
+#endif
 
+#ifndef G_LIB_SMALL
 std::string G::Pam::name() const
 {
 	return m_imp->name() ;
 }
+#endif
 

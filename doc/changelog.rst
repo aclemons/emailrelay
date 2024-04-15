@@ -5,7 +5,8 @@ Change Log
 2.5.2 -> 2.5.3
 ==============
 
-* New *--log-format* option (eg. *--log-format=address,port*) (see NEWS file).
+* New *--log-format* option (eg. *--log-format=address,port*).
+* Configuration files always use UTF-8 character encoding on Windows.
 
 2.5.1 -> 2.5.2
 ==============

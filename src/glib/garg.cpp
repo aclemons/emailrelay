@@ -21,28 +21,29 @@
 #include "gdef.h"
 #include "garg.h"
 #include "gprocess.h"
+#include "gconvert.h"
+#include "gscope.h"
 #include "gpath.h"
 #include "gstr.h"
 #include "glog.h"
 #include "gassert.h"
 #include <cstring>
 
-std::string G::Arg::m_v0 ;
-std::string G::Arg::m_cwd ;
+G::Path G::Arg::m_v0 ;
+G::Path G::Arg::m_cwd ;
 
 G::Arg::Arg( int argc , char **argv )
 {
 	G_ASSERT( argc > 0 ) ;
 	G_ASSERT( argv != nullptr ) ;
+
 	for( int i = 0 ; i < argc ; i++ )
 		m_array.emplace_back( argv[i] ) ;
 
-	static bool first = true ;
-	if( first )
+	if( m_v0.empty() && !m_array.empty() )
 	{
-		m_v0 = std::string( argv[0] ) ;
-		m_cwd = Process::cwd(true/*nothrow*/) ; // don't throw yet - we may "cd /" to deamonise
-		first = false ;
+		m_v0 = Path( m_array[0] ) ;
+		m_cwd = Process::cwd( std::nothrow ) ; // don't throw yet - we may "cd /" to deamonise
 	}
 }
 
@@ -51,38 +52,35 @@ G::Arg::Arg( const StringArray & args ) :
 {
 }
 
-G::Arg::Arg()
-= default ;
-
 #ifndef G_LIB_SMALL
-void G::Arg::parse( HINSTANCE , const std::string & command_line_tail )
+G::Arg::Arg( const Path & argv0 , const std::string & command_line_tail )
 {
-	std::string proc_exe = Process::exe() ;
-	if( proc_exe.empty() ) throw Exception( "cannot determine the path of this executable" ) ;
-	m_array.clear() ;
-	m_array.push_back( proc_exe ) ;
+	if( argv0.empty() )
+		throw Exception( "invalid path for this executable" ) ;
 	parseImp( command_line_tail ) ;
+	m_array.insert( m_array.begin() , argv0.str() ) ;
 }
 #endif
 
-void G::Arg::parse( const std::string & command_line )
+G::Arg::Arg( const std::string & command_line )
 {
 	G_ASSERT( !command_line.empty() ) ;
-	m_array.clear() ;
 	parseImp( command_line ) ;
 }
 
-#ifndef G_LIB_SMALL
-void G::Arg::reparse( const std::string & command_line_tail )
+G::Arg G::Arg::windows()
 {
-	auto p = m_array.begin() ;
-	m_array.erase( ++p , m_array.end() ) ;
-	parseImp( command_line_tail ) ;
+	Arg arg( (Windows()) ) ;
+	if( m_v0.empty() && !arg.m_array.empty() )
+	{
+		m_v0 = Path( arg.m_array[0] ) ;
+		m_cwd = Process::cwd( std::nothrow ) ;
+	}
+	return arg ;
 }
-#endif
 
 #ifndef G_LIB_SMALL
-std::string G::Arg::v0()
+G::Path G::Arg::v0()
 {
 	return m_v0 ;
 }
@@ -96,19 +94,19 @@ G::StringArray G::Arg::array( unsigned int shift ) const
 	return result ;
 }
 
-bool G::Arg::contains( const std::string & option , std::size_t option_args , bool cs ) const
+bool G::Arg::contains( std::string_view option , std::size_t option_args , bool cs ) const
 {
 	return find( cs , option , option_args , nullptr ) != 0U ;
 }
 
 #ifndef G_LIB_SMALL
-std::size_t G::Arg::count( const std::string & option ) const
+std::size_t G::Arg::count( std::string_view option ) const
 {
 	return find( true , option , 0U , nullptr ) ;
 }
 #endif
 
-std::size_t G::Arg::find( bool cs , const std::string & option , std::size_t option_args ,
+std::size_t G::Arg::find( bool cs , std::string_view option , std::size_t option_args ,
 	std::size_t * index_p ) const
 {
 	std::size_t count = 0U ;
@@ -137,12 +135,12 @@ std::size_t G::Arg::match( const std::string & prefix ) const
 	return 0U ;
 }
 
-bool G::Arg::strmatch( bool cs , const std::string & s1 , const std::string & s2 )
+bool G::Arg::strmatch( bool cs , std::string_view s1 , std::string_view s2 )
 {
-	return cs ? (s1==s2) : (Str::upper(s1)==Str::upper(s2)) ;
+	return cs ? (s1==s2) : Str::imatch(s1,s2) ;
 }
 
-bool G::Arg::remove( const std::string & option , std::size_t option_args )
+bool G::Arg::remove( std::string_view option , std::size_t option_args )
 {
 	std::size_t i = 0U ;
 	const bool found = find( true , option , option_args , &i ) != 0U ;
@@ -151,7 +149,7 @@ bool G::Arg::remove( const std::string & option , std::size_t option_args )
 	return found ;
 }
 
-std::string G::Arg::removeValue( const std::string & option , const std::string & default_ )
+std::string G::Arg::removeValue( std::string_view option , const std::string & default_ )
 {
 	std::size_t option_args = 1U ;
 	std::size_t i = 0U ;
@@ -174,7 +172,7 @@ std::string G::Arg::removeAt( std::size_t option_index , std::size_t option_args
 	return value ;
 }
 
-std::size_t G::Arg::index( const std::string & option , std::size_t option_args ,
+std::size_t G::Arg::index( std::string_view option , std::size_t option_args ,
 	std::size_t default_ ) const
 {
 	std::size_t i = 0U ;
@@ -207,7 +205,9 @@ std::string G::Arg::prefix() const
 
 const char * G::Arg::prefix( char ** argv ) noexcept
 {
+	if( argv == nullptr ) return "" ;
 	const char * exe = argv[0] ;
+	if( exe == nullptr || exe[0] == '\0' ) return "" ;
 	const char * p1 = std::strrchr( exe , '/' ) ;
 	const char * p2 = std::strrchr( exe , '\\' ) ;
 	p1 = p1 == nullptr ? exe : (p1+1U) ;
@@ -225,29 +225,41 @@ void G::Arg::parseImp( const std::string & command_line )
 	Str::replace( m_array , '\0' , ' ' ) ;
 }
 
-std::string G::Arg::exe( bool do_throw )
+G::Path G::Arg::exe()
 {
-	std::string proc_exe = Process::exe() ;
-	if( proc_exe.empty() && ( m_v0.empty() || ( m_cwd.empty() && Path(m_v0).isRelative() ) ) )
+	return exeImp( true ) ;
+}
+
+#ifndef G_LIB_SMALL
+G::Path G::Arg::exe( std::nothrow_t )
+{
+	return exeImp( false ) ;
+}
+#endif
+
+G::Path G::Arg::exeImp( bool do_throw )
+{
+	Path process_exe = Process::exe() ;
+	if( !process_exe.empty() )
 	{
-		if( do_throw )
-		{
-			throw Exception( "cannot determine the absolute path of the current executable" ,
-				G::is_windows() ? "" : "try mounting procfs" ) ;
-		}
-		return {} ;
+		return process_exe ;
 	}
-	else if( proc_exe.empty() && Path(m_v0).isRelative() )
-	{
-		return Path::join(m_cwd,m_v0).collapsed().str() ;
-	}
-	else if( proc_exe.empty() )
+	else if( m_v0.isAbsolute() )
 	{
 		return m_v0 ;
 	}
+	else if( !m_cwd.empty() )
+	{
+		return Path::join(m_cwd,m_v0).collapsed() ;
+	}
+	else if( do_throw )
+	{
+		throw Exception( "cannot determine the absolute path of the current executable" ,
+			G::is_windows() ? "" : "try mounting procfs" ) ;
+	}
 	else
 	{
-		return proc_exe ;
+		return {} ;
 	}
 }
 

@@ -57,7 +57,7 @@ namespace GNet
 /// exception escapes the event loop. This is safe even if the exception
 /// handler object is destroyed by the original exception because the
 /// exception handler base-class destructor uses the timer list's disarm()
-/// mechanism. This is the same behaviour as in the EventHandlerList.
+/// mechanism. This is the same behaviour as in the EventLoop.
 ///
 /// The implementation maintains a pointer to the timer that will
 /// expire soonest so that interval() is fast and O(1) when the set

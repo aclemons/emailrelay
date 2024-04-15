@@ -371,7 +371,7 @@ sub windows_switches
 		GCONFIG_TLS_USE_MBEDTLS => (($mbedtls&&!$openssl)?1:0) ,
 		GCONFIG_TLS_USE_OPENSSL => ((!$mbedtls&&$openssl)?1:0) ,
 		GCONFIG_TLS_USE_BOTH => (($mbedtls&&$openssl)?1:0) ,
-		GCONFIG_TLS_USE_NONE => ((!$mbedtls&&!$openssl)?0:1) ,
+		GCONFIG_TLS_USE_NONE => ((!$mbedtls&&!$openssl)?1:0) ,
 		GCONFIG_UDS => 0 ,
 		GCONFIG_WINDOWS => 1 ,
 	) ;

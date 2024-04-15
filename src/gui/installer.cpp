@@ -19,6 +19,7 @@
 ///
 
 #include "gdef.h"
+#include "gqt.h"
 #include "gcominit.h"
 #include "gstr.h"
 #include "gstringmap.h"
@@ -30,6 +31,8 @@
 #include "gdirectory.h"
 #include "gprocess.h"
 #include "guilink.h"
+#include "gcodepage.h"
+#include "gconvert.h"
 #include "gbatchfile.h"
 #include "gxtext.h"
 #include "gbase64.h"
@@ -53,87 +56,20 @@
 #include <list>
 #include <cstdlib>
 
-// internationalisation shenanigans
-#if 1
-#include "gqt.h"
-using trstring = QString ;
-static std::string from_trstring( const trstring & qs )
-{
-	return GQt::stdstr( qs , GQt::Utf8 ) ;
-}
-static bool empty( const trstring & s )
-{
-	return s.isEmpty() ;
-}
+// TrError -- an exception class that takes a translated QString
+// and/or an un-translated UTF-8 string
+//
 struct TrError : std::runtime_error
 {
-	trstring m_text ;
-	std::string m_subject ;
-	explicit TrError( trstring text , std::string subject = std::string() ) :
-		std::runtime_error(from_trstring(text)) ,
-		m_text(text) ,
-		m_subject(subject)
+	QString m_error_text ; // translated
+	std::string m_error_more ; // un-translated
+	explicit TrError( QString error_text , std::string error_more = std::string() ) :
+		std::runtime_error(GQt::u8string_from_qstring(error_text).append(error_text.isEmpty()?0U:1U,' ').append(m_error_more)) ,
+		m_error_text(error_text) ,
+		m_error_more(error_more)
 	{
 	}
 } ;
-#else
-#define Q_DECLARE_TR_FUNCTIONS(name)
-using trstring = std::string ;
-struct Proxy
-{
-	Proxy( const std::string & s ) :
-		m_s(s) ,
-		m_arg(1)
-	{
-	}
-	Proxy & arg( const std::string & value )
-	{
-		std::string key = "%" + G::Str::fromInt(m_arg++) ;
-		G::Str::replaceAll( m_s , key , value ) ;
-		return *this ;
-	}
-	operator std::string() const
-	{
-		return m_s ;
-	}
-	std::string operator+( const std::string & s ) const
-	{
-		return m_s + s ;
-	}
-	std::string m_s ;
-	int m_arg ;
-} ;
-struct QCoreApplication
-{
-	static Proxy translate( const char * , const std::string & s )
-	{
-		return Proxy(s) ;
-	}
-} ;
-static Proxy tr( const std::string & s )
-{
-	return Proxy(s) ;
-}
-static std::string from_trstring( const trstring & s )
-{
-	return s ;
-}
-static bool empty( const trstring & s )
-{
-	return s.empty() ;
-}
-struct TrError : std::runtime_error
-{
-	std::string m_text ;
-	std::string m_subject ;
-	explicit TrError( const std::string & text , const std::string & subject = std::string() ) :
-		std::runtime_error(text+(subject.empty()?"":": ")+subject) ,
-		m_text(text) ,
-		m_subject(subject)
-	{
-	}
-} ;
-#endif
 
 #ifdef CreateDirectory
 #undef CreateDirectory
@@ -142,9 +78,9 @@ struct TrError : std::runtime_error
 struct ActionInterface
 {
 	virtual void run() = 0 ;
-	virtual trstring text() const = 0 ;
+	virtual QString text() const = 0 ;
 	virtual std::string subject() const = 0 ;
-	virtual trstring ok() const = 0 ;
+	virtual QString ok() const = 0 ;
 	virtual ~ActionInterface() = default ;
 } ;
 
@@ -160,19 +96,19 @@ bool Helper::m_is_mac = false ;
 
 struct ActionBase : public ActionInterface , protected Helper
 {
-	trstring ok() const override ;
+	QString ok() const override ;
 } ;
 
 struct CreateDirectory : public ActionBase
 {
-	trstring m_display_name ;
-	trstring m_ok ;
+	QString m_display_name ;
+	QString m_ok ;
 	G::Path m_path ;
 	bool m_tight_permissions ;
-	CreateDirectory( trstring display_name , std::string path , bool tight_permissions = false ) ;
-	trstring text() const override ;
+	CreateDirectory( QString display_name , std::string path , bool tight_permissions = false ) ;
+	QString text() const override ;
 	std::string subject() const override ;
-	trstring ok() const override ;
+	QString ok() const override ;
 	void run() override ;
 	Q_DECLARE_TR_FUNCTIONS(CreateDirectory)
 } ;
@@ -186,9 +122,9 @@ struct CreatePointerFile : public ActionBase
 	G::Path m_dir_tr ;
 	CreatePointerFile( const G::Path & pointer_file , const G::Path & gui_exe , const G::Path & dir_config , const G::Path & dir_install , const G::Path & dir_tr ) ;
 	void run() override ;
-	trstring text() const override ;
+	QString text() const override ;
 	std::string subject() const override ;
-	trstring ok() const override ;
+	QString ok() const override ;
 	Q_DECLARE_TR_FUNCTIONS(CreatePointerFile)
 } ;
 
@@ -196,12 +132,12 @@ struct CreateFilterScript : public ActionBase
 {
 	G::Path m_path ;
 	bool m_client_filter ;
-	trstring m_ok ;
+	QString m_ok ;
 	CreateFilterScript( const G::Path & path , bool client ) ;
 	void run() override ;
-	trstring text() const override ;
+	QString text() const override ;
 	std::string subject() const override ;
-	trstring ok() const override ;
+	QString ok() const override ;
 	Q_DECLARE_TR_FUNCTIONS(CreateFilterScript)
 } ;
 
@@ -212,7 +148,7 @@ struct CopyPayloadFile : public ActionBase
 	std::string m_flags ;
 	CopyPayloadFile( G::Path src , G::Path dst , std::string flags ) ;
 	void run() override ;
-	trstring text() const override ;
+	QString text() const override ;
 	std::string subject() const override ;
 	Q_DECLARE_TR_FUNCTIONS(CopyPayloadFile)
 } ;
@@ -223,7 +159,7 @@ struct CopyPayloadTree : public ActionBase
 	G::Path m_dst ;
 	CopyPayloadTree( G::Path src , G::Path dst ) ;
 	void run() override ;
-	trstring text() const override ;
+	QString text() const override ;
 	std::string subject() const override ;
 	void add( int depth , G::Path , G::Path ) const ;
 	Q_DECLARE_TR_FUNCTIONS(CopyPayloadTree)
@@ -233,13 +169,13 @@ struct FileGroup : public ActionBase
 {
 	std::string m_path ;
 	std::string m_tail ;
-	trstring m_ok ;
+	QString m_ok ;
 	FileGroup( const std::string & , const std::string & ) ;
 	void exec( const std::string & , const std::string & ) ;
 	void run() override ;
-	trstring text() const override ;
+	QString text() const override ;
 	std::string subject() const override ;
-	trstring ok() const override ;
+	QString ok() const override ;
 	Q_DECLARE_TR_FUNCTIONS(FileGroup)
 } ;
 
@@ -256,7 +192,7 @@ struct CreateSecrets : public ActionBase
 	std::vector<Item> m_content ;
 	CreateSecrets( const std::string & config_dir , const std::string & filename , G::Path template_ , const G::MapFile & pvalues ) ;
 	void run() override ;
-	trstring text() const override ;
+	QString text() const override ;
 	std::string subject() const override ;
 	static bool match( std::string , std::string ) ;
 	static bool yes( const std::string & ) ;
@@ -272,7 +208,7 @@ struct CreateBatchFile : public ActionBase
 	G::StringArray m_args ;
 	CreateBatchFile( const G::Path & bat , const G::Path & exe , const G::StringArray & args ) ;
 	void run() override ;
-	trstring text() const override ;
+	QString text() const override ;
 	std::string subject() const override ;
 	Q_DECLARE_TR_FUNCTIONS(CreateBatchFile)
 } ;
@@ -294,12 +230,12 @@ struct UpdateLink : public ActionBase
 	G::StringArray m_args ;
 	G::Path m_icon ;
 	G::Path m_link_path ;
-	trstring m_ok ;
+	QString m_ok ;
 	UpdateLink( LinkType , bool active , G::Path link_dir , G::Path working_dir , G::Path target , const G::StringArray & args , G::Path icon ) ;
 	void run() override ;
-	trstring text() const override ;
+	QString text() const override ;
 	std::string subject() const override ;
-	trstring ok() const override ;
+	QString ok() const override ;
 	Q_DECLARE_TR_FUNCTIONS(UpdateLink)
 } ;
 
@@ -307,15 +243,15 @@ struct UpdateBootLink : public ActionBase
 {
 	bool m_active ;
 	bool m_start_on_boot ;
-	trstring m_ok ;
+	QString m_ok ;
 	std::string m_name ;
 	G::Path m_startstop_src ;
 	G::Path m_exe ;
 	UpdateBootLink( bool active , bool start_on_boot , std::string , G::Path startstop_src , G::Path exe ) ;
 	void run() override ;
-	trstring text() const override ;
+	QString text() const override ;
 	std::string subject() const override ;
-	trstring ok() const override ;
+	QString ok() const override ;
 	Q_DECLARE_TR_FUNCTIONS(UpdateBootLink)
 } ;
 
@@ -323,14 +259,14 @@ struct InstallService : public ActionBase
 {
 	bool m_active ;
 	bool m_start_on_boot ;
-	trstring m_ok ;
+	QString m_ok ;
 	G::Path m_bat ;
 	G::Path m_service_wrapper ;
 	InstallService( bool active , bool start_on_boot , G::Path bat , G::Path wrapper ) ;
 	void run() override ;
-	trstring text() const override ;
+	QString text() const override ;
 	std::string subject() const override ;
-	trstring ok() const override ;
+	QString ok() const override ;
 	Q_DECLARE_TR_FUNCTIONS(InstallService)
 } ;
 
@@ -339,21 +275,21 @@ struct RegisterAsEventSource : public ActionBase
 	G::Path m_exe ;
 	explicit RegisterAsEventSource( const G::Path & ) ;
 	void run() override ;
-	trstring text() const override ;
+	QString text() const override ;
 	std::string subject() const override ;
 	Q_DECLARE_TR_FUNCTIONS(RegisterAsEventSource)
 } ;
 
 struct CreateConfigFile : public ActionBase
 {
-	trstring m_ok ;
+	QString m_ok ;
 	G::Path m_template ;
 	G::Path m_dst ;
 	CreateConfigFile( G::Path dst_dir , std::string dst_name , G::Path template_ ) ;
 	void run() override ;
-	trstring text() const override ;
+	QString text() const override ;
 	std::string subject() const override ;
-	trstring ok() const override ;
+	QString ok() const override ;
 	Q_DECLARE_TR_FUNCTIONS(CreateConfigFile)
 } ;
 
@@ -364,7 +300,7 @@ struct EditConfigFile : public ActionBase
 	bool m_do_backup ;
 	EditConfigFile( G::Path dir , std::string name , const G::MapFile & server_config , bool ) ;
 	void run() override ;
-	trstring text() const override ;
+	QString text() const override ;
 	std::string subject() const override ;
 	Q_DECLARE_TR_FUNCTIONS(EditConfigFile)
 } ;
@@ -374,7 +310,7 @@ struct GenerateKey : public ActionBase
 	GenerateKey( G::Path path_out , const std::string & issuer ) ;
 	static G::Path exe( bool is_windows ) ; // public & used early
 	void run() override ;
-	trstring text() const override ;
+	QString text() const override ;
 	std::string subject() const override ;
 	G::Path m_exe ;
 	G::Path m_path_out ;
@@ -386,13 +322,13 @@ struct Launcher : public ActionBase
 {
 	Launcher( bool as_service , const G::Path & bat , const G::Path & exe , const G::Path & conf ) ;
 	void run() override ;
-	trstring text() const override ;
+	QString text() const override ;
 	std::string subject() const override ;
-	trstring ok() const override ;
+	QString ok() const override ;
 	bool m_as_service ;
-	trstring m_text ;
+	QString m_text ;
 	std::string m_subject ;
-	trstring m_ok ;
+	QString m_ok ;
 	G::ExecutableCommand m_cmd ;
 	Q_DECLARE_TR_FUNCTIONS(Launcher)
 } ;
@@ -400,11 +336,11 @@ struct Launcher : public ActionBase
 struct JustTesting : public ActionBase
 {
 	JustTesting() ;
-	trstring text() const override ;
+	QString text() const override ;
 	std::string subject() const override ;
-	trstring ok() const override ;
+	QString ok() const override ;
 	void run() override ;
-	trstring m_ok ;
+	QString m_ok ;
 	Q_DECLARE_TR_FUNCTIONS(JustTesting)
 } ;
 
@@ -412,9 +348,9 @@ struct Action
 {
 	std::shared_ptr<ActionInterface> m_p ;
 	explicit Action( ActionInterface * p ) ;
-	trstring text() const ;
+	QString text() const ;
 	std::string subject() const ;
-	trstring ok() const ;
+	QString ok() const ;
 	void run() ;
 } ;
 
@@ -464,14 +400,14 @@ private:
 
 // ==
 
-CreateDirectory::CreateDirectory( trstring display_name , std::string path , bool tight_permissions ) :
+CreateDirectory::CreateDirectory( QString display_name , std::string path , bool tight_permissions ) :
 	m_display_name(display_name) ,
 	m_path(path) ,
 	m_tight_permissions(tight_permissions)
 {
 }
 
-trstring CreateDirectory::text() const
+QString CreateDirectory::text() const
 {
 	return tr("creating %1 directory").arg(m_display_name) ;
 }
@@ -481,9 +417,9 @@ std::string CreateDirectory::subject() const
 	return m_path.str() ;
 }
 
-trstring CreateDirectory::ok() const
+QString CreateDirectory::ok() const
 {
-	return empty(m_ok) ? ActionBase::ok() : m_ok ;
+	return m_ok.isEmpty() ? ActionBase::ok() : m_ok ;
 }
 
 void CreateDirectory::run()
@@ -561,7 +497,7 @@ void CreatePointerFile::run()
 	}
 }
 
-trstring CreatePointerFile::text() const
+QString CreatePointerFile::text() const
 {
 	return tr("creating pointer file") ;
 }
@@ -571,7 +507,7 @@ std::string CreatePointerFile::subject() const
 	return m_pointer_file.str() ; // possibly empty
 }
 
-trstring CreatePointerFile::ok() const
+QString CreatePointerFile::ok() const
 {
 	if( m_pointer_file.empty() )
 		return tr("nothing to do") ;
@@ -601,7 +537,7 @@ void CopyPayloadFile::run()
 			G::File::chmodx( m_dst ) ;
 }
 
-trstring CopyPayloadFile::text() const
+QString CopyPayloadFile::text() const
 {
 	return tr("copying payload file") ;
 }
@@ -631,12 +567,12 @@ void CopyPayloadTree::add( int depth , G::Path src_dir , G::Path dst_dir ) const
 		if( iter.isDir() )
 		{
 			G_LOG( "CopyPayloadTree::add: recursion: [" << iter.filePath() << "] [" << dst_dir << "] [" << iter.fileName() << "]" ) ;
-			add( depth+1 , iter.filePath() , dst_dir+iter.fileName() ) ; // recurse
+			add( depth+1 , iter.filePath() , dst_dir/iter.fileName() ) ; // recurse
 		}
 		else
 		{
 			G::Path src = iter.filePath() ;
-			G::Path dst = dst_dir + iter.fileName() ;
+			G::Path dst = dst_dir / iter.fileName() ;
 			G_LOG( "CopyPayloadTree::add: depth=" << depth << ": copy file [" << src << "] -> [" << dst << "]" ) ;
 			G::File::copy( src , dst ) ;
 			if( G::File::isExecutable(src,std::nothrow) ||
@@ -653,7 +589,7 @@ void CopyPayloadTree::run()
 	add( 0 , m_src , m_dst ) ;
 }
 
-trstring CopyPayloadTree::text() const
+QString CopyPayloadTree::text() const
 {
 	return tr("copying payload directory") ;
 }
@@ -683,7 +619,7 @@ void FileGroup::run()
 		G::File::chmod( m_path , parts.at(2U) ) ;
 }
 
-trstring FileGroup::text() const
+QString FileGroup::text() const
 {
 	return tr("setting group permissions") ;
 }
@@ -693,9 +629,9 @@ std::string FileGroup::subject() const
 	return m_path + " " + m_tail ;
 }
 
-trstring FileGroup::ok() const
+QString FileGroup::ok() const
 {
-	return empty(m_ok) ? ActionBase::ok() : m_ok ;
+	return m_ok.isEmpty() ? ActionBase::ok() : m_ok ;
 }
 
 // ==
@@ -767,7 +703,7 @@ void CreateSecrets::addSecret( const G::MapFile & p ,
 	}
 }
 
-trstring CreateSecrets::text() const
+QString CreateSecrets::text() const
 {
 	return tr("creating authentication secrets file") ;
 }
@@ -890,7 +826,7 @@ CreateBatchFile::CreateBatchFile( const G::Path & bat , const G::Path & exe , co
 {
 }
 
-trstring CreateBatchFile::text() const
+QString CreateBatchFile::text() const
 {
 	return tr("creating startup batch file") ;
 }
@@ -904,6 +840,27 @@ void CreateBatchFile::run()
 {
 	G::StringArray all_args = m_args ;
 	all_args.insert( all_args.begin() , m_exe.str() ) ;
+
+	// check every argument can be converted to the OEM code page
+	for( const auto & arg : all_args )
+	{
+		if( arg.empty() ) continue ;
+		std::size_t pos = G::CodePage::toCodePageOem(arg).find(G::CodePage::oem_error) ;
+		if( pos != std::string::npos ) // if not convertible...
+		{
+			// find the first invalid character
+			std::vector<std::pair<std::size_t,std::size_t>> parts ;
+			parts.reserve( arg.size() ) ;
+			G::Convert::u8parse( arg ,
+				[&](G::Convert::unicode_type,std::size_t size_,std::size_t offset_){ parts.push_back(std::make_pair(size_,offset_)) ; return true;} ) ;
+			std::string bad_part ; // single utf-8 character
+			if( pos < parts.size() && (parts[pos].first+parts[pos].second) < arg.size() ) // just in case
+				bad_part = arg.substr( parts[pos].second , parts[pos].first ) ;
+
+			throw TrError( tr("invalid oem character") , bad_part ) ;
+		}
+	}
+
 	G::BatchFile::write( m_bat , all_args , "emailrelay" ) ;
 }
 
@@ -923,7 +880,7 @@ UpdateLink::UpdateLink( LinkType link_type , bool active , G::Path link_dir , G:
 	m_link_path = G::Path( m_link_dir , link_filename ) ;
 }
 
-trstring UpdateLink::text() const
+QString UpdateLink::text() const
 {
 	if( m_link_type == LinkType::Desktop ) return tr("updating destkop link") ;
 	if( m_link_type == LinkType::StartMenu ) return tr("updating start menu link") ;
@@ -956,9 +913,9 @@ void UpdateLink::run()
 	}
 }
 
-trstring UpdateLink::ok() const
+QString UpdateLink::ok() const
 {
-	return empty(m_ok) ? ActionBase::ok() : m_ok ;
+	return m_ok.isEmpty() ? ActionBase::ok() : m_ok ;
 }
 
 // ==
@@ -992,7 +949,7 @@ void InstallService::run()
 	}
 }
 
-trstring InstallService::text() const
+QString InstallService::text() const
 {
 	return (!m_active || m_start_on_boot) ? tr("installing service") : tr("uninstalling service") ;
 }
@@ -1002,9 +959,9 @@ std::string InstallService::subject() const
 	return std::string() ;
 }
 
-trstring InstallService::ok() const
+QString InstallService::ok() const
 {
-	return empty(m_ok) ? ActionBase::ok() : m_ok ;
+	return m_ok.isEmpty() ? ActionBase::ok() : m_ok ;
 }
 
 // ==
@@ -1018,7 +975,7 @@ UpdateBootLink::UpdateBootLink( bool active , bool start_on_boot , std::string n
 {
 }
 
-trstring UpdateBootLink::text() const
+QString UpdateBootLink::text() const
 {
 	return tr("updating boot configuration") ;
 }
@@ -1049,9 +1006,9 @@ void UpdateBootLink::run()
 	}
 }
 
-trstring UpdateBootLink::ok() const
+QString UpdateBootLink::ok() const
 {
-	return empty(m_ok) ? ActionBase::ok() : m_ok ;
+	return m_ok.isEmpty() ? ActionBase::ok() : m_ok ;
 }
 
 // ==
@@ -1067,7 +1024,7 @@ void RegisterAsEventSource::run()
 		G::LogOutput::register_( m_exe.str() ) ;
 }
 
-trstring RegisterAsEventSource::text() const
+QString RegisterAsEventSource::text() const
 {
 	return tr("registering as a source for event viewer logging") ;
 }
@@ -1113,7 +1070,7 @@ void CreateFilterScript::run()
 	}
 }
 
-trstring CreateFilterScript::text() const
+QString CreateFilterScript::text() const
 {
 	if( m_client_filter )
 		return tr("creating client filter script") ;
@@ -1126,16 +1083,16 @@ std::string CreateFilterScript::subject() const
 	return m_path.str() ;
 }
 
-trstring CreateFilterScript::ok() const
+QString CreateFilterScript::ok() const
 {
-	return empty(m_ok) ? ActionBase::ok() : m_ok ;
+	return m_ok.isEmpty() ? ActionBase::ok() : m_ok ;
 }
 
 // ==
 
 CreateConfigFile::CreateConfigFile( G::Path dst_dir , std::string dst_name , G::Path template_ ) :
 	m_template(template_) ,
-	m_dst(dst_dir+dst_name)
+	m_dst(dst_dir/dst_name)
 {
 }
 
@@ -1149,7 +1106,7 @@ void CreateConfigFile::run()
 		G::File::create( m_dst ) ;
 }
 
-trstring CreateConfigFile::text() const
+QString CreateConfigFile::text() const
 {
 	return tr("creating configuration file") ;
 }
@@ -1159,15 +1116,15 @@ std::string CreateConfigFile::subject() const
 	return m_dst.str() ;
 }
 
-trstring CreateConfigFile::ok() const
+QString CreateConfigFile::ok() const
 {
-	return empty(m_ok) ? ActionBase::ok() : m_ok ;
+	return m_ok.isEmpty() ? ActionBase::ok() : m_ok ;
 }
 
 // ==
 
 EditConfigFile::EditConfigFile( G::Path dir , std::string name , const G::MapFile & server_config , bool do_backup ) :
-	m_path(dir+name) ,
+	m_path(dir/name) ,
 	m_server_config(server_config) ,
 	m_do_backup(do_backup)
 {
@@ -1180,7 +1137,7 @@ void EditConfigFile::run()
 	m_server_config.editInto( m_path , m_do_backup , allow_read_error , allow_write_error ) ;
 }
 
-trstring EditConfigFile::text() const
+QString EditConfigFile::text() const
 {
 	return tr("editing configuration file") ;
 }
@@ -1203,17 +1160,17 @@ G::Path GenerateKey::exe( bool is_windows )
 {
 	// (guimain.cpp tests for this binary and tells the gui 'smtp server' page)
 
-	std::string this_exe = G::Process::exe() ;
+	G::Path this_exe = G::Process::exe() ;
 	if( this_exe.empty() )
 		return {} ;
 
-	G::Path dir = G::Path(this_exe).dirname() ;
+	G::Path dir = this_exe.dirname() ;
 	std::string filename = is_windows ? "emailrelay-keygen.exe" : "emailrelay-keygen" ;
 
-	if( G::File::exists(dir+"programs"+filename) )
-		return dir + "programs" + filename ;
+	if( G::File::exists(dir/"programs"/filename) )
+		return dir / "programs" / filename ;
 	else
-		return dir + filename ;
+		return dir / filename ;
 }
 
 void GenerateKey::run()
@@ -1233,7 +1190,7 @@ void GenerateKey::run()
 		throw std::runtime_error( output ) ;
 }
 
-trstring GenerateKey::text() const
+QString GenerateKey::text() const
 {
 	return tr("generating tls server key") ;
 }
@@ -1280,12 +1237,12 @@ void Launcher::run()
 		// file is tail-ed by ProgressPage -- using G::NewProcess
 		// doesn't work well because stderr is not always inherited
 		// and then closed cleanly)
-		std::string s = m_cmd.exe().str() ;
-		(void) system( s.c_str() ) ; // NOLINT
+		//
+		(void) system( m_cmd.exe().cstr() ) ; // NOLINT
 	}
 }
 
-trstring Launcher::text() const
+QString Launcher::text() const
 {
 	return m_text ;
 }
@@ -1295,9 +1252,9 @@ std::string Launcher::subject() const
 	return m_subject ;
 }
 
-trstring Launcher::ok() const
+QString Launcher::ok() const
 {
-	return empty(m_ok) ? ActionBase::ok() : m_ok ;
+	return m_ok.isEmpty() ? ActionBase::ok() : m_ok ;
 }
 
 // ==
@@ -1305,12 +1262,12 @@ trstring Launcher::ok() const
 JustTesting::JustTesting()
 = default ;
 
-trstring JustTesting::ok() const
+QString JustTesting::ok() const
 {
-	return empty(m_ok) ? ActionBase::ok() : m_ok ;
+	return m_ok.isEmpty() ? ActionBase::ok() : m_ok ;
 }
 
-trstring JustTesting::text() const
+QString JustTesting::text() const
 {
 	//: random text used in testing
 	return tr("doing something") ;
@@ -1341,7 +1298,7 @@ void JustTesting::run()
 
 // ==
 
-trstring ActionBase::ok() const
+QString ActionBase::ok() const
 {
 	return QCoreApplication::translate( "Installer" , "ok" ) ;
 }
@@ -1353,7 +1310,7 @@ Action::Action( ActionInterface * p ) :
 {
 }
 
-trstring Action::text() const
+QString Action::text() const
 {
 	return m_p->text() ;
 }
@@ -1363,7 +1320,7 @@ std::string Action::subject() const
 	return m_p->subject() ;
 }
 
-trstring Action::ok() const
+QString Action::ok() const
 {
 	return m_p->ok() ;
 }
@@ -1421,7 +1378,7 @@ bool InstallerImp::next()
 	else if( m_p == m_list.end() ) // inc. new
 	{
 		m_p = m_list.begin() ;
-		m_output.action_utf8 = from_trstring( (*m_p).text() ) ;
+		m_output.action = GQt::u8string_from_qstring( (*m_p).text() ) ;
 		m_output.subject = (*m_p).subject() ;
 		return true ;
 	}
@@ -1430,7 +1387,7 @@ bool InstallerImp::next()
 		++m_p ;
 		if( m_p != m_list.end() )
 		{
-			m_output.action_utf8 = from_trstring( (*m_p).text() ) ;
+			m_output.action = GQt::u8string_from_qstring( (*m_p).text() ) ;
 			m_output.subject = (*m_p).subject() ;
 		}
 		return m_p != m_list.end() ;
@@ -1447,20 +1404,20 @@ void InstallerImp::back()
 	{
 		m_p = m_list.begin() ;
 		std::advance( m_p , m_list.size()-1U ) ;
-		m_output.action_utf8 = from_trstring( (*m_p).text() ) ;
+		m_output.action = GQt::u8string_from_qstring( (*m_p).text() ) ;
 		m_output.subject = (*m_p).subject() ;
 	}
 	else
 	{
 		--m_p ;
-		m_output.action_utf8 = from_trstring( (*m_p).text() ) ;
+		m_output.action = GQt::u8string_from_qstring( (*m_p).text() ) ;
 		m_output.subject = (*m_p).subject() ;
 	}
 }
 
 bool InstallerImp::failed() const
 {
-	return m_have_run && ( !m_output.error.empty() || !m_output.error_utf8.empty() ) ;
+	return m_have_run && ( !m_output.error.empty() || !m_output.error_more.empty() ) ;
 }
 
 bool InstallerImp::done()
@@ -1546,7 +1503,7 @@ void InstallerImp::addActions()
 	if( m_installing )
 	{
 		// read the contents
-		G::MapFile payload_map( m_payload + "payload.cfg" ) ;
+		G::MapFile payload_map( m_payload / "payload.cfg" ) ;
 
 		// add the file copy tasks
 		G::StringArray keys = payload_map.keys() ;
@@ -1566,7 +1523,7 @@ void InstallerImp::addActions()
 			std::string flags = G::Str::tail( dst , flags_pos , std::string() ) ;
 			dst = G::Str::trimmed( G::Str::head( dst , flags_pos , dst ) , G::Str::ws() ) ;
 
-			G::Path src = m_payload + key ;
+			G::Path src = m_payload / key ;
 			if( is_directory_tree )
 				addAction( new CopyPayloadTree(src,dst) ) ;
 			else
@@ -1624,7 +1581,7 @@ void InstallerImp::addActions()
 		bool server_tls = yes(pvalue("smtp-server-tls")) || yes(pvalue("smtp-server-tls-connection")) ;
 		if( server_tls && pvalue("smtp-server-tls-certificate").empty() )
 		{
-			G::Path path_out = G::Path(pvalue("dir-config")) + "emailrelay-install.pem" ;
+			G::Path path_out = G::Path(pvalue("dir-config")) / "emailrelay-install.pem" ;
 			addAction( new GenerateKey(path_out,"CN=example.com") ) ;
 			m_pages_output.add( "smtp-server-tls-certificate" , path_out.str() , true ) ;
 		}
@@ -1700,7 +1657,7 @@ G::Path InstallerImp::addLauncher()
 	G::Path bat = ivalue( "-bat" ) ;
 	G::Path exe = ivalue( "-exe" ) ;
 	G::Path dir_config = pvalue( "dir-config" ) ;
-	G::Path config_file = dir_config + "emailrelay.conf" ;
+	G::Path config_file = dir_config / "emailrelay.conf" ;
 	bool as_service = yes( pvalue("start-on-boot") ) ;
 
 	std::size_t list_size = m_list.size() ;
@@ -1719,20 +1676,20 @@ void InstallerImp::run()
 	try
 	{
 		m_have_run = true ;
-		m_output.result_utf8.clear() ;
+		m_output.result.clear() ;
 		m_output.error.clear() ;
-		m_output.error_utf8.clear() ;
+		m_output.error_more.clear() ;
 		current().run() ;
-		m_output.result_utf8 = from_trstring( current().ok() ) ;
+		m_output.result = GQt::u8string_from_qstring( current().ok() ) ;
 	}
 	catch( TrError & e )
 	{
-		m_output.error_utf8 = from_trstring( e.m_text ) ;
-		m_output.error = e.m_subject ;
+		m_output.error = GQt::u8string_from_qstring( e.m_error_text ) ;
+		m_output.error_more = e.m_error_more ;
 	}
 	catch( std::exception & e )
 	{
-		m_output.error = e.what() ;
+		m_output.error_more = e.what() ;
 	}
 }
 
@@ -1810,14 +1767,14 @@ G::Path Installer::addLauncher()
 
 std::string Installer::failedText() const
 {
-	trstring failed = QCoreApplication::translate( "Installer" , "** failed **" ) ;
-	return from_trstring(failed) ;
+	QString failed = QCoreApplication::translate( "Installer" , "** failed **" ) ;
+	return GQt::u8string_from_qstring(failed) ;
 }
 
 std::string Installer::finishedText() const
 {
-	trstring finished = QCoreApplication::translate( "Installer" , "== finished ==" ) ;
-	return from_trstring(finished) ;
+	QString finished = QCoreApplication::translate( "Installer" , "== finished ==" ) ;
+	return GQt::u8string_from_qstring(finished) ;
 }
 
 // ==

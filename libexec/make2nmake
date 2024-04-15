@@ -344,6 +344,27 @@ sub create_nmake_file
 		print $fh "\n" ;
 	}
 
+	print $fh "# CLEAN...\n\n" ;
+	print $fh "clean:\n" ;
+	for my $obj ( sort keys %all_objects )
+	{
+		print $fh "    -del /Q \$(OBJ:/=\\)$obj\n" ;
+	}
+	for my $libname ( @{$m->{e_libraries}} )
+	{
+		my $e = $m->{e_library}->{$libname} ;
+		print $fh "    -del /Q \$(OBJ:/=\\)$$e{libname}.lib\n" ;
+	}
+	for my $progname ( @{$m->{e_programs}} )
+	{
+		my $e = $m->{e_program}->{$progname} ;
+		"    -del /Q \$(EXE:/=\\)$$e{progfile}\n" ;
+	}
+	for my $subdir ( @{$m->{e_subdirs}} )
+	{
+		print $fh "    cd $subdir && \$(MAKE) /\$(MAKEFLAGS) -f $makefile_name clean\n" ;
+	}
+
 	print $fh "\n" ;
 	$fh->close() or die ;
 }

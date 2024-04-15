@@ -65,7 +65,7 @@ namespace G
 			static void installHandler( int ) ;
 			static bool ignored( int ) ;
 			static void atexitHandler() noexcept ;
-			static Arg duplicate( const char * , std::size_t ) ;
+			static Arg duplicate( const char * , std::size_t , bool = false ) ;
 			static Link * new_link_ignore_leak() ;
 			static char * new_arg_ignore_leak( std::size_t ) ;
 
@@ -130,7 +130,7 @@ G::Cleanup::Arg G::Cleanup::arg( const std::string & s )
 G::Cleanup::Arg G::Cleanup::arg( const Path & p )
 {
 	std::string s = p.str() ;
-	return CleanupImp::duplicate( s.data() , s.size() ) ;
+	return CleanupImp::duplicate( s.data() , s.size() , true ) ;
 }
 
 #ifndef G_LIB_SMALL
@@ -143,15 +143,15 @@ G::Cleanup::Arg G::Cleanup::arg( std::nullptr_t )
 // ==
 
 #ifndef G_LIB_SMALL
-const char * G::Cleanup::Arg::str() const noexcept
+bool G::Cleanup::Arg::isPath() const noexcept
 {
-	return m_ptr ;
+	return m_is_path ;
 }
 #endif
 
-const G::Path::value_type * G::Cleanup::Arg::path() const noexcept
+const char * G::Cleanup::Arg::str() const noexcept
 {
-	return m_ptr ; // or some sort of discriminated union
+	return m_ptr ;
 }
 
 // ===
@@ -193,7 +193,7 @@ char * G::CleanupImp::new_arg_ignore_leak( std::size_t n )
     return static_cast<char*>( operator new(n) ) ; // NOLINT // ignore leak
 }
 
-G::Cleanup::Arg G::CleanupImp::duplicate( const char * p , std::size_t n )
+G::Cleanup::Arg G::CleanupImp::duplicate( const char * p , std::size_t n , bool is_path )
 {
 	G_ASSERT( (n+std::size_t(1U)) > n ) ;
 	if( (n+std::size_t(1U)) <= n )
@@ -205,6 +205,7 @@ G::Cleanup::Arg G::CleanupImp::duplicate( const char * p , std::size_t n )
 
 	Arg a ;
 	a.m_ptr = pp ; // friend
+	a.m_is_path = is_path ;
 	return a ;
 }
 

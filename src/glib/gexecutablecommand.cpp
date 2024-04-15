@@ -28,21 +28,12 @@
 #ifndef G_LIB_SMALL
 G::ExecutableCommand::ExecutableCommand( const std::string & s )
 {
-	if( s.find(' ') == std::string::npos ) // optimisation
+	m_args = Arg(s).array() ;
+	if( !m_args.empty() )
 	{
-		m_exe = s ;
-	}
-	else
-	{
-		G::Arg arg ;
-		arg.parse( s ) ;
-		m_args = arg.array() ;
-		if( !m_args.empty() )
-		{
-			m_exe = m_args.at(0U) ;
-			std::rotate( m_args.begin() , m_args.begin()+1U , m_args.end() ) ;
-			m_args.pop_back() ; // remove exe
-		}
+		m_exe = m_args.at(0U) ;
+		std::rotate( m_args.begin() , m_args.begin()+1U , m_args.end() ) ;
+		m_args.pop_back() ; // remove exe
 	}
 }
 #endif

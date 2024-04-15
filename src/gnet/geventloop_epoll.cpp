@@ -82,7 +82,7 @@ private:
 	ListItem * find( Descriptor ) noexcept ;
 	ListItem & findOrCreate( Descriptor ) ;
 	int ms() const ;
-	static int ms( unsigned int , unsigned int ) ;
+	static int ms( unsigned int , unsigned int ) noexcept ;
 	static void fdupdate( int , int fd , unsigned int old_events , unsigned int new_events ) ;
 	static void fdupdate( int , int fd , unsigned int old_events , unsigned int new_events , std::nothrow_t ) noexcept ;
 	static void fdadd( int , int fd , unsigned int events ) ;
@@ -223,7 +223,7 @@ int GNet::EventLoopImp::ms() const
 	}
 }
 
-int GNet::EventLoopImp::ms( unsigned int s , unsigned int us )
+int GNet::EventLoopImp::ms( unsigned int s , unsigned int us ) noexcept
 {
 	constexpr unsigned int s_max = static_cast<unsigned int>( std::numeric_limits<int>::max()/1000 - 1 ) ;
 	static_assert( s_max > 600 , "" ) ; // sanity check that clipping at more than ten mins

@@ -546,7 +546,7 @@ G::Path Main::Configuration::pathValueImp( std::string && value ) const
 	if( value.find("@app") == 0U && !m_app_dir.empty() )
 		G::Str::replace( value , "@app" , m_app_dir.str() ) ;
 
-	return G::Path(value).isAbsolute() ? G::Path(value) : ( daemon() ? (m_base_dir+value) : value ) ;
+	return G::Path(value).isAbsolute() ? G::Path(value) : ( daemon() ? (m_base_dir/value) : value ) ;
 }
 
 bool Main::Configuration::pathlike( std::string_view option_name )

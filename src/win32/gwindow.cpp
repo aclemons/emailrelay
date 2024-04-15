@@ -19,6 +19,7 @@
 ///
 
 #include "gdef.h"
+#include "gnowide.h"
 #include "gwindow.h"
 #include "gpump.h"
 #include "gconvert.h"
@@ -36,22 +37,19 @@ GGui::Window::Window( HWND hwnd ) :
 GGui::Window::~Window()
 {
 	if( handle() )
-		SetWindowLongPtr( handle() , 0 , 0 ) ;
+		G::nowide::setWindowLongPtr( handle() , 0 , 0 ) ;
 }
 
-bool GGui::Window::registerWindowClass( const std::string & class_name_in ,
+bool GGui::Window::registerWindowClass( const std::string & class_name ,
 	HINSTANCE hinstance , UINT style ,
 	HICON icon , HCURSOR cursor ,
 	HBRUSH background , UINT menu_resource_id )
 {
-	G_DEBUG( "GGui::Window::registerWindowClass: \"" << class_name_in << "\"" ) ;
+	G_DEBUG( "GGui::Window::registerWindowClass: \"" << class_name << "\"" ) ;
 
-	LPTSTR menu_name = menu_resource_id ? MAKEINTRESOURCE(menu_resource_id) : 0 ;
+	// see also IsWindowUnicode()
 
-	std::basic_string<TCHAR> class_name ;
-	G::Convert::convert( class_name , class_name_in ) ;
-
-	WNDCLASS c ;
+	G::nowide::WNDCLASS_type c ;
 	c.style = style ;
 	c.lpfnWndProc = gwindow_wndproc_export ;
 	c.cbClsExtra = 8 ; // reserved
@@ -60,10 +58,8 @@ bool GGui::Window::registerWindowClass( const std::string & class_name_in ,
 	c.hIcon = icon ;
 	c.hCursor = cursor ;
 	c.hbrBackground = background ;
-	c.lpszMenuName = menu_name ;
-	c.lpszClassName = class_name.c_str() ;
 
-	return RegisterClass( &c ) != 0 ;
+	return G::nowide::registerClass( c , class_name , menu_resource_id ) != 0 ;
 }
 
 bool GGui::Window::create( const std::string & class_name ,
@@ -77,8 +73,8 @@ bool GGui::Window::create( const std::string & class_name ,
 	DWORD style = style_pair.first ;
 	DWORD extended_style = style_pair.second ;
 
-	void *vp = reinterpret_cast<void*>(this) ;
-	HWND hwnd = CreateWindowExA( extended_style , class_name.c_str() , title.c_str() ,
+	void * vp = reinterpret_cast<void*>(this) ;
+	HWND hwnd = G::nowide::createWindowEx( extended_style , class_name , title ,
 		style , x , y , dx , dy , parent , menu , hinstance , vp ) ;
 	setHandle( hwnd ) ; // GGui::WindowBase
 
@@ -106,7 +102,7 @@ void GGui::Window::invalidate( bool erase )
 GGui::Window * GGui::Window::instance( HWND hwnd )
 {
 	G_ASSERT( hwnd != HNULL ) ;
-	LONG_PTR wl = GetWindowLongPtr( hwnd , 0 ) ;
+	LONG_PTR wl = G::nowide::getWindowLongPtr( hwnd , 0 ) ;
 	void * vp = reinterpret_cast<void*>(wl) ;
 	return reinterpret_cast<Window*>(vp) ;
 }
@@ -194,7 +190,7 @@ LRESULT GGui::Window::wndProcCore( Window * window , HWND hwnd , UINT msg , WPAR
 		G_DEBUG( "GGui::Window::wndProc: WM_CREATE: hwnd " << hwnd ) ;
 		void * vp = reinterpret_cast<void*>(window) ;
 		LONG_PTR wl = reinterpret_cast<LONG_PTR>(vp) ;
-		SetWindowLongPtr( hwnd , 0 , wl ) ;
+		G::nowide::setWindowLongPtr( hwnd , 0 , wl ) ;
 		window->setHandle( hwnd ) ;
 		result = window->onCreate() ? 0 : -1 ;
 	}
@@ -204,7 +200,7 @@ LRESULT GGui::Window::wndProcCore( Window * window , HWND hwnd , UINT msg , WPAR
 		if( window != nullptr )
 			result = window->crack( msg , wparam , lparam , call_default ) ;
 		if( call_default )
-			result = DefWindowProc( hwnd , msg , wparam , lparam ) ;
+			result = G::nowide::defWindowProc( hwnd , msg , wparam , lparam ) ;
 	}
 	return result ;
 }
@@ -212,7 +208,7 @@ LRESULT GGui::Window::wndProcCore( Window * window , HWND hwnd , UINT msg , WPAR
 LRESULT GGui::Window::sendUserString( HWND hwnd , const char * string )
 {
 	G_ASSERT( string != nullptr ) ;
-	return SendMessage( hwnd , Cracker::wm_user_other() , 0 , reinterpret_cast<LPARAM>(string) ) ;
+	return G::nowide::sendMessage( hwnd , Cracker::wm_user_other() , 0 , reinterpret_cast<LPARAM>(string) ) ;
 }
 
 LRESULT GGui::Window::onUserOther( WPARAM , LPARAM lparam )
@@ -283,12 +279,12 @@ HBRUSH GGui::Window::classBrush()
 
 HICON GGui::Window::classIcon()
 {
-	return LoadIcon( HNULL , IDI_APPLICATION ) ;
+	return G::nowide::loadIconApplication() ;
 }
 
 HCURSOR GGui::Window::classCursor()
 {
-	return LoadCursor( HNULL , IDC_ARROW ) ;
+	return G::nowide::loadCursorArrow() ;
 }
 
 GGui::Size GGui::Window::borderSize( bool has_menu )

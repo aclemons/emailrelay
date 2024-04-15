@@ -129,6 +129,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <fstream>
+#include <array>
 
 #ifdef G_WINDOWS
 #ifdef G_QT_STATIC
@@ -154,8 +155,8 @@ static int height()
 
 static void errorBox( const std::string & what )
 {
-	QString title( GQt::qstr("E-MailRelay") ) ;
-	QString qwhat = GQt::qstr( what ) ;
+	QString title( GQt::qstring_from_u8string("E-MailRelay") ) ;
+	QString qwhat = GQt::qstring_from_u8string( what ) ;
 	QMessageBox::critical( nullptr , title ,
 		QMessageBox::tr("Failed with the following exception: %1").arg(qwhat) ,
 		QMessageBox::Abort ) ;
@@ -168,8 +169,8 @@ static QString tr( const char * text )
 
 static void infoBox( const std::string & text )
 {
-	QString title( GQt::qstr("E-MailRelay") ) ;
-	QString qtext = GQt::qstr( text ) ;
+	QString title( GQt::qstring_from_u8string("E-MailRelay") ) ;
+	QString qtext = GQt::qstring_from_u8string( text ) ;
 	QMessageBox::information( nullptr , title , qtext ,
 		QMessageBox::Ok ) ;
 }
@@ -219,12 +220,13 @@ bool Application::notify( QObject * p1 , QEvent * p2 )
 	return false ;
 }
 
-static G::Path search( const G::Path & base , const std::string & filename ,
-	const std::string & d1 , const std::string & d2 = std::string() , const std::string & d3 = std::string() )
+static G::Path search( const G::Path & base , const std::string & filename , const G::StringArray & dirs )
 {
-	if( !d1.empty() && G::File::exists( base + d1 + filename ) ) return base + d1 + filename ;
-	if( !d2.empty() && G::File::exists( base + d2 + filename ) ) return base + d2 + filename ;
-	if( !d3.empty() && G::File::exists( base + d3 + filename ) ) return base + d3 + filename ;
+	for( const auto & dir : dirs )
+	{
+		if( !dir.empty() && G::File::exists(base/dir/filename) )
+			return base/dir/filename ;
+	}
 	return G::Path() ;
 }
 
@@ -239,8 +241,8 @@ static std::string pointerFilename( const G::Path & argv0 )
 static G::Path configFile( const G::Path & dir_config )
 {
 	return isWindows() ?
-		(dir_config+"emailrelay-start.bat") :
-		(dir_config+"emailrelay.conf") ;
+		(dir_config/"emailrelay-start.bat") :
+		(dir_config/"emailrelay.conf") ;
 }
 
 static std::string value( const G::Arg & args , const std::string & option )
@@ -290,17 +292,18 @@ int main( int argc , char * argv [] )
 			// to the 'LANG' environment variable or an explicit '--qm' option
 			QTranslator translator ;
 			{
-				G_LOG( "main: locale: " << GQt::stdstr(QLocale::system().name()) ) ; // eg. "en_GB"
+				G_LOG( "main: locale: " << GQt::u8string_from_qstring(QLocale::system().name()) ) ; // eg. "en_GB"
 				bool loaded = false ;
 				G::Path qmfile = value( args , "--qm" ) ;
 				G::Path qmdir = value( args , "--qmdir" ) ;
 				if( qmdir.empty() )
-					qmdir = argv0.dirname() + "translations" ;
+					qmdir = argv0.dirname() / "translations" ;
 				if( !qmfile.empty() )
-					loaded = translator.load( GQt::qstr(qmfile) ) ;
+					loaded = translator.load( GQt::qstring_from_path(qmfile) ) ;
 				if( !loaded )
-					loaded = translator.load( QLocale() , GQt::qstr("emailrelay") , GQt::qstr(".") ,
-						GQt::qstr(qmdir.str()) , GQt::qstr(".qm") ) ;
+					loaded = translator.load( QLocale() ,
+						GQt::qstring_from_u8string("emailrelay") , GQt::qstring_from_u8string(".") ,
+						GQt::qstring_from_path(qmdir) , GQt::qstring_from_u8string(".qm") ) ;
 				if( loaded )
 					QCoreApplication::installTranslator( &translator ) ;
 				else
@@ -310,29 +313,38 @@ int main( int argc , char * argv [] )
 			// load an icon
 			if( !isWindows() && !isMac() && !args.contains("-qwindowicon") )
 			{
-				G::Path icon_png_path = search( argv0.dirname() , "emailrelay-icon.png" , "." , "icon" , "resources" ) ;
+				G::Path icon_png_path = search( argv0.dirname() , "emailrelay-icon.png" , {".","icon","resources"} ) ;
 				if( !icon_png_path.empty() )
-					app.setWindowIcon( QIcon(GQt::qstr(icon_png_path)) ) ;
+					app.setWindowIcon( QIcon(GQt::qstring_from_path(icon_png_path)) ) ;
 			}
 
 			// test-mode -- create a minimal payload, make it easier to
 			// click through, and write install variables to installer.txt
 			if( args.contains("--test") )
 			{
-				G::Path pdir = argv0.dirname() + "payload" ;
+				G::Path pdir = argv0.dirname() / "payload" ;
 				G::File::mkdir( pdir , std::nothrow ) ;
 				std::ofstream f ;
-				G::File::open( f , pdir+"payload.cfg" , G::File::Text() ) ;
+				G::File::open( f , pdir/"payload.cfg" , G::File::Text() ) ;
 				if( isWindows() )
 				{
-					G::File::copyInto( "emailrelay-gui.exe" , pdir , std::nothrow ) ;
-					f << "emailrelay-gui.exe= %dir-install%/emailrelay-gui.exe +x" << std::endl ;
+					std::array<std::string,3> exe_names { "emailrelay-gui.exe" , "emailrelay.exe" , "emailrelay-service.exe" } ;
+					for( auto exe_name : exe_names )
+					{
+						G::Path exe_path = search( argv0.dirname() , exe_name ,
+							{ "." , ".." , "../../main/release" , "../../main/debug" } ) ;
+						if( G::File::exists( exe_path ) )
+						{
+							G::File::copyInto( exe_path , pdir , std::nothrow ) ;
+							f << exe_path.basename() << "= %dir-install%/" << exe_path.basename() << " +x" << std::endl ;
+						}
+					}
 				}
 				else
 				{
-					G::File::mkdirs( pdir+"usr/sbin" , std::nothrow ) ;
-					G::File::copyInto( argv0 , pdir + "usr/sbin" , std::nothrow ) ;
-					G::File::copyInto( "/usr/sbin/emailrelay" , pdir + "usr/sbin" , std::nothrow ) ;
+					G::File::mkdirs( pdir/"usr/sbin" , std::nothrow ) ;
+					G::File::copyInto( argv0 , pdir / "usr/sbin" , std::nothrow ) ;
+					G::File::copyInto( "/usr/sbin/emailrelay" , pdir / "usr/sbin" , std::nothrow ) ;
 					f << "usr/sbin/=%dir-install%/sbin/" << std::endl ;
 				}
 				Gui::Page::setTestMode() ;
@@ -341,15 +353,15 @@ int main( int argc , char * argv [] )
 			// look for the payload (for install mode)
 			G::Path payload_path =
 				is_mac ?
-					search( argv0.dirname() , "payload" , ".." , "." ) :
-					search( argv0.dirname() , "payload" , "." ) ;
+					search( argv0.dirname() , "payload" , {"..","."} ) :
+					search( argv0.dirname() , "payload" , {"."} ) ;
 
 			// look for for the pointer file (for configure mode)
 			G::Path pointer_file ;
 			if( is_mac )
-				pointer_file = search( argv0.dirname() , "dir.cfg" , ".." ) ;
+				pointer_file = search( argv0.dirname() , "dir.cfg" , {".."} ) ;
 			if( pointer_file.empty() )
-				pointer_file = search( argv0.dirname() , pointerFilename(argv0) , "." ) ;
+				pointer_file = search( argv0.dirname() , pointerFilename(argv0) , {"."} ) ;
 
 			// choose install or configure mode
 			bool configure_mode = is_mac || payload_path.empty() ;
@@ -364,8 +376,8 @@ int main( int argc , char * argv [] )
 					"'%1' pointer file to allow reconfiguration: "
 					"this program has probably been moved away from its original location: "
 					"please configure the emailrelay server manually" ) ;
-				QString message = message_format.arg( GQt::qstr( pointerFilename(argv0) , GQt::Path ) ) ;
-				throw std::runtime_error( GQt::stdstr( message , GQt::Utf8 ) ) ;
+				QString message = message_format.arg( GQt::qstring_from_path( pointerFilename(argv0) ) ) ;
+				throw std::runtime_error( GQt::u8string_from_qstring(message) ) ;
 			}
 
 			// load the pointer file
@@ -387,8 +399,8 @@ int main( int argc , char * argv [] )
 			// add some handy substitution variables
 			if( is_mac )
 			{
-				pointer_map.add( "dir-contents" , (argv0.dirname()+"..").collapsed().str() ) ;
-				pointer_map.add( "dir-bundle" , (argv0.dirname()+".."+"..").collapsed().str() ) ;
+				pointer_map.add( "dir-contents" , (argv0.dirname()/"..").collapsed().str() ) ;
+				pointer_map.add( "dir-bundle" , (argv0.dirname()/".."/"..").collapsed().str() ) ;
 			}
 
 			// load the existing server configuration
@@ -469,8 +481,8 @@ int main( int argc , char * argv [] )
 					{
 						QString message_format = tr( "cannot write [%1]: check file permissions%2" ) ;
 						QString more_help = isWindows() ? tr( " or run as administrator" ) : QString() ;
-						QString message = message_format.arg(GQt::qstr(server_config_file.str())).arg(more_help) ;
-						throw std::runtime_error( GQt::stdstr( message , GQt::Utf8 ) ) ;
+						QString message = message_format.arg(GQt::qstring_from_path(server_config_file)).arg(more_help) ;
+						throw std::runtime_error( GQt::u8string_from_qstring(message) ) ;
 					}
 				}
 				else if( !G::Directory(server_config_file.dirname()).valid(true) )
@@ -479,8 +491,8 @@ int main( int argc , char * argv [] )
 					QString message_format = exists ?
 						tr( "cannot create files in [%1]: try changing the \"dir-config\" entry in the configuration file [%2]" ) :
 						tr( "cannot create files in [%1]: try adding a \"dir-config\" entry to the configuration file [%2]" ) ;
-					QString message = message_format.arg(GQt::qstr(server_config_file.dirname())).arg(GQt::qstr(pointer_file)) ;
-					throw std::runtime_error( GQt::stdstr( message , GQt::Utf8 ) ) ;
+					QString message = message_format.arg(GQt::qstring_from_path(server_config_file.dirname())).arg(GQt::qstring_from_path(pointer_file)) ;
+					throw std::runtime_error( GQt::u8string_from_qstring(message) ) ;
 				}
 			}
 
@@ -498,7 +510,7 @@ int main( int argc , char * argv [] )
 			G::Path virgin_flag_file ;
 			if( is_mac )
 			{
-				virgin_flag_file = dir_run + ".new" ;
+				virgin_flag_file = dir_run / ".new" ;
 				G_LOG_S( "main: virgin-file=" << virgin_flag_file ) ;
 				run_before = !G::File::exists( virgin_flag_file ) ;
 			}

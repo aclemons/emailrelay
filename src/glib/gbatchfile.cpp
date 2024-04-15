@@ -20,6 +20,7 @@
 
 #include "gdef.h"
 #include "gbatchfile.h"
+#include "gcodepage.h"
 #include "gfile.h"
 #include "garg.h"
 #include "gstr.h"
@@ -30,28 +31,27 @@
 
 G::BatchFile::BatchFile( const Path & path )
 {
-	std::ifstream stream ;
-	File::open( stream , path , File::Text() ) ;
-	if( !stream.good() )
-		throw Error( "cannot open batch file" , path.str() ) ;
-	m_line = readFrom( stream , path.str() , true ) ;
-	m_args = split( m_line ) ;
+	init( path ) ;
 }
 
 G::BatchFile::BatchFile( const Path & path , std::nothrow_t )
 {
-	std::ifstream stream ;
-	File::open( stream , path , File::Text() ) ;
-	if( stream.good() )
+	try
 	{
-		m_line = readFrom( stream , path.str() , false ) ;
-		m_args = split( m_line ) ;
+		init( path ) ;
+	}
+	catch( Error & )
+	{
 	}
 }
 
-G::BatchFile::BatchFile( std::istream & stream , const std::string & name )
+void G::BatchFile::init( const Path & path )
 {
-	m_line = readFrom( stream , name , true ) ;
+	std::ifstream stream ;
+	File::open( stream , path , File::Text() ) ;
+	if( !stream.good() )
+		throw Error( "cannot open batch file" , path.str() ) ;
+	m_line = readFrom( stream , path.str() ) ;
 	m_args = split( m_line ) ;
 }
 
@@ -65,7 +65,7 @@ bool G::BatchFile::ignorable( const std::string & trimmed_line )
 
 bool G::BatchFile::relevant( const std::string & trimmed_line )
 {
-	return ! ignorable( trimmed_line ) ;
+	return !ignorable( trimmed_line ) ;
 }
 
 std::string G::BatchFile::join( const std::string & file_name , unsigned int line_number )
@@ -75,7 +75,7 @@ std::string G::BatchFile::join( const std::string & file_name , unsigned int lin
 	return ss.str() ;
 }
 
-std::string G::BatchFile::readFrom( std::istream & stream , const std::string & stream_name , bool strict )
+std::string G::BatchFile::readFrom( std::istream & stream , const std::string & stream_name )
 {
 	std::string line ;
 	unsigned int line_number = 1U ;
@@ -95,7 +95,7 @@ std::string G::BatchFile::readFrom( std::istream & stream , const std::string & 
 		}
 	}
 
-	if( strict && line.empty() )
+	if( line.empty() )
 		throw Error( "batch file is empty" , join(stream_name,line_number) ) ;
 
 	// strip off any "start" prefix -- allow the "start" to have a quoted window
@@ -134,7 +134,7 @@ std::string G::BatchFile::readFrom( std::istream & stream , const std::string & 
 	// percent characters are doubled up in batch files so un-double them here
 	Str::replaceAll( line , "%%" , "%" ) ;
 
-	return line ;
+	return CodePage::fromCodePageOem( line ) ; // to UTF-8
 }
 
 std::string G::BatchFile::line() const
@@ -206,10 +206,10 @@ void G::BatchFile::write( const Path & path , const StringArray & args , const s
 	if( !stream.good() )
 		throw Error( "cannot create batch file" , path.str() ) ;
 
-	stream << "start \"" << name << "\"" ;
+	stream << "start \"" << CodePage::toCodePageOem(name) << "\"" ;
 	for( const auto & arg : args )
 	{
-		stream << " " << percents(quote(arg)) ;
+		stream << " " << percents(quote(CodePage::toCodePageOem(arg))) ;
 	}
 	stream << "\r\n" ;
 
@@ -221,10 +221,7 @@ void G::BatchFile::write( const Path & path , const StringArray & args , const s
 G::StringArray G::BatchFile::split( const std::string & line )
 {
 	// get G::Arg to deal with the quotes
-	Arg args ;
-	if( !line.empty() )
-		args.parse( line ) ;
-	return args.array() ;
+	return Arg(line).array() ;
 }
 
 std::string G::BatchFile::percents( const std::string & s )

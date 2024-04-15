@@ -26,36 +26,6 @@
 #include <iostream>
 #include <cstdio>
 
-bool G::File::removeImp( const char * path , int * e ) noexcept
-{
-	bool ok = path && 0 == std::remove( path ) ;
-	if( e )
-		*e = ok ? 0 : ( path ? Process::errno_() : EINVAL ) ;
-	return ok ;
-}
-
-bool G::File::remove( const Path & path , std::nothrow_t ) noexcept
-{
-	static_assert( noexcept(path.cstr()) , "" ) ;
-	return removeImp( path.cstr() , nullptr ) ;
-}
-
-bool G::File::cleanup( const Cleanup::Arg & arg ) noexcept
-{
-	return removeImp( arg.path() , nullptr ) ;
-}
-
-void G::File::remove( const Path & path )
-{
-	int e = 0 ;
-	bool ok = removeImp( path.cstr() , &e ) ;
-	if( !ok )
-	{
-		G_WARNING( "G::File::remove: cannot delete file [" << path << "]: " << Process::strerror(e) ) ;
-		throw CannotRemove( path.str() , Process::strerror(e) ) ;
-	}
-}
-
 bool G::File::renameImp( const char * from , const char * to , int * e ) noexcept
 {
 	bool ok = from && to && 0 == std::rename( from , to ) ;
@@ -99,7 +69,7 @@ bool G::File::copy( const Path & from , const Path & to , std::nothrow_t )
 #ifndef G_LIB_SMALL
 bool G::File::copyInto( const Path & from , const Path & to_dir , std::nothrow_t )
 {
-	G::Path to = to_dir + from.basename() ;
+	G::Path to = to_dir / from.basename() ;
 	bool ok = copy(from,to,0).empty() ;
 	if( ok && isExecutable(from,std::nothrow) )
 		ok = chmodx( to , std::nothrow ) ;

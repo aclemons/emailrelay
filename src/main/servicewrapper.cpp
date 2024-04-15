@@ -48,9 +48,12 @@
 //
 
 #include "gdef.h"
+#include "gnowide.h"
 #include "gconvert.h"
+#include "gscope.h"
 #include "gbatchfile.h"
 #include "gmapfile.h"
+#include "gscope.h"
 #include "garg.h"
 #include "gfile.h"
 #include "serviceimp.h"
@@ -70,47 +73,52 @@ using ServiceHandle = SERVICE_STATUS_HANDLE ;
 
 struct ServiceArg
 {
-	ServiceArg( int argc , char ** argv )
+	ServiceArg( const G::Arg & arg ) :
+		m_array(arg.array()) ,
+		m_prefix(arg.prefix())
 	{
-		m_arg0 = argc > 0 ? std::string(argv[0]) : std::string() ;
-		std::size_t pos = m_arg0.find_last_of( "/\\" ) ;
-		if( pos != std::string::npos )
-			m_arg0 = m_arg0.substr( pos+1U ) ;
-
-		m_arg1 = argc > 1 ? lowercase(std::string(argv[1])) : std::string() ;
-		m_arg2 = argc > 2 ? std::string(argv[2]) : std::string("emailrelay") ;
-		m_arg3 = argc > 3 ? std::string(argv[3]) : std::string("E-MailRelay") ;
-		m_help = m_arg1 == "--help" || m_arg1 == "/?" || m_arg1 == "-?" || m_arg1 == "-h" ;
-		m_install = m_arg1 == "--install" || m_arg1 == "-install" || m_arg1 == "/install" ;
-		m_remove =
-			m_arg1 == "--remove" || m_arg1 == "-remove" || m_arg1 == "/remove" ||
-			m_arg1 == "--uninstall" || m_arg1 == "-uninstall" || m_arg1 == "/uninstall" ;
+	}
+	bool help() const
+	{
+		if( m_array.size() < 2U ) return false ;
+		return
+			m_array[1] == "--help" ||
+			m_array[1] == "/?" ||
+			m_array[1] == "-?" ||
+			m_array[1] == "-h" ;
+	}
+	bool install() const
+	{
+		if( m_array.size() < 2U ) return false ;
+		return
+			m_array[1] == "--install" ||
+			m_array[1] == "-install" ||
+			m_array[1] == "/install" ;
+	}
+	bool remove() const
+	{
+		if( m_array.size() < 2U ) return false ;
+		return
+			m_array[1] == "--remove" ||
+			m_array[1] == "-remove" ||
+			m_array[1] == "/remove" ;
+	}
+	std::string name() const
+	{
+		if( m_array.size() < 3U ) return "emailrelay" ;
+		return {m_array[2]} ;
+	}
+	std::string displayName() const
+	{
+		if( m_array.size() < 4U ) return "E-MailRelay" ;
+		return {m_array[3]} ;
 	}
 	std::string usage() const
 	{
-		return m_arg0 + " [{--help|--install|--remove}] [<name> [<display-name>]]" ;
+		return m_prefix + " [{--help|--install|--remove}] [<name> [<display-name>]]" ;
 	}
-	static std::string lowercase( std::string s )
-	{
-		for( char & c : s )
-			c = ( ( c >= 'A' && c <= 'Z' ) ? (c-'\x20') : c ) ;
-		return s ;
-	}
-	std::string v2() const
-	{
-		return m_arg2 ;
-	}
-	std::string v3() const
-	{
-		return m_arg3 ;
-	}
-	bool m_help ;
-	bool m_install ;
-	bool m_remove ;
-	std::string m_arg0 ;
-	std::string m_arg1 ;
-	std::string m_arg2 ;
-	std::string m_arg3 ;
+	std::vector<std::string> m_array ;
+	std::string m_prefix ;
 } ;
 
 struct ServiceError : public std::runtime_error
@@ -198,9 +206,6 @@ struct ServiceEvent
 class Service
 {
 public:
-	using tstring = std::basic_string<TCHAR> ;
-
-public:
 	static void install( const std::string & name , const std::string & display_name ) ;
 	static void remove( const std::string & name ) ;
 	static void run() ;
@@ -209,7 +214,7 @@ public:
 public:
 	Service() ;
 	~Service() ;
-	void start( const tstring & name ) ;
+	void start( const std::string & name ) ;
 	void onControlEvent( DWORD ) ;
 	void runThread() ;
 	bool valid() const noexcept ;
@@ -226,7 +231,7 @@ private:
 	static void setStatus( ServiceHandle , DWORD ) noexcept ;
 	ServiceHandle statusHandle( const std::string & ) ;
 	void stopThread() noexcept ;
-	static std::string thisExe() ;
+	static G::Path thisExe() ;
 	static G::Path configFile( const G::Path & ) ;
 	static G::Path bat( const std::string & service_name ) ;
 	static std::string commandline( const G::Path & bat_path ) ;
@@ -246,17 +251,17 @@ private:
 
 // ==
 
-int main( int argc , char * argv [] )
+int main( int , char * [] )
 {
 	try
 	{
-		ServiceArg arg( argc , argv ) ;
-		if( arg.m_help )
+		ServiceArg arg( G::Arg::windows() ) ;
+		if( arg.help() )
 			std::cout << "usage: " << arg.usage() << std::endl ;
-		else if( arg.m_install )
-			Service::install( arg.v2() , arg.v3() ) ;
-		else if( arg.m_remove )
-			Service::remove( arg.v2() ) ;
+		else if( arg.install() )
+			Service::install( arg.name() , arg.displayName() ) ;
+		else if( arg.remove() )
+			Service::remove( arg.name() ) ;
 		else
 			Service::run() ;
 		return 0 ;
@@ -272,14 +277,14 @@ int main( int argc , char * argv [] )
 	return 1 ;
 }
 
-void WINAPI ServiceMain( DWORD argc , LPTSTR * argv )
+void ServiceMain( G::StringArray args )
 {
 	try
 	{
-		G_SERVICE_DEBUG( "ServiceMain: start: argc=" << argc ) ;
-		Service::tstring service_name ;
-		if( argc > 0 )
-			service_name = Service::tstring( argv[0] ) ;
+		G_SERVICE_DEBUG( "ServiceMain: start: argc=" << args.size() ) ;
+		std::string service_name ;
+		if( !args.empty() )
+			service_name = args[0] ;
 
 		Service * service = Service::instance() ;
 		if( service != nullptr )
@@ -296,7 +301,7 @@ void WINAPI ServiceMain( DWORD argc , LPTSTR * argv )
 	G_SERVICE_DEBUG( "ServiceMain: done" ) ;
 }
 
-void WINAPI ControlHandler( DWORD control )
+void ControlHandler( DWORD control )
 {
 	try
 	{
@@ -346,17 +351,15 @@ Service * Service::m_this = nullptr ;
 void Service::install( const std::string & service_name , const std::string & display_name )
 {
 	// prepare the service-wrapper commandline
-	std::string this_exe = Service::thisExe() ;
-	std::string command_line = this_exe.find(" ") == std::string::npos ?
-		this_exe : ( std::string("\"")+this_exe+"\"") ;
+	G::Path this_exe = G::nowide::exe() ;
+	std::string command_line = this_exe.str().find(' ') == std::string::npos ? this_exe.str() : (std::string(1U,'\"').append(this_exe.str()).append(1U,'\"')) ;
 	std::cout << "installing service \"" << service_name << "\": [" << command_line << "]" << std::endl ;
 
 	// check that we will be able to read the batch file at service run-time
-	G::Path batch_file = Service::bat( service_name ) ;
-	Service::commandline( batch_file ) ;
+	Service::commandline( bat(service_name) ) ;
 
 	// create the service
-	std::string description = display_name + " service (reads " + batch_file.str() + " at service start time)" ;
+	std::string description = display_name + " service (reads " + bat(service_name).str() + " at service start time)" ;
 	std::string reason = ServiceImp::install( command_line , service_name , display_name , description ) ;
 	if( !reason.empty() )
 		throw std::runtime_error( reason ) ;
@@ -393,17 +396,14 @@ Service::Service() :
 	m_this = this ;
 }
 
-void Service::start( const tstring & name_in )
+void Service::start( const std::string & service_name )
 {
 	try
 	{
 		G_SERVICE_DEBUG( "Service::start: start" ) ;
-		std::string name ; // active-code-page
-		G::Convert::convert( name , name_in , G::Convert::ThrowOnError("converting service name") ) ;
-		if( name.empty() ) name = "emailrelay" ; // for testing purposes
-		m_hservice = statusHandle( name ) ;
+		m_hservice = statusHandle( service_name ) ;
 		setStatus( SERVICE_START_PENDING ) ;
-		m_child = ServiceChild( commandline(bat(name)) ) ;
+		m_child = ServiceChild( commandline(bat(service_name)) ) ;
 		m_thread_exit.create() ;
 		m_hthread = CreateThread( nullptr , 0 , RunThread , this , 0 , &m_thread_id ) ;
 		G_SERVICE_DEBUG( "Service::start: done" ) ;
@@ -458,36 +458,28 @@ void Service::stopThread() noexcept
 	m_thread_exit.set() ;
 }
 
-std::string Service::thisExe()
-{
-	G::Arg arg ;
-	HINSTANCE hinstance = 0 ;
-	arg.parse( hinstance , std::string() ) ;
-	return arg.v(0U) ;
-}
-
 G::Path Service::configFile( const G::Path & p )
 {
-	return p.dirname() + (p.withoutExtension().basename()+".cfg") ;
+	return p.dirname() / (p.withoutExtension().basename()+".cfg") ;
 }
 
 G::Path Service::bat( const std::string & prefix )
 {
 	std::string filename = prefix + "-start.bat" ;
-	G::Path this_exe = thisExe() ;
+
+	G::Path this_exe = G::nowide::exe() ;
 
 	G::MapFile config_map ;
 	G::Path config_file = configFile( this_exe ) ;
 	if( G::File::exists(config_file) )
 		config_map = G::MapFile( config_file , "service config" ) ;
 
-	std::string dir_config = config_map.value( "dir-config" ) ;
-	if( dir_config.find("@app") == 0U )
-		G::Str::replace( dir_config , "@app" , this_exe.dirname().str() ) ;
+	G::Path dir_config = config_map.pathValue( "dir-config" , {} ) ;
+	dir_config.replace( "@app" , this_exe.dirname().str() ) ;
 
 	G::Path dir = dir_config.empty() ? this_exe.dirname() : G::Path(dir_config) ;
 
-	return dir + filename ;
+	return dir / filename ;
 }
 
 std::string Service::commandline( const G::Path & bat_path )
@@ -612,27 +604,20 @@ ServiceChild::ServiceChild( std::string command_line ) :
 {
 	G_SERVICE_DEBUG( "ServiceChild::ctor: spawning [" << command_line << "]" ) ;
 
-	STARTUPINFOA start {} ;
-	start.cb = sizeof(start) ;
+	G::nowide::STARTUPINFO_BASE_type startup_info {} ;
+	startup_info.cb = sizeof(startup_info) ;
 
-	BOOL inherit = FALSE ;
-	DWORD flags = CREATE_NO_WINDOW ;
-	LPVOID env = nullptr ;
-	LPCSTR cwd = nullptr ;
-	PROCESS_INFORMATION info ;
-	SECURITY_ATTRIBUTES * process_attributes = nullptr ;
-	SECURITY_ATTRIBUTES * thread_attributes = nullptr ;
-	char * command_line_p = const_cast<char*>(command_line.c_str()) ;
+	PROCESS_INFORMATION process_info {} ;
 
-	BOOL rc = CreateProcessA( nullptr , command_line_p ,
-		process_attributes , thread_attributes , inherit ,
-		flags , env , cwd , &start , &info ) ;
+	bool rc = G::nowide::createProcess( {} , command_line ,
+		nullptr , nullptr , CREATE_NO_WINDOW ,
+		&startup_info , &process_info , FALSE ) ;
 
 	if( !rc )
 		throw std::runtime_error( std::string() + "cannot create process: [" + command_line + "]" ) ;
 
-	CloseHandle( info.hThread ) ;
-	m_hprocess = info.hProcess ;
+	CloseHandle( process_info.hThread ) ;
+	m_hprocess = process_info.hProcess ;
 	G_SERVICE_DEBUG( "ServiceChild::ctor: done" ) ;
 }
 

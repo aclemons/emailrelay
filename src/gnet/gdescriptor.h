@@ -70,7 +70,7 @@ public:
 
 private:
 	SOCKET m_fd ; // NOLINT
-	HANDLE m_handle{0} ;
+	HANDLE m_handle {HNULL} ;
 } ;
 
 inline

@@ -91,6 +91,10 @@ public:
 		///< Translates an 'errno' value into a meaningful diagnostic string.
 		///< The returned string is non-empty, even for a zero errno.
 
+	static std::string errorMessage( DWORD error ) ;
+		///< Translates a GetLastError() value into a meaningful diagnostic string.
+		///< The returned string is non-empty, even for a zero error number.
+
 	static std::pair<Identity,Identity> beOrdinaryAtStartup( const std::string & nobody , bool change_group ) ;
 		///< Revokes special privileges (root or suid) at startup, possibly
 		///< including extra group membership, making the named user the
@@ -142,14 +146,17 @@ public:
 	static void setEffectiveGroup( Identity ) ;
 		///< Sets the effective group-id. Throws on error.
 
-	static std::string cwd( bool no_throw = false ) ;
-		///< Returns the current working directory. Throws on error
-		///< by default or returns the empty string.
+	static Path cwd() ;
+		///< Returns the current working directory. Throws on error.
 
-	static std::string exe() ;
+	static Path cwd( std::nothrow_t ) ;
+		///< Returns the current working directory. Returns the
+		///< empty path on error.
+
+	static Path exe() ;
 		///< Returns the absolute path of the current executable,
 		///< independent of the argv array passed to main(). Returns
-		///< the empty string if unknown.
+		///< the empty path if unknown.
 
 	class Id /// Process-id class.
 	{
@@ -211,6 +218,9 @@ public:
 
 public:
 	Process() = delete ;
+
+private:
+	static Path cwdImp( bool ) ;
 } ;
 
 inline G::Process::Id::Id( int n ) noexcept :

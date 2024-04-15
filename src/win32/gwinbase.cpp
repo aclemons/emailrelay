@@ -19,6 +19,7 @@
 ///
 
 #include "gdef.h"
+#include "gnowide.h"
 #include "gstr.h"
 #include "gwinbase.h"
 #include "glog.h"
@@ -73,22 +74,11 @@ GGui::Size GGui::WindowBase::externalSize() const
 
 std::string GGui::WindowBase::windowClass() const
 {
-	std::vector<char> buffer( 257U ) ; // atom size limit
-	buffer[0U] = '\0' ;
-	GetClassNameA( m_hwnd , &buffer[0] , static_cast<int>(buffer.size()-1U) ) ;
-	buffer[buffer.size()-1U] = '\0' ;
-
-	if( (std::strlen(&buffer[0])+1U) == buffer.size() )
-	{
-		G_WARNING( "GGui::WindowBase::windowClass: possible truncation: "
-			<< "\"" << G::Str::printable(std::string(&buffer[0])) << "\"" ) ;
-	}
-
-	return std::string( &buffer[0] ) ;
+	return G::nowide::getClassName( m_hwnd ) ;
 }
 
 HINSTANCE GGui::WindowBase::windowInstanceHandle() const
 {
-	return reinterpret_cast<HINSTANCE>(GetWindowLongPtr(m_hwnd,GWLP_HINSTANCE)) ;
+	return reinterpret_cast<HINSTANCE>(G::nowide::getWindowLongPtr(m_hwnd,GWLP_HINSTANCE)) ;
 }
 

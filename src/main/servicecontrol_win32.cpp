@@ -19,6 +19,7 @@
 ///
 
 #include "gdef.h"
+#include "gnowide.h"
 #include "servicecontrol.h"
 #include "ggettext.h"
 #include <sstream>
@@ -96,7 +97,6 @@ private:
 	void stop( SC_HANDLE , std::nothrow_t ) ;
 	DWORD status() const ;
 	SC_HANDLE h() const ;
-	SC_HANDLE createImp( SC_HANDLE , const std::string & , const std::string & , DWORD , const std::string & ) ;
 
 private:
 	SC_HANDLE m_h{0} ;
@@ -135,7 +135,7 @@ std::string ServiceControl::Error::decode( DWORD e )
 
 ServiceControl::Manager::Manager( DWORD access )
 {
-	m_h = OpenSCManager( nullptr , nullptr , access ) ;
+	m_h = G::nowide::openSCManagerW( access ) ;
 	if( m_h == 0 )
 	{
 		DWORD e = GetLastError() ;
@@ -168,7 +168,7 @@ ServiceControl::Service::~Service()
 
 SC_HANDLE ServiceControl::Service::open( SC_HANDLE hmanager , const std::string & name )
 {
-	SC_HANDLE h = OpenServiceA( hmanager , name.c_str() ,
+	SC_HANDLE h = G::nowide::openServiceW( hmanager , name ,
 		DELETE | SERVICE_STOP | SERVICE_QUERY_STATUS | SERVICE_START ) ;
 
 	if( h == 0 )
@@ -184,24 +184,16 @@ SC_HANDLE ServiceControl::Service::h() const
 	return m_h ;
 }
 
-SC_HANDLE ServiceControl::Service::createImp( SC_HANDLE hmanager , const std::string & name ,
-	const std::string & display_name , DWORD start_type , const std::string & commandline )
-{
-	return CreateServiceA( hmanager , name.c_str() , display_name.c_str() ,
-		SERVICE_ALL_ACCESS , SERVICE_WIN32_OWN_PROCESS , start_type , SERVICE_ERROR_NORMAL ,
-		commandline.c_str() ,
-		nullptr , nullptr , nullptr , nullptr , nullptr ) ;
-}
-
 void ServiceControl::Service::create( const Manager & manager , const std::string & name ,
 	const std::string & display_name , DWORD start_type , const std::string & commandline )
 {
-	m_h = createImp( manager.h() , name , display_name , start_type , commandline ) ;
+	m_h = G::nowide::createServiceW( manager.h() , name , display_name , start_type , commandline ) ;
 	if( m_h == 0 )
 	{
 		DWORD e = GetLastError() ;
 		if( e == ERROR_SERVICE_EXISTS )
 		{
+			// remove it
 			{
 				SC_HANDLE h = open( manager.h() , name ) ;
 				ScopeExitCloser closer( h ) ;
@@ -209,7 +201,8 @@ void ServiceControl::Service::create( const Manager & manager , const std::strin
 				removeImp( h , std::nothrow ) ;
 			}
 
-			m_h = createImp( manager.h() , name , display_name , start_type , commandline ) ;
+			// try again
+			m_h = G::nowide::createServiceW( manager.h() , name , display_name , start_type , commandline ) ;
 			if( m_h == 0 )
 				e = GetLastError() ;
 		}
@@ -231,9 +224,7 @@ void ServiceControl::Service::configure( const std::string & description_in , co
 		description.append( "..." ) ;
 	}
 
-	SERVICE_DESCRIPTIONA service_description ;
-	service_description.lpDescription = const_cast<char*>(description.c_str()) ;
-	ChangeServiceConfig2A( m_h , SERVICE_CONFIG_DESCRIPTION , &service_description ) ; // ignore errors
+	G::nowide::changeServiceConfigW( m_h , description ) ; // ignore errors
 }
 
 void ServiceControl::Service::stop()
@@ -290,8 +281,7 @@ bool ServiceControl::Service::stopped() const
 
 void ServiceControl::Service::start()
 {
-	auto rc = StartService( m_h , 0 , nullptr ) ;
-	if( !rc )
+	if( !G::nowide::startServiceW(m_h) )
 	{
 		DWORD e = GetLastError() ;
 		throw Error( "cannot start the service" , e ) ;

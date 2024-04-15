@@ -31,9 +31,9 @@ namespace GNet
 }
 
 //| \class GNet::Done
-/// An exception class that is detected by GNet::EventHandlerList and
-/// results in onException() being called with the 'done' parameter
-/// set.
+/// An exception class that is caught separately by GNet::EventEmitter
+/// and GNet::TimerList so that onException() callbacks have their
+/// 'done' parameter set.
 /// \see GNet::ClientPtr
 ///
 class GNet::Done : public std::runtime_error

@@ -19,8 +19,10 @@
 ///
 
 #include "gdef.h"
+#include "gnowide.h"
 #include "gprocess.h"
 #include "gexception.h"
+#include "gconvert.h"
 #include "gstr.h"
 #include "glog.h"
 #include <iostream>
@@ -106,11 +108,18 @@ int G::Process::errno_( const SignalSafe & , int e ) noexcept
 
 std::string G::Process::strerror( int errno_ )
 {
-	std::vector<char> buffer( 80U , '\0' ) ;
-	if( strerror_s( &buffer[0] , buffer.size()-1U , errno_ ) || buffer.at(0U) == '\0' )
-		return std::string("unknown error (").append(G::Str::fromInt(errno_)).append(1U,')') ;
-	std::string s( &buffer[0] ) ;
+	std::string s = nowide::strerror( errno_ ) ;
 	return Str::isPrintableAscii(s) ? Str::lower(s) : s ;
+}
+
+std::string G::Process::errorMessage( DWORD e )
+{
+	std::string s = nowide::formatMessage( e ) ;
+	G::Str::trimRight( s , ".\r\n" ) ;
+	if( s.empty() )
+		return std::string("error ").append( std::to_string(e) ) ;
+	else
+		return Str::isPrintableAscii(s) ? Str::lower(s) : s ;
 }
 
 std::pair<G::Identity,G::Identity> G::Process::beOrdinaryAtStartup( const std::string & , bool )
@@ -143,39 +152,22 @@ void G::Process::setEffectiveGroup( Identity )
 {
 }
 
-std::string G::Process::exe()
+G::Path G::Process::exe()
 {
-	// same code is in G::LogOutput...
-	std::vector<char> buffer ;
-	std::size_t sizes[] = { 80U , 1024U , 32768U , 0U } ; // documented limit of 32k
-	for( std::size_t * size_p = sizes ; *size_p ; ++size_p )
-	{
-		buffer.resize( *size_p+1U , '\0' ) ;
-		DWORD size = static_cast<DWORD>( buffer.size() ) ;
-		HINSTANCE hinstance = HNULL ;
-		DWORD rc = ::GetModuleFileNameA( hinstance , &buffer[0] , size ) ;
-		if( rc == 0 ) break ;
-		if( rc < size )
-			return std::string( &buffer[0] , rc ) ;
-	}
-	return std::string() ;
+	return nowide::exe() ;
 }
 
-std::string G::Process::cwd( bool no_throw )
+G::Path G::Process::cwd()
 {
-	char * p = _getcwd( nullptr , 2048 ) ; // "a buffer of at least .. is .. allocated" "more only if necessary"
-	if( p == nullptr )
-	{
-		if( !no_throw )
-			throw GetCwdError() ;
-		return std::string() ;
-	}
-	else
-	{
-		std::string result( p ) ;
-		std::free( p ) ;
-		return result ;
-	}
+	G::Path result = nowide::cwd() ;
+	if( result.empty() )
+		throw Process::GetCwdError() ;
+	return result ;
+}
+
+G::Path G::Process::cwd( std::nothrow_t )
+{
+	return nowide::cwd() ;
 }
 
 // ===

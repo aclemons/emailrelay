@@ -79,12 +79,24 @@
 	#if defined(linux) || defined(__linux__)
 		#define G_UNIX_LINUX 1
 	#endif
+	#if defined(G_WINDOWS)
+		#if !defined(G_NO_UNICODE)
+			#define G_UNICODE
+		#endif
+	#endif
+	#if !defined(GCONFIG_WINXP)
+		#define GCONFIG_WINXP 0
+	#endif
 
 	/* Apply GCONFIG defaults in case of no autoconf
 	 */
-	#if defined(_MSC_VER) && defined(__cplusplus)
-		#if defined(__has_include)
+	#if defined(__cplusplus)
+		#if defined(_MSC_VER) && defined(__has_include)
 			#if __has_include(<version>)
+				#include <version>
+			#endif
+		#else
+			#if __cplusplus >= 202000L
 				#include <version>
 			#endif
 		#endif
@@ -179,6 +191,13 @@
 			#define GCONFIG_HAVE_ARPA_INET_H 0
 		#endif
 	#endif
+	#if !defined(GCONFIG_HAVE_CHAR8_T)
+		#if defined(__cpp_lib_char8_t)
+			#define GCONFIG_HAVE_CHAR8_T 1
+		#else
+			#define GCONFIG_HAVE_CHAR8_T 0
+		#endif
+	#endif
 	#if !defined(GCONFIG_HAVE_LONG_LONG)
 		#define GCONFIG_HAVE_LONG_LONG 1
 	#endif
@@ -225,6 +244,13 @@
 			#define GCONFIG_HAVE_GETENV_S 0
 		#endif
 	#endif
+	#if !defined(GCONFIG_HAVE_WGETENV_S)
+		#if defined(G_WINDOWS) && !GCONFIG_WINXP
+			#define GCONFIG_HAVE_WGETENV_S 1
+		#else
+			#define GCONFIG_HAVE_WGETENV_S 0
+		#endif
+	#endif
 	#if !defined(GCONFIG_HAVE_PUTENV_S)
 		#if ( defined(G_WINDOWS) && !defined(G_MINGW) ) || defined(putenv_s)
 			#define GCONFIG_HAVE_PUTENV_S 1
@@ -232,8 +258,22 @@
 			#define GCONFIG_HAVE_PUTENV_S 0
 		#endif
 	#endif
+	#if !defined(GCONFIG_HAVE_WPUTENV_S)
+		#if defined(G_WINDOWS) && !GCONFIG_WINXP
+			#define GCONFIG_HAVE_WPUTENV_S 1
+		#else
+			#define GCONFIG_HAVE_WPUTENV_S 0
+		#endif
+	#endif
 	#if !defined(GCONFIG_HAVE_PUTENV)
 		#define GCONFIG_HAVE_PUTENV 1
+	#endif
+	#if !defined(GCONFIG_HAVE_WCSERROR_S)
+		#if defined(G_WINDOWS) && !GCONFIG_WINXP
+			#define GCONFIG_HAVE_WCSERROR_S 1
+		#else
+			#define GCONFIG_HAVE_WCSERROR_S 0
+		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_GETPWNAM)
 		#define GCONFIG_HAVE_GETPWNAM 1
@@ -702,6 +742,13 @@
 			#define GCONFIG_HAVE_SOPEN_S 1
 		#endif
 	#endif
+	#if !defined(GCONFIG_HAVE_WSOPEN_S)
+		#if defined(G_WINDOWS) && !GCONFIG_WINXP
+			#define GCONFIG_HAVE_WSOPEN_S 1
+		#else
+			#define GCONFIG_HAVE_WSOPEN_S 0
+		#endif
+	#endif
 	#if !defined(GCONFIG_HAVE_EXTENDED_OPEN)
 		#if defined(G_UNIX) || defined(G_MINGW)
 			#define GCONFIG_HAVE_EXTENDED_OPEN 0
@@ -891,6 +938,7 @@
 			using HANDLE = unsigned int ;
 			using TCHAR = wchar_t ;
 			using SOCKET = int ;
+			using DWORD = unsigned int ;
 		#endif
 
 		/* Define a null value for opaque pointer types that are
@@ -1041,6 +1089,11 @@
 					return std::unique_ptr<T>( new T( std::forward<Args>(args)... ) ) ; // NOLINT
 				}
 			}
+		#endif
+		#if ! GCONFIG_HAVE_CHAR8_T
+			using char8_t = signed char ;
+			#include <string>
+			namespace std { using u8string = std::basic_string<char8_t> ; } // NOLINT
 		#endif
 
 		/* Threading helper

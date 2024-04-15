@@ -25,6 +25,6 @@
 
 G::Path GStore::FileStore::defaultDirectory()
 {
-	return G::Path(G::Environment::get("ProgramData","c:/ProgramData")) + "E-MailRelay" + "spool" ;
+	return G::Path(G::Environment::get("ProgramData","c:/ProgramData"))/"E-MailRelay"/"spool" ;
 }
 

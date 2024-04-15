@@ -237,10 +237,12 @@ bool GNet::AddressLocal::validStrings( std::string_view host_part , std::string_
 	return validString( host_part , reason_p ) ;
 }
 
+#ifndef G_LIB_SMALL
 bool GNet::AddressLocal::validPort( unsigned int /*port*/ )
 {
 	return true ;
 }
+#endif
 
 bool GNet::AddressLocal::same( const AddressLocal & other , bool /*ipv6_compare_with_scope*/ ) const
 {
@@ -266,10 +268,12 @@ unsigned long GNet::AddressLocal::scopeId( unsigned long default_ ) const
 	return default_ ;
 }
 
+#ifndef G_LIB_SMALL
 const sockaddr * GNet::AddressLocal::address() const
 {
 	return reinterpret_cast<const sockaddr*>(&m_local) ;
 }
+#endif
 
 sockaddr * GNet::AddressLocal::address()
 {
@@ -286,10 +290,12 @@ G::StringArray GNet::AddressLocal::wildcards() const
 	return { displayString() } ;
 }
 
+#ifndef G_LIB_SMALL
 bool GNet::AddressLocal::format( const std::string & )
 {
 	return true ;
 }
+#endif
 
 bool GNet::AddressLocal::isLocal( std::string & ) const
 {

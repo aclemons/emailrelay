@@ -1,6 +1,7 @@
 emailrelay (2.5.3) unstable; urgency=low
-  * New "--log-format" option (eg. "--log-format=address,port") (see NEWS file).
- -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Sun, 17 Mar 2024 00:00:00 +0000
+  * New "--log-format" option (eg. "--log-format=address,port").
+  * Configuration files always use UTF-8 character encoding on Windows.
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Mon, 15 Apr 2024 00:00:00 +0000
 
 emailrelay (2.5.2) unstable; urgency=low
   * Windows build scripts reworked.

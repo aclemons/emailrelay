@@ -29,21 +29,17 @@
 #include "resource.h"
 #include <clocale>
 
-int WINAPI WinMain( HINSTANCE hinstance , HINSTANCE previous , LPSTR command_line , int show_style )
+int WINAPI WinMain( HINSTANCE hinstance , HINSTANCE previous , LPSTR /*command_line*/ , int show_style )
 {
 	try
 	{
 		#if 0
-			// set the C locale from the environment -- this has very little effect
-			// on C++ code on windows, particularly as we avoid things like atoi(),
-			// tolower(), strtoul() etc. -- however, it is probably best not to
-			// use it at all because of possible interaction between the MBCS
-			// functions and the locale
+			// set the C locale from the environment -- this has no effect
+			// since we avoid things like atoi(), tolower(), strtoul() etc.
 			::setlocale( LC_ALL , "" ) ;
 		#endif
 
-		G::Arg arg ;
-		arg.parse( hinstance , command_line ) ;
+		G::Arg arg = G::Arg::windows() ; // GetCommandLineW()
 
 		Main::WinApp app( hinstance , previous , "E-MailRelay" ) ;
 		Main::Run run( app , arg , /*has-gui=*/true ) ;

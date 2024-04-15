@@ -19,6 +19,7 @@
 ///
 
 #include "gdef.h"
+#include "gnowide.h"
 #include "gconvert.h"
 #include "guidir.h"
 #include "gfile.h"
@@ -53,22 +54,22 @@ namespace Gui
 
 G::Path Gui::Dir::install()
 {
-	return DirImp::special("programs") + "E-MailRelay" ;
+	return DirImp::special("programs") / "E-MailRelay" ;
 }
 
 G::Path Gui::Dir::config()
 {
-	return DirImp::special("data") + "E-MailRelay" ;
+	return DirImp::special("data") / "E-MailRelay" ;
 }
 
 G::Path Gui::Dir::spool()
 {
-	return DirImp::special("data") + "E-MailRelay" + "spool" ;
+	return DirImp::special("data") / "E-MailRelay" / "spool" ;
 }
 
 G::Path Gui::Dir::pid( const G::Path & )
 {
-	return DirImp::special("data") + "E-MailRelay" ;
+	return DirImp::special("data") / "E-MailRelay" ;
 }
 
 G::Path Gui::Dir::home()
@@ -98,26 +99,31 @@ G::Path Gui::DirImp::special( const std::string & type )
 	// this is not quite right when running with UAC administrator rights because
 	// it gets the administrator's user directories for the desktop etc links and not
 	// the user's -- and there is no reasonable way to get the user's access token
-	std::vector<char> buffer( MAX_PATH+1U ) ;
-	buffer.at(0) = '\0' ;
 	HANDLE user_token = HNULL ; // TODO original user's paths when run-as administrator
-	bool ok = S_OK == SHGetFolderPathA( HNULL , special_id(type) , user_token , SHGFP_TYPE_CURRENT , &buffer[0] ) ;
-	buffer.at(buffer.size()-1U) = '\0' ;
-	return ok ? G::Path(&buffer[0]) : G::Path("c:/") ;
+	G::Path result = G::nowide::shGetFolderPath( HNULL , special_id(type) , user_token , SHGFP_TYPE_CURRENT ) ;
+	return result.empty() ? G::Path("c:/") : result ;
 }
 
 int Gui::DirImp::special_id( const std::string & type )
 {
-	if( type == "desktop" ) return CSIDL_DESKTOPDIRECTORY ; // "c:/users/<username>/desktop"
-	if( type == "menu" ) return CSIDL_PROGRAMS ; // "c:/users/<username>/appdata/roaming/microsoft/windows/start menu/programs"
-	if( type == "autostart" ) return CSIDL_STARTUP ; // "c:/users/<username>/appdata/roaming/microsoft/windows/start menu/startup/programs"
-	if( type == "programs" ) return sizeof(void*) == 4 ? CSIDL_PROGRAM_FILESX86 : CSIDL_PROGRAM_FILES ; // "c:/program files"
-	if( type == "data" ) return CSIDL_COMMON_APPDATA ; // "c:/programdata"
-	throw std::runtime_error("internal error") ;
+	if( type == "desktop" )
+		return CSIDL_DESKTOPDIRECTORY ; // "c:/users/<username>/desktop"
+	else if( type == "menu" )
+		return CSIDL_PROGRAMS ; // "c:/users/<username>/appdata/roaming/microsoft/windows/start menu/programs"
+	else if( type == "autostart" )
+		return CSIDL_STARTUP ; // "c:/users/<username>/appdata/roaming/microsoft/windows/start menu/startup/programs"
+	else if( type == "programs" && sizeof(void*) == 4 )
+		return CSIDL_PROGRAM_FILESX86 ; // "c:/program files (x86)"
+	else if( type == "programs" )
+		return CSIDL_PROGRAM_FILES ; // "c:/program files"
+	else if( type == "data" )
+		return CSIDL_COMMON_APPDATA ; // "c:/programdata"
+	else
+		throw std::runtime_error("internal error") ;
 }
 
 G::Path Gui::DirImp::envPath( const std::string & key , const G::Path & default_ )
 {
-	return G::Path( G::Environment::get( key , default_.str() ) ) ;
+	return G::Environment::getPath( key , default_ ) ;
 }
 

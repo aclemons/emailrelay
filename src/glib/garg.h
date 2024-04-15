@@ -22,9 +22,12 @@
 #define G_ARG_H
 
 #include "gdef.h"
+#include "gnowide.h"
 #include "gstringarray.h"
+#include "gpath.h"
 #include <vector>
 #include <string>
+#include <new>
 
 namespace G
 {
@@ -44,41 +47,40 @@ class G::Arg
 {
 public:
 	Arg( int argc , char ** argv ) ;
-		///< Constructor taking argc/argv. Should not be used in a shared
-		///< object or dll.
+		///< Constructor taking argc/argv directly from main().
+		///< Sets the v0() path and captures the cwd.
 
 	explicit Arg( const G::StringArray & ) ;
 		///< Constructor taking an array of command-line arguments. The
 		///< program name in the first position is expected but may be
 		///< ignored.
 
-	Arg() ;
-		///< Default constructor. Initialise with parse().
+	explicit Arg( const std::string & full_command_line ) ;
+		///< Constructor taking a full command-line.
 
-	void parse( HINSTANCE hinstance , const std::string & command_line_tail ) ;
-		///< Parses the given command-line tail, splitting it up into
-		///< an array of tokens. The v(0) value comes from the supplied
-		///< instance handle.
+	Arg( const Path & exe , const std::string & command_line_tail ) ;
+		///< Constructor taking argv0 and a command-line tail.
+		///< The first parameter is typically exe().
 
-	void parse( const std::string & command_line ) ;
-		///< Parses the given command line, splitting it up into an array
-		///< of tokens. The command-line should start with the v(0) value.
+	static Arg windows() ;
+		///< Factory function for Windows using GetCommandLineW().
+		///< Also sets the v0() path and captures the cwd.
 
-	void reparse( const std::string & command_line_tail ) ;
-		///< Reinitialises the object with the given command-line tail. The
-		///< command-line should not contain the program name: the v(0)
-		///< value and prefix() are unchanged.
+	static Path v0() ;
+		///< Returns a copy of argv[0] from the first call to the
+		///< argc/argv constructor overload. Returns the empty path
+		///< if that constructor overload has never been called
+		///< successfully. See also exe().
 
-	static std::string v0() ;
-		///< Returns a copy of argv[0] from the first call to the constructor
-		///< that takes argc/argv. Returns the empty string if that constructor
-		///< overload has never been used. See also exe().
+	static Path exe() ;
+		///< Returns Process::exe() or in exceptional circumstances an
+		///< absolute path constructed from v0() and the captured cwd.
+		///< Throws on error. See also v0().
 
-	static std::string exe( bool do_throw = true ) ;
-		///< Returns Process::exe() or an absolute path constructed from v0()
-		///< and possibly using the cwd. Throws on error by default, or
-		///< optionally returns the empty string.
-		///< See also v0().
+	static Path exe( std::nothrow_t ) ;
+		///< Returns Process::exe() or in exceptional circumstances an
+		///< absolute path constructed from v0() and the captured cwd.
+		///< Returns the empty path on error. See also v0().
 
 	std::size_t c() const ;
 		///< Returns the number of tokens in the command line, including the
@@ -99,18 +101,18 @@ public:
 		///< An exception-free version of prefix() which can be used in
 		///< main() outside of the outermost try block.
 
-	bool contains( const std::string & option , std::size_t option_args = 0U , bool case_sensitive = true ) const ;
+	bool contains( std::string_view option , std::size_t option_args = 0U , bool case_sensitive = true ) const ;
 		///< Returns true if the command line contains the given option
 		///< with enough command line arguments left to satisfy the required
 		///< number of option arguments. (By convention an option starts
 		///< with a dash, but that is not required here; it's just a string
 		///< that is matched against command-line arguments.)
 
-	std::size_t count( const std::string & option ) const ;
+	std::size_t count( std::string_view option ) const ;
 		///< Returns the number of times the given string appears in the
 		///< list of arguments.
 
-	std::size_t index( const std::string & option , std::size_t option_args = 0U ,
+	std::size_t index( std::string_view option , std::size_t option_args = 0U ,
 		std::size_t default_ = 0U ) const ;
 			///< Returns the index of the given option. Returns zero
 			///< (or the given default) if not present.
@@ -119,11 +121,11 @@ public:
 		///< Returns the index of the first argument that matches the
 		///< given prefix. Returns zero if none.
 
-	bool remove( const std::string & option , std::size_t option_args = 0U ) ;
+	bool remove( std::string_view option , std::size_t option_args = 0U ) ;
 		///< Removes the given option and its arguments. Returns false if
 		///< the option does not exist.
 
-	std::string removeValue( const std::string & option , const std::string & default_ = {} ) ;
+	std::string removeValue( std::string_view option , const std::string & default_ = {} ) ;
 		///< Removes the given single-valued option and its value. Returns
 		///< the option value or the default if the option does not exist.
 
@@ -143,15 +145,27 @@ public:
 		///< Returns the end operator.
 
 private:
-	std::size_t find( bool , const std::string & , std::size_t , std::size_t * ) const ;
-	static bool strmatch( bool , const std::string & , const std::string & ) ;
+	struct Windows {} ;
+	explicit Arg( Windows ) ;
+	std::size_t find( bool , std::string_view , std::size_t , std::size_t * ) const ;
+	static bool strmatch( bool , std::string_view , std::string_view ) ;
 	void parseImp( const std::string & ) ;
+	static Path exeImp( bool do_throw ) ;
+	void osinit( int , char ** ) ;
+	void split( const std::string & ) ;
 
 private:
 	StringArray m_array ;
-	static std::string m_v0 ;
-	static std::string m_cwd ;
+	static Path m_v0 ;
+	static Path m_cwd ;
 } ;
+
+inline G::Arg::Arg( Windows )
+{
+	#ifdef G_WINDOWS
+		parseImp( nowide::getCommandLine() ) ;
+	#endif
+}
 
 namespace G
 {

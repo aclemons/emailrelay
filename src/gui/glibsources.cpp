@@ -39,6 +39,8 @@
 #include "garg.cpp"
 #include "gbase64.cpp"
 #include "gbatchfile.cpp"
+#include "gcodepage.cpp"
+#include "gconvert.cpp"
 #include "gdate.cpp"
 #include "gdirectory.cpp"
 #include "gexception.cpp"
@@ -69,8 +71,6 @@
 #include "options.cpp"
 #ifdef G_WINDOWS
 #include "gcleanup_win32.cpp"
-#include "gconvert.cpp"
-#include "gconvert_win32.cpp"
 #include "gdirectory_win32.cpp"
 #include "gfile_win32.cpp"
 #include "gidentity_win32.cpp"

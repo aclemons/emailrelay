@@ -40,12 +40,13 @@ UNIX_SOURCES = \
 WINDOWS_SOURCES = \
 	gbatchfile.cpp \
 	gbatchfile.h \
+	gcodepage.cpp \
+	gcodepage.h \
+	gconvert.cpp \
+	gconvert.h \
 	gmapfile.cpp \
 	gmapfile.h \
 	gcleanup_win32.cpp \
-	gconvert.h \
-	gconvert.cpp \
-	gconvert_win32.cpp \
 	gdaemon_win32.cpp \
 	gdirectory_win32.cpp \
 	genvironment_win32.cpp \
@@ -105,6 +106,7 @@ COMMON_SOURCES = \
 	gmd5.cpp \
 	gmsg.h \
 	gnewprocess.h \
+	gnowide.h \
 	gomembuf.h \
 	goptional.h \
 	goption.h \

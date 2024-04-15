@@ -141,7 +141,7 @@ void GVerifiers::VerifierFactory::fixFile( Spec & result , const G::Path & base_
 	if( !app_dir.empty() && result.second.find("@app") == 0U )
 		G::Str::replace( result.second , "@app" , app_dir.str() ) ;
 	else if( !base_dir.empty() && G::Path(result.second).isRelative() )
-		result.second = (base_dir+result.second).str() ;
+		result.second = (base_dir/result.second).str() ;
 }
 
 void GVerifiers::VerifierFactory::checkFile( Spec & result , G::StringArray * warnings_p )

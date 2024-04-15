@@ -89,7 +89,7 @@ void G::LogOutput::osinit()
 }
 
 #ifndef G_LIB_SMALL
-void G::LogOutput::register_( const std::string & )
+void G::LogOutput::register_( const Path & )
 {
 }
 #endif

@@ -71,7 +71,7 @@ G::DirectoryList::DirectoryList()
 = default;
 
 #ifndef G_LIB_SMALL
-void G::DirectoryList::readAll( const G::Path & dir , std::vector<G::DirectoryList::Item> & out )
+void G::DirectoryList::readAll( const G::Path & dir , std::vector<Item> & out )
 {
 	DirectoryList list ;
 	list.readAll( dir ) ;
@@ -103,7 +103,6 @@ void G::DirectoryList::readImp( const G::Path & dir , bool sub_dirs , std::strin
 	DirectoryIterator iter( directory ) ;
 	while( iter.more() && !iter.error() )
 	{
-		// (we do our own filename matching here to avoid glob())
 		if( sub_dirs ? iter.isDir() : ( suffix.empty() || Str::tailMatch(iter.fileName(),suffix) ) )
 		{
 			if( limit == 0U || m_list.size() < limit )

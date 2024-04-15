@@ -175,10 +175,10 @@ Main::CommandLine::CommandLine( Output & output , const G::Arg & args_in ,
 Main::CommandLine::~CommandLine()
 = default ;
 
-std::string Main::CommandLine::configFile( const std::string & arg )
+G::Path Main::CommandLine::configFile( const std::string & arg )
 {
-	std::string path = arg ;
-	G::Str::replace( path , "@app" , G::Path(G::Process::exe()).dirname().str() ) ;
+	G::Path path( arg ) ;
+	path.replace( "@app" , G::Process::exe().dirname().str() ) ;
 	return path ;
 }
 

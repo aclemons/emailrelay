@@ -22,14 +22,15 @@
 #include "ghostname.h"
 #include "genvironment.h"
 #include "gstr.h"
+#include <vector>
 
 std::string G::hostname()
 {
 	std::vector<char> buffer( 257U , '\0' ) ; // documented hostname limit of 256
-	if( 0 == ::gethostname( &buffer[0] , static_cast<int>(buffer.size()-1U) ) && buffer.at(0U) != '\0' )
+	if( 0 == ::gethostname( buffer.data() , static_cast<int>(buffer.size()-1U) ) && buffer.at(0U) != '\0' )
 	{
 		buffer[buffer.size()-1U] = '\0' ;
-		return std::string( &buffer[0] ) ;
+		return std::string( buffer.data() ) ;
 	}
 	else
 	{
