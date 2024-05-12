@@ -51,6 +51,7 @@ cfg_exclude_files="${cfg_exclude_files}|gbatchfile.cpp" # windows only
 cfg_exclude_files="${cfg_exclude_files}|gconvert.cpp" # windows only
 cfg_exclude_files="${cfg_exclude_files}|gconvert.cpp" # windows only
 cfg_exclude_files="${cfg_exclude_files}|gmapfile.cpp" # windows only
+cfg_exclude_files="${cfg_exclude_files}|geventloophandles.cpp" # windows only
 
 cfg_exclude_functions="__none__"
 cfg_exclude_functions="${cfg_exclude_function} GNet::inet_pton_imp" # see gdef.h

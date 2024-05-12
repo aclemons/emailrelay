@@ -627,7 +627,7 @@ GNet::Socket::ssize_type GNet::DatagramSocket::writeto( const char * buffer , si
 	if( nsent < 0 )
 	{
 		saveReason() ;
-		G_DEBUG( "GNet::DatagramSocket::write: write error " << reason() ) ;
+		G_DEBUG( "GNet::DatagramSocket::write: write error: " << reason() ) ;
 		return -1 ;
 	}
 	return nsent ;

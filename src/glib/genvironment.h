@@ -77,7 +77,12 @@ public:
 	void set( const std::string & name , const std::string & value ) ;
 		///< Inserts or updates a variable in this set.
 
-	const char * ptr() const noexcept ;
+	std::string block() const ;
+		///< Returns a contiguous block of memory containing the
+		///< null-terminated strings with an extra zero byte
+		///< at the end.
+
+	std::wstring block( std::wstring (*)(std::string_view) ) const ;
 		///< Returns a contiguous block of memory containing the
 		///< null-terminated strings with an extra zero byte
 		///< at the end.
@@ -115,13 +120,12 @@ private:
 	void setup() ;
 	void setList() ;
 	void setPointers() ;
-	void setBlock() ;
+	void setBlocks() ;
 
 private:
 	Map m_map ;
 	std::vector<std::string> m_list ;
 	std::vector<char*> m_pointers ;
-	std::string m_block ;
 } ;
 
 inline

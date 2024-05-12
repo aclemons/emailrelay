@@ -171,7 +171,6 @@ dnl ----------------------
 dnl Does AC_CHECK_TYPE for common types.
 dnl
 AC_DEFUN([GCONFIG_FN_CHECK_TYPES],[
-	AC_REQUIRE([GCONFIG_FN_TYPE_CHAR8_T])
 	AC_REQUIRE([GCONFIG_FN_TYPE_SOCKLEN_T])
 	AC_REQUIRE([GCONFIG_FN_TYPE_ERRNO_T])
 	AC_REQUIRE([GCONFIG_FN_TYPE_SSIZE_T])
@@ -2497,29 +2496,6 @@ AC_DEFUN([GCONFIG_FN_TLS_OPENSSL],
 		AC_DEFINE(GCONFIG_HAVE_OPENSSL_MIN_MAX,1,[Define true if openssl has SSL_set_min_proto_version])
 	else
 		AC_DEFINE(GCONFIG_HAVE_OPENSSL_MIN_MAX,0,[Define true if openssl has SSL_set_min_proto_version])
-	fi
-])
-
-dnl GCONFIG_FN_TYPE_CHAR8_T
-dnl -----------------------
-dnl Tests for c++20 char8_t.
-dnl
-AC_DEFUN([GCONFIG_FN_TYPE_CHAR8_T],
-[AC_CACHE_CHECK([for char8_t],[gconfig_cv_type_char8_t],
-[
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-		[
-			[char8_t c = 0 ;]
-		],
-		[
-		])],
-		gconfig_cv_type_char8_t=yes,
-		gconfig_cv_type_char8_t=no )
-])
-	if test "$gconfig_cv_type_char8_t" = "yes" ; then
-		AC_DEFINE(GCONFIG_HAVE_CHAR8_T,1,[Define true if c++20 char8_t type is defined])
-	else
-		AC_DEFINE(GCONFIG_HAVE_CHAR8_T,0,[Define true if c++20 char8_t type is defined])
 	fi
 ])
 

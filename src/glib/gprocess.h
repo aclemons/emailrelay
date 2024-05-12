@@ -59,7 +59,7 @@ public:
 	class UmaskImp ;
 
 	static void closeFiles( bool keep_stderr = false ) ;
-		///< Closes all open file descriptors and reopen stdin,
+		///< Closes all open file descriptors and reopens stdin,
 		///< stdout and possibly stderr to the null device.
 
 	static void closeStderr() ;
@@ -67,7 +67,11 @@ public:
 
 	static void closeOtherFiles( int fd_keep = -1 ) ;
 		///< Closes all open file descriptors except the three
-		///< standard ones and possibly one other.
+		///< standard ones and optionally one other.
+
+	static void inheritStandardFiles() ;
+		///< Makes sure that the standard file descriptors
+		///< are inherited.
 
 	static void cd( const Path & dir ) ;
 		///< Changes directory.

@@ -19,7 +19,6 @@
 ///
 
 #include "gdef.h"
-#include "gcodepage.h"
 #include "gconvert.h"
 #include <algorithm>
 #include <cwchar> // std::wsclen()

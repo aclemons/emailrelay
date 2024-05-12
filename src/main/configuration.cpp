@@ -679,7 +679,9 @@ GSmtp::ServerProtocol::Config Main::Configuration::_smtpServerProtocolConfig( bo
 			.set_with_pipelining( smtp_server_switches("pipelining"_sv,true) )
 			.set_with_chunking( smtp_server_switches("chunking"_sv,false) )
 			.set_with_smtputf8( smtp_server_switches("smtputf8"_sv,false) )
-			.set_smtputf8_strict( smtp_server_switches("smtputf8strict"_sv,false) ) ;
+			.set_smtputf8_strict( smtp_server_switches("smtputf8strict"_sv,false) )
+			.set_parsing_allows_spaces() // moot
+			.set_parsing_allows_nobrackets( !smtp_server_switches("strictparsing"_sv,true) ) ;
 }
 
 GNet::Server::Config Main::Configuration::_netServerConfig( std::pair<int,int> linger ) const

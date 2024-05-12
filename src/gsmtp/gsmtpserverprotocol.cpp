@@ -831,7 +831,7 @@ void GSmtp::ServerProtocol::doMail( EventData event_data , bool & predicate )
 	}
 	else
 	{
-		auto mail_command = parseMailFrom( mail_line ) ;
+		auto mail_command = parseMailFrom( mail_line , m_config.parsing_allows_spaces , m_config.parsing_allows_nobrackets ) ;
 		if( !mail_command.error.empty() )
 		{
 			predicate = false ;
@@ -864,7 +864,7 @@ void GSmtp::ServerProtocol::doMail( EventData event_data , bool & predicate )
 void GSmtp::ServerProtocol::doRcpt( EventData event_data , bool & predicate )
 {
 	std::string_view rcpt_line = event_data ;
-	auto rcpt_command = parseRcptTo( rcpt_line ) ;
+	auto rcpt_command = parseRcptTo( rcpt_line , m_config.parsing_allows_spaces , m_config.parsing_allows_nobrackets ) ;
 	if( !rcpt_command.error.empty() )
 	{
 		predicate = false ;

@@ -37,6 +37,7 @@
 //           --terminate             terminate when failing
 //           --tls                   enable tls
 //           --huge                  send huge smtp responses
+//           --loopback              listen on loopback address (127.0.0.1)
 //
 
 #include "gdef.h"
@@ -78,6 +79,7 @@ struct TestServerConfig
 	bool m_quiet ;
 	unsigned int m_idle_timeout ;
 	std::size_t m_huge ;
+	bool m_loopback ;
 } ;
 
 class Peer : public GNet::ServerPeer
@@ -113,8 +115,9 @@ public:
 	static GNet::Address address( const TestServerConfig & config )
 	{
 		auto family = config.m_ipv6 ? GNet::Address::Family::ipv6 : GNet::Address::Family::ipv4 ;
-		//return GNet::Address( family , config.m_port ) ;
-		return GNet::Address::loopback( family , config.m_port ) ;
+		return config.m_loopback ?
+			GNet::Address::loopback( family , config.m_port ) :
+			GNet::Address( family , config.m_port ) ;
 	}
 } ;
 
@@ -160,12 +163,13 @@ Peer::Peer( GNet::EventStateUnbound esu , GNet::ServerPeerInfo && peer_info , Te
 	m_in_auth_2(false) ,
 	m_message(0)
 {
+	G_DEBUG( "Peer::ctor: new peer" ) ;
 	send( "220 test server\r\n"_sv ) ;
 }
 
 void Peer::onDelete( const std::string & )
 {
-	G_LOG_S( "Server::newPeer: connection dropped" ) ;
+	G_LOG_S( "Peer::onDelete: connection dropped" ) ;
 }
 
 void Peer::onSendComplete()
@@ -361,6 +365,7 @@ int main( int argc , char * argv [] )
 		G::Options::add( options , 'f' , "pid-file" , "pid file" , "" , M::one , "path" , 1 , 0 ) ;
 		G::Options::add( options , '6' , "ipv6" , "use ipv6" , "" , M::zero , "" , 1 , 0 ) ;
 		G::Options::add( options , 'H' , "huge" , "send huge ehlo response" , "" , M::zero , "" , 1 , 0 ) ;
+		G::Options::add( options , 'k' , "loopback" , "listen on loopback interface" , "" , M::zero , "" , 1 , 0 ) ;
 		G::GetOpt opt( arg , options ) ;
 		if( opt.hasErrors() )
 		{
@@ -389,6 +394,7 @@ int main( int argc , char * argv [] )
 		test_config.m_huge = opt.contains( "huge" ) ? 100000U : 0U ;
 		test_config.m_port = opt.contains("port") ? G::Str::toUInt(opt.value("port")) : 10025U ;
 		test_config.m_idle_timeout = opt.contains("idle-timeout") ? G::Str::toInt(opt.value("idle-timeout")) : 300U ;
+		test_config.m_loopback = opt.contains("loopback") ;
 		bool debug = opt.contains( "debug" ) ;
 
 		G::Path argv0 = G::Path(arg.v(0)).withoutExtension().basename() ;

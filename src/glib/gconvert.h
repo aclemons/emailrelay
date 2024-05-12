@@ -22,7 +22,6 @@
 #define G_CONVERT_H
 
 #include "gdef.h"
-#include "gcodepage.h"
 #include "gstringview.h"
 #include "gexception.h"
 #include <string>

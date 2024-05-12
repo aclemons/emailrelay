@@ -175,10 +175,10 @@ public:
 		///< Returns true if the path exists() and is a directory.
 		///< Symlinks are followed. Returns false on error.
 
-	static Stat stat( const Path & path , bool read_symlink = false ) ;
-		///< Returns a file status structure. Returns with
-		///< the 'error' field set on error. Always fails if
-		///< 'read-link' on Windows.
+	static Stat stat( const Path & path , bool symlink_nofollow = false ) ;
+		///< Returns a file status structure. Returns with the
+		///< 'error' field set on error. The 'symlink_nofollow'
+		///< parameter value is ignored on Windows.
 
 	static SystemTime time( const Path & file ) ;
 		///< Returns the file's timestamp. Throws on error.

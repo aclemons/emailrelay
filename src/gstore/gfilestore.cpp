@@ -472,7 +472,7 @@ bool GStore::FileStore::FileOp::hardlink( const G::Path & src , const G::Path & 
 	if( linked )
 	{
 		auto dir_stat = G::File::stat( dst.simple() ? G::Path(".") : dst.dirname() ) ;
-		if( !dir_stat.error && dir_stat.inherit )
+		if( !dir_stat.error && !dir_stat.is_link && dir_stat.inherit )
 			G::File::chgrp( dst , dir_stat.gid , std::nothrow ) ;
 	}
 

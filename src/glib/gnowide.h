@@ -68,9 +68,11 @@ namespace G
 			#if GCONFIG_HAVE_WINDOWS_STARTUP_INFO_EX
 				using STARTUPINFO_BASE_type = STARTUPINFOW ;
 				using STARTUPINFO_REAL_type = STARTUPINFOEXW ;
+				constexpr DWORD STARTUPINFO_flags = EXTENDED_STARTUPINFO_PRESENT ;
 			#else
 				using STARTUPINFO_BASE_type = STARTUPINFOW ;
 				using STARTUPINFO_REAL_type = STARTUPINFOW ;
+				constexpr DWORD STARTUPINFO_flags = 0 ;
 			#endif
 			using IShellLink_type = IShellLinkW ;
 		#else
@@ -83,9 +85,11 @@ namespace G
 			#if GCONFIG_HAVE_WINDOWS_STARTUP_INFO_EX
 				using STARTUPINFO_BASE_type = STARTUPINFOA ;
 				using STARTUPINFO_REAL_type = STARTUPINFOEXA ;
+				constexpr DWORD STARTUPINFO_flags = EXTENDED_STARTUPINFO_PRESENT ;
 			#else
 				using STARTUPINFO_BASE_type = STARTUPINFOA ;
 				using STARTUPINFO_REAL_type = STARTUPINFOA ;
+				constexpr DWORD STARTUPINFO_flags = 0 ;
 			#endif
 			using IShellLink_type = IShellLinkA ;
 		#endif
@@ -371,14 +375,15 @@ namespace G
 				*is_new_p = disposition == REG_CREATED_NEW_KEY ;
 			return result ;
 		}
-		inline LSTATUS regOpenKey( HKEY key_in , const Path & sub , HKEY * key_out_p )
+		inline LSTATUS regOpenKey( HKEY key_in , const Path & sub , HKEY * key_out_p , bool read_only = false )
 		{
+			REGSAM access = read_only ? (STANDARD_RIGHTS_READ|KEY_QUERY_VALUE) : KEY_ALL_ACCESS ;
 			if( w )
 				return RegOpenKeyExW( key_in , Convert::widen(sub.str()).c_str() ,
-					0 , KEY_ALL_ACCESS , key_out_p ) ;
+					0 , access , key_out_p ) ;
 			else
 				return RegOpenKeyExA( key_in , sub.cstr() ,
-					0 , KEY_ALL_ACCESS , key_out_p ) ;
+					0 , access , key_out_p ) ;
 		}
 		inline LSTATUS regDeleteKey( HKEY key , const Path & sub )
 		{
@@ -474,26 +479,28 @@ namespace G
 					reinterpret_cast<const BYTE*>(&n) , sizeof(DWORD) ) ;
 		}
 		inline BOOL createProcess( std::string_view exe , std::string_view command_line ,
-			const void * env_p , const Path * cd_path_p , DWORD startup_info_flags ,
+			const char * /*env_char_block_p*/ , const wchar_t * env_wchar_block_p ,
+			const Path * cd_path_p , DWORD startup_info_flags ,
 			STARTUPINFOW * startup_info , PROCESS_INFORMATION * info_ptr , bool inherit = true )
 		{
 			return CreateProcessW( exe.empty() ? nullptr : Convert::widen(exe).c_str() ,
 				const_cast<wchar_t*>(Convert::widen(command_line).c_str()) ,
 				nullptr , nullptr ,
-				inherit , startup_info_flags ,
-				const_cast<void*>(env_p) ,
+				inherit , startup_info_flags|CREATE_UNICODE_ENVIRONMENT ,
+				const_cast<wchar_t*>(env_wchar_block_p) ,
 				cd_path_p ? Convert::widen(cd_path_p->str()).c_str() : nullptr ,
 				startup_info , info_ptr ) ;
 		}
 		inline BOOL createProcess( const std::string & exe , const std::string & command_line ,
-			const void * env_p , const Path * cd_path_p , DWORD startup_info_flags ,
+			const char * env_char_block_p , const wchar_t * /*env_wchar_block_p*/ ,
+			const Path * cd_path_p , DWORD startup_info_flags ,
 			STARTUPINFOA * startup_info , PROCESS_INFORMATION * info_ptr , bool inherit = true )
 		{
 			return CreateProcessA( exe.empty() ? nullptr : exe.c_str() ,
 				const_cast<char*>(command_line.c_str()) ,
 				nullptr , nullptr ,
 				inherit , startup_info_flags ,
-				const_cast<void*>(env_p) ,
+				const_cast<char*>(env_char_block_p) ,
 				cd_path_p ? cd_path_p->cstr() : nullptr ,
 				startup_info , info_ptr ) ;
 		}
@@ -759,11 +766,14 @@ namespace G
 			// (modifies the caller's structure)
 			data->hIcon = LoadIconW( hinstance , MAKEINTRESOURCEW(icon_id) ) ;
 			if( data->hIcon == HNULL ) return 2 ;
+
+			std::wstring wtip = Convert::widen( tip ) ;
 			constexpr std::size_t n = sizeof(data->szTip) / sizeof(data->szTip[0]) ;
 			static_assert( n > 0U , "" ) ;
 			for( std::size_t i = 0U ; i < n ; i++ )
-				data->szTip[i] = ( i < tip.size() ? static_cast<wchar_t>(tip[i]) : L'\0' ) ;
+				data->szTip[i] = ( i < wtip.size() ? wtip[i] : L'\0' ) ;
 			data->szTip[n-1U] = L'\0' ;
+
 			return Shell_NotifyIconW( NIM_ADD , data ) ? 0 : 1 ;
 		}
 		inline int shellNotifyIcon( HINSTANCE hinstance , DWORD , NOTIFYICONDATAA * data ,
@@ -772,11 +782,13 @@ namespace G
 			// (modifies the caller's structure)
 			data->hIcon = LoadIconA( hinstance , MAKEINTRESOURCEA(icon_id) ) ;
 			if( data->hIcon == HNULL ) return 2 ;
+
 			constexpr std::size_t n = sizeof(data->szTip) / sizeof(data->szTip[0]) ;
 			static_assert( n > 0U , "" ) ;
 			for( std::size_t i = 0U ; i < n ; i++ )
 				data->szTip[i] = ( i < tip.size() ? tip[i] : '\0' ) ;
 			data->szTip[n-1U] = '\0' ;
+
 			return Shell_NotifyIconA( NIM_ADD , data ) ? 0 : 1 ;
 		}
 		inline bool shellNotifyIcon( DWORD message , NOTIFYICONDATAW * data , std::nothrow_t ) noexcept

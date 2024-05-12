@@ -191,8 +191,15 @@ bool G::DirectoryIteratorImp::more()
 		#endif
 		else
 		{
-			m_is_dir = File::isDirectory(filePath(),std::nothrow) ;
-			m_is_link = File::isLink(filePath(),std::nothrow) ;
+			auto statbuf = File::stat( filePath() , /*symlink_nofollow=*/true ) ;
+			m_error = statbuf.error != 0 ;
+			m_is_dir = !m_error && statbuf.is_dir ;
+			m_is_link = !m_error && statbuf.is_link ;
+			if( m_is_link )
+			{
+				statbuf = File::stat( filePath() , /*symlink_nofollow=*/false ) ;
+				m_is_dir = statbuf.error != 0 && statbuf.is_dir ;
+			}
 		}
 		if( !special )
 			break ;

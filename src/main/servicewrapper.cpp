@@ -604,14 +604,17 @@ ServiceChild::ServiceChild( std::string command_line ) :
 {
 	G_SERVICE_DEBUG( "ServiceChild::ctor: spawning [" << command_line << "]" ) ;
 
-	G::nowide::STARTUPINFO_BASE_type startup_info {} ;
-	startup_info.cb = sizeof(startup_info) ;
+	G::nowide::STARTUPINFO_REAL_type startup_info {} ;
+	DWORD startup_info_flags = G::nowide::STARTUPINFO_flags | CREATE_NO_WINDOW ;
+	auto * startup_info_ptr = reinterpret_cast<G::nowide::STARTUPINFO_BASE_type*>(& startup_info) ;
+	startup_info_ptr->cb = sizeof( startup_info ) ;
 
 	PROCESS_INFORMATION process_info {} ;
 
 	bool rc = G::nowide::createProcess( {} , command_line ,
-		nullptr , nullptr , CREATE_NO_WINDOW ,
-		&startup_info , &process_info , FALSE ) ;
+		nullptr , nullptr , nullptr ,
+		startup_info_flags , startup_info_ptr ,
+		&process_info , /*inherit=*/false ) ;
 
 	if( !rc )
 		throw std::runtime_error( std::string() + "cannot create process: [" + command_line + "]" ) ;

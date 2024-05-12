@@ -185,7 +185,11 @@ G::NewProcessImp::NewProcessImp( const Path & exe , const StringArray & args , c
 				m_pipe.dupTo( STDERR_FILENO ) ;
 			}
 			duplicate( config.stdin , STDIN_FILENO ) ;
-			Process::closeOtherFiles() ;
+			Process::inheritStandardFiles() ;
+
+			// close other file descriptors
+			if( config.close_other_fds )
+				Process::closeOtherFiles() ;
 
 			// restore SIGPIPE handling so that writing to
 			// the closed pipe should terminate the child

@@ -5,6 +5,8 @@ E-MailRelay Change Log
 --------------
 * New "--log-format" option (eg. "--log-format=address,port").
 * Configuration files always use UTF-8 character encoding on Windows.
+* New "nostrictparsing" option for "--server-smtp-config".
+* More concurrent connections on Windows.
 
 2.5.1 -> 2.5.2
 --------------

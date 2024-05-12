@@ -155,6 +155,7 @@
 ./src/gsmtp/gverifier.cpp
 ./src/gsmtp/gverifierfactorybase.cpp
 ./src/gsmtp/gverifierstatus.cpp
+./src/gssl/empty.cpp
 ./src/gssl/gssl.cpp
 ./src/gssl/gssl_mbedtls.cpp
 ./src/gssl/gssl_mbedtls_keygen.cpp

@@ -111,7 +111,8 @@ public:
 		///< Returns true if more and advances by one.
 
 	bool isDir() const ;
-		///< Returns true if the current item is a directory.
+		///< Returns true if the current item is a directory or
+		///< a symlink to a directory.
 
 	bool isLink() const ;
 		///< Returns true if the current item is a symlink.

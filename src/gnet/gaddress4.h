@@ -52,7 +52,7 @@ public:
 	unsigned long scopeId( unsigned long default_ = 0UL ) const ;
 	unsigned int port() const ;
 	void setPort( unsigned int port ) ;
-	bool setZone( const std::string & ipv6_zone_name_or_scope_id ) ;
+	bool setZone( std::string_view ipv6_zone_name_or_scope_id ) ;
 	void setScopeId( unsigned long ipv6_scope_id ) ;
 	static bool validString( std::string_view , std::string * = nullptr ) ;
 	static bool validStrings( std::string_view , std::string_view , std::string * = nullptr ) ;

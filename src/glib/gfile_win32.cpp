@@ -255,7 +255,7 @@ int G::File::mkdirImp( const Path & dir ) noexcept
 	}
 }
 
-G::File::Stat G::File::statImp( const char * path , bool ) noexcept
+G::File::Stat G::File::statImp( const char * path , bool /*symlink_nofollow*/ ) noexcept
 {
 	try
 	{

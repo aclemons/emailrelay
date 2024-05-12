@@ -109,6 +109,8 @@ public:
 		bool with_chunking {true} ; // CHUNKING (BDAT) and also advertise BINARYMIME
 		bool with_pipelining {true} ;
 		bool with_smtputf8 {false} ;
+		bool parsing_allows_spaces {false} ; // sr #89
+		bool parsing_allows_nobrackets {false} ; // sr #97
 		bool smtputf8_strict {false} ; // reject non-ASCII characters if no MAIL-FROM SMTPUTF8 parameter
 
 		bool tls_starttls {false} ;
@@ -126,6 +128,8 @@ public:
 		Config & set_with_chunking( bool = true ) noexcept ;
 		Config & set_with_pipelining( bool = true ) noexcept ;
 		Config & set_with_smtputf8( bool = true ) noexcept ;
+		Config & set_parsing_allows_spaces( bool = true ) noexcept ;
+		Config & set_parsing_allows_nobrackets( bool = true ) noexcept ;
 		Config & set_smtputf8_strict( bool = true ) noexcept ;
 		Config & set_max_size( std::size_t ) noexcept ;
 		Config & set_tls_starttls( bool = true ) noexcept ;
@@ -382,6 +386,8 @@ inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_tls_st
 inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_tls_connection( bool b ) noexcept { tls_connection = b ; return *this ; }
 inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_with_pipelining( bool b ) noexcept { with_pipelining = b ; return *this ; }
 inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_with_smtputf8( bool b ) noexcept { with_smtputf8 = b ; return *this ; }
+inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_parsing_allows_spaces( bool b ) noexcept { parsing_allows_spaces = b ; return *this ; }
+inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_parsing_allows_nobrackets( bool b ) noexcept { parsing_allows_nobrackets = b ; return *this ; }
 inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_shutdown_how_on_quit( int i ) noexcept { shutdown_how_on_quit = i ; return *this ; }
 inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_client_error_limit( unsigned int n ) noexcept { client_error_limit = n ; return *this ; }
 inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_smtputf8_strict( bool b ) noexcept { smtputf8_strict = b ; return *this ; }

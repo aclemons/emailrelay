@@ -58,17 +58,21 @@ public:
 		std::string auth ;
 		std::string body ; // 7BIT, 8BITMIME, BINARYMIME
 		bool smtputf8 {false} ; // SMTPUTF8 option
+		bool allowed_spaces {false} ;
+		bool allowed_nobrackets {false} ;
 	} ;
 
-	static MailboxStyle mailboxStyle( const std::string & mailbox ) ;
+	static MailboxStyle mailboxStyle( std::string_view mailbox ) ;
 		///< Classifies the given mailbox name.
 		///< See also RFC-5198.
 
-	static AddressCommand parseMailFrom( std::string_view ) ;
-		///< Parses a MAIL-FROM command.
+	static AddressCommand parseMailFrom( std::string_view ,
+		bool allow_spaces , bool allow_nobrackets ) ;
+			///< Parses a MAIL-FROM command.
 
-	static AddressCommand parseRcptTo( std::string_view ) ;
-		///< Parses a RCPT-TO command.
+	static AddressCommand parseRcptTo( std::string_view ,
+		bool allow_spaces , bool allow_nobrackets ) ;
+			///< Parses a RCPT-TO command.
 
 	static std::pair<std::size_t,bool> parseBdatSize( std::string_view ) ;
 		///< Parses a BDAT command.
@@ -89,7 +93,7 @@ private:
 		ValidXtext ,
 		Upper
 	} ;
-	static AddressCommand parseAddressPart( std::string_view ) ;
+	static AddressCommand parseAddressPart( std::string_view , bool , bool ) ;
 	static std::size_t parseMailNumericValue( std::string_view , std::string_view , AddressCommand & ) ;
 	static std::string parseMailStringValue( std::string_view , std::string_view , AddressCommand & , Conversion = Conversion::None ) ;
 	static bool parseMailBoolean( std::string_view , std::string_view , AddressCommand & ) ;

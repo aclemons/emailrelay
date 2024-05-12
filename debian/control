@@ -1,7 +1,7 @@
 Source: emailrelay
 Section: mail
 Priority: optional
-Maintainer: Graeme Walker, https://sourceforge.net/projects/emailrelay
+Maintainer: Graeme Walker <graeme_walker@users.sourceforge.net>
 Build-Depends: debhelper-compat (= 13), autotools-dev, libssl-dev, libpam0g-dev
 Standards-Version: 3.9.8
 Homepage: http://emailrelay.sourceforge.net

@@ -39,19 +39,19 @@
 G::MapFile::MapFile()
 = default;
 
-G::MapFile::MapFile( const Path & path , std::string_view kind , MapFile::Encoding encoding ) :
+G::MapFile::MapFile( const Path & path , std::string_view kind ) :
 	m_kind(sv_to_string(kind))
 {
 	if( !path.empty() )
 	{
 		m_path = path ;
-		readFrom( path , kind , encoding ) ;
+		readFrom( path , kind ) ;
 	}
 }
 
 G::MapFile::MapFile( std::istream & stream )
 {
-	readFrom( stream , Encoding::Utf8 ) ;
+	readFrom( stream ) ;
 }
 
 G::MapFile::MapFile( const StringMap & map ) :
@@ -77,19 +77,19 @@ G::MapFile::MapFile( const OptionMap & map , std::string_view yes )
 	}
 }
 
-void G::MapFile::readFrom( const Path & path , std::string_view kind , Encoding encoding )
+void G::MapFile::readFrom( const Path & path , std::string_view kind )
 {
 	std::ifstream stream ;
 	File::open( stream , path , File::Text() ) ;
 	if( !stream.good() )
 		throw readError( path , sv_to_string(kind) ) ;
 	G_LOG( "MapFile::read: reading [" << path.str() << "]" ) ;
-	readFrom( stream , encoding ) ;
+	readFrom( stream ) ;
 	if( stream.bad() ) // eg. EISDIR
 		throw readError( path , sv_to_string(kind) ) ;
 }
 
-void G::MapFile::readFrom( std::istream & stream , Encoding encoding )
+void G::MapFile::readFrom( std::istream & stream )
 {
 	std::string line ;
 	while( stream.good() )
@@ -100,8 +100,6 @@ void G::MapFile::readFrom( std::istream & stream , Encoding encoding )
 			continue ;
 		if( !stream )
 			break ;
-		if( encoding == Encoding::Ansi )
-			line = G::CodePage::fromCodePageAnsi( line ) ;
 		if( ignore(line) )
 			continue ;
 
@@ -139,7 +137,7 @@ bool G::MapFile::ignore( const std::string & line ) const
 void G::MapFile::check( const Path & path , std::string_view kind )
 {
 	MapFile tmp ;
-	tmp.readFrom( path , kind , Encoding::Utf8 ) ;
+	tmp.readFrom( path , kind ) ;
 }
 
 void G::MapFile::log( const std::string & prefix_in ) const

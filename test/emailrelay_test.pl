@@ -2032,7 +2032,6 @@ sub testRoutingWithClientAccountSelection
 	$test_server_2->cleanup() ;
 }
 
-
 sub testRoutingWithSplitAndMxFilters
 {
 	# setup
@@ -2052,7 +2051,7 @@ sub testRoutingWithSplitAndMxFilters
 	requireAdmin() ;
 	my $server = new Server() ;
 	my $client = new Server() ;
-	my $dnsserver = new DnsServer( System::nextPort() , "127.0.@.0" ) ; # should fail to connect
+	my $dnsserver = new DnsServer( System::nextPort() , "127.0.@.0" ) ; # should fail to connect (test server has --loopback)
 	my $test_server = new TestServer( System::nextPort() ) ;
 	my $admin_client = new AdminClient( $server->adminPort() ) ;
 	$server->set_filter( "split:".$test_server->port() ) ;

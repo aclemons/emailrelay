@@ -21,7 +21,6 @@
 #include "gdef.h"
 #include "garg.h"
 #include "gprocess.h"
-#include "gconvert.h"
 #include "gscope.h"
 #include "gpath.h"
 #include "gstr.h"

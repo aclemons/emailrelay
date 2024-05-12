@@ -150,7 +150,7 @@ const char * GNet::Address4::setPort( sockaddr_type & inet , unsigned int port )
 	return nullptr ;
 }
 
-bool GNet::Address4::setZone( const std::string & /*ipv6_zone_name_or_scope_id*/ )
+bool GNet::Address4::setZone( std::string_view /*ipv6_zone_name_or_scope_id*/ )
 {
 	return true ;
 }

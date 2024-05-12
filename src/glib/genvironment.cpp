@@ -22,6 +22,7 @@
 #include "genvironment.h"
 #include "gstr.h"
 #include <algorithm>
+#include <numeric>
 #include <stdexcept>
 
 G::Environment::Environment()
@@ -46,8 +47,7 @@ G::Environment::Environment( const Environment & other ) :
 G::Environment::Environment( Environment && other ) noexcept :
 	m_map(std::move(other.m_map)) ,
 	m_list(std::move(other.m_list)) ,
-	m_pointers(std::move(other.m_pointers)) ,
-	m_block(std::move(other.m_block))
+	m_pointers(std::move(other.m_pointers))
 {
 }
 
@@ -56,7 +56,6 @@ void G::Environment::swap( Environment & other ) noexcept
 	m_map.swap( other.m_map ) ;
 	m_list.swap( other.m_list ) ;
 	m_pointers.swap( other.m_pointers ) ;
-	std::swap( m_block , other.m_block ) ;
 }
 
 #ifndef G_LIB_SMALL
@@ -87,7 +86,6 @@ void G::Environment::setup()
 {
 	setList() ;
 	setPointers() ;
-	setBlock() ;
 }
 
 void G::Environment::setList()
@@ -111,20 +109,6 @@ void G::Environment::setPointers()
 	m_pointers.push_back( nullptr ) ;
 }
 
-void G::Environment::setBlock()
-{
-	std::size_t n = 0U ;
-	for( auto & s : m_list )
-		n += (s.size()+1U) ;
-	m_block.reserve( n + 1U ) ;
-	for( auto & s : m_list )
-	{
-		m_block.append( s ) ;
-		m_block.append( 1U , '\0' ) ;
-	}
-	m_block.append( 1U , '\0' ) ;
-}
-
 void G::Environment::add( const std::string & name , const std::string & value )
 {
 	if( name.find('=') != std::string::npos )
@@ -146,13 +130,6 @@ char ** G::Environment::v() const noexcept
 	return const_cast<char**>( m_pointers.data() ) ;
 }
 
-#ifndef G_LIB_SMALL
-const char * G::Environment::ptr() const noexcept
-{
-	return m_block.data() ;
-}
-#endif
-
 bool G::Environment::contains( const std::string & name ) const
 {
 	return m_map.find(name) != m_map.end() ;
@@ -162,6 +139,34 @@ bool G::Environment::contains( const std::string & name ) const
 std::string G::Environment::value( const std::string & name , const std::string & default_ ) const
 {
 	return contains(name) ? (*m_map.find(name)).second : default_ ;
+}
+#endif
+
+#ifndef G_LIB_SMALL
+std::string G::Environment::block() const
+{
+	std::size_t n = std::accumulate( m_list.begin() , m_list.end() , std::size_t(0U) ,
+		[](std::size_t n_,const std::string &s_){return n_+s_.size()+1U;} ) ;
+	std::string result ;
+	result.reserve( n+1U ) ;
+	for( const auto & s : m_list )
+		result.append(s).append(1U,'\0') ;
+	result.append( 1U , '\0' ) ;
+	return result ;
+}
+#endif
+
+#ifndef G_LIB_SMALL
+std::wstring G::Environment::block( std::wstring (*fn)(std::string_view) ) const
+{
+	std::size_t n = std::accumulate( m_list.begin() , m_list.end() , std::size_t(0U) ,
+		[](std::size_t n_,const std::string &s_){return n_+s_.size()+1U;} ) ;
+	std::wstring result ;
+	result.reserve( n+1U ) ;
+	for( const auto & s : m_list )
+		result.append(fn(s)).append(1U,L'\0') ;
+	result.append( 1U , L'\0' ) ;
+	return result ;
 }
 #endif
 

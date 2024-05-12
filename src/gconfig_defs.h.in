@@ -12,9 +12,6 @@
 /* Define true if arpa/inet.h is available */
 #undef GCONFIG_HAVE_ARPA_INET_H
 
-/* Define true if c++20 char8_t type is defined */
-#undef GCONFIG_HAVE_CHAR8_T
-
 /* Define true if compiler has std::align() */
 #undef GCONFIG_HAVE_CXX_ALIGNMENT
 

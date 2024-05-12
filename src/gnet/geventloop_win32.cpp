@@ -40,7 +40,6 @@
 namespace GNet
 {
 	class EventLoopImp ;
-	class EventLoopHandles ;
 }
 
 class GNet::EventLoopImp : public EventLoop
@@ -180,7 +179,10 @@ bool GNet::EventLoopImp::running() const
 std::string GNet::EventLoopImp::run()
 {
 	collectGarbage() ; // in case re-run() after an exception
-	m_handles->init( m_list ) ;
+
+	std::size_t i = 0U ;
+	List * list_p = &m_list ;
+	m_handles->update( m_list.size() , [list_p,&i](){return (*list_p)[i++].m_handle;} ) ;
 
 	G::ScopeExitSetFalse running( m_running = true ) ;
 	m_dirty = false ;
@@ -203,23 +205,20 @@ void GNet::EventLoopImp::runOnce()
 
 	EventLoopHandles & handles = *m_handles ;
 
-	if( handles.overflow( m_list.size() ) )
-		throw Overflow( handles.help(m_list,false) ) ;
-
 	auto rc = handles.wait( ms() ) ;
-
-	if( rc == RcType::timeout )
+	if( rc == RcType::overflow )
+	{
+		throw Overflow( handles.help(false) ) ;
+	}
+	else if( rc == RcType::timeout )
 	{
 		TimerList::instance().doTimeouts() ;
 	}
 	else if( rc == RcType::event )
 	{
-		// let the handles object shuffle our list
-		std::size_t list_index = handles.shuffle( m_list , rc ) ;
-
-		ListItem & list_item = m_list[list_index] ;
+		ListItem & list_item = m_list[rc.index()] ;
 		if( list_item.m_type == ListItemType::socket )
-			handleSocketEvent( list_index ) ;
+			handleSocketEvent( rc.index() ) ;
 		else
 			handleSimpleEvent( list_item ) ;
 	}
@@ -235,9 +234,7 @@ void GNet::EventLoopImp::runOnce()
 	}
 	else if( rc == RcType::failed )
 	{
-		DWORD e = GetLastError() ;
-		throw Error( "wait-for-multiple-objects failed" ,
-			G::Str::fromUInt(static_cast<unsigned int>(e)) ) ;
+		throw Error( "wait failed (" + std::to_string(rc.m_error) + ")" ) ;
 	}
 	else // rc == RcType::other
 	{
@@ -248,7 +245,9 @@ void GNet::EventLoopImp::runOnce()
 	bool was_dirty = collectGarbage() ;
 
 	// let the handles object see the new, garbage-collected list
-	handles.update( m_list , was_dirty , rc ) ;
+	std::size_t i = 0U ;
+	List * list_p = &m_list ;
+	handles.update( m_list.size() , [list_p,&i](){return (*list_p)[i++].m_handle;} , was_dirty ) ;
 }
 
 bool GNet::EventLoopImp::collectGarbage()
@@ -370,7 +369,11 @@ void GNet::EventLoopImp::dropRead( Descriptor fdd ) noexcept
 	{
 		item->m_events &= ~READ_EVENTS ;
 		fdupdate( fdd , item->m_events , std::nothrow ) ;
-		m_dirty |= ( item->m_events == 0L ) ; // dirty if Item now logically deleted
+		if( item->m_events == 0L ) // logically deleted
+		{
+			m_dirty = true ;
+			m_handles->onClose( fdd.h() ) ;
+		}
 	}
 }
 
@@ -381,7 +384,11 @@ void GNet::EventLoopImp::dropWrite( Descriptor fdd ) noexcept
 	{
 		item->m_events &= ~WRITE_EVENTS ;
 		fdupdate( fdd , item->m_events , std::nothrow ) ;
-		m_dirty |= ( item->m_events == 0L ) ;
+		if( item->m_events == 0L )
+		{
+			m_dirty = true ;
+			m_handles->onClose( fdd.h() ) ;
+		}
 	}
 }
 
@@ -392,7 +399,11 @@ void GNet::EventLoopImp::dropOther( Descriptor fdd ) noexcept
 	{
 		item->m_events &= ~EXCEPTION_EVENTS ;
 		fdupdate( fdd , item->m_events , std::nothrow ) ;
-		m_dirty |= ( item->m_events == 0L ) ;
+		if( item->m_events == 0L )
+		{
+			m_dirty = true ;
+			m_handles->onClose( fdd.h() ) ;
+		}
 	}
 }
 
@@ -405,6 +416,7 @@ void GNet::EventLoopImp::drop( Descriptor fdd ) noexcept
 		fdupdate( fdd , item->m_events , std::nothrow ) ;
 		item->m_handler = nullptr ;
 		m_dirty = true ;
+		m_handles->onClose( fdd.h() ) ;
 	}
 }
 
@@ -438,7 +450,6 @@ void GNet::EventLoopImp::handleSocketEvent( std::size_t index )
 		throw Error( "enum-network-events failed" ) ;
 	if( e_not_sock )
 		throw Error( "enum-network-events failed: not a socket" ) ;
-
 
 	// we might do more than one raiseEvent() here and m_list can change
 	// between each call, potentially invalidating our ListItem pointer --
@@ -490,10 +501,22 @@ void GNet::EventLoopImp::checkForOverflow( const ListItem & item )
 {
 	G_ASSERT( m_handles != nullptr ) ;
 	const bool is_new = item.m_events == 0L ;
-	if( is_new && m_handles->overflow( m_list , &EventLoopImp::isValid ) )
+
+	List * list_p = &m_list ;
+	std::function<std::size_t()> count_valid_fn = [list_p](){
+		std::size_t n = 0 ;
+		for( auto p = list_p->cbegin() ; p != list_p->cend() ; ++p )
+		{
+			if( std::next(p) == list_p->cend() || isValid(*p) ) // always count the one we've just added
+				n++ ;
+		}
+		return n ;
+	} ;
+
+	if( is_new && m_handles->overflow( m_list.size() , count_valid_fn ) )
 	{
 		m_list.pop_back() ;
-		throw Overflow( m_handles->help(m_list,true) ) ;
+		throw Overflow( m_handles->help(true) ) ;
 	}
 }
 

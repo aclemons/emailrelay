@@ -71,6 +71,10 @@ void G::Process::closeOtherFiles( int )
 {
 }
 
+void G::Process::inheritStandardFiles()
+{
+}
+
 void G::Process::closeStderr()
 {
 }

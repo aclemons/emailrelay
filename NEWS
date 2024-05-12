@@ -15,9 +15,13 @@ On Windows all internal character encoding now standardises on UTF-8,
 independent of locale or code page. For more information refer to the developer
 document.
 
-Other low-level code improvements include:
-* use of std::string_view and std::optional if c++17
-* G::Cleanup handlers are now 'noexcept' if c++17
-* rework of GNet event loops
-* decoupling of GNet::ExceptionSource from event logging
+The SMTP server protocol can now optionally accept invalid SEND-FROM and RCPT-TO
+commands that do not have angle brackets. This behaviour is enabled by using
+"--server-smtp-config=nostrictparsing". Future releases might also require this
+option in order to accept SEND-FROM and RCPT-TO lines with a space after the
+colon.
+
+The Windows event-loop will now flip to a multi-threaded implementation if the
+number of handles goes above 64, allowing for more than 1000 simultaneous
+connections.
 

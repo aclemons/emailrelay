@@ -93,14 +93,17 @@ public:
 		NewProcess::Fd stdin {Fd::devnull()} ;
 		NewProcess::Fd stdout {Fd::pipe()} ;
 		NewProcess::Fd stderr {Fd::devnull()} ;
-		Path cd ; // cd in child process before exec
+		Path cd ; // change directory in child process before exec
 		bool strict_exe {true} ; // require 'exe' is absolute
 		std::string exec_search_path ; // PATH in child process before execvpe() -- not windows
 		Identity run_as {Identity::invalid()} ; // see Process::beOrdinaryForExec() -- not windows
 		bool strict_id {true} ; // dont allow run_as root -- not windows
+		bool close_other_fds {true} ; // close non-standard file descriptors -- not windows
 		int exec_error_exit {127} ; // exec failure error code -- not windows
 		std::string exec_error_format ; // exec failure error message with substitution of strerror and errno
 		FormatFn exec_error_format_fn {nullptr} ; // exec failure error message function passed exec_error_format and errno
+		HANDLE keep_handle_1 {HNULL} ; // extra handle to keep -- windows only
+		HANDLE keep_handle_2 {HNULL} ; // extra handle to keep -- windows only
 
 		Config & set_env( const Environment & ) ;
 		Config & set_stdin( Fd ) ;
@@ -111,6 +114,7 @@ public:
 		Config & set_exec_search_path( const std::string & ) ;
 		Config & set_run_as( Identity ) ;
 		Config & set_strict_id( bool = true ) ;
+		Config & set_close_other_fds( bool = true ) ;
 		Config & set_exec_error_exit( int ) ;
 		Config & set_exec_error_format( const std::string & ) ;
 		Config & set_exec_error_format_fn( FormatFn ) ;
@@ -281,6 +285,7 @@ inline G::NewProcess::Config & G::NewProcess::Config::set_strict_exe( bool b ) {
 inline G::NewProcess::Config & G::NewProcess::Config::set_exec_search_path( const std::string & s ) { exec_search_path = s ; return *this ; }
 inline G::NewProcess::Config & G::NewProcess::Config::set_run_as( Identity i ) { run_as = i ; return *this ; }
 inline G::NewProcess::Config & G::NewProcess::Config::set_strict_id( bool b ) { strict_id = b ; return *this ; }
+inline G::NewProcess::Config & G::NewProcess::Config::set_close_other_fds( bool b ) { close_other_fds = b ; return *this ; }
 inline G::NewProcess::Config & G::NewProcess::Config::set_exec_error_exit( int n ) { exec_error_exit = n ; return *this ; }
 inline G::NewProcess::Config & G::NewProcess::Config::set_exec_error_format( const std::string & s ) { exec_error_format = s ; return *this ; }
 inline G::NewProcess::Config & G::NewProcess::Config::set_exec_error_format_fn( FormatFn f ) { exec_error_format_fn = f ; return *this ; }

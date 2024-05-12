@@ -213,7 +213,7 @@ my $cmake_args = {
 	} ;
 
 # project version
-chomp( my $version = eval { FileHandle->new("VERSION")->gets() } || "2.5.3dev2" ) ;
+chomp( my $version = eval { FileHandle->new("VERSION")->gets() } || "2.5.3dev3" ) ;
 my $project = "emailrelay" ;
 my $install_x64 = "$project-$version-w64" ;
 my $install_x86 = "$project-$version-w32" ;

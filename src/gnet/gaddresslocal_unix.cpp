@@ -47,7 +47,7 @@ namespace GNet
 			GDEF_IGNORE_PARAM( a ) ;
 			#endif
 		}
-		constexpr std::size_t psize()
+		constexpr std::size_t psize() noexcept
 		{
 			return sizeof( sockaddr_un::sun_path ) ;
 		}

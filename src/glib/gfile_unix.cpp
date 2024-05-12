@@ -206,11 +206,11 @@ int G::File::mkdirImp( const Path & dir ) noexcept
 	}
 }
 
-G::File::Stat G::File::statImp( const char * path , bool read_symlink ) noexcept
+G::File::Stat G::File::statImp( const char * path , bool symlink_nofollow ) noexcept
 {
 	Stat s ;
 	struct stat statbuf {} ;
-	if( 0 == ( read_symlink ? (::lstat(path,&statbuf)) : (::stat(path,&statbuf)) ) )
+	if( 0 == ( symlink_nofollow ? (::lstat(path,&statbuf)) : (::stat(path,&statbuf)) ) )
 	{
 		s.error = 0 ;
 		s.enoent = false ;

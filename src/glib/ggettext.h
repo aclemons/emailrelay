@@ -51,7 +51,7 @@ namespace G
 		///< eg. ISO-8859-1 or UTF-8, transcoding from the catalogue as
 		///< necessary.
 
-	constexpr const char * gettext_noop( const char * p ) ;
+	constexpr const char * gettext_noop( const char * p ) noexcept ;
 		///< Returns the parameter. Used to mark a string-literal for
 		///< translation, with the conversion at run-time done with
 		///< a call to gettext() elsewhere in the code.
@@ -61,32 +61,32 @@ namespace G
 		///< std::cout << call_gettext( gettext_noop("hello, world") ) ;
 		///< \endcode
 
-	const char * txt( const char * p ) ;
+	const char * txt( const char * p ) noexcept ;
 		///< A briefer alternative to G::gettext().
 
-	constexpr const char * tx( const char * p ) ;
+	constexpr const char * tx( const char * p ) noexcept ;
 		///< A briefer alternative to G::gettext_noop().
 
-	constexpr std::string_view tx( std::string_view sv ) ;
+	constexpr std::string_view tx( std::string_view sv ) noexcept ;
 		///< String view overload.
 }
 
-inline const char * G::txt( const char * p )
+inline const char * G::txt( const char * p ) noexcept
 {
 	return G::gettext( p ) ;
 }
 
-constexpr const char * G::gettext_noop( const char * p )
+constexpr const char * G::gettext_noop( const char * p ) noexcept
 {
 	return p ;
 }
 
-constexpr const char * G::tx( const char * p )
+constexpr const char * G::tx( const char * p ) noexcept
 {
 	return p ;
 }
 
-constexpr std::string_view G::tx( std::string_view sv )
+constexpr std::string_view G::tx( std::string_view sv ) noexcept
 {
 	return sv ;
 }

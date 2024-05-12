@@ -60,23 +60,20 @@ namespace G
 			{
 				G_EXCEPTION( Error , tx("AttributeList error") ) ;
 				using pointer_type = LPPROC_THREAD_ATTRIBUTE_LIST ;
-				explicit AttributeList( HANDLE ) ;
+				explicit AttributeList( HANDLE , HANDLE = 0 , HANDLE = 0 ) ;
 				~AttributeList() ;
 				pointer_type ptr() ;
 				private:
-				void resize() ;
-				void init( DWORD ) ;
-				void add( HANDLE ) ;
 				void cleanup() noexcept ;
 				G::Buffer<char> m_buffer ;
-				HANDLE m_handle {NULL} ;
+				std::vector<HANDLE> m_handles ;
 				pointer_type m_ptr {NULL} ;
 			} ;
 		#else
 			struct AttributeList
 			{
 				using pointer_type = void* ;
-				explicit AttributeList( HANDLE ) {}
+				explicit AttributeList( HANDLE , HANDLE = 0 , HANDLE = 0 ) {}
 				pointer_type ptr() { return nullptr ; }
 			} ;
 		#endif
@@ -90,25 +87,25 @@ namespace G
 				#if GCONFIG_HAVE_WINDOWS_STARTUP_INFO_EX
 					nowide::STARTUPINFO_REAL_type zero {} ;
 					m_startup_info = zero ;
-					m_startup_info.StartupInfo.cb = sizeof( STARTUPINFOEXA ) ;
+					m_startup_info.StartupInfo.cb = sizeof(m_startup_info) ;
 					m_startup_info.StartupInfo.dwFlags = STARTF_USESTDHANDLES ;
 					m_startup_info.StartupInfo.hStdInput = INVALID_HANDLE_VALUE ;
 					m_startup_info.StartupInfo.hStdOutput = hstdout ;
 					m_startup_info.StartupInfo.hStdError = hstderr ;
 					m_startup_info.lpAttributeList = attribute_list.ptr() ;
 					m_ptr = reinterpret_cast<nowide::STARTUPINFO_BASE_type*>(&m_startup_info) ;
-					m_flags = CREATE_NO_WINDOW | EXTENDED_STARTUPINFO_PRESENT ;
+					m_flags = CREATE_NO_WINDOW | nowide::STARTUPINFO_flags ;
 				#else
 					GDEF_IGNORE_PARAMS( attribute_list ) ;
 					nowide::STARTUPINFO_BASE_type zero {} ;
 					m_startup_info = zero ;
-					m_startup_info.cb = sizeof( STARTUPINFOA ) ;
+					m_startup_info.cb = sizeof(m_startup_info) ;
 					m_startup_info.dwFlags = STARTF_USESTDHANDLES ;
 					m_startup_info.hStdInput = INVALID_HANDLE_VALUE ;
 					m_startup_info.hStdOutput = hstdout ;
 					m_startup_info.hStdError = hstderr ;
 					m_ptr = &m_startup_info ;
-					m_flags = CREATE_NO_WINDOW ;
+					m_flags = CREATE_NO_WINDOW | nowide::STARTUPINFO_flags ;
 				#endif
 			}
 		} ;
@@ -150,8 +147,10 @@ public:
 
 private:
 	static std::pair<std::string,std::string> commandLine( std::string exe , StringArray args ) ;
-	static std::pair<HANDLE,DWORD> createProcess( const std::string & exe , const std::string & command_line ,
-		const Environment & , HANDLE hpipe , Fd fd_stdout , Fd fd_stderr , bool , const Path & cd ) ;
+	static std::pair<HANDLE,DWORD> createProcessImp( const std::string & exe ,
+		const std::string & command_line , const Environment & ,
+		HANDLE hpipe , HANDLE keep_handle_1 , HANDLE keep_handle_2 ,
+		Fd fd_stdout , Fd fd_stderr , bool with_cd , const Path & cd ) ;
 	static void dequote( std::string & ) ;
 	static std::string withQuotes( const std::string & ) ;
 	static bool isSpaced( const std::string & ) ;
@@ -224,9 +223,9 @@ G::NewProcessImp::NewProcessImp( const Path & exe , const StringArray & args , c
 
 	auto command_line_pair = commandLine( exe.str() , args ) ;
 
-	std::pair<HANDLE,DWORD> pair = createProcess( command_line_pair.first , command_line_pair.second ,
-		config.env , m_pipe.hwrite() , config.stdout , config.stderr ,
-		!config.cd.empty() , config.cd ) ;
+	std::pair<HANDLE,DWORD> pair = createProcessImp( command_line_pair.first , command_line_pair.second ,
+		config.env , m_pipe.hwrite() , config.keep_handle_1 , config.keep_handle_2 ,
+		config.stdout , config.stderr , !config.cd.empty() , config.cd ) ;
 
 	if( !valid(pair.first) )
 	{
@@ -279,23 +278,29 @@ int G::NewProcessImp::id() const noexcept
 	return static_cast<int>(m_pid) ;
 }
 
-std::pair<HANDLE,DWORD> G::NewProcessImp::createProcess( const std::string & exe , const std::string & command_line ,
-	const Environment & env , HANDLE hpipe , Fd fd_stdout , Fd fd_stderr , bool with_cd , const Path & cd_path )
+std::pair<HANDLE,DWORD> G::NewProcessImp::createProcessImp( const std::string & exe ,
+	const std::string & command_line , const Environment & env ,
+	HANDLE hpipe , HANDLE keep_handle_1 , HANDLE keep_handle_2 ,
+	Fd fd_stdout , Fd fd_stderr , bool with_cd , const Path & cd_path )
 {
 	namespace imp = NewProcessWindowsImp ;
-	G_DEBUG( "G::NewProcessImp::createProcess: exe=[" << exe << "] command-line=[" << command_line << "]" ) ;
+	G_DEBUG( "G::NewProcessImp::createProcessImp: exe=[" << exe << "] command-line=[" << command_line << "]" ) ;
 
 	// redirect stdout or stderr onto the read end of our pipe
-	imp::AttributeList attribute_list( hpipe ) ;
+	imp::AttributeList attribute_list( hpipe , keep_handle_1 , keep_handle_2 ) ;
 	imp::StartupInfo startup_info( attribute_list ,
 		fd_stdout == Fd::pipe() ? hpipe : INVALID_HANDLE_VALUE ,
 		fd_stderr == Fd::pipe() ? hpipe : INVALID_HANDLE_VALUE ) ;
+
+	std::string env_char_block = env.block() ;
+	std::wstring env_wchar_block = env.block( &G::Convert::widen ) ;
 
 	PROCESS_INFORMATION info {} ;
 	DWORD e = 0 ;
 
 	BOOL rc = nowide::createProcess( exe , command_line ,
-		env.empty() ? nullptr : env.ptr() ,
+		env.empty() ? nullptr : env_char_block.data() ,
+		env.empty() ? nullptr : env_wchar_block.data() ,
 		with_cd ? &cd_path : nullptr ,
 		startup_info.m_flags , startup_info.m_ptr ,
 		&info ) ;
@@ -303,15 +308,15 @@ std::pair<HANDLE,DWORD> G::NewProcessImp::createProcess( const std::string & exe
 	if( rc == 0 || !valid(info.hProcess) )
 	{
 		e = GetLastError() ;
-		G_DEBUG( "G::NewProcessImp::createProcess: error=" << e ) ;
+		G_DEBUG( "G::NewProcessImp::createProcessImp: error=" << e ) ;
 		CloseHandle( info.hThread ) ;
 		return { info.hProcess , e } ;
 	}
 	else
 	{
 		CloseHandle( info.hThread ) ;
-		G_DEBUG( "G::NewProcessImp::createProcess: process-id=" << info.dwProcessId ) ;
-		G_DEBUG( "G::NewProcessImp::createProcess: thread-id=" << info.dwThreadId ) ;
+		G_DEBUG( "G::NewProcessImp::createProcessImp: process-id=" << info.dwProcessId ) ;
+		G_DEBUG( "G::NewProcessImp::createProcessImp: thread-id=" << info.dwThreadId ) ;
 		return { info.hProcess , info.dwProcessId } ;
 	}
 }
@@ -427,51 +432,40 @@ std::string G::NewProcessImp::powershell()
 // ==
 
 #if GCONFIG_HAVE_WINDOWS_STARTUP_INFO_EX
-G::NewProcessWindowsImp::AttributeList::AttributeList( HANDLE h )
+G::NewProcessWindowsImp::AttributeList::AttributeList( HANDLE h1 , HANDLE h2 , HANDLE h3 )
 {
-	resize() ;
-	init( h ? 1 : 0 ) ;
-	add( h ) ;
-}
+	m_handles.reserve( 3U ) ;
+	if( h1 ) m_handles.push_back( h1 ) ;
+	if( h2 ) m_handles.push_back( h2 ) ;
+	if( h3 ) m_handles.push_back( h3 ) ;
 
-G::NewProcessWindowsImp::AttributeList::~AttributeList()
-{
-	cleanup() ;
-}
-
-void G::NewProcessWindowsImp::AttributeList::resize()
-{
-	SIZE_T buffer_size = 0 ;
-	InitializeProcThreadAttributeList( NULL , 1 , 0 , &buffer_size ) ;
-	if( buffer_size == 0 || buffer_size > 100000 )
-		throw Error() ;
-	m_buffer.resize( buffer_size ) ;
-}
-
-void G::NewProcessWindowsImp::AttributeList::init( DWORD attribute_count )
-{
-	SIZE_T buffer_size = m_buffer.size() ;
-	auto ptr = reinterpret_cast<LPPROC_THREAD_ATTRIBUTE_LIST>(m_buffer.data()) ;
-	BOOL ok = InitializeProcThreadAttributeList( ptr , attribute_count , 0 , &buffer_size ) ;
-	if( !ok )
-		throw Error() ;
-	m_ptr = ptr ;
-	G_ASSERT( m_buffer.size() >= buffer_size ) ;
-}
-
-void G::NewProcessWindowsImp::AttributeList::add( HANDLE h )
-{
-	if( h )
+	if( !m_handles.empty() )
 	{
-		m_handle = h ;
-		BOOL ok = UpdateProcThreadAttribute( m_ptr , 0 ,
-			PROC_THREAD_ATTRIBUTE_HANDLE_LIST , &m_handle , sizeof(m_handle) , NULL , NULL ) ;
+		SIZE_T buffer_size = 0 ;
+		InitializeProcThreadAttributeList( NULL , 1 , 0 , &buffer_size ) ;
+		if( buffer_size == 0 || buffer_size > 100000 )
+			throw Error() ;
+		m_buffer.resize( buffer_size ) ;
+
+		auto ptr = reinterpret_cast<LPPROC_THREAD_ATTRIBUTE_LIST>(m_buffer.data()) ;
+		BOOL ok = InitializeProcThreadAttributeList( ptr , 1 , 0 , &buffer_size ) ;
+		if( !ok || buffer_size != m_buffer.size() )
+			throw Error() ;
+
+		ok = UpdateProcThreadAttribute( ptr , 0 , PROC_THREAD_ATTRIBUTE_HANDLE_LIST ,
+			m_handles.data() , m_handles.size() * sizeof(HANDLE) , NULL , NULL ) ;
 		if( !ok )
 		{
 			cleanup() ;
 			throw Error() ;
 		}
+		m_ptr = ptr ;
 	}
+}
+
+G::NewProcessWindowsImp::AttributeList::~AttributeList()
+{
+	cleanup() ;
 }
 
 void G::NewProcessWindowsImp::AttributeList::cleanup() noexcept
@@ -618,9 +612,9 @@ G::NewProcessWaitable & G::NewProcessWaitable::wait()
 	m_data_size = 0U ;
 	m_error = 0 ;
 	std::array<char,64U> discard_buffer {} ;
-	char * discard = &discard_buffer[0] ;
+	char * discard = discard_buffer.data() ;
 	std::size_t discard_size = discard_buffer.size() ;
-	char * read_p = &m_buffer[0] ;
+	char * read_p = m_buffer.data() ;
 	std::size_t space = m_buffer.size() ;
 	for(;;)
 	{
@@ -681,6 +675,6 @@ int G::NewProcessWaitable::get( std::nothrow_t , int ec ) const noexcept
 
 std::string G::NewProcessWaitable::output() const
 {
-	return m_buffer.size() ? std::string(&m_buffer[0],m_data_size) : std::string() ;
+	return m_buffer.empty() ? std::string() : std::string(m_buffer.data(),m_data_size) ;
 }
 

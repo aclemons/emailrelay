@@ -22,9 +22,11 @@
 #define G_ARG_H
 
 #include "gdef.h"
-#include "gnowide.h"
 #include "gstringarray.h"
 #include "gpath.h"
+#ifdef G_WINDOWS
+#include "gnowide.h"
+#endif
 #include <vector>
 #include <string>
 #include <new>

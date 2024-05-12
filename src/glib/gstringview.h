@@ -85,7 +85,7 @@ public:
 	constexpr const char * data() const noexcept { return m_p ; }
 	constexpr bool empty() const noexcept { return m_n == 0U ; }
 	void swap( string_view & other ) noexcept { std::swap(m_p,other.m_p) ; std::swap(m_n,other.m_n) ; }
-	constexpr const char & operator[]( std::size_t i ) const { return m_p[i] ; }
+	constexpr const char & operator[]( std::size_t i ) const noexcept { return m_p[i] ; }
 	const char & at( std::size_t i ) const { if( i >= m_n ) throw std::out_of_range("string_view::at") ; return m_p[i] ; }
 	const char * begin() const noexcept { return empty() ? nullptr : m_p ; }
 	const char * cbegin() const noexcept { return empty() ? nullptr : m_p ; }

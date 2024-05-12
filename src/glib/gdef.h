@@ -50,6 +50,9 @@
 	#if defined(G_WINDOWS) && defined(G_UNIX)
 		#error invalid compilation switches - define G_WINDOWS or G_UNIX but not both
 	#endif
+	#if GCONFIG_WINXP && !defined(G_WINDOWS)
+		#error invalid compilation switches - GCONFIG_WINXP requires G_WINDOWS
+	#endif
 
 	/* Define supplementary o/s switches
 	 */
@@ -189,13 +192,6 @@
 			#define GCONFIG_HAVE_ARPA_INET_H 1
 		#else
 			#define GCONFIG_HAVE_ARPA_INET_H 0
-		#endif
-	#endif
-	#if !defined(GCONFIG_HAVE_CHAR8_T)
-		#if defined(__cpp_lib_char8_t)
-			#define GCONFIG_HAVE_CHAR8_T 1
-		#else
-			#define GCONFIG_HAVE_CHAR8_T 0
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_LONG_LONG)
@@ -1090,11 +1086,6 @@
 				}
 			}
 		#endif
-		#if ! GCONFIG_HAVE_CHAR8_T
-			using char8_t = signed char ;
-			#include <string>
-			namespace std { using u8string = std::basic_string<char8_t> ; } // NOLINT
-		#endif
 
 		/* Threading helper
 	 	*/
@@ -1149,34 +1140,34 @@
 		namespace G
 		{
 			#ifdef G_WINDOWS
-				constexpr bool is_windows() { return true ; }
+				constexpr bool is_windows() noexcept { return true ; }
 			#else
-				constexpr bool is_windows() { return false ; }
+				constexpr bool is_windows() noexcept { return false ; }
 			#endif
 			#ifdef G_MINGW
-				constexpr bool is_wine() { return true ; }
+				constexpr bool is_wine() noexcept { return true ; }
 			#else
-				constexpr bool is_wine() { return false ; }
+				constexpr bool is_wine() noexcept { return false ; }
 			#endif
 			#ifdef G_UNIX_LINUX
-				constexpr bool is_linux() { return true ; }
+				constexpr bool is_linux() noexcept { return true ; }
 			#else
-				constexpr bool is_linux() { return false ; }
+				constexpr bool is_linux() noexcept { return false ; }
 			#endif
 			#ifdef G_UNIX_FREEBSD
-				constexpr bool is_free_bsd() { return true ; }
+				constexpr bool is_free_bsd() noexcept { return true ; }
 			#else
-				constexpr bool is_free_bsd() { return false ; }
+				constexpr bool is_free_bsd() noexcept { return false ; }
 			#endif
 			#ifdef G_UNIX_OPENBSD
-				constexpr bool is_open_bsd() { return true ; }
+				constexpr bool is_open_bsd() noexcept { return true ; }
 			#else
-				constexpr bool is_open_bsd() { return false ; }
+				constexpr bool is_open_bsd() noexcept { return false ; }
 			#endif
 			#ifdef G_UNIX_BSD
-				constexpr bool is_bsd() { return true ; }
+				constexpr bool is_bsd() noexcept { return true ; }
 			#else
-				constexpr bool is_bsd() { return false ; }
+				constexpr bool is_bsd() noexcept { return false ; }
 			#endif
 		}
 

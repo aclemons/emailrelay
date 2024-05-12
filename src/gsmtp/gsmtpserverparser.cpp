@@ -27,7 +27,7 @@
 #include "gassert.h"
 #include <string>
 
-GSmtp::ServerParser::MailboxStyle GSmtp::ServerParser::mailboxStyle( const std::string & mailbox )
+GSmtp::ServerParser::MailboxStyle GSmtp::ServerParser::mailboxStyle( std::string_view mailbox )
 {
 	static constexpr const char * cc =
 		"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F"
@@ -74,13 +74,14 @@ std::pair<bool,bool> GSmtp::ServerParser::parseBdatLast( std::string_view bdat_l
 	return {last,ok} ;
 }
 
-GSmtp::ServerParser::AddressCommand GSmtp::ServerParser::parseMailFrom( std::string_view line )
+GSmtp::ServerParser::AddressCommand GSmtp::ServerParser::parseMailFrom( std::string_view line ,
+	bool allow_spaces , bool allow_nobrackets )
 {
 	G::StringTokenView t( line , " \t"_sv ) ;
 	if( !G::Str::imatch("MAIL"_sv,t()) || G::Str::ifind(t.next()(),"FROM:"_sv) != 0U )
 		return {"invalid mail-from command"} ;
 
-	AddressCommand result = parseAddressPart( line ) ;
+	AddressCommand result = parseAddressPart( line , allow_spaces , allow_nobrackets ) ;
 	if( result.error.empty() )
 	{
 		if( !parseMailStringValue(line,"SMTPUTF8="_sv,result).empty() ) // RFC-6531 3.4 para1, but not clear
@@ -99,16 +100,18 @@ GSmtp::ServerParser::AddressCommand GSmtp::ServerParser::parseMailFrom( std::str
 	return result ;
 }
 
-GSmtp::ServerParser::AddressCommand GSmtp::ServerParser::parseRcptTo( std::string_view line )
+GSmtp::ServerParser::AddressCommand GSmtp::ServerParser::parseRcptTo( std::string_view line ,
+	bool allow_spaces , bool allow_nobrackets )
 {
 	G::StringTokenView t( line , " \t"_sv ) ;
 	if( !G::Str::imatch("RCPT"_sv,t()) || G::Str::ifind(t.next()(),"TO:"_sv) != 0U )
 		return {"invalid rcpt-to command"} ;
 
-	return parseAddressPart( line ) ;
+	return parseAddressPart( line , allow_spaces , allow_nobrackets ) ;
 }
 
-GSmtp::ServerParser::AddressCommand GSmtp::ServerParser::parseAddressPart( std::string_view line )
+GSmtp::ServerParser::AddressCommand GSmtp::ServerParser::parseAddressPart( std::string_view line ,
+	bool allow_spaces , bool allow_nobrackets )
 {
 	// RFC-5321 4.1.2
 	// eg. MAIL FROM:<>
@@ -124,66 +127,83 @@ GSmtp::ServerParser::AddressCommand GSmtp::ServerParser::parseAddressPart( std::
 		return {"invalid character in mailbox name"} ;
 	}
 
-	// find the opening angle bracket
+	// find the colon
 	std::size_t startpos = line.find( ':' ) ;
 	if( startpos == std::string::npos )
 		return {"missing colon"} ;
 	startpos++ ;
-	while( startpos < line.size() && line[startpos] == ' ' )
-		startpos++ ; // (as requested)
-	if( (startpos+2U) > line.size() || line[startpos] != '<' || line.find('>',startpos+1U) == std::string::npos )
+
+	// find the address part
+	AddressCommand result ;
+	std::size_t endpos = 0U ;
+	if( allow_spaces )
+	{
+		result.allowed_spaces = true ;
+		startpos = line.find_first_not_of( " \t" , startpos ) ;
+	}
+	if( allow_nobrackets && startpos < line.size() &&
+		line[startpos] != '<' && line[startpos] != ' ' && line[startpos] != '\t' )
+	{
+		endpos = line.find_first_of( " \t"_sv , startpos ) ;
+		if( endpos == std::string::npos )
+			endpos = line.size() ;
+		result.allowed_nobrackets = true ;
+		G_ASSERT( startpos < line.size() && endpos <= line.size() && endpos > startpos ) ;
+	}
+	else if( (startpos+2U) > line.size() || line[startpos] != '<' || line.find('>',startpos+1U) == std::string::npos )
 	{
 		return {"missing or invalid angle brackets in mailbox name"} ;
 	}
-
-	// step over any source route
-	if( line[startpos+1U] == '@' )
-	{
-		// RFC-6531 complicates the syntax, but we follow RFC-5321 4.1.2 in
-		// assuming there is no colon within the RFC-6531 A-d-l syntax element
-		startpos = line.find( ':' , startpos+1U ) ;
-		if( startpos == std::string::npos || (startpos+2U) >= line.size() )
-			return {"invalid source route in mailbox name"} ;
-	}
-
-	// find the end, allowing for quoted angle brackets and escaped quotes
-	std::size_t endpos = 0U ;
-	if( line.at(startpos+1U) == '"' )
-	{
-		for( std::size_t i = startpos+2U ; endpos == 0U && i < line.size() ; i++ )
-		{
-			if( line[i] == '\\' )
-				i++ ;
-			else if( line[i] == '"' )
-				endpos = line.find( '>' , i ) ;
-		}
-		if( endpos == std::string::npos )
-			return {"invalid quoting"} ;
-	}
 	else
 	{
-		endpos = line.find( '>' , startpos+1U ) ;
-		G_ASSERT( endpos != std::string::npos ) ;
+		// step over any source route so startpos is the colon
+		if( line.at(startpos+1U) == '@' )
+		{
+			// RFC-6531 complicates the syntax, but we follow RFC-5321 4.1.2 in
+			// assuming there is no colon within the RFC-6531 A-d-l syntax element
+			startpos = line.find( ':' , startpos+1U ) ;
+			if( startpos == std::string::npos || (startpos+2U) >= line.size() )
+				return {"invalid source route in mailbox name"} ;
+		}
+
+		// find the endpos allowing for quoted angle brackets and escaped quotes
+		if( line.at(startpos+1U) == '"' )
+		{
+			for( std::size_t i = startpos+2U ; endpos == 0U && i < line.size() ; i++ )
+			{
+				if( line[i] == '\\' )
+					i++ ;
+				else if( line[i] == '"' )
+					endpos = line.find( '>' , i ) ;
+			}
+			if( endpos == std::string::npos )
+				return {"invalid quoting"} ;
+		}
+		else
+		{
+			endpos = line.find( '>' , startpos+1U ) ;
+			G_ASSERT( endpos != std::string::npos ) ;
+		}
+		if( (endpos+1U) < line.size() && line.at(endpos+1U) != ' ' )
+			return {"invalid angle brackets"} ;
+
+		G_ASSERT( startpos < line.size() && endpos < line.size() && endpos > startpos ) ;
+		G_ASSERT( line.at(startpos) == '<' || line.at(startpos) == ':' ) ;
+		G_ASSERT( line.at(endpos) == '>' ) ;
 	}
-	if( (endpos+1U) < line.size() && line.at(endpos+1U) != ' ' )
-		return {"invalid angle brackets"} ;
 
-	G_ASSERT( startpos != std::string::npos && endpos != std::string::npos ) ;
-	G_ASSERT( endpos > startpos ) ;
-	G_ASSERT( endpos < line.size() ) ;
-	G_ASSERT( line.at(startpos) == '<' || line.at(startpos) == ':' ) ;
-	G_ASSERT( line.at(endpos) == '>' ) ;
-
-	std::string address = std::string( line.data()+startpos+1U , endpos-startpos-1U ) ;
+	std::string_view address =
+		result.allowed_nobrackets ?
+			std::string_view( line.data()+startpos , endpos-startpos ) :
+			std::string_view( line.data()+startpos+1U , endpos-startpos-1U ) ;
 
 	auto style = mailboxStyle( address ) ;
 	if( style == MailboxStyle::Invalid )
 		return {"invalid character in mailbox name"} ;
 
-	AddressCommand result ;
-	result.address = std::string( line.data()+startpos+1U , endpos-startpos-1U ) ;
+	result.address = G::sv_to_string( address ) ;
 	result.utf8address = style == MailboxStyle::Utf8 ;
-	result.tailpos = endpos+1U ;
+	result.tailpos = result.allowed_nobrackets ? endpos : (endpos+1U) ;
 	return result ;
 }
 

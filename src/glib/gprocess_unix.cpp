@@ -98,6 +98,7 @@ void G::Process::closeFiles( bool keep_stderr )
 		ProcessImp::reopen( STDERR_FILENO , ProcessImp::Mode::write_only ) ;
 
 	closeOtherFiles() ;
+	inheritStandardFiles() ;
 }
 
 void G::Process::closeOtherFiles( int fd_keep )
@@ -112,6 +113,10 @@ void G::Process::closeOtherFiles( int fd_keep )
 		if( fd != STDIN_FILENO && fd != STDOUT_FILENO && fd != STDERR_FILENO && fd != fd_keep )
 			::close( fd ) ;
 	}
+}
+
+void G::Process::inheritStandardFiles()
+{
 	ProcessImp::noCloseOnExec( STDIN_FILENO ) ;
 	ProcessImp::noCloseOnExec( STDOUT_FILENO ) ;
 	ProcessImp::noCloseOnExec( STDERR_FILENO ) ;
@@ -249,7 +254,7 @@ G::Path G::Process::exe()
 	{
 		std::size_t n = static_cast<std::size_t>(rc) ;
 		if( n > buffer.size() ) n = buffer.size() ;
-		return Path( buffer.data() , n ) ;
+		return Path( std::string_view(buffer.data(),n) ) ;
 	}
 	else
 	{

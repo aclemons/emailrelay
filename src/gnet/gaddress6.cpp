@@ -28,12 +28,10 @@
 #include <utility> // std::swap()
 #include <cstring> // std::memcpy()
 #include <type_traits>
+#include <sstream>
+#include <array>
 #include <climits>
 #include <sys/types.h>
-#include <sstream>
-#include <vector>
-#include <iomanip>
-#include <array>
 
 namespace GNet
 {

@@ -160,15 +160,17 @@ bool G::File::exists( const Path & path , bool error_return_value , bool do_thro
 	return true ;
 }
 
+#ifndef G_LIB_SMALL
 bool G::File::isLink( const Path & path , std::nothrow_t )
 {
-	Stat s = statImp( path.cstr() , true ) ;
+	Stat s = statImp( path.cstr() , /*symlink_nofollow=*/true ) ;
 	return 0 == s.error && s.is_link ;
 }
+#endif
 
-G::File::Stat G::File::stat( const Path & path , bool read_symlink )
+G::File::Stat G::File::stat( const Path & path , bool symlink_nofollow )
 {
-	return statImp( path.cstr() , read_symlink ) ;
+	return statImp( path.cstr() , symlink_nofollow ) ;
 }
 
 bool G::File::isDirectory( const Path & path , std::nothrow_t )

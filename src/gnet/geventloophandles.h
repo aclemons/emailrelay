@@ -23,19 +23,54 @@
 
 #include "gdef.h"
 #include "geventloop.h"
-#include "glog.h"
-#include "gassert.h"
 #include <memory>
 #include <vector>
-#include <array>
-#include <algorithm>
 #include <functional>
-#include <sstream>
 
 namespace GNet
 {
 	class EventLoopHandles ;
-	static constexpr std::size_t LIMIT = (MAXIMUM_WAIT_OBJECTS-1) ; // sic (beware bad documentation)
+	enum class EventLoopHandlesRcType
+	{
+		timeout ,
+		event ,
+		message ,
+		failed ,
+		overflow
+	} ;
+	struct EventLoopHandlesRc
+	{
+		using RcType = EventLoopHandlesRcType ;
+		EventLoopHandlesRc( RcType type , std::size_t index = 0U ) noexcept : m_type(type) , m_index(index) , m_error(0) {}
+		static EventLoopHandlesRc failure( DWORD error ) noexcept { EventLoopHandlesRc rc(RcType::failed) ; rc.m_error = error ; return rc ; }
+		RcType type() const noexcept { return m_type ; }
+		operator RcType () const noexcept { return m_type ; }
+		std::size_t index() const noexcept { return m_index ; }
+		//
+		RcType m_type ;
+		std::size_t m_index ; // ListItem index
+		DWORD m_error ; // if 'failed'
+	} ;
+	struct EventLoopHandlesBase
+	{
+		using RcType = EventLoopHandlesRcType ;
+		using Rc = EventLoopHandlesRc ;
+		virtual ~EventLoopHandlesBase() ;
+		virtual Rc wait( DWORD ms ) = 0 ;
+		virtual void update( std::size_t list_size , std::function<HANDLE()> list_fn , bool full_update ) = 0 ;
+		virtual bool overflow( std::size_t list_size , std::function<std::size_t()> list_size_fn ) const = 0 ;
+		virtual void onClose( HANDLE ) = 0 ;
+		virtual std::string help( bool on_add ) const = 0 ;
+	} ;
+	struct EventLoopConfig
+	{
+		EventLoopConfig() ;
+		bool debug ;
+		bool st_only ;
+		std::size_t st_wait_limit ;
+		std::size_t mt_wait_limit ;
+		std::size_t mt_thread_limit ;
+	} ;
 }
 
 //| \class GNet::EventLoopHandles
@@ -48,53 +83,32 @@ namespace GNet
 /// void run()
 /// {
 ///   Handles handles ;
-///   handles.init( m_list ) ;
+///   handles.update( m_list.size() , [&](){m_list...} ) ;
 ///   for(;;)
 ///   {
-///     if( handles.overflow( m_list.size() ) ) throw ;
 ///     auto rc = handles.wait( timeout() ) ;
 ///     if( rc == RcType::event )
 ///     {
-///       auto i = handles.shuffle( m_list , rc ) ;
-///       handleEvent( m_list[i] ) ;
+///       handleEvent( m_list[rc.index()] ) ;
 ///     }
 ///     if( m_list.isDirty() )
 ///       m_list.collectGarbage() ;
-///     handles.update( m_list , m_list.wasDirty() , rc ) ;
+///     handles.update( m_list.size() , [&](){m_list...} , m_list.wasDirty() ) ;
 ///   }
 /// }
 /// void add( HANDLE h )
 /// {
 ///   m_list.push_back( {h,...} ) ;
-///   if( handles.overflow( m_list , ... ) ) throw ... ;
+///   if( handles.overflow( m_list.size() , [&](){m_list...} ) ) { m_list.pop_back() ; throw ... } ;
 /// }
 /// \endcode
 ///
 class GNet::EventLoopHandles
 {
 public:
-	enum class RcType // A type enumeration for GNet::EventLoopImp::Rc.
-	{
-		timeout ,
-		event ,
-		message ,
-		failed ,
-		other
-	} ;
-	struct Rc /// A structure for the return code from WaitForMultipleObjects().
-	{
-		Rc( RcType type , std::size_t index = 0U , std::size_t extra_1 = 0U , std::size_t extra_2 = 0U ) noexcept ;
-		RcType type() const noexcept ;
-		operator RcType () const noexcept { return m_type ; } // (inline definition for msvc)
-		std::size_t index() const noexcept ;
-		//
-		RcType m_type ;
-		std::size_t m_index ; // ListItem index
-		std::size_t m_extra_hpos ; // opaque value: handle position
-		std::size_t m_extra_tid ; // opaque value: thread id
-	} ;
+	using RcType = EventLoopHandlesRcType ;
+	using Rc = EventLoopHandlesRc ;
 
-public:
 	EventLoopHandles() ;
 		///< Constructor.
 
@@ -106,10 +120,11 @@ public:
 		///< limit. Returns an enumerated result together with the index
 		///< of the first handle with an event.
 
-	template <typename TList> void init( TList & ) ;
+	void init( std::size_t list_size , std::function<HANDLE()> list_fn ) ;
 		///< Initialises the handles from the event-loop list.
+		///< The functor returns each handle in turn.
 
-	template <typename TList> void update( const TList & , bool full_update , Rc rc ) ;
+	void update( std::size_t list_size , std::function<HANDLE()> list_fn , bool full_update = true ) ;
 		///< Copies in a fresh set of handles from the event-loop list.
 		///< The list must be freshly garbage-collected so that all
 		///< the handles are valid. This is called after every
@@ -118,146 +133,30 @@ public:
 		///< then 'full-update' should be set to true, along with the
 		///< index of the event that has just been handled in 'rc'.
 
-	template <typename TList> std::size_t shuffle( TList & , Rc rc ) ;
-		///< Shuffles the external event-loop list and the internal
-		///< handles as necessary to prevent starvation. Returns
-		///< the new list index of the current event after shuffling
-		///< (see Rc::index()).
+	void onClose( HANDLE ) ;
+		///< Called when a handle is closed.
 
-	template <typename TList> bool overflow( TList & list , bool (*valid_fn)(const typename TList::value_type&) ) ;
-		///< Returns true if the number of valid entries in the event-loop
-		///< list would cause an overflow, using the given function to
-		///< ignore list items that are going to be garbage collected.
-		///< The last item on the list is considered to be valid,
-		///< regardless of what the tester function says.
+	bool overflow( std::size_t list_size_ceiling , std::function<std::size_t()> list_size_fn ) const ;
+		///< Returns true if the number of entries in the event-loop list
+		///< would cause an overflow. The first parameter is the total
+		///< list size possibly including invalid handles that will be
+		///< garbage-collected, and the second parameter is a function
+		///< that returns the number of valid handles.
 		///<
-		///< The event loop should use this immediately after adding
-		///< an item to the list and not just wait for the next go-round.
-		///< This allows the error condition to be handled cleanly
-		///< without terminating the event-loop and exiting main().
-		///<
-		///< This overload allows the implementation to switch over
-		///< automatically on first overflow to an implementation
-		///< that supports more handles.
+		///< The event loop should use this immediately after adding an
+		///< item to the list and not just wait for the next go-round.
+		///< This allows the overflow exception to be handled cleanly
+		///< in-context rather than having the next wait() return an
+		///< overflow error and terminate the application.
 
-	bool overflow( std::size_t ) const ;
-		///< An overload taking the number of valid entries in the
-		///< event-loop list. This overload does not allow the
-		///< implementation to switch over.
-
-	template <typename TList> std::string help( const TList & , bool on_add ) const ;
+	std::string help( bool on_add ) const ;
 		///< Returns a helpful explanation for overflow().
 
 private:
+	EventLoopConfig m_config ;
+	std::unique_ptr<EventLoopHandlesBase> m_mt ;
 	std::vector<HANDLE> m_handles ;
+	std::vector<std::size_t> m_indexes ;
 } ;
-
-// ==
-
-inline
-GNet::EventLoopHandles::Rc::Rc( RcType type , std::size_t index , std::size_t extra_1 , std::size_t extra_2 ) noexcept :
-	m_type(type) ,
-	m_index(index) ,
-	m_extra_hpos(extra_1) ,
-	m_extra_tid(extra_2)
-{
-}
-
-inline
-GNet::EventLoopHandles::RcType GNet::EventLoopHandles::Rc::type() const noexcept
-{
-	return m_type ;
-}
-
-inline
-std::size_t GNet::EventLoopHandles::Rc::index() const noexcept
-{
-	return m_index ;
-}
-
-// ==
-
-template <typename TList>
-void GNet::EventLoopHandles::init( TList & list )
-{
-	m_handles.resize( list.size() ) ;
-	std::size_t i = 0U ;
-	for( const auto & list_item : list )
-		m_handles[i++] = list_item.m_handle ;
-}
-
-inline
-GNet::EventLoopHandles::Rc GNet::EventLoopHandles::wait( DWORD ms )
-{
-	DWORD handles_n = static_cast<DWORD>( m_handles.size() ) ;
-	HANDLE * handles_p = m_handles.empty() ? nullptr : &m_handles[0] ;
-	DWORD rc = MsgWaitForMultipleObjectsEx( handles_n , handles_p , ms , QS_ALLINPUT , 0 ) ;
-
-	if( rc == WAIT_TIMEOUT )
-	{
-		return { RcType::timeout } ;
-	}
-	else if( rc >= WAIT_OBJECT_0 && rc < (WAIT_OBJECT_0+handles_n) )
-	{
-		return { RcType::event , static_cast<std::size_t>(rc-WAIT_OBJECT_0) } ;
-	}
-	else if( rc == (WAIT_OBJECT_0+handles_n) )
-	{
-		return { RcType::message } ;
-	}
-	else if( rc == WAIT_FAILED )
-	{
-		return { RcType::failed } ;
-	}
-	else
-	{
-		return { RcType::other } ;
-	}
-}
-
-template <typename TList>
-std::size_t GNet::EventLoopHandles::shuffle( TList & list , Rc rc )
-{
-	G_ASSERT( !m_handles.empty() ) ;
-	G_ASSERT( list.size() == m_handles.size() ) ;
-	G_ASSERT( rc.index() < m_handles.size() ) ;
-	std::size_t index = rc.index() ;
-	std::vector<HANDLE> & handles = m_handles ;
-	if( (index+1U) < handles.size() ) // if not already rightmost
-	{
-		std::size_t index_1 = index + 1U ;
-		std::rotate( handles.begin()+index , handles.begin()+index_1 , handles.end() ) ;
-		std::rotate( list.begin()+index , list.begin()+index_1 , list.end() ) ;
-		index = handles.size() - 1U ;
-	}
-	return index ;
-}
-
-template <typename TList>
-void GNet::EventLoopHandles::update( const TList & list , bool updated , Rc )
-{
-	if( updated )
-		init( list ) ;
-}
-
-inline
-bool GNet::EventLoopHandles::overflow( std::size_t n ) const
-{
-	return n > LIMIT ;
-}
-
-template <typename TList>
-bool GNet::EventLoopHandles::overflow( TList & list , bool (*fn)(const typename TList::value_type&) )
-{
-	return
-		list.size() > LIMIT &&
-		static_cast<std::size_t>(1+std::count_if(list.cbegin(),list.cbegin()+list.size()-1U,fn)) > LIMIT ;
-}
-
-template <typename TList>
-std::string GNet::EventLoopHandles::help( const TList & , bool /*on_add*/ ) const
-{
-	return "too many open handles" ;
-}
 
 #endif

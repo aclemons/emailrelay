@@ -53,7 +53,7 @@ rem $ cd qt-src && perl init-repository --module-subset=qtbase,qttools,qttransla
 rem
 rem Download emailrelay:
 rem $ git clone https://git.code.sf.net/p/emailrelay/git emailrelay-src
-rem $ git -C emailrelay-src checkout 2.5.3dev2
+rem $ git -C emailrelay-src checkout 2.5.3dev3
 rem $ copy emailrelay-src\libexec\winbuildall.bat .
 rem
 
