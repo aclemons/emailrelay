@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -88,7 +88,7 @@ std::filebuf * G::File::open( std::filebuf & fb , const Path & path , InOut inou
 			fb.open( path.cstr() , std::ios_base::out | std::ios_base::binary ) ;
 }
 
-int G::File::open( const Path & path , InOutAppend mode ) noexcept
+int G::File::open( const Path & path , InOutAppend mode , bool ) noexcept
 {
 	static_assert( noexcept(path.cstr()) , "" ) ;
 	const char * path_cstr = path.cstr() ;

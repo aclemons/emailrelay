@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,9 +28,9 @@
 #ifndef G_LIB_SMALL
 G::ExecutableCommand::ExecutableCommand( const std::string & s )
 {
-	m_args = Arg(s).array() ;
-	if( !m_args.empty() )
+	if( !s.empty() )
 	{
+		m_args = Arg(s).array() ;
 		m_exe = m_args.at(0U) ;
 		std::rotate( m_args.begin() , m_args.begin()+1U , m_args.end() ) ;
 		m_args.pop_back() ; // remove exe

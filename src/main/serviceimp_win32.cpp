@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,6 +22,8 @@
 #include "gnowide.h"
 #include "serviceimp.h"
 #include "servicecontrol.h"
+#include "gprocess.h"
+#include "gfile.h"
 #include <fstream>
 
 namespace ServiceImp
@@ -50,14 +52,14 @@ void WINAPI ServiceImp::ServiceMainW( DWORD argc , wchar_t ** argv )
 		ServiceImp::m_service_main_fn( args ) ;
 }
 
-std::string ServiceImp::install( const std::string & commandline , const std::string & name ,
+std::pair<std::string,DWORD> ServiceImp::install( const std::string & commandline , const std::string & name ,
 	const std::string & display_name , const std::string & description )
 {
 	// see servicecontrol_win32.cpp
 	return service_install( commandline , name , display_name , description , true ) ;
 }
 
-std::string ServiceImp::remove( const std::string & service_name )
+std::pair<std::string,DWORD> ServiceImp::remove( const std::string & service_name )
 {
 	// see servicecontrol_win32.cpp
 	return service_remove( service_name ) ;
@@ -81,7 +83,7 @@ DWORD ServiceImp::dispatch( ServiceMainFn service_main_fn )
 	return ok ? DWORD(0) : e ;
 }
 
-DWORD ServiceImp::setStatus( StatusHandle hservice , DWORD new_state , DWORD timeout_ms ) noexcept
+DWORD ServiceImp::setStatus( StatusHandle hservice , DWORD new_state , DWORD timeout_ms , DWORD generic_error , DWORD specific_error ) noexcept
 {
 	SERVICE_STATUS s {} ;
 	s.dwServiceType = SERVICE_WIN32_OWN_PROCESS ;
@@ -89,6 +91,12 @@ DWORD ServiceImp::setStatus( StatusHandle hservice , DWORD new_state , DWORD tim
 	s.dwControlsAccepted = SERVICE_ACCEPT_STOP ;
 	s.dwWin32ExitCode = NO_ERROR ;
 	s.dwServiceSpecificExitCode = 0 ;
+	if( generic_error )
+	{
+		s.dwWin32ExitCode = generic_error ;
+		if( generic_error == ERROR_SERVICE_SPECIFIC_ERROR )
+			s.dwServiceSpecificExitCode = specific_error ;
+	}
 	s.dwCheckPoint = 0 ;
 	s.dwWaitHint = timeout_ms ;
 	bool ok = !!SetServiceStatus( hservice , &s ) ;
@@ -96,9 +104,27 @@ DWORD ServiceImp::setStatus( StatusHandle hservice , DWORD new_state , DWORD tim
 	return ok ? DWORD(0) : e ;
 }
 
-void ServiceImp::log( const std::string & /*s*/ ) noexcept
+void ServiceImp::log( const std::string & s ) noexcept
 {
-	//static std::ofstream f( "c:/temp/temp.out" ) ;
-	//f << s << std::endl ;
+	static bool first = true ;
+	static std::ofstream f ;
+	try
+	{
+		if( first )
+		{
+			first = false ;
+			HKEY hkey = 0 ;
+			G::nowide::regOpenKey( HKEY_LOCAL_MACHINE , G::Path("SOFTWARE")/G::Process::exe().withoutExtension().basename() , &hkey , true ) ;
+			std::string logfile ;
+			G::nowide::regGetValueString( hkey , "logfile" , &logfile ) ;
+			if( !logfile.empty() )
+				G::File::open( f , logfile ) ;
+		}
+		if( f.is_open() )
+			f << s << "\r" << std::endl ;
+	}
+	catch(...)
+	{
+	}
 }
 

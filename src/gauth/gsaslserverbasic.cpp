@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -56,6 +56,13 @@ public:
 	bool trustedCore( const std::string & , const std::string & ) const ;
 	std::string id() const ;
 	bool authenticated() const ;
+
+public:
+	~SaslServerBasicImp() = default ;
+	SaslServerBasicImp( const SaslServerBasicImp & ) = delete ;
+	SaslServerBasicImp( SaslServerBasicImp && ) = delete ;
+	SaslServerBasicImp & operator=( const SaslServerBasicImp & ) = delete ;
+	SaslServerBasicImp & operator=( SaslServerBasicImp && ) = delete ;
 
 private:
 	bool m_first_apply {true} ;
@@ -382,7 +389,7 @@ bool GAuth::SaslServerBasic::trusted( const G::StringArray & address_wildcards ,
 
 void GAuth::SaslServerBasic::reset()
 {
-	return m_imp->reset() ;
+	m_imp->reset() ;
 }
 
 bool GAuth::SaslServerBasic::init( bool secure , const std::string & mechanism )

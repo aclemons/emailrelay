@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@
 #include <string>
 #include <list>
 #include <vector>
+#include <new>
 
 namespace GGui
 {
@@ -63,10 +64,12 @@ public:
 	class NoRedraw
 	{
 		private: Control & m_control ;
-		public: NoRedraw(Control&) ;
+		public: explicit NoRedraw( Control & ) ;
 		public: ~NoRedraw() ;
-		private: NoRedraw & operator=( const NoRedraw & ) ;
-		private: NoRedraw( const NoRedraw & ) ;
+		public: NoRedraw & operator=( const NoRedraw & ) = delete ;
+		public: NoRedraw & operator=( NoRedraw && ) = delete ;
+		public: NoRedraw( const NoRedraw & ) = delete ;
+		public: NoRedraw( NoRedraw && ) = delete ;
 	} ;
 
 	Control( const Dialog & dialog , int id ) ;
@@ -87,7 +90,7 @@ public:
 	bool valid() const ;
 		///< Returns true if this control is usable.
 
-	HWND hdialog() const ;
+	HWND hdialog() const noexcept ;
 		///< Returns the dialog box's window handle.
 
 	int id() const ;
@@ -95,6 +98,9 @@ public:
 
 	HWND handle() const ;
 		///< Returns the control's window handle.
+
+	HWND handle( std::nothrow_t ) const noexcept ;
+		///< Non-chacheing, noexcept overload.
 
 	virtual ~Control() ;
 		///< Destructor.
@@ -157,7 +163,7 @@ private:
 	HWND m_hdialog ;
 	bool m_valid ;
 	int m_id ;
-	HWND m_hwnd ; // control
+	mutable HWND m_hwnd ; // control
 	unsigned m_no_redraw_count ;
 } ;
 

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ namespace GNet
 class GNet::Server : public Listener, private EventHandler, private ExceptionHandler
 {
 public:
-	G_EXCEPTION( CannotBind , tx("cannot bind the listening port") ) ;
+	G_EXCEPTION( CannotBind , tx("cannot bind the listening port") )
 
 	struct Config /// A configuration structure for GNet::Server.
 	{
@@ -78,9 +78,9 @@ public:
 		///< Override from GNet::Listener.
 
 	std::vector<std::weak_ptr<GNet::ServerPeer>> peers() ;
-		///< Returns the list of ServerPeer objects. Do not allow
-		///< the returned ServerPeer objects to outlive this
-		///< Server.
+		///< Returns the list of ServerPeer objects. The
+		///< returned ServerPeer objects must not outlive
+		///< this Server.
 
 	bool hasPeers() const ;
 		///< Returns true if peers() is not empty.

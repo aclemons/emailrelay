@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 ///
 
 #include "gdef.h"
+#include "gnowide.h"
 #include "winapp.h"
 #include "winmenu.h"
 #include "gwindow.h"
@@ -106,8 +107,7 @@ void Main::WinApp::init( const Configuration & configuration , const G::Options 
 
 int Main::WinApp::exitCode() const
 {
-	// see test/Server.pm hasDebug()
-	if( G::Test::enabled("special-exit-code") )
+	if( G::Test::enabled("special-exit-code") ) // see test/Server.pm hasDebug()
 		return (G::threading::works()?23:25) ;
 
 	return m_exit_code ;
@@ -131,21 +131,21 @@ UINT Main::WinApp::resource() const
 
 bool Main::WinApp::onCreate()
 {
-	if( m_cfg.with_tray )
+	try
 	{
-		try
+		if( m_cfg.with_tray )
 		{
 			m_tray = std::make_unique<GGui::Tray>( resource() , *this , "E-MailRelay" ) ;
 		}
-		catch( std::exception & e )
+		if( m_cfg.open_on_create )
 		{
-			using G::txt ;
-			throw G::Exception( e.what() , txt("try using the --hidden option") ) ;
+			doOpen() ;
 		}
 	}
-	if( m_cfg.open_on_create )
+	catch( std::exception & e )
 	{
-		doOpen() ;
+		setReason( e.what() , G::txt("try using the --hidden option") ) ; // GGui::Window()
+		return false ;
 	}
 	return true ;
 }
@@ -175,13 +175,13 @@ void Main::WinApp::onTrayRightMouseButtonDown()
 	bool with_close = form_is_visible ;
 	int id = m_menu->popup( *this , false , with_open , with_close ) ;
 
-	PostMessage( handle() , wm_user() , 1 , static_cast<LPARAM>(id) ) ;
+	G::nowide::postMessage( handle() , wm_user() , 1 , static_cast<LPARAM>(id) ) ;
 }
 
 void Main::WinApp::onTrayDoubleClick()
 {
 	G_DEBUG( "Main::WinApp::onTrayDoubleClick: tray double-click" ) ;
-	PostMessage( handle() , wm_user() , 2 , static_cast<LPARAM>(IDM_OPEN) ) ;
+	G::nowide::postMessage( handle() , wm_user() , 2 , static_cast<LPARAM>(IDM_OPEN) ) ;
 }
 
 LRESULT Main::WinApp::onUser( WPARAM /*wparam*/ , LPARAM lparam )
@@ -194,16 +194,16 @@ LRESULT Main::WinApp::onUser( WPARAM /*wparam*/ , LPARAM lparam )
 	return 0L ;
 }
 
-LRESULT Main::WinApp::onUserOther( WPARAM wparam , LPARAM )
+LRESULT Main::WinApp::onUserOther( WPARAM wparam , LPARAM lparam )
 {
 	// this is asynchronous notification from GGui::Stack that
 	// the dialog has completed (wparam=0/1) or the apply button
-	// has been denied (wparam=2) or WM_SYSCOMMAND has been
-	// received (wparam=3)
+	// has been denied (wparam=2) or a non-standard WM_SYSCOMMAND
+	// has been received (wparam=3)
 
-	G_DEBUG( "Main::WinApp::onUserOther: wparam=" << wparam ) ;
+	G_DEBUG( "Main::WinApp::onUserOther: wparam=" << wparam << " lparam=" << lparam ) ;
 
-	if( wparam == 3 ) // iff cfg.with_sysmenu_quit
+	if( wparam == 3U && lparam == WinForm::quitId() ) // iff cfg.with_sysmenu_quit
 		doQuit() ;
 
 	else if( m_cfg.quit_on_form_ok )
@@ -249,6 +249,9 @@ void Main::WinApp::doOpen()
 		bool form_with_icon = true ;
 		bool form_with_system_menu_quit = m_cfg.with_sysmenu_quit ;
 
+		// create the form, passing our window handle() for receiving
+		// asynchronous Gui::Stack notifications via onUserOther()
+		//
 		m_form = std::make_unique<WinForm>( hinstance() , m_configuration_data ,
 			form_hparent , handle() , form_style , form_allow_apply ,
 			form_with_icon , form_with_system_menu_quit ) ;
@@ -308,11 +311,6 @@ void Main::WinApp::onRunEvent( std::string s0 , std::string s1 , std::string s2 
 		m_form->setStatus( s0 , s1 , s2 , s3 ) ;
 }
 
-void Main::WinApp::onWindowException( std::exception & e )
-{
-	GGui::Window::onWindowException( e ) ;
-}
-
 G::OptionsUsage::Config Main::WinApp::outputLayout( bool verbose ) const
 {
 	G::OptionsUsage::Config layout ;
@@ -328,8 +326,11 @@ bool Main::WinApp::outputSimple() const
 	return false ;
 }
 
-void Main::WinApp::output( const std::string & text , bool , bool verbose )
+void Main::WinApp::output( const std::string & text , bool is_error , bool verbose )
 {
+	if( is_error && m_exit_code == 0 )
+		m_exit_code = 1 ;
+
 	if( !m_disable_output )
 	{
 		G::StringArray text_lines ;
@@ -342,7 +343,7 @@ void Main::WinApp::output( const std::string & text , bool , bool verbose )
 		}
 		else
 		{
-			messageBox( text ) ;
+			messageBox( text ) ; // GGui::ApplicationBase::messageBox()
 		}
 	}
 }

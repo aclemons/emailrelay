@@ -36,8 +36,8 @@
       <dd>
        This is equivalent to <em>--log</em> and <em>--close-stderr</em>. It is a convenient way of
        running a background storage daemon that accepts mail messages and spools
-       them. Use <em>--log</em> instead of <em>--as-server</em> to keep standard error stream
-       open.
+       them. Use <em>--log</em> instead of <em>--as-server</em> to keep the standard error
+       stream open.
       </dd>
      <dt>--spool-dir &lt;dir&gt; (-s)</dt>
       <dd>
@@ -86,7 +86,7 @@
        Runs the specified external filter program whenever a mail message is
        forwarded. The filter is passed the name of the message file in the spool
        directory so that it can edit it as required. A network filter can be
-       specified as <em>net:<tcp-address></em> and prefixes of <em>spam:</em>, <em>spam-edit:</em> and
+       specified as <em>net:&lt;tcp-address&gt;</em> and prefixes of <em>spam:</em>, <em>spam-edit:</em> and
        <em>exit:</em> are also allowed. The <em>spam:</em> and <em>spam-edit:</em> prefixes require a
        SpamAssassin daemon to be running. For store-and-forward applications the
        <em>--filter</em> option is normally more useful than <em>--client-filter</em>.
@@ -148,7 +148,7 @@
      <dt>--address-verifier &lt;program&gt;</dt>
       <dd>
        Runs the specified external program to verify a message recipient's e-mail
-       address. A network verifier can be specified as <em>net:<tcp-address></em>. The
+       address. A network verifier can be specified as <em>net:&lt;tcp-address&gt;</em>. The
        <em>account:</em> built-in address verifier can be used to check recipient
        addresses against the list of local system account names.
       </dd>
@@ -169,14 +169,18 @@
       <dd>
        Specifies a list of DNSBL servers that are used to reject SMTP connections
        from blocked addresses. The configuration string is made up of
-       comma-separated fields: the DNS server's transport address, a timeout in
-       milliseconds, a rejection threshold, and then the list of DNSBL servers.
+       comma-separated fields: the list of DNSBL servers, an optional rejection
+       threshold, an optional timeout in milliseconds, and optionally the
+       transport address of the DNS server.
       </dd>
      <dt>--domain &lt;fqdn&gt; (-D)</dt>
       <dd>
-       Specifies the network name that is used in SMTP EHLO commands, <em>Received</em>
-       lines, and for generating authentication challenges. The default is derived
-       from a DNS lookup of the local hostname.
+       Specifies the domain name that is used in SMTP client EHLO commands, server
+       EHLO responses, <em>Received</em> lines, and for generating authentication
+       challenges. The SMTP client will use an IP address in the EHLO command if
+       the given domain is not a dotted FQDN. If this option is not used at all
+       then the default value is the canonical name returned from a DNS query of
+       the local hostname, or the system's FQDN on Windows.
       </dd>
      <dt>--filter &lt;program&gt; (-z)</dt>
       <dd>
@@ -184,10 +188,10 @@
        The filter is passed the name of the message file in the spool directory so
        that it can edit it as required. The mail message is rejected if the filter
        program terminates with an exit code between 1 and 99. Use
-       <em>net:<tcp-address></em> to communicate with a filter daemon over the network,
-       or <em>spam:<tcp-address></em> for a spamassassin spamd daemon to accept or reject
-       mail messages, or <em>spam-edit:<tcp-address></em> to have spamassassin edit the
-       message content without rejecting it, or <em>exit:<number></em> to emulate a
+       <em>net:&lt;tcp-address&gt;</em> to communicate with a filter daemon over the network,
+       or <em>spam:&lt;tcp-address&gt;</em> for a spamassassin spamd daemon to accept or reject
+       mail messages, or <em>spam-edit:&lt;tcp-address&gt;</em> to have spamassassin edit the
+       message content without rejecting it, or <em>exit:&lt;number&gt;</em> to emulate a
        filter program that just exits.
       </dd>
      <dt>--filter-timeout &lt;time&gt; (-W)</dt>
@@ -209,7 +213,7 @@
        listening. When an interface name is decorated with a <em>-ipv4</em> or <em>-ipv6</em>
        suffix only their IPv4 or IPv6 addresses will be used (eg. <em>ppp0-ipv4</em>).
        To inherit listening file descriptors from the parent process on unix use a
-       syntax like this: <em>--interface</em> smtp=fd#3,smtp=fd#4,pop=fd#5.
+       syntax like this: <em>--interface=smtp=fd#3</em>.
       </dd>
      <dt>--prompt-timeout &lt;time&gt; (-w)</dt>
       <dd>
@@ -220,8 +224,8 @@
      <dt>--server-smtp-config &lt;config&gt; (-Z)</dt>
       <dd>
        Configures the SMTP server protocol using a comma-separated list of optional
-       features, including 'pipelining', 'chunking', 'smtputf8', and
-       'smtputf8strict'.
+       features, including 'pipelining', 'chunking', 'smtputf8', 'smtputf8strict',
+       'nostrictparsing' and 'noalabels'.
       </dd>
      <dt>--size &lt;bytes&gt; (-M)</dt>
       <dd>
@@ -241,7 +245,7 @@
        Modifies the POP server's spool directory to be the sub-directory with the
        same name as the user-id used for POP authentication. This allows POP
        clients to see only their own messages after they have been moved into
-       separate sub-directories typically by the built-in <em>deliver:</em> or <em>copy:</em>
+       separate sub-directories, typically by the built-in <em>deliver:</em> or <em>copy:</em>
        filters. Content files can remain in the main spool directory to save disk
        space; they will be deleted by the POP server when it deletes the last
        matching envelope file.
@@ -283,7 +287,7 @@
        password fields can be Base64 encoded if the second field is <em>plain:b</em>. It
        is also possible to do without a secrets file and give the Base64 encoded
        user-id and password directly on the command-line or in the configuration
-       file formatted as <em>plain:<base64-user-id>:<base64-password></em>. Note that
+       file formatted as <em>plain:&lt;base64-user-id&gt;:&lt;base64-password&gt;</em>. Note that
        putting these account details on the command-line is not recommended
        because it will make the password easily visible to all users on the local
        machine.
@@ -367,7 +371,7 @@
        Enables verification of the remote SMTP server's certificate against any of
        the trusted CA certificates in the specified file or directory. In many use
        cases this should be a file containing just your self-signed root
-       certificate. Specify <em><default></em> (including the angle brackets) for the TLS
+       certificate. Specify <em>&lt;default&gt;</em> (including the angle brackets) for the TLS
        library's default set of trusted CAs.
       </dd>
      <dt>--client-tls-verify-name &lt;cname&gt;</dt>
@@ -406,7 +410,7 @@
        Enables verification of remote SMTP and POP clients' certificates against any
        of the trusted CA certificates in the specified file or directory. In many
        use cases this should be a file containing just your self-signed root
-       certificate. Specify <em><default></em> (including the angle brackets) for the TLS
+       certificate. Specify <em>&lt;default&gt;</em> (including the angle brackets) for the TLS
        library's default set of trusted CAs.
       </dd>
      <dt>--tls-config &lt;options&gt; (-9)</dt>
@@ -426,24 +430,22 @@
        interfaces. The program will terminate as soon as any initial forwarding is
        complete.
       </dd>
-     <dt>--hidden (-H)</dt>
-      <dd>
-       Windows only. Hides the application window and disables all message boxes,
-       overriding any <em>--show</em> option. This is useful when running as a windows
-       service.
-      </dd>
      <dt>--localedir &lt;dir&gt;</dt>
       <dd>
        Enables localisation and specifies the locale base directory where message
        catalogues can be found. An empty directory can be used for the built-in
-       default.
+       default. Unix only.
       </dd>
      <dt>--no-daemon (-t)</dt>
       <dd>
        Disables the normal backgrounding at startup so that the program runs in the
-       foreground, without forking or detaching from the terminal.  On Windows
-       this disables the system tray icon so the program uses a normal window;
-       when the window is closed the program terminates.
+       foreground, without forking or detaching from the terminal. Unix only.
+      </dd>
+     <dt>--hidden (-H)</dt>
+      <dd>
+       Hides the application window and disables all message boxes, overriding any
+       <em>--show</em> option. This is useful when running as a windows service. Windows
+       only.
       </dd>
      <dt>--no-smtp (-X)</dt>
       <dd>
@@ -462,7 +464,14 @@
        verifiers. This option can be used to define the non-privileged user-id. It
        also determines the group ownership of new files and sockets if the
        directory owner is not 'sticky'. Specify <em>root</em> to disable all user-id
-       switching. Ignored on Windows.
+       switching. Unix only.
+      </dd>
+     <dt>--show &lt;style&gt;</dt>
+      <dd>
+       Starts the application window in the given style: <em>hidden</em>, <em>popup</em>,
+       <em>window</em>, <em>window,tray</em>, or <em>tray</em>. Ignored if also using <em>--no-daemon</em> or
+       <em>--hidden</em>. If none of <em>--window</em>, <em>--no-daemon</em> and <em>--hidden</em> are used
+       then the default style is <em>tray</em>. Windows only.
       </dd>
     </dl>
    <h3><a class="a-header">Logging options</a></h3>
@@ -474,11 +483,11 @@
       </dd>
      <dt>--log (-l)</dt>
       <dd>
-       Enables logging to the standard error stream and to the syslog. The
+       Enables logging to the standard error stream and to the system log. The
        <em>--close-stderr</em> and <em>--no-syslog</em> options can be used to disable output to
-       standard error stream and the syslog separately. Note that <em>--as-server</em>,
-       <em>--as-client</em> and <em>--as-proxy</em> imply <em>--log</em>, and <em>--as-server</em> and
-       <em>--as-proxy</em> also imply <em>--close-stderr</em>.
+       standard error stream and the system log separately. Note that
+       <em>--as-server</em>, <em>--as-client</em> and <em>--as-proxy</em> imply <em>--log</em>, and
+       <em>--as-server</em> and <em>--as-proxy</em> also imply <em>--close-stderr</em>.
       </dd>
      <dt>--debug (-g)</dt>
       <dd>
@@ -489,7 +498,7 @@
      <dt>--log-address</dt>
       <dd>
        Adds the network address of remote clients to the logging output. Equivalent
-       to <em></em>--log-format=address<em></em>.
+       to <em>--log-format=address</em>.
       </dd>
      <dt>--log-file &lt;file&gt; (-N)</dt>
       <dd>
@@ -507,18 +516,18 @@
      <dt>--log-time (-L)</dt>
       <dd>
        Adds a timestamp to the logging output using the local timezone. Equivalent
-       to <em></em>--log-format=time<em></em>.
+       to <em>--log-format=time</em>.
       </dd>
      <dt>--no-syslog (-n)</dt>
       <dd>
-       Disables logging to the syslog. Note that <em>--as-client</em> implies
+       Disables logging to the system log. Note that <em>--as-client</em> implies
        <em>--no-syslog</em>.
       </dd>
-     <dt>--syslog[=&lt;facility&gt;] (-k)</dt>
+     <dt>--syslog (-k)</dt>
       <dd>
-       When used with <em>--log</em> this option enables logging to the syslog even if the
-       <em>--no-syslog</em> option is also used. This is typically used as a convenient
-       override when using <em>--as-client</em>.
+       When used with <em>--log</em> this option enables logging to the system log, even if
+       the <em>--no-syslog</em> option is also used. This is typically used as a
+       convenient override when using <em>--as-client</em>.
       </dd>
      <dt>--close-stderr (-e)</dt>
       <dd>
@@ -550,7 +559,7 @@ port 10025
     <p>
      All options that specify a filename can use a special <em>@app</em> substitution
      variable that is interpreted as the directory that contains the <em>emailrelay</em>
-     executable or MacOS application bundle.
+     executable.
     </p>
 
     <p>
@@ -637,8 +646,8 @@ out-forward-to smtp.smarthost.com
      <li>when E-MailRelay first starts up (<em>--as-client</em> or <em>--forward</em>)</li>
      <li>as each message is submitted, just before receipt is acknowledged (<em>--immediate</em>)</li>
      <li>as soon as the submitting client disconnects (<em>--forward-on-disconnect</em>)</li>
-     <li>periodically (<em>--poll=<seconds></em>)</li>
-     <li>on demand using the administration interface's <em>forward</em> command (<em>--admin=<port></em>)</li>
+     <li>periodically (<em>--poll=&lt;seconds&gt;</em>)</li>
+     <li>on demand using the administration interface's <em>forward</em> command (<em>--admin=&lt;port&gt;</em>)</li>
      <li>when a <em>--filter</em> script exits with an exit code of 103</li>
     </ul>
 
@@ -995,6 +1004,14 @@ WScript.Quit( 0 ) ;
 </pre>
       </div><!-- div-pre -->
     <p>
+     And the DNS timeouts can be adjusted with <em>nst</em> and <em>rt</em> parameters:
+    </p>
+
+      <div class="div-pre">
+       <pre>--client-filter="mx:nst=60;rt=60;127.0.0.1:53"
+</pre>
+      </div><!-- div-pre -->
+    <p>
      If the DNS server responds with a forwarding address of <em>0.0.0.0</em> then the
      <em>ForwardToAddress</em> will be cleared and the message will be forwarded to the
      default <em>--forward-to</em> address.
@@ -1011,10 +1028,9 @@ WScript.Quit( 0 ) ;
    <h2><a class="a-header" name="SH_1_8">Address verifiers</a></h2> <!-- index:2:SH:1:8:Address verifiers -->
     <p>
      By default the E-MailRelay server will accept all recipient addresses for
-     incoming e-mails as valid. This default behaviour can be modified by using an
-     external verifier program, specified with the <em>--address-verifier</em> command-line
-     option, so the verifier can choose which recipient addresses are accepted as
-     valid and which are rejected.
+     incoming e-mails as valid, but an external verifier program, specified with the
+     <em>--address-verifier</em> command-line option, can be used to modify or reject
+     individual recipient addresses.
     </p>
 
     <p>
@@ -1200,7 +1216,7 @@ catch( e )
      network and send address verification requests as lines with pipe-delimited
      fields. The expected response is another pipe-delimited line containing the same
      information as returned by verifier scripts but in reverse, such as
-     <em>0|postmaster|Local Postmaster <postmaster@example.com></em> or
+     <em>0|postmaster|Local Postmaster &lt;postmaster@example.com&gt;</em> or
      <em>2|mailbox unavailable</em>.
     </p>
 
@@ -1214,7 +1230,7 @@ catch( e )
     </p>
    <h3><a class="a-header">account:</a></h3>
     <p>
-     The <em>account:</em> verifier does validation of recipient address against system
+     The <em>account:</em> verifier does validation of recipient addresses against system
      account names and the network domain or <em>--domain</em> value. For example, it will
      accept <em>alice@example.com</em> only if there is a local system account called
      <em>alice</em> and the local fully-qualified domain name is <em>example.com</em>.
@@ -1243,10 +1259,11 @@ catch( e )
 </pre>
       </div><!-- div-pre -->
     <p>
-     With the <em>check</em> parameter the verifier will test whether the recipient address
-     is a local account but always accept the address as valid, whether it is a local
-     account or not. This is useful for outgoing traffic where local recipients can be
-     delivered immediately without being sent to the next-hop SMTP server.
+     With the <em>check</em> parameter the verifier will determine whether the recipient
+     address is a local account but always accept the address as valid. An address
+     that does not match a local account will be accepted as a valid remote address.
+     This is useful for outgoing traffic where local recipients can be delivered
+     immediately without being sent to the next-hop SMTP server.
     </p>
 
     <p>
@@ -1257,8 +1274,8 @@ catch( e )
 </pre>
       </div><!-- div-pre -->
     <p>
-     With the <em>remote</em> parameter the recipient address is valid only if it is a local
-     account but it is treated as not local so that the e-mail message will be
+     With the <em>remote</em> parameter the recipient address is valid only if it matches a
+     local account but it is treated as remote so that the e-mail message will be
      available for forwarding rather than delivery.
     </p>
    <h2><a class="a-header" name="SH_1_11">Authentication</a></h2> <!-- index:2:SH:1:11:Authentication -->
@@ -1287,7 +1304,7 @@ emailrelay --as-client=example.com:smtp --client-auth=/etc/emailrelay-server.aut
 
     <p>
      It is also possible to give the client authentication details directly by
-     specifying <em>plain:<base64-user-id>:<base64-password></em> as the <em>--client-auth</em>
+     specifying <em>plain:&lt;base64-user-id&gt;:&lt;base64-password&gt;</em> as the <em>--client-auth</em>
      value. This is not recommended because it exposes the account details
      through the process table, command-line history, etc.
     </p>
@@ -1363,7 +1380,7 @@ server plain:b Y2Fyb2w= bXkgcGFzc3dvcmQ= # carol
       </div><!-- div-pre -->
     <p>
      Note that modern email services will expect user-ids and passwords containing
-     non-ASCII characters to use UTF-8 encoding with RFC-4013 normalisation.
+     non-ASCII characters to use UTF-8 character encoding and RFC-4013 normalisation.
     </p>
 
     <p>
@@ -1468,7 +1485,7 @@ server plain carol my+20password
      command, ignoring any AUTH name from the original submission. This default
      policy can be modified by editing the <em>MailFromAuthOut</em> field in the message
      envelope file, perhaps by using a <em>--filter</em> or <em>--client-filter</em> program. The
-     value in this envelope field should be empty for the default policy, <em><></em> for
+     value in this envelope field should be empty for the default policy, <em>&lt;&gt;</em> for
      no AUTH name, or an xtext-encoded authentication name.
     </p>
 
@@ -1523,6 +1540,12 @@ server plain carol my+20password
      expect all connections to be using TLS from the start, so the whole SMTP
      dialogue is encrypted, without the need for <em>STARTTLS</em>.
     </p>
+
+    <p>
+     If E-MailRelay has been built with both MbedTLS and OpenSSL/LibreSSL libraries
+     (as reported by <em>emailrelay --version --verbose</em>) then it will use
+     OpenSSL/LibreSSL by default. To switch to MbedTLS use <em>--tls-config=mbedtls</em>.
+    </p>
    <h2><a class="a-header" name="SH_1_13">PAM authentication</a></h2> <!-- index:2:SH:1:13:PAM authentication -->
     <p>
      E-MailRelay on Linux supports the use of PAM (Pluggable Authentication Modules)
@@ -1560,7 +1583,75 @@ server plain carol my+20password
      <em>--user=root</em> command-line option to make sure that the process's effective
      user-id stays as <em>root</em> while it accesses the PAM system.
     </p>
-   <h2><a class="a-header" name="SH_1_14">Routing</a></h2> <!-- index:2:SH:1:14:Routing -->
+   <h2><a class="a-header" name="SH_1_14">Submission</a></h2> <!-- index:2:SH:1:14:Submission -->
+    <p>
+     New e-mail messages can be submitted into an E-MailRelay server using SMTP or
+     by using the <em>emailrelay-submit</em> utility to create the content and envelope file
+     directly in the spool directory.
+    </p>
+
+    <p>
+     If using SMTP for submission make sure that the submitting user agent emits
+     separate e-mail messages for each <em>Bcc</em> recipient so that one <em>Bcc</em> recipient
+     cannot see the addresses of any of the others.
+    </p>
+
+    <p>
+     On Linux/Unix systems the <em>emailrelay-submit</em> tool is normally installed so that
+     it runs with elevated privileges so that it can write into the E-MailRelay
+     spool directory. It might also be just a symbolic link to the main <em>emailrelay</em>
+     binary, in the style of BusyBox, and in that case it will have reduced
+     functionality.
+    </p>
+
+    <p>
+     One way of using <em>emailrelay-submit</em> is to construct a new e-mail message from
+     only command-line parameters. This can be useful for creating automated alert
+     e-mails, for example:
+    </p>
+
+      <div class="div-pre">
+       <pre>emailrelay-submit -dtFN --to="user@localhost" --content U3ViamVjdDogaGVscA --content="" --content=ZXJyb3I
+</pre>
+      </div><!-- div-pre -->
+    <p>
+     Each <em>--content</em> parameter is a base64-encoded line of content, which can be
+     a header line, an empty line or a line of body text.
+    </p>
+
+    <p>
+     Alternatively, the message content can come from a RFC-5322 format file, read
+     from either the standard input or <em>--input-file</em>, with just envelope addresses
+     passed on the command-line:
+    </p>
+
+      <div class="div-pre">
+       <pre>emailrelay-submit --to="user@localhost" --from="sender@localhost" --input-file=content.txt
+</pre>
+      </div><!-- div-pre -->
+    <p>
+     Or the submitted message content can come from a mixture of command-line
+     parameters and an input file:
+    </p>
+
+      <div class="div-pre">
+       <pre>emailrelay-submit -dtF --to="user@localhost" --content=U3ViamVjdDogaGVscA --content="" --body --input-file=body.txt
+</pre>
+      </div><!-- div-pre -->
+    <p>
+     Or a complete message file can be submitted, with the envelope addresses parsed
+     out of the message headers:
+    </p>
+
+      <div class="div-pre">
+       <pre>emailrelay-submit --bcc-split --input-file message.eml
+</pre>
+      </div><!-- div-pre -->
+    <p>
+     In this example if the message headers specify more than one <em>Bcc</em> recipient
+     then multiple messages will be submitted.
+    </p>
+   <h2><a class="a-header" name="SH_1_15">Routing</a></h2> <!-- index:2:SH:1:15:Routing -->
     <p>
      E-MailRelay is often used to store-and-forward e-mail messages, with the
      forwarded messages going to a <em>smarthost</em> for onward routing. (The smarthost
@@ -1633,13 +1724,13 @@ server plain carol my+20password
      in the envelope is used to pick one of the <em>client</em> rows in the client secrets
      file having a matching fifth field.
     </p>
-   <h2><a class="a-header" name="SH_1_15">Delivery</a></h2> <!-- index:2:SH:1:15:Delivery -->
+   <h2><a class="a-header" name="SH_1_16">Delivery</a></h2> <!-- index:2:SH:1:16:Delivery -->
     <p>
      When running in a simple store-and-forward setup E-MailRelay does not concern
      itself with message delivery; every e-mail message ends up in the main spool
-     directory without regard to the recipient addresses. However, it is quite easy
-     to write a <em>delivery</em> filter that examines the recipient addresses in each
-     message's envelope file and copies the message files into a separate <em>mailbox</em>
+     directory for forwarding, without regard to the recipient addresses. However, it
+     is quite easy to have a <em>delivery</em> filter that examines the recipient addresses
+     in each e-mail message and moves the message files into a separate <em>mailbox</em>
      for each recipient.
     </p>
 
@@ -1654,7 +1745,7 @@ server plain carol my+20password
      address verifier script (<em>--address-verifier</em>). The address verifier can check
      each recipient address and map it to a mailbox name which then gets written to
      the envelope file's <em>To-Local</em> list. After that a delivery filter script
-     (<em>--filter</em>) just has to copy the message files into the designated mailboxes.
+     (<em>--filter</em>) just has to move the message files into the designated mailboxes.
     </p>
 
     <p>
@@ -1668,9 +1759,9 @@ server plain carol my+20password
     <p>
      Delivery is normally only relevant to incoming messages being received from
      external systems, but it might also be desirable for outgoing messages that are
-     addressed to local users. For these messages is makes sense for the delivery
-     filter to move the message files straight into the incoming mailbox rather than
-     have the message forwarded to the smarthost and then come back in again.
+     addressed to local users. For these messages is makes sense to use the delivery
+     mechanism to move the message files straight into the incoming mailbox rather
+     than have the message forwarded to the smarthost and then come back in again.
     </p>
    <h3><a class="a-header">deliver:</a></h3>
     <p>
@@ -1702,11 +1793,19 @@ server plain carol my+20password
      <em>--delivery-dir</em> command-line option can be used to provide the <em>deliver:</em>
      filter with a different base directory.
     </p>
-   <h2><a class="a-header" name="SH_1_16">IP addresses</a></h2> <!-- index:2:SH:1:16:IP addresses -->
+   <h2><a class="a-header" name="SH_1_17">Delivery status notifications</a></h2> <!-- index:2:SH:1:17:Delivery status notifications -->
+    <p>
+     E-MailRelay does not generate delivery status notifications (DSNs). If required
+     failed messages in the spool directory can be processed by some other means,
+     with the DSN messages submitted into an outgoing E-MailRelay instance that
+     either forwards to a smarthost or does its own routing. See <em>Submission</em> and
+     <em>Routing</em> above.
+    </p>
+   <h2><a class="a-header" name="SH_1_18">IP addresses</a></h2> <!-- index:2:SH:1:18:IP addresses -->
     <p>
      By default the E-MailRelay server listens for connections on the wildcard IPv4
      and IPv6 addresses, and when making outgoing connections it does not explicitly
-     bind an address to the the local socket.
+     bind any particular address to the the local socket.
     </p>
 
     <p>
@@ -1825,7 +1924,7 @@ server plain carol my+20password
        <pre>--as-client ipv4or6.example.com:25 --client-interface 0.0.0.0
 --as-client ipv4or6.example.com:25 --client-interface ::</pre>
       </div><!-- div-pre -->
-   <h2><a class="a-header" name="SH_1_17">Socket activation</a></h2> <!-- index:2:SH:1:17:Socket activation -->
+   <h2><a class="a-header" name="SH_1_19">Socket activation</a></h2> <!-- index:2:SH:1:19:Socket activation -->
     <p>
      On Linux/Unix systems E-MailRelay can be passed open listening file descriptors
      at start-up by using the <em>--interface</em> option with a value like fd#3. This
@@ -1841,7 +1940,7 @@ server plain carol my+20password
        <pre>--interface=fd#4
 --interface=smtp=fd#5,pop=fd#6</pre>
       </div><!-- div-pre -->
-   <h2><a class="a-header" name="SH_1_18">Unix domain sockets</a></h2> <!-- index:2:SH:1:18:Unix domain sockets -->
+   <h2><a class="a-header" name="SH_1_20">Unix domain sockets</a></h2> <!-- index:2:SH:1:20:Unix domain sockets -->
     <p>
      E-MailRelay on Linux/Unix will listen on unix-domain sockets instead of IPv4 or
      IPv6 if the <em>--interface</em> option is given with an absolute file-system path:
@@ -1890,7 +1989,7 @@ server plain carol my+20password
 --filter=spam:/run/spamd.s
 --filter=spam-edit:/run/spamd.s</pre>
       </div><!-- div-pre -->
-   <h2><a class="a-header" name="SH_1_19">SOCKS</a></h2> <!-- index:2:SH:1:19:SOCKS -->
+   <h2><a class="a-header" name="SH_1_21">SOCKS</a></h2> <!-- index:2:SH:1:21:SOCKS -->
     <p>
      E-MailRelay can use a SOCKS 4a proxy for establishing outgoing SMTP connections;
      just append the SOCKS proxy address to the SMTP server's address, separated by
@@ -1911,7 +2010,7 @@ server plain carol my+20password
      establish the connection. The target SMTP server will see a connection coming
      from the Tor exit node rather than from the E-MailRelay server.
     </p>
-   <h2><a class="a-header" name="SH_1_20">SMTP extensions</a></h2> <!-- index:2:SH:1:20:SMTP extensions -->
+   <h2><a class="a-header" name="SH_1_22">SMTP extensions</a></h2> <!-- index:2:SH:1:22:SMTP extensions -->
     <p>
      Some standard extensions of the SMTP protocol can be enabled by using the
      <em>--server-smtp-config</em> and <em>--client-smtp-config</em> command-line options.
@@ -1921,7 +2020,7 @@ server plain carol my+20password
      there is a risk that any mail messages that require those extensions will fail
      to be forwarded.
     </p>
-   <h2><a class="a-header" name="SH_1_21">Administration interface</a></h2> <!-- index:2:SH:1:21:Administration interface -->
+   <h2><a class="a-header" name="SH_1_23">Administration interface</a></h2> <!-- index:2:SH:1:23:Administration interface -->
     <p>
      If enabled with the <em>--admin</em> command-line option, the E-MailRelay server will
      provide a network interface for performing administration tasks. This is a
@@ -1951,11 +2050,17 @@ E-MailRelay&gt; quit
     </p>
 
     <p>
+     The <em>smtp disable</em> command will cause E-MailRelay to reject new SMTP
+     connections with a <em>421 service not available</em> message. This can be useful when
+     shutting down the service without disrupting existing connections.
+    </p>
+
+    <p>
      The <em>list</em> command lists the messages in the spool directory, <em>status</em> provides
      network status information and activity statistics, and <em>notify</em> enables
-     asynchronous event notification.
+     asynchronous event notification through the administation connection.
     </p>
-   <h2><a class="a-header" name="SH_1_22">Connection blocking</a></h2> <!-- index:2:SH:1:22:Connection blocking -->
+   <h2><a class="a-header" name="SH_1_24">Connection blocking</a></h2> <!-- index:2:SH:1:24:Connection blocking -->
     <p>
      All incoming connections from remote network addresses are rejected by default,
      but can be allowed by using the <em>--remote-clients</em> or <em>-r</em> option. This is to
@@ -2011,8 +2116,8 @@ E-MailRelay&gt; quit
     <p>
      If the timeout period expires before a collective decision is reached then the
      connection is allowed by default. This default behaviour can be changed by using
-     a negative timeout, although an unresponsive DNSBL servers might then result in
-     all incoming connections being blocked:
+     a negative timeout, but beware that an unresponsive DNSBL server might then
+     result in all incoming connections being blocked:
     </p>
 
       <div class="div-pre">
@@ -2023,7 +2128,7 @@ E-MailRelay&gt; quit
      Connections from loopback and private (RFC-1918) network addresses are never
      checked using DNSBL.
     </p>
-   <h2><a class="a-header" name="SH_1_23">POP server</a></h2> <!-- index:2:SH:1:23:POP server -->
+   <h2><a class="a-header" name="SH_1_25">POP server</a></h2> <!-- index:2:SH:1:25:POP server -->
     <p>
      The POP protocol is designed to allow e-mail user agents to retrieve and delete
      e-mail messages that have arrived at their final destination.
@@ -2052,9 +2157,9 @@ E-MailRelay&gt; quit
 
     <p>
      To get the e-mail message files into the <em>--pop-by-name</em> sub-directory a filter
-     script can be used. This should just copy the new envelope file and content file
-     into those sub-directories of the main spool directory for which there are
-     matching entries in the POP secrets file.
+     script can be used. This should just copy the new envelope file into those
+     sub-directories of the main spool directory for which there are matching entries
+     in the POP secrets file.
     </p>
 
     <p>
@@ -2068,7 +2173,7 @@ E-MailRelay&gt; quit
 
     <p>
      Alternatively, another way to save disk space on Linux/Unix is for the filter
-     script to copy content files using hard links.
+     script to copy content files into the sub-directories but use hard links.
     </p>
 
     <p>
@@ -2078,8 +2183,6 @@ E-MailRelay&gt; quit
      original files in the main spool directory so they can be forwarded use
      <em>copy:nodelete</em>; to copy just the envelope file and leave the content file alone
      use <em>copy:pop</em>; and to copy content files with hard links use <em>copy:hardlink</em>.
-     Remember to create matching sub-directories when adding users to the POP secrets
-     file.
     </p>
 
     <p>
@@ -2089,7 +2192,7 @@ E-MailRelay&gt; quit
      to interpret message recipient addresses as belonging to local users or not. See
      <em>Delivery</em> above for more information.
     </p>
-   <h2><a class="a-header" name="SH_1_24">Run-time environment</a></h2> <!-- index:2:SH:1:24:Run-time environment -->
+   <h2><a class="a-header" name="SH_1_26">Run-time environment</a></h2> <!-- index:2:SH:1:26:Run-time environment -->
     <p>
      On Linux/Unix systems an E-MailRelay server started as <em>root</em> runs mostly with an
      unprivileged effective user-id and group-id given by the <em>--user</em> command-line
@@ -2129,10 +2232,19 @@ E-MailRelay&gt; quit
     </p>
 
     <p>
+     By default the <em>emailrelay</em> program will fork and detach so that it runs in the
+     background, independently of the process that started it. The <em>--no-daemon</em>
+     option can be used to run in the foreground without forking. The program exit
+     code is 0 on success, 1 on error but 2 if the listening socket could not be
+     bound (which often indicates that another E-MailRelay instance is already
+     running).
+    </p>
+
+    <p>
      On Windows all files are opened with the _SH_DENYNO option so they can be
      accessed without sharing violations.
     </p>
-   <h2><a class="a-header" name="SH_1_25">Files and directories</a></h2> <!-- index:2:SH:1:25:Files and directories -->
+   <h2><a class="a-header" name="SH_1_27">Files and directories</a></h2> <!-- index:2:SH:1:27:Files and directories -->
     <p>
      On Linux/Unix systems E-MailRelay installs by default under <em>/usr/local</em>, but
      binary distributions will probably have been built to install elsewhere.
@@ -2178,7 +2290,7 @@ sudo make install
       </div><!-- div-pre -->
     <p>
      It is possible to change the installation root directory after building by
-     using <em>make DESTDIR=<root> install</em> or <em>DESTDIR=<root> make -e install</em>.
+     using <em>make DESTDIR=&lt;root&gt; install</em> or <em>DESTDIR=&lt;root&gt; make -e install</em>.
      However, this will not change the default spool directory path built into the
      scripts and executables so the correct spool directory will then have to be
      specified at run-time with the <em>--spool-dir</em> command-line option.
@@ -2194,10 +2306,10 @@ sudo make install
 
     <div class="div-footer">
      <p>
-      Copyright (C) 2001-2023 Graeme Walker
+      Copyright (C) 2001-2024 Graeme Walker
      </p>
     </div><!-- div-footer -->
  </div> <!-- div-main -->
  </body>
 </html>
-<!-- Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->
+<!-- Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->

@@ -22,8 +22,8 @@
     </ul>
    <h2><a class="a-header" name="SH_1_2">Portability</a></h2> <!-- index:2:SH:1:2:Portability -->
     <p>
-     The E-MailRelay code is written in C++11. Earlier versions of E-MailRelay used
-     C++03.
+     The E-MailRelay code is written in Modern C++, superficially using C++17 but
+     remaining compatible with C++11.
     </p>
 
     <p>
@@ -73,7 +73,7 @@
      between objects (not to be confused with operating system signals). The
      slot/signal implementation has been simplified compared to Qt or boost by not
      supporting signal multicasting, so each signal connects to no more than one
-     slot. The implementation now uses std::function.
+     slot. The implementation is now a thin wrapper over std::function.
     </p>
 
     <p>
@@ -83,7 +83,7 @@
      most cases signals are emitted at the end of a function and the stack unwinds
      back to the event loop immediately afterwards, but in other situations,
      particularly when emitting more than one signal, defensive measures are
-     required.
+     required (see <em>glib/gcall.h</em>).
     </p>
    <h2><a class="a-header" name="SH_1_4">Module structure</a></h2> <!-- index:2:SH:1:4:Module structure -->
     <p>
@@ -240,8 +240,12 @@
      wrap up the <em>getaddrinfo()</em> and <em>waitpid()</em> system calls. The shared state
      comprises only the parameters and return results from these system calls, and
      synchronisation back to the main thread uses the main event loop (see
-     <em>GNet::FutureEvent</em>). Threading is not used elsewhere so the C/C++ run-time
-     library does not need to be thread-safe.
+     <em>GNet::FutureEvent</em>).
+    </p>
+
+    <p>
+     Multi-threading is also used in the Windows event loop once the number of
+     handles goes above the WaitForMultipleObjects() limit.
     </p>
    <h2><a class="a-header" name="SH_1_8">E-MailRelay GUI</a></h2> <!-- index:2:SH:1:8:E-MailRelay GUI -->
     <p>
@@ -269,7 +273,7 @@
     </p>
 
     <p>
-     When run in configure mode the GUI normally ends up simply editing the
+     When run in configure mode the GUI normally ends up just editing the
      <em>emailrelay.conf</em> file (or <em>emailrelay-start.bat</em> on Windows) and/or the
      <em>emailrelay.auth</em> secrets file.
     </p>
@@ -285,10 +289,11 @@
     <p>
      When building the GUI program the library code shared with the main server
      executable is compiled separately so that different GUI-specific compiler
-     options can be used. This is done as a 'unity build', concatenating the shared
-     code into one source file and compiling that for the GUI. (This technique
-     requires that private 'detail' namespaces are named rather than anonymous so
-     that there cannot be any name clashes within the combined anonymous namespace.)
+     options can be used. This is done as a 'unity build', using the pre-processor
+     to concatenate the shared code into one source file and compiling that for the
+     GUI. (This technique requires that private 'detail' namespaces are explicitly
+     named rather than anonymous so that there cannot be any name clashes within the
+     combined anonymous namespace.)
     </p>
    <h2><a class="a-header" name="SH_1_9">Character encoding on Windows</a></h2> <!-- index:2:SH:1:9:Character encoding on Windows -->
     <p>
@@ -303,7 +308,7 @@
      The header file <em>gnowide.h</em> has inline functions that convert to and from UTF-8
      before calling the <em>wide</em> Windows API functions. The actual convertion between
      UTF-8 and UTF-16 wide characters is done by the G::Convert class. As a temporary
-     measure the G_NO_UNICODE preprocessor switch can be defined to go back to using
+     measure the G_ANSI pre-processor switch can be defined to go back to using
      <em>ansi</em> functions.
     </p>
 
@@ -312,7 +317,7 @@
      code, such as in <em>gfile_win32.cpp</em>, passes the UTF-8 strings to the <em>nowide</em>
      inline functions which in turn call wide runtime library functions like
      _wopen(). The exception is that the G::Path::iopath() method can be used to
-     initialise std::fstreams directly, without being wrapped by <em>nowide</em> functions.
+     initialise std::fstreams directly, without using the <em>nowide</em> functions.
     </p>
 
     <p>
@@ -323,10 +328,11 @@
 
     <p>
      Configuration files are expected to use UTF-8 character encoding. The secrets
-     file should also use UTF-8, but Base64 or xtext encoding is used for the account
-     details, so the encoding is less relevant there. The startup batch file
-     (<em>emailrelay-start.bat</em>) uses the OEM code page and the E-MailRelay GUI makes
-     sure that the user's choice of install directory is compatible with this.
+     file also notionally uses UTF-8, but Base64 or xtext encoding is used for the
+     account details, so the encoding is less relevant there. The startup batch file
+     (<em>emailrelay-start.bat</em>) necessarily uses the OEM code page and the E-MailRelay
+     GUI now tries to ensure that the user's choice of install directory is
+     compatible with this.
     </p>
    <h2><a class="a-header" name="SH_1_10">Windows build</a></h2> <!-- index:2:SH:1:10:Windows build -->
     <p>
@@ -342,7 +348,7 @@
     <p>
      The <em>winbuild.bat</em> script expects to find mbedtls source code in a child or
      sibling directory and Qt libraries under <em>c:\qt</em>, but refer to <em>winbuild.pm</em> for
-     the details. The build proceeds using <em>cmake</em> and <em>msbuild</em> resulting in
+     the details. The build proceeds using <em>cmake</em> and <em>cmake --build</em>, resulting in
      statically-linked executables but with the GUI typically dynamically-linked.
     </p>
 
@@ -392,7 +398,8 @@
 
     <p>
      The setup program is the emailrelay GUI running in setup mode, with a <em>payload</em>
-     directory containing the files to be installed.
+     directory containing the files to be installed. Refer to the comments in
+     <em>src/gui/guimain.cpp</em> for more details.
     </p>
    <h2><a class="a-header" name="SH_1_12">Unix build</a></h2> <!-- index:2:SH:1:12:Unix build -->
     <p>
@@ -401,6 +408,13 @@
      the settings from the <em>configure</em> script, so run <em>configure</em> or <em>configure.sh</em>
      before <em>make2cmake</em>. The <em>configure</em> script is normally part of the release but
      it can itself be generated by running the <em>bootstrap</em> script.
+    </p>
+
+    <p>
+     For a 'unity build' run <em>configure</em> (typically with compiler options passed via
+     <em>CXXFLAGS</em>) and then <em>make unity</em>. Code-size optimisations such as <em>-Os</em> and
+     <em>-fwhole-program</em> are particularly effective for a unity build. Refer to the
+     comments in <em>unity/Makefile.am</em> for more information.
     </p>
    <h2><a class="a-header" name="SH_1_13">Unix packaging</a></h2> <!-- index:2:SH:1:13:Unix packaging -->
     <p>
@@ -418,8 +432,7 @@
      The GUI code has i18n support using the Qt framework, with the tr() function
      used throughout the GUI source code. The GUI main() function loads translations
      from the <em>translations</em> sub-directory (relative to the executable), although
-     that can be overridden with the <em>--qm</em> command-line option. Qt's <em>-reverse</em>
-     option can also be used to reverse the widgets when using RTL languages.
+     that can be overridden with the <em>--qm</em> command-line option.
     </p>
 
     <p>
@@ -444,7 +457,7 @@
 
       <div class="div-pre">
        <pre>$ svn co https://svn.code.sf.net/p/emailrelay/code emailrelay
-$ cd emailrelay/tags/V_2_5_2
+$ cd emailrelay/tags/V_2_6
 </pre>
       </div><!-- div-pre -->
     <p>
@@ -454,13 +467,13 @@ $ cd emailrelay/tags/V_2_5_2
       <div class="div-pre">
        <pre>$ git clone https://git.code.sf.net/p/emailrelay/git emailrelay
 $ cd emailrelay
-$ git checkout V_2_5_2
+$ git checkout V_2_6
 </pre>
       </div><!-- div-pre -->
     <p>
-     Code that has been formally released will be tagged with a tag like <em>V_2_5_2</em>
+     Code that has been formally released will be tagged with a tag like <em>V_2_6</em>
      and any post-release or back-ported fixes will be on a <em>fixes</em> branch like
-     <em>V_2_5_2_fixes</em>.
+     <em>V_2_6_fixes</em>.
     </p>
    <h2><a class="a-header" name="SH_1_16">Compile-time features</a></h2> <!-- index:2:SH:1:16:Compile-time features -->
     <p>
@@ -485,10 +498,10 @@ $ git checkout V_2_5_2
 
     <div class="div-footer">
      <p>
-      Copyright (C) 2001-2023 Graeme Walker
+      Copyright (C) 2001-2024 Graeme Walker
      </p>
     </div><!-- div-footer -->
  </div> <!-- div-main -->
  </body>
 </html>
-<!-- Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->
+<!-- Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->

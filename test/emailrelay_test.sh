@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ then
 fi
 
 # test for perl
-perl -e "use Carp; use FileHandle; use Getopt::Std; use IO::Socket; use IO::Select; exit(99);" 2>/dev/null
+perl -e "use Carp; use FileHandle; use Getopt::Std; use IO::Socket; use IO::Select; use lib \".\" ; exit(99);" 2>/dev/null
 rc=$?
 if test $rc -ne 99
 then

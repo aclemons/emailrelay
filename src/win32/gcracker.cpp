@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -34,8 +34,7 @@ GGui::Cracker::Cracker( HWND hwnd ) :
 }
 
 GGui::Cracker::~Cracker()
-{
-}
+= default ;
 
 LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam , LPARAM lparam , bool & call_default )
 {
@@ -61,7 +60,7 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam , LPARAM lparam , boo
 		{
 			G_DEBUG( "Cracker::onClose" ) ;
 			if( onClose() )
-				PostMessage( handle() , WM_DESTROY , 0 , 0 ) ;
+				G::nowide::postMessage( handle() , WM_DESTROY , 0 , 0 ) ;
 			return 0 ;
 		}
 
@@ -132,6 +131,8 @@ LRESULT GGui::Cracker::crack( UINT message , WPARAM wparam , LPARAM lparam , boo
 				processed = onSysCommand( SysCommand::scSize ) ;
 			else if( cmd == SC_CLOSE )
 				processed = onSysCommand( SysCommand::scClose ) ;
+			else
+				processed = onSysCommandOther( cmd ) ;
 			if( !processed )
 				call_default = true ;
 			return 0 ;
@@ -448,6 +449,11 @@ void GGui::Cracker::onSysColourChange()
 }
 
 bool GGui::Cracker::onSysCommand( SysCommand )
+{
+	return false ;
+}
+
+bool GGui::Cracker::onSysCommandOther( WPARAM )
 {
 	return false ;
 }

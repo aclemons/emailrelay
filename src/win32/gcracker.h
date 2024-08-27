@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -43,7 +43,7 @@ public:
 		///< Constructor. The window handle is passed on to
 		///< the base class.
 
-	virtual ~Cracker() ;
+	~Cracker() override ;
 		///< Virtual destructor.
 
 	LRESULT crack( unsigned int msg , WPARAM w , LPARAM l , bool & default_ ) ;
@@ -90,10 +90,16 @@ protected:
 		///< Overridable. Called when the window receives a
 		///< WM_SYSCOLORCHANGE message.
 
-	enum class SysCommand { scMaximise , scMinimise , scClose , scSize /*etc*/ } ;
+	enum class SysCommand { scMaximise , scMinimise , scClose , scSize } ;
 	virtual bool onSysCommand( SysCommand sys_command ) ;
 		///< Overridable. Called when the window receives a
 		///< WM_SYSCOMMAND message. Returns true if processed.
+
+	virtual bool onSysCommandOther( WPARAM ) ;
+		///< Overridable. Called when the window receives a
+		///< WM_SYSCOMMAND message that is not mapped to one
+		///< of the SysCommand enums. Returns true if
+		///< processed.
 
 	virtual bool onCreate() ;
 		///< Overridable. Called when the window receives a

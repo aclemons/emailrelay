@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -43,12 +43,11 @@ namespace G
 ///
 /// Usage:
 /// \code
-/// G::PidFile pid_file ;
-/// if( !path.empty() )
-/// { pid_file.init(path) ; pid_file.check() ; }
 /// G::Root::init("nobody") ;
-/// if( daemon ) G::Daemon::detach( pid_file ) ;
-/// { G::Root claim_root ; pid_file.commit() ; }
+/// G::PidFile pid_file( path ) ;
+/// { G::Root _ ; pid_file.mkdir() ; }
+/// if( daemon ) G::Daemon::detach( pid_file.path() ) ;
+/// { G::Root _ ; pid_file.commit() ; }
 /// \endcode
 ///
 /// \see G::Daemon
@@ -56,7 +55,7 @@ namespace G
 class G::PidFile
 {
 public:
-	G_EXCEPTION( Error , tx("invalid pid file") ) ;
+	G_EXCEPTION( Error , tx("invalid pid file") )
 
 	explicit PidFile( const Path & pid_file_path ) ;
 		///< Constructor. A relative path is converted to

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -86,17 +86,17 @@ public:
 		unsigned int tag_bits {0U} ; ///< show options with matching tag bits, or zero for all
 
 		Config & set_separator( const std::string & ) ;
-		Config & set_column( std::size_t ) ;
-		Config & set_width( std::size_t ) ;
-		Config & set_width2( std::size_t ) ;
-		Config & set_margin( std::size_t ) ;
-		Config & set_extra( bool = true ) ;
-		Config & set_alt_usage( bool = true ) ;
+		Config & set_column( std::size_t ) noexcept ;
+		Config & set_width( std::size_t ) noexcept ;
+		Config & set_width2( std::size_t ) noexcept ;
+		Config & set_margin( std::size_t ) noexcept ;
+		Config & set_extra( bool = true ) noexcept ;
+		Config & set_alt_usage( bool = true ) noexcept ;
 
-		Config & set_level_max( unsigned int ) ;
-		Config & set_level_min( unsigned int ) ;
-		Config & set_main_tag( unsigned int ) ;
-		Config & set_tag_bits( unsigned int ) ;
+		Config & set_level_max( unsigned int ) noexcept ;
+		Config & set_level_min( unsigned int ) noexcept ;
+		Config & set_main_tag( unsigned int ) noexcept ;
+		Config & set_tag_bits( unsigned int ) noexcept ;
 		Config & setDefaults() ;
 		Config & setWidthsWrtMargin() ;
 		Config & setOverflowFormat( char = ' ' ) ;
@@ -163,15 +163,15 @@ private:
 } ;
 
 inline G::OptionsUsage::Config & G::OptionsUsage::Config::set_separator( const std::string & s ) { separator = s ; return *this ; }
-inline G::OptionsUsage::Config & G::OptionsUsage::Config::set_column( std::size_t n ) { column  = n ; return *this ; }
-inline G::OptionsUsage::Config & G::OptionsUsage::Config::set_width( std::size_t n ) { width = n ; return *this ; }
-inline G::OptionsUsage::Config & G::OptionsUsage::Config::set_width2( std::size_t n ) { width2 = n ; return *this ; }
-inline G::OptionsUsage::Config & G::OptionsUsage::Config::set_margin( std::size_t n ) { margin = n ; return *this ; }
-inline G::OptionsUsage::Config & G::OptionsUsage::Config::set_extra( bool b ) { extra = b ; return *this ; }
-inline G::OptionsUsage::Config & G::OptionsUsage::Config::set_alt_usage( bool b ) { alt_usage = b ; return *this ; }
-inline G::OptionsUsage::Config & G::OptionsUsage::Config::set_level_max( unsigned int n ) { level_max = n ; return *this ; }
-inline G::OptionsUsage::Config & G::OptionsUsage::Config::set_level_min( unsigned int n ) { level_min = n ; return *this ; }
-inline G::OptionsUsage::Config & G::OptionsUsage::Config::set_main_tag( unsigned int n ) { main_tag = n ; return *this ; }
-inline G::OptionsUsage::Config & G::OptionsUsage::Config::set_tag_bits( unsigned int n ) { tag_bits = n ; return *this ; }
+inline G::OptionsUsage::Config & G::OptionsUsage::Config::set_column( std::size_t n ) noexcept { column  = n ; return *this ; }
+inline G::OptionsUsage::Config & G::OptionsUsage::Config::set_width( std::size_t n ) noexcept { width = n ; return *this ; }
+inline G::OptionsUsage::Config & G::OptionsUsage::Config::set_width2( std::size_t n ) noexcept { width2 = n ; return *this ; }
+inline G::OptionsUsage::Config & G::OptionsUsage::Config::set_margin( std::size_t n ) noexcept { margin = n ; return *this ; }
+inline G::OptionsUsage::Config & G::OptionsUsage::Config::set_extra( bool b ) noexcept { extra = b ; return *this ; }
+inline G::OptionsUsage::Config & G::OptionsUsage::Config::set_alt_usage( bool b ) noexcept { alt_usage = b ; return *this ; }
+inline G::OptionsUsage::Config & G::OptionsUsage::Config::set_level_max( unsigned int n ) noexcept { level_max = n ; return *this ; }
+inline G::OptionsUsage::Config & G::OptionsUsage::Config::set_level_min( unsigned int n ) noexcept { level_min = n ; return *this ; }
+inline G::OptionsUsage::Config & G::OptionsUsage::Config::set_main_tag( unsigned int n ) noexcept { main_tag = n ; return *this ; }
+inline G::OptionsUsage::Config & G::OptionsUsage::Config::set_tag_bits( unsigned int n ) noexcept { tag_bits = n ; return *this ; }
 
 #endif

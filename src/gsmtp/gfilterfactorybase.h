@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 
 #include "gdef.h"
 #include "gfilter.h"
+#include "gstringview.h"
 #include "gfilestore.h"
 #include "geventstate.h"
 #include "gexception.h"
@@ -44,7 +45,7 @@ public:
 	struct Spec /// Filter specification tuple for GSmtp::FilterFactoryBase::newFilter().
 	{
 		Spec() ;
-		Spec( const std::string & , const std::string & ) ;
+		Spec( std::string_view , std::string_view ) ;
 		Spec & operator+=( const Spec & ) ;
 		std::string first ; // "exit", "file", "net", "spam", "chain", empty on error
 		std::string second ; // reason on error, or eg. "/bin/a" if "file", eg. "file:/bin/a,file:/bin/b" if "chain"

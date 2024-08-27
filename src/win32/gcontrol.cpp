@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,6 +26,9 @@
 #include "glog.h"
 #include "gassert.h"
 #include "gdc.h"
+#include <type_traits>
+#include <limits>
+#include <algorithm>
 #include <vector>
 #include <commctrl.h>
 #include <prsht.h> // PropertySheet
@@ -74,8 +77,9 @@ void GGui::Control::load( DWORD types )
  #endif
 }
 
-HWND GGui::Control::hdialog() const
+HWND GGui::Control::hdialog() const noexcept
 {
+	static_assert( noexcept(m_dialog->handle()) , "" ) ;
 	G_ASSERT( m_hdialog != HNULL || m_dialog != nullptr ) ;
 	return m_hdialog ? m_hdialog : m_dialog->handle() ; // WindowBase::handle()
 }
@@ -97,7 +101,7 @@ int GGui::Control::id() const
 
 LRESULT GGui::Control::sendMessage( unsigned int message , WPARAM wparam , LPARAM lparam ) const
 {
-	return G::nowide::sendMessage( handle() , message , wparam , lparam ) ;
+	return G::nowide::sendMessage( handle(std::nothrow) , message , wparam , lparam ) ;
 }
 
 LRESULT GGui::Control::sendMessageString( unsigned int message , WPARAM wparam , const std::string & s ) const
@@ -110,13 +114,18 @@ std::string GGui::Control::sendMessageGetString( unsigned int message , WPARAM w
 	return G::nowide::sendMessageGetString( handle() , message , wparam ) ;
 }
 
+HWND GGui::Control::handle( std::nothrow_t ) const noexcept
+{
+	static_assert( noexcept(hdialog()) , "" ) ;
+	return m_hwnd ?  m_hwnd : GetDlgItem( hdialog() , m_id ) ;
+}
+
 HWND GGui::Control::handle() const
 {
 	if( m_hwnd == 0 )
 	{
 		HWND hdialog_ = hdialog() ;
 		const_cast<Control*>(this)->m_hwnd = GetDlgItem( hdialog_ , m_id ) ;
-		G_DEBUG( "GGui::Control::handle: GetDlgItem(" << m_id << ") -> " << m_hwnd ) ;
 		if( m_hwnd == HNULL )
 		{
 			std::ostringstream ss ;
@@ -277,11 +286,7 @@ unsigned int GGui::ListBox::entries() const
 {
 	LRESULT entries = sendMessage( LB_GETCOUNT , 0 , 0 ) ;
 	if( entries == LB_ERR )
-	{
-		G_DEBUG( "GGui::ListBox::entries: listbox getcount error" ) ;
 		entries = 0 ;
-	}
-	G_ASSERT( entries == static_cast<LRESULT>(static_cast<unsigned int>(entries)) ) ;
 	return static_cast<unsigned int>(entries) ;
 }
 
@@ -359,16 +364,12 @@ void GGui::EditBox::set( const G::StringArray & list )
 	else
 	{
 		NoRedraw no_redraw( *this ) ;
-
 		std::string total ;
-		const char *sep = "" ;
 		for( G::StringArray::const_iterator iter = list.begin() ; iter != list.end() ; ++iter )
 		{
-			total.append( sep ) ;
-			sep = "\x0D\x0A" ;
+			total.append( "\r\n" , (iter==list.begin()?0U:2U) ) ;
 			total.append( *iter ) ;
 		}
-
 		G::nowide::setWindowText( handle() , total ) ;
 		G_ASSERT( lines() >= list.size() ) ;
 	}
@@ -379,11 +380,9 @@ unsigned int GGui::EditBox::lines()
 	// handle an empty control since em_getlinecount returns one
 	int length = G::nowide::getWindowTextLength( handle() ) ;
 	if( length == 0 )
-		return 0 ;
+		return 0U ;
 
 	LRESULT lines = sendMessage( EM_GETLINECOUNT ) ;
-	G_DEBUG( "GGui::EditBox::lines: " << lines ) ;
-	G_ASSERT( lines == static_cast<LRESULT>(static_cast<unsigned int>(lines)) ) ;
 	return static_cast<unsigned int>(lines) ;
 }
 
@@ -391,19 +390,16 @@ unsigned int GGui::EditBox::linesInWindow()
 {
 	unsigned int text_height = characterHeight() ;
 	unsigned int window_height = windowHeight() ;
-	G_ASSERT( text_height != 0 ) ;
-	unsigned int result = window_height / text_height ;
-	G_DEBUG( "GGui::EditBox::linesInWindow: " << result ) ;
-	return result ;
+	G_ASSERT( text_height != 0U ) ;
+	return window_height / std::max(1U,text_height) ;
 }
 
 void GGui::EditBox::scrollBack( int lines )
 {
-	if( lines <= 0 )
-		return ;
-
-	LONG dy = -lines ;
-	sendMessage( EM_LINESCROLL , 0 , dy ) ;
+	static_assert( std::is_signed<LONG>::value && sizeof(LONG) >= sizeof(int) , "" ) ;
+	LONG dy = -static_cast<LONG>(lines) ;
+	if( dy < 0 )
+		sendMessage( EM_LINESCROLL , 0 , dy ) ;
 }
 
 void GGui::EditBox::scrollToEnd()
@@ -419,32 +415,28 @@ std::string GGui::EditBox::get() const
 
 unsigned int GGui::EditBox::scrollPosition()
 {
+	static_assert( sizeof(LRESULT) >= sizeof(unsigned) , "" ) ;
 	LRESULT position = sendMessage( EM_GETFIRSTVISIBLELINE ) ;
-	G_DEBUG( "GGui::EditBox::scrollPosition: " << position ) ;
-	G_ASSERT( position == static_cast<LRESULT>(static_cast<unsigned int>(position)) ) ;
-	return static_cast<unsigned int>(position) ;
+	return static_cast<unsigned int>( std::min( LRESULT(std::numeric_limits<unsigned>::max()) , position ) ) ;
 }
 
 unsigned int GGui::EditBox::scrollRange()
 {
 	unsigned int range = lines() ;
-	if( range <= 1 )
-		range = 1 ;
+	if( range <= 1U )
+		range = 1U ;
 	else
 		range-- ;
-
-	//range += linesInWindow() ;
-	G_DEBUG( "GGui::EditBox::scrollRange: " << range ) ;
 	return range ;
 }
 
 unsigned int GGui::EditBox::characterHeight()
 {
-	if( m_character_height == 0 )
+	if( m_character_height == 0U )
 	{
 		DeviceContext dc( handle() ) ;
 		m_character_height = G::nowide::getTextMetricsHeight( dc() ) ;
-		G_ASSERT( m_character_height != 0 ) ;
+		G_ASSERT( m_character_height != 0U ) ;
 	}
 	return m_character_height ;
 }

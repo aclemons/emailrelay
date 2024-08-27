@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -55,7 +55,7 @@ namespace GNet
 class GNet::DnsMessage
 {
 public:
-	G_EXCEPTION( Error , tx("dns message error") ) ;
+	G_EXCEPTION( Error , tx("dns message error") )
 	using Question = DnsMessageQuestion ;
 	using RR = DnsMessageRR ;
 
@@ -275,6 +275,13 @@ public:
 	const DnsMessageRRData & rdata() const ;
 		///< Provides access to the message RDATA.
 
+public:
+	~DnsMessageRR() = default ;
+	DnsMessageRR( const DnsMessageRR & ) = default ;
+	DnsMessageRR( DnsMessageRR && ) = default ;
+	DnsMessageRR & operator=( const DnsMessageRR & ) = delete ;
+	DnsMessageRR & operator=( DnsMessageRR && ) = delete ;
+
 private:
 	friend class GNet::DnsMessageRRData ;
 	std::string rdataDname( unsigned int rdata_offset ) const ;
@@ -288,7 +295,7 @@ private:
 	GNet::Address addressImp( unsigned int port , bool & ok ) const ;
 
 private:
-	const DnsMessage & m_msg ;
+	const DnsMessage & m_msg ; // NOLINT cppcoreguidelines-avoid-const-or-ref-data-members
 	unsigned int m_offset {0U} ;
 	unsigned int m_size {0U} ;
 	unsigned int m_type {0U} ;

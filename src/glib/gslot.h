@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -172,7 +172,7 @@ namespace G
 		///
 		struct SignalImp
 		{
-			G_EXCEPTION_CLASS( AlreadyConnected , tx("signal already connected") ) ;
+			G_EXCEPTION_CLASS( AlreadyConnected , tx("signal already connected") )
 			SignalImp() = delete ;
 		} ;
 
@@ -184,7 +184,7 @@ namespace G
 		{
 			Slot<SlotArgs...> m_slot ;
 			bool m_once ;
-			bool m_emitted{false} ;
+			bool m_emitted {false} ;
 			explicit Signal( bool once = false ) :
 				m_once(once)
 			{

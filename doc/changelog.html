@@ -9,12 +9,21 @@
   <!-- index:0::::E-MailRelay Change Log -->
  <div class="div-main">
   <h1><a class="a-header" name="H_1">E-MailRelay Change Log</a></h1> <!-- index:1:H:E-MailRelay Change Log -->
-   <h2><a class="a-header" name="SH_1_1">2.5.2 -> 2.5.3</a></h2> <!-- index:2:SH:1:1:2.5.2 -> 2.5.3 -->
+   <h2><a class="a-header" name="SH_1_1">2.5.2 -> 2.6</a></h2> <!-- index:2:SH:1:1:2.5.2 -> 2.6 -->
     <ul>
      <li>New <em>--log-format</em> option (eg. <em>--log-format=address,port</em>).</li>
-     <li>Configuration files always use UTF-8 character encoding on Windows.</li>
-     <li>New <em>nostrictparsing</em> option for <em>--server-smtp-config</em>.</li>
-     <li>More concurrent connections on Windows.</li>
+     <li>New <em>--server-smtp-config</em> <em>nostrictparsing</em> option to allow missing <em>RCPT-TO</em> angle brackets.</li>
+     <li>The SMTP server converts incoming e-mail addresses to RFC-5890 A-labels by default (see NEWS).</li>
+     <li>The <em>mx:</em> filter accepts an IP address in the envelope forward-to field, not just a domain name.</li>
+     <li>Pop-by-name sub-directories are automatically created if necessary.</li>
+     <li>The <em>--forward-to</em> domain names can be UTF-8.</li>
+     <li>Windows configuration files always use UTF-8 character encoding.</li>
+     <li>The Windows installer puts options in <em>emailrelay.cfg</em>, not <em>emailrelay-start.bat</em>.</li>
+     <li>The Windows service wrapper will read <em>emailrelay.cfg</em> if there is no batch file.</li>
+     <li>The SMTP client EHLO parameter is controlled by <em>--domain</em> (as in v2.3) but IP address if not a FQDN.</li>
+     <li>The <em>emailrelay-submit</em> utility can parse recipient addresses out of content headers.</li>
+     <li>On Windows <em>--no-daemon</em> is deprecated in favour of <em>--show=window</em>.</li>
+     <li>The Windows event loop supports more concurrent connections [bug-id #59].</li>
     </ul>
    <h2><a class="a-header" name="SH_1_2">2.5.1 -> 2.5.2</a></h2> <!-- index:2:SH:1:2:2.5.1 -> 2.5.2 -->
     <ul>
@@ -407,8 +416,8 @@
      <li>Non-privileged user switch (<em>--user</em>) added.</li>
      <li>Better handling of NarrowPipe exception (ie. 8-bit message to 7-bit server).</li>
      <li>Allow null return path in MAIL-FROM.</li>
-     <li>Reject recipients which look like <em><user>@localhost</em> (as used by fetchmail for local delivery).</li>
-     <li>Treat recipients which look like <em>postmaster@localhost</em> or <em>postmaster@<fqdn></em> as local postmaster.</li>
+     <li>Reject recipients which look like <em>&lt;user&gt;@localhost</em> (as used by fetchmail for local delivery).</li>
+     <li>Treat recipients which look like <em>postmaster@localhost</em> or <em>postmaster@&lt;fqdn&gt;</em> as local postmaster.</li>
      <li>Optional timestamps on log output (<em>--log-time</em>).</li>
      <li>Fix EHLO to HELO fallback for 501/502 responses in client protocol.</li>
      <li>Submission utility <em>emailrelay-submit</em> added.</li>
@@ -467,4 +476,4 @@
  </div> <!-- div-main -->
  </body>
 </html>
-<!-- Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->
+<!-- Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->

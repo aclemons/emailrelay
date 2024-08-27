@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -36,10 +36,9 @@ GGui::ApplicationBase::ApplicationBase( HINSTANCE current , HINSTANCE previous ,
 }
 
 GGui::ApplicationBase::~ApplicationBase()
-{
-}
+= default ;
 
-std::string GGui::ApplicationBase::createWindow( int show_style , bool do_show , int dx , int dy , bool no_throw )
+void GGui::ApplicationBase::createWindow( int show_style , bool do_show , int dx , int dy )
 {
 	G_DEBUG( "GGui::ApplicationBase::createWindow: name=" << m_name << " first=" << (m_previous==0) ) ;
 
@@ -59,10 +58,7 @@ std::string GGui::ApplicationBase::createWindow( int show_style , bool do_show ,
 			HNULL , // menu handle: HNULL => use class's menu
 			hinstance() ) )
 	{
-		if( no_throw )
-			return wndProcExceptionString() ;
-		else
-			throw CreateError( wndProcExceptionString() ) ;
+		throw CreateError( reason() ) ; // GGui::Window::reason()
 	}
 
 	if( do_show )
@@ -70,7 +66,6 @@ std::string GGui::ApplicationBase::createWindow( int show_style , bool do_show ,
 		show( show_style ) ; // GGui::Window::show(), ShowWindow()
 		update() ; // GGui::Window::update(), UpdateWindow()
 	}
-	return std::string() ;
 }
 
 bool GGui::ApplicationBase::firstInstance() const
@@ -155,14 +150,14 @@ void GGui::ApplicationBase::beep() const
 
 bool GGui::ApplicationBase::messageBoxQuery( const std::string & message )
 {
-		HWND hwnd = messageBoxHandle() ;
+	HWND hwnd = messageBoxHandle() ;
 	unsigned int type = messageBoxType( hwnd , MB_YESNO | MB_ICONQUESTION ) ;
 	return G::nowide::messageBox( hwnd , message , title() , type ) ;
 }
 
 void GGui::ApplicationBase::messageBox( const std::string & message )
 {
-		HWND hwnd = messageBoxHandle() ;
+	HWND hwnd = messageBoxHandle() ;
 	unsigned int type = messageBoxType( hwnd , MB_OK | MB_ICONEXCLAMATION ) ;
 	G::nowide::messageBox( hwnd , message , title() , type ) ;
 }

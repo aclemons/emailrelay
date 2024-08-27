@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -62,14 +62,14 @@ public:
 			///< eg. "1000-1002;pm;lc".
 
 private: // overrides
-	void verify( Command command , const std::string & , const GSmtp::Verifier::Info & ) override ;
-	G::Slot::Signal<GSmtp::Verifier::Command,const GSmtp::VerifierStatus&> & doneSignal() override ;
-	void cancel() override ;
+	void verify( const GSmtp::Verifier::Request & ) override ; // GSmtp::Verifier
+	G::Slot::Signal<GSmtp::Verifier::Command,const GSmtp::VerifierStatus&> & doneSignal() override ; // GSmtp::Verifier
+	void cancel() override ; // GSmtp::Verifier
 
 private:
 	void onTimeout() ;
-	bool lookup( const std::string & , const std::string & , std::string * = nullptr , std::string * = nullptr ) const ;
-	static std::string dequote( const std::string & ) ;
+	bool lookup( std::string_view , std::string_view , std::string * = nullptr , std::string * = nullptr ) const ;
+	static std::string_view dequote( std::string_view ) ;
 
 private:
 	using Signal = G::Slot::Signal<GSmtp::Verifier::Command,const GSmtp::VerifierStatus&> ;

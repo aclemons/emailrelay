@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -71,9 +71,9 @@ public:
 	struct Domain /// Overload discriminator for Address::supports()
 		{} ;
 
-	G_EXCEPTION( Error , tx("address error") ) ;
-	G_EXCEPTION( BadString , tx("invalid address") ) ;
-	G_EXCEPTION_CLASS( BadFamily , tx("unsupported address family") ) ;
+	G_EXCEPTION( Error , tx("address error") )
+	G_EXCEPTION( BadString , tx("invalid address") )
+	G_EXCEPTION_CLASS( BadFamily , tx("unsupported address family") )
 
 	static bool supports( Family ) noexcept ;
 		///< Returns true if the implementation supports the given

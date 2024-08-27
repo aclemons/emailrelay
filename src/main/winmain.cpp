@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -60,7 +60,15 @@ int WINAPI WinMain( HINSTANCE hinstance , HINSTANCE previous , LPSTR /*command_l
 		}
 		catch( GNet::SocketBase::SocketBindError & e )
 		{
-			app.onError( e.what() , 2 ) ;
+			if( e.m_einuse )
+			{
+				std::string_view help = "check whether emailrelay is already running as a service" ;
+				app.onError( std::string(e.what()).append(": ",2U).append(help.data(),help.size()) , 2 ) ;
+			}
+			else
+			{
+				app.onError( e.what() , 2 ) ;
+			}
 		}
 		catch( std::exception & e )
 		{
@@ -71,7 +79,7 @@ int WINAPI WinMain( HINSTANCE hinstance , HINSTANCE previous , LPSTR /*command_l
 	}
 	catch(...)
 	{
-		::MessageBeep( MB_ICONHAND ) ;
+		MessageBeep( MB_ICONHAND ) ;
 	}
 	return 1 ;
 }

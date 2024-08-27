@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 #
 # SmtpClient.pm
 #
-# A network client for driving the smtp interface.
+# A perl-only network client for driving the smtp interface.
 #
 # Synopsis:
 #
@@ -27,10 +27,11 @@
 #	$sc->ehlo() ;
 #	$sc->doBadHelo() ;
 #	$sc->doBadCommand() ;
-#	$sc->mail() ;
-#	$sc->submit_start() ; # ehlo, mail-from, rcpt-to, headers
+#	$sc->mail({expect_...=>0}) ; # mail-from
+#	$sc->submit_start(["me","you"],{expect_...=>0}) ; # ehlo, mail-from, rcpt-to, content-headers
 #	$sc->submit_line("testing 123") ;
-#	$sc->submit_end() ; # or submit_end_nowait()
+#	$sc->submit_end({nowait=>0,with_quit=>0}) ; # or...
+#   $sc->submit( ["me","you"] , {nowait=>0,with_quit=>0} ) ;
 #	$sc->close() ;
 #
 
@@ -65,12 +66,13 @@ sub server { return shift->{'m_server'} }
 sub open
 {
 	# Opens the connection.
-	my ( $this , $wait ) = @_ ;
-	$wait = defined($wait) ? $wait : 1 ;
+	my ( $this , $wait220 ) = @_ ;
+	$wait220 = $wait220->{wait220} if ref($wait220) eq "HASH" ;
+	$wait220 = 1 if !defined($wait220) ;
 
 	$this->{m_nc} = new NetClient( $this->{m_port} , $this->{m_server} , $this->{m_timeout} , $this->{m_prompt} ) ;
 	return undef if !$this->{m_nc} ;
-	$this->{m_nc}->read( qr/220 [^\n]+\n/ , -1 ) if $wait ;
+	$this->{m_nc}->read( qr/220 [^\n]+\n/ , -1 ) if $wait220 ;
 	return 1 ;
 }
 
@@ -92,8 +94,11 @@ sub mail
 {
 	# Says mail-from. Can optionally be expected to fail
 	# with an authentication-require error message.
-	my ( $this , $expect_mail_from_to_fail ) = @_ ;
-	if( $expect_mail_from_to_fail )
+	my ( $this , $opt ) = @_ ;
+
+	my $expect_mailfrom_failure = $opt->{expect_mailfrom_failure} ;
+
+	if( $expect_mailfrom_failure )
 	{
 		$this->{m_nc}->send( "mail from:<me\@here>\r\n" , qr/530 authentication required[^\n]*\n/ ) ;
 	}
@@ -107,13 +112,15 @@ sub submit_start
 {
 	# Starts message submission. See also submit_line()
 	# and submit_end().
-	my ( $this , $to , $expect_rcpt_to_to_fail ) = @_ ;
+	my ( $this , $to , $opt ) = @_ ;
+
 	if( !defined($to) ) { $to = 'you@there' }
+	my $expect_rcpt_to_failure = $opt->{expect_rcpt_to_failure} ;
+
 	my @to_list = ref($to) ? @$to : ($to) ;
-	$expect_rcpt_to_to_fail ||= 0 ;
 	$this->{m_nc}->cmd( "ehlo here" ) ;
 	$this->{m_nc}->cmd( 'mail from:<me@here>' ) ;
-	if( $expect_rcpt_to_to_fail )
+	if( $expect_rcpt_to_failure )
 	{
 		my $rcpt_to = $to_list[0] ;
 		$this->{m_nc}->cmd( "rcpt to:<$rcpt_to>" , qr/550 [^\n]+\n/ ) ;
@@ -137,14 +144,26 @@ sub submit_end
 {
 	# Ends message submission by sending a dot.
 	# Returns the SMTP response line or undef on error.
-	my ( $this ) = @_ ;
-	return $this->{m_nc}->cmd( "." , qr/[^\n]*\n/ ) ;
-}
+	my ( $this , $opt ) = @_ ;
 
-sub submit_end_nowait
-{
-	my ( $this , $with_quit ) = @_ ;
-	$this->{m_nc}->send( $with_quit ? ".\r\nQUIT\r\n" : ".\r\n" ) ;
+	my $nowait = $opt->{nowait} ;
+	my $with_quit = $opt->{with_quit} ; # if nowait
+
+	if( $nowait )
+	{
+		if( $with_quit )
+		{
+			$this->{m_nc}->send( ".\r\nQUIT\r\n" ) ;
+		}
+		else
+		{
+			$this->{m_nc}->send( ".\r\n" ) ;
+		}
+	}
+	else
+	{
+		return $this->{m_nc}->cmd( "." , qr/[^\n]*\n/ ) ;
+	}
 }
 
 sub submit_line
@@ -159,10 +178,10 @@ sub submit_line
 sub submit
 {
 	# Submits a whole test message.
-	my ( $this , $to ) = @_ ;
-	$this->submit_start( $to ) ;
+	my ( $this , $to_list , $opt ) = @_ ;
+	$this->submit_start( $to_list ) ;
 	$this->submit_line( "This is a test." ) ;
-	return $this->submit_end() ;
+	return $this->submit_end( $opt ) ;
 }
 
 sub doBadHelo

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,8 +31,8 @@ namespace Gui
 }
 
 //| \class Gui::Boot
-/// Provides support for installing, uninstalling and
-/// starting a boot-time service.
+/// Provides support for installing, uninstalling and starting
+/// a boot-time service.
 ///
 /// The Windows implementation uses the interface in
 /// "servicecontrol.h": service_install(), service_remove()
@@ -55,8 +55,10 @@ public:
 		const G::Path & path_1 , const G::Path & path_2 ) ;
 			///< Installs the target as a boot-time service. Throws on error.
 			///<
-			///< For Windows path_1 is the batch file and path_2 is the
-			///< service wrapper. For Unix path_1 is the startstop script and
+			///< For Windows path_1 is the the batch file and
+			///< path_2 is the service wrapper.
+			///<
+			///< For Unix path_1 is the startstop script and
 			///< path_2 is the server executable.
 
 	static bool uninstall( const std::string & name ,

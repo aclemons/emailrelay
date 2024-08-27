@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -58,7 +58,7 @@ namespace GNet
 class GNet::ServerPeer : private EventHandler , public Connection , private SocketProtocolSink , public ExceptionSource , private EventLogging
 {
 public:
-	G_EXCEPTION( IdleTimeout , tx("idle timeout") ) ;
+	G_EXCEPTION( IdleTimeout , tx("idle timeout") )
 
 	struct Config /// A configuration structure for GNet::ServerPeer.
 	{
@@ -136,7 +136,9 @@ protected:
 		///< residual data sent.
 
 	virtual bool onReceive( const char * data , std::size_t size , std::size_t eolsize , std::size_t linesize , char c0 ) = 0 ;
-		///< Called on receipt of data. See GNet::LineBuffer.
+		///< Called on receipt of a complete line of data.
+		///< This method is the sink function for the internal
+		///< GNet::LineBuffer. See GNet::LineBuffer::apply().
 
 	virtual void onDelete( const std::string & reason ) = 0 ;
 		///< Called just before the Server deletes this ServerPeer as

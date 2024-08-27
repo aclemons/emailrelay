@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,36 +20,21 @@
 
 #include "gdef.h"
 #include "gsmtpserverparser.h"
+#include "gidn.h"
 #include "gxtext.h"
 #include "gstr.h"
 #include "gstringtoken.h"
+#include "gconvert.h"
 #include "glog.h"
 #include "gassert.h"
 #include <string>
-
-GSmtp::ServerParser::MailboxStyle GSmtp::ServerParser::mailboxStyle( std::string_view mailbox )
-{
-	static constexpr const char * cc =
-		"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F"
-		"\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F" "\x7F" ;
-
-	bool invalid = mailbox.find_first_of( cc , 0U , 33U ) != std::string::npos ;
-	bool ascii = !invalid && G::Str::isPrintableAscii( mailbox ) ;
-
-	if( invalid )
-		return MailboxStyle::Invalid ;
-	else if( ascii )
-		return MailboxStyle::Ascii ;
-	else
-		return MailboxStyle::Utf8 ;
-}
 
 std::pair<std::size_t,bool> GSmtp::ServerParser::parseBdatSize( std::string_view bdat_line )
 {
 	G::StringTokenView token( bdat_line , "\t "_sv ) ;
 	std::size_t size = 0U ;
 	bool ok = false ;
-	if( token && ++token )
+	if( ++token )
 	{
 		bool overflow = false ;
 		bool invalid = false ;
@@ -65,7 +50,7 @@ std::pair<bool,bool> GSmtp::ServerParser::parseBdatLast( std::string_view bdat_l
 	G::StringTokenView token( bdat_line , "\t "_sv ) ;
 	bool last = false ;
 	bool ok = false ;
-	if( token && ++token )
+	if( ++token )
 	{
 		ok = true ;
 		if( ++token )
@@ -74,14 +59,13 @@ std::pair<bool,bool> GSmtp::ServerParser::parseBdatLast( std::string_view bdat_l
 	return {last,ok} ;
 }
 
-GSmtp::ServerParser::AddressCommand GSmtp::ServerParser::parseMailFrom( std::string_view line ,
-	bool allow_spaces , bool allow_nobrackets )
+GSmtp::ServerParser::AddressCommand GSmtp::ServerParser::parseMailFrom( std::string_view line , const Config & config )
 {
 	G::StringTokenView t( line , " \t"_sv ) ;
 	if( !G::Str::imatch("MAIL"_sv,t()) || G::Str::ifind(t.next()(),"FROM:"_sv) != 0U )
 		return {"invalid mail-from command"} ;
 
-	AddressCommand result = parseAddressPart( line , allow_spaces , allow_nobrackets ) ;
+	AddressCommand result = parseAddressPart( line , config ) ;
 	if( result.error.empty() )
 	{
 		if( !parseMailStringValue(line,"SMTPUTF8="_sv,result).empty() ) // RFC-6531 3.4 para1, but not clear
@@ -100,18 +84,16 @@ GSmtp::ServerParser::AddressCommand GSmtp::ServerParser::parseMailFrom( std::str
 	return result ;
 }
 
-GSmtp::ServerParser::AddressCommand GSmtp::ServerParser::parseRcptTo( std::string_view line ,
-	bool allow_spaces , bool allow_nobrackets )
+GSmtp::ServerParser::AddressCommand GSmtp::ServerParser::parseRcptTo( std::string_view line , const Config & config )
 {
 	G::StringTokenView t( line , " \t"_sv ) ;
 	if( !G::Str::imatch("RCPT"_sv,t()) || G::Str::ifind(t.next()(),"TO:"_sv) != 0U )
 		return {"invalid rcpt-to command"} ;
 
-	return parseAddressPart( line , allow_spaces , allow_nobrackets ) ;
+	return parseAddressPart( line , config ) ;
 }
 
-GSmtp::ServerParser::AddressCommand GSmtp::ServerParser::parseAddressPart( std::string_view line ,
-	bool allow_spaces , bool allow_nobrackets )
+GSmtp::ServerParser::AddressCommand GSmtp::ServerParser::parseAddressPart( std::string_view line , const Config & config )
 {
 	// RFC-5321 4.1.2
 	// eg. MAIL FROM:<>
@@ -127,36 +109,49 @@ GSmtp::ServerParser::AddressCommand GSmtp::ServerParser::parseAddressPart( std::
 		return {"invalid character in mailbox name"} ;
 	}
 
-	// find the colon
+	// find one past the colon
 	std::size_t startpos = line.find( ':' ) ;
 	if( startpos == std::string::npos )
 		return {"missing colon"} ;
 	startpos++ ;
 
-	// find the address part
+	// test for possibly-allowed errors
 	AddressCommand result ;
-	std::size_t endpos = 0U ;
-	if( allow_spaces )
+	if( startpos < line.size() && ( line[startpos] == ' ' || line[startpos] == '\t' ) )
+		result.invalid_spaces = true ;
+	startpos = line.find_first_not_of( " \t" , startpos , 2U ) ;
+	if( startpos == std::string::npos ) startpos = line.size() ;
+	if( startpos < line.size() && line[startpos] != '<' )
+		result.invalid_nobrackets = true ;
+
+	// fail unallowed errors
+	if( result.invalid_spaces && !config.allow_spaces )
 	{
-		result.allowed_spaces = true ;
-		startpos = line.find_first_not_of( " \t" , startpos ) ;
+		result.error = "invalid space after colon" ;
+		return result ;
 	}
-	if( allow_nobrackets && startpos < line.size() &&
-		line[startpos] != '<' && line[startpos] != ' ' && line[startpos] != '\t' )
+	if( result.invalid_nobrackets && !config.allow_nobrackets )
+	{
+		result.error = "missing angle brackets in mailbox name" ;
+		return result ;
+	}
+
+	// find the address part
+	std::size_t endpos = 0U ;
+	if( result.invalid_nobrackets )
 	{
 		endpos = line.find_first_of( " \t"_sv , startpos ) ;
-		if( endpos == std::string::npos )
-			endpos = line.size() ;
-		result.allowed_nobrackets = true ;
+		if( endpos == std::string::npos ) endpos = line.size() ;
 		G_ASSERT( startpos < line.size() && endpos <= line.size() && endpos > startpos ) ;
 	}
-	else if( (startpos+2U) > line.size() || line[startpos] != '<' || line.find('>',startpos+1U) == std::string::npos )
+	else if( (startpos+2U) > line.size() || line.find('>',startpos+1U) == std::string::npos )
 	{
-		return {"missing or invalid angle brackets in mailbox name"} ;
+		result.error = "invalid angle brackets in mailbox name" ;
+		return result ;
 	}
 	else
 	{
-		// step over any source route so startpos is the colon
+		// step over any source route so startpos is the colon not the "<"
 		if( line.at(startpos+1U) == '@' )
 		{
 			// RFC-6531 complicates the syntax, but we follow RFC-5321 4.1.2 in
@@ -193,18 +188,32 @@ GSmtp::ServerParser::AddressCommand GSmtp::ServerParser::parseAddressPart( std::
 	}
 
 	std::string_view address =
-		result.allowed_nobrackets ?
+		result.invalid_nobrackets ?
 			std::string_view( line.data()+startpos , endpos-startpos ) :
 			std::string_view( line.data()+startpos+1U , endpos-startpos-1U ) ;
 
-	auto style = mailboxStyle( address ) ;
-	if( style == MailboxStyle::Invalid )
+	auto address_style = GStore::MessageStore::addressStyle( address ) ;
+	if( address_style == AddressStyle::Invalid )
 		return {"invalid character in mailbox name"} ;
 
-	result.address = G::sv_to_string( address ) ;
-	result.utf8address = style == MailboxStyle::Utf8 ;
-	result.tailpos = result.allowed_nobrackets ? endpos : (endpos+1U) ;
+	result.utf8_mailbox_part = address_style == AddressStyle::Utf8Both || address_style == AddressStyle::Utf8Mailbox ;
+	result.utf8_domain_part = address_style == AddressStyle::Utf8Both || address_style == AddressStyle::Utf8Domain ;
+	result.raw_address = G::sv_to_string( address ) ;
+	result.address = result.utf8_domain_part ? encodeDomain(address) : result.raw_address ;
+	result.address_style = address_style ;
+	result.tailpos = result.invalid_nobrackets ? endpos : (endpos+1U) ;
 	return result ;
+}
+
+std::string GSmtp::ServerParser::encodeDomain( std::string_view address )
+{
+	std::size_t at_pos = address.rfind( '@' ) ;
+	std::string_view user = G::Str::headView( address , at_pos , address ) ;
+	std::string_view domain = G::Str::tailView( address , at_pos ) ;
+	return
+		domain.empty() ?
+			G::sv_to_string( address ) :
+			G::sv_to_string(user).append(1U,'@').append(G::Idn::encode(domain)) ;
 }
 
 std::size_t GSmtp::ServerParser::parseMailNumericValue( std::string_view line , std::string_view key_eq , AddressCommand & out )

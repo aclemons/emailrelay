@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -343,12 +343,9 @@ std::string & G::Str::trim( std::string & s , std::string_view ws )
 std::string G::Str::trimmed( const std::string & s_in , std::string_view ws )
 {
 	std::string s( s_in ) ;
-	return trim( s , ws ) ;
-}
-
-std::string G::Str::trimmed( std::string && s , std::string_view ws )
-{
-	return std::move( trimLeft(trimRight(s,ws),ws) ) ;
+	trimRight( s , ws ) ;
+	trimLeft( s , ws ) ;
+	return s ;
 }
 
 std::string_view G::Str::trimmedView( std::string_view s , std::string_view ws ) noexcept
@@ -358,31 +355,31 @@ std::string_view G::Str::trimmedView( std::string_view s , std::string_view ws )
 
 bool G::StrImp::isDigit( char c ) noexcept
 {
-	auto uc = static_cast<unsigned char>(c) ;
+	unsigned int uc = static_cast<unsigned char>(c) ;
 	return uc >= 48U && uc <= 57U ;
 }
 
 bool G::StrImp::isHex( char c ) noexcept
 {
-	auto uc = static_cast<unsigned char>(c) ;
+	unsigned int uc = static_cast<unsigned char>(c) ;
 	return ( uc >= 48U && uc <= 57U ) || ( uc >= 65U && uc <= 70U ) || ( uc >= 97U && uc <= 102U ) ;
 }
 
 bool G::StrImp::isPrintableAscii( char c ) noexcept
 {
-	auto uc = static_cast<unsigned char>(c) ;
+	unsigned int uc = static_cast<unsigned char>(c) ;
 	return uc >= 32U && uc < 127U ;
 }
 
 bool G::StrImp::isPrintable( char c ) noexcept
 {
-	auto uc = static_cast<unsigned char>(c) ;
-	return ( uc >= 32U && uc < 127U ) || ( uc >= 0xa0 && uc < 0xff ) ;
+	unsigned int uc = static_cast<unsigned char>(c) ;
+	return uc >= 32U && uc != 127U ;
 }
 
 bool G::StrImp::isSimple( char c ) noexcept
 {
-	auto uc = static_cast<unsigned char>(c) ;
+	unsigned int uc = static_cast<unsigned char>(c) ;
 	return isDigit(c) || c == '-' || c == '_' ||
 		( uc >= 65U && uc <= 90U ) ||
 		( uc >= 97U && uc <= 122U ) ;
@@ -627,12 +624,12 @@ unsigned int G::Str::toUInt( std::string_view s1 , std::string_view s2 )
 	return !s1.empty() && isUInt(s1) ? toUInt(s1) : toUInt(s2) ;
 }
 
-#ifndef G_LIB_SMALL
-unsigned int G::Str::toUInt( std::string_view s , unsigned int default_ )
+unsigned int G::Str::toUInt( std::string_view s , unsigned int default_ ) noexcept
 {
-	return !s.empty() && isUInt(s) ? toUInt(s) : default_ ;
+	bool overflow = false ;
+	bool invalid = false ;
+	return !s.empty() && isUInt(s) ? StrImp::toUInt(s,overflow,invalid) : default_ ;
 }
-#endif
 
 #ifndef G_LIB_SMALL
 unsigned int G::Str::toUInt( std::string_view s , Limited )
@@ -1352,14 +1349,14 @@ std::string_view G::Str::tailView( std::string_view in , std::string_view sep , 
 	return tailView( in , pos , default_empty ? std::string_view() : in ) ;
 }
 
-bool G::Str::tailMatch( const std::string & in , std::string_view tail ) noexcept
+bool G::Str::tailMatch( std::string_view in , std::string_view tail ) noexcept
 {
 	return
 		tail.empty() ||
 		( in.size() >= tail.size() && 0 == in.compare(in.size()-tail.size(),tail.size(),tail.data()) ) ;
 }
 
-bool G::Str::headMatch( const std::string & in , std::string_view head ) noexcept
+bool G::Str::headMatch( std::string_view in , std::string_view head ) noexcept
 {
 	return
 		head.empty() ||

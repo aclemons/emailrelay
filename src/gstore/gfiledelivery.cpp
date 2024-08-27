@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -70,7 +70,11 @@ bool GStore::FileDelivery::deliverToMailboxes( const G::Path & delivery_dir , co
 	for( const auto & mailbox : mailbox_list )
 	{
 		// create the target directory if necessary
-		G::Path mbox_dir = delivery_dir / mailbox ;
+		// (see also GPop::Store::prepare())
+		//
+		if( mailbox.empty() || !G::Str::isPrintable(mailbox) || !G::Path(mailbox).simple() )
+			throw MkdirError( "invalid mailbox name" , G::Str::printable(mailbox) ) ;
+		G::Path mbox_dir = delivery_dir/mailbox ;
 		if( !FileOp::isdir(mbox_dir) )
 		{
 			G_LOG( "GStore::FileDelivery::deliverToMailboxes: delivery: creating mailbox [" << mailbox << "]" ) ;
@@ -104,7 +108,7 @@ void GStore::FileDelivery::deliverTo( FileStore & /*store*/ , std::string_view p
 		// copy content to maildir's "new" sub-directory via "tmp"
 		static int seq {} ;
 		std::ostringstream ss ;
-		ss << G::SystemTime::now() << "." << G::Process::Id().str() << "." << G::hostname() << "." << seq++ ;
+		ss << G::SystemTime::now() << "." << G::Process::Id().str() << "." << hostname() << "." << seq++ ;
 		G::Path tmp_content_path = dst_dir/"tmp"/ss.str() ;
 		G::Path new_content_path = dst_dir/"new"/ss.str() ;
 		if( !FileOp::copy( content_path , tmp_content_path , hardlink ) )
@@ -180,5 +184,15 @@ G::Path GStore::FileDelivery::epath( const MessageId & message_id , FileStore::S
 G::Path GStore::FileDelivery::cpath( const MessageId & message_id ) const
 {
 	return m_store.contentPath( message_id ) ;
+}
+
+std::string GStore::FileDelivery::hostname()
+{
+	std::string name = G::hostname() ;
+	if( name.empty() ) name = "localhost" ;
+	G::Str::replace( name , '/' , '_' ) ;
+	G::Str::replace( name , '\\' , '_' ) ;
+	G::Str::replace( name , '.' , '_' ) ;
+	return name ;
 }
 

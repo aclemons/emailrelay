@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -79,8 +79,8 @@ namespace GSmtp
 class GSmtp::ServerProtocol : private GSmtp::ServerParser , private GSmtp::ServerSend
 {
 public:
-	G_EXCEPTION_CLASS( Done , tx("smtp protocol done") ) ;
-	G_EXCEPTION( Busy , tx("smtp protocol busy") ) ;
+	G_EXCEPTION_CLASS( Done , tx("smtp protocol done") )
+	G_EXCEPTION( Busy , tx("smtp protocol busy") )
 	using ApplyArgsTuple = std::tuple<const char *,std::size_t,std::size_t,std::size_t,char,bool> ; // see GNet::LineBuffer
 
 	class Text /// An interface used by GSmtp::ServerProtocol to provide response text strings.
@@ -109,8 +109,7 @@ public:
 		bool with_chunking {true} ; // CHUNKING (BDAT) and also advertise BINARYMIME
 		bool with_pipelining {true} ;
 		bool with_smtputf8 {false} ;
-		bool parsing_allows_spaces {false} ; // sr #89
-		bool parsing_allows_nobrackets {false} ; // sr #97
+		ServerParser::Config parser_config ;
 		bool smtputf8_strict {false} ; // reject non-ASCII characters if no MAIL-FROM SMTPUTF8 parameter
 
 		bool tls_starttls {false} ;
@@ -119,7 +118,7 @@ public:
 		unsigned int client_error_limit {8U} ;
 		std::size_t max_size {0U} ; // EHLO SIZE
 		std::string sasl_server_config ;
-		std::string sasl_server_challenge_hostname ; // eg. GNet::Local::canonicalName()
+		std::string sasl_server_challenge_hostname ;
 
 		Config() ;
 		Config & set_mail_requires_authentication( bool = true ) noexcept ;
@@ -128,8 +127,7 @@ public:
 		Config & set_with_chunking( bool = true ) noexcept ;
 		Config & set_with_pipelining( bool = true ) noexcept ;
 		Config & set_with_smtputf8( bool = true ) noexcept ;
-		Config & set_parsing_allows_spaces( bool = true ) noexcept ;
-		Config & set_parsing_allows_nobrackets( bool = true ) noexcept ;
+		Config & set_parser_config( const ServerParser::Config & ) ;
 		Config & set_smtputf8_strict( bool = true ) noexcept ;
 		Config & set_max_size( std::size_t ) noexcept ;
 		Config & set_tls_starttls( bool = true ) noexcept ;
@@ -350,7 +348,10 @@ private:
 	void doSecureGreeting( EventData , bool & ) ;
 	void verifyDone( Verifier::Command , const VerifierStatus & ) ;
 	std::string useStartTls() const ;
-	void verify( Verifier::Command , const std::string & , const std::string & = {} ) ;
+	void verify( Verifier::Command , const std::string & , const std::string & = {} , const std::string & = {} ) ;
+	void warnInvalidSpaces() const ;
+	void warnNoBrackets() const ;
+	static void warning( const std::string & ) ;
 
 private:
 	ServerSender * m_sender ;
@@ -366,6 +367,7 @@ private:
 	bool m_with_starttls {false} ;
 	GNet::Address m_peer_address ;
 	bool m_secure {false} ;
+	std::string m_verifier_raw_address ;
 	std::string m_certificate ;
 	std::string m_protocol ;
 	std::string m_cipher ;
@@ -386,8 +388,7 @@ inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_tls_st
 inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_tls_connection( bool b ) noexcept { tls_connection = b ; return *this ; }
 inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_with_pipelining( bool b ) noexcept { with_pipelining = b ; return *this ; }
 inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_with_smtputf8( bool b ) noexcept { with_smtputf8 = b ; return *this ; }
-inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_parsing_allows_spaces( bool b ) noexcept { parsing_allows_spaces = b ; return *this ; }
-inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_parsing_allows_nobrackets( bool b ) noexcept { parsing_allows_nobrackets = b ; return *this ; }
+inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_parser_config( const ServerParser::Config & c ) { parser_config = c ; return *this ; }
 inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_shutdown_how_on_quit( int i ) noexcept { shutdown_how_on_quit = i ; return *this ; }
 inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_client_error_limit( unsigned int n ) noexcept { client_error_limit = n ; return *this ; }
 inline GSmtp::ServerProtocol::Config & GSmtp::ServerProtocol::Config::set_smtputf8_strict( bool b ) noexcept { smtputf8_strict = b ; return *this ; }

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -58,13 +58,13 @@ class GNet::SocketProtocol
 {
 public:
 	using Sink = SocketProtocolSink ;
-	G_EXCEPTION_CLASS( ReadError , tx("peer disconnected") ) ;
-	G_EXCEPTION( SendError , tx("peer disconnected") ) ;
-	G_EXCEPTION( ShutdownError , tx("shutdown error") ) ;
-	G_EXCEPTION( SecureConnectionTimeout , tx("secure connection timeout") ) ;
-	G_EXCEPTION( Shutdown , tx("peer shutdown") ) ;
-	G_EXCEPTION( OtherEventError , tx("network event") ) ;
-	G_EXCEPTION( ProtocolError , tx("socket protocol error") ) ;
+	G_EXCEPTION_CLASS( ReadError , tx("peer disconnected") )
+	G_EXCEPTION( SendError , tx("peer disconnected") )
+	G_EXCEPTION( ShutdownError , tx("shutdown error") )
+	G_EXCEPTION( SecureConnectionTimeout , tx("secure connection timeout") )
+	G_EXCEPTION( Shutdown , tx("peer shutdown") )
+	G_EXCEPTION( OtherEventError , tx("network event") )
+	G_EXCEPTION( ProtocolError , tx("socket protocol error") )
 
 	struct Config /// A configuration structure for GNet::SocketProtocol.
 	{

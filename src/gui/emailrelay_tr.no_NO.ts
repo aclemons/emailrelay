@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<!-- Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->
+<!-- Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->
 <TS version="2.1" language="nb_NO">
 <context>
     <name>CopyPayloadFile</name>

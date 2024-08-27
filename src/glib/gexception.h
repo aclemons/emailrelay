@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -90,7 +90,7 @@ private:
 	class_name() : G::Exception(description) {} \
 	explicit class_name( std::string_view more ) : G::Exception(description,more) {} \
 	class_name( std::string_view more1 , std::string_view more2 ) : G::Exception(description,more1,more2) {} \
-	class_name( std::string_view more1 , std::string_view more2 , std::string_view more3 ) : G::Exception(description,more1,more2,more3) {} }
+	class_name( std::string_view more1 , std::string_view more2 , std::string_view more3 ) : G::Exception(description,more1,more2,more3) {} } ;
 
 #define G_EXCEPTION_FUNCTION_( name , description ) \
 	inline static G::Exception name() { return G::Exception((description)) ; } \

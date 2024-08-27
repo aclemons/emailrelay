@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,6 +24,14 @@
 #include <cstring>
 #include <stdexcept>
 
+namespace G
+{
+	namespace EnvironmentUnixImp
+	{
+		char * stringdup( const std::string & ) ;
+	}
+}
+
 std::string G::Environment::get( const std::string & name , const std::string & default_ )
 {
 	const char * p = std::getenv( name.c_str() ) ;
@@ -38,7 +46,7 @@ G::Path G::Environment::getPath( const std::string & name , const G::Path & defa
 }
 #endif
 
-char * G::Environment::stringdup( const std::string & s )
+char * G::EnvironmentUnixImp::stringdup( const std::string & s )
 {
 	void * p = std::memcpy( new char[s.size()+1U] , s.c_str() , s.size()+1U ) ; // NOLINT
 	return static_cast<char*>(p) ;
@@ -47,15 +55,14 @@ char * G::Environment::stringdup( const std::string & s )
 void G::Environment::put( const std::string & name , const std::string & value )
 {
 	// see man putenv(3) NOTES
-	char * deliberately_leaky_copy = stringdup( std::string().append(name).append(1U,'=').append(value) ) ; // NOLINT
+	namespace imp = EnvironmentUnixImp ;
+	char * deliberately_leaky_copy = imp::stringdup( std::string().append(name).append(1U,'=').append(value) ) ; // NOLINT
 	::putenv( deliberately_leaky_copy ) ;
 } // NOLINT
 
 G::Environment G::Environment::minimal( bool sbin )
 {
-	Environment env ;
-	env.add( "PATH" , sbin ? "/usr/bin:/bin:/usr/sbin:/sbin" : "/usr/bin:/bin" ) ; // no "."
-	env.add( "IFS" , " \t\n" ) ;
-	return env ;
+	std::string path = sbin ? "/usr/bin:/bin:/usr/sbin:/sbin" : "/usr/bin:/bin" ; // no "."
+	return Environment( {{"PATH",path},{"IFS"," \t\n"}} ) ;
 }
 

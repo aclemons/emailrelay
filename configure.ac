@@ -1,4 +1,4 @@
-dnl Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+dnl Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 dnl 
 dnl This program is free software: you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@ dnl
 dnl Process this file with autoconf to produce a configure script.
 dnl
 
-AC_INIT([E-MailRelay],[2.5.3dev3],[],[emailrelay])
+AC_INIT([E-MailRelay],[2.6],[],[emailrelay])
 AC_CONFIG_SRCDIR([src/glib/gdef.h])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([no-define])
@@ -38,6 +38,7 @@ AC_PROG_INSTALL
 AC_PROG_RANLIB
 AC_PROG_SED
 AC_PROG_GREP
+AC_CHECK_PROGS([STRIP],[strip])
 AC_CHECK_PROGS([MAKE],[make gmake])
 AC_CHECK_PROGS([AR],[ar gar])
 AC_CHECK_PROGS([GZIP],[gzip])

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -55,7 +55,7 @@ public:
 		Error
 	} ;
 
-	virtual void addTo( const std::string & to , bool local , bool utf8address ) = 0 ;
+	virtual void addTo( const std::string & to , bool local , MessageStore::AddressStyle ) = 0 ;
 		///< Adds a 'to' address.
 
 	virtual Status addContent( const char * , std::size_t ) = 0 ;

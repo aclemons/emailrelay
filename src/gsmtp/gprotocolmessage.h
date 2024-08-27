@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -73,18 +73,19 @@ public:
 		std::string reason ; // log string typically from filter output
 	} ;
 	using ProcessedSignal = G::Slot::Signal<const ProcessedInfo&> ;
+	using AddressStyle = GStore::MessageStore::AddressStyle ;
 	struct FromInfo /// Extra information from the SMTP MAIL-FROM command passed to GSmtp::ProtocolMessage::setFrom().
 	{
 		std::string auth ; // RFC-2554 MAIL-FROM with AUTH= ie. 'auth-in' (xtext or "<>")
 		std::string body ; // RFC-1652 MAIL-FROM with BODY={7BIT|8BITMIME|BINARYMIME}
 		bool smtputf8 {true} ; // RFC-6531 MAIL-FROM with SMTPUTF8
-		bool utf8address {false} ; // GSmtp::ServerParser::MailboxStyle
+		AddressStyle address_style {AddressStyle::Ascii} ;
 	} ;
 	struct ToInfo /// Extra information passed to GSmtp::ProtocolMessage::addTo().
 	{
 		explicit ToInfo( const VerifierStatus & ) ;
 		VerifierStatus status ;
-		bool utf8address ; // GSmtp::ServerParser::MailboxStyle
+		AddressStyle address_style ;
 	} ;
 
 	virtual ~ProtocolMessage() = default ;

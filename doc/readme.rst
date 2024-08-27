@@ -97,7 +97,7 @@ a first line of defense against spammers:
 
     emailrelay --as-server -v -r --domain=example.com --address-verifier=account:
 
-Then enable POP access to the incoming e-mails with *--pop*, *--pop-port* and
+Then enable POP_ access to the incoming e-mails with *--pop*, *--pop-port* and
 \ *--pop-auth*\ :
 
 ::

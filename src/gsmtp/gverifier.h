@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -43,11 +43,13 @@ class GSmtp::Verifier
 {
 public:
 	enum class Command { VRFY , RCPT } ;
-	struct Info /// Extra information passed to GSmtp::Verifier::verify().
+	struct Request /// Verification request passed to various GSmtp::Verifier::verify() overrides.
 	{
-		std::string mail_from_parameter ; // if RCPT, not VRFY
+		Command command {Command::RCPT} ;
+		std::string raw_address ; // recipient address as received
+		std::string address ; // recipient address to verify
+		std::string from_address ; // MAIL-FROM address if RCPT, not VRFY
 		G::BasicAddress client_ip ;
-		std::string domain ;
 		std::string auth_mechanism ;
 		std::string auth_extra ;
 	} ;
@@ -59,11 +61,11 @@ public:
 		Config & set_domain( const std::string & ) ;
 	} ;
 
-	virtual void verify( Command , const std::string & rcpt_to_parameter ,
-		const Info & ) = 0 ;
-			///< Checks a recipient address and asynchronously returns a
-			///< structure to indicate whether the address is a local
-			///< mailbox, what the full name is, and the canonical address.
+	virtual void verify( const Request & ) = 0 ;
+		///< Checks a recipient address and asynchronously returns a
+		///< GSmtp::VerifierStatus structure to indicate whether the address
+		///< is a local mailbox, what the full name is, and the canonical
+		///< address.
 
 	virtual G::Slot::Signal<Command,const VerifierStatus&> & doneSignal() = 0 ;
 		///< Returns a signal that is emit()ed when the verify() request

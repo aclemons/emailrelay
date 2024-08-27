@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -44,16 +44,16 @@ namespace GStore
 /// The deliver() override takes a ".new" or ".busy" message from the
 /// file store and delivers it to its local recipient mailbox
 /// sub-directories and then deletes the original message files
-/// (unless configured as 'no_delete').
+/// (unless configured with 'no_delete').
 ///
 class GStore::FileDelivery : public MessageDelivery
 {
 public:
-	G_EXCEPTION( EnvelopeWriteError , tx("delivery: cannot write envelope file") ) ;
-	G_EXCEPTION( ContentWriteError , tx("delivery: cannot write content file") ) ;
-	G_EXCEPTION( MkdirError , tx("delivery: cannot create delivery directory") ) ;
-	G_EXCEPTION( MaildirCopyError , tx("delivery: cannot write maildir tmp file") ) ;
-	G_EXCEPTION( MaildirMoveError , tx("delivery: cannot move maildir file") ) ;
+	G_EXCEPTION( EnvelopeWriteError , tx("delivery: cannot write envelope file") )
+	G_EXCEPTION( ContentWriteError , tx("delivery: cannot write content file") )
+	G_EXCEPTION( MkdirError , tx("delivery: cannot create delivery directory") )
+	G_EXCEPTION( MaildirCopyError , tx("delivery: cannot write maildir tmp file") )
+	G_EXCEPTION( MaildirMoveError , tx("delivery: cannot move maildir file") )
 	struct Config /// A configuration structure for GStore::FileDelivery.
 	{
 		bool hardlink {false} ; // copy the content by hard-linking
@@ -85,6 +85,13 @@ public:
 			///< the new files have full group access. The destination
 			///< directory should normally have sticky group ownership.
 
+public:
+	~FileDelivery() override = default ;
+	FileDelivery( const FileDelivery & ) = delete ;
+	FileDelivery( FileDelivery && ) = delete ;
+	FileDelivery & operator=( const FileDelivery & ) = delete ;
+	FileDelivery & operator=( FileDelivery && ) = delete ;
+
 private: // overrides
 	bool deliver( const MessageId & , bool ) override ; // GStore::MessageDelivery
 
@@ -94,6 +101,7 @@ private:
 	static G::StringArray mailboxes( const Config & , const GStore::Envelope & ) ;
 	static std::string mailbox( const Config & , const std::string & ) ;
 	static std::string id( const G::Path & ) ;
+	static std::string hostname() ;
 	G::Path cpath( const MessageId & ) const ;
 	G::Path epath( const MessageId & , FileStore::State ) const ;
 

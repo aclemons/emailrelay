@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,11 +27,12 @@
 namespace G
 {
 	//| \class G::LogStream
-	/// A non-throwing wrapper for std::ostream, used by G::Log.
-	/// This allows streaming to a G::Log instance to be inherently
-	/// non-throwing without needing a try/catch block at every
-	/// call site. The most common streaming operators are
-	/// implemented out-of-line as a modest code size optimisation.
+	/// A non-throwing copyable wrapper for std::ostream, used by
+	/// G::LogOutput and associated logging macros. This class allows
+	/// streaming to G::LogOutput to be inherently non-throwing without
+	/// needing a try/catch block at every call site. The most common
+	/// streaming operators are implemented out-of-line as a modest
+	/// code-size optimisation.
 	///
 	struct LogStream
 	{
@@ -53,6 +54,7 @@ namespace G
 	LogStream & operator<<( LogStream & s , unsigned int ) noexcept ;
 	LogStream & operator<<( LogStream & s , long ) noexcept ;
 	LogStream & operator<<( LogStream & s , unsigned long ) noexcept ;
+	LogStream & operator<<( LogStream & s , void * /*handle*/ ) noexcept ;
 
 	template <typename T> LogStream & operator<<( LogStream & s , const T & t ) noexcept
 	{
@@ -60,7 +62,7 @@ namespace G
 		{
 			try
 			{
-					*(s.m_ostream) << t ;
+				*(s.m_ostream) << t ;
 			}
 			catch(...)
 			{

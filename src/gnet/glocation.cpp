@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 #include "glocation.h"
 #include "gresolver.h"
 #include "gassert.h"
+#include "glog.h"
 
 GNet::Location::Location( const std::string & spec , int family ) :
 	m_host(head(sockless(spec))) ,
@@ -139,8 +140,7 @@ bool GNet::Location::resolveTrivially()
 	std::string address_string = G::Str::join( ":" , m_host , m_service ) ;
 	if( !resolved() && Address::validString(address_string,&reason) )
 	{
-		Address address = Address::parse( address_string ) ;
-		update( address , std::string() ) ;
+		update( Address::parse(address_string) ) ;
 	}
 	return resolved() ;
 }
@@ -155,13 +155,13 @@ GNet::Address GNet::Location::address() const
 	return m_address ;
 }
 
-void GNet::Location::update( const Address & address , const std::string & name )
+void GNet::Location::update( const Address & address )
 {
-	if( !update(address,name,std::nothrow) )
+	if( !update(address,std::nothrow) )
 		throw InvalidFamily() ;
 }
 
-bool GNet::Location::update( const Address & address , const std::string & name , std::nothrow_t )
+bool GNet::Location::update( const Address & address , std::nothrow_t )
 {
 	bool valid_family =
 		address.family() == Address::Family::ipv4 ||
@@ -174,15 +174,9 @@ bool GNet::Location::update( const Address & address , const std::string & name 
 	m_address = address ;
 	m_family = address.af() ; // not enum
 	m_address_valid = true ;
-	m_canonical_name = name ;
 	m_update_time = G::SystemTime::now() ;
 	G_DEBUG( "GNet::Location::ctor: resolved location [" << displayString() << "]" ) ;
 	return true ;
-}
-
-std::string GNet::Location::name() const
-{
-	return m_canonical_name ;
 }
 
 std::string GNet::Location::displayString() const

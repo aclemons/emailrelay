@@ -48,8 +48,11 @@
 /* Define true if _fsopen() is available */
 #undef GCONFIG_HAVE_FSOPEN
 
+/* Define true if getaddrinfo() supports AI_IDN */
+#undef GCONFIG_HAVE_GAI_IDN
+
 /* Define true if gai_strerror() is available */
-#undef GCONFIG_HAVE_GAISTRERROR
+#undef GCONFIG_HAVE_GAI_STRERROR
 
 /* Define true if getenv_s in stdlib.h */
 #undef GCONFIG_HAVE_GETENV_S

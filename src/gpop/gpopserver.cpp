@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -117,8 +117,8 @@ std::unique_ptr<GNet::ServerPeer> GPop::Server::newPeer( GNet::EventStateUnbound
 		else
 		{
 			GNet::Address peer_address = peer_info.m_address ;
-			ptr = std::make_unique<ServerPeer>( esu , std::move(peer_info) , m_store , m_secrets , m_config.sasl_server_config ,
-				newProtocolText(peer_address) , ServerProtocol::Config() ) ; // up-cast (GPop::ServerPeer to GNet::ServerPeer)
+			ptr = std::make_unique<ServerPeer>( esu , std::move(peer_info) , m_store , m_secrets ,
+				m_config.sasl_server_config , newProtocolText(peer_address) , m_config.protocol_config ) ;
 		}
 	}
 	catch( std::exception & e ) // newPeer()

@@ -1,4 +1,4 @@
-dnl Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+dnl Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 dnl 
 dnl This program is free software: you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
@@ -161,7 +161,8 @@ AC_DEFUN([GCONFIG_FN_CHECK_NET],[
 	AC_REQUIRE([GCONFIG_FN_IFNAMETOINDEX])
 	AC_REQUIRE([GCONFIG_FN_IFNAMETOLUID])
 	AC_REQUIRE([GCONFIG_FN_IFINDEX])
-	AC_REQUIRE([GCONFIG_FN_GAISTRERROR])
+	AC_REQUIRE([GCONFIG_FN_GAI_STRERROR])
+	AC_REQUIRE([GCONFIG_FN_GAI_IDN])
 	AC_REQUIRE([GCONFIG_FN_UDS])
 	AC_REQUIRE([GCONFIG_FN_UDS_LEN])
 ])
@@ -278,14 +279,14 @@ dnl Calls GCONFIG_FN_CXX_STD_THREAD_IMP with a suitable warning message.
 dnl
 AC_DEFUN([GCONFIG_FN_CXX_STD_THREAD],
 [
-	GCONFIG_FN_CXX_STD_THREAD_IMP([std::thread_asynchronous_script_execution])
+	GCONFIG_FN_CXX_STD_THREAD_IMP([std::thread_no_asynchronous_script_execution])
 ])
 
 dnl GCONFIG_FN_CXX_STD_THREAD_IMP
 dnl -----------------------------
 dnl Tests for a viable c++ std::thread class under the current compile and link options
 dnl and adds '-pthread' as necessary. The first parameter is a warning message added to
-dnl gconfig_warnings, something like 'std::thread_multithreading'.
+dnl gconfig_warnings, something like 'no_std::thread_multithreading'.
 dnl
 AC_DEFUN([GCONFIG_FN_CXX_STD_THREAD_IMP],
 [
@@ -388,6 +389,56 @@ AC_DEFUN([GCONFIG_FN_CXX_STRING_VIEW],
 	else
 		AC_DEFINE(GCONFIG_HAVE_CXX_STRING_VIEW,0,[Define true if compiler supports c++ string_view])
 	fi
+])
+
+dnl GCONFIG_FN_COMPILER_IS_GCC
+dnl --------------------------
+dnl Tests whether the c++ compiler is gcc and sets Makefile
+dnl conditional GCONFIG_COMPILER_IS_GCC accordingly.
+dnl
+dnl (See also ac_compiler_gnu=yes/no.)
+dnl
+AC_DEFUN([GCONFIG_FN_COMPILER_IS_GCC],
+[AC_CACHE_CHECK([for gcc compiler],[gconfig_cv_compiler_is_gcc],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#if defined(__GNUC__) && !defined(__clang__)]
+			[/* gcc */]
+			[#else]
+			[#error not gcc]
+			[#endif]
+		],
+		[
+		])],
+		gconfig_cv_compiler_is_gcc=yes ,
+		gconfig_cv_compiler_is_gcc=no )
+])
+	AM_CONDITIONAL([GCONFIG_COMPILER_IS_GCC],test "$gconfig_cv_compiler_is_gcc" = "yes")
+])
+
+dnl GCONFIG_FN_COMPILER_IS_CLANG
+dnl ----------------------------
+dnl Tests whether the c++ compiler is clang and sets Makefile
+dnl conditional GCONFIG_COMPILER_IS_CLANG accordingly.
+dnl
+AC_DEFUN([GCONFIG_FN_COMPILER_IS_CLANG],
+[AC_CACHE_CHECK([for clang compiler],[gconfig_cv_compiler_is_clang],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#if defined(__clang__)]
+			[/* clang */]
+			[#else]
+			[#error not clang]
+			[#endif]
+		],
+		[
+		])],
+		gconfig_cv_compiler_is_clang=yes ,
+		gconfig_cv_compiler_is_clang=no )
+])
+	AM_CONDITIONAL([GCONFIG_COMPILER_IS_CLANG],test "$gconfig_cv_compiler_is_clang" = "yes")
 ])
 
 dnl GCONFIG_FN_ENABLE_ADMIN
@@ -508,7 +559,7 @@ AC_DEFUN([GCONFIG_FN_ENABLE_GUI],
 
 	if test "$gconfig_gui" = "no" -a "$enable_gui" != "no"
 	then
-		gconfig_warnings="$gconfig_warnings qt_graphical_user_interface"
+		gconfig_warnings="$gconfig_warnings qt_will_not_build_graphical_user_interface"
 	fi
 
 	AC_SUBST([GCONFIG_QT_LIBS],[$QT_LIBS])
@@ -830,12 +881,12 @@ AC_DEFUN([GCONFIG_FN_FSOPEN],
 	fi
 ])
 
-dnl GCONFIG_FN_GAISTRERROR
-dnl ----------------------
+dnl GCONFIG_FN_GAI_STRERROR
+dnl -----------------------
 dnl Tests for gai_strerror() (see getaddinfo(3)).
 dnl
-AC_DEFUN([GCONFIG_FN_GAISTRERROR],
-[AC_CACHE_CHECK([for gai_strerror()],[gconfig_cv_gaistrerror],
+AC_DEFUN([GCONFIG_FN_GAI_STRERROR],
+[AC_CACHE_CHECK([for gai_strerror()],[gconfig_cv_gai_strerror],
 [
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
 		[
@@ -854,13 +905,47 @@ AC_DEFUN([GCONFIG_FN_GAISTRERROR],
 		[
 			[p = gai_strerror( 123 ) ;]
 		])],
-		gconfig_cv_gaistrerror=yes ,
-		gconfig_cv_gaistrerror=no )
+		gconfig_cv_gai_strerror=yes ,
+		gconfig_cv_gai_strerror=no )
 ])
-	if test "$gconfig_cv_gaistrerror" = "yes" ; then
-		AC_DEFINE(GCONFIG_HAVE_GAISTRERROR,1,[Define true if gai_strerror() is available])
+	if test "$gconfig_cv_gai_strerror" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_GAI_STRERROR,1,[Define true if gai_strerror() is available])
 	else
-		AC_DEFINE(GCONFIG_HAVE_GAISTRERROR,0,[Define true if gai_strerror() is available])
+		AC_DEFINE(GCONFIG_HAVE_GAI_STRERROR,0,[Define true if gai_strerror() is available])
+	fi
+])
+
+dnl GCONFIG_FN_GAI_IDN
+dnl ------------------
+dnl Tests for the AI_IDN flag (see glibc's getaddinfo(3)).
+dnl
+AC_DEFUN([GCONFIG_FN_GAI_IDN],
+[AC_CACHE_CHECK([for getaddrinfo() with AI_IDN],[gconfig_cv_gai_idn],
+[
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		[
+			[#ifdef _WIN32]
+				[#include <winsock2.h>]
+				[#include <windows.h>]
+				[#include <ws2tcpip.h>]
+				[#include <iphlpapi.h>]
+			[#else]
+				[#include <sys/types.h>]
+				[#include <sys/socket.h>]
+				[#include <netdb.h>]
+			[#endif]
+			[int flags = 0;]
+		],
+		[
+			[flags |= AI_IDN ;]
+		])],
+		gconfig_cv_gai_idn=yes ,
+		gconfig_cv_gai_idn=no )
+])
+	if test "$gconfig_cv_gai_idn" = "yes" ; then
+		AC_DEFINE(GCONFIG_HAVE_GAI_IDN,1,[Define true if getaddrinfo() supports AI_IDN])
+	else
+		AC_DEFINE(GCONFIG_HAVE_GAI_IDN,0,[Define true if getaddrinfo() supports AI_IDN])
 	fi
 ])
 
@@ -1462,7 +1547,7 @@ AC_DEFUN([GCONFIG_FN_NETROUTE],
 	else
 		AC_DEFINE(GCONFIG_HAVE_NETROUTE,0,[Define true to enable use of bsd routing sockets])
 		if test "`uname`" = "NetBSD" -o "`uname`" = "FreeBSD" -o "`uname`" = "OpenBSD" ; then
-			gconfig_warnings="$gconfig_warnings netroute_network_interface_event_notification"
+			gconfig_warnings="$gconfig_warnings netroute_no_network_interface_event_notification"
 		fi
 	fi
 ])
@@ -1932,7 +2017,7 @@ AC_DEFUN([GCONFIG_FN_RTNETLINK],
 	else
 		AC_DEFINE(GCONFIG_HAVE_RTNETLINK,0,[Define true to enable use of linux rtnetlink])
 		if test "`uname`" = "Linux" ; then
-			gconfig_warnings="$gconfig_warnings rtnetlink_network_interface_event_notification"
+			gconfig_warnings="$gconfig_warnings rtnetlink_no_network_interface_event_notification"
 		fi
 	fi
 ])
@@ -2375,7 +2460,7 @@ AC_DEFUN([GCONFIG_FN_TLS],
 
 	if test "$gconfig_ssl_use_none" = "yes"
 	then
-		gconfig_warnings="$gconfig_warnings openssl/mbedtls_transport_layer_security"
+		gconfig_warnings="$gconfig_warnings openssl/mbedtls_no_transport_layer_security"
 	fi
 
 	AC_SUBST([GCONFIG_TLS_LIBS])
@@ -2766,9 +2851,9 @@ AC_DEFUN([GCONFIG_FN_WARNINGS],
 	do
 		if test "$gconfig_w" != ""
 		then
-			echo "$gconfig_w" | sed 's/_/ /g' | while read gconfig_what gconfig_stuff
+			echo "$gconfig_w" | sed 's/_/ /g' | while read gconfig_what gconfig_warning_text
 			do
-				AC_MSG_WARN([missing $gconfig_what - no support for $gconfig_stuff])
+				AC_MSG_WARN([missing $gconfig_what - $gconfig_warning_text])
 			done
 		fi
 	done
@@ -3054,7 +3139,7 @@ AC_DEFUN([GCONFIG_FN_WITH_PAM],
 
 	if test "$gconfig_pam_compiles" != "yes" -a "$with_pam" != "no"
 	then
-		gconfig_warnings="$gconfig_warnings pam_pam_authentication"
+		gconfig_warnings="$gconfig_warnings pam_no_support_for_pam_authentication"
 	fi
 
 	if test "$gconfig_use_pam" = "yes"

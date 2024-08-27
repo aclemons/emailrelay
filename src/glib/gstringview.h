@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 #include "gdef.h"
 #include <string>
 #include <cstring>
+#include <new>
 
 #if GCONFIG_HAVE_CXX_STRING_VIEW
 
@@ -77,7 +78,9 @@ public:
 	static constexpr std::size_t npos = std::size_t(-1) ;
 	string_view() noexcept = default ;
 	string_view( std::nullptr_t ) = delete ;
+	static constexpr /*consteval*/ std::size_t strlen_imp( const char * p , std::size_t n = 0U ) noexcept { return *p ? strlen_imp(p+1,n+1U) : n ; }
 	constexpr string_view( const char * p , std::size_t n ) noexcept : m_p(p) , m_n(n) {}
+	constexpr /*consteval*/ string_view( const char * p , std::nothrow_t ) noexcept : m_p(p) , m_n(p?strlen_imp(p):0U) {}
 	string_view( const char * p ) noexcept /*implicit*/ : m_p(p) , m_n(p?std::strlen(p):0U) {}
 	string_view( const std::string & s ) noexcept /* implicit */ : m_p(s.data()) , m_n(s.size()) {}
 	constexpr std::size_t size() const noexcept { return m_n ; }
@@ -95,6 +98,7 @@ public:
     	int rc = ( empty() || other.empty() ) ? 0 : std::char_traits<char>::compare( m_p , other.m_p , std::min(m_n,other.m_n) ) ;
     	return rc == 0 ? ( m_n < other.m_n ? -1 : (m_n==other.m_n?0:1) ) : rc ;
 	}
+	int compare( std::size_t pos , std::size_t count , string_view other ) const noexcept { return substr(pos,count).compare(other) ; }
 	bool operator==( const string_view & other ) const noexcept { return compare(other) == 0 ; }
 	bool operator!=( const string_view & other ) const noexcept { return compare(other) != 0 ; }
 	bool operator<( const string_view & other ) const noexcept { return compare(other) < 0 ; }
@@ -138,17 +142,9 @@ namespace G
 	{
 		return sv.empty() ? s.empty() : ( 0 == s.compare( 0 , s.size() , sv.data() , sv.size() ) ) ;
 	}
-	inline bool operator==( string_view sv , const std::string & s )
-	{
-		return sv.empty() ? s.empty() : ( 0 == s.compare( 0 , s.size() , sv.data() , sv.size() ) ) ;
-	}
 	inline bool operator!=( const std::string & s , string_view sv )
 	{
 		return !(s == sv) ;
-	}
-	inline bool operator!=( string_view sv , const std::string & s )
-	{
-		return !(sv == s) ;
 	}
 	inline std::string sv_to_string( string_view sv )
 	{

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -62,8 +62,8 @@ namespace GGui
 class GGui::ApplicationBase : public ApplicationInstance , public Window
 {
 public:
-	G_EXCEPTION( RegisterError, tx("cannot register application's window class") ) ;
-	G_EXCEPTION( CreateError , tx("cannot create application window") ) ;
+	G_EXCEPTION( RegisterError, tx("cannot register application's window class") )
+	G_EXCEPTION( CreateError , tx("cannot create application window") )
 
 	ApplicationBase( HINSTANCE current, HINSTANCE previous, const std::string & name );
 		///< Constructor. Applications should instantiate a ApplicationBase-derived
@@ -72,13 +72,12 @@ public:
 		///< window-class name and the title, unless title() and className()
 		///< are overridden in the derived class.
 
-	virtual ~ApplicationBase() ;
+	~ApplicationBase() override ;
 		///< Virtual destructor.
 
-	std::string createWindow( int show , bool do_show = true , int dx = 0 , int dy = 0 , bool no_throw = false ) ;
-		///< Initialisation. Creates the main window, etc.
-		///< This should be called from WinMain().
-		///< Returns an error string if no-throw.
+	void createWindow( int show , bool do_show = true , int dx = 0 , int dy = 0 ) ;
+		///< Initialisation. Creates the main window, etc. This should
+		///< be called from WinMain(). Throws on error.
 
 	void run() ;
 		///< Runs the GGui::Pump class's GetMessage()/DispatchMessage() message
@@ -132,7 +131,7 @@ protected:
 	virtual DWORD classStyle() const ;
 		///< Overridable. Defines the main window class style.
 
-	virtual void onDestroy() override ;
+	void onDestroy() override ;
 		///< Override from GGui::Window. Calls GGui::Pump::quit().
 
 	virtual void initFirst() ;

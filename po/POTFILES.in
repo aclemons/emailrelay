@@ -48,6 +48,7 @@
 ./src/glib/ghash.cpp
 ./src/glib/ghostname_unix.cpp
 ./src/glib/gidentity_unix.cpp
+./src/glib/gidn.cpp
 ./src/glib/glog.cpp
 ./src/glib/glogoutput.cpp
 ./src/glib/glogoutput_unix.cpp
@@ -111,7 +112,8 @@
 ./src/gnet/ginterfaces_unix.cpp
 ./src/gnet/glinebuffer.cpp
 ./src/gnet/glinestore.cpp
-./src/gnet/glocal.cpp
+./src/gnet/glisteners.cpp
+./src/gnet/glocal_unix.cpp
 ./src/gnet/glocation.cpp
 ./src/gnet/gmonitor.cpp
 ./src/gnet/gmultiserver.cpp
@@ -155,7 +157,6 @@
 ./src/gsmtp/gverifier.cpp
 ./src/gsmtp/gverifierfactorybase.cpp
 ./src/gsmtp/gverifierstatus.cpp
-./src/gssl/empty.cpp
 ./src/gssl/gssl.cpp
 ./src/gssl/gssl_mbedtls.cpp
 ./src/gssl/gssl_mbedtls_keygen.cpp
@@ -196,6 +197,7 @@
 ./src/main/start.cpp
 ./src/main/submission.cpp
 ./src/main/submit.cpp
+./src/main/submitparser.cpp
 ./src/main/unit.cpp
 ./src/main/winapp.cpp
 ./src/main/winform.cpp

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,7 +26,22 @@
 #include "gstringarray.h"
 #include "gstringmap.h"
 #include "goptionparser.h"
+#include "goptionreader.h"
+#include "gassert.h"
 #include "glog.h"
+
+namespace ServerConfigurationImp
+{
+	struct Token
+	{
+		const char * p ;
+	} ;
+	static std::string & operator<<( std::string & s , Token t )
+	{
+		s.append(",",s.empty()?0U:1U).append(t.p) ;
+		return s ;
+	}
+}
 
 ServerConfiguration::ServerConfiguration()
 = default;
@@ -45,22 +60,61 @@ G::MapFile ServerConfiguration::read( const G::Path & config_file )
 	}
 	else if( config_file.extension() == "bat" )
 	{
-		// read the batch file and parse the command-line
-		G::BatchFile batch_file( config_file , std::nothrow ) ;
-		if( !batch_file.args().empty() )
-		{
-			G::OptionMap option_map ;
-			G::Options options = Main::Options::spec( G::is_windows() ) ;
-			G::OptionParser parser( options , option_map ) ;
-			parser.parse( batch_file.args() , 1U ) ; // ignore errors
-			config = G::MapFile( option_map , G::Str::positive() ) ;
-		}
+		config = readBatchFile( config_file ) ;
 	}
 	else
 	{
 		config = G::MapFile( config_file , "config" ) ;
 	}
 
+	normalise( config ) ;
+	return config ;
+}
+
+G::MapFile ServerConfiguration::readBatchFile( const G::Path & batch_file_path )
+{
+	// TODO refactor ServerConfiguration::readBatchFile() and Main::CommandLine
+
+	// read the batch file
+	const G::BatchFile batch_file( batch_file_path , std::nothrow ) ;
+	if( batch_file.args().empty() )
+		return {} ;
+
+	// parse once to see if there is a config file
+	const G::Options options_spec = Main::Options::spec() ;
+	G::Path config_file ;
+	{
+		G::StringArray errors ;
+		G::OptionMap option_map ;
+		G::StringArray parsed_args = G::OptionParser::parse( batch_file.args() , options_spec , option_map , &errors ) ;
+		if( errors.empty() && parsed_args.size() == 1U )
+			config_file = parsed_args[0] ;
+	}
+
+	// assemble all args from the batch file combined with any config file that it refers to
+	G::StringArray all_args = batch_file.args() ;
+	G_ASSERT( config_file.empty() || all_args.size() >= 2U ) ;
+	if( !config_file.empty() && all_args.size() >= 2U )
+	{
+		all_args.pop_back() ;
+		std::string app_value = G::Path(all_args[0]).dirname().str() ;
+		if( !app_value.empty() )
+			config_file.replace( "@app" , app_value ) ;
+		G::OptionReader::add( all_args , config_file ) ;
+	}
+
+	// parse again
+	G::OptionMap option_map ;
+	{
+		G::StringArray errors ; // ignored -- empty option_map on error
+		G::OptionParser::parse( all_args , options_spec , option_map , &errors ) ;
+	}
+
+	return G::MapFile( option_map , G::Str::positive() ) ;
+}
+
+void ServerConfiguration::normalise( G::MapFile & config )
+{
 	// normalise by expanding "--as-whatever" etc.
 	std::string const yes = G::Str::positive() ;
 	if( config.contains("as-client") )
@@ -91,8 +145,16 @@ G::MapFile ServerConfiguration::read( const G::Path & config_file )
 	{
 		config.add( "no-syslog" , G::Str::negative() ) ;
 	}
-
-	return config ;
+	if( config.contains("log-time") )
+	{
+		config.add( "log-format" , "time" ) ;
+		config.remove( "log-time" ) ;
+	}
+	if( config.contains("log-address") )
+	{
+		config.add( "log-format" , "address" ) ;
+		config.remove( "log-address" ) ;
+	}
 }
 
 std::string ServerConfiguration::quote( const std::string & s )
@@ -132,6 +194,7 @@ G::StringArray ServerConfiguration::args( bool no_close_stderr ) const
 
 ServerConfiguration ServerConfiguration::fromPages( const G::MapFile & pages )
 {
+	using Token = ServerConfigurationImp::Token ;
 	G::StringMap out ;
 
 	std::string auth = G::Path(pages.value("dir-config"),"emailrelay.auth").str() ;
@@ -238,11 +301,19 @@ ServerConfiguration ServerConfiguration::fromPages( const G::MapFile & pages )
 	}
 	if( pages.booleanValue("logging-time",true) )
 	{
-		out["log-time"] ;
+		out["log-format"] << Token{"time"} ;
 	}
 	if( pages.booleanValue("logging-address",true) )
 	{
-		out["log-address"] ;
+		out["log-format"] << Token{"address"} ;
+	}
+	if( pages.booleanValue("logging-port",true) )
+	{
+		out["log-format"] << Token{"port"} ;
+	}
+	if( pages.booleanValue("logging-msgid",true) )
+	{
+		out["log-format"] << Token{"msgid"} ;
 	}
 	if( pages.booleanValue("listening-remote",true) )
 	{

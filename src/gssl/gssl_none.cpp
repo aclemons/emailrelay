@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -69,7 +69,7 @@ bool GSsl::Library::hasProfile( const std::string & ) const
 
 const GSsl::Profile & GSsl::Library::profile( const std::string & ) const
 {
-	throw G::Exception( "internal error" ) ;
+	throw G::Exception( "invalid profile name: no tls library built in" ) ;
 }
 
 bool GSsl::Library::enabled() const

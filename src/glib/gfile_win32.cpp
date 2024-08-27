@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 #include "gconvert.h"
 #include "gprocess.h"
 #include "gassert.h"
+#include "glog.h"
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <io.h>
@@ -45,9 +46,9 @@ namespace G
 		{
 			nowide::open( io , path , mode ) ;
 		}
-		int open( const Path & path , int flags , int pmode )
+		int open( const Path & path , int flags , int pmode , bool inherit )
 		{
-			return nowide::open( path , flags , pmode ) ;
+			return nowide::open( path , flags , pmode , inherit ) ;
 		}
 		void uninherited( HANDLE h )
 		{
@@ -104,19 +105,19 @@ std::filebuf * G::File::open( std::filebuf & fb , const Path & path , InOut inou
 	return fb.is_open() ? &fb : nullptr ;
 }
 
-int G::File::open( const Path & path , InOutAppend mode ) noexcept
+int G::File::open( const Path & path , InOutAppend mode , bool inherit ) noexcept
 {
 	try
 	{
-		int pmode = _S_IREAD | _S_IWRITE ;
+		const int pmode = _S_IREAD | _S_IWRITE ;
 		if( mode == InOutAppend::In )
-			return FileImp::open( path , _O_RDONLY|_O_BINARY , pmode ) ;
+			return FileImp::open( path , _O_RDONLY|_O_BINARY , pmode , inherit ) ;
 		else if( mode == InOutAppend::Out )
-			return FileImp::open( path , _O_WRONLY|_O_CREAT|_O_TRUNC|_O_BINARY , pmode ) ;
+			return FileImp::open( path , _O_WRONLY|_O_CREAT|_O_TRUNC|_O_BINARY , pmode , inherit ) ;
 		else if( mode == InOutAppend::OutNoCreate )
-			return FileImp::open( path , _O_WRONLY|_O_BINARY , pmode ) ;
+			return FileImp::open( path , _O_WRONLY|_O_BINARY , pmode , inherit ) ;
 		else
-			return FileImp::open( path , _O_WRONLY|_O_CREAT|_O_APPEND|_O_BINARY , pmode ) ;
+			return FileImp::open( path , _O_WRONLY|_O_CREAT|_O_APPEND|_O_BINARY , pmode , inherit ) ;
 	}
 	catch(...)
 	{
@@ -128,8 +129,9 @@ int G::File::open( const Path & path , CreateExclusive ) noexcept
 {
 	try
 	{
-		int pmode = _S_IREAD | _S_IWRITE ;
-		return FileImp::open( path , _O_WRONLY|_O_CREAT|_O_EXCL|_O_BINARY , pmode ) ;
+		const int pmode = _S_IREAD | _S_IWRITE ;
+		const bool inherit = false ;
+		return FileImp::open( path , _O_WRONLY|_O_CREAT|_O_EXCL|_O_BINARY , pmode , inherit ) ;
 	}
 	catch(...)
 	{
@@ -154,8 +156,9 @@ bool G::File::probe( const Path & path ) noexcept
 {
 	try
 	{
-		int pmode = _S_IREAD | _S_IWRITE ;
-		int fd = FileImp::open( path , _O_WRONLY|_O_CREAT|_O_EXCL|O_TEMPORARY|_O_BINARY , pmode ) ;
+		const int pmode = _S_IREAD | _S_IWRITE ;
+		const bool inherit = false ;
+		int fd = FileImp::open( path , _O_WRONLY|_O_CREAT|_O_EXCL|O_TEMPORARY|_O_BINARY , pmode , inherit ) ;
 		if( fd >= 0 )
 			_close( fd ) ; // also deletes
 		return fd >= 0 ;
@@ -168,7 +171,9 @@ bool G::File::probe( const Path & path ) noexcept
 
 void G::File::create( const Path & path )
 {
-	int fd = FileImp::open( path , _O_RDONLY|_O_CREAT , _S_IREAD|_S_IWRITE ) ;
+	const int pmode = _S_IREAD | _S_IWRITE ;
+	const bool inherit = false ;
+	int fd = FileImp::open( path , _O_RDONLY|_O_CREAT , pmode , inherit ) ;
 	if( fd < 0 )
 		throw CannotCreate( path.str() ) ;
 	_close( fd ) ;
@@ -214,16 +219,23 @@ void G::File::close( int fd ) noexcept
 
 bool G::File::remove( const Path & path , std::nothrow_t ) noexcept
 {
-	return nowide::remove( path ) ;
-}
-
-void G::File::remove( const Path & path )
-{
 	bool ok = nowide::remove( path ) ;
 	if( !ok )
 	{
 		int e = Process::errno_() ;
-		G_WARNING( "G::File::remove: cannot delete file [" << path << "]: " << Process::strerror(e) ) ;
+		if( e == EACCES )
+			ok = nowide::rmdir( path ) ;
+	}
+	return ok ;
+}
+
+void G::File::remove( const Path & path )
+{
+	bool ok = remove( path , std::nothrow ) ;
+	if( !ok )
+	{
+		int e = Process::errno_() ;
+		G_WARNING( "G::File::remove: cannot remove [" << path << "]: " << Process::strerror(e) ) ;
 		throw CannotRemove( path.str() , Process::strerror(e) ) ;
 	}
 }

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -77,11 +77,11 @@ namespace GNet
 class GNet::Client : private EventHandler, public Connection, private SocketProtocolSink, private Resolver::Callback , public ExceptionSource
 {
 public:
-	G_EXCEPTION( DnsError , tx("dns error") ) ;
-	G_EXCEPTION( ConnectError , tx("connect failure") ) ;
-	G_EXCEPTION( NotConnected , tx("socket not connected") ) ;
-	G_EXCEPTION( ResponseTimeout , tx("response timeout") ) ;
-	G_EXCEPTION( IdleTimeout , tx("idle timeout") ) ;
+	G_EXCEPTION( DnsError , tx("dns error") )
+	G_EXCEPTION( ConnectError , tx("connect failure") )
+	G_EXCEPTION( NotConnected , tx("socket not connected") )
+	G_EXCEPTION( ResponseTimeout , tx("response timeout") )
+	G_EXCEPTION( IdleTimeout , tx("idle timeout") )
 
 	struct Config /// A structure containing GNet::Client configuration parameters.
 	{

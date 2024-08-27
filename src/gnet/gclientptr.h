@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 #include "geventhandler.h"
 #include "gscope.h"
 #include "gslot.h"
+#include "glog.h"
 #include <memory>
 #include <type_traits>
 
@@ -142,7 +143,7 @@ template <typename T>
 class GNet::ClientPtr : public ClientPtrBase , public ExceptionHandler , public ExceptionSource
 {
 public:
-	G_EXCEPTION( InvalidState , tx("invalid state of network client holder") ) ;
+	G_EXCEPTION( InvalidState , tx("invalid state of network client holder") )
 
 	explicit ClientPtr( T * p = nullptr ) ;
 		///< Constructor. Takes ownership of the new-ed client.

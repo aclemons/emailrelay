@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+   Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
    
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -81,11 +81,6 @@
 	#endif
 	#if defined(linux) || defined(__linux__)
 		#define G_UNIX_LINUX 1
-	#endif
-	#if defined(G_WINDOWS)
-		#if !defined(G_NO_UNICODE)
-			#define G_UNICODE
-		#endif
 	#endif
 	#if !defined(GCONFIG_WINXP)
 		#define GCONFIG_WINXP 0
@@ -240,11 +235,19 @@
 			#define GCONFIG_HAVE_GETENV_S 0
 		#endif
 	#endif
-	#if !defined(GCONFIG_HAVE_WGETENV_S)
-		#if defined(G_WINDOWS) && !GCONFIG_WINXP
-			#define GCONFIG_HAVE_WGETENV_S 1
-		#else
-			#define GCONFIG_HAVE_WGETENV_S 0
+	#if GCONFIG_WINXP
+		/* (cross-compiling configure script gets it wrong) */
+		#ifdef GCONFIG_HAVE_WGETENV_S
+			#undef GCONFIG_HAVE_WGETENV_S
+		#endif
+		#define GCONFIG_HAVE_WGETENV_S 0
+	#else
+		#if !defined(GCONFIG_HAVE_WGETENV_S)
+			#if defined(G_WINDOWS)
+				#define GCONFIG_HAVE_WGETENV_S 1
+			#else
+				#define GCONFIG_HAVE_WGETENV_S 0
+			#endif
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_PUTENV_S)
@@ -254,21 +257,35 @@
 			#define GCONFIG_HAVE_PUTENV_S 0
 		#endif
 	#endif
-	#if !defined(GCONFIG_HAVE_WPUTENV_S)
-		#if defined(G_WINDOWS) && !GCONFIG_WINXP
-			#define GCONFIG_HAVE_WPUTENV_S 1
-		#else
-			#define GCONFIG_HAVE_WPUTENV_S 0
+	#if GCONFIG_WINXP
+		#ifdef GCONFIG_HAVE_WPUTENV_S
+			#undef GCONFIG_HAVE_WPUTENV_S
+		#endif
+		#define GCONFIG_HAVE_WPUTENV_S 0
+	#else
+		#if !defined(GCONFIG_HAVE_WPUTENV_S)
+			#if defined(G_WINDOWS)
+				#define GCONFIG_HAVE_WPUTENV_S 1
+			#else
+				#define GCONFIG_HAVE_WPUTENV_S 0
+			#endif
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_PUTENV)
 		#define GCONFIG_HAVE_PUTENV 1
 	#endif
-	#if !defined(GCONFIG_HAVE_WCSERROR_S)
-		#if defined(G_WINDOWS) && !GCONFIG_WINXP
-			#define GCONFIG_HAVE_WCSERROR_S 1
-		#else
-			#define GCONFIG_HAVE_WCSERROR_S 0
+	#if GCONFIG_WINXP
+		#ifdef GCONFIG_HAVE_WCSERROR_S
+			#undef GCONFIG_HAVE_WCSERROR_S
+		#endif
+		#define GCONFIG_HAVE_WCSERROR_S 0
+	#else
+		#if !defined(GCONFIG_HAVE_WCSERROR_S)
+			#if defined(G_WINDOWS)
+				#define GCONFIG_HAVE_WCSERROR_S 1
+			#else
+				#define GCONFIG_HAVE_WCSERROR_S 0
+			#endif
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_GETPWNAM)
@@ -433,8 +450,11 @@
 			#define GCONFIG_HAVE_WINDOWS_IPHLPAPI_H 1
 		#endif
 	#endif
-	#if !defined(GCONFIG_HAVE_GAISTRERROR)
-		#define GCONFIG_HAVE_GAISTRERROR 1
+	#if !defined(GCONFIG_HAVE_GAI_STRERROR)
+		#define GCONFIG_HAVE_GAI_STRERROR 1
+	#endif
+	#if !defined(GCONFIG_HAVE_GAI_IDN)
+		#define GCONFIG_HAVE_GAI_IDN 0
 	#endif
 	#if !defined(GCONFIG_HAVE_INET_NTOP)
 		#define GCONFIG_HAVE_INET_NTOP 1
@@ -738,11 +758,18 @@
 			#define GCONFIG_HAVE_SOPEN_S 1
 		#endif
 	#endif
-	#if !defined(GCONFIG_HAVE_WSOPEN_S)
-		#if defined(G_WINDOWS) && !GCONFIG_WINXP
-			#define GCONFIG_HAVE_WSOPEN_S 1
-		#else
-			#define GCONFIG_HAVE_WSOPEN_S 0
+	#if GCONFIG_WINXP
+		#ifdef GCONFIG_HAVE_WSOPEN_S
+			#undef GCONFIG_HAVE_WSOPEN_S
+		#endif
+		#define GCONFIG_HAVE_WSOPEN_S 0
+	#else
+		#if !defined(GCONFIG_HAVE_WSOPEN_S)
+			#if defined(G_WINDOWS)
+				#define GCONFIG_HAVE_WSOPEN_S 1
+			#else
+				#define GCONFIG_HAVE_WSOPEN_S 0
+			#endif
 		#endif
 	#endif
 	#if !defined(GCONFIG_HAVE_EXTENDED_OPEN)
@@ -975,7 +1002,7 @@
 		#if GCONFIG_HAVE_UINTPTR_T
 			using g_uintptr_t = uintptr_t ; // uintptr_t in C99 and C++2011
 		#else
-			using g_uintptr_t = std::size_t ; // assumes a non-segmented architecture - see also windows LONG_PTR
+			using g_uintptr_t = std::size_t ; // assumes a non-segmented architecture - see also windows ULONG_PTR
 		#endif
 		#if GCONFIG_HAVE_INT64
 			static_assert( sizeof(g_int64_t) == 8U , "uint64 wrong size" ) ;
@@ -1056,7 +1083,7 @@
 			#define GDEF_FALLTHROUGH
 		#endif
 		#include <tuple>
-		namespace G { template <typename... T> inline void gdef_ignore( T&& ... ) {} }
+		namespace G { template <typename... T> inline void gdef_ignore( T&& ... ) {} } // NOLINT
 		#define GDEF_IGNORE_PARAMS(...) G::gdef_ignore(__VA_ARGS__)
 		#define GDEF_IGNORE_RETURN std::ignore =
 		#define GDEF_IGNORE_PARAM(name) std::ignore = name
@@ -1144,11 +1171,6 @@
 			#else
 				constexpr bool is_windows() noexcept { return false ; }
 			#endif
-			#ifdef G_MINGW
-				constexpr bool is_wine() noexcept { return true ; }
-			#else
-				constexpr bool is_wine() noexcept { return false ; }
-			#endif
 			#ifdef G_UNIX_LINUX
 				constexpr bool is_linux() noexcept { return true ; }
 			#else
@@ -1211,7 +1233,7 @@
 		/* Inline definitions of missing functions
 	 	*/
 
-		#if ! GCONFIG_HAVE_GAISTRERROR
+		#if ! GCONFIG_HAVE_GAI_STRERROR
 			inline const char * gai_strerror( int ) // wrt getaddrinfo(3)
 			{
 				return nullptr ;

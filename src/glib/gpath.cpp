@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -62,7 +62,7 @@ struct G::PathImp::PathPlatform<G::PathImp::Platform::Windows>
 	{
 		return
 			( s.length() >= 3U && s[1] == ':' && s[2] == '\\' ) ||
-			( s.length() >= 1U && s[0] == '\\' ) ;
+			( s.length() >= 1U && s[0] == '\\' ) ; // NOLINT
 	}
 	static std::size_t rootsizeImp( const std::string & s , std::size_t offset , std::size_t parts ) noexcept
 	{
@@ -458,7 +458,7 @@ G::Path G::Path::join( const Path & p1 , const Path & p2 )
 
 G::Path G::Path::collapsed() const
 {
-	auto two_dots = [](const std::string &s_){ return s_.size()==2U && s_[0] == '.' && s_[1] == '.' ; } ;
+	auto two_dots_fn = [](const std::string &s_){ return s_.size()==2U && s_[0] == '.' && s_[1] == '.' ; } ;
 
 	StringArray a = split() ;
 	auto start = a.begin() ;
@@ -469,11 +469,11 @@ G::Path G::Path::collapsed() const
 	while( start != end )
 	{
 		// step over leading double-dots -- cannot collapse
-		while( start != end && two_dots(*start) )
+		while( start != end && two_dots_fn(*start) )
 			++start ;
 
 		// find collapsible double-dots
-		auto p_dots = std::find_if( start , end , two_dots ) ;
+		auto p_dots = std::find_if( start , end , two_dots_fn ) ;
 		if( p_dots == end )
 			break ; // no collapsible double-dots remaining
 

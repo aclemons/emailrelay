@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -41,7 +41,7 @@
 class GNet::ResolverImp : private FutureEventHandler
 {
 public:
-	ResolverImp( Resolver & , EventState , const Location & ) ;
+	ResolverImp( Resolver & , EventState , const Location & , const Resolver::Config & ) ;
 		// Constructor.
 
 	~ResolverImp() override ;
@@ -74,7 +74,6 @@ private:
 	void onTimeout() ;
 
 private:
-	using Pair = ResolverFuture::Pair ;
 	Resolver * m_resolver ;
 	std::unique_ptr<FutureEvent> m_future_event ;
 	Timer<ResolverImp> m_timer ;
@@ -86,12 +85,12 @@ private:
 
 std::size_t GNet::ResolverImp::m_zcount = 0U ;
 
-GNet::ResolverImp::ResolverImp( Resolver & resolver , EventState es , const Location & location ) :
+GNet::ResolverImp::ResolverImp( Resolver & resolver , EventState es , const Location & location , const Resolver::Config & config ) :
 	m_resolver(&resolver) ,
 	m_future_event(std::make_unique<FutureEvent>(static_cast<FutureEventHandler&>(*this),es)) ,
 	m_timer(*this,&ResolverImp::onTimeout,es) ,
 	m_location(location) ,
-	m_future(location.host(),location.service(),location.family(),/*dgram=*/false,true)
+	m_future(location.host(),location.service(),location.family(),config)
 {
 	G_ASSERT( G::threading::works() ) ; // see Resolver::start()
 	G::Cleanup::Block block_signals ;
@@ -135,9 +134,9 @@ void GNet::ResolverImp::onFutureEvent()
 {
 	G_DEBUG( "GNet::ResolverImp::onFutureEvent: future event: ptr=" << m_resolver ) ;
 
-	Pair result = m_future.get() ;
+	ResolverFuture::Result result = m_future.get() ;
 	if( !m_future.error() )
-		m_location.update( result.first , result.second ) ;
+		m_location.update( result.address ) ;
 
 	if( m_thread.joinable() )
 		m_thread.join() ; // worker thread is finishing, so no delay here
@@ -193,35 +192,39 @@ GNet::Resolver::~Resolver()
 
 std::string GNet::Resolver::resolve( Location & location )
 {
+	return resolve(location,{}).first ;
+}
+
+std::pair<std::string,std::string> GNet::Resolver::resolve( Location & location , const Config & config )
+{
 	// synchronous resolve
-	using Pair = ResolverFuture::Pair ;
+	using Result = ResolverFuture::Result ;
 	G_DEBUG( "GNet::Resolver::resolve: resolve request [" << location.displayString() << "]"
 		<< " (" << location.family() << ")" ) ;
-	ResolverFuture future( location.host() , location.service() , location.family() , /*dgram=*/false ) ;
+	ResolverFuture future( location.host() , location.service() , location.family() , config ) ;
 	future.run() ; // blocks until complete
-	Pair result = future.get() ;
+	Result result = future.get() ;
 	if( future.error() )
 	{
 		G_DEBUG( "GNet::Resolver::resolve: resolve error [" << future.reason() << "]" ) ;
-		return future.reason() ;
+		return {future.reason(),{}} ;
 	}
 	else
 	{
-		G_DEBUG( "GNet::Resolver::resolve: resolve result [" << result.first.displayString() << "]"
-			<< "[" << result.second << "]" ) ;
-		location.update( result.first , result.second ) ;
-		return {} ;
+		G_DEBUG( "GNet::Resolver::resolve: resolve result [" << result.address.displayString() << "]" ) ;
+		location.update( result.address ) ;
+		return {{},result.canonicalName} ;
 	}
 }
 
 #ifndef G_LIB_SMALL
 GNet::Resolver::AddressList GNet::Resolver::resolve( const std::string & host , const std::string & service ,
-	int family , bool dgram )
+	int family , const Config & config )
 {
 	// synchronous resolve
 	G_DEBUG( "GNet::Resolver::resolve: resolve-request [" << host << "/"
 		<< service << "/" << (family==AF_UNSPEC?"ip":(family==AF_INET?"ipv4":"ipv6")) << "]" ) ;
-	ResolverFuture future( host , service , family , dgram ) ;
+	ResolverFuture future( host , service , family , config ) ;
 	future.run() ;
 	AddressList list ;
 	future.get( list ) ;
@@ -230,14 +233,14 @@ GNet::Resolver::AddressList GNet::Resolver::resolve( const std::string & host , 
 }
 #endif
 
-void GNet::Resolver::start( const Location & location )
+void GNet::Resolver::start( const Location & location , const Config & config )
 {
 	// asynchronous resolve
 	if( !EventLoop::instance().running() ) throw Error( "no event loop" ) ;
 	if( !async() ) throw Error( "not multi-threaded" ) ; // precondition
 	if( busy() ) throw BusyError() ;
 	G_DEBUG( "GNet::Resolver::start: resolve start [" << location.displayString() << "]" ) ;
-	m_imp = std::make_unique<ResolverImp>( *this , m_es , location ) ;
+	m_imp = std::make_unique<ResolverImp>( *this , m_es , location , config ) ;
 }
 
 void GNet::Resolver::done( const std::string & error , const Location & location )
@@ -266,4 +269,7 @@ bool GNet::Resolver::async()
 		return false ;
 	}
 }
+
+GNet::Resolver::Config::Config()
+= default ;
 

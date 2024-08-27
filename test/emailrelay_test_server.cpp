@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -30,11 +30,11 @@
 //           --auth-login            enable mechanism login
 //           --auth-ok               successful authentication
 //           --auth-plain            enable mechanism plain
-//           --drop                  drop the connection when content has DROP or when
+//           --drop                  drop the connection when content has DROP or when --fail-at
 //           --fail-at=<n>           fail from the n'th message
 //           --idle-timeout=<s>      idle timeout
 //           --pause                 slow final ok response
-//           --terminate             terminate when failing
+//           --terminate             quit the event-loop when --fail-at
 //           --tls                   enable tls
 //           --huge                  send huge smtp responses
 //           --loopback              listen on loopback address (127.0.0.1)
@@ -56,6 +56,7 @@
 #include "glogoutput.h"
 #include "gexception.h"
 #include "gsleep.h"
+#include "glog.h"
 #include <string>
 #include <fstream>
 #include <exception>
@@ -112,7 +113,7 @@ public:
 	~Server() override ;
 	std::unique_ptr<GNet::ServerPeer> newPeer( GNet::EventStateUnbound , GNet::ServerPeerInfo && ) override ;
 	TestServerConfig m_config ;
-	static GNet::Address address( const TestServerConfig & config )
+	static GNet::Address listenAddress( const TestServerConfig & config )
 	{
 		auto family = config.m_ipv6 ? GNet::Address::Family::ipv6 : GNet::Address::Family::ipv4 ;
 		return config.m_loopback ?
@@ -123,7 +124,7 @@ public:
 
 Server::Server( GNet::EventState es , TestServerConfig config ) :
 	GNet::Server(es,
-		GNet::Address(address(config)) ,
+		GNet::Address(listenAddress(config)) ,
 		GNet::ServerPeer::Config()
 			.set_socket_protocol_config( GNet::SocketProtocol::Config() )
 			.set_idle_timeout(config.m_idle_timeout),

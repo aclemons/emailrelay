@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -436,7 +436,7 @@ void GSmtp::ServerProtocol::doBdatImp( std::string_view bdat_line , bool & ok , 
 	{
 		std::string received_line = m_text.received( m_session_peer_name , m_sasl->authenticated() ,
 			m_secure , m_protocol , m_cipher ) ;
-		if( received_line.length() )
+		if( !received_line.empty() )
 			m_pm.addReceived( received_line ) ;
 	}
 
@@ -620,19 +620,24 @@ void GSmtp::ServerProtocol::doVrfy( EventData event_data , bool & predicate )
 		}
 		else
 		{
-			verify( Verifier::Command::VRFY , to ) ;
+			verify( Verifier::Command::VRFY , to , to ) ;
 		}
 	}
 }
 
-void GSmtp::ServerProtocol::verify( Verifier::Command command , const std::string & to , const std::string & from )
+void GSmtp::ServerProtocol::verify( Verifier::Command command , const std::string & to_address ,
+	const std::string & to_raw_address , const std::string & from_address )
 {
-	Verifier::Info info ;
-	info.client_ip = m_peer_address ;
-	info.mail_from_parameter = from ;
-	info.auth_mechanism = m_sasl->authenticated() ? m_sasl->mechanism() : std::string("NONE") ;
-	info.auth_extra = m_sasl->id() ;
-	m_verifier.verify( command , to , info ) ;
+	Verifier::Request request ;
+	request.command = command ;
+	request.raw_address = to_raw_address ;
+	request.address = to_address ;
+	request.client_ip = m_peer_address ;
+	request.from_address = from_address ;
+	request.auth_mechanism = m_sasl->authenticated() ? m_sasl->mechanism() : std::string("NONE") ;
+	request.auth_extra = m_sasl->id() ;
+	m_verifier_raw_address = request.raw_address ;
+	m_verifier.verify( request ) ;
 }
 
 void GSmtp::ServerProtocol::verifyDone( Verifier::Command command , const VerifierStatus & status )
@@ -831,7 +836,13 @@ void GSmtp::ServerProtocol::doMail( EventData event_data , bool & predicate )
 	}
 	else
 	{
-		auto mail_command = parseMailFrom( mail_line , m_config.parsing_allows_spaces , m_config.parsing_allows_nobrackets ) ;
+		auto mail_command = parseMailFrom( mail_line , m_config.parser_config ) ;
+
+		if( mail_command.invalid_nobrackets )
+			warnNoBrackets() ;
+		else if( mail_command.invalid_spaces )
+			warnInvalidSpaces() ;
+
 		if( !mail_command.error.empty() )
 		{
 			predicate = false ;
@@ -843,19 +854,19 @@ void GSmtp::ServerProtocol::doMail( EventData event_data , bool & predicate )
 			predicate = false ;
 			sendTooBig() ;
 		}
-		else if( mail_command.utf8address && !mail_command.smtputf8 && m_config.smtputf8_strict )
+		else if( mail_command.utf8_mailbox_part && !mail_command.smtputf8 && m_config.smtputf8_strict )
 		{
 			predicate = false ;
-			sendBadFrom( "invalid character in mailbox name" ) ;
+			sendBadFrom( "invalid character in mailbox name: not using smptutf8" ) ;
 		}
 		else
 		{
-			sendMailReply( mail_command.address ) ;
+			sendMailReply( mail_command.raw_address ) ;
 			ProtocolMessage::FromInfo from_info ;
 			from_info.auth = mail_command.auth ;
 			from_info.body = mail_command.body ;
 			from_info.smtputf8 = mail_command.smtputf8 ;
-			from_info.utf8address = mail_command.utf8address ;
+			from_info.address_style = mail_command.address_style ;
 			m_pm.setFrom( mail_command.address , from_info ) ;
 		}
 	}
@@ -864,41 +875,46 @@ void GSmtp::ServerProtocol::doMail( EventData event_data , bool & predicate )
 void GSmtp::ServerProtocol::doRcpt( EventData event_data , bool & predicate )
 {
 	std::string_view rcpt_line = event_data ;
-	auto rcpt_command = parseRcptTo( rcpt_line , m_config.parsing_allows_spaces , m_config.parsing_allows_nobrackets ) ;
+	auto rcpt_command = parseRcptTo( rcpt_line , m_config.parser_config ) ;
+	if( rcpt_command.invalid_nobrackets )
+		warnNoBrackets() ;
+	else if( rcpt_command.invalid_spaces )
+		warnInvalidSpaces() ;
 	if( !rcpt_command.error.empty() )
 	{
 		predicate = false ;
-		sendBadTo( std::string() , rcpt_command.error , false ) ;
+		sendBadTo( {} , rcpt_command.error , false ) ;
 	}
-	else if( rcpt_command.utf8address && !m_pm.fromInfo().smtputf8 && m_config.smtputf8_strict )
+	else if( rcpt_command.utf8_mailbox_part && !m_pm.fromInfo().smtputf8 && m_config.smtputf8_strict )
 	{
 		predicate = false ;
-		sendBadTo( std::string() , "invalid character in mailbox name" , false ) ;
+		sendBadTo( {} , "invalid character in mailbox name: not using smtputf8" , false ) ;
 	}
 	else
 	{
-		verify( Verifier::Command::RCPT , rcpt_command.address , m_pm.from() ) ;
+		verify( Verifier::Command::RCPT , rcpt_command.address , rcpt_command.raw_address , m_pm.from() ) ;
 	}
 }
 
 void GSmtp::ServerProtocol::doRcptToReply( EventData event_data , bool & predicate )
 {
-	// recover the VerifierStatus from the event-data string
+	// recover the VerifierStatus from its VerifierStatus::str() form -- see verifyDone()
 	VerifierStatus status = VerifierStatus::parse( str(event_data) ) ;
 
 	// store the status.address as the recipient address in the envelope
 	bool ok = m_pm.addTo( ProtocolMessage::ToInfo(status) ) ;
 	G_ASSERT( status.is_valid || !ok ) ;
 
-	// respond with reference the original recipient address
+	// respond with reference the original recipient address (not status.recipient)
+	const std::string & recipient = m_verifier_raw_address ;
 	if( ok )
 	{
-		sendRcptReply( status.recipient , status.is_local ) ;
+		sendRcptReply( recipient , status.is_local ) ;
 	}
 	else
 	{
 		predicate = false ;
-		sendBadTo( status.recipient , status.response , status.temporary ) ;
+		sendBadTo( recipient , status.response , status.temporary ) ;
 	}
 }
 
@@ -937,7 +953,7 @@ void GSmtp::ServerProtocol::doData( EventData , bool & )
 	std::string received_line = m_text.received( m_session_peer_name , m_sasl->authenticated() ,
 		m_secure , m_protocol , m_cipher ) ;
 
-	if( received_line.length() )
+	if( !received_line.empty() )
 		m_pm.addReceived( received_line ) ;
 
 	sendDataReply() ;
@@ -1030,6 +1046,25 @@ G::StringArray GSmtp::ServerProtocol::mechanisms() const
 G::StringArray GSmtp::ServerProtocol::mechanisms( bool secure ) const
 {
 	return m_sasl->mechanisms( secure ) ;
+}
+
+void GSmtp::ServerProtocol::warnInvalidSpaces() const
+{
+	const std::string & help = m_config.parser_config.allow_spaces_help ;
+	if( !help.empty() )
+		warning( help ) ;
+}
+
+void GSmtp::ServerProtocol::warnNoBrackets() const
+{
+	const std::string & help = m_config.parser_config.allow_nobrackets_help ;
+	if( !help.empty() )
+		warning( help ) ;
+}
+
+void GSmtp::ServerProtocol::warning( const std::string & help )
+{
+	G_WARNING_ONCE( "GSmtp::ServerProtocol::warning: invalid smtp command syntax from remote client: " << help ) ;
 }
 
 // ===

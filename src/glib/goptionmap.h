@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 
 #include "gdef.h"
 #include "goptionvalue.h"
+#include "gstringview.h"
 #include <string>
 #include <map>
 #include <algorithm>
@@ -50,44 +51,43 @@ public:
 public:
 	void insert( const Map::value_type & ) ;
 		///< Inserts the key/value pair into the map. The ordering of values
-		///< in the map with the same key is in the order of insert()ion
-		///< (as guaranteed by std::multimap since c++ 2011).
+		///< in the map with the same key is in the order of insert()ion.
 
 	void replace( std::string_view key , const std::string & value ) ;
 		///< Replaces all matching values with a single value.
 
-	void increment( std::string_view key ) ;
+	void increment( std::string_view key ) noexcept ;
 		///< Increments the repeat count for the given entry.
 
-	const_iterator begin() const ;
+	const_iterator begin() const noexcept ;
 		///< Returns the begin iterator.
 
-	const_iterator cbegin() const ;
+	const_iterator cbegin() const noexcept ;
 		///< Returns the begin iterator.
 
-	const_iterator end() const ;
+	const_iterator end() const noexcept ;
 		///< Returns the off-the-end iterator.
 
-	const_iterator cend() const ;
+	const_iterator cend() const noexcept ;
 		///< Returns the off-the-end iterator.
 
-	const_iterator find( std::string_view ) const ;
+	const_iterator find( std::string_view ) const noexcept ;
 		///< Finds the map entry with the given key.
 
 	void clear() ;
 		///< Clears the map.
 
-	bool contains( std::string_view ) const ;
+	bool contains( std::string_view ) const noexcept ;
 		///< Returns true if the map contains the given key, but ignoring 'off'
 		///< option-values.
 
-	bool contains( const char * ) const ;
+	bool contains( const char * ) const noexcept ;
 		///< Overload for c-string.
 
-	bool contains( const std::string & ) const ;
+	bool contains( const std::string & ) const noexcept ;
 		///< Overload for std-string.
 
-	std::size_t count( std::string_view key ) const ;
+	std::size_t count( std::string_view key ) const noexcept ;
 		///< Returns the total repeat count for all matching entries.
 		///< See G::OptionValue::count().
 
@@ -98,14 +98,14 @@ public:
 		///< corresponding to the first one, being G::Str::positive() if 'on'
 		///< or the supplied default if 'off'.
 
-	unsigned int number( std::string_view key , unsigned int default_ ) const ;
+	unsigned int number( std::string_view key , unsigned int default_ ) const noexcept ;
 		///< Returns the matching value as a number.
 
 private:
 	using Range = std::pair<Map::const_iterator,Map::const_iterator> ;
-	Range findRange( std::string_view key ) const ;
-	Map::iterator findFirst( std::string_view key ) ;
-	std::string join( Map::const_iterator , Map::const_iterator , std::string_view ) const ;
+	Range findRange( std::string_view key ) const noexcept ;
+	Map::iterator findFirst( std::string_view key ) noexcept ;
+	static std::string join( Map::const_iterator , Map::const_iterator , std::string_view ) ;
 
 private:
 	Map m_map ;

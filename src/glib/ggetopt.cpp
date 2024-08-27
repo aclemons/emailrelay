@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,14 +20,9 @@
 
 #include "gdef.h"
 #include "ggetopt.h"
-#include "goptions.h"
-#include "goptionvalue.h"
 #include "goptionparser.h"
 #include "goptionreader.h"
 #include "gstr.h"
-#include "gstringmap.h"
-#include "gstringtoken.h"
-#include "gfile.h"
 #include "gassert.h"
 #include "glog.h"
 #include <fstream>
@@ -181,7 +176,7 @@ std::string G::GetOpt::value( std::string_view name , std::string_view default_ 
 std::optional<std::string> G::GetOpt::optional( std::string_view name ) const
 {
 	if( !m_map.contains(name) ) return {} ;
-	return std::optional<std::string>( value(name) ) ;
+	return std::optional<std::string>( G::sv_to_string(name) ) ; // NOLINT
 }
 
 G::Arg G::GetOpt::args() const

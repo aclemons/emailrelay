@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,6 +43,14 @@
 # Looks for Qt libraries in various places (see winbuild::find_qt_x64()).
 # For a fully static GUI build the Qt libraries will have to have been built
 # from source, for example by "qtbuild.pl".
+#
+# The basic "-I" and "-D" compiler options come from parsing the automake
+# makefiles ("Makefile.am"). Additional compiler flags are injected by the
+# perl module "libexec/BuildInfo.pm". The results are written into the
+# cmake target_...() directives in the various "CMakeLists.txt" files.
+# Then cmake adds its own options which are stored in the "CMakeCache.txt"
+# file and overridden from the cmake command-line with "-DCMAKE_CXX_FLAGS=..."
+# etc. (see also run_cmake() below).
 #
 # The "install" sub-task, which is not run by default, assembles binaries
 # and their dependencies in a directory tree ready for zipping and
@@ -141,7 +149,7 @@ if( ! -e "winbuild.cfg" )
 		my $qt_x64 = -d $cfg_path_qt_x64 ? $cfg_path_qt_x64 : "c:/qt/5.15.2/msvc2019_64" ;
 		my $qt_x86 = -d $cfg_path_qt_x86 ? $cfg_path_qt_x86 : "c:/qt/5.15.2/msvc2019" ;
 
-		print $fh "# winbuild.cfg -- created by winbuild.pl -- edit as required\n" ;
+		print $fh "# winbuild.cfg -- created by winbuild.pl -- uncomment to override run-time searches\n" ;
 		print $fh "\n" ;
 		print $fh "#with_mbedtls 0\n" ;
 		print $fh "#mbedtls_src $mbedtls_src\n" ;
@@ -213,7 +221,7 @@ my $cmake_args = {
 	} ;
 
 # project version
-chomp( my $version = eval { FileHandle->new("VERSION")->gets() } || "2.5.3dev3" ) ;
+chomp( my $version = eval { FileHandle->new("VERSION")->gets() } || "2.6" ) ;
 my $project = "emailrelay" ;
 my $install_x64 = "$project-$version-w64" ;
 my $install_x86 = "$project-$version-w32" ;
@@ -686,11 +694,18 @@ sub install_core
 		__src_main_bin_dir__/emailrelay-textmode.exe __programs__/
 		bin/emailrelay-service-install.js __programs__/
 		bin/emailrelay-bcc-check.pl examples/
+		bin/emailrelay-check-ipaddress.js examples/
+		bin/emailrelay-check-ipaddress.pl examples/
+		bin/emailrelay-dkim-signer.pl examples/
 		bin/emailrelay-edit-content.js examples/
 		bin/emailrelay-edit-envelope.js examples/
+		bin/emailrelay-ldap-verify.py examples/
 		bin/emailrelay-resubmit.js examples/
+		bin/emailrelay-rot13.pl examples/
 		bin/emailrelay-set-from.pl examples/
 		bin/emailrelay-set-from.js examples/
+		bin/emailrelay-set-message-id.js examples/
+		doc/emailrelay.css doc/
 		doc/authentication.png doc/
 		doc/forwardto.png doc/
 		doc/whatisit.png doc/

@@ -1,13 +1,22 @@
 E-MailRelay Change Log
 ======================
 
-2.5.2 -> 2.5.3
---------------
+2.5.2 -> 2.6
+------------
 
 * New `--log-format` option (eg. `--log-format=address,port`).
-* Configuration files always use UTF-8 character encoding on Windows.
-* New `nostrictparsing` option for `--server-smtp-config`.
-* More concurrent connections on Windows.
+* New `--server-smtp-config` `nostrictparsing` option to allow missing `RCPT-TO` angle brackets.
+* The [SMTP][] server converts incoming e-mail addresses to [RFC-5890][] A-labels by default (see NEWS).
+* The `mx:` filter accepts an IP address in the envelope forward-to field, not just a domain name.
+* Pop-by-name sub-directories are automatically created if necessary.
+* The `--forward-to` domain names can be UTF-8.
+* Windows configuration files always use UTF-8 character encoding.
+* The Windows installer puts options in `emailrelay.cfg`, not `emailrelay-start.bat`.
+* The Windows service wrapper will read `emailrelay.cfg` if there is no batch file.
+* The SMTP client EHLO parameter is controlled by `--domain` (as in v2.3) but IP address if not a FQDN.
+* The `emailrelay-submit` utility can parse recipient addresses out of content headers.
+* On Windows `--no-daemon` is deprecated in favour of `--show=window`.
+* The Windows event loop supports more concurrent connections [bug-id #59].
 
 2.5.1 -> 2.5.2
 --------------
@@ -30,7 +39,7 @@ E-MailRelay Change Log
 ----------
 
 * Multiple configurations in one process.
-* SMTP PIPELINING ([RFC-2920][]).
+* [SMTP][] PIPELINING ([RFC-2920][]).
 * SMTP CHUNKING/8BITMIME 'BDAT' extension ([RFC-3030][]), disabled by default.
 * SMTP SMTPUTF8 extension ([RFC-6531][]), disabled by default.
 * No 7-bit/8-bit check on received message content (see NEWS file).
@@ -70,12 +79,12 @@ E-MailRelay Change Log
 
 * Connections from IPv4 'private use' addresses are allowed by default (see `--remote-clients`).
 * Interface names can be used with `--interface` (eg. `--interface=eth0`).
-* New `--server-tls-connection` option for server-side implicit TLS.
+* New `--server-tls-connection` option for server-side implicit [TLS][].
 * New `--forward-to-some` option to permit some message recipients to be rejected.
 * New `--log-address` option to aid adaptive firewalling.
 * Dynamic log file rolling when using `--log-file=%d`.
 * Choice of syslog 'facility' on Linux with `--syslog=local0` etc.
-* Pipelined SMTP QUIT commands sent by broken clients are tolerated.
+* Pipelined [SMTP][] QUIT commands sent by broken clients are tolerated.
 * Better handling of overly-verbose or unkillable `--filter` scripts.
 * Optional epoll event loop on Linux (`configure --enable-epoll`).
 * Some internationalisation support (see NEWS file).
@@ -96,7 +105,7 @@ E-MailRelay Change Log
 * New `--show` option on windows to better control the user interface style.
 * The `--pop` option always requires `--pop-auth`.
 * No message is spooled if all its envelope recipients are local-mailboxes.
-* TLS cipher name added to `Received` line as per [RFC-8314][] 4.3.
+* [TLS][] cipher name added to `Received` line as per [RFC-8314][] 4.3.
 * Certificate contents are not logged.
 * Timestamp parts of spool filenames no longer limited to six digits.
 
@@ -110,14 +119,14 @@ E-MailRelay Change Log
 
 * Improved IPv6 support, with IPv4 and IPv6 used independently at run-time (see `--interface`).
 * Server process is not blocked during `--filter` or `--address-verifier` execution, if multi-threaded.
-* Support for the `mbedTLS` TLS library as an alternative to OpenSSL (`configure --with-mbedtls`).
+* Support for the `mbedTLS` [TLS][] library as an alternative to OpenSSL (`configure --with-mbedtls`).
 * TLS server certificates specified with new `--server-tls-certificate` option, not `--server-tls`.
 * TLS servers enable client certificate verification with `--server-tls-verify`, not `--tls-config`.
 * TLS clients can verify server certificates with `--client-tls-verify` and `--client-tls-verify-name`.
 * The `--tls-config` option works differently (see NEWS file).
 * New `--client-tls-server-name` option for server name identification (SNI).
 * New `--client-tls-required` option to force client connections to use TLS.
-* New `--server-tls-required` option to force remote SMTP clients to use STARTTLS.
+* New `--server-tls-required` option to force remote [SMTP][] clients to use STARTTLS.
 * New `--forward-on-disconnect` option replaces `--poll=0`.
 * The `--anonymous` option now suppresses the `Received` line, whatever the `--domain`.
 * The second field in the secrets file indicates the password encoding, not AUTH mechanism.
@@ -128,7 +137,7 @@ E-MailRelay Change Log
 * Message rejection reasons passed back to the submitting SMTP client are much less verbose.
 * Forwarding events are queued up if the forwarding client is still busy from last time.
 * The bind address for outgoing connections is no longer taken from first unqualified `--interface` address [bug-id #27].
-* The SMTP client protocol tries more than one authentication mechanism.
+* The [SMTP][] client protocol tries more than one authentication mechanism.
 * Some support for XOAUTH2 client-side authentication.
 * Client protocol sends QUIT with a socket shutdown().
 * The Windows commdlg list-view widget is used for the server status pages.
@@ -162,12 +171,12 @@ E-MailRelay Change Log
 1.8.2 -> 1.9
 ------------
 
-* Added negotiated TLS/SSL for [POP][] (ie. `STLS`).
+* Added negotiated [TLS][]/SSL for [POP][] (ie. `STLS`).
 * The first two fields in the secrets files are reordered (with backwards compatibility).
-* Added Linux PAM authentication (`configure --with-pam` and then `--server-auth=/pam`).
+* Added Linux [PAM][] authentication (`configure --with-pam` and then `--server-auth=/pam`).
 * Optional protocol-specific `--interface` qualifiers, eg. `--interface smtp=127.0.0.1,pop=192.168.1.1`.
 * Outgoing client connection bound with the first `--interface` or `--interface client=...` address.
-* Support for SMTP-over-TLS on outgoing client connection (`--client-tls-connection`) (cf. `STARTTLS`)
+* Support for [SMTP][]-over-TLS on outgoing client connection (`--client-tls-connection`) (cf. `STARTTLS`)
 * Support for [SOCKS][] 4a on outgoing client connection, eg. `--forward-to example.com:25@127.0.0.1:9050`.
 * TLS configuration options (`--tls-config=...`) for SSLv2/3 fallback etc.
 * No `Received` line added if `--anonymous` and an empty `--domain` name.
@@ -194,7 +203,7 @@ E-MailRelay Change Log
 ------------
 
 * Changed the definition of `--as-proxy` to use `--poll 0` rather than `--immediate` [bug-id 1961652].
-* Fixed stalling bug when using server-side TLS/SSL (`--server-tls`) [bug-id 1961655].
+* Fixed stalling bug when using server-side [TLS][]/SSL (`--server-tls`) [bug-id 1961655].
 * Improved Debian packaging for Linux (`make deb`).
 
 1.7 -> 1.8
@@ -205,7 +214,7 @@ E-MailRelay Change Log
 * Build-time options to reduce runtime library dependencies (eg. `./configure --disable-dns --disable-identity`).
 * New switch to limit the size of submitted messages (`--size`).
 * New semantics for `--poll 0`, providing a good alternative to `--immediate` when proxying.
-* SMTP client protocol emits a RSET after a rejected recipient as a workround for broken server protocols.
+* [SMTP][] client protocol emits a RSET after a rejected recipient as a workround for broken server protocols.
 * SMTP client protocol continues if the server advertises AUTH but the client has no authentication secrets.
 * When a message cannot be forwarded the offending SMTP protocol response number, if any, is put in the envelope file.
 * A warning is printed if logging is requested but both stderr and syslog are disabled.
@@ -217,7 +226,7 @@ E-MailRelay Change Log
 1.6 -> 1.7
 ----------
 
-* TLS/SSL support for SMTP using OpenSSL (`./configure --with-openssl` with `--client-tls` and `--server-tls`).
+* [TLS][]/SSL support for [SMTP][] using OpenSSL (`./configure --with-openssl` with `--client-tls` and `--server-tls`).
 * Authentication mechanism `PLAIN` added.
 * Some tightening up of the SMTP server protocol.
 * Windows service wrapper has an `--uninstall` option.
@@ -227,8 +236,8 @@ E-MailRelay Change Log
 ----------
 
 * GPLv3 licence (see `http://gplv3.fsf.org`).
-* New `--prompt-timeout` switch for the timeout when waiting for the initial 220 prompt from the SMTP server.
-* Fix for flow-control assertion error when the POP server sends a very long list of spooled messages.
+* New `--prompt-timeout` switch for the timeout when waiting for the initial 220 prompt from the [SMTP][] server.
+* Fix for flow-control assertion error when the [POP][] server sends a very long list of spooled messages.
 * Wildcard matching for trusted IP addresses in the authentication secrets file can now use CIDR notation.
 * More fine-grained switching of effective user-id to read files and directories when running as root.
 * Fewer new client connections when proxying.
@@ -307,7 +316,7 @@ E-MailRelay Change Log
 * Client protocol waits for a greeting from the server on startup [bug-id 842156].
 * Fix for incorrect backslash normalisation on `--verifier` command-lines containing spaces [bug-id 890646].
 * Verifier programs can now summarily abort a connection using an exit value of 100.
-* New `--anonymous` switch that reduces information leakage to the SMTP client and disables `VRFY`.
+* New `--anonymous` switch that reduces information leakage to the [SMTP][] client and disables `VRFY`.
 * Better validation of `MAIL-FROM` and `RCPT-TO` formatting.
 * Rewrite of low-level MD5 code.
 * Performance tuning.
@@ -433,8 +442,8 @@ E-MailRelay Change Log
 * Non-privileged user switch (`--user`) added.
 * Better handling of NarrowPipe exception (ie. 8-bit message to 7-bit server).
 * Allow null return path in MAIL-FROM.
-* Reject recipients which look like `<user>@localhost` (as used by fetchmail for local delivery).
-* Treat recipients which look like `postmaster@localhost` or `postmaster@<fqdn>` as local postmaster.
+* Reject recipients which look like `&lt;user&gt;@localhost` (as used by fetchmail for local delivery).
+* Treat recipients which look like `postmaster@localhost` or `postmaster@&lt;fqdn&gt;` as local postmaster.
 * Optional timestamps on log output (`--log-time`).
 * Fix EHLO to HELO fallback for 501/502 responses in client protocol.
 * Submission utility `emailrelay-submit` added.
@@ -443,7 +452,7 @@ E-MailRelay Change Log
 0.9.5 -> 0.9.6
 --------------
 
-* SMTP AUTHentication extension \-\- LOGIN mechanism only.
+* [SMTP][] AUTHentication extension \-\- LOGIN mechanism only.
 * Client-side protocol timeout.
 * Client-side connection timeout.
 * Preprocessor can cancel further message processing.
@@ -502,6 +511,7 @@ Windows fixes and improvements...
 [RFC-3030]: https://tools.ietf.org/html/rfc3030
 [RFC-3848]: https://tools.ietf.org/html/rfc3848
 [RFC-5782]: https://tools.ietf.org/html/rfc5782
+[RFC-5890]: https://tools.ietf.org/html/rfc5890
 [RFC-6531]: https://tools.ietf.org/html/rfc6531
 [RFC-8314]: https://tools.ietf.org/html/rfc8314
 [SMTP]: https://en.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol

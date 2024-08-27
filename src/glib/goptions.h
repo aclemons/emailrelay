@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ namespace G
 class G::Options
 {
 public:
-	G_EXCEPTION( InvalidSpecification , tx("invalid options specification string") ) ;
+	G_EXCEPTION( InvalidSpecification , tx("invalid options specification string") )
 
 	explicit Options( const std::string & spec , char sep_major = '|' , char sep_minor = '!' , char escape = '^' ) ;
 		///< Constructor taking a specification string.

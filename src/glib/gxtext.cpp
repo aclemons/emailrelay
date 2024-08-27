@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ namespace G
 		inline unsigned int unhex( char c )
 		{
 			unsigned int rc = 0U ;
-			switch( c )
+			switch( c ) // NOLINT
 			{
 				case '0': rc = 0U ; break ;
 				case '1': rc = 1U ; break ;

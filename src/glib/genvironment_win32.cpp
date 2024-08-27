@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@ G::Path G::Environment::getPath( const std::string & name , const G::Path & defa
 
 G::Environment G::Environment::minimal( bool )
 {
-	return Environment() ;
+	return Environment( {} ) ;
 }
 
 void G::Environment::put( const std::string & name , const std::string & value )

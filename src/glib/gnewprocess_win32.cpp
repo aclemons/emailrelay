@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -33,8 +33,8 @@
 #include <sys/stat.h>
 #include <process.h>
 #include <io.h>
-#include <algorithm> // std::swap()
-#include <utility> // std::swap()
+#include <algorithm>
+#include <utility>
 #include <array>
 
 namespace G
@@ -58,22 +58,22 @@ namespace G
 		#if GCONFIG_HAVE_WINDOWS_STARTUP_INFO_EX
 			struct AttributeList
 			{
-				G_EXCEPTION( Error , tx("AttributeList error") ) ;
+				G_EXCEPTION( Error , tx("AttributeList error") )
 				using pointer_type = LPPROC_THREAD_ATTRIBUTE_LIST ;
-				explicit AttributeList( HANDLE , HANDLE = 0 , HANDLE = 0 ) ;
+				explicit AttributeList( const std::array<HANDLE,4U> & ) ;
 				~AttributeList() ;
 				pointer_type ptr() ;
 				private:
 				void cleanup() noexcept ;
 				G::Buffer<char> m_buffer ;
-				std::vector<HANDLE> m_handles ;
+				std::array<HANDLE,4U> m_handles ;
 				pointer_type m_ptr {NULL} ;
 			} ;
 		#else
 			struct AttributeList
 			{
 				using pointer_type = void* ;
-				explicit AttributeList( HANDLE , HANDLE = 0 , HANDLE = 0 ) {}
+				explicit AttributeList( const std::array<HANDLE,4U> & ) {}
 				pointer_type ptr() { return nullptr ; }
 			} ;
 		#endif
@@ -82,14 +82,14 @@ namespace G
 			nowide::STARTUPINFO_REAL_type m_startup_info ;
 			nowide::STARTUPINFO_BASE_type * m_ptr ;
 			DWORD m_flags ;
-			StartupInfo( AttributeList & attribute_list , HANDLE hstdout , HANDLE hstderr )
+			StartupInfo( AttributeList & attribute_list , HANDLE hstdin , HANDLE hstdout , HANDLE hstderr )
 			{
 				#if GCONFIG_HAVE_WINDOWS_STARTUP_INFO_EX
 					nowide::STARTUPINFO_REAL_type zero {} ;
 					m_startup_info = zero ;
 					m_startup_info.StartupInfo.cb = sizeof(m_startup_info) ;
 					m_startup_info.StartupInfo.dwFlags = STARTF_USESTDHANDLES ;
-					m_startup_info.StartupInfo.hStdInput = INVALID_HANDLE_VALUE ;
+					m_startup_info.StartupInfo.hStdInput = hstdin ;
 					m_startup_info.StartupInfo.hStdOutput = hstdout ;
 					m_startup_info.StartupInfo.hStdError = hstderr ;
 					m_startup_info.lpAttributeList = attribute_list.ptr() ;
@@ -101,7 +101,7 @@ namespace G
 					m_startup_info = zero ;
 					m_startup_info.cb = sizeof(m_startup_info) ;
 					m_startup_info.dwFlags = STARTF_USESTDHANDLES ;
-					m_startup_info.hStdInput = INVALID_HANDLE_VALUE ;
+					m_startup_info.hStdInput = hstdin ;
 					m_startup_info.hStdOutput = hstdout ;
 					m_startup_info.hStdError = hstderr ;
 					m_ptr = &m_startup_info ;
@@ -109,6 +109,12 @@ namespace G
 				#endif
 			}
 		} ;
+		HANDLE fdhandle( int fd ) ;
+		void closeHandle( HANDLE h ) noexcept
+		{
+			if( h != HNULL )
+				CloseHandle( h ) ;
+		}
 	}
 }
 
@@ -150,7 +156,7 @@ private:
 	static std::pair<HANDLE,DWORD> createProcessImp( const std::string & exe ,
 		const std::string & command_line , const Environment & ,
 		HANDLE hpipe , HANDLE keep_handle_1 , HANDLE keep_handle_2 ,
-		Fd fd_stdout , Fd fd_stderr , bool with_cd , const Path & cd ) ;
+		Fd fd_stdin , Fd fd_stdout , Fd fd_stderr , bool with_cd , const Path & cd ) ;
 	static void dequote( std::string & ) ;
 	static std::string withQuotes( const std::string & ) ;
 	static bool isSpaced( const std::string & ) ;
@@ -212,20 +218,16 @@ G::NewProcessImp::NewProcessImp( const Path & exe , const StringArray & args , c
 {
 	G_DEBUG( "G::NewProcessImp::ctor: exe=[" << exe << "] args=[" << Str::join("],[",args) << "]" ) ;
 
-	// only support Fd::devnull() and Fd::pipe() here
-	if( config.stdin != Fd::devnull() ||
-		( config.stdout != Fd::devnull() && config.stdout != Fd::pipe() ) ||
-		( config.stderr != Fd::devnull() && config.stderr != Fd::pipe() ) ||
-		( config.stdout == Fd::pipe() && config.stderr == Fd::pipe() ) )
-	{
+	bool one_pipe = config.stdout == Fd::pipe() || config.stderr == Fd::pipe() ;
+	bool stdin_ok = config.stdin.m_null || config.stdin.m_fd >= 0 ;
+	if( !one_pipe || !stdin_ok )
 		throw NewProcess::Error( "invalid parameters" ) ;
-	}
 
 	auto command_line_pair = commandLine( exe.str() , args ) ;
 
 	std::pair<HANDLE,DWORD> pair = createProcessImp( command_line_pair.first , command_line_pair.second ,
 		config.env , m_pipe.hwrite() , config.keep_handle_1 , config.keep_handle_2 ,
-		config.stdout , config.stderr , !config.cd.empty() , config.cd ) ;
+		config.stdin , config.stdout , config.stderr , !config.cd.empty() , config.cd ) ;
 
 	if( !valid(pair.first) )
 	{
@@ -264,8 +266,8 @@ void G::NewProcessImp::kill() noexcept
 
 G::NewProcessImp::~NewProcessImp()
 {
-	if( m_hprocess != HNULL )
-		CloseHandle( m_hprocess ) ;
+	namespace imp = NewProcessWindowsImp ;
+	imp::closeHandle( m_hprocess ) ;
 }
 
 G::NewProcessWaitable & G::NewProcessImp::waitable() noexcept
@@ -281,16 +283,30 @@ int G::NewProcessImp::id() const noexcept
 std::pair<HANDLE,DWORD> G::NewProcessImp::createProcessImp( const std::string & exe ,
 	const std::string & command_line , const Environment & env ,
 	HANDLE hpipe , HANDLE keep_handle_1 , HANDLE keep_handle_2 ,
-	Fd fd_stdout , Fd fd_stderr , bool with_cd , const Path & cd_path )
+	Fd fd_stdin , Fd fd_stdout , Fd fd_stderr , bool with_cd , const Path & cd_path )
 {
 	namespace imp = NewProcessWindowsImp ;
 	G_DEBUG( "G::NewProcessImp::createProcessImp: exe=[" << exe << "] command-line=[" << command_line << "]" ) ;
 
+	HANDLE hstdin = INVALID_HANDLE_VALUE ;
+	if( fd_stdin.m_fd >= 0 )
+		hstdin = imp::fdhandle( fd_stdin.m_fd ) ;
+
+	HANDLE hstdout = INVALID_HANDLE_VALUE ;
+	if( fd_stdout == Fd::pipe() )
+		hstdout = hpipe ;
+	else if( fd_stdout.m_fd >= 0 )
+		hstdout = imp::fdhandle( fd_stdout.m_fd ) ;
+
+	HANDLE hstderr = INVALID_HANDLE_VALUE ;
+	if( fd_stderr == Fd::pipe() )
+		hstderr = hpipe ;
+	else if( fd_stderr.m_fd >= 0 )
+		hstderr = imp::fdhandle( fd_stderr.m_fd ) ;
+
 	// redirect stdout or stderr onto the read end of our pipe
-	imp::AttributeList attribute_list( hpipe , keep_handle_1 , keep_handle_2 ) ;
-	imp::StartupInfo startup_info( attribute_list ,
-		fd_stdout == Fd::pipe() ? hpipe : INVALID_HANDLE_VALUE ,
-		fd_stderr == Fd::pipe() ? hpipe : INVALID_HANDLE_VALUE ) ;
+	imp::AttributeList attribute_list({ hstdin , hpipe , keep_handle_1 , keep_handle_2 }) ;
+	imp::StartupInfo startup_info( attribute_list , hstdin , hstdout , hstderr ) ;
 
 	std::string env_char_block = env.block() ;
 	std::wstring env_wchar_block = env.block( &G::Convert::widen ) ;
@@ -309,12 +325,12 @@ std::pair<HANDLE,DWORD> G::NewProcessImp::createProcessImp( const std::string & 
 	{
 		e = GetLastError() ;
 		G_DEBUG( "G::NewProcessImp::createProcessImp: error=" << e ) ;
-		CloseHandle( info.hThread ) ;
+		imp::closeHandle( info.hThread ) ;
 		return { info.hProcess , e } ;
 	}
 	else
 	{
-		CloseHandle( info.hThread ) ;
+		imp::closeHandle( info.hThread ) ;
 		G_DEBUG( "G::NewProcessImp::createProcessImp: process-id=" << info.dwProcessId ) ;
 		G_DEBUG( "G::NewProcessImp::createProcessImp: thread-id=" << info.dwThreadId ) ;
 		return { info.hProcess , info.dwProcessId } ;
@@ -365,7 +381,7 @@ std::pair<std::string,std::string> G::NewProcessImp::commandLine( std::string ex
 	{
 		if( ( arg.empty() || isSpaced(arg) ) && isSpaced(exe) && type == "bat" )
 		{
-			G_WARNING_ONCE( "G::NetProcessImp::commandLine: batch file path contains a space so arguments cannot be quoted" ) ;
+			G_WARNING_ONCE( "G::NewProcessImp::commandLine: batch file path contains a space so arguments cannot be quoted" ) ;
 			command_line.append(1U,' ').append(arg) ; // this fails >-: cmd /c "a b.bat" "c d"
 		}
 		else if( arg.empty() || isSpaced(arg) )
@@ -432,14 +448,13 @@ std::string G::NewProcessImp::powershell()
 // ==
 
 #if GCONFIG_HAVE_WINDOWS_STARTUP_INFO_EX
-G::NewProcessWindowsImp::AttributeList::AttributeList( HANDLE h1 , HANDLE h2 , HANDLE h3 )
+G::NewProcessWindowsImp::AttributeList::AttributeList( const std::array<HANDLE,4U> & handles_in ) :
+	m_handles(handles_in)
 {
-	m_handles.reserve( 3U ) ;
-	if( h1 ) m_handles.push_back( h1 ) ;
-	if( h2 ) m_handles.push_back( h2 ) ;
-	if( h3 ) m_handles.push_back( h3 ) ;
-
-	if( !m_handles.empty() )
+	auto end = std::partition( m_handles.begin() , m_handles.end() ,
+		[](HANDLE h){return h!=0 && h!=INVALID_HANDLE_VALUE;} ) ;
+	std::size_t handles_size = std::distance( m_handles.begin() , end ) ;
+	if( handles_size )
 	{
 		SIZE_T buffer_size = 0 ;
 		InitializeProcThreadAttributeList( NULL , 1 , 0 , &buffer_size ) ;
@@ -453,7 +468,7 @@ G::NewProcessWindowsImp::AttributeList::AttributeList( HANDLE h1 , HANDLE h2 , H
 			throw Error() ;
 
 		ok = UpdateProcThreadAttribute( ptr , 0 , PROC_THREAD_ATTRIBUTE_HANDLE_LIST ,
-			m_handles.data() , m_handles.size() * sizeof(HANDLE) , NULL , NULL ) ;
+			m_handles.data() , handles_size * sizeof(HANDLE) , NULL , NULL ) ;
 		if( !ok )
 		{
 			cleanup() ;
@@ -493,8 +508,8 @@ G::NewProcessWindowsImp::Pipe::Pipe() :
 
 G::NewProcessWindowsImp::Pipe::~Pipe()
 {
-	if( m_read != HNULL ) CloseHandle( m_read ) ;
-	if( m_write != HNULL ) CloseHandle( m_write ) ;
+	closeHandle( m_read ) ;
+	closeHandle( m_write ) ;
 }
 
 void G::NewProcessWindowsImp::Pipe::create( HANDLE & h_read , HANDLE & h_write )
@@ -521,7 +536,7 @@ void G::NewProcessWindowsImp::Pipe::uninherited( HANDLE h )
 	if( ! SetHandleInformation( h , HANDLE_FLAG_INHERIT , 0 ) )
 	{
 		DWORD error = GetLastError() ;
-		CloseHandle( h ) ;
+		closeHandle( h ) ;
 		G_ERROR( "G::NewProcessWindowsImp::Pipe::uninherited: uninherited error " << error ) ;
 		throw NewProcess::PipeError( "uninherited" ) ;
 	}
@@ -539,8 +554,7 @@ HANDLE G::NewProcessWindowsImp::Pipe::hread() const
 
 void G::NewProcessWindowsImp::Pipe::close()
 {
-	if( m_write != HNULL )
-		CloseHandle( m_write ) ;
+	closeHandle( m_write ) ;
 	m_write = HNULL ;
 }
 
@@ -676,5 +690,18 @@ int G::NewProcessWaitable::get( std::nothrow_t , int ec ) const noexcept
 std::string G::NewProcessWaitable::output() const
 {
 	return m_buffer.empty() ? std::string() : std::string(m_buffer.data(),m_data_size) ;
+}
+
+// ==
+
+HANDLE G::NewProcessWindowsImp::fdhandle( int fd )
+{
+	// beware "parameter validation" -- maybe use _set_thread_local_invalid_parameter_handler()
+	if( fd < 0 )
+		return INVALID_HANDLE_VALUE ;
+	intptr_t h = _get_osfhandle( fd ) ;
+	if( h == -1 || h == -2 )
+		return INVALID_HANDLE_VALUE ;
+	return reinterpret_cast<HANDLE>(h) ;
 }
 

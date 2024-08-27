@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -170,7 +170,7 @@ template <unsigned int N, typename U, typename S>
 void G::HashState<N,U,S>::decode( const std::string & str , uint_type * values_out , size_type & size_out )
 {
 	if( str.length() < (N+4U) )
-		return decode( str+std::string(N+4U,'\0') , values_out , size_out ) ; // call ourselves again if too short
+		return decode( str+std::string(N+4U,'\0') , values_out , size_out ) ; // call ourselves again if too short // NOLINT recursion
 	convert( str , values_out , size_out ) ;
 }
 
@@ -178,7 +178,8 @@ template <unsigned int N, typename U, typename S>
 void G::HashState<N,U,S>::decode( const std::string & str , uint_type & hi , uint_type & low ,
 	uint_type * v0 , uint_type * v1 , uint_type * v2 , uint_type * v3 , uint_type * v4 )
 {
-	if( str.length() < (N+4U) ) return decode( str+std::string(N+4U,'\0') , hi , low , v0 , v1 , v2 , v3 , v4 ) ;
+	if( str.length() < (N+4U) )
+		return decode( str+std::string(N+4U,'\0') , hi , low , v0 , v1 , v2 , v3 , v4 ) ; // call ourselves again if too short // NOLINT recursion
 	std::array<uint_type,N/4> values {} ;
 	uint_type n ;
 	convert( str , values.data() , n ) ;
@@ -195,7 +196,8 @@ template <unsigned int N, typename U, typename S>
 void G::HashState<N,U,S>::decode( const std::string & str , uint_type & hi , uint_type & low ,
 	uint_type * values_out )
 {
-	if( str.length() < (N+4U) ) return decode( str+std::string(N+4U,'\0') , hi , low , values_out ) ;
+	if( str.length() < (N+4U) )
+		return decode( str+std::string(N+4U,'\0') , hi , low , values_out ) ; // call ourselves again if too short // NOLINT recursion
 	uint_type n ;
 	convert( str , values_out , n ) ;
 	hi = ( n >> 29 ) ;

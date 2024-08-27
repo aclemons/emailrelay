@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,50 +20,68 @@
 // A bare-bones smtp client for testing purposes, using blocking
 // socket i/o and no event-loop.
 //
-// Opens multiple connections at start-up and then sends a number
-// of email messages on each one in turn.
+// Optionally opens multiple connections at start-up. Sends a number
+// of e-mail messages on each one in turn.
 //
 // usage:
-//      emailrelay_test_client [-qQ] [-v [-v]] [<port>]
-//      emailrelay_test_client [-qQ] [-v [-v]] <addr-ipv4> <port> [<connections> [<iterations> [<lines> [<line-length> [<messages>]]]]]
-//         -v -- verbose logging
-//         -q -- send "."&"QUIT" instead of "."
-//         -Q -- send "."&"QUIT" and immediately disconnect
+//      emailrelay_test_client [options] <addr-ipv4> <port>
+//         -v                 : verbose logging (can be used more than once)
+//         -q                 : send "." and "QUIT" instead of "."
+//         -Q                 : send "." and "QUIT" and immediately disconnect
+//         --log-file <path>  : log file
+//         --iterations <n>   : number of program loops (-1 for forever) (default 1)
+//         --connections <n>  : number of parallel connections per loop (default 1)
+//         --messages <n>     : number of messages per connection (default 1)
+//         --recipients <n>   : recipients per message (default 1)
+//         --lines <n>        : number of lines per message (default 1000)
+//         --line-length <n>  : message line length (default 998)
+//         --timeout <s>      : overall timeout (default none)
+//         --utf8-domain      : use a UTF-8 domain name in e-mail addresses
+//         --smtputf8         : use UTF-8 mailbox names and use SMTPUTF8 MAIL-FROM
 //
 
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include "gdef.h"
 #include "gsleep.h"
+#include "gconvert.h"
 #include <cstring> // std::size_t
 #include <sstream>
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <stdexcept>
 #include <exception>
 #include <vector>
 #include <algorithm>
+#include <memory>
 #include <cstring> // std::strtoul()
 #include <cstdlib>
-#ifndef _WIN32
+#ifndef G_WINDOWS
 #include <csignal>
 #endif
 
 struct Config
 {
+	std::string log_file ;
 	int verbosity {0} ;
 	bool eager_quit {false} ;
 	bool eager_quit_disconnect {false} ;
 	bool no_wait {false} ;
 	std::string address ;
 	int port {10025} ;
+	int iterations {1} ; // -1 to loop forever
 	int connections {1} ;
-	int iterations {-1} ;
+	int messages {1} ;
+	int recipients {1} ;
 	int lines {1000} ;
 	int line_length {998} ;
-	int messages {2} ;
-} cfg ;
+	bool utf8_domain {false} ;
+	bool smtputf8 {false} ;
+	std::string domain {"example.com"} ;
+	int timeout {0} ; // seconds until exit()
+} ;
 
-#ifdef _WIN32
+#ifdef G_WINDOWS
 using read_size_type = int ;
 using connect_size_type = int ;
 using send_size_type = int ;
@@ -73,6 +91,8 @@ using connect_size_type = std::size_t ;
 using send_size_type = std::size_t ;
 const int INVALID_SOCKET = -1 ;
 #endif
+
+std::ostream * log_stream = &std::cout ;
 
 struct Address
 {
@@ -107,8 +127,7 @@ struct Address
 struct Test
 {
 public:
-	Test() ;
-	void init( const Address & , int messages , int lines , int line_length ) ;
+	Test( Address , Config ) ;
 	bool runSome() ;
 	bool done() const ;
 	void close() ;
@@ -120,27 +139,26 @@ private:
 	void sendData( const char * , std::size_t ) ;
 	void waitline() ;
 	void waitline( const char * ) ;
-	void sendMessage( int , int , int , bool ) ;
+	void sendMessage( int , int , int , std::string , bool , bool ) ;
 	static void close_( SOCKET fd ) ;
 	static void shutdown( SOCKET fd ) ;
 	static std::string printable( std::string ) ;
 
 private:
 	SOCKET m_fd ;
-	int m_messages {0} ;
-	int m_lines {0} ;
-	int m_recipients {3} ;
-	int m_line_length {0} ;
+	const Config m_config ;
 	int m_state {0} ;
 	bool m_done {false} ;
 	unsigned m_wait {0} ;
 } ;
 
-Test::Test()
+Test::Test( Address address , Config config ) :
+	m_config(config)
 {
 	m_fd = ::socket( PF_INET , SOCK_STREAM , 0 ) ;
 	if( m_fd == INVALID_SOCKET )
 		throw std::runtime_error( "invalid socket" ) ;
+	connect( address ) ;
 }
 
 bool Test::done() const
@@ -148,17 +166,9 @@ bool Test::done() const
 	return m_done ;
 }
 
-void Test::init( const Address & a , int messages , int lines , int line_length )
-{
-	m_messages = messages ;
-	m_lines = lines ;
-	m_line_length = line_length ;
-	connect( a ) ;
-}
-
 void Test::connect( const Address & a )
 {
-	if( cfg.verbosity ) std::cout << "connect: fd=" << m_fd << std::endl ;
+	if( m_config.verbosity ) std::cout << "connect: fd=" << m_fd << std::endl ;
 	int rc = ::connect( m_fd , a.ptr() , static_cast<connect_size_type>(a.size()) ) ;
 	if( rc != 0 )
 		throw std::runtime_error( "connect error" ) ;
@@ -177,9 +187,9 @@ bool Test::runSome()
 		waitline( "250 " ) ;
 		m_state++ ;
 	}
-	else if( m_state > 1 && m_state < (m_messages+2) )
+	else if( m_state > 1 && m_state < (m_config.messages+2) )
 	{
-		sendMessage( m_recipients , m_lines , m_line_length , m_state == (m_messages+1) ) ;
+		sendMessage( m_config.recipients , m_config.lines , m_config.line_length , m_config.domain , m_config.smtputf8 , m_state == (m_config.messages+1) ) ;
 		m_state++ ;
 	}
 	else
@@ -191,13 +201,18 @@ bool Test::runSome()
 	return m_done ;
 }
 
-void Test::sendMessage( int recipients , int lines , int length , bool last )
+void Test::sendMessage( int recipients , int lines , int length , std::string domain , bool smtputf8 , bool last )
 {
-	send( "MAIL FROM:<test>\r\n" ) ;
+	const std::string a { '\xC4' , '\x80' } ; // u8"\u0100" (u8"" is c++17)
+	const std::string b { '\xC6' , '\x80' } ; // u8"\u0180"
+	std::string alice = smtputf8 ? (a+"lice") : "alice" ;
+	std::string bob = smtputf8 ? (b+"ob") : "bob" ;
+
+	send( "MAIL FROM:<"+alice+"@"+domain+">" + (smtputf8?" SMTPUTF8":"") + "\r\n" ) ;
 	waitline() ;
 	for( int i = 0 ; i < recipients ; i++ )
 	{
-		send( "RCPT TO:<test>\r\n" ) ;
+		send( "RCPT TO:<"+bob+(recipients>1?std::to_string(i):std::string())+"@"+domain+">\r\n" ) ;
 		waitline() ;
 	}
 	send( "DATA\r\n" ) ;
@@ -210,10 +225,10 @@ void Test::sendMessage( int recipients , int lines , int length , bool last )
 	for( int i = 0 ; i < lines ; i++ )
 		sendData( &buffer[0] , buffer.size() ) ;
 
-	if( last && cfg.eager_quit )
+	if( last && m_config.eager_quit )
 	{
 		send( ".\r\nQUIT\r\n" ) ;
-		if( cfg.eager_quit_disconnect )
+		if( m_config.eager_quit_disconnect )
 		{
 			close() ;
 			return ;
@@ -235,7 +250,7 @@ void Test::waitline()
 
 void Test::waitline( const char * match )
 {
-	if( cfg.no_wait )
+	if( m_config.no_wait )
 	{
 		m_wait++ ;
 		return ;
@@ -256,8 +271,8 @@ void Test::waitline( const char * match )
 		else if( c == '\n' ) line.append( "\\n" ) ;
 		else line.append( 1U , c ) ;
 	}
-	if( cfg.verbosity )
-		std::cout << m_fd << ": rx<<: [" << line << "]" << std::endl ;
+	if( m_config.verbosity )
+		*log_stream << "fd" << m_fd << ": rx<<: [" << line << "]" << std::endl ;
 }
 
 void Test::send( const std::string & s )
@@ -267,13 +282,13 @@ void Test::send( const std::string & s )
 
 void Test::send( const char * p , std::size_t n )
 {
-	if( cfg.verbosity ) std::cout << m_fd << ": tx>>: [" << printable(std::string(p,n)) << "]" << std::endl ;
+	if( m_config.verbosity ) *log_stream << "fd" << m_fd << ": tx>>: [" << printable(std::string(p,n)) << "]" << std::endl ;
 	::send( m_fd , p , static_cast<send_size_type>(n) , 0 ) ;
 }
 
 void Test::sendData( const char * p , std::size_t n )
 {
-	if( cfg.verbosity > 1 ) std::cout << m_fd << ": tx>>: [<" << n << " bytes>]" << std::endl ;
+	if( m_config.verbosity > 1 ) *log_stream << "fd" << m_fd << ": tx>>: [<" << n << " bytes>]" << std::endl ;
 	::send( m_fd , p , static_cast<send_size_type>(n) , 0 ) ;
 }
 
@@ -289,13 +304,13 @@ void Test::shutdown( SOCKET fd )
 
 void Test::close()
 {
-	if( cfg.verbosity ) std::cout << "close: fd=" << m_fd << std::endl ;
+	if( m_config.verbosity ) *log_stream << "close: fd=" << m_fd << std::endl ;
 	close_( m_fd ) ;
 }
 
 void Test::close_( SOCKET fd )
 {
-	#ifdef _WIN32
+	#ifdef G_WINDOWS
 		::closesocket( fd ) ;
 	#else
 		::close( fd ) ;
@@ -304,7 +319,7 @@ void Test::close_( SOCKET fd )
 
 void init()
 {
-	#ifdef _WIN32
+	#ifdef G_WINDOWS
 		WSADATA info ;
 		if( ::WSAStartup( MAKEWORD(2,2) , &info ) )
 			throw std::runtime_error( "WSAStartup failed" ) ;
@@ -328,104 +343,148 @@ std::string usage( const char * argv0 )
 	std::ostringstream ss ;
 	ss
 		<< "usage: " << argv0 << " [-q | -Q] [-v [-v]] "
-		<< "[--connections <connections-in-parallel>] "
+		<< "[--log-file <path>] "
 		<< "[--iterations <iterations>] "
+		<< "[--connections <connections-in-parallel>] "
+		<< "[--messages <messages-per-connection>] "
+		<< "[--recipients <recipients-per-message>] "
 		<< "[--lines <lines-per-message>] "
 		<< "[--line-length <line-length>] "
-		<< "[--messages <messages-per-connection>] "
+		<< "[--timeout <seconds>] "
+		<< "[--utf8-domain] [--smtputf8] "
 		<< "[<ipaddress>] <port>" ;
 	return ss.str() ;
 }
 
 int main( int argc , char * argv [] )
 {
+	if( argc > 1 && argv[1][0] == '-' && argv[1][1] == 'h' )
+	{
+		std::cout << usage(argv[0]) << std::endl ;
+		return 0 ;
+	}
+
+	Config config ;
+	while( argc > 1 )
+	{
+		int remove = 0 ;
+		std::string arg = argv[1] ;
+		std::string value = argc > 2 ? argv[2] : "" ;
+		if( arg == "-v" ) config.verbosity++ , remove = 1 ;
+		if( arg == "-q" ) config.eager_quit = true , remove = 1 ;
+		if( arg == "-Q" ) config.eager_quit = config.eager_quit_disconnect = true , remove = 1 ;
+		if( arg == "--log-file" ) config.log_file = value , remove = 2 ;
+		if( arg == "--iterations" ) config.iterations = to_int(value) , remove = 2 ;
+		if( arg == "--connections" ) config.connections = to_int(value) , remove = 2 ;
+		if( arg == "--recipients" ) config.recipients = to_int(value) , remove = 2 ;
+		if( arg == "--messages" ) config.messages = to_int(value) , remove = 2 ;
+		if( arg == "--lines" ) config.lines = to_int(value) , remove = 2 ;
+		if( arg == "--line-length" ) config.line_length = to_int(value) , remove = 2 ;
+		if( arg == "--utf8-domain" ) config.utf8_domain = true , remove = 1 ;
+		if( arg == "--smtputf8" ) config.smtputf8 = true , remove = 1 ;
+		if( arg == "--timeout" ) config.timeout = to_int(value) , remove = 2 ;
+		if( remove == 0 ) break ;
+		while( remove-- && argc > 1 )
+		{
+			for( int i = 1 ; (i+1) <= argc ; i++ )
+				argv[i] = argv[i+1] ;
+			argc-- ;
+		}
+		std::string u { '\xC3' , '\xBC' } ; // u8"\u00FC"
+		config.domain = config.utf8_domain ? std::string("b"+u+"cher.example.com") : std::string("example.com") ;
+		if( !config.log_file.empty() )
+		{
+			log_stream = new std::ofstream( config.log_file.c_str() ) ;
+			if( !log_stream->good() )
+				throw std::runtime_error( "cannot open log file [" + config.log_file + "]" ) ;
+		}
+	}
+	if( argc == 2 )
+	{
+		config.port = to_int( argv[1] )  ;
+	}
+	else if( argc == 3 )
+	{
+		config.address = argv[1] , config.port = to_int( argv[2] ) ;
+	}
+	else
+	{
+		std::cerr << usage(argv[0]) << std::endl ;
+		return 2 ;
+	}
+
+	init() ;
+
+	G::threading::thread_type timer_thread ;
+	bool thread_stop = false ;
 	try
 	{
-		if( argc > 1 && argv[1][0] == '-' && argv[1][1] == 'h' )
+		if( config.timeout )
 		{
-			std::cout << usage(argv[0]) << std::endl ;
-			return 0 ;
+			#ifdef G_WINDOWS
+			int timeout = config.timeout ;
+			timer_thread = std::thread( [&thread_stop,timeout]() {
+					for( int i = 0 ; i < timeout ; i++ )
+					{
+						sleep( 1 ) ;
+						if( thread_stop )
+							break ;
+					}
+					if( !thread_stop )
+					{
+						*log_stream << "timed out" << std::endl ;
+						exit( 1 ) ;
+					}
+				}) ;
+			#else
+			thread_stop = !thread_stop ;
+			alarm( config.timeout ) ; // SIGALRM
+			#endif
 		}
 
-		// by default loop forever with one connection sending two large messages
+		Address address = config.address.empty() ? Address(config.port) : Address(config.address.c_str(),config.port) ;
 
-		while( argc > 1 )
+		if( config.verbosity )
 		{
-			int remove = 0 ;
-			std::string arg = argv[1] ;
-			std::string value = argc > 2 ? argv[2] : "" ;
-			if( arg == "-v" ) cfg.verbosity++ , remove = 1 ;
-			if( arg == "-q" ) cfg.eager_quit = true , remove = 1 ;
-			if( arg == "-Q" ) cfg.eager_quit = cfg.eager_quit_disconnect = true , remove = 1 ;
-			if( arg == "--connections" ) cfg.connections = to_int(value) , remove = 2 ;
-			if( arg == "--iterations" ) cfg.iterations = to_int(value) , remove = 2 ;
-			if( arg == "--lines" ) cfg.lines = to_int(value) , remove = 2 ;
-			if( arg == "--line-length" ) cfg.line_length = to_int(value) , remove = 2 ;
-			if( arg == "--messages" ) cfg.messages = to_int(value) , remove = 2 ;
-			if( remove == 0 ) break ;
-			while( remove-- && argc > 1 )
+			std::cout << "address: " << (config.address.length()?config.address:"<default>") << std::endl ;
+			std::cout << "port: " << config.port << std::endl ;
+			std::cout << "iterations: " << config.iterations << std::endl ;
+			std::cout << "connections: " << config.connections << std::endl ;
+			std::cout << "messages: " << config.messages << std::endl ;
+			std::cout << "recipients: " << config.recipients << std::endl ;
+			std::cout << "lines: " << config.lines << std::endl ;
+			std::cout << "line-length: " << config.line_length << std::endl ;
+		}
+
+		for( int i = 0 ; config.iterations < 0 || i < config.iterations ; i++ )
+		{
+			std::vector<std::shared_ptr<Test>> tests ;
+			for( int t = 0 ; t < config.connections ; t++ )
+				tests.push_back( std::make_shared<Test>(address,config) ) ;
+			for( unsigned done_count = 0 ; done_count < tests.size() ; )
 			{
-				for( int i = 1 ; (i+1) <= argc ; i++ )
-					argv[i] = argv[i+1] ;
-				argc-- ;
-			}
-		}
-		if( argc == 2 )
-		{
-			cfg.port = to_int( argv[1] )  ;
-		}
-		else if( argc == 3 )
-		{
-			cfg.address = argv[1] , cfg.port = to_int( argv[2] ) ;
-		}
-		else
-		{
-			std::cerr << usage(argv[0]) << std::endl ;
-			return 2 ;
-		}
-
-		init() ;
-
-		Address a = cfg.address.empty() ? Address(cfg.port) : Address(cfg.address.c_str(),cfg.port) ;
-
-		//if( cfg.verbosity )
-		{
-			std::cout << "connections: " << cfg.connections << std::endl ;
-			std::cout << "iterations: " << cfg.iterations << std::endl ;
-			std::cout << "lines: " << cfg.lines << std::endl ;
-			std::cout << "line-length: " << cfg.line_length << std::endl ;
-			std::cout << "messages: " << cfg.messages << std::endl ;
-			std::cout << "address: " << (cfg.address.length()?cfg.address:"<default>") << std::endl ;
-			std::cout << "port: " << cfg.port << std::endl ;
-		}
-
-		for( int i = 0 ; cfg.iterations < 0 || i < cfg.iterations ; i++ )
-		{
-			std::vector<Test> test( cfg.connections ) ;
-			for( auto & t : test )
-			{
-				t.init( a , cfg.messages , cfg.lines , cfg.line_length ) ;
-			}
-			for( unsigned done_count = 0 ; done_count < test.size() ; )
-			{
-				for( auto & t : test )
+				for( auto & t : tests )
 				{
-					if( !t.done() && t.runSome() )
+					if( !t->done() && t->runSome() )
 						done_count++ ;
 				}
 			}
-			for( auto & t : test )
+			for( auto & t : tests )
 			{
-				t.close() ;
+				t->close() ;
 			}
 		}
 
+		thread_stop = true ;
+		if( timer_thread.joinable() ) timer_thread.join() ;
 		return 0 ;
 	}
 	catch( std::exception & e )
 	{
 		std::cerr << "exception: " << e.what() << std::endl ;
 	}
+	thread_stop = true ;
+	if( timer_thread.joinable() ) timer_thread.join() ;
 	return 1 ;
 }
 

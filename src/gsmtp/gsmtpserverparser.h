@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 
 #include "gdef.h"
 #include "gstringview.h"
+#include "gmessagestore.h"
 #include <string>
 
 namespace GSmtp
@@ -31,48 +32,52 @@ namespace GSmtp
 }
 
 //| \class GSmtp::ServerParser
-/// A static mix-in class for GSmtp::ServerProtocol to do SMTP command
-/// parsing. Also provides mailboxStyle() to check a mailbox's
-/// character-set.
+/// A static class for SMTP command parsing, used by GSmtp::ServerProtocol
+/// as a mix-in base.
 ///
 /// See also RFC-5321 4.1.2.
 ///
 class GSmtp::ServerParser
 {
 public:
-	enum class MailboxStyle
+	struct Config /// A configuration structure for GSmtp::ServerParser.
 	{
-		Invalid , // eg. NUL or CRLF
-		Ascii , // printable ASCII (RFC-5321 4.1.2)
-		Utf8 // other (RFC-6531)
+		bool allow_spaces {false} ; // sr #89
+		bool allow_nobrackets {false} ; // sr #97
+		bool alabels {false} ; // normalise domain names using A-labels
+		std::string allow_spaces_help ;
+		std::string allow_nobrackets_help ;
+		Config & set_allow_spaces( bool b = true ) noexcept ;
+		Config & set_allow_nobrackets( bool b = true ) noexcept ;
+		Config & set_alabels( bool b = true ) noexcept ;
+		Config & set_allow_spaces_help( const std::string & ) ;
+		Config & set_allow_nobrackets_help( const std::string & ) ;
 	} ;
+	using AddressStyle = GStore::MessageStore::AddressStyle ;
 	struct AddressCommand /// mail-from or rcpt-to
 	{
 		AddressCommand() = default ;
 		AddressCommand( const std::string & e ) : error(e) {}
 		std::string error ;
-		std::string address ; // SMTP form, possibly quoted and escaped
-		bool utf8address {false} ; // ServerParser::mailboxStyle()
+		std::string raw_address ; // raw address, possibly UTF-8 and/or with local-part quoted and escaped
+		std::string address ; // address with domain part using A-labels (if requested by Config::alabels)
+		AddressStyle address_style {AddressStyle::Ascii} ; // see GStore::MessageStore::addressStyle()
+		bool utf8_mailbox_part {false} ; // see address_style
+		bool utf8_domain_part {false} ; // see address_style
 		std::size_t tailpos {std::string::npos} ;
 		std::size_t size {0U} ;
 		std::string auth ;
 		std::string body ; // 7BIT, 8BITMIME, BINARYMIME
 		bool smtputf8 {false} ; // SMTPUTF8 option
-		bool allowed_spaces {false} ;
-		bool allowed_nobrackets {false} ;
+		bool invalid_spaces {false} ;
+		bool invalid_nobrackets {false} ;
 	} ;
 
-	static MailboxStyle mailboxStyle( std::string_view mailbox ) ;
-		///< Classifies the given mailbox name.
-		///< See also RFC-5198.
+	static AddressCommand parseMailFrom( std::string_view , const Config & ) ;
+		///< Parses a MAIL-FROM command.
 
-	static AddressCommand parseMailFrom( std::string_view ,
-		bool allow_spaces , bool allow_nobrackets ) ;
-			///< Parses a MAIL-FROM command.
-
-	static AddressCommand parseRcptTo( std::string_view ,
-		bool allow_spaces , bool allow_nobrackets ) ;
-			///< Parses a RCPT-TO command.
+	static AddressCommand parseRcptTo( std::string_view , const Config & ) ;
+		///< Parses a RCPT-TO command.
 
 	static std::pair<std::size_t,bool> parseBdatSize( std::string_view ) ;
 		///< Parses a BDAT command.
@@ -93,10 +98,17 @@ private:
 		ValidXtext ,
 		Upper
 	} ;
-	static AddressCommand parseAddressPart( std::string_view , bool , bool ) ;
+	static AddressCommand parseAddressPart( std::string_view , const Config & ) ;
 	static std::size_t parseMailNumericValue( std::string_view , std::string_view , AddressCommand & ) ;
 	static std::string parseMailStringValue( std::string_view , std::string_view , AddressCommand & , Conversion = Conversion::None ) ;
 	static bool parseMailBoolean( std::string_view , std::string_view , AddressCommand & ) ;
+	static std::string encodeDomain( std::string_view ) ;
 } ;
+
+inline GSmtp::ServerParser::Config & GSmtp::ServerParser::Config::set_allow_spaces( bool b ) noexcept { allow_spaces = b ; return *this ; }
+inline GSmtp::ServerParser::Config & GSmtp::ServerParser::Config::set_allow_nobrackets( bool b ) noexcept { allow_nobrackets = b ; return *this ; }
+inline GSmtp::ServerParser::Config & GSmtp::ServerParser::Config::set_alabels( bool b ) noexcept { alabels = b ; return *this ; }
+inline GSmtp::ServerParser::Config & GSmtp::ServerParser::Config::set_allow_spaces_help( const std::string & s ) { allow_spaces_help = s ; return *this ; }
+inline GSmtp::ServerParser::Config & GSmtp::ServerParser::Config::set_allow_nobrackets_help( const std::string & s ) { allow_nobrackets_help = s ; return *this ; }
 
 #endif

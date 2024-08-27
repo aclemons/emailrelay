@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -238,7 +238,7 @@ else
  $(OS_LIBS)
 endif
 
-emailrelay_submit_SOURCES = submit.cpp legal.cpp legal.h
+emailrelay_submit_SOURCES = submit.cpp submitparser.cpp submitparser.h legal.cpp legal.h
 if GCONFIG_WINDOWS
  emailrelay_submit_LDFLAGS = -static
  emailrelay_submit_LDADD = \

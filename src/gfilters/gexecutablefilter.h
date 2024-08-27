@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -70,7 +70,7 @@ public:
 	ExecutableFilter & operator=( ExecutableFilter && ) = delete ;
 
 private:
-	std::tuple<std::string,int,std::string> parseOutput( std::string , const std::string & ) const ;
+	static std::tuple<std::string,int,std::string> parseOutput( std::string , const std::string & ) ;
 	void onTimeout() ;
 	std::string prefix() const ;
 

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ namespace G
 class G::Base64
 {
 public:
-	G_EXCEPTION( Error , tx("base64 encoding error") ) ;
+	G_EXCEPTION( Error , tx("base64 encoding error") )
 
 	static std::string encode( std::string_view , std::string_view line_break = {} ) ;
 		///< Encodes the given string, optionally inserting line-breaks

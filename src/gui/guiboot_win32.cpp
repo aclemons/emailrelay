@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -30,15 +30,15 @@ namespace Gui
 {
 	namespace BootImp
 	{
-		bool createConfigurationFile( const G::Path & bat , const G::Path & wrapper_exe , bool do_throw )
+		bool createConfigurationFile( const G::Path & wrapper_exe , const G::Path & bat_dir , bool do_throw )
 		{
-			G::Path config_file = wrapper_exe.withoutExtension() ;
+			G::Path wrapper_config( wrapper_exe.withoutExtension().str() + ".cfg" ) ; // emailrelay-service.cfg
 			std::ofstream file ;
-			G::File::open( file , config_file.str()+".cfg" , G::File::Text() ) ;
-			G::MapFile::writeItem( file , "dir-config" , bat.dirname().str() ) ;
+			G::File::open( file , wrapper_config , G::File::Text() ) ;
+			G::MapFile::writeItem( file , "dir-config" , bat_dir.str() ) ;
 			file.close() ;
 			if( file.fail() && do_throw )
-				throw std::runtime_error( "failed to create service wrapper configuration file " + config_file.str() ) ;
+				throw std::runtime_error( "failed to create service wrapper configuration file " + wrapper_config.str() ) ;
 			return !file.fail() ;
 		}
 	}
@@ -54,35 +54,34 @@ bool Gui::Boot::installable()
 
 void Gui::Boot::install( const std::string & name , const G::Path & bat , const G::Path & wrapper_exe )
 {
-	// the 'bat' path is the batch file containing the full command-line
-	// for the server process -- the service wrapper knows how to read it
-	// at service start time to assemble the full server command-line -- the
-	// batch file must be located in a directory given by a configuration
-	// file "<wrapper-basename>.cfg" (so typically "emailrelay-service.cfg") --
-	// for backwards compatibility the batch file can also be located
-	// in the same directory as the wrapper
+	// the 'bat' path is for the batch file containing the command-line for
+	// the server process -- it is used here mostly for its directory part --
+	// the service wrapper derives its filename from the service name and
+	// its directory from reading the service wrapper config file -- the
+	// service wrapper will look for either a batch file or a configuration
+	// file
 
-	// install the service
+	// install the service -- see servicecontrol_win32.cpp
 	std::string qwrapper = wrapper_exe.str().find(" ") != std::string::npos ?
 		( std::string() + "\"" + wrapper_exe.str() + "\"" ) : wrapper_exe.str() ;
 	std::string display_name = "E-MailRelay" ;
-	std::string description = display_name + " service (reads " + bat.str() + " at service start time)" ;
-	std::string reason = ::service_install( qwrapper , name , display_name , description ) ;
+	std::string description = display_name + " service (reads " + bat.str() + " at service start time)" ; // see also service wrapper's serviceInfo()
+	std::string reason = ::service_install( qwrapper , name , display_name , description ).first ;
 	if( !reason.empty() )
 		throw std::runtime_error( reason ) ;
 
-	// create the config file
+	// create the service-wrapper config file
 	bool do_throw = true ;
-	BootImp::createConfigurationFile( bat , wrapper_exe , do_throw ) ;
+	BootImp::createConfigurationFile( wrapper_exe , bat.dirname() , do_throw ) ;
 }
 
 bool Gui::Boot::uninstall( const std::string & name , const G::Path & bat , const G::Path & wrapper_exe )
 {
 	// create an unused config file -- the user can edit it for a manual service install
 	bool do_throw = false ;
-	BootImp::createConfigurationFile( bat , wrapper_exe , do_throw ) ;
+	BootImp::createConfigurationFile( wrapper_exe , bat.dirname() , do_throw ) ;
 
-	return ::service_remove(name).empty() ;
+	return ::service_remove(name).first.empty() ;
 }
 
 bool Gui::Boot::installed( const std::string & name )
@@ -97,7 +96,7 @@ bool Gui::Boot::launchable( const std::string & )
 
 void Gui::Boot::launch( const std::string & name )
 {
-	std::string e = ::service_start( name ) ;
+	std::string e = ::service_start(name).first ;
 	if( !e.empty() )
 		throw std::runtime_error( e ) ;
 }

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ namespace GNet
 class GNet::Task
 {
 public:
-	G_EXCEPTION( Busy , tx("cannot execute command-line task: still busy from last time") ) ;
+	G_EXCEPTION( Busy , tx("cannot execute command-line task: still busy from last time") )
 
 	Task( TaskCallback & , EventState es ,
 		const std::string & exec_error_format = {} ,

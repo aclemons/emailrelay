@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@
 #include "gdatetime.h"
 #include "gfile.h"
 #include "gassert.h"
+#include "glog.h"
 #include <fstream>
 #include <sstream>
 
@@ -201,7 +202,7 @@ void GAuth::SecretsFile::processLine( Contents & contents , unsigned int line_nu
 			Secret secret_obj( {id,id_encoding} , {secret,secret_encoding} , hash_function , lineContext(line_number) ) ;
 			bool inserted = contents.m_map.insert( {key,secret_obj} ).second ;
 			if( inserted )
-				contents.m_types.insert( G::Str::lower(type) ) ;
+				contents.m_server_types.insert( G::Str::lower(type) ) ;
 			else
 				addError( contents , line_number , "duplicate server secret"_sv ) ;
 		}
@@ -333,7 +334,7 @@ bool GAuth::SecretsFile::containsServerSecret( std::string_view type , std::stri
 	reread() ;
 
 	return id_decoded.empty() ?
-		m_contents.m_types.find( G::Str::lower(type) ) != m_contents.m_types.end() :
+		m_contents.m_server_types.find( G::Str::lower(type) ) != m_contents.m_server_types.end() :
 		m_contents.m_map.find( serverKey(type,id_decoded) ) != m_contents.m_map.end() ;
 }
 

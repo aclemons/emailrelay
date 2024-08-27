@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -43,21 +43,22 @@ namespace G
 class G::Convert
 {
 public:
-	G_EXCEPTION_CLASS( NarrowError , tx("string character-set narrowing error") ) ;
-	G_EXCEPTION_CLASS( WidenError , tx("string character-set widening error") ) ;
+	G_EXCEPTION_CLASS( NarrowError , tx("string character-set narrowing error") )
+	G_EXCEPTION_CLASS( WidenError , tx("string character-set widening error") )
 	using unicode_type = std::uint_least32_t ;
+	static_assert( sizeof(unicode_type) >= sizeof(wchar_t) , "" ) ;
 	static constexpr unicode_type unicode_error = ~(unicode_type)0 ;
 	using ParseFn = std::function<bool(unicode_type,std::size_t,std::size_t)> ;
 
 	static std::wstring widen( std::string_view ) ;
-		///< Widens from utf8 to utf16/ucs4 wstring. Invalid input characters
+		///< Widens from UTF-8 to UTF-16/UCS-4 wstring. Invalid input characters
 		///< are substituted with L'\xFFFD'.
 
 	static bool valid( std::string_view ) noexcept ;
-		///< Returns true if the string is valid utf8.
+		///< Returns true if the string is valid UTF-8.
 
 	static std::string narrow( const std::wstring & ) ;
-		///< Narrows from utf16/ucs4 wstring to utf8. Invalid input characters
+		///< Narrows from UTF-16/UCS-4 wstring to UTF-8. Invalid input characters
 		///< are substituted with u8"\uFFFD", ie. "\xEF\xBF\xBD".
 
 	static std::string narrow( const wchar_t * ) ;
@@ -73,23 +74,24 @@ public:
 		///< Returns true if the string contains u8"\uFFFD".
 
 	static std::size_t u8out( unicode_type , char * & ) noexcept ;
-		///< Puts a UTF-8 code into a character buffer. Advances the
-		///< pointer by reference and returns the number of bytes (1..4).
-		///< Returns zero on error, without advancing the pointer.
+		///< Puts a Unicode character value into a character buffer with
+		///< UTF-8 encoding. Advances the pointer by reference and returns
+		///< the number of bytes (1..4). Returns zero on error, without
+		///< advancing the pointer.
 
 	static std::pair<unicode_type,std::size_t> u8in( const unsigned char * , std::size_t n ) noexcept ;
-		///< Reads a unicode character from a UTF-8 buffer together with
+		///< Reads a Unicode character from a UTF-8 buffer together with
 		///< the number of bytes consumed. Returns [unicode_error,1] on
 		///< error.
 
 	static void u8parse( std::string_view , ParseFn ) ;
-		///< Calls a function for each unicode value in the given
+		///< Calls a function for each Unicode value in the given
 		///< UTF-8 string. Stops if the callback returns false. The
-		///< callback parameters are: unicode value (0xFFFD on
+		///< callback parameters are: Unicode value (0xFFFD on
 		///< error), UTF-8 bytes consumed, and UTF-8 byte offset.
 
 	static bool utf16( bool ) ;
-		///< Forces utf16 even if wchar_t is 4 bytes. Used in testing.
+		///< Forces UTF-16 even if wchar_t is 4 bytes. Used in testing.
 
 public:
 	Convert() = delete ;
@@ -100,6 +102,8 @@ private:
 	static std::size_t widenImp( const char * , std::size_t , wchar_t * , bool * = nullptr ) noexcept ;
 	static std::string narrowImp( const wchar_t * , std::size_t ) ;
 	static std::size_t narrowImp( const wchar_t * , std::size_t , char * ) noexcept ;
+	static unicode_type unicode_cast( wchar_t c ) noexcept ;
+	static char char_cast( unsigned int ) noexcept ;
 } ;
 
 #endif

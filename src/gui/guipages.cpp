@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -273,10 +273,10 @@ DirectoryPage::DirectoryPage( Gui::Dialog & dialog , const G::MapFile & config ,
 		connect( m_runtime_dir_edit_box , SIGNAL(textChanged(QString)), this, SLOT(onOtherDirChange()) );
 		if( testMode() )
 		{
-			const char * emailrelay =
+			const char * emailrelay = reinterpret_cast<const char*>(
 				G::is_windows() ?
 					u8"\u00C9-\u00B5\u00E4\u00EF\u2502\u0052\u00EB\u2514\u00E4\u00FF" : // cp437 compatible
-					u8"\u4E18\u070B\u4ECE\u03B1\u0269\u013A\u16B1\u0115\u013A\u0103\u0423" ;
+					u8"\u4E18\u070B\u4ECE\u03B1\u0269\u013A\u16B1\u0115\u013A\u0103\u0423" ) ;
 			G::Path tmp_base = is_windows ? G::Environment::getPath("TEMP","c:/temp") : G::Path("/tmp" ) ;
 			G::Path tmp_dir = tmp_base / std::string(emailrelay).append(1U,'.').append(G::Process::Id().str()) ;
 			QString old_value = m_install_dir_edit_box->text() ;
@@ -312,7 +312,9 @@ void DirectoryPage::checkCharacterSets()
 
 		//: one or more invalid characters in an installation directory
 		QString message = tr("warning: invalid characters") ;
-		m_notice_label->setText( u8"<font color=\"#cc0\">\u26A0 " + message + "</font>" ) ;
+		const wchar_t triangle = L'\u26A0' ;
+		QString text = QString("<font color=\"#cc0\">").append(triangle).append(" ").append(message).append("</font>") ;
+		m_notice_label->setText( text ) ;
 	}
 }
 
@@ -625,7 +627,8 @@ PopPage::PopPage( Gui::Dialog & dialog , const G::MapFile & config , const std::
 {
 	//: internet address, port number
 	QLabel * port_label = new QLabel( tr("Port:") ) ;
-	m_port_edit_box = new QLineEdit( GQt::qstring_from_u8string(config.value("pop-port","110")) ) ;
+	std::string port_value = testMode() ? std::string("10110") : config.value( "pop-port" , "110" ) ;
+	m_port_edit_box = new QLineEdit( qstr(port_value) ) ;
 	tip( m_port_edit_box , tr("--pop-port") ) ;
 	port_label->setBuddy( m_port_edit_box ) ;
 
@@ -814,7 +817,8 @@ SmtpServerPage::SmtpServerPage( Gui::Dialog & dialog , const G::MapFile & config
 {
 	//: internet address, port number
 	QLabel * port_label = new QLabel( tr("Port:") ) ;
-	m_port_edit_box = new QLineEdit( qstr(config.value("port","25")) ) ;
+	std::string port_value = testMode() ? std::string("10025") : config.value( "port" , "25" ) ;
+	m_port_edit_box = new QLineEdit( qstr(port_value) ) ;
 	tip( m_port_edit_box , tr("--port") ) ;
 	port_label->setBuddy( m_port_edit_box ) ;
 
@@ -1471,10 +1475,16 @@ LoggingPage::LoggingPage( Gui::Dialog & dialog , const G::MapFile & config , con
 	m_log_output_file_browse_button->setVisible( false ) ; // moot
 
 	m_log_fields_time_checkbox = new QCheckBox( tr("Timestamps") ) ;
-	tip( m_log_fields_time_checkbox , tr("--log-time") ) ;
+	tip( m_log_fields_time_checkbox , tr("--log-format=time") ) ;
 
 	m_log_fields_address_checkbox = new QCheckBox( tr("Network addresses") ) ;
-	tip( m_log_fields_address_checkbox , tr("--log-address") ) ;
+	tip( m_log_fields_address_checkbox , tr("--log-format=address") ) ;
+
+	m_log_fields_port_checkbox = new QCheckBox( tr("TCP ports") ) ;
+	tip( m_log_fields_port_checkbox , tr("--log-format=port") ) ;
+
+	m_log_fields_msgid_checkbox = new QCheckBox( tr("Message ids") ) ;
+	tip( m_log_fields_msgid_checkbox , tr("--log-format=msgid") ) ;
 
 	auto * log_output_file_layout = new QHBoxLayout ;
 	log_output_file_layout->addWidget( m_log_output_file_label ) ;
@@ -1490,9 +1500,11 @@ LoggingPage::LoggingPage( Gui::Dialog & dialog , const G::MapFile & config , con
 	log_output_layout->addWidget( m_log_output_file_checkbox ) ;
 	log_output_layout->addLayout( log_output_file_layout ) ;
 
-	auto * log_fields_layout = new QVBoxLayout ;
-	log_fields_layout->addWidget( m_log_fields_time_checkbox ) ;
-	log_fields_layout->addWidget( m_log_fields_address_checkbox ) ;
+	auto * log_fields_layout = new QGridLayout ;
+	log_fields_layout->addWidget( m_log_fields_time_checkbox , 0 , 0 ) ;
+	log_fields_layout->addWidget( m_log_fields_address_checkbox , 1 , 0 ) ;
+	log_fields_layout->addWidget( m_log_fields_port_checkbox , 0 , 1 ) ;
+	log_fields_layout->addWidget( m_log_fields_msgid_checkbox , 1 , 1 ) ;
 
 	bool syslog_override = config.booleanValue("syslog",false) ;
 	bool as_client = config.booleanValue("as-client",false) ;
@@ -1503,8 +1515,10 @@ LoggingPage::LoggingPage( Gui::Dialog & dialog , const G::MapFile & config , con
 	m_log_level_verbose_checkbox->setChecked( config.booleanValue("verbose",true) ) ; // true, because windows users
 	m_log_level_debug_checkbox->setChecked( config.booleanValue("debug",false) ) ;
 	m_log_level_debug_checkbox->setEnabled( config.booleanValue("debug",false) ) ; // todo, enable if debugging is built-in
-	m_log_fields_time_checkbox->setChecked( config.booleanValue("log-time",true) ) ;
-	m_log_fields_address_checkbox->setChecked( config.booleanValue("log-address",false) ) ;
+	m_log_fields_time_checkbox->setChecked( config.valueContains("log-format","time") || config.booleanValue("log-time",true) ) ;
+	m_log_fields_address_checkbox->setChecked( config.valueContains("log-format","address") || config.booleanValue("log-address",false) ) ;
+	m_log_fields_port_checkbox->setChecked( config.valueContains("log-format","port") ) ;
+	m_log_fields_msgid_checkbox->setChecked( config.valueContains("log-format","msgid") ) ;
 
 	//: group label for the logging verbosity level
 	QGroupBox * level_group = new QGroupBox( tr("Level") ) ;
@@ -1596,6 +1610,8 @@ void LoggingPage::dump( std::ostream & stream , bool for_install ) const
 	dumpItem( stream , for_install , "logging-file" , value_path(m_log_output_file_checkbox->isChecked()?m_log_output_file_edit_box:nullptr) ) ;
 	dumpItem( stream , for_install , "logging-time" , value_yn(m_log_fields_time_checkbox) ) ;
 	dumpItem( stream , for_install , "logging-address" , value_yn(m_log_fields_address_checkbox) ) ;
+	dumpItem( stream , for_install , "logging-port" , value_yn(m_log_fields_port_checkbox) ) ;
+	dumpItem( stream , for_install , "logging-msgid" , value_yn(m_log_fields_msgid_checkbox) ) ;
 }
 
 // ==
@@ -1999,7 +2015,7 @@ void ProgressPage::onInstallTimeout()
 			if( m_installer.failed() )
 			{
 				if( m_state == 2 )
-					addLine( GQt::qstring_from_u8string(m_installer.failedText()) ) ;
+					addLine( qstr(m_installer.failedText()) ) ;
 				else
 					m_installer.back() ;
 				m_state += 1 ;
@@ -2007,7 +2023,7 @@ void ProgressPage::onInstallTimeout()
 			else
 			{
 				if( m_state == 2 )
-					addLine( GQt::qstring_from_u8string(m_installer.finishedText()) ) ;
+					addLine( qstr(m_installer.finishedText()) ) ;
 				m_state += 2 ;
 				if( m_logwatch_thread )
 					m_logwatch_thread->start() ;
@@ -2068,11 +2084,11 @@ QString ProgressPage::format( const Installer::Output & output )
 	// string (eg. for system errors) -- translators should ensure that some sort
 	// of error message is displayed in this case
 
-	QString action = GQt::qstring_from_u8string( output.action ) ;
-	QString subject = GQt::qstring_from_u8string( output.subject ) ;
-	QString result = GQt::qstring_from_u8string( output.result ) ;
-	QString error = GQt::qstring_from_u8string( output.error ) ;
-	QString error_more = GQt::qstring_from_u8string( output.error_more ) ;
+	QString action = qstr( output.action ) ;
+	QString subject = qstr( output.subject ) ;
+	QString result = qstr( output.result ) ;
+	QString error = qstr( output.error ) ;
+	QString error_more = qstr( output.error_more ) ;
 
 	if( result.isEmpty() && error.isEmpty() && error_more.isEmpty() )
 	{

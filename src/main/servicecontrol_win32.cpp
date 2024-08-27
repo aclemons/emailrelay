@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@ namespace ServiceControl
 struct ServiceControl::Error : std::runtime_error
 {
 	Error( const std::string & s , DWORD ) ;
+	DWORD m_error {0} ;
 	static std::string decode( DWORD ) ;
 } ;
 
@@ -105,7 +106,8 @@ private:
 // ==
 
 ServiceControl::Error::Error( const std::string & s , DWORD e ) :
-	std::runtime_error(s+": "+decode(e))
+	std::runtime_error(s+": "+decode(e)) ,
+	m_error(e)
 {
 }
 
@@ -215,7 +217,7 @@ void ServiceControl::Service::configure( const std::string & description_in , co
 {
 	std::string description = description_in ;
 	if( description.empty() )
-		description = ( display_name + " service" ) ;
+		description = display_name + " service" ;
 
 	static constexpr std::size_t limit = 2048U ;
 	if( (description.length()+5U) > limit )
@@ -290,29 +292,33 @@ void ServiceControl::Service::start()
 
 // ==
 
-std::string service_install( const std::string & commandline , const std::string & name ,
+std::pair<std::string,DWORD> service_install( const std::string & commandline , const std::string & name ,
 	const std::string & display_name , const std::string & description , bool autostart )
 {
 	using namespace ServiceControl ;
 	try
 	{
 		if( name.empty() || display_name.empty() )
-			throw std::runtime_error( "invalid zero-length service name" ) ;
+			throw Error( "invalid zero-length service name" , ERROR_INVALID_NAME ) ;
 
 		Manager manager ;
 		Service service ;
 		DWORD start_type = autostart ? SERVICE_AUTO_START : SERVICE_DEMAND_START ;
 		service.create( manager , name , display_name , start_type , commandline ) ;
 		service.configure( description , display_name ) ;
-		return std::string() ;
+		return {{},0} ;
+	}
+	catch( Error & e )
+	{
+		return {e.what(),e.m_error} ;
 	}
 	catch( std::exception & e )
 	{
-		return e.what() ;
+		return {e.what(),ERROR_SERVICE_SPECIFIC_ERROR} ;
 	}
 	catch(...)
 	{
-		return "failed" ;
+		return {"failed",ERROR_SERVICE_SPECIFIC_ERROR} ;
 	}
 }
 
@@ -331,7 +337,7 @@ bool service_installed( const std::string & name )
 	}
 }
 
-std::string service_remove( const std::string & name )
+std::pair<std::string,DWORD> service_remove( const std::string & name )
 {
 	using namespace ServiceControl ;
 	try
@@ -340,19 +346,23 @@ std::string service_remove( const std::string & name )
 		Service service( manager , name , DELETE | SERVICE_STOP ) ;
 		service.stop() ;
 		service.remove() ;
-		return std::string() ;
+		return {{},0} ;
+	}
+	catch( Error & e )
+	{
+		return {e.what(),e.m_error} ;
 	}
 	catch( std::exception & e )
 	{
-		return e.what() ;
+		return {e.what(),ERROR_SERVICE_SPECIFIC_ERROR} ;
 	}
 	catch(...)
 	{
-		return "failed" ;
+		return {"failed",ERROR_SERVICE_SPECIFIC_ERROR} ;
 	}
 }
 
-std::string service_start( const std::string & name )
+std::pair<std::string,DWORD> service_start( const std::string & name )
 {
 	using namespace ServiceControl ;
 	try
@@ -360,17 +370,21 @@ std::string service_start( const std::string & name )
 		Manager manager( SC_MANAGER_ALL_ACCESS ) ;
 		Service service( manager , name , SERVICE_START ) ;
 		if( !service.stopped() )
-			throw std::runtime_error( "already running" ) ;
+			throw Error( "already running" , ERROR_SERVICE_ALREADY_RUNNING ) ;
 		service.start() ;
-		return std::string() ;
+		return {{},0} ;
+	}
+	catch( Error & e )
+	{
+		return {e.what(),e.m_error} ;
 	}
 	catch( std::exception & e )
 	{
-		return e.what() ;
+		return {e.what(),ERROR_SERVICE_SPECIFIC_ERROR} ;
 	}
 	catch(...)
 	{
-		return "failed" ;
+		return {"failed",ERROR_SERVICE_SPECIFIC_ERROR} ;
 	}
 }
 

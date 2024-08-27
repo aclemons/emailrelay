@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,46 +24,46 @@
 #include "gdef.h"
 #include "gssl_mbedtls_headers.h"
 #include "gstrmacros.h"
+#include <cstddef> // std::nullptr_t
 
 // macro magic to provide function-name/function-pointer arguments for call()
+//
+// in later versions of mbedtls v2 some functions like foo() have a preferred
+// alternative form foo_ret() that returns an integer result code -- however
+// in mbedtls v3 some of the foo_ret() functions are deprecated and foo()
+// is now preferred
+//
 #ifdef FN
 #undef FN
 #endif
-#define FN( fn ) (#fn),(fn)
-
-// in newer versions of the mbedtls library hashing functions like mbed_whatever_ret()
-// returning an integer are preferred, compared to mbed_whatever() returning void --
-// except in version 3 some functions go back to a void return
+#define FN( fn ) nullptr,(#fn),(fn)
 #if MBEDTLS_VERSION_NUMBER >= 0x02070000
-#define FN_RET( fn ) (#fn),(G_STR_PASTE(fn,_ret))
 #if MBEDTLS_VERSION_MAJOR >= 3
-#define FN_RETv3( fn ) (#fn),(fn)
+#define FN_RET( fn ) nullptr,(#fn),(fn)
 #else
-#define FN_RETv3( fn ) (#fn),(G_STR_PASTE(fn,_ret))
+#define FN_RET( fn ) 0,(#fn),(G_STR_PASTE(fn,_ret))
 #endif
 #else
-#define FN_RET( fn ) (#fn),(fn)
-#define FN_RETv3( fn ) (#fn),(fn)
+#define FN_RET( fn ) nullptr,(#fn),(fn)
 #endif
+#define FN_OK( ok , fn ) int(ok),(#fn),(fn)
 
 namespace GSsl
 {
 	namespace MbedTls
 	{
-		// calls the given function with error checking -- overload for functions returning int
+		// calls the given function with error checking -- overload for functions returning an integer status value
 		template <typename F, typename... Args>
-		typename std::enable_if< !std::is_same<void,typename std::result_of<F(Args...)>::type>::value >::type
-		call( const char * fname , F fn , Args&&... args )
+		void call( int ok , const char * fname , F fn , Args&&... args )
 		{
 			int rc = fn( std::forward<Args>(args)... ) ;
-			if( rc )
+			if( rc != ok )
 				throw Error( fname , rc ) ;
 		}
 
 		// calls the given function -- overload for functions returning void
 		template <typename F, typename... Args>
-		typename std::enable_if< std::is_same<void,typename std::result_of<F(Args...)>::type>::value >::type
-		call( const char * , F fn , Args&&... args )
+		void call( std::nullptr_t , const char * /*fname*/ , F fn , Args&&... args )
 		{
 			fn( std::forward<Args>(args)... ) ;
 		}

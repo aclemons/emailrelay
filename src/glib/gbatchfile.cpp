@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -42,6 +42,7 @@ G::BatchFile::BatchFile( const Path & path , std::nothrow_t )
 	}
 	catch( Error & )
 	{
+		clear() ;
 	}
 }
 
@@ -51,8 +52,26 @@ void G::BatchFile::init( const Path & path )
 	File::open( stream , path , File::Text() ) ;
 	if( !stream.good() )
 		throw Error( "cannot open batch file" , path.str() ) ;
-	m_line = readFrom( stream , path.str() ) ;
+	m_raw_line = readFrom( stream , path.str() ) ;
+	auto parse_result = parse( m_raw_line ) ;
+	if( !parse_result.error.empty() )
+		throw Error( parse_result.error , path.str() ) ;
+	m_name = parse_result.name ;
+	m_line = parse_result.line ;
 	m_args = split( m_line ) ;
+}
+
+void G::BatchFile::clear()
+{
+	m_raw_line.clear() ;
+	m_name.clear() ;
+	m_line.clear() ;
+	m_args.clear() ;
+}
+
+bool G::BatchFile::empty() const
+{
+	return m_line.empty() ;
 }
 
 bool G::BatchFile::ignorable( const std::string & trimmed_line )
@@ -68,18 +87,10 @@ bool G::BatchFile::relevant( const std::string & trimmed_line )
 	return !ignorable( trimmed_line ) ;
 }
 
-std::string G::BatchFile::join( const std::string & file_name , unsigned int line_number )
-{
-	std::ostringstream ss ;
-	ss << file_name << "(" << line_number << ")" ;
-	return ss.str() ;
-}
-
-std::string G::BatchFile::readFrom( std::istream & stream , const std::string & stream_name )
+std::string G::BatchFile::readFrom( std::istream & stream , const std::string & stream_name , bool do_throw )
 {
 	std::string line ;
-	unsigned int line_number = 1U ;
-	for( ; stream.good() ; line_number++ )
+	while( stream.good() )
 	{
 		std::string s = Str::readLineFrom( stream ) ;
 		if( !stream ) break ;
@@ -90,16 +101,30 @@ std::string G::BatchFile::readFrom( std::istream & stream , const std::string & 
 		{
 			if( line.empty() )
 				line = s ;
+			else if( do_throw )
+				throw Error( "too many lines in batch file" , stream_name ) ;
 			else
-				throw Error( "too many lines in batch file" , join(stream_name,line_number) ) ;
+				return {} ;
 		}
 	}
 
 	if( line.empty() )
-		throw Error( "batch file is empty" , join(stream_name,line_number) ) ;
+	{
+		if( do_throw )
+			throw Error( "batch file is empty" , stream_name ) ;
+		return {} ;
+	}
 
+	return line ;
+}
+
+G::BatchFile::ParseResult G::BatchFile::parse( const std::string & line_in )
+{
 	// strip off any "start" prefix -- allow the "start" to have a quoted window
 	// title but dont expect any "start" options such as "/min"
+
+	ParseResult result ;
+	std::string line = line_in ;
 	if( !line.empty() )
 	{
 		using size_type = std::string::size_type ;
@@ -116,13 +141,13 @@ std::string G::BatchFile::readFrom( std::istream & stream , const std::string & 
 			std::size_t name_start_pos = command_pos ;
 			std::size_t name_end_pos = line.find( '\"' , name_start_pos+1U ) ;
 			if( name_end_pos == npos )
-				throw Error( "mismatched quotes in batch file" , stream_name ) ;
+				return {{},{},"mismatched quotes in batch file"} ;
 			if( (name_end_pos+2U) >= line.size() || line.at(name_end_pos+1U) != ' ' )
-				throw Error( "invalid window name in batch file" , stream_name ) ;
+				return {{},{},"invalid window name in batch file"} ;
 
-			m_name = line.substr( name_start_pos+1U , name_end_pos-(name_start_pos+1U) ) ;
-			dequote( m_name ) ;
-			Str::trim( m_name , Str::ws() ) ;
+			result.name = line.substr( name_start_pos+1U , name_end_pos-(name_start_pos+1U) ) ;
+			dequote( result.name ) ;
+			Str::trim( result.name , Str::ws() ) ;
 
 			command_pos = line.find_first_not_of( ws , name_end_pos+2U ) ;
 		}
@@ -134,7 +159,8 @@ std::string G::BatchFile::readFrom( std::istream & stream , const std::string & 
 	// percent characters are doubled up in batch files so un-double them here
 	Str::replaceAll( line , "%%" , "%" ) ;
 
-	return CodePage::fromCodePageOem( line ) ; // to UTF-8
+	result.line = CodePage::fromCodePageOem( line ) ; // to UTF-8
+	return result ;
 }
 
 std::string G::BatchFile::line() const
@@ -154,29 +180,17 @@ const G::StringArray & G::BatchFile::args() const
 
 std::size_t G::BatchFile::lineArgsPos() const
 {
-	// cf. G::Str::dequote()
-	const std::string ws = sv_to_string( Str::ws() ) ;
-	const char qq = '\"' ;
-	const char esc = '\\' ;
-	bool in_quote = false ;
-	bool escaped = false ;
+	constexpr char qq = '\"' ;
 	std::size_t i = 0U ;
-	for( ; i < m_line.size() ; i++ )
+	for( bool in_quote = false ; i < m_line.size() ; i++ )
 	{
 		char c = m_line[i] ;
-		if( c == esc && !escaped )
-		{
-			escaped = true ;
-		}
-		else
-		{
-			if( c == qq && !escaped && !in_quote )
-				in_quote = true ;
-			else if( c == qq && !escaped )
-				in_quote = false ;
-			else if( ws.find(c) != std::string::npos && !in_quote )
-				break ;
-		}
+		if( c == qq && !in_quote )
+			in_quote = true ;
+		else if( c == qq )
+			in_quote = false ;
+		else if( Str::ws().find(c) != std::string::npos && !in_quote )
+			break ;
 	}
 	return i ;
 }
@@ -187,11 +201,11 @@ void G::BatchFile::dequote( std::string & s )
 		s = s.substr( 1U , s.size()-2U ) ;
 }
 
-void G::BatchFile::write( const Path & path , const StringArray & args , const std::string & name_in )
+void G::BatchFile::write( const Path & path , const StringArray & args , const std::string & name_in , bool make_backup )
 {
 	G_ASSERT( !args.empty() ) ;
 	if( args.empty() )
-		throw Error( "invalid contents for startup batch file" ) ;
+		throw Error( "invalid contents for startup batch file" ) ; // need at least the executable
 
 	std::string name = name_in ;
 	if( name.empty() )
@@ -201,18 +215,30 @@ void G::BatchFile::write( const Path & path , const StringArray & args , const s
 		name = Path(name).withoutExtension().basename() ;
 	}
 
+	std::string start_line ;
+	{
+		std::ostringstream ss ;
+		ss << "start \"" << CodePage::toCodePageOem(name) << "\"" ;
+		for( const auto & arg : args )
+		{
+			ss << " " << percents(quote(CodePage::toCodePageOem(arg))) ;
+		}
+		start_line = ss.str() ;
+	}
+
+	if( make_backup )
+	{
+		BatchFile on_disk( path , std::nothrow ) ;
+		if( start_line != on_disk.m_raw_line )
+			G::File::backup( path , std::nothrow ) ;
+	}
+
 	std::ofstream stream ;
 	File::open( stream , path ) ;
 	if( !stream.good() )
 		throw Error( "cannot create batch file" , path.str() ) ;
 
-	stream << "start \"" << CodePage::toCodePageOem(name) << "\"" ;
-	for( const auto & arg : args )
-	{
-		stream << " " << percents(quote(CodePage::toCodePageOem(arg))) ;
-	}
-	stream << "\r\n" ;
-
+	stream << start_line << "\r\n" ;
 	stream.close() ;
 	if( stream.fail() )
 		throw Error( "cannot write batch file" , path.str() ) ;

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 
 #include "gdef.h"
 #include "gexception.h"
+#include "gstringview.h"
 #include "gsignalsafe.h"
 #include <string>
 #include <iostream>
@@ -43,9 +44,9 @@ namespace G
 class G::Identity
 {
 public:
-	G_EXCEPTION( NoSuchUser , tx("no such user") ) ;
-	G_EXCEPTION( NoSuchGroup , tx("no such group") ) ;
-	G_EXCEPTION( Error , tx("cannot read user database") ) ;
+	G_EXCEPTION( NoSuchUser , tx("no such user") )
+	G_EXCEPTION( NoSuchGroup , tx("no such group") )
+	G_EXCEPTION( Error , tx("cannot read user database") )
 
 	explicit Identity( const std::string & username ,
 		const std::string & group_name_override = {} ) ;
@@ -89,11 +90,11 @@ public:
 	bool operator!=( const Identity & ) const noexcept ;
 		///< Comparison operator.
 
-	static std::pair<Identity,std::string> lookup( const std::string & user ) ;
+	static std::pair<Identity,std::string> lookup( std::string_view user ) ;
 		///< Does a username lookup returning the identity and the
 		///< canonical name. Throws if no such user or on error.
 
-	static std::pair<Identity,std::string> lookup( const std::string & user , std::nothrow_t ) ;
+	static std::pair<Identity,std::string> lookup( std::string_view user , std::nothrow_t ) ;
 		///< Does a username lookup returning the identity and the
 		///< canonical name. Returns with Identitiy::invalid() if
 		///< no such user. Throws on error.

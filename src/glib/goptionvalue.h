@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 
 #include "gdef.h"
 #include "gstr.h"
+#include "gstringview.h"
 #include <string>
 
 namespace G
@@ -60,6 +61,12 @@ public:
 	std::string value() const ;
 		///< Returns the value as a string.
 
+	std::string_view valueref() const noexcept ;
+		///< Exposes the value as a string view.
+
+	bool operator==( std::string_view ) const noexcept ;
+		///< Returns true if the given string matches value().
+
 	bool numeric() const noexcept ;
 		///< Returns true if value() is an unsigned integer.
 
@@ -74,8 +81,8 @@ public:
 		///< Increments the instance count().
 
 private:
-	bool m_on_off{false} ;
-	std::size_t m_count{1U} ;
+	bool m_on_off {false} ;
+	std::size_t m_count {1U} ;
 	std::string m_value ;
 } ;
 
@@ -123,6 +130,18 @@ inline
 std::string G::OptionValue::value() const
 {
 	return m_value ;
+}
+
+inline
+std::string_view G::OptionValue::valueref() const noexcept
+{
+	return {m_value} ;
+}
+
+inline
+bool G::OptionValue::operator==( std::string_view s ) const noexcept
+{
+	return s == m_value ;
 }
 
 inline

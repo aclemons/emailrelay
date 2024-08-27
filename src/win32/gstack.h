@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -37,7 +37,8 @@ namespace GGui
 }
 
 //| \class GGui::StackPageCallback
-/// A callback interface for GGui::Stack.
+/// A callback interface for GGui::Stack. Note that there is also
+/// a callback mechanism via message-passing (see Stack::ctor).
 ///
 class GGui::StackPageCallback
 {
@@ -59,10 +60,6 @@ public:
 		///< returns false then the button has no effect and an
 		///< 'apply-denied' notification is posted instead (wparam 2).
 
-	virtual void onSysCommand( unsigned int id ) ;
-		///< Called on WM_SYSCOMMAND. A notification message is
-		///< also posted with a wparam of 3 and the id in lparam.
-
 	virtual ~StackPageCallback() ;
 		///< Destructor.
 } ;
@@ -81,12 +78,13 @@ public:
 	void create( HWND hparent , const std::string & title , int icon_id ,
 		HWND notify_hwnd , unsigned int notify_message , bool fixed_size = true ) ;
 			///< Creates the property sheet containing all the added pages and
-			///< hooks into the message pump.
+			///< hooks into the message pump. Throws on error.
 			///<
 			///< If the notify parameters are non-zero then the notify window
 			///< will receive an asynchronous message after the dialog completes
 			///< (wparam 0 or 1), or after any onApply() callback returns false
-			///< (wparam 2), or after a user-defined WM_SYSCOMMAND.
+			///< (wparam 2), or on receipt of a non-standard WM_SYSCOMMAND
+			///< message (wparam 3, with lparam for the menu item id).
 
 	void addPage( const std::string & title , int dialog_id ) ;
 		///< Creates a property sheet page and adds it to to the internal
@@ -100,11 +98,11 @@ public:
 		///< a stack message, in the same way as GGui::Dialog::dialogMessage().
 		///< Returns true if a stack message.
 
-	static int sheetProc( HWND hwnd , UINT message , LPARAM lparam ) ;
-		///< Implementation window procedure.
+	static int sheetCallback( HWND hwnd , UINT message , LPARAM lparam ) ;
+		///< Implementation callback procedure.
 
-	static unsigned int pageProc( HWND hwnd , UINT message , G::nowide::PROPSHEETPAGE_type * page ) ;
-		///< Implementation window procedure.
+	static unsigned int pageCallback( HWND hwnd , UINT message , G::nowide::PROPSHEETPAGE_type * page ) ;
+		///< Implementation callback procedure.
 
 	static bool dlgProc( HWND hwnd , UINT message , WPARAM wparam , LPARAM lparam ) ;
 		///< Implementation window procedure.
@@ -114,7 +112,6 @@ public:
 
 private:
 	static Stack * getObjectPointer( HWND hwnd ) ;
-	LRESULT wndProc( UINT , WPARAM , LPARAM , bool & ) ;
 	void hook( HWND ) ;
 	void unhook() ;
 	void doOnApply( HWND ) ;
@@ -129,18 +126,20 @@ public:
 private:
 	using PageInfo = std::pair<Stack*,int> ;
 	static constexpr int MAGIC = 24938 ;
-	int m_magic ;
-	HINSTANCE m_hinstance ;
+	int m_magic {MAGIC} ;
+	HINSTANCE m_hinstance {0} ;
+	HWND m_hsheet {0} ;
 	StackPageCallback & m_callback ;
-	std::pair<DWORD,DWORD> m_style ;
-	bool m_set_style ;
-	bool m_fixed_size ;
+	std::pair<DWORD,DWORD> m_style {0,0} ;
+	bool m_set_style {false} ;
+	bool m_fixed_size {false} ;
 	std::list<PageInfo> m_pages ;
 	std::vector<HPROPSHEETPAGE> m_hpages ;
-	HWND m_notify_hwnd ;
-	unsigned int m_notify_message ;
+	HWND m_notify_hwnd {0} ;
+	unsigned int m_notify_message {0U} ;
 	static std::list<HWND> m_list ;
-	LONG_PTR m_wndproc_orig ;
+	ULONG_PTR m_wndproc_orig {0} ;
+	bool m_seen_wm_initdialog {false} ;
 } ;
 
 #endif

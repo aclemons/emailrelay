@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ GFilters::SplitFilter::SplitFilter( GNet::EventState es , GStore::FileStore & st
 	std::string_view spec_sv = spec ;
 	for( G::StringTokenView t(spec_sv,";",1U) ; t ; ++t )
 	{
-		if( t() == "raw"_sv ) m_raw = true ; // case-sensitive domain names
+		if( t() == "raw" ) m_raw = true ; // case-sensitive domain names
 		if( G::Str::isNumeric(t()) ) m_port = G::sv_to_string(t()) ;
 	}
 }

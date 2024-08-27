@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -113,7 +113,7 @@ std::string G::OptionsUsage::summaryPartOne( const Config & config ) const
 	}
 
 	std::string s = ss.str() ;
-	if( s.length() ) s.append( "] " ) ;
+	if( !s.empty() ) s.append( "] " ) ;
 	return s ;
 }
 
@@ -126,7 +126,7 @@ std::string G::OptionsUsage::summaryPartTwo( const Config & config ) const
 		if( option.visible({config.level_min,config.level_max},config.main_tag,config.tag_bits) )
 		{
 			ss << sep << "[" ;
-			if( option.name.length() )
+			if( !option.name.empty() )
 			{
 				ss << "--" << option.name ;
 			}
@@ -236,14 +236,14 @@ std::string G::OptionsUsage::helpSyntax( const Option & option , bool with_non_s
 	{
 		syntax.append( 1U , '-' ) ;
 		syntax.append( 1U , option.c ) ;
-		if( option.name.length() )
+		if( !option.name.empty() )
 			syntax.append( ", " ) ;
 	}
 	else if( with_non_space )
 	{
 		syntax.append( 4U , non_space ) ; // (new)
 	}
-	if( option.name.length() )
+	if( !option.name.empty() )
 	{
 		syntax.append( "--" ) ;
 		syntax.append( option.name ) ;

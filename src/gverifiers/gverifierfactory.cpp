@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -33,10 +33,10 @@
 GVerifiers::VerifierFactory::VerifierFactory()
 = default ;
 
-GVerifiers::VerifierFactory::Spec GVerifiers::VerifierFactory::parse( const std::string & spec_in ,
+GVerifiers::VerifierFactory::Spec GVerifiers::VerifierFactory::parse( std::string_view spec_in ,
 	const G::Path & base_dir , const G::Path & app_dir , G::StringArray * warnings_p )
 {
-	std::string tail = G::Str::tail( spec_in , ":" ) ;
+	std::string_view tail = G::Str::tailView( spec_in , ":" ) ;
 	Spec result ;
 	if( spec_in.empty() )
 	{
@@ -90,7 +90,7 @@ std::unique_ptr<GSmtp::Verifier> GVerifiers::VerifierFactory::newVerifier( GNet:
 	}
 	else if( spec.first == "file" )
 	{
-		return std::make_unique<ExecutableVerifier>( es , G::Path(spec.second) , config.timeout ) ;
+		return std::make_unique<ExecutableVerifier>( es , config , G::Path(spec.second) ) ;
 	}
 
 	throw G::Exception( "invalid verifier" , spec.second ) ;

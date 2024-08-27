@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -395,7 +395,7 @@ void Main::CommandLine::showThreading( bool e , const std::string & eot ) const
 
 void Main::CommandLine::showUds( bool e , const std::string & eot ) const
 {
-	if( !G::is_windows() || G::is_wine() )
+	if( !G::is_windows() )
 	{
 		bool enabled = GNet::Address::supports( GNet::Address::Family::local ) ;
 		Show show( m_output , e , m_verbose ) ;

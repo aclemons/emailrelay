@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -216,8 +216,9 @@ const char * G::Arg::prefix( char ** argv ) noexcept
 
 void G::Arg::parseImp( const std::string & command_line )
 {
-	std::string_view ws( " \t" ) ;
-	std::string_view nbws( "\0\0" , 2U ) ;
+	constexpr std::string_view ws( " \t" , 2U ) ;
+	constexpr std::string_view nbws( "\0\0" , 2U ) ;
+	static_assert( ws.size() == nbws.size() , "" ) ;
 	const char esc = '\\' ;
 	const char qq = '\"' ;
 	Str::splitIntoTokens( Str::dequote(command_line,qq,esc,ws,nbws) , m_array , ws , esc ) ;

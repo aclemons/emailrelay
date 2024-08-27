@@ -50,8 +50,8 @@ BEGIN
 END
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2, 5, 33, 0
- PRODUCTVERSION 2, 5, 33, 0
+ FILEVERSION 2, 6, 0, 0
+ PRODUCTVERSION 2, 6, 0, 0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -69,12 +69,12 @@ BEGIN
             VALUE "Comments", "GPL v3 license"
             VALUE "CompanyName", " "
             VALUE "FileDescription", "E-MailRelay Application"
-            VALUE "FileVersion", "2, 5, 33, 0"
+            VALUE "FileVersion", "2, 6, 0, 0"
             VALUE "InternalName", "emailrelay"
-            VALUE "LegalCopyright", "Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>"
+            VALUE "LegalCopyright", "Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>"
             VALUE "OriginalFilename", "emailrelay.exe"
             VALUE "ProductName", "E-MailRelay"
-            VALUE "ProductVersion", "2, 5, 33, 0"
+            VALUE "ProductVersion", "2, 6, 0, 0"
         END
     END
     BLOCK "VarFileInfo"

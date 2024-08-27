@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -44,28 +44,28 @@ GPop::ServerProtocol::ServerProtocol( Sender & sender , Security & security , St
 {
 	// (dont send anything to the peer from this ctor -- the Sender object is not fuly constructed)
 
-	m_fsm( Event::eStat , State::sActive , State::sActive , &GPop::ServerProtocol::doStat ) ;
-	m_fsm( Event::eList , State::sActive , State::sActive , &GPop::ServerProtocol::doList ) ;
-	m_fsm( Event::eRetr , State::sActive , State::sData , &GPop::ServerProtocol::doRetr , State::sActive ) ;
-	m_fsm( Event::eTop , State::sActive , State::sData , &GPop::ServerProtocol::doTop , State::sActive ) ;
-	m_fsm( Event::eDele , State::sActive , State::sActive , &GPop::ServerProtocol::doDele ) ;
-	m_fsm( Event::eNoop , State::sActive , State::sActive , &GPop::ServerProtocol::doNoop ) ;
-	m_fsm( Event::eRset , State::sActive , State::sActive , &GPop::ServerProtocol::doRset ) ;
-	m_fsm( Event::eUidl , State::sActive , State::sActive , &GPop::ServerProtocol::doUidl ) ;
-	m_fsm( Event::eSent , State::sData , State::sActive , &GPop::ServerProtocol::doNothing ) ;
-	m_fsm( Event::eUser , State::sStart , State::sStart , &GPop::ServerProtocol::doUser ) ;
-	m_fsm( Event::ePass , State::sStart , State::sActive , &GPop::ServerProtocol::doPass , State::sStart ) ;
-	m_fsm( Event::eApop , State::sStart , State::sActive , &GPop::ServerProtocol::doApop , State::sStart ) ;
-	m_fsm( Event::eQuit , State::sStart , State::sEnd , &GPop::ServerProtocol::doQuitEarly ) ;
-	m_fsm( Event::eCapa , State::sStart , State::sStart , &GPop::ServerProtocol::doCapa ) ;
-	m_fsm( Event::eCapa , State::sActive , State::sActive , &GPop::ServerProtocol::doCapa ) ;
+	m_fsm( Event::eStat , State::sActive , State::sActive , &ServerProtocol::doStat ) ;
+	m_fsm( Event::eList , State::sActive , State::sActive , &ServerProtocol::doList ) ;
+	m_fsm( Event::eRetr , State::sActive , State::sData , &ServerProtocol::doRetr , State::sActive ) ;
+	m_fsm( Event::eTop , State::sActive , State::sData , &ServerProtocol::doTop , State::sActive ) ;
+	m_fsm( Event::eDele , State::sActive , State::sActive , &ServerProtocol::doDele ) ;
+	m_fsm( Event::eNoop , State::sActive , State::sActive , &ServerProtocol::doNoop ) ;
+	m_fsm( Event::eRset , State::sActive , State::sActive , &ServerProtocol::doRset ) ;
+	m_fsm( Event::eUidl , State::sActive , State::sActive , &ServerProtocol::doUidl ) ;
+	m_fsm( Event::eSent , State::sData , State::sActive , &ServerProtocol::doNothing ) ;
+	m_fsm( Event::eUser , State::sStart , State::sStart , &ServerProtocol::doUser ) ;
+	m_fsm( Event::ePass , State::sStart , State::sActive , &ServerProtocol::doPass , State::sStart ) ;
+	m_fsm( Event::eApop , State::sStart , State::sActive , &ServerProtocol::doApop , State::sStart ) ;
+	m_fsm( Event::eQuit , State::sStart , State::sEnd , &ServerProtocol::doQuitEarly ) ;
+	m_fsm( Event::eCapa , State::sStart , State::sStart , &ServerProtocol::doCapa ) ;
+	m_fsm( Event::eCapa , State::sActive , State::sActive , &ServerProtocol::doCapa ) ;
 	if( m_security.securityEnabled() )
-		m_fsm( Event::eStls , State::sStart , State::sStart , &GPop::ServerProtocol::doStls , State::sStart ) ;
-	m_fsm( Event::eAuth , State::sStart , State::sAuth , &GPop::ServerProtocol::doAuth , State::sStart ) ;
-	m_fsm( Event::eAuthData , State::sAuth , State::sAuth , &GPop::ServerProtocol::doAuthData , State::sStart ) ;
-	m_fsm( Event::eAuthComplete , State::sAuth , State::sActive , &GPop::ServerProtocol::doAuthComplete ) ;
-	m_fsm( Event::eCapa , State::sActive , State::sActive , &GPop::ServerProtocol::doCapa ) ;
-	m_fsm( Event::eQuit , State::sActive , State::sEnd , &GPop::ServerProtocol::doQuit ) ;
+		m_fsm( Event::eStls , State::sStart , State::sStart , &ServerProtocol::doStls , State::sStart ) ;
+	m_fsm( Event::eAuth , State::sStart , State::sAuth , &ServerProtocol::doAuth , State::sStart ) ;
+	m_fsm( Event::eAuthData , State::sAuth , State::sAuth , &ServerProtocol::doAuthData , State::sStart ) ;
+	m_fsm( Event::eAuthComplete , State::sAuth , State::sActive , &ServerProtocol::doAuthComplete ) ;
+	m_fsm( Event::eCapa , State::sActive , State::sActive , &ServerProtocol::doCapa ) ;
+	m_fsm( Event::eQuit , State::sActive , State::sEnd , &ServerProtocol::doQuit ) ;
 }
 
 void GPop::ServerProtocol::init()
@@ -210,7 +210,7 @@ std::string GPop::ServerProtocol::commandWord( const std::string & line ) const
 	return G::Str::upper(commandPart(line,0U)) ;
 }
 
-std::string GPop::ServerProtocol::commandPart( const std::string & line , std::size_t index ) const
+std::string GPop::ServerProtocol::commandPart( const std::string & line , std::size_t index )
 {
 	std::string_view line_sv( line ) ;
 	G::StringTokenView t( line_sv , G::Str::ws() ) ;
@@ -224,7 +224,7 @@ std::string GPop::ServerProtocol::commandParameter( const std::string & line_in 
 	return commandPart( line_in , index ) ;
 }
 
-GPop::ServerProtocol::Event GPop::ServerProtocol::commandEvent( std::string_view command ) const
+GPop::ServerProtocol::Event GPop::ServerProtocol::commandEvent( std::string_view command )
 {
 	if( command == "QUIT"_sv ) return Event::eQuit ;
 	if( command == "STAT"_sv ) return Event::eStat ;
@@ -473,6 +473,7 @@ void GPop::ServerProtocol::doAuthComplete( const std::string & , bool & )
 {
 	G_LOG_S( "GPop::ServerProtocol: pop authentication of " << m_sasl->id() << " connected from " << m_peer_address.displayString() ) ;
 	m_user = m_sasl->id() ;
+	m_store.prepare( m_user ) ;
 	readStore( m_user ) ;
 	sendOk() ;
 }
@@ -548,11 +549,12 @@ void GPop::ServerProtocol::doPass( const std::string & line , bool & ok )
 	m_sasl_init_apop = false ;
 	if( !m_user.empty() && m_sasl->init(m_secure,"PLAIN") ) // (USER/PASS uses SASL PLAIN)
 	{
-		std::string rsp = m_user + std::string(1U,'\0') + m_user + std::string(1U,'\0') + commandParameter(line) ;
+		std::string rsp = m_user + std::string(1U,'\0').append(m_user).append(1U,'\0').append(commandParameter(line)) ;
 		bool done = false ;
-		std::string ignore = m_sasl->apply( rsp , done ) ;
+		GDEF_IGNORE_RETURN m_sasl->apply( rsp , done ) ;
 		if( done && m_sasl->authenticated() )
 		{
+			m_store.prepare( m_user ) ;
 			readStore( m_user ) ;
 			sendOk() ;
 		}
@@ -575,10 +577,11 @@ void GPop::ServerProtocol::doApop( const std::string & line , bool & ok )
 	{
 		std::string rsp = commandParameter(line,1) + " " + commandParameter(line,2) ;
 		bool done = false ;
-		std::string ignore = m_sasl->apply( rsp , done ) ;
+		GDEF_IGNORE_RETURN m_sasl->apply( rsp , done ) ;
 		if( done && m_sasl->authenticated() )
 		{
 			m_user = m_sasl->id() ;
+			m_store.prepare( m_user ) ;
 			readStore( m_user ) ;
 			sendOk() ;
 		}
@@ -609,7 +612,7 @@ void GPop::ServerProtocol::sendLine( std::string_view line , bool has_crlf )
 	}
 }
 
-void GPop::ServerProtocol::sendLine( std::string && line )
+void GPop::ServerProtocol::sendLine( std::string && line ) // NOLINT cppcoreguidelines-rvalue-reference-param-not-moved
 {
 	G_LOG( "GPop::ServerProtocol: tx>>: \"" << G::Str::printable(line) << "\"" ) ;
 	m_sender.protocolSend( line.append("\r\n",2U) , 0U ) ;
@@ -619,7 +622,7 @@ void GPop::ServerProtocol::sendLines( std::ostringstream & ss )
 {
 	ss << "\r\n" ;
 	const std::string s = ss.str() ;
-	if( G::Log::atVerbose() )
+	if( G::LogOutput::Instance::atVerbose() )
 	{
 		std::size_t lines = std::count( s.begin() , s.end() , '\n' ) ;
 		const std::size_t npos = std::string::npos ;
@@ -666,9 +669,4 @@ std::string GPop::ServerProtocolText::user( const std::string & id ) const
 {
 	return std::string("user: ",6U).append(id) ;
 }
-
-// ===
-
-GPop::ServerProtocol::Config::Config()
-= default ;
 

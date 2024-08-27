@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -61,10 +61,10 @@ class G::Pam
 public:
 	struct Item /// A structure used by G::Pam to hold conversation items.
 	{
-		const std::string in_type ; // "password", "prompt", "error", "info"
-		const std::string in ; // password prompt, non-password prompt, error text, infomation message, etc
+		std::string in_type ; // "password", "prompt", "error", "info"
+		std::string in ; // password prompt, non-password prompt, error text, infomation message, etc
 		std::string out ; // password, or whatever was prompted for
-		bool out_defined{false} ; // to be set to true if 'out' is assigned
+		bool out_defined {false} ; // to be set to true if 'out' is assigned
 	} ;
 	class Error : public G::Exception /// An exception class for G::Pam.
 	{

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@
 #include "serviceimp.h"
 #include "servicecontrol.h"
 #include "gconvert.h"
+#include "gstringview.h"
 #include <iostream>
 
 namespace ServiceImp
@@ -36,24 +37,23 @@ namespace ServiceImp
 	constexpr DWORD SERVICE_RUNNING = 4 ;
 }
 
-std::string ServiceImp::install( const std::string & , const std::string & name ,
+std::pair<std::string,DWORD> ServiceImp::install( const std::string & , const std::string & name ,
 	const std::string & , const std::string & )
 {
 	std::cout << "ServiceImp::install: " << name << std::endl ;
 	m_name = name ;
-	return {} ;
+	return {{},0} ;
 }
 
-std::string ServiceImp::remove( const std::string & name )
+std::pair<std::string,DWORD> ServiceImp::remove( const std::string & name )
 {
 	std::cout << "ServiceImp::remove: " << name << std::endl ;
-	return {} ;
+	return {{},0} ;
 }
 
 std::pair<ServiceImp::StatusHandle,DWORD> ServiceImp::statusHandle( const std::string & , HandlerFn )
 {
-	StatusHandle h = 1 ;
-	return { h , 0 } ;
+	return {1,0} ;
 }
 
 DWORD ServiceImp::dispatch( ServiceMainFn fn )
@@ -65,14 +65,14 @@ DWORD ServiceImp::dispatch( ServiceMainFn fn )
 	return 0 ;
 }
 
-DWORD ServiceImp::setStatus( StatusHandle , DWORD new_state , DWORD ) noexcept
+DWORD ServiceImp::setStatus( StatusHandle , DWORD new_state , DWORD /*timeout*/ , DWORD /*generic_error*/ , DWORD /*specific_error*/ ) noexcept
 {
-	std::string s ;
-	if( new_state == SERVICE_STOPPED ) s = "stopped" ;
-	if( new_state == SERVICE_START_PENDING ) s = "start-pending" ;
-	if( new_state == SERVICE_STOP_PENDING ) s = "stop-pending" ;
-	if( new_state == SERVICE_RUNNING ) s = "running" ;
-	std::cout << "ServiceImp::setStatus: " << new_state << " " << s << std::endl ;
+	std::string_view sv ;
+	if( new_state == SERVICE_STOPPED ) sv = "stopped" ;
+	if( new_state == SERVICE_START_PENDING ) sv = "start-pending" ;
+	if( new_state == SERVICE_STOP_PENDING ) sv = "stop-pending" ;
+	if( new_state == SERVICE_RUNNING ) sv = "running" ;
+	std::cout << "ServiceImp::setStatus: " << new_state << " " << sv << std::endl ;
 	return 0 ;
 }
 

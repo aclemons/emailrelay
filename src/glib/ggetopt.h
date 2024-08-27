@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,9 +31,7 @@
 #include "gpath.h"
 #include "gstringview.h"
 #include "gstringarray.h"
-#include "gexception.h"
 #include <string>
-#include <list>
 
 namespace G
 {
@@ -101,10 +99,10 @@ public:
 		///< cannot be opened. Parsing errors are added to errorList().
 
 	const std::vector<Option> & options() const ;
-		///< Returns the list of option specification objects.
+		///< Exposes the list of option specification objects.
 
 	const OptionMap & map() const ;
-		///< Returns the map of option-values.
+		///< Exposes the map of option-values.
 
 	Arg args() const ;
 		///< Returns the G::Arg command-line, excluding options.

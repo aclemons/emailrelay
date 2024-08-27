@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,33 +29,34 @@
 #include "glocal.h"
 #include "glog.h"
 
-GVerifiers::ExecutableVerifier::ExecutableVerifier( GNet::EventState es , const G::Path & path , unsigned int timeout ) :
+GVerifiers::ExecutableVerifier::ExecutableVerifier( GNet::EventState es , const GSmtp::Verifier::Config & config , const G::Path & path ) :
 	m_timer(*this,&ExecutableVerifier::onTimeout,es) ,
+	m_config(config) ,
 	m_path(path) ,
-	m_timeout(timeout) ,
 	m_task(*this,es,"<<verifier exec error: __strerror__>>",G::Root::nobody())
 {
 }
 
-void GVerifiers::ExecutableVerifier::verify( GSmtp::Verifier::Command command , const std::string & to_address ,
-	const GSmtp::Verifier::Info & info )
+void GVerifiers::ExecutableVerifier::verify( const GSmtp::Verifier::Request & request )
 {
-	m_command = command ;
-	G_DEBUG( "GVerifiers::ExecutableVerifier::verify: to=[" << to_address << "]" ) ;
+	G_ASSERT( !m_config.domain.empty() ) ;
+	G_ASSERT( !request.address.empty() ) ; // etc
+	G_DEBUG( "GVerifiers::ExecutableVerifier::verify: to=[" << request.address << "]" ) ;
+	m_command = request.command ;
 
 	G::ExecutableCommand commandline( m_path.str() , G::StringArray() ) ;
-	commandline.add( to_address ) ;
-	commandline.add( info.mail_from_parameter ) ;
-	commandline.add( info.client_ip.displayString() ) ;
-	commandline.add( info.domain ) ;
-	commandline.add( G::Str::lower(info.auth_mechanism) ) ;
-	commandline.add( info.auth_extra ) ;
+	commandline.add( request.address ) ;
+	commandline.add( request.from_address ) ;
+	commandline.add( request.client_ip.displayString() ) ;
+	commandline.add( m_config.domain ) ;
+	commandline.add( G::Str::lower(request.auth_mechanism) ) ;
+	commandline.add( request.auth_extra ) ;
 
 	G_LOG( "GVerifiers::ExecutableVerifier: address verifier: executing " << commandline.displayString() ) ;
-	m_to_address = to_address ;
+	m_to_address = request.address ;
 	m_task.start( commandline ) ;
-	if( m_timeout )
-		m_timer.startTimer( m_timeout ) ;
+	if( m_config.timeout )
+		m_timer.startTimer( m_config.timeout ) ;
 }
 
 void GVerifiers::ExecutableVerifier::onTimeout()

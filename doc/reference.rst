@@ -31,8 +31,8 @@ Basic options
 
     This is equivalent to *--log* and *--close-stderr*. It is a convenient way of
     running a background storage daemon that accepts mail messages and spools
-    them. Use *--log* instead of *--as-server* to keep standard error stream
-    open.
+    them. Use *--log* instead of *--as-server* to keep the standard error
+    stream open.
 
 *   --spool-dir \<dir\> (-s)
 
@@ -69,7 +69,7 @@ SMTP client options
 
 *   --forward-to \<host:port\> (-o)
 
-    Specifies the transport address of the remote SMTP server that spooled mail
+    Specifies the transport address of the remote SMTP_ server that spooled mail
     messages are forwarded to.
 
 *   --poll \<period\> (-O)
@@ -82,7 +82,7 @@ SMTP client options
     Runs the specified external filter program whenever a mail message is
     forwarded. The filter is passed the name of the message file in the spool
     directory so that it can edit it as required. A network filter can be
-    specified as *net:<tcp-address>* and prefixes of *spam:*, *spam-edit:* and
+    specified as *net:\<tcp-address\>* and prefixes of *spam:*, *spam-edit:* and
     *exit:* are also allowed. The *spam:* and *spam-edit:* prefixes require a
     SpamAssassin daemon to be running. For store-and-forward applications the
     *--filter* option is normally more useful than *--client-filter*.
@@ -90,7 +90,7 @@ SMTP client options
 *   --client-interface \<ip-address\> (-6)
 
     Specifies the IP network address to be used to bind the local end of outgoing
-    SMTP connections. By default the address will depend on the routing tables
+    SMTP_ connections. By default the address will depend on the routing tables
     in the normal way. Use *0.0.0.0* to use only IPv4 addresses returned from
     DNS lookups of the *--forward-to* address, or *::* for IPv6.
 
@@ -102,7 +102,7 @@ SMTP client options
 *   --idle-timeout \<time\>
 
     Specifies a timeout (in seconds) for receiving network traffic from remote
-    SMTP and POP_ clients. The default is 60 seconds.
+    SMTP_ and POP_ clients. The default is 60 seconds.
 
 *   --response-timeout \<time\> (-T)
 
@@ -133,7 +133,7 @@ SMTP server options
 
 *   --port \<port\> (-p)
 
-    Sets the port number used for listening for incoming SMTP connections.
+    Sets the port number used for listening for incoming SMTP_ connections.
 
 *   --remote-clients (-r)
 
@@ -145,13 +145,13 @@ SMTP server options
 *   --address-verifier \<program\>
 
     Runs the specified external program to verify a message recipient's e-mail
-    address. A network verifier can be specified as *net:<tcp-address>*. The
+    address. A network verifier can be specified as *net:\<tcp-address\>*. The
     *account:* built-in address verifier can be used to check recipient
     addresses against the list of local system account names.
 
 *   --anonymous[=\<scope\>] (-A)
 
-    Disables the server's SMTP VRFY command, sends less verbose SMTP greeting and
+    Disables the server's SMTP_ VRFY command, sends less verbose SMTP greeting and
     responses, stops *Received* lines being added to mail message content
     files, and stops the SMTP client protocol adding *AUTH=* to the *MAIL*
     command. For finer control use a comma-separated list of things to
@@ -164,16 +164,20 @@ SMTP server options
 
 *   --dnsbl \<config\>
 
-    Specifies a list of DNSBL_ servers that are used to reject SMTP connections
+    Specifies a list of DNSBL_ servers that are used to reject SMTP_ connections
     from blocked addresses. The configuration string is made up of
-    comma-separated fields: the DNS server's transport address, a timeout in
-    milliseconds, a rejection threshold, and then the list of DNSBL servers.
+    comma-separated fields: the list of DNSBL servers, an optional rejection
+    threshold, an optional timeout in milliseconds, and optionally the
+    transport address of the DNS server.
 
 *   --domain \<fqdn\> (-D)
 
-    Specifies the network name that is used in SMTP EHLO commands, *Received*
-    lines, and for generating authentication challenges. The default is derived
-    from a DNS lookup of the local hostname.
+    Specifies the domain name that is used in SMTP client EHLO commands, server
+    EHLO responses, *Received* lines, and for generating authentication
+    challenges. The SMTP client will use an IP address in the EHLO command if
+    the given domain is not a dotted FQDN. If this option is not used at all
+    then the default value is the canonical name returned from a DNS query of
+    the local hostname, or the system's FQDN on Windows.
 
 *   --filter \<program\> (-z)
 
@@ -181,10 +185,10 @@ SMTP server options
     The filter is passed the name of the message file in the spool directory so
     that it can edit it as required. The mail message is rejected if the filter
     program terminates with an exit code between 1 and 99. Use
-    *net:<tcp-address>* to communicate with a filter daemon over the network,
-    or *spam:<tcp-address>* for a spamassassin spamd daemon to accept or reject
-    mail messages, or *spam-edit:<tcp-address>* to have spamassassin edit the
-    message content without rejecting it, or *exit:<number>* to emulate a
+    *net:\<tcp-address\>* to communicate with a filter daemon over the network,
+    or *spam:\<tcp-address\>* for a spamassassin spamd daemon to accept or reject
+    mail messages, or *spam-edit:\<tcp-address\>* to have spamassassin edit the
+    message content without rejecting it, or *exit:\<number\>* to emulate a
     filter program that just exits.
 
 *   --filter-timeout \<time\> (-W)
@@ -195,7 +199,7 @@ SMTP server options
 *   --interface \<ip-address-list\> (-I)
 
     Specifies the IP network addresses or interface names used to bind listening
-    ports. By default listening ports for incoming SMTP, POP and administration
+    ports. By default listening ports for incoming SMTP_, POP_ and administration
     connections will bind the 'any' address for IPv4 and for IPv6, ie.
     *0.0.0.0* and *::*. Multiple addresses can be specified by using the option
     more than once or by using a comma-separated list. Use a prefix of *smtp=*,
@@ -206,23 +210,23 @@ SMTP server options
     listening. When an interface name is decorated with a *-ipv4* or *-ipv6*
     suffix only their IPv4 or IPv6 addresses will be used (eg. *ppp0-ipv4*).
     To inherit listening file descriptors from the parent process on unix use a
-    syntax like this: *--interface* smtp=fd#3,smtp=fd#4,pop=fd#5.
+    syntax like this: *--interface=smtp=fd#3*.
 
 *   --prompt-timeout \<time\> (-w)
 
     Specifies a timeout (in seconds) for getting the initial prompt from a remote
-    SMTP server. If no prompt is received after this time then the SMTP dialog
+    SMTP_ server. If no prompt is received after this time then the SMTP dialog
     goes ahead without it.
 
 *   --server-smtp-config \<config\> (-Z)
 
     Configures the SMTP server protocol using a comma-separated list of optional
-    features, including 'pipelining', 'chunking', 'smtputf8', and
-    'smtputf8strict'.
+    features, including 'pipelining', 'chunking', 'smtputf8', 'smtputf8strict',
+    'nostrictparsing' and 'noalabels'.
 
 *   --size \<bytes\> (-M)
 
-    Limits the size of mail messages that can be submitted over SMTP.
+    Limits the size of mail messages that can be submitted over SMTP_.
 
 
 POP server options
@@ -230,7 +234,7 @@ POP server options
 
 *   --pop (-B)
 
-    Enables the POP server, listening by default on port 110, providing access to
+    Enables the POP_ server, listening by default on port 110, providing access to
     spooled mail messages. Negotiated TLS_ using the POP *STLS* command will be
     enabled if the *--server-tls* option is also given.
 
@@ -239,9 +243,9 @@ POP server options
     Modifies the POP server's spool directory to be the sub-directory with the
     same name as the user-id used for POP authentication. This allows POP
     clients to see only their own messages after they have been moved into
-    separate sub-directories typically by the built-in *deliver:* or *copy:*
+    separate sub-directories, typically by the built-in *deliver:* or *copy:*
     filters. Content files can remain in the main spool directory to save disk
-    space; they will be deleted by the POP server when it deletes the last
+    space; they will be deleted by the POP_ server when it deletes the last
     matching envelope file.
 
 *   --pop-no-delete (-G)
@@ -274,7 +278,7 @@ Authentication options
 
 *   --client-auth \<file\> (-C)
 
-    Enables SMTP client authentication with the remote server, using the account
+    Enables SMTP_ client authentication with the remote server, using the account
     details taken from the specified secrets file. The secrets file should
     normally contain one line having between four and five space-separated
     fields. The first field must be *client*, the second field is the password
@@ -283,20 +287,20 @@ Authentication options
     password fields can be Base64_ encoded if the second field is *plain:b*. It
     is also possible to do without a secrets file and give the Base64 encoded
     user-id and password directly on the command-line or in the configuration
-    file formatted as *plain:<base64-user-id>:<base64-password>*. Note that
+    file formatted as *plain:\<base64-user-id\>:\<base64-password\>*. Note that
     putting these account details on the command-line is not recommended
     because it will make the password easily visible to all users on the local
     machine.
 
 *   --client-auth-config \<config\>
 
-    Configures the SMTP client authentication module using a semicolon-separated
+    Configures the SMTP_ client authentication module using a semicolon-separated
     list of configuration items. Each item is a single-character key, followed
     by a colon and then a comma-separated list. A 'm' character introduces an
     ordered list of preferred authentication mechanisms and an 'x' introduces a
     list of mechanisms to avoid. An 'a' list and a 'd' list can be used
     similarly to prefer and avoid certain mechanisms once the session is
-    encrypted with TLS.
+    encrypted with TLS_.
 
 *   --server-auth \<file\> (-S)
 
@@ -305,29 +309,29 @@ Authentication options
     should contain lines that have four space-separated fields, starting with
     *server* in the first field; the second field is the password encoding
     (*plain* or *md5*), the third is the client user-id and the fourth is the
-    password. The user-id is RFC-1891_ xtext encoded, and the password is either
+    password. The user-id is RFC-1891_ xtext_ encoded, and the password is either
     xtext encoded or generated by *emailrelay-passwd*. Alternatively, the
-    username and password can be Base64 encoded if the second field is
+    username and password can be Base64_ encoded if the second field is
     \ *plain:b*\ . A special value of *pam:* can be used for authentication using
     linux PAM_.
 
 *   --server-auth-config \<config\>
 
-    Configures the SMTP server authentication module using a semicolon-separated
+    Configures the SMTP_ server authentication module using a semicolon-separated
     list of configuration items. Each item is a single-character key, followed
     by a colon and then a comma-separated list. A 'm' character introduces an
     ordered list of allowed authentication mechanisms and an 'x' introduces a
     list of mechanisms to deny. An 'a' list and a 'd' list can be used
     similarly to allow and deny mechanisms once the session is encrypted with
-    TLS. In typical usage you might have an empty allow list for an unencrypted
+    TLS_. In typical usage you might have an empty allow list for an unencrypted
     session and a single preferred mechanism once encrypted, *m:;a:plain*.
 
 *   --pop-auth \<file\> (-F)
 
-    Specifies a file containing valid POP account details. The file format is the
-    same as for the SMTP server secrets file, ie. lines starting with *server*,
+    Specifies a file containing valid POP_ account details. The file format is the
+    same as for the SMTP_ server secrets file, ie. lines starting with *server*,
     with user-id and password in the third and fourth fields. A special value
-    of *pam:* can be used for authentication using linux PAM.
+    of *pam:* can be used for authentication using linux PAM_.
 
 
 TLS options
@@ -335,7 +339,7 @@ TLS options
 
 *   --client-tls (-j)
 
-    Enables negotiated TLS for outgoing SMTP connections; the SMTP STARTTLS
+    Enables negotiated TLS_ for outgoing SMTP_ connections; the SMTP STARTTLS
     command will be issued if the remote server supports it.
 
 *   --client-tls-certificate \<pem-file\>
@@ -348,7 +352,7 @@ TLS options
 
 *   --client-tls-connection (-b)
 
-    Enables the use of a TLS tunnel for outgoing SMTP connections. This is for
+    Enables the use of a TLS_ tunnel for outgoing SMTP_ connections. This is for
     SMTP over TLS (SMTPS), not TLS negotiated within SMTP using STARTTLS.
 
 *   --client-tls-required
@@ -359,16 +363,16 @@ TLS options
 
 *   --client-tls-server-name \<hostname\>
 
-    Defines the target server hostname in the TLS handshake. With
+    Defines the target server hostname in the TLS_ handshake. With
     *--client-tls-connection* this can be used for SNI, allowing the remote
     server to adopt an appropriate identity.
 
 *   --client-tls-verify \<ca-list\>
 
-    Enables verification of the remote SMTP server's certificate against any of
+    Enables verification of the remote SMTP_ server's certificate against any of
     the trusted CA certificates in the specified file or directory. In many use
     cases this should be a file containing just your self-signed root
-    certificate. Specify *<default>* (including the angle brackets) for the TLS
+    certificate. Specify *\<default\>* (including the angle brackets) for the TLS
     library's default set of trusted CAs.
 
 *   --client-tls-verify-name \<cname\>
@@ -378,7 +382,7 @@ TLS options
 
 *   --server-tls (-K)
 
-    Enables TLS for incoming SMTP and POP connections. SMTP clients can then
+    Enables TLS_ for incoming SMTP_ and POP_ connections. SMTP clients can then
     request TLS encryption by issuing the STARTTLS command. The
     *--server-tls-certificate* option must be used to define the server
     certificate.
@@ -393,21 +397,21 @@ TLS options
 
 *   --server-tls-connection
 
-    Enables SMTP over TLS when acting as an SMTP server. This is for SMTP over
+    Enables SMTP_ over TLS_ when acting as an SMTP server. This is for SMTP over
     TLS (SMTPS), not TLS negotiated within SMTP using STARTTLS.
 
 *   --server-tls-required
 
-    Makes the use of TLS mandatory for any incoming SMTP and POP connections.
+    Makes the use of TLS mandatory for any incoming SMTP and POP_ connections.
     SMTP clients must use the STARTTLS command to establish a TLS session
     before they can issue SMTP AUTH or SMTP MAIL-TO commands.
 
 *   --server-tls-verify \<ca-list\>
 
-    Enables verification of remote SMTP and POP clients' certificates against any
+    Enables verification of remote SMTP_ and POP clients' certificates against any
     of the trusted CA certificates in the specified file or directory. In many
     use cases this should be a file containing just your self-signed root
-    certificate. Specify *<default>* (including the angle brackets) for the TLS
+    certificate. Specify *\<default\>* (including the angle brackets) for the TLS_
     library's default set of trusted CAs.
 
 *   --tls-config \<options\> (-9)
@@ -424,32 +428,30 @@ Process options
 
 *   --dont-serve (-x)
 
-    Disables all network serving, including SMTP, POP and administration
+    Disables all network serving, including SMTP_, POP_ and administration
     interfaces. The program will terminate as soon as any initial forwarding is
     complete.
-
-*   --hidden (-H)
-
-    Windows only. Hides the application window and disables all message boxes,
-    overriding any *--show* option. This is useful when running as a windows
-    service.
 
 *   --localedir \<dir\>
 
     Enables localisation and specifies the locale base directory where message
     catalogues can be found. An empty directory can be used for the built-in
-    default.
+    default. Unix only.
 
 *   --no-daemon (-t)
 
     Disables the normal backgrounding at startup so that the program runs in the
-    foreground, without forking or detaching from the terminal.  On Windows
-    this disables the system tray icon so the program uses a normal window;
-    when the window is closed the program terminates.
+    foreground, without forking or detaching from the terminal. Unix only.
+
+*   --hidden (-H)
+
+    Hides the application window and disables all message boxes, overriding any
+    *--show* option. This is useful when running as a windows service. Windows
+    only.
 
 *   --no-smtp (-X)
 
-    Disables listening for incoming SMTP connections.
+    Disables listening for incoming SMTP_ connections.
 
 *   --pid-file \<path\> (-i)
 
@@ -464,7 +466,14 @@ Process options
     verifiers. This option can be used to define the non-privileged user-id. It
     also determines the group ownership of new files and sockets if the
     directory owner is not 'sticky'. Specify *root* to disable all user-id
-    switching. Ignored on Windows.
+    switching. Unix only.
+
+*   --show \<style\>
+
+    Starts the application window in the given style: *hidden*, *popup*,
+    \ *window*\ , *window,tray*, or *tray*. Ignored if also using *--no-daemon* or
+    \ *--hidden*\ . If none of *--window*, *--no-daemon* and *--hidden* are used
+    then the default style is *tray*. Windows only.
 
 
 Logging options
@@ -477,11 +486,11 @@ Logging options
 
 *   --log (-l)
 
-    Enables logging to the standard error stream and to the syslog. The
+    Enables logging to the standard error stream and to the system log. The
     *--close-stderr* and *--no-syslog* options can be used to disable output to
-    standard error stream and the syslog separately. Note that *--as-server*,
-    *--as-client* and *--as-proxy* imply *--log*, and *--as-server* and
-    *--as-proxy* also imply *--close-stderr*.
+    standard error stream and the system log separately. Note that
+    \ *--as-server*\ , *--as-client* and *--as-proxy* imply *--log*, and
+    *--as-server* and *--as-proxy* also imply *--close-stderr*.
 
 *   --debug (-g)
 
@@ -492,7 +501,7 @@ Logging options
 *   --log-address
 
     Adds the network address of remote clients to the logging output. Equivalent
-    to **--log-format=address\ **\ .
+    to *--log-format=address*.
 
 *   --log-file \<file\> (-N)
 
@@ -510,18 +519,18 @@ Logging options
 *   --log-time (-L)
 
     Adds a timestamp to the logging output using the local timezone. Equivalent
-    to **--log-format=time\ **\ .
+    to *--log-format=time*.
 
 *   --no-syslog (-n)
 
-    Disables logging to the syslog. Note that *--as-client* implies
+    Disables logging to the system log. Note that *--as-client* implies
     \ *--no-syslog*\ .
 
-*   --syslog[=\<facility\>] (-k)
+*   --syslog (-k)
 
-    When used with *--log* this option enables logging to the syslog even if the
-    *--no-syslog* option is also used. This is typically used as a convenient
-    override when using *--as-client*.
+    When used with *--log* this option enables logging to the system log, even if
+    the *--no-syslog* option is also used. This is typically used as a
+    convenient override when using *--as-client*.
 
 *   --close-stderr (-e)
 
@@ -549,7 +558,7 @@ be separated with a space. For example:
 
 All options that specify a filename can use a special *@app* substitution
 variable that is interpreted as the directory that contains the *emailrelay*
-executable or MacOS application bundle.
+executable.
 
 It is possible to run multiple E-MailRelay instances in one process by prefixing
 the *--spool-dir* option with an arbitrary name like *in* or *out*, ie.
@@ -584,7 +593,7 @@ Message store
 =============
 E-mail messages are stored as text files in the configured spool directory; each
 message is represented as an envelope file and a content file. The envelope file
-contains parameters relevant to the SMTP dialogue, and the content file contains
+contains parameters relevant to the SMTP_ dialogue, and the content file contains
 the RFC-822_ headers and body text.
 
 Envelope files can be modified by external filter scripts as long as the basic
@@ -616,8 +625,8 @@ command-line options:
 * when E-MailRelay first starts up (*--as-client* or *--forward*)
 * as each message is submitted, just before receipt is acknowledged (\ *--immediate*\ )
 * as soon as the submitting client disconnects (\ *--forward-on-disconnect*\ )
-* periodically (\ *--poll=<seconds>*\ )
-* on demand using the administration interface's *forward* command (\ *--admin=<port>*\ )
+* periodically (\ *--poll=\<seconds\>*\ )
+* on demand using the administration interface's *forward* command (\ *--admin=\<port\>*\ )
 * when a *--filter* script exits with an exit code of 103
 
 These can be mixed.
@@ -664,7 +673,7 @@ is given a *.bad* filename suffix so that it will not get picked up for
 forwarding and the first few thousand characters of the filter's standard output
 stream are searched for a line like \<\<error text\>\> or *[[error text]]*. The
 error text inside the double square or angle brackets is taken as a failure
-reason and passed back to the remote SMTP client and also written into the
+reason and passed back to the remote SMTP_ client and also written into the
 envelope file. If the error text starts with a three-digit number between 400
 and 599 followed by a space then that is used as the SMTP response code. A
 second error-text line can be used for additional diagnostics that will not be
@@ -734,7 +743,7 @@ Either forward-slashes or back-slashes can be used.
 E-MailRelay also has a *--client-filter* option that enables processing of
 e-mail messages just before they are forwarded, rather than after they are
 stored. The disadvantage is that by then it is too late to notify the submitting
-SMTP client of any processing failures so in many store-and-forward applications
+SMTP_ client of any processing failures so in many store-and-forward applications
 using *--filter* is more useful. The special exit code of 100 can be used to
 ignore the current message, and 102 to stop scanning for more spooled messages
 after processing the current one (eg. for simple rate-limiting).
@@ -862,7 +871,7 @@ split:
 ------
 The *split:* filter can be used when outgoing e-mail messages need to be routed
 to different next-hop servers according to the recipient addresses. The filter
-examines the domain part of the recipient addresses in the SMTP envelope file
+examines the domain part of the recipient addresses in the SMTP_ envelope file
 and if there is more than one domain then the message is copied so that each
 copy relates to a single domain. It then copies the recipient address's domain
 name into the *ForwardTo* field within the envelope file.
@@ -902,6 +911,12 @@ the *mx:* string:
 
     --client-filter="mx:127.0.0.1:53"
 
+And the DNS timeouts can be adjusted with *nst* and *rt* parameters:
+
+::
+
+    --client-filter="mx:nst=60;rt=60;127.0.0.1:53"
+
 If the DNS server responds with a forwarding address of *0.0.0.0* then the
 *ForwardToAddress* will be cleared and the message will be forwarded to the
 default *--forward-to* address.
@@ -916,10 +931,9 @@ does not have one already.
 Address verifiers
 =================
 By default the E-MailRelay server will accept all recipient addresses for
-incoming e-mails as valid. This default behaviour can be modified by using an
-external verifier program, specified with the *--address-verifier* command-line
-option, so the verifier can choose which recipient addresses are accepted as
-valid and which are rejected.
+incoming e-mails as valid, but an external verifier program, specified with the
+*--address-verifier* command-line option, can be used to modify or reject
+individual recipient addresses.
 
 Address verifiers can also be used to identify recipient addresses that are
 local addresses with an associated mailbox.
@@ -967,7 +981,7 @@ converting to lower-case:
     exit 1
 
 The modified recipient address is stored in the envelope file and will be used
-as the SMTP RCPT-TO address when the message is forwarded.
+as the SMTP_ RCPT-TO address when the message is forwarded.
 
 If the address verifier identifies a recipient address as being a local user
 with an associated mailbox then it should write two lines to the standard
@@ -986,7 +1000,7 @@ exit with a value of zero.
 Messages with recipient addresses that have been identified as local can be
 delivered to the relevant mailbox by a filter such as the built-in *deliver:*
 filter. Local recipient addresses are ignored when a message is forwarded by the
-SMTP client.
+SMTP_ client.
 
 For invalid addresses the verifier's exit value should be non-zero and the first
 line of output will be taken as the error response sent to the remote client. An
@@ -1075,7 +1089,7 @@ In this case E-MailRelay will connect to the specified verifier daemon over the
 network and send address verification requests as lines with pipe-delimited
 fields. The expected response is another pipe-delimited line containing the same
 information as returned by verifier scripts but in reverse, such as
-*0|postmaster|Local Postmaster <postmaster@example.com>* or
+*0|postmaster|Local Postmaster \<postmaster@example.com\>* or
 \ *2|mailbox unavailable*\ .
 
 E-MailRelay is responsible for maintaining the connection to the *net:* server
@@ -1087,7 +1101,7 @@ There is one built-in address verifier called *account:*.
 
 account:
 --------
-The *account:* verifier does validation of recipient address against system
+The *account:* verifier does validation of recipient addresses against system
 account names and the network domain or *--domain* value. For example, it will
 accept *alice@example.com* only if there is a local system account called
 *alice* and the local fully-qualified domain name is *example.com*.
@@ -1110,10 +1124,11 @@ Eg:
 
     --address-verifier="account:1000-1002;lowercase" --domain=example.com
 
-With the *check* parameter the verifier will test whether the recipient address
-is a local account but always accept the address as valid, whether it is a local
-account or not. This is useful for outgoing traffic where local recipients can be
-delivered immediately without being sent to the next-hop SMTP server.
+With the *check* parameter the verifier will determine whether the recipient
+address is a local account but always accept the address as valid. An address
+that does not match a local account will be accepted as a valid remote address.
+This is useful for outgoing traffic where local recipients can be delivered
+immediately without being sent to the next-hop SMTP_ server.
 
 Eg:
 
@@ -1121,14 +1136,14 @@ Eg:
 
     --address-verifier=account:check --domain=example.com --delivery-dir=@app/in
 
-With the *remote* parameter the recipient address is valid only if it is a local
-account but it is treated as not local so that the e-mail message will be
+With the *remote* parameter the recipient address is valid only if it matches a
+local account but it is treated as remote so that the e-mail message will be
 available for forwarding rather than delivery.
 
 Authentication
 ==============
 E-MailRelay can perform 'client-side' authentication when connecting to remote
-SMTP servers, and 'server-side' authentication when remote clients connect to
+SMTP_ servers, and 'server-side' authentication when remote clients connect to
 the E-MailRelay server.
 
 SMTP authentication is enabled with the *--client-auth* and *--server-auth*
@@ -1145,7 +1160,7 @@ E-MailRelay acts as a client to talk to a remote server. The file should
 contain at least one *client* entry.
 
 It is also possible to give the client authentication details directly by
-specifying *plain:<base64-user-id>:<base64-password>* as the *--client-auth*
+specifying *plain:\<base64-user-id\>:\<base64-password\>* as the *--client-auth*
 value. This is not recommended because it exposes the account details
 through the process table, command-line history, etc.
 
@@ -1172,7 +1187,7 @@ Lines have four or five white-space delimited fields:
 * *client-account-selector* (client-side, optional)
 
 The *client-or-server* field must be *client* or *server*; the *password-type*
-field should be *plain* or *md5*; the *userid* field is xtext-encoded
+field should be *plain* or *md5*; the *userid* field is xtext_-encoded
 user identifier; and the *password* field is the xtext-encoded plain password
 or a base64-encoded *HMAC-MD5* state from *emailrelay-passwd*. For *client*
 lines the password-type can also be *oauth*.
@@ -1186,12 +1201,12 @@ For example:
     server plain alice e+3Dmc2
     server plain carol my+20password
 
-The *xtext* encoding scheme is defined properly in RFC-3461_, but basically it
+The xtext_ encoding scheme is defined properly in RFC-3461_, but basically it
 says that non-alphanumeric characters (including space, *+*, *#* and *=*) should
 be represented in uppercase hexadecimal ASCII as *+XX*. So a space should be
 written as *+20*; *+* as *+2B*; *#* as *+23*; and *=* as *+3D*.
 
-Base64 encoding can be used instead of xtext encoding by replacing *plain* by
+Base64_ encoding can be used instead of xtext encoding by replacing *plain* by
 \ *plain:b*\ :
 
 ::
@@ -1202,7 +1217,7 @@ Base64 encoding can be used instead of xtext encoding by replacing *plain* by
     server plain:b Y2Fyb2w= bXkgcGFzc3dvcmQ= # carol
 
 Note that modern email services will expect user-ids and passwords containing
-non-ASCII characters to use UTF-8 encoding with RFC-4013_ normalisation.
+non-ASCII characters to use UTF-8 character encoding and RFC-4013_ normalisation.
 
 Multiple client accounts can be defined in the secrets file by using a fifth
 field as an account selector. When an e-mail message is forwarded the
@@ -1223,7 +1238,7 @@ mechanisms have been defined and standardised, and the simplest ones just
 exchange a username and plain-text password. E-MailRelay supports the PLAIN,
 LOGIN and CRAM-MD5 mechanisms for both client-side and server-side
 authentication as a minimum, with XOAUTH2 on for client-side authentication.
-Other mechanisms might be built in or available via PAM (see below).
+Other mechanisms might be built in or available via PAM_ (see below).
 
 The PLAIN, LOGIN and CRAM-MD5 mechanisms can use plain-text passwords, stored
 in the secrets file using a password-type of *plain*. In addition, the
@@ -1275,7 +1290,7 @@ ranges, to submit mail without requiring authentication:
     server plain carol my+20password
 
 On the client side, authentication is performed when E-MailRelay connects to a
-server that implements the SMTP AUTH extension with one of the supported
+server that implements the SMTP_ AUTH extension with one of the supported
 mechanisms. If client-side authentication is required but the remote server
 does not support the AUTH extension, or does not support mechanisms for which
 E-MailRelay has secrets, then forwarding will fail.
@@ -1285,15 +1300,15 @@ authentication name is passed as the AUTH parameter of the SMTP MAIL FROM
 command, ignoring any AUTH name from the original submission. This default
 policy can be modified by editing the *MailFromAuthOut* field in the message
 envelope file, perhaps by using a *--filter* or *--client-filter* program. The
-value in this envelope field should be empty for the default policy, *<>* for
-no AUTH name, or an xtext-encoded authentication name.
+value in this envelope field should be empty for the default policy, *\<\>* for
+no AUTH name, or an xtext_-encoded authentication name.
 
-The TLS layer can also be used for authentication, independently of SMTP, as
+The TLS_ layer can also be used for authentication, independently of SMTP_, as
 described below.
 
 TLS encryption
 ==============
-E-MailRelay can use negotiated TLS to encrypt SMTP and POP sessions: use the
+E-MailRelay can use negotiated TLS_ to encrypt SMTP_ and POP_ sessions: use the
 *--client-tls* command-line option to enable client-side TLS encryption when
 E-MailRelay is acting as an SMTP client, and use *--server-tls* to enable
 server-side TLS when E-MailRelay is acting as an SMTP or POP server. The
@@ -1312,28 +1327,32 @@ suitable for testing:
 
     $ openssl req -x509 -noenc -subj "/CN=$USER" -newkey rsa:2048 -keyout emailrelay.pem  -out emailrelay.pem
 
-TLS performs encryption to prevent eavesdropping, but it does not necessarily
+TLS_ performs encryption to prevent eavesdropping, but it does not necessarily
 do authentication to prevent man-in-the-middle attacks. For full TLS
 authentication you must use private keys and X.509 certificates symmetrically
 on both ends, with TLS verification enabled in both directions. Refer to the
 documentation of all the *--server-tls...* and *--client-tls...* command-line
 options for more details.
 
-E-MailRelay can also make outgoing SMTP connections using TLS encryption where
+E-MailRelay can also make outgoing SMTP_ connections using TLS encryption where
 the whole SMTP dialog is encrypted from the start (\ *--client-tls-connection*\ ).
 This is sometimes called SMTP-over-TLS or secure SMTP (smtps) or implicit TLS
 and it is normally used with port number 465.
 
 Similarly, when using *--server-tls-connection* the E-MailRelay server will
-expect all connections to be using TLS from the start, so the whole SMTP
+expect all connections to be using TLS_ from the start, so the whole SMTP
 dialogue is encrypted, without the need for *STARTTLS*.
+
+If E-MailRelay has been built with both MbedTLS and OpenSSL/LibreSSL libraries
+(as reported by *emailrelay --version --verbose*) then it will use
+OpenSSL/LibreSSL by default. To switch to MbedTLS use *--tls-config=mbedtls*.
 
 PAM authentication
 ==================
-E-MailRelay on Linux supports the use of PAM (Pluggable Authentication Modules)
+E-MailRelay on Linux supports the use of PAM_ (Pluggable Authentication Modules)
 for authentication if it has been built with the *--with-pam* configure option.
 
-PAM authentication can be used to authenticate SMTP and POP connections coming
+PAM authentication can be used to authenticate SMTP_ and POP_ connections coming
 in from remote clients; it cannot be used by E-MailRelay to supply passwords
 when acting as an SMTP client.
 
@@ -1342,7 +1361,7 @@ PAM authentication for SMTP and POP respectively. The E-MailRelay server will
 then advertise an SMTP authentication mechanism of PLAIN and do the actual
 authentication via PAM.
 
-The PAM system itself must be configured with a service of *emailrelay*. This
+The PAM_ system itself must be configured with a service of *emailrelay*. This
 normally involves creating a file */etc/pam.d/emailrelay* containing something
 like the following:
 
@@ -1355,7 +1374,59 @@ account names and passwords to authenticate remote clients. On some systems
 this will require special permissioning to allow the E-MailRelay server to
 read the shadow password database, so run the server as *root* and also add the
 *--user=root* command-line option to make sure that the process's effective
-user-id stays as *root* while it accesses the PAM system.
+user-id stays as *root* while it accesses the PAM_ system.
+
+Submission
+==========
+New e-mail messages can be submitted into an E-MailRelay server using SMTP_ or
+by using the *emailrelay-submit* utility to create the content and envelope file
+directly in the spool directory.
+
+If using SMTP for submission make sure that the submitting user agent emits
+separate e-mail messages for each Bcc_ recipient so that one *Bcc* recipient
+cannot see the addresses of any of the others.
+
+On Linux/Unix systems the *emailrelay-submit* tool is normally installed so that
+it runs with elevated privileges so that it can write into the E-MailRelay
+spool directory. It might also be just a symbolic link to the main *emailrelay*
+binary, in the style of BusyBox, and in that case it will have reduced
+functionality.
+
+One way of using *emailrelay-submit* is to construct a new e-mail message from
+only command-line parameters. This can be useful for creating automated alert
+e-mails, for example:
+
+::
+
+    emailrelay-submit -dtFN --to="user@localhost" --content U3ViamVjdDogaGVscA --content="" --content=ZXJyb3I
+
+Each *--content* parameter is a base64-encoded line of content, which can be
+a header line, an empty line or a line of body text.
+
+Alternatively, the message content can come from a RFC-5322_ format file, read
+from either the standard input or *--input-file*, with just envelope addresses
+passed on the command-line:
+
+::
+
+    emailrelay-submit --to="user@localhost" --from="sender@localhost" --input-file=content.txt
+
+Or the submitted message content can come from a mixture of command-line
+parameters and an input file:
+
+::
+
+    emailrelay-submit -dtF --to="user@localhost" --content=U3ViamVjdDogaGVscA --content="" --body --input-file=body.txt
+
+Or a complete message file can be submitted, with the envelope addresses parsed
+out of the message headers:
+
+::
+
+    emailrelay-submit --bcc-split --input-file message.eml
+
+In this example if the message headers specify more than one Bcc_ recipient
+then multiple messages will be submitted.
 
 Routing
 =======
@@ -1406,7 +1477,7 @@ routed to unavailable addresses will stay in the spool directory. Use *--poll*
 to make sure that these messages are retried and check the spool directory for
 old messages files from time to time.
 
-If routed SMTP connections need to authenticate using different client account
+If routed SMTP_ connections need to authenticate using different client account
 details then the filter that sets the *ForwardToAddress* in the message envelope
 file should also populate the *ClientAccountSelector* field. The selector value
 in the envelope is used to pick one of the *client* rows in the client secrets
@@ -1416,9 +1487,9 @@ Delivery
 ========
 When running in a simple store-and-forward setup E-MailRelay does not concern
 itself with message delivery; every e-mail message ends up in the main spool
-directory without regard to the recipient addresses. However, it is quite easy
-to write a *delivery* filter that examines the recipient addresses in each
-message's envelope file and copies the message files into a separate *mailbox*
+directory for forwarding, without regard to the recipient addresses. However, it
+is quite easy to have a *delivery* filter that examines the recipient addresses
+in each e-mail message and moves the message files into a separate *mailbox*
 for each recipient.
 
 A *mailbox* is normally just a sub-directory of the main spool directory with a
@@ -1429,19 +1500,19 @@ Deriving a suitable mailbox name from the recipient address is best done by an
 address verifier script (\ *--address-verifier*\ ). The address verifier can check
 each recipient address and map it to a mailbox name which then gets written to
 the envelope file's *To-Local* list. After that a delivery filter script
-(\ *--filter*\ ) just has to copy the message files into the designated mailboxes.
+(\ *--filter*\ ) just has to move the message files into the designated mailboxes.
 
 Once e-mail messages have been delivered into separate mailboxes they can be
-accessed by individual users using POP with the *--pop-by-name* option. When a
+accessed by individual users using POP_ with the *--pop-by-name* option. When a
 user's e-mail user agent retrieves messages using POP it supplies a user-id for
 authentication purposes and E-MailRelay will use this user-id to select the
 appropriate mailbox from which to serve up e-mails.
 
 Delivery is normally only relevant to incoming messages being received from
 external systems, but it might also be desirable for outgoing messages that are
-addressed to local users. For these messages is makes sense for the delivery
-filter to move the message files straight into the incoming mailbox rather than
-have the message forwarded to the smarthost and then come back in again.
+addressed to local users. For these messages is makes sense to use the delivery
+mechanism to move the message files straight into the incoming mailbox rather
+than have the message forwarded to the smarthost and then come back in again.
 
 deliver:
 --------
@@ -1460,7 +1531,7 @@ Eg:
 
 The *deliver:* filter creates mailbox directories as necessary, but if the
 mailbox directory already exists and has *new*, *tmp* and *cur* sub-directories
-within it then it is treated as a *maildir* mailbox. In this case the content
+within it then it is treated as a maildir_ mailbox. In this case the content
 file (only) is copied into the *cur* sub-directory. This can be useful for
 serving up messages with an IMAP_ server such as dovecot_.
 
@@ -1468,11 +1539,19 @@ Mailboxes are normally sub-directories of the spool directory, but the
 *--delivery-dir* command-line option can be used to provide the *deliver:*
 filter with a different base directory.
 
+Delivery status notifications
+=============================
+E-MailRelay does not generate delivery status notifications (DSNs). If required
+failed messages in the spool directory can be processed by some other means,
+with the DSN messages submitted into an outgoing E-MailRelay instance that
+either forwards to a smarthost or does its own routing. See *Submission* and
+*Routing* above.
+
 IP addresses
 ============
 By default the E-MailRelay server listens for connections on the wildcard IPv4
 and IPv6 addresses, and when making outgoing connections it does not explicitly
-bind an address to the the local socket.
+bind any particular address to the the local socket.
 
 If a single network address is specified with the *--interface* command-line
 option then that address is used for listening.
@@ -1484,7 +1563,7 @@ Eg:
     --interface 127.0.0.1
 
 If the *--client-interface* option is used then that address is used to bind
-the local end of outgoing SMTP client connections.
+the local end of outgoing SMTP_ client connections.
 
 Eg:
 
@@ -1543,7 +1622,7 @@ only on incoming connections use *--interface ::*.
     --interface 0.0.0.0 # IPv4 only
     --interface ::      # IPv6 only
 
-To use IPv4 only on outgoing SMTP connection use *--client-interface 0.0.0.0*;
+To use IPv4 only on outgoing SMTP_ connection use *--client-interface 0.0.0.0*;
 for IPv6 only on outgoing SMTP connections use *--client-interface ::*.
 
 ::
@@ -1623,7 +1702,7 @@ Eg:
 
 SOCKS
 =====
-E-MailRelay can use a SOCKS_ 4a proxy for establishing outgoing SMTP connections;
+E-MailRelay can use a SOCKS_ 4a proxy for establishing outgoing SMTP_ connections;
 just append the SOCKS proxy address to the SMTP server's address, separated by
 \ *@*\ .
 
@@ -1635,12 +1714,12 @@ there is a local Tor node running on port 9050:
     emailrelay --forward-to example.com:smtp@localhost:9050 ...
 
 The Tor system will then be used to resolve the *example.com* domain name and
-establish the connection. The target SMTP server will see a connection coming
+establish the connection. The target SMTP_ server will see a connection coming
 from the Tor exit node rather than from the E-MailRelay server.
 
 SMTP extensions
 ===============
-Some standard extensions of the SMTP protocol can be enabled by using the
+Some standard extensions of the SMTP_ protocol can be enabled by using the
 *--server-smtp-config* and *--client-smtp-config* command-line options.
 These include the CHUNKING and SMTPUTF8 extensions defined in RFC-3030_ and
 RFC-6531_ respectively. However, these extensions should only be enabled if the
@@ -1662,7 +1741,7 @@ simple command-line interface which is compatible with *netcat* and *telnet*:
     E-MailRelay> quit
 
 The *forward* command is used to trigger the E-MailRelay server into forwarding
-spooled mail to the next SMTP server.
+spooled mail to the next SMTP_ server.
 
 The *flush* command is similar but it uses its own connection to the SMTP
 server and waits for the messages to be sent.
@@ -1670,9 +1749,13 @@ server and waits for the messages to be sent.
 The *unfail-all* command can be used to remove the *.bad* filename extension
 from files in the spool directory.
 
+The *smtp disable* command will cause E-MailRelay to reject new SMTP
+connections with a *421 service not available* message. This can be useful when
+shutting down the service without disrupting existing connections.
+
 The *list* command lists the messages in the spool directory, *status* provides
 network status information and activity statistics, and *notify* enables
-asynchronous event notification.
+asynchronous event notification through the administation connection.
 
 Connection blocking
 ===================
@@ -1680,7 +1763,7 @@ All incoming connections from remote network addresses are rejected by default,
 but can be allowed by using the *--remote-clients* or *-r* option. This is to
 guard against accidental exposure to the internet.
 
-Incoming SMTP connections can also be checked against DNSBL blocklists in order
+Incoming SMTP_ connections can also be checked against DNSBL_ blocklists in order
 to block connections from known spammers. Use the *--dnsbl* option to define a
 list of DNSBL servers, together with a rejection threshold. If the threshold
 number of servers 'deny' the incoming connection's network address then
@@ -1696,7 +1779,7 @@ server transport address:
 
 The threshold defaults to 1, the timeout defaults to a small number of seconds,
 and the DNS server defaults to the first of the local system's configured
-nameservers, so a simple list of DNSBL servers can be used:
+nameservers, so a simple list of DNSBL_ servers can be used:
 
 ::
 
@@ -1708,7 +1791,7 @@ For backwards compatibility the comma-separated fields can be reversed:
 
     emailrelay -r --dnsbl 1.1.1.1:53,500,1,spam.example.com,block.example.com
 
-A threshold of zero means that the DNSBL servers are consulted but connections
+A threshold of zero means that the DNSBL_ servers are consulted but connections
 are always allowed. This can be combined with verbose logging (\ *--log -v*\ ) for
 initial testing:
 
@@ -1718,44 +1801,44 @@ initial testing:
 
 If the timeout period expires before a collective decision is reached then the
 connection is allowed by default. This default behaviour can be changed by using
-a negative timeout, although an unresponsive DNSBL servers might then result in
-all incoming connections being blocked:
+a negative timeout, but beware that an unresponsive DNSBL server might then
+result in all incoming connections being blocked:
 
 ::
 
     emailrelay -r --dnsbl spam.example.com,block.example.com,1,-5000 ...
 
 Connections from loopback and private (RFC-1918_) network addresses are never
-checked using DNSBL.
+checked using DNSBL_.
 
 POP server
 ==========
-The POP protocol is designed to allow e-mail user agents to retrieve and delete
+The POP_ protocol is designed to allow e-mail user agents to retrieve and delete
 e-mail messages that have arrived at their final destination.
 
 The POP server in E-MailRelay is enabled with *--pop* and then *--pop-auth* to
 point to the authentication secrets file. By default it serves up e-mail
 messages that are in the main spool directory. However, having a POP client
 delete messages in the E-MailRelay spool directory that would otherwise be
-forwarded by SMTP is probably not a good idea. In this situation the
+forwarded by SMTP_ is probably not a good idea. In this situation the
 *--pop-no-delete* option can be used to make the POP delete command appear to
 succeed but actually do nothing. This may confuse some POP clients resulting in
 message duplication, but more capable user agents keep track of the messages
 they have retrieved to avoid duplication.
 
 Another approach is to copy message files out of the main spool directory before
-serving them up with POP, then the POP client can safely delete them without
+serving them up with POP_, then the POP client can safely delete them without
 affecting SMTP forwarding. The *--pop-by-name* option should be used to do this.
 E-MailRelay will then serve up e-mail messages from a sub-directory of the main
 spool directory, with the sub-directory name being just the name that the POP
 client uses to authenticate.
 
 To get the e-mail message files into the *--pop-by-name* sub-directory a filter
-script can be used. This should just copy the new envelope file and content file
-into those sub-directories of the main spool directory for which there are
-matching entries in the POP secrets file.
+script can be used. This should just copy the new envelope file into those
+sub-directories of the main spool directory for which there are matching entries
+in the POP secrets file.
 
-To save disk space the POP server using *--pop-by-name* will look for content
+To save disk space the POP_ server using *--pop-by-name* will look for content
 files in the main spool directory if it cannot see the content file in the
 sub-directory. In that case the POP delete command will delete the envelope
 file from the sub-directory but only delete the content file if there are no
@@ -1763,16 +1846,14 @@ other envelope files with the same name in either the main spool directory or
 any other sub-directory.
 
 Alternatively, another way to save disk space on Linux/Unix is for the filter
-script to copy content files using hard links.
+script to copy content files into the sub-directories but use hard links.
 
 The built-in *copy:* filter can be used to work with *--pop-by-name*. It copies
-message files into all sub-directories (whether they have a matching POP account
+message files into all sub-directories (whether they have a matching POP_ account
 or not) and by default it then deletes the original message files. To keep the
 original files in the main spool directory so they can be forwarded use
 \ *copy:nodelete*\ ; to copy just the envelope file and leave the content file alone
 use *copy:pop*; and to copy content files with hard links use *copy:hardlink*.
-Remember to create matching sub-directories when adding users to the POP secrets
-file.
 
 The built-in *delivery:* filter also works well with *--pop-by-name*. It copies
 message files into sub-directories (now conceptually delivery mailboxes)
@@ -1809,6 +1890,13 @@ the security complications of system() or popen() are avoided.
 
 The effective user-id and group-id switching can be disabled by using
 \ *--user=root*\ .
+
+By default the *emailrelay* program will fork and detach so that it runs in the
+background, independently of the process that started it. The *--no-daemon*
+option can be used to run in the foreground without forking. The program exit
+code is 0 on success, 1 on error but 2 if the listening socket could not be
+bound (which often indicates that another E-MailRelay instance is already
+running).
 
 On Windows all files are opened with the _SH_DENYNO option so they can be
 accessed without sharing violations.
@@ -1850,7 +1938,7 @@ Standard (FHS_) use the *configure.sh* wrapper script:
     sudo make install
 
 It is possible to change the installation root directory after building by
-using *make DESTDIR=<root> install* or *DESTDIR=<root> make -e install*.
+using *make DESTDIR=\<root\> install* or *DESTDIR=\<root\> make -e install*.
 However, this will not change the default spool directory path built into the
 scripts and executables so the correct spool directory will then have to be
 specified at run-time with the *--spool-dir* command-line option.
@@ -1864,6 +1952,7 @@ and these default to *%ProgramFiles%/E-MailRelay* for programs and
 
 
 .. _Base64: https://en.wikipedia.org/wiki/Base64
+.. _Bcc: https://en.wikipedia.org/wiki/Blind_carbon_copy
 .. _DNSBL: https://en.wikipedia.org/wiki/DNSBL
 .. _FHS: https://wiki.linuxfoundation.org/lsb/fhs
 .. _IMAP: https://en.wikipedia.org/wiki/Internet_Message_Access_Protocol
@@ -1875,6 +1964,7 @@ and these default to *%ProgramFiles%/E-MailRelay* for programs and
 .. _RFC-3030: https://tools.ietf.org/html/rfc3030
 .. _RFC-3461: https://tools.ietf.org/html/rfc3461
 .. _RFC-4013: https://tools.ietf.org/html/rfc4013
+.. _RFC-5322: https://tools.ietf.org/html/rfc5322
 .. _RFC-6531: https://tools.ietf.org/html/rfc6531
 .. _RFC-822: https://tools.ietf.org/html/rfc822
 .. _SMTP: https://en.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol
@@ -1884,4 +1974,4 @@ and these default to *%ProgramFiles%/E-MailRelay* for programs and
 .. _maildir: https://en.wikipedia.org/wiki/Maildir
 .. _xtext: https://tools.ietf.org/html/rfc3461#section-4
 
-.. footer:: Copyright (C) 2001-2023 Graeme Walker
+.. footer:: Copyright (C) 2001-2024 Graeme Walker

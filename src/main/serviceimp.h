@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 #include "gdef.h"
 #include "gstringarray.h"
 #include <string>
+#include <utility>
 #include <functional>
 
 #ifdef G_UNIX
@@ -36,24 +37,31 @@ namespace ServiceImp /// A interface used by the service wrapper to talk to the 
 	using HandlerFn = std::function<void(DWORD)> ;
 	using ServiceMainFn = std::function<void(G::StringArray)> ;
 
-	std::string install( const std::string & commandline , const std::string & name ,
+	std::pair<std::string,DWORD> install( const std::string & commandline , const std::string & name ,
 		const std::string & display_name , const std::string & description ) ;
-			///< Installs the service. Returns an error string.
+			///< Installs the service. Returns the empty string on
+			///< success or a failure reason and GetLastError() value.
 
-	std::string remove( const std::string & service_name ) ;
-		///< Uninstalls the service. Returns an error string.
+	std::pair<std::string,DWORD> remove( const std::string & service_name ) ;
+		///< Uninstalls the service. Returns the empty string on
+		///< success or a failure reason and GetLastError() value.
 
 	std::pair<StatusHandle,DWORD> statusHandle( const std::string & service_name , HandlerFn ) ;
 		///< Returns a service handle associated with the given control
-		///< callback function.
+		///< callback function. Returns a non-zero handle on success
+		///< or a zero handle with a GetLastError() error value.
 
 	DWORD dispatch( ServiceMainFn ) ;
 		///< Dispatches messages from the service sub-system to the given
-		///< ServiceMain function. Only returns when the service stops.
+		///< ServiceMain function. Returns a GetLastError() value.
+		///< Only returns when the service stops.
 
-	DWORD setStatus( StatusHandle hservice , DWORD new_state , DWORD timeout_ms ) noexcept ;
-		///< Sets the service status. Returns zero on success or
-		///< an error number.
+	DWORD setStatus( StatusHandle hservice , DWORD new_state , DWORD timeout_ms ,
+		DWORD generic_error = 0 , DWORD specific_error = 0 ) noexcept ;
+			///< Sets the service status. Returns zero on success or a
+			///< GetLastError() generic error value. If the generic error
+			///< is ERROR_SERVICE_SPECIFIC_ERROR then the specific error
+			///< is also recorded.
 
 	void log( const std::string & ) noexcept ;
 		///< Does service-wrapper logging.

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -47,9 +47,8 @@ namespace GNet
 class GNet::MultiServer : private InterfacesHandler
 {
 public:
-	G_EXCEPTION( NoListeningAddresses , tx("no listening addresses") ) ;
-	G_EXCEPTION( InvalidName , tx("invalid address or interface name") ) ;
-	G_EXCEPTION( InvalidFd , tx("invalid listening file descriptor number") ) ;
+	G_EXCEPTION( NoListeningAddresses , tx("no listening addresses") )
+	G_EXCEPTION( InvalidName , tx("invalid address or interface name") )
 	using AddressList = std::vector<Address> ;
 
 	struct ServerInfo /// A structure used in GNet::MultiServer::newPeer().
@@ -62,7 +61,7 @@ public:
 		unsigned int port , const std::string & server_type ,
 		ServerPeer::Config server_peer_config , Server::Config server_config ) ;
 			///< Constructor. The server listens on inherited file descriptors
-			///< formatted like "#3", specific local addresses (eg. "127.0.0.1")
+			///< formatted like "fd#3", specific local addresses (eg. "127.0.0.1")
 			///< and addresses from named interfaces ("eth0").
 			///<
 			///< Listens on "0.0.0.0" and "::" if the listen list is
@@ -79,8 +78,8 @@ public:
 
 	std::vector<std::weak_ptr<ServerPeer>> peers() ;
 		///< Returns the list of ServerPeer-derived objects.
-		///< Do not allow the returned ServerPeer objects to
-		///< outlive this MultiServer.
+		///< The returned ServerPeer objects must not outlive
+		///< this MultiServer.
 
 	std::unique_ptr<ServerPeer> doNewPeer( EventStateUnbound , ServerPeerInfo && , const ServerInfo & ) ;
 		///< Pseudo-private method used by the pimple class.

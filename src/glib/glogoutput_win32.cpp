@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -39,23 +39,23 @@ namespace G
 	}
 }
 
-void G::LogOutput::osoutput( int fd , G::Log::Severity severity , char * message , std::size_t n )
+void G::LogOutput::osoutput( int fd , Severity severity , char * message , std::size_t n )
 {
 	// event log
 	//
 	if( m_config.m_use_syslog &&
-		severity != Log::Severity::Debug &&
-		severity != Log::Severity::InfoVerbose &&
+		severity != Severity::Debug &&
+		severity != Severity::InfoVerbose &&
 		m_handle != HNULL )
 	{
 		DWORD id = 0x400003E9L ; // 1001
 		WORD type = EVENTLOG_INFORMATION_TYPE ;
-		if( severity == Log::Severity::Warning )
+		if( severity == Severity::Warning )
 		{
 			id = 0x800003EAL ; // 1002
 			type = EVENTLOG_WARNING_TYPE ;
 		}
-		else if( severity == Log::Severity::Error || severity == Log::Severity::Assertion )
+		else if( severity == Severity::Error || severity == Severity::Assertion )
 		{
 			id = 0xC00003EBL ; // 1003
 			type = EVENTLOG_ERROR_TYPE ;

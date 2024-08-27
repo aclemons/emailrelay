@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -30,8 +30,7 @@
 #include "glog.h"
 #include <cerrno>
 #include <array>
-#include <algorithm> // std::swap()
-#include <utility> // std::swap()
+#include <vector>
 #include <tuple> // std::tie()
 #include <iostream>
 #include <csignal> // ::kill()
@@ -84,10 +83,10 @@ public:
 	int id() const noexcept ;
 	static std::pair<bool,pid_t> fork() ;
 	NewProcessWaitable & waitable() noexcept ;
-	int run( const Path & , const StringArray & , const Environment & , bool strict_exe ) ;
+	static int run( const Path & , const StringArray & , const Environment & , bool strict_exe ) ;
 	void kill() noexcept ;
 	static void printError( int , const std::string & s ) ;
-	std::string execErrorFormat( const std::string & format , int errno_ ) ;
+	static std::string execErrorFormat( const std::string & format , int errno_ ) ;
 	static bool duplicate( Fd , int ) ;
 
 public:
@@ -158,7 +157,7 @@ G::NewProcessImp::NewProcessImp( const Path & exe , const StringArray & args , c
 			throw NewProcess::Insecure() ;
 
 	// fork
-	bool in_child {} ;
+	bool in_child = false ;
 	std::tie(in_child,m_child_pid) = fork() ;
 	if( in_child )
 	{
@@ -232,7 +231,7 @@ std::pair<bool,pid_t> G::NewProcessImp::fork()
 	const bool ok = rc != -1 ;
 	if( !ok ) throw NewProcess::CannotFork() ;
 	bool in_child = rc == 0 ;
-	auto child_pid = static_cast<pid_t>(rc) ;
+	auto child_pid = rc ;
 	return { in_child , child_pid } ;
 }
 
@@ -246,42 +245,43 @@ void G::NewProcessImp::printError( int stdxxx , const std::string & s )
 int G::NewProcessImp::run( const G::Path & exe , const StringArray & args ,
 	const Environment & env , bool strict_exe )
 {
-	char ** argv = new char* [ args.size() + 2U ] ;
-	argv[0U] = const_cast<char*>( exe.cstr() ) ;
-	unsigned int argc = 1U ;
-	for( auto arg_p = args.begin() ; arg_p != args.end() ; ++arg_p , argc++ )
-		argv[argc] = const_cast<char*>(arg_p->c_str()) ;
-	argv[argc] = nullptr ;
+	std::vector<char*> argarray ;
+	argarray.reserve( args.size() + 2U ) ;
+	argarray.push_back( const_cast<char*>(exe.cstr()) ) ;
+	for( const auto & arg : args )
+		argarray.push_back( const_cast<char*>(arg.c_str()) ) ;
+	argarray.push_back( nullptr ) ;
 
 	int e = 0 ;
 	if( env.empty() )
 	{
 		if( strict_exe )
 		{
-			::execv( exe.cstr() , argv ) ;
+			::execv( exe.cstr() , argarray.data() ) ;
 			e = Process::errno_() ;
 		}
 		else
 		{
-			::execvp( exe.cstr() , argv ) ;
+			::execvp( exe.cstr() , argarray.data() ) ;
 			e = Process::errno_() ;
 		}
 	}
 	else
 	{
+		std::string envblock = env.block() ;
+		auto envarray = G::Environment::array( envblock ) ;
 		if( strict_exe )
 		{
-			::execve( exe.cstr() , argv , env.v() ) ;
+			::execve( exe.cstr() , argarray.data() , envarray.data() ) ;
 			e = Process::errno_() ;
 		}
 		else
 		{
-			::execvpe( exe.cstr() , argv , env.v() ) ;
+			::execvpe( exe.cstr() , argarray.data() , envarray.data() ) ;
 			e = Process::errno_() ;
 		}
 	}
 
-	delete [] argv ;
 	G_DEBUG( "G::NewProcess::run: execve() returned: errno=" << e << ": " << exe ) ;
 	return e ;
 }

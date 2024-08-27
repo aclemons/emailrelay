@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -97,7 +97,7 @@ std::streambuf * G::basic_omembuf<Tchar>::setbuf( Tchar * p , std::streamsize n 
 template <typename Tchar>
 std::streampos G::basic_omembuf<Tchar>::seekoff( std::streamoff off , std::ios_base::seekdir way , std::ios_base::openmode which )
 {
-	if( off == 0 && way == std::ios_base::cur && ( which & std::ios_base::out ) )
+	if( off == 0 && way == std::ios_base::cur && ( which & std::ios_base::out ) ) // NOLINT
 		return base_type::pptr() - base_type::pbase() ;
 	else
 		return -1 ;
@@ -106,7 +106,7 @@ std::streampos G::basic_omembuf<Tchar>::seekoff( std::streamoff off , std::ios_b
 template <typename Tchar>
 std::streampos G::basic_omembuf<Tchar>::seekpos( std::streampos pos , std::ios_base::openmode which )
 {
-	if( pos == 0 && ( which & std::ios_base::out ) )
+	if( pos == 0 && ( which & std::ios_base::out ) ) // NOLINT
 	{
 		base_type::setp( base_type::pbase() , base_type::epptr() ) ;
 		return 0 ;

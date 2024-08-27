@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -117,6 +117,7 @@ bool GNet::SocketBase::isFamily( Address::Family family ) const
 
 void GNet::SocketBase::drop() noexcept
 {
+	static_assert( noexcept(dropReadHandler()) , "" ) ;
 	dropReadHandler() ;
 	dropWriteHandler() ;
 	dropOtherHandler() ;
@@ -201,6 +202,13 @@ SOCKET GNet::SocketBase::fd() const noexcept
 	return m_fd.fd() ;
 }
 
+#ifndef G_LIB_SMALL
+GNet::Descriptor GNet::SocketBase::fdd() const noexcept
+{
+	return m_fd ;
+}
+#endif
+
 std::string GNet::SocketBase::reason() const
 {
 	if( m_reason == 0 ) return {} ;
@@ -250,7 +258,7 @@ void GNet::Socket::bind( const Address & local_address )
 	if( error(rc) )
 	{
 		saveReason() ;
-		throw SocketBindError( local_address.displayString() , reason() ) ;
+		throw SocketBindError( local_address , reason() , eInUse() ) ;
 	}
 	m_bound_scope_id = local_address.scopeId() ;
 }

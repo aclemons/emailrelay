@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -60,13 +60,12 @@ namespace GNet
 		virtual void update( std::size_t list_size , std::function<HANDLE()> list_fn , bool full_update ) = 0 ;
 		virtual bool overflow( std::size_t list_size , std::function<std::size_t()> list_size_fn ) const = 0 ;
 		virtual void onClose( HANDLE ) = 0 ;
-		virtual std::string help( bool on_add ) const = 0 ;
 	} ;
 	struct EventLoopConfig
 	{
 		EventLoopConfig() ;
-		bool debug ;
 		bool st_only ;
+		bool update_all ;
 		std::size_t st_wait_limit ;
 		std::size_t mt_wait_limit ;
 		std::size_t mt_thread_limit ;
@@ -101,6 +100,10 @@ namespace GNet
 ///   m_list.push_back( {h,...} ) ;
 ///   if( handles.overflow( m_list.size() , [&](){m_list...} ) ) { m_list.pop_back() ; throw ... } ;
 /// }
+/// void remove( HANDLE h )
+/// {
+///    handles.onClose( h ) ;
+/// }
 /// \endcode
 ///
 class GNet::EventLoopHandles
@@ -120,37 +123,29 @@ public:
 		///< limit. Returns an enumerated result together with the index
 		///< of the first handle with an event.
 
-	void init( std::size_t list_size , std::function<HANDLE()> list_fn ) ;
-		///< Initialises the handles from the event-loop list.
-		///< The functor returns each handle in turn.
-
 	void update( std::size_t list_size , std::function<HANDLE()> list_fn , bool full_update = true ) ;
 		///< Copies in a fresh set of handles from the event-loop list.
 		///< The list must be freshly garbage-collected so that all
 		///< the handles are valid. This is called after every
 		///< wait() once any returned event has been fully handled.
 		///< If the list has changed as a result of handling the event
-		///< then 'full-update' should be set to true, along with the
-		///< index of the event that has just been handled in 'rc'.
+		///< then 'full-update' should be set to true.
 
 	void onClose( HANDLE ) ;
-		///< Called when a handle is closed.
+		///< Called when a handle is about to be closed.
 
 	bool overflow( std::size_t list_size_ceiling , std::function<std::size_t()> list_size_fn ) const ;
 		///< Returns true if the number of entries in the event-loop list
 		///< would cause an overflow. The first parameter is the total
 		///< list size possibly including invalid handles that will be
-		///< garbage-collected, and the second parameter is a function
-		///< that returns the number of valid handles.
+		///< garbage-collected, and the second parameter is a possibly-slow
+		///< function that returns the exact number of valid handles.
 		///<
 		///< The event loop should use this immediately after adding an
 		///< item to the list and not just wait for the next go-round.
 		///< This allows the overflow exception to be handled cleanly
-		///< in-context rather than having the next wait() return an
-		///< overflow error and terminate the application.
-
-	std::string help( bool on_add ) const ;
-		///< Returns a helpful explanation for overflow().
+		///< and in-context rather than having the next wait() return
+		///< an overflow error and terminate the application.
 
 private:
 	EventLoopConfig m_config ;

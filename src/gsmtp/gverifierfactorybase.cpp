@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,9 +24,9 @@
 GSmtp::VerifierFactoryBase::Spec::Spec()
 = default ;
 
-GSmtp::VerifierFactoryBase::Spec::Spec( const std::string & first_in , const std::string & second_in ) :
-	first(first_in) ,
-	second(second_in)
+GSmtp::VerifierFactoryBase::Spec::Spec( std::string_view first_in , std::string_view second_in ) :
+	first(G::sv_to_string(first_in)) ,
+	second(G::sv_to_string(second_in))
 {
 }
 

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -58,7 +58,7 @@ GStore::MessageId GSmtp::ProtocolMessageStore::setFrom( const std::string & from
 {
 	G_DEBUG( "GSmtp::ProtocolMessageStore::setFrom: " << from ) ;
 
-	if( from.length() == 0U ) // => probably a failure notification message
+	if( from.empty() ) // => probably a failure notification message
 		G_WARNING( "GSmtp::ProtocolMessageStore: empty MAIL-FROM return path" ) ;
 
 	G_ASSERT( m_new_msg == nullptr ) ;
@@ -67,7 +67,7 @@ GStore::MessageId GSmtp::ProtocolMessageStore::setFrom( const std::string & from
 	GStore::MessageStore::SmtpInfo smtp_info ;
 	smtp_info.auth = from_info.auth ;
 	smtp_info.body = from_info.body ;
-	smtp_info.utf8address = from_info.utf8address ;
+	smtp_info.address_style = from_info.address_style ;
 	const std::string & from_auth_out = std::string() ;
 	m_new_msg = m_store.newMessage( from , smtp_info , from_auth_out ) ;
 
@@ -93,7 +93,7 @@ bool GSmtp::ProtocolMessageStore::addTo( const ToInfo & to_info )
 	}
 	else
 	{
-		m_new_msg->addTo( to_info.status.address , to_info.status.is_local , to_info.utf8address ) ;
+		m_new_msg->addTo( to_info.status.address , to_info.status.is_local , to_info.address_style ) ;
 		return true ;
 	}
 }

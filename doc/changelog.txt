@@ -1,12 +1,21 @@
 E-MailRelay Change Log
 ======================
 
-2.5.2 -> 2.5.3
---------------
+2.5.2 -> 2.6
+------------
 * New "--log-format" option (eg. "--log-format=address,port").
-* Configuration files always use UTF-8 character encoding on Windows.
-* New "nostrictparsing" option for "--server-smtp-config".
-* More concurrent connections on Windows.
+* New "--server-smtp-config" "nostrictparsing" option to allow missing "RCPT-TO" angle brackets.
+* The SMTP server converts incoming e-mail addresses to RFC-5890 A-labels by default (see NEWS).
+* The "mx:" filter accepts an IP address in the envelope forward-to field, not just a domain name.
+* Pop-by-name sub-directories are automatically created if necessary.
+* The "--forward-to" domain names can be UTF-8.
+* Windows configuration files always use UTF-8 character encoding.
+* The Windows installer puts options in "emailrelay.cfg", not "emailrelay-start.bat".
+* The Windows service wrapper will read "emailrelay.cfg" if there is no batch file.
+* The SMTP client EHLO parameter is controlled by "--domain" (as in v2.3) but IP address if not a FQDN.
+* The "emailrelay-submit" utility can parse recipient addresses out of content headers.
+* On Windows "--no-daemon" is deprecated in favour of "--show=window".
+* The Windows event loop supports more concurrent connections [bug-id #59].
 
 2.5.1 -> 2.5.2
 --------------

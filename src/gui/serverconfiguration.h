@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -35,8 +35,9 @@ class ServerConfiguration
 public:
 	explicit ServerConfiguration( const G::Path & ) ;
 		///< Constructor that reads the emailrelay server configuration from a
-		///< configuration file or startup batch file. If the file does
-		///< not exist then the exe() and args() will be empty.
+		///< configuration file or a startup batch file together with its
+		///< configuration file (if any). If the specified file does not
+		///< exist then the exe() and args() will be empty.
 
 	static ServerConfiguration fromPages( const G::MapFile & pages_output ) ;
 		///< Factory function using the output from the stack of
@@ -55,7 +56,9 @@ public:
 
 private:
 	ServerConfiguration() ;
-	static G::MapFile read( const G::Path & config_file ) ;
+	static G::MapFile read( const G::Path & ) ;
+	static G::MapFile readBatchFile( const G::Path & ) ;
+	static void normalise( G::MapFile & ) ;
 	static std::string quote( const std::string & ) ;
 
 private:

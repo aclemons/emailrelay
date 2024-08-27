@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -67,8 +67,8 @@
 //
 // Each page initialises its widgets from a set of page variables ("pvalues").
 // In configure mode the initial set of pvalues are read in from the server
-// configuration file by the ServerConfiguration class, plus a copy of the
-// pointer variables.
+// configuration file by the ServerConfiguration class and augmented with
+// a copy of the pointer variables.
 //
 // Once the page interactions are complete each page writes its pvalues out into
 // a text stream that is passed to a separate installer class.
@@ -92,8 +92,8 @@
 // server executable, and the pointer file (which on unix is a shell script that
 // re-runs the gui).
 //
-// The configuration directory will contain the server configuration file (which
-// is a startup batch file on windows), and the authentication secrets file.
+// The configuration directory will contain the server configuration file,
+// startup batch file (on windows), and the authentication secrets file.
 //
 // On unix the server configuration file is in a format that can be read by the
 // System V init script to assemble the server's full command-line (although
@@ -101,7 +101,7 @@
 //
 // The install directory, and to a lesser extent the configuration directory,
 // will contain additional files copied straight from the payload, such as
-// shared libraries, documentation, and utilities.
+// translations, documentation, and utilities.
 //
 
 #include "gdef.h"
@@ -125,6 +125,7 @@
 #include "gstr.h"
 #include "gstringwrap.h"
 #include "gformat.h"
+#include "glog.h"
 #include <string>
 #include <iostream>
 #include <stdexcept>
@@ -155,7 +156,7 @@ static int height()
 
 static void errorBox( const std::string & what )
 {
-	QString title( GQt::qstring_from_u8string("E-MailRelay") ) ;
+	QString title = GQt::qstring_from_u8string( "E-MailRelay" ) ;
 	QString qwhat = GQt::qstring_from_u8string( what ) ;
 	QMessageBox::critical( nullptr , title ,
 		QMessageBox::tr("Failed with the following exception: %1").arg(qwhat) ,
@@ -169,7 +170,7 @@ static QString tr( const char * text )
 
 static void infoBox( const std::string & text )
 {
-	QString title( GQt::qstring_from_u8string("E-MailRelay") ) ;
+	QString title = GQt::qstring_from_u8string( "E-MailRelay" ) ;
 	QString qtext = GQt::qstring_from_u8string( text ) ;
 	QMessageBox::information( nullptr , title , qtext ,
 		QMessageBox::Ok ) ;
@@ -318,8 +319,8 @@ int main( int argc , char * argv [] )
 					app.setWindowIcon( QIcon(GQt::qstring_from_path(icon_png_path)) ) ;
 			}
 
-			// test-mode -- create a minimal payload, make it easier to
-			// click through, and write install variables to installer.txt
+			// test-mode -- create a minimal payload, enable click-through,
+			// and write install variables to "installer.txt"
 			if( args.contains("--test") )
 			{
 				G::Path pdir = argv0.dirname() / "payload" ;

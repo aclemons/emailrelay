@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -46,7 +46,7 @@ namespace GAuth
 class GAuth::Secrets
 {
 public:
-	G_EXCEPTION( ClientAccountError , tx("invalid client account details") ) ;
+	G_EXCEPTION( ClientAccountError , tx("invalid client account details") )
 
 	static void check( const std::string & client , const std::string & server , const std::string & pop ) ;
 		///< Checks the given secret sources. Logs warnings and throws

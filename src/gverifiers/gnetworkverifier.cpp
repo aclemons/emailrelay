@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@
 GVerifiers::NetworkVerifier::NetworkVerifier( GNet::EventState es , const GSmtp::Verifier::Config & config ,
 	const std::string & server ) :
 		m_es(es) ,
+		m_config(config) ,
 		m_location(server) ,
 		m_connection_timeout(config.timeout) ,
 		m_response_timeout(config.timeout)
@@ -42,10 +43,9 @@ GVerifiers::NetworkVerifier::~NetworkVerifier()
 	m_client_ptr.deletedSignal().disconnect() ;
 }
 
-void GVerifiers::NetworkVerifier::verify( Command command , const std::string & mail_to_address ,
-	const GSmtp::Verifier::Info & info )
+void GVerifiers::NetworkVerifier::verify( const GSmtp::Verifier::Request & request )
 {
-	m_command = command ;
+	m_command = request.command ;
 	if( m_client_ptr.get() == nullptr )
 	{
 		unsigned int idle_timeout = 0U ;
@@ -57,17 +57,17 @@ void GVerifiers::NetworkVerifier::verify( Command command , const std::string & 
 	}
 
 	G_LOG( "GVerifiers::NetworkVerifier: verification request: ["
-		<< G::Str::printable(mail_to_address) << "] (" << info.client_ip.displayString() << ")" ) ;
+		<< G::Str::printable(request.address) << "] (" << request.client_ip.displayString() << ")" ) ;
 
 	G::StringArray args ;
-	args.push_back( mail_to_address ) ;
-	args.push_back( info.mail_from_parameter ) ;
-	args.push_back( info.client_ip.displayString() ) ;
-	args.push_back( info.domain ) ;
-	args.push_back( G::Str::lower(info.auth_mechanism) ) ;
-	args.push_back( info.auth_extra ) ;
+	args.push_back( request.address ) ;
+	args.push_back( request.from_address ) ;
+	args.push_back( request.client_ip.displayString() ) ;
+	args.push_back( m_config.domain ) ;
+	args.push_back( G::Str::lower(request.auth_mechanism) ) ;
+	args.push_back( request.auth_extra ) ;
 
-	m_to_address = mail_to_address ;
+	m_to_address = request.address ;
 	m_client_ptr->request( G::Str::join("|",args) ) ;
 }
 

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 
 #include "gdef.h"
 #include "gexception.h"
+#include "gstringview.h"
 #include "gpath.h"
 #include <string>
 #include <vector>
@@ -40,7 +41,7 @@ namespace G
 class G::Environment
 {
 public:
-	G_EXCEPTION( Error , tx("invalid environment variable") ) ;
+	G_EXCEPTION( Error , tx("invalid environment variable") )
 
 	static std::string get( const std::string & name , const std::string & default_ ) ;
 		///< Returns the environment variable value or the given default.
@@ -61,21 +62,14 @@ public:
 	explicit Environment( const std::map<std::string,std::string> & ) ;
 		///< Constructor from a map.
 
-	~Environment() = default ;
-		///< Destructor.
-
-	void add( const std::string & name , const std::string & value ) ;
-		///< Adds a variable to this set. Does nothing if already
-		///< present.
-
 	bool contains( const std::string & name ) const ;
 		///< Returns true if the given variable is in this set.
 
 	std::string value( const std::string & name , const std::string & default_ = {} ) const ;
 		///< Returns the value of the given variable in this set.
 
-	void set( const std::string & name , const std::string & value ) ;
-		///< Inserts or updates a variable in this set.
+	bool add( std::string_view key , std::string_view value ) ;
+		///< Adds an environment variable. Returns false if invalid.
 
 	std::string block() const ;
 		///< Returns a contiguous block of memory containing the
@@ -84,49 +78,38 @@ public:
 
 	std::wstring block( std::wstring (*)(std::string_view) ) const ;
 		///< Returns a contiguous block of memory containing the
-		///< null-terminated strings with an extra zero byte
+		///< null-terminated strings with an extra zero character
 		///< at the end.
-
-	char ** v() const noexcept ;
-		///< Returns a null-terminated array of pointers.
 
 	bool empty() const noexcept ;
 		///< Returns true if empty.
 
-	Environment( const Environment & ) ;
-		///< Copy constructor.
+	static std::vector<char*> array( const std::string & block ) ;
+		///< Returns a pointer array pointing into the given
+		///< block(), with const-casts.
 
-	Environment( Environment && ) noexcept ;
-		///< Move constructor.
+	static std::vector<char*> array( std::string && envblock ) = delete ;
+		///< Deleted overload.
 
-	Environment & operator=( const Environment & ) ;
-		///< Assigment operator.
-
-	Environment & operator=( Environment && ) noexcept ;
-		///< Move assigment operator.
-
-	bool valid() const ;
-		///< Returns true if the class invariants are
-		///< satisfied. Used in testing.
-
-private:
-	Environment() ;
-	void swap( Environment & ) noexcept ;
+	std::map<std::string,std::string> map() const ;
+		///< Returns the environment as a map.
 
 private:
 	using Map = std::map<std::string,std::string> ;
 	using List = std::vector<std::string> ;
-	static char * stringdup( const std::string & ) ;
-	void setup() ;
-	void setList() ;
-	void setPointers() ;
-	void setBlocks() ;
+
+private:
+	static void sanitise( Map & ) ;
 
 private:
 	Map m_map ;
-	std::vector<std::string> m_list ;
-	std::vector<char*> m_pointers ;
 } ;
+
+inline
+std::map<std::string,std::string> G::Environment::map() const
+{
+	return m_map ;
+}
 
 inline
 bool G::Environment::empty() const noexcept
@@ -137,7 +120,7 @@ bool G::Environment::empty() const noexcept
 inline
 G::Environment G::Environment::inherit()
 {
-	return {} ;
+	return Environment( {} ) ;
 }
 
 #endif

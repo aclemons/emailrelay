@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@
 #include "gpopserverprotocol.h"
 #include "gsecrets.h"
 #include "gexception.h"
+#include "gstringview.h"
 #include "gstringarray.h"
 #include <string>
 #include <sstream>
@@ -47,7 +48,7 @@ namespace GPop
 class GPop::ServerPeer : public GNet::ServerPeer , private ServerProtocol::Sender , private ServerProtocol::Security
 {
 public:
-	G_EXCEPTION( SendError , tx("network send error") ) ;
+	G_EXCEPTION( SendError , tx("network send error") )
 
 	ServerPeer( GNet::EventStateUnbound , GNet::ServerPeerInfo && , Store & ,
 		const GAuth::SaslServerSecrets & , const std::string & sasl_server_config ,
@@ -55,13 +56,13 @@ public:
 			///< Constructor.
 
 private: // overrides
-	bool protocolSend( std::string_view , std::size_t ) override ; // Override from GPop::ServerProtocol::Sender.
-	void onDelete( const std::string & ) override ; // Override from GNet::ServerPeer.
-	bool onReceive( const char * , std::size_t , std::size_t , std::size_t , char ) override ; // Override from GNet::ServerPeer.
-	void onSecure( const std::string & , const std::string & , const std::string & ) override ; // Override from GNet::SocketProtocolSink.
-	void onSendComplete() override ; // Override from GNet::ServerPeer.
-	bool securityEnabled() const override ; // Override from GPop::ServerProtocol::Security.
-	void securityStart() override ; // Override from GPop::ServerProtocol::Security.
+	bool protocolSend( std::string_view , std::size_t ) override ; // GPop::ServerProtocol::Sender
+	void onDelete( const std::string & ) override ; // GNet::ServerPeer
+	bool onReceive( const char * , std::size_t , std::size_t , std::size_t , char ) override ; // GNet::ServerPeer
+	void onSecure( const std::string & , const std::string & , const std::string & ) override ; // GNet::SocketProtocolSink
+	void onSendComplete() override ; // GNet::ServerPeer
+	bool securityEnabled() const override ; // GPop::ServerProtocol::Security
+	void securityStart() override ; // GPop::ServerProtocol::Security
 
 public:
 	~ServerPeer() override = default ;
@@ -84,24 +85,24 @@ private:
 class GPop::Server : public GNet::MultiServer
 {
 public:
-	G_EXCEPTION( Overflow , tx("too many interface addresses") ) ;
+	G_EXCEPTION( Overflow , tx("too many interface addresses") )
 	struct Config /// A structure containing GPop::Server configuration parameters.
 	{
-		bool allow_remote{false} ;
-		unsigned int port{110} ;
+		bool allow_remote {false} ;
+		unsigned int port {110} ;
 		G::StringArray addresses ;
 		GNet::ServerPeer::Config net_server_peer_config ;
 		GNet::Server::Config net_server_config ;
+		ServerProtocol::Config protocol_config ;
 		std::string sasl_server_config ;
-		std::string sasl_server_challenge_domain ;
 
-		Config & set_allow_remote( bool = true ) ;
-		Config & set_port( unsigned int ) ;
+		Config & set_allow_remote( bool = true ) noexcept ;
+		Config & set_port( unsigned int ) noexcept ;
 		Config & set_addresses( const G::StringArray & ) ;
 		Config & set_net_server_peer_config( const GNet::ServerPeer::Config & ) ;
 		Config & set_net_server_config( const GNet::Server::Config & ) ;
+		Config & set_protocol_config( const ServerProtocol::Config & ) ;
 		Config & set_sasl_server_config( const std::string & ) ;
-		Config & set_sasl_server_challenge_domain( const std::string & ) ;
 	} ;
 
 	Server( GNet::EventState , Store & store , const GAuth::SaslServerSecrets & , const Config & ) ;
@@ -131,12 +132,12 @@ private:
 	const GAuth::SaslServerSecrets & m_secrets ;
 } ;
 
-inline GPop::Server::Config & GPop::Server::Config::set_allow_remote( bool b ) { allow_remote = b ; return *this ; }
-inline GPop::Server::Config & GPop::Server::Config::set_port( unsigned int p ) { port = p ; return *this ; }
+inline GPop::Server::Config & GPop::Server::Config::set_allow_remote( bool b ) noexcept { allow_remote = b ; return *this ; }
+inline GPop::Server::Config & GPop::Server::Config::set_port( unsigned int p ) noexcept { port = p ; return *this ; }
 inline GPop::Server::Config & GPop::Server::Config::set_addresses( const G::StringArray & a ) { addresses = a ; return *this ; }
 inline GPop::Server::Config & GPop::Server::Config::set_net_server_peer_config( const GNet::ServerPeer::Config & c ) { net_server_peer_config = c ; return *this ; }
 inline GPop::Server::Config & GPop::Server::Config::set_net_server_config( const GNet::Server::Config & c ) { net_server_config = c ; return *this ; }
+inline GPop::Server::Config & GPop::Server::Config::set_protocol_config( const ServerProtocol::Config & c ) { protocol_config = c ; return *this ; }
 inline GPop::Server::Config & GPop::Server::Config::set_sasl_server_config( const std::string & s ) { sasl_server_config = s ; return *this ; }
-inline GPop::Server::Config & GPop::Server::Config::set_sasl_server_challenge_domain( const std::string & s ) { sasl_server_challenge_domain = s ; return *this ; }
 
 #endif

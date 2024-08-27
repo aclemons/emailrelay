@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -51,11 +51,11 @@ namespace GAuth
 class GAuth::Cram
 {
 public:
-	G_EXCEPTION( BadType , tx("invalid secret type") ) ;
-	G_EXCEPTION( Mismatch , tx("mismatched hash types") ) ;
-	G_EXCEPTION( NoState , tx("no intermediate-state hash function available") ) ;
-	G_EXCEPTION( InvalidState , tx("invalid hash function intermediate state") ) ;
-	G_EXCEPTION( NoTls , tx("no tls library") ) ;
+	G_EXCEPTION( BadType , tx("invalid secret type") )
+	G_EXCEPTION( Mismatch , tx("mismatched hash types") )
+	G_EXCEPTION( NoState , tx("no intermediate-state hash function available") )
+	G_EXCEPTION( InvalidState , tx("invalid hash function intermediate state") )
+	G_EXCEPTION( NoTls , tx("no tls library") )
 
 	static std::string response( std::string_view hash_type , bool hmac ,
 		const Secret & secret , std::string_view challenge ,

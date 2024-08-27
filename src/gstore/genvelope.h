@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -40,8 +40,8 @@ namespace GStore
 class GStore::Envelope
 {
 public:
-	G_EXCEPTION( ReadError , tx("cannot read envelope file") ) ;
-	G_EXCEPTION( WriteError , tx("cannot write envelope file") ) ;
+	G_EXCEPTION( ReadError , tx("cannot read envelope file") )
+	G_EXCEPTION( WriteError , tx("cannot write envelope file") )
 
 	static void read( std::istream & , Envelope & ) ;
 		///< Reads an envelope from a stream. Throws on error.

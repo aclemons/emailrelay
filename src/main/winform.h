@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -74,6 +74,10 @@ public:
 		///< Updates the 'status' property page. The parameters come
 		///< from slot/signal parameters.
 
+	static constexpr unsigned int quitId() noexcept ;
+		///< Returns the WM_SYSCOMMAND wparam value that is used if the
+		///< constructor has 'with_system_menu_quit'.
+
 private: // overrides
 	virtual void onInit( HWND , int ) override ; // Override from StackPageCallback.
 	virtual bool onApply() override ; // Override from StackPageCallback.
@@ -93,8 +97,8 @@ private:
 	G::StringArray statusData() const ;
 	void getStatusData( G::StringArray & out ) const ;
 	G::StringArray licenceData() const ;
-	void addSystemMenuItem( std::string_view name , unsigned int id ) ;
 	static std::string timestamp() ;
+	void addSystemMenuItem( std::string_view , unsigned int ) ;
 
 private:
 	using StatusMap = std::map<std::string,std::pair<std::string,std::string>> ;
@@ -108,5 +112,12 @@ private:
 	G::StringArray m_cfg_data ; // key,value,key,value...
 	StatusMap m_status_map ;
 } ;
+
+constexpr unsigned int Main::WinForm::quitId() noexcept
+{
+	return 16U ;
+}
+static_assert( Main::WinForm::quitId() < 0xF000 , "" ) ; // see GetSystemMenu()
+static_assert( ( Main::WinForm::quitId() & 0x0F ) == 0 , "" ) ; // see WM_SYSCOMMAND
 
 #endif

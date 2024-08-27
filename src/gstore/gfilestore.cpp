@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -113,6 +113,7 @@ GStore::FileStore::FileStore( const G::Path & dir , const G::Path & delivery_dir
 	m_config(config)
 {
 	checkPath( dir ) ;
+	osinit() ;
 }
 
 G::Path GStore::FileStore::directory() const
@@ -163,7 +164,6 @@ void GStore::FileStore::checkPath( const G::Path & directory_path )
 	G::Directory dir_test( directory_path ) ;
 	bool ok = false ;
 	int error = 0 ;
-	std::string reason  ;
 
 	// fail if not readable (after switching effective userid)
 	{

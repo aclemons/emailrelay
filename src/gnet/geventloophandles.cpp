@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,12 +21,10 @@
 #include "gdef.h"
 #include "geventloophandles.h"
 #include "gexception.h"
-#include "gprocess.h"
-#include "gpath.h"
-#include "gnowide.h"
-#include "gtest.h"
+#include "gassert.h"
 #include "glog.h"
 #include <algorithm>
+#include <functional>
 
 namespace GNet
 {
@@ -43,25 +41,6 @@ namespace GNet
 				std::rotate( handles.begin()+offset , handles.begin()+(offset+1U) , handles.end() ) ;
 				std::rotate( indexes.begin()+offset , indexes.begin()+(offset+1U) , indexes.end() ) ;
 			}
-		}
-		HKEY regOpen( const G::Path & path )
-		{
-			HKEY hkey = 0 ;
-			G::nowide::regOpenKey( HKEY_LOCAL_MACHINE , path , &hkey , /*read_only=*/true ) ;
-			return hkey ;
-		}
-		void regGetValue( HKEY hkey , const G::Path & path , std::size_t & value_out ,
-			std::size_t max_value , std::size_t min_value = 0U )
-		{
-			DWORD value = 0 ;
-			if( G::nowide::regGetValueNumber( hkey , path , &value ) == ERROR_SUCCESS )
-				value_out = std::max( min_value , std::min( max_value , static_cast<std::size_t>(value) ) ) ;
-		}
-		void regGetValue( HKEY hkey , const G::Path & path , bool & value_out )
-		{
-			DWORD value = 0 ;
-			if( G::nowide::regGetValueNumber( hkey , path , &value ) == ERROR_SUCCESS )
-				value_out = value != 0 ;
 		}
 	}
 }
@@ -159,37 +138,15 @@ bool GNet::EventLoopHandles::overflow( std::size_t list_size , std::function<std
 		return list_size > m_config.st_wait_limit && list_size_fn() > m_config.st_wait_limit ;
 }
 
-std::string GNet::EventLoopHandles::help( bool on_add ) const
-{
-	if( m_mt )
-		return m_mt->help( on_add ) ;
-	else
-		return "too many open handles" ;
-}
-
 // --
 
 GNet::EventLoopConfig::EventLoopConfig() :
-	debug(false) ,
 	st_only(false) ,
+	update_all(false) ,
 	st_wait_limit(EventLoopHandlesImp::WAIT_LIMIT) ,
 	mt_wait_limit(EventLoopHandlesImp::WAIT_LIMIT) ,
 	mt_thread_limit(EventLoopHandlesImp::WAIT_LIMIT)
 {
-	// for testing...
-	namespace imp = EventLoopHandlesImp ;
-	HKEY hkey = imp::regOpen( G::Path("SOFTWARE")/G::Process::exe().withoutExtension().basename()/"eventloop" ) ;
-	imp::regGetValue( hkey , "debug" , debug ) ;
-	imp::regGetValue( hkey , "st_only" , st_only ) ;
-	imp::regGetValue( hkey , "st_wait_limit" , st_wait_limit , imp::WAIT_LIMIT ) ;
-	imp::regGetValue( hkey , "mt_wait_limit" , mt_wait_limit , imp::WAIT_LIMIT ) ;
-	imp::regGetValue( hkey , "mt_thread_limit" , mt_thread_limit , imp::WAIT_LIMIT , 2U ) ;
-	if( hkey )
-	{
-		RegCloseKey( hkey ) ;
-		G_LOG( "GNet::EventLoopConfig::ctor: eventloop config: "
-			<< st_only << " " << st_wait_limit << " " << mt_wait_limit << " " << mt_thread_limit ) ;
-	}
 }
 
 // --
@@ -217,7 +174,7 @@ struct GNet::EventLoopThread
 
 	explicit EventLoopThread( int id ) ;
 	~EventLoopThread() ;
-	void run() noexcept ;
+	void run( G::LogOutput::Config , int ) noexcept ;
 	static HANDLE createEvent() noexcept ;
 	static void shuffle( HANDLE * , std::size_t * , std::size_t size , std::size_t offset ) noexcept ;
 
@@ -230,20 +187,21 @@ struct GNet::EventLoopThread
 	const HANDLE m_hstopcon {HNULL} ;
 	const HANDLE m_heventind {HNULL} ;
 
-	// main-line only...
-	bool m_stopped {false} ;
-	std::array<HANDLE,WAIT_LIMIT> m_stable ; // not shuffled
+	// main-thread only...
+	bool m_stop {false} ;
+	std::size_t m_thread_handle_count {0U} ;
+	std::array<HANDLE,WAIT_LIMIT> m_thread_handles ; // not shuffled
 
-	// thread only...
-	bool m_idle {true} ;
+	// this-thread only...
+	bool m_stopped {true} ;
 	bool m_failed {false} ;
 
 	// atomic...
 	std::atomic<std::size_t> m_event_value {0U} ;
-	std::atomic<std::size_t> m_handle_count {0U} ;
 
 	// updated while idle...
-	std::array<HANDLE,WAIT_LIMIT> m_handles ; // quit, start, stop, eventloop-handle, ...
+	std::size_t m_wait_handle_count {0U} ;
+	std::array<HANDLE,WAIT_LIMIT> m_wait_handles ; // quit, start, stop, eventloop-handle, ...
 	std::array<std::size_t,WAIT_LIMIT> m_indexes ; // -1, -1, -1, eventloop-index, ...
 
 	std::thread m_thread ;
@@ -269,7 +227,6 @@ public: // overrides
 	void update( std::size_t list_size , std::function<HANDLE()> list_fn , bool updated ) override ;
 	void onClose( HANDLE ) override ;
 	bool overflow( std::size_t list_size , std::function<std::size_t()> list_size_fn ) const override ;
-	std::string help( bool on_add ) const override ;
 
 private:
 	void addThread() ;
@@ -298,9 +255,14 @@ private:
 				index++ ;
 			}
 		}
-		bool newRow() const
+		bool isLhs() const
 		{
 			return offset == margin ;
+		}
+		void toLhs()
+		{
+			if( !isLhs() )
+				nextRow() ;
 		}
 		std::size_t width( std::size_t remainder ) const
 		{
@@ -309,8 +271,8 @@ private:
 		}
 		std::size_t nextRow()
 		{
+			G_ASSERT( offset_limit > offset ) ;
 			std::size_t addend = offset_limit - offset ;
-			G_ASSERT( addend >= 1U ) ;
 			offset = margin ;
 			index++ ;
 			return addend ;
@@ -370,104 +332,100 @@ void GNet::EventLoopHandlesMt::update( std::size_t list_size , std::function<HAN
 		for( std::size_t i = 0U ; i < list_size ; i++ )
 			m_eventloop_handles[i] = list_fn() ;
 
-		if( m_config.debug )
-		{
-			std::ostringstream ss ;
-			for( HANDLE h : m_eventloop_handles )
-				ss << ' ' << reinterpret_cast<g_uintptr_t>(h) ;
-			G_LOG( "GNet::EventLoopHandlesMt::update: " << list_size << " eventloop handles:" << ss.str() ) ;
-		}
-
 		// make enough threads
 		while( list_size > m_capacity )
 			addThread() ;
 
 		// identify threads that need updating
-		Position pos( m_config.mt_wait_limit ) ;
-		for( std::size_t i = 0U ; i < list_size ; )
+		if( m_config.update_all )
 		{
-			G_ASSERT( pos.index < m_threads.size() ) ;
-			EventLoopThread & t = *m_threads.at( pos.index ) ;
-			if( ( pos.newRow() && pos.width(list_size-i) != t.m_handle_count ) ||
-				t.m_stable.at(pos.offset) != m_eventloop_handles[i] )
-			{
-				t.m_stopped = true ;
-				i += pos.nextRow() ;
-			}
-			else
-			{
-				i++ ;
-				++pos ;
-			}
+			for( auto & t : m_threads )
+				t->m_stop = true ;
 		}
-		if( !pos.newRow() ) pos.nextRow() ;
-		for( ; pos.index < m_threads.size() ; pos.nextRow() )
+		else
 		{
-			EventLoopThread & t = *m_threads.at( pos.index ) ;
-			if( t.m_handle_count != EventLoopThread::margin )
-				t.m_stopped = true ;
+			Position pos( m_config.mt_wait_limit ) ;
+			for( std::size_t i = 0U ; i < list_size ; )
+			{
+				G_ASSERT( pos.index < m_threads.size() ) ;
+				EventLoopThread & t = *m_threads.at( pos.index ) ;
+				if( ( pos.isLhs() && pos.width(list_size-i) != t.m_thread_handle_count ) ||
+					t.m_thread_handles.at(pos.offset) != m_eventloop_handles[i] )
+				{
+					t.m_stop = true ;
+					i += pos.nextRow() ;
+				}
+				else
+				{
+					i++ ;
+					++pos ;
+				}
+			}
+			for( pos.toLhs() ; pos.index < m_threads.size() ; pos.nextRow() )
+			{
+				EventLoopThread & t = *m_threads.at( pos.index ) ;
+				if( t.m_thread_handle_count != EventLoopThread::margin )
+					t.m_stop = true ;
+			}
 		}
 
 		// 'stop' the threads so they can be updated
 		for( auto & thread_ptr : m_threads )
 		{
-			if( thread_ptr->m_stopped )
+			if( thread_ptr->m_stop )
 				setEvent( thread_ptr->m_hstopreq ) ;
 		}
 		for( auto & thread_ptr : m_threads )
 		{
-			if( thread_ptr->m_stopped )
+			if( thread_ptr->m_stop )
 				waitFor( thread_ptr->m_hstopcon ) ;
 		}
 
 		// update each stopped thread's handles
-		pos = Position( m_config.mt_wait_limit ) ;
-		for( std::size_t i = 0U ; i < list_size ; i++ , ++pos )
+		Position pos( m_config.mt_wait_limit ) ;
+		for( std::size_t i = 0U ; i < list_size ; )
 		{
 			G_ASSERT( pos.index < m_threads.size() ) ;
 			EventLoopThread & t = *m_threads.at( pos.index ) ;
-			HANDLE h = m_eventloop_handles[i] ;
-			if( pos.newRow() )
-				t.m_handle_count = pos.width( list_size - i ) ;
-			G_ASSERT( pos.offset < t.m_handle_count ) ;
-			G_ASSERT( pos.offset < t.m_stable.size() ) ;
-			t.m_stable.at(pos.offset) = h ;
-			if( t.m_stopped )
+			if( t.m_stop )
 			{
-				t.m_handles[pos.offset] = h ;
+				HANDLE h = m_eventloop_handles[i] ;
+				if( pos.isLhs() )
+				{
+					t.m_thread_handle_count = pos.width( list_size - i ) ;
+					t.m_wait_handle_count = t.m_thread_handle_count ;
+				}
+				t.m_thread_handles.at(pos.offset) = h ;
+				t.m_wait_handles[pos.offset] = h ;
 				t.m_indexes[pos.offset] = i ;
+				i++ ;
+				++pos ;
 			}
-		}
-		if( !pos.newRow() ) pos.nextRow() ;
-		for( ; pos.index < m_threads.size() ; pos.nextRow() )
-		{
-			m_threads.at(pos.index)->m_handle_count = EventLoopThread::margin ;
-		}
-
-		if( m_config.debug )
-		{
-			for( std::size_t i = 0U ; i < m_threads.size() ; i++ )
+			else
 			{
-				std::ostringstream ss ;
-				for( std::size_t j = 0U ; j < m_threads[i]->m_handle_count ; j++ )
-					ss << ' ' << reinterpret_cast<g_uintptr_t>(m_threads[i]->m_stable[j]) ;
-				G_LOG( "GNet::EventLoopHandlesMt::update: thread handles: " << i << ": "
-					<< ss.str() << (m_threads[i]->m_stopped?" (*)":"") ) ;
+				i += pos.nextRow() ;
 			}
+		}
+		for( pos.toLhs() ; pos.index < m_threads.size() ; pos.nextRow() )
+		{
+			EventLoopThread & t = *m_threads.at( pos.index ) ;
+			t.m_thread_handle_count = EventLoopThread::margin ;
+			if( t.m_stop )
+				t.m_wait_handle_count = EventLoopThread::margin ;
 		}
 	}
 
 	// 'start' the 'stopped' threads
 	for( auto & thread_ptr : m_threads )
 	{
-		if( thread_ptr->m_stopped )
+		if( thread_ptr->m_stop )
 			setEvent( thread_ptr->m_hstartreq ) ;
 	}
 	for( auto & thread_ptr : m_threads )
 	{
-		if( thread_ptr->m_stopped )
+		if( thread_ptr->m_stop )
 		{
-			thread_ptr->m_stopped = false ;
+			thread_ptr->m_stop = false ;
 			waitFor( thread_ptr->m_hstartcon ) ;
 		}
 	}
@@ -502,15 +460,7 @@ GNet::EventLoopHandlesRc GNet::EventLoopHandlesMt::wait( DWORD ms )
 		std::size_t offset = static_cast<std::size_t>(rc-WAIT_OBJECT_0) ;
 		std::size_t thread_index = m_thread_indexes.at( offset ) ;
 		std::size_t event_handle_index = m_threads.at(thread_index)->m_event_value ;
-		m_threads.at(thread_index)->m_stopped = true ;
-
-		if( m_config.debug )
-		{
-			G_LOG( "GNet::EventLoopHandlesMt::wait: event indication: "
-				<< "thread-offset=" << offset << " "
-				<< "thread-index=" << thread_index << " "
-				<< "handle-index=" << event_handle_index << "/" << m_eventloop_handles.size() ) ;
-		}
+		m_threads.at(thread_index)->m_stop = true ;
 
 		if( event_handle_index == ~std::size_t(0) ) // thread died
 			return Rc::failure( ERROR_HANDLE_EOF ) ;
@@ -537,19 +487,24 @@ GNet::EventLoopHandlesRc GNet::EventLoopHandlesMt::wait( DWORD ms )
 
 void GNet::EventLoopHandlesMt::onClose( HANDLE h )
 {
+	// stop the relevant thread early so that it is never
+	// waiting on a handle that has now been closed -- this
+	// is not necessary for winsock handles, but it is not
+	// clear whether it might needed be for other handle types
+	//
 	for( auto & thread_ptr : m_threads )
 	{
-		if( !thread_ptr->m_stopped )
+		if( !thread_ptr->m_stop )
 		{
-			std::size_t n = thread_ptr->m_handle_count.load() ;
-			HANDLE * start = thread_ptr->m_stable.data() ;
+			std::size_t n = thread_ptr->m_thread_handle_count ;
+			HANDLE * start = thread_ptr->m_thread_handles.data() ;
 			HANDLE * end = start + n ;
 			HANDLE * p = std::find( start , end , h ) ;
 			if( p != end )
 			{
 				setEvent( thread_ptr->m_hstopreq ) ;
 				waitFor( thread_ptr->m_hstopcon ) ;
-				thread_ptr->m_stopped = true ;
+				thread_ptr->m_stop = true ;
 				break ;
 			}
 		}
@@ -570,11 +525,6 @@ std::size_t GNet::EventLoopHandlesMt::capacityLimit( EventLoopConfig config ) no
 {
 	config = sanitise( config ) ;
 	return config.mt_thread_limit * (config.mt_wait_limit - EventLoopThread::margin) ;
-}
-
-std::string GNet::EventLoopHandlesMt::help( bool on_add ) const
-{
-	return "too many open handles" ;
 }
 
 HANDLE GNet::EventLoopHandlesImp::createEvent() noexcept
@@ -615,21 +565,22 @@ GNet::EventLoopThread::EventLoopThread( int id ) :
 	m_heventind(createEvent())
 {
 	static_assert( margin == 3U , "" ) ;
-	m_stable[0] = 0 ;
-	m_stable[1] = 0 ;
-	m_stable[2] = 0 ;
+	m_thread_handles[0] = 0 ;
+	m_thread_handles[1] = 0 ;
+	m_thread_handles[2] = 0 ;
+	m_thread_handle_count = margin ;
 
-	m_handles[0] = m_hquitreq ;
-	m_handles[1] = m_hstartreq ;
-	m_handles[2] = m_hstopreq ;
+	m_wait_handles[0] = m_hquitreq ;
+	m_wait_handles[1] = m_hstartreq ;
+	m_wait_handles[2] = m_hstopreq ;
+	m_wait_handle_count = margin ;
 
 	m_indexes[0] = ~(std::size_t(0U)) ;
 	m_indexes[1] = ~(std::size_t(0U)) ;
 	m_indexes[2] = ~(std::size_t(0U)) ;
 
-	m_handle_count = margin ;
-	m_idle = true ;
-	m_thread = std::thread( &EventLoopThread::run , this ) ;
+	m_stopped = true ;
+	m_thread = std::thread( std::bind(&EventLoopThread::run,this,G::LogOutput::Instance::config(),G::LogOutput::Instance::fd()) ) ;
 }
 
 GNet::EventLoopThread::~EventLoopThread()
@@ -642,14 +593,14 @@ GNet::EventLoopThread::~EventLoopThread()
 	CloseHandle( m_heventind ) ;
 }
 
-void GNet::EventLoopThread::run() noexcept
+void GNet::EventLoopThread::run( G::LogOutput::Config /*log_output_config*/ , int /*log_output_fd*/ ) noexcept
 {
+	//G::LogOutput log_output( "thread-"+std::to_string(m_id) , log_output_config , log_output_fd ) ;
 	m_failed = false ;
 	while( !m_failed )
 	{
-		std::size_t handle_count = m_handle_count.load() ;
-		DWORD handles_n = static_cast<DWORD>( m_idle ? std::size_t(3U) : handle_count ) ;
-		DWORD rc = WaitForMultipleObjects( handles_n , m_handles.data() , FALSE , INFINITE ) ;
+		DWORD handles_n = static_cast<DWORD>( m_stopped ? margin : m_wait_handle_count ) ;
+		DWORD rc = WaitForMultipleObjects( handles_n , m_wait_handles.data() , FALSE , INFINITE ) ;
 		std::size_t offset = static_cast<std::size_t>(rc-WAIT_OBJECT_0) ;
 		if( rc < WAIT_OBJECT_0 || rc >= (WAIT_OBJECT_0+handles_n) )
 		{
@@ -661,23 +612,23 @@ void GNet::EventLoopThread::run() noexcept
 		}
 		else if( offset == 1U ) // startreq
 		{
-			m_idle = false ;
+			m_stopped = false ;
 			if( !ResetEvent( m_heventind ) ) m_failed = true ;
-			if( !ResetEvent( m_handles[1] ) ) m_failed = true ;
+			if( !ResetEvent( m_wait_handles[1] ) ) m_failed = true ;
 			if( !SetEvent( m_hstartcon ) ) m_failed = true ;
 		}
 		else if( offset == 2U ) // stopreq
 		{
-			m_idle = true ;
+			m_stopped = true ;
 			if( !ResetEvent( m_heventind ) ) m_failed = true ;
-			if( !ResetEvent( m_handles[2] ) ) m_failed = true ;
+			if( !ResetEvent( m_wait_handles[2] ) ) m_failed = true ;
 			if( !SetEvent( m_hstopcon ) ) m_failed = true ;
 		}
-		else if( offset < handle_count )
+		else if( offset < handles_n )
 		{
 			m_event_value = m_indexes[offset] ;
-			m_idle = true ;
-			shuffle( m_handles.data() , m_indexes.data() , handle_count , offset ) ;
+			m_stopped = true ;
+			shuffle( m_wait_handles.data() , m_indexes.data() , m_wait_handle_count , offset ) ;
 			if( !SetEvent( m_heventind ) ) m_failed = true ;
 		}
 		else

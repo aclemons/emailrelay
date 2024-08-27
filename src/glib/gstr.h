@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -47,10 +47,10 @@ namespace G
 class G::Str
 {
 public:
-	G_EXCEPTION_CLASS( Overflow , tx("string conversion error: over/underflow") ) ;
-	G_EXCEPTION_CLASS( InvalidFormat, tx("string conversion error: invalid format") ) ;
-	G_EXCEPTION_CLASS( NotEmpty, tx("internal error: string container not empty") ) ;
-	G_EXCEPTION( InvalidEol , tx("invalid end-of-line specifier") ) ;
+	G_EXCEPTION_CLASS( Overflow , tx("string conversion error: over/underflow") )
+	G_EXCEPTION_CLASS( InvalidFormat, tx("string conversion error: invalid format") )
+	G_EXCEPTION_CLASS( NotEmpty, tx("internal error: string container not empty") )
+	G_EXCEPTION( InvalidEol , tx("invalid end-of-line specifier") )
 
 	struct Limited /// Overload discrimiator for G::Str::toUWhatever() requesting a range-limited result.
 		{} ;
@@ -115,9 +115,6 @@ public:
 	static std::string trimmed( const std::string & s , std::string_view ws ) ;
 		///< Returns a trim()med version of s.
 
-	static std::string trimmed( std::string && s , std::string_view ws ) ;
-		///< Returns a trim()med version of s.
-
 	static std::string_view trimmedView( std::string_view s , std::string_view ws ) noexcept ;
 		///< Returns a trim()med view of the input view.
 
@@ -130,13 +127,12 @@ public:
 		///< Empty strings return true.
 
 	static bool isPrintableAscii( std::string_view s ) noexcept ;
-		///< Returns true if every character is a 7-bit, non-control
-		///< character (ie. 0x20<=c<0x7f). Empty strings return true.
+		///< Returns true if every character is between 0x20 and 0x7e
+		///< inclusive. Empty strings return true.
 
 	static bool isPrintable( std::string_view s ) noexcept ;
-		///< Returns true if every character is a non-control
-		///< character (ie. 0x20<=c<0x7f || 0xa0<=c<0xff).
-		///< Empty strings return true.
+		///< Returns true if every character is 0x20 or above but
+		///< not 0x7f. Empty strings return true.
 
 	static bool isSimple( std::string_view s ) noexcept ;
 		///< Returns true if every character is alphanumeric or
@@ -257,7 +253,7 @@ public:
 		///< Overload that converts the first string if it can be converted
 		///< without throwing, or otherwise the second string.
 
-	static unsigned int toUInt( std::string_view s1 , unsigned int default_ ) ;
+	static unsigned int toUInt( std::string_view s1 , unsigned int default_ ) noexcept ;
 		///< Overload that converts the string if it can be converted
 		///< without throwing, or otherwise returns the default value.
 
@@ -436,8 +432,8 @@ public:
 		///< character is supplied then it can be used to escape whitespace
 		///< characters, preventing a split, with those escape characters being
 		///< consumed in the process. For shell-like tokenising use dequote()
-		///< before splitIntoTokens(), and revert the non-breaking spaces
-		///< afterwards.
+		///< before splitIntoTokens() (using the same escape character), and
+		///< revert the non-breaking spaces afterwards.
 
 	static StringArray splitIntoTokens( const std::string & in , std::string_view ws = Str::ws() , char esc = '\0' ) ;
 		///< Overload that returns by value.
@@ -544,10 +540,10 @@ public:
 			///< using a seven-bit case-insensitive search. Returns std::string::npos
 			///< if not found. The locale is ignored.
 
-	static bool tailMatch( const std::string & in , std::string_view ending ) noexcept ;
+	static bool tailMatch( std::string_view in , std::string_view ending ) noexcept ;
 		///< Returns true if the string has the given ending (or the given ending is empty).
 
-	static bool headMatch( const std::string & in , std::string_view head ) noexcept ;
+	static bool headMatch( std::string_view in , std::string_view head ) noexcept ;
 		///< Returns true if the string has the given start (or head is empty).
 
 	static std::string_view ws() noexcept ;

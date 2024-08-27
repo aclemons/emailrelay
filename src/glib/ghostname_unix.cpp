@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,20 +31,12 @@ std::string G::hostname()
 	if( rc == -1 )
 		return {} ;
 
-	std::string name = std::string( info.nodename ) ;
-	std::string::size_type pos = name.find( '.' ) ;
-	if( pos != std::string::npos )
-		name = name.substr( 0U , pos ) ;
+	info.nodename[sizeof(info.nodename)-1U] = '\0' ;
+	std::string_view name = G::Str::headView( info.nodename , {".",1U} , false ) ;
 
-	// pathologically "uname -n" can be empty, so
-	// allow "export HOSTNAME=localhost" as a
-	// workround
-	//
-	if( name.empty() )
-	{
-		name = Str::printable( Environment::get("HOSTNAME",std::string()) , '_' ) ;
-	}
+	if( name.empty() ) // pathologically "uname -n" can be empty
+		return Environment::get( "HOSTNAME" , std::string() ) ;
 
-	return name ;
+	return Str::printable( name ) ;
 }
 

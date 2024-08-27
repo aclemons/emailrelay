@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -74,10 +74,10 @@ namespace GNet
 /// \endcode
 ///
 /// The EventStateUnbound class is used as a device to force
-/// factory methods to plumb-in an ExceptionSource pointer
-/// into the newly-created object as soon as its address is
-/// available, before the EventState propagates into base
-/// classes and sub-objects.
+/// factory methods to plumb-in an ExceptionSource pointer into
+/// the newly-created object as soon as its address is available,
+/// before the EventState propagates into base  classes and
+/// sub-objects.
 ///
 /// \code
 /// class FooServer
@@ -103,19 +103,17 @@ namespace GNet
 /// } ;
 /// \endcode
 ///
-/// To automatically set a G::LogOutput logging context during
-/// event processing key classes in the containment tree should
-/// override GNet::EventLogging::eventLoggingString() and set
-/// the logging interface pointer in their EventState:
+/// To automatically set a G::LogOutput logging context during event
+/// processing certain key classes in the containment tree should
+/// override GNet::EventLogging::eventLoggingString() and set the
+/// logging interface pointer in their EventState:
 ///
 /// \code
 /// struct Foo : EventLogging , FooBase
 /// {
 ///   Foo( EventState es , ... ) :
-/// \endcode
-/// EventLogging(es.logging()) ,
-/// FooBase(es.logging(this),...) ,
-/// \code
+///     EventLogging(es.logging()) ,
+///     FooBase(es.logging(this),...) ,
 ///     m_es(es.logging(this)) ,
 ///     m_event_logging_string("foo: ")
 ///   {

@@ -1,27 +1,96 @@
 News
 ====
 
-2.5.3
------
-The E-MailRelay 2.5.3 point release extends the "--log-address" mechanism,
-replacing it with "--log-format". The "--log-format" keywords are:
+Logging
+-------
+The "--log-address" and "--log-time" options are replaced by a more flexible
+"--log-format" option that takes a list of one or more keywords:
 * time -- timestamp, like "--log-time"
 * address -- smtp server remote network address, like "--log-address"
 * port -- smtp server remote port
-* unit -- configuration name, eg. "--in-spool-dir" logged as "in"
+* unit -- configuration instance name, eg. "--in-spool-dir" logged as "in"
 * msgid -- smtp client message file id
 
-On Windows all internal character encoding now standardises on UTF-8,
-independent of locale or code page. For more information refer to the developer
-document.
-
+SMTP parsing
+------------
 The SMTP server protocol can now optionally accept invalid SEND-FROM and RCPT-TO
-commands that do not have angle brackets. This behaviour is enabled by using
-"--server-smtp-config=nostrictparsing". Future releases might also require this
-option in order to accept SEND-FROM and RCPT-TO lines with a space after the
-colon.
+commands that do not have angle brackets. This behaviour is enabled by using the
+"--server-smtp-config" option "nostrictparsing". (Future E-MailRelay releases
+might also require this option in order to accept invalid SEND-FROM and RCPT-TO
+lines that have a space after the colon.)
 
+Character encoding
+------------------
+All internal character encoding now standardises on UTF-8, independent of locale
+or Windows code page. For more information refer to the developer document.
+
+International Domain Names
+--------------------------
+E-MailRelay has not so far concerned itself with IDN issues because for simple
+store-and-forward applications: (1) the e-mail addresses that come in from the
+remote client can be used verbatim when talking to the remote server; (2) DNS is
+only used to resolve the "--forward-to" address, which can be easily encoded
+by the user; (3) the DNSBL feature does not need to be IDN aware because it only
+makes queries for domain names that are ASCII-encoded IP addresses; (4) the
+SMTPUTF8 protocol extension concerns itself with the user part of e-mail
+addresses and not the domain name, and the IDN text in RFC-6531 3.2 does not
+apply; and (5) external address verifiers are passed e-mail addresses exactly as
+they appear on the wire.
+
+However, since version 2.5 E-MailRelay can now do message routing if one filter
+(eg. "copy:") groups e-mail messages by recipient domain name and another (eg.
+"mx:") populates the envelope forward-to-address field with the associated IP
+address. In this case both the message grouping and the DNS MX queries work
+better if non-ASCII domain names are converted to A-labels ("xn--...").
+
+So in this release non-ASCII domains in e-mail addresses in incoming messages
+are immediately converted to use A-labels. This is done by the SMTP server
+protocol, before calling the address verifier or writing the envelope file.
+There is a new "--smtp-server-config" option called "noalabels" to suppress this
+conversion.
+
+When resolving the "--forward-to" address a non-ASCII domain name is now
+converted to A-labels before doing the getaddrinfo() DNS lookup. (While glibc
+supports the getaddrinfo() AI_IDN flag, that does not help for MX lookups, it
+does not work while using the "C" locale, and it is not available if using
+other run-time libraries.)
+
+If no "--domain" option is given on the command-line then on Unix the default
+fully qualified domain name is derived from a DNS lookup of the hostname. In
+this release the hostname is first converted to an A-label and the canonical
+name in the answer is immediately converted to A-labels. On Windows the default
+FQDN is now the system's "ComputerNameDnsFullyQualified" value with conversion
+to A-labels as necessary.
+
+If the "--domain" option is given then the domain name should be ASCII or use
+A-labels. If U-labels are used then they will not be converted to A-labels and
+this may result in invalid SMTP interaction, invalid "Received" lines and
+surprising domain mis-matches in filters and verifier scripts.
+
+Windows event-loop
+------------------
 The Windows event-loop will now flip to a multi-threaded implementation if the
-number of handles goes above 64, allowing for more than 1000 simultaneous
-connections.
+total number of handles goes above the 64-handle limit imposed by
+WaitForMultipleObjects(). This allows for more than 1000 concurrent connections.
+The implementation creates a worker thread for each block of 64 handles and they
+post event notifications back to the event loop running in the main thread.
+
+Windows startup batch file
+--------------------------
+The Windows startup batch file has become an inconvenience as command-lines have
+become longer, and because of its restricted OEM character set.
+
+In this release the installation GUI ("emailrelay-setup.exe") will write
+configuration options into a configuration file "emailrelay.cfg" rather than
+"emailrelay-start.bat". The batch file can then be simplified to something like
+"start emailrelay.exe emailrelay.cfg", having no command-line options at all.
+
+The reconfiguration GUI ("emailrelay-gui.exe") now moves command-line options
+from the batch file into the separate configuration file, which it will create
+if necessary.
+
+The Windows service wrapper has been updated so that it will read both the
+startup batch file and the configuration file in order to construct the server
+command-line -- see src/main/servicewrapper.cpp for more details. For diagnosic
+logging configure a registry entry "HKLM/SOFTWARE/emailrelay-service/logfile".
 

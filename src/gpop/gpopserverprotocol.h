@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@
 #include "gsaslserversecrets.h"
 #include "gpopstore.h"
 #include "gsaslserver.h"
+#include "gstringview.h"
 #include "gtimer.h"
 #include "gexception.h"
 #include <memory>
@@ -48,7 +49,7 @@ namespace GPop
 class GPop::ServerProtocol
 {
 public:
-	G_EXCEPTION( ProtocolDone , tx("pop protocol done") ) ;
+	G_EXCEPTION( ProtocolDone , tx("pop protocol done") )
 
 	class Sender /// An interface used by ServerProtocol to send protocol replies.
 	{
@@ -69,7 +70,6 @@ public:
 
 	struct Config /// A structure containing configuration parameters for ServerProtocol.
 	{
-		Config() ;
 		bool crlf_only {true} ; // (RFC-2821 2.3.7 does not apply to POP)
 		std::string sasl_server_challenge_domain ;
 		Config & set_crlf_only( bool = true ) ;
@@ -181,12 +181,12 @@ private:
 	void sendError() ;
 	void sendError( const std::string & ) ;
 	void sendOk() ;
-	Event commandEvent( std::string_view ) const ;
 	int commandNumber( const std::string & , int , std::size_t index = 1U ) const ;
 	void sendList( const std::string & , bool ) ;
 	std::string commandWord( const std::string & ) const ;
 	std::string commandParameter( const std::string & , std::size_t index = 1U ) const ;
-	std::string commandPart( const std::string & , std::size_t index ) const ;
+	static std::string commandPart( const std::string & , std::size_t index ) ;
+	static Event commandEvent( std::string_view ) ;
 	void sendContent() ;
 	bool sendContentLine( std::string & , bool & ) ;
 	void sendLine( std::string_view , bool has_crlf = false ) ;

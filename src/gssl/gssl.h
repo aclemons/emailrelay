@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -254,8 +254,8 @@ private:
 class GSsl::Library
 {
 public:
-	G_EXCEPTION( NoInstance , tx("no tls library object") ) ;
-	G_EXCEPTION( BadProfileName , tx("invalid tls profile name") ) ;
+	G_EXCEPTION( NoInstance , tx("no tls library object") )
+	G_EXCEPTION( BadProfileName , tx("invalid tls profile name") )
 	using LogFn = void (*)(int, const std::string &) ;
 
 	explicit Library( bool active = true , const std::string & library_config = {} ,

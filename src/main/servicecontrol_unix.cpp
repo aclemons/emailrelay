@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,10 +21,10 @@
 #include "servicecontrol.h"
 #include <string>
 
-std::string service_install( const std::string & , const std::string & , const std::string & ,
+std::pair<std::string,DWORD> service_install( const std::string & , const std::string & , const std::string & ,
 	const std::string & , bool )
 {
-	return {} ;
+	return {{},0} ;
 }
 
 bool service_installed( const std::string & )
@@ -32,13 +32,13 @@ bool service_installed( const std::string & )
 	return true ;
 }
 
-std::string service_remove( const std::string & )
+std::pair<std::string,DWORD> service_remove( const std::string & )
 {
-	return "not implemented" ;
+	return {"not implemented",1} ;
 }
 
-std::string service_start( const std::string & )
+std::pair<std::string,DWORD> service_start( const std::string & )
 {
-	return "not implemented" ;
+	return {"not implemented",1} ;
 }
 

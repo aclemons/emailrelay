@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 
 #include "gdef.h"
 #include "gexception.h"
+#include "gmessagestore.h"
 #include <string>
 
 namespace GSmtp
@@ -46,12 +47,12 @@ namespace GSmtp
 /// to the recipient's mailbox name (which should not have an at sign).
 ///
 /// If a valid remote recipient then 'is_local' is set false, 'full_name'
-/// is empty, and 'address' is typically a copy of the original recipient.
+/// is empty, and 'address' is the verified form of the original recipient.
 ///
 class GSmtp::VerifierStatus
 {
 public:
-	G_EXCEPTION( InvalidStatus , tx("invalid verifier status") ) ;
+	G_EXCEPTION( InvalidStatus , tx("invalid verifier status") )
 
 	static VerifierStatus invalid( const std::string & recipient ,
 		bool temporary = false ,
@@ -72,10 +73,6 @@ public:
 
 	std::string str() const ;
 		///< Returns a string representation of the structure.
-
-	bool utf8address() const ;
-		///< Returns true if 'address' is utf8 according to
-		///< GSmtp::ServerParser::mailboxStyle().
 
 public:
 	bool is_valid {false} ;

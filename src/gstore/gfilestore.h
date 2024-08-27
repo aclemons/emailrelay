@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -55,9 +55,9 @@ namespace GStore
 class GStore::FileStore : public MessageStore
 {
 public:
-	G_EXCEPTION( InvalidDirectory , tx("invalid spool directory") ) ;
-	G_EXCEPTION( EnvelopeReadError , tx("cannot read envelope file") ) ;
-	G_EXCEPTION( GetError , tx("error getting message") ) ;
+	G_EXCEPTION( InvalidDirectory , tx("invalid spool directory") )
+	G_EXCEPTION( EnvelopeReadError , tx("cannot read envelope file") )
+	G_EXCEPTION( GetError , tx("error getting message") )
 	enum class State // see GStore::FileStore::envelopePath()
 	{
 		New ,
@@ -159,6 +159,7 @@ public:
 
 private:
 	static void checkPath( const G::Path & dir ) ;
+	static void osinit() ;
 	G::Path fullPath( const std::string & filename ) const ;
 	std::string getline( std::istream & ) const ;
 	std::string value( const std::string & ) const ;

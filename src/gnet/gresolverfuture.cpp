@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,43 +20,58 @@
 
 #include "gdef.h"
 #include "gresolverfuture.h"
+#include "ggetaddrinfo.h"
 #include "gtest.h"
 #include "gstr.h"
+#include "gidn.h"
 #include "gsleep.h"
 #include "glog.h"
 #include <cstring>
 #include <cstdio>
 
-GNet::ResolverFuture::ResolverFuture( const std::string & host , const std::string & service , int family ,
-	bool dgram , bool for_async_hint ) :
+GNet::ResolverFuture::ResolverFuture( const std::string & host , const std::string & service ,
+	int family , const Resolver::Config & config ) :
+		m_config(config) ,
 		m_numeric_service(!service.empty() && G::Str::isNumeric(service)) ,
-		m_socktype(dgram?SOCK_DGRAM:SOCK_STREAM) ,
-		m_host(host) ,
+		m_host(encode(host,config.raw)) ,
 		m_host_p(m_host.c_str()) ,
 		m_service(service) ,
 		m_service_p(m_service.c_str()) ,
-		m_family(family) ,
-		m_test_mode(for_async_hint&&G::Test::enabled("getaddrinfo-slow"))
+		m_family(family)
 {
 	std::memset( &m_ai_hint , 0 , sizeof(m_ai_hint) ) ;
-	m_ai_hint.ai_flags = AI_CANONNAME | // NOLINT
-		( family == AF_UNSPEC ? AI_ADDRCONFIG : 0 ) |
-		( m_numeric_service ? AI_NUMERICSERV : 0 ) ;
 	m_ai_hint.ai_family = family ;
-	m_ai_hint.ai_socktype = m_socktype ;
+	m_ai_hint.ai_socktype = config.datagram ? SOCK_DGRAM : SOCK_STREAM ;
+	m_ai_hint.ai_flags = 0 ;
+	if( config.with_canonical_name ) m_ai_hint.ai_flags |= AI_CANONNAME ;
+	if( family == AF_UNSPEC ) m_ai_hint.ai_flags |= AI_ADDRCONFIG ;
+	if( m_numeric_service ) m_ai_hint.ai_flags |= AI_NUMERICSERV ;
+	#if GCONFIG_HAVE_GAI_IDN
+	if( config.idn_flag ) m_ai_hint.ai_flags |= AI_IDN ; // glibc only
+	#endif
 }
 
 GNet::ResolverFuture::~ResolverFuture()
 {
 	if( m_ai )
-		::freeaddrinfo( m_ai ) ; // documented as "thread-safe"
+		GetAddrInfo::freeaddrinfo( m_ai ) ;
+}
+
+std::string GNet::ResolverFuture::encode( const std::string & host , bool raw )
+{
+	if( raw || G::Str::isPrintableAscii(host) )
+		return host ;
+	else if( G::Idn::valid(host) )
+		return G::Idn::encode( host ) ;
+	else
+		return host ;
 }
 
 GNet::ResolverFuture & GNet::ResolverFuture::run() noexcept
 {
-	// worker thread - as simple as possible
-	if( m_test_mode ) sleep( 10 ) ;
-	m_rc = ::getaddrinfo( m_host_p , m_service_p , &m_ai_hint , &m_ai ) ;
+	// worker thread -- as simple as possible
+	if( m_config.test_slow ) sleep( 10 ) ;
+	m_rc = GetAddrInfo::getaddrinfo( m_host_p , m_service_p , &m_ai_hint , &m_ai ) ;
 	return *this ;
 }
 
@@ -67,7 +82,7 @@ std::string GNet::ResolverFuture::failure() const
 		ss << "no such " << ipvx() << "host: \"" << m_host << "\"" ;
 	else
 		ss << "no such " << ipvx() << "host or service: \"" << m_host << ":" << m_service << "\"" ;
-	const char * reason = gai_strerror( m_rc ) ; // not portable, but see gdef.h
+	const char * reason = GetAddrInfo::gai_strerror( m_rc ) ;
 	if( reason && *reason )
 		ss << " (" << G::Str::lower(G::Str::trimmed(std::string(reason)," .")) << ")" ;
 	return ss.str() ;
@@ -90,17 +105,17 @@ std::string GNet::ResolverFuture::none() const
 	return "no usable addresses returned for \"" + m_host + "\"" ;
 }
 
-bool GNet::ResolverFuture::fetch( Pair & pair ) const
+bool GNet::ResolverFuture::fetch( Result & result ) const
 {
-	// fetch the first valid address/name pair
+	// fetch the first valid address
 	for( const struct addrinfo * p = m_ai ; p ; p = p->ai_next )
 	{
 		socklen_t addrlen = static_cast<socklen_t>(p->ai_addrlen) ;
 		if( Address::validData( p->ai_addr , addrlen ) )
 		{
-			Address address( p->ai_addr , addrlen ) ;
-			std::string name( p->ai_canonname ? p->ai_canonname : "" ) ;
-			pair = std::make_pair( address , name ) ;
+			result.address = Address( p->ai_addr , addrlen ) ;
+			if( m_config.with_canonical_name && p->ai_canonname )
+				result.canonicalName.assign( p->ai_canonname ) ;
 			return true ;
 		}
 	}
@@ -131,9 +146,9 @@ void GNet::ResolverFuture::get( List & list )
 		m_reason = none() ;
 }
 
-GNet::ResolverFuture::Pair GNet::ResolverFuture::get()
+GNet::ResolverFuture::Result GNet::ResolverFuture::get()
 {
-	Pair result( Address::defaultAddress() , std::string() ) ;
+	Result result { Address::defaultAddress() , {} } ;
 	if( failed() )
 		m_reason = failure() ;
 	else if( !fetch(result) )

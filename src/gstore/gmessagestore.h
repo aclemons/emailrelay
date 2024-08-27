@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -72,11 +72,19 @@ private:
 class GStore::MessageStore
 {
 public:
+	enum class AddressStyle
+	{
+		Invalid , // control characters or invalid UTF-8 encoding or invalid IDN
+		Ascii , // printable ASCII mailbox and domain (RFC-5321 4.1.2)
+		Utf8Mailbox , // UTF-8 mailbox, ASCII domain
+		Utf8Domain , // ASCII mailbox, UTF-8 domain (and valid IDN)
+		Utf8Both // UTF-8 mailbox, UTF-8 domain (and valid IDN)
+	} ;
 	struct SmtpInfo /// Information on the SMTP options used when submitted.
 	{
 		std::string auth ; // AUTH=
 		std::string body ; // BODY=
-		bool utf8address {false} ; // beyond ascii
+		AddressStyle address_style {AddressStyle::Ascii} ;
 	} ;
 	enum class BodyType
 	{
@@ -144,6 +152,10 @@ public:
 	virtual G::Slot::Signal<> & messageStoreRescanSignal() noexcept = 0 ;
 		///< Provides a signal which is emitted when rescan()
 		///< is called.
+
+	static AddressStyle addressStyle( std::string_view address ) ;
+		///< Parses an address to determine whether it has ASCII or
+		///< UTF-8 parts. See also RFC-5198.
 } ;
 
 namespace GStore

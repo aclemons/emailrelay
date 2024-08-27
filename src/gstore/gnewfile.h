@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@ namespace GStore
 class GStore::NewFile : public NewMessage
 {
 public:
-	G_EXCEPTION( FileError , tx("message store error") ) ;
+	G_EXCEPTION( FileError , tx("message store error") )
 
 	NewFile( FileStore & store , const std::string & from , const MessageStore::SmtpInfo & ,
 		const std::string & from_auth_out , std::size_t max_size ) ;
@@ -73,7 +73,7 @@ private: // overrides
 	void commit( bool strict ) override ; // GStore::NewMessage
 	MessageId id() const override ; // GStore::NewMessage
 	std::string location() const override ; // GStore::NewMessage
-	void addTo( const std::string & to , bool local , bool utf8address ) override ; // GStore::NewMessage
+	void addTo( const std::string & to , bool local , MessageStore::AddressStyle ) override ; // GStore::NewMessage
 	NewMessage::Status addContent( const char * , std::size_t ) override ; // GStore::NewMessage
 	std::size_t contentSize() const override ; // GStore::NewMessage
 	void prepare( const std::string & auth_id , const std::string & peer_socket_address ,

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,22 +19,18 @@
 ///
 
 #include "gdef.h"
+#include "gnowide.h"
 #include "ghostname.h"
 #include "genvironment.h"
 #include "gstr.h"
-#include <vector>
 
 std::string G::hostname()
 {
-	std::vector<char> buffer( 257U , '\0' ) ; // documented hostname limit of 256
-	if( 0 == ::gethostname( buffer.data() , static_cast<int>(buffer.size()-1U) ) && buffer.at(0U) != '\0' )
-	{
-		buffer[buffer.size()-1U] = '\0' ;
-		return std::string( buffer.data() ) ;
-	}
-	else
-	{
-		return Str::printable( Environment::get("COMPUTERNAME",std::string()) , '_' ) ;
-	}
+	std::string name = nowide::getComputerNameEx( ComputerNamePhysicalDnsHostname ) ;
+	if( name.empty() )
+		name = nowide::getComputerNameEx( ComputerNameNetBIOS ) ;
+	if( name.empty() )
+		name = Environment::get( "COMPUTERNAME" , std::string() ) ;
+	return name ;
 }
 

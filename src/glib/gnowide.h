@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,16 +17,16 @@
 ///
 /// \file gnowide.h
 ///
-/// Contains inline functions that convert to and from UTF-8 and
-/// then call the wide-character "W()" or "_w()" Windows
-/// functions internally.
+/// Contains inline functions that convert to and from UTF-8
+/// strings in order to call wide-character "W()" or "_w()"
+/// Windows functions internally.
 ///
 /// This means that in the rest of the code filesystem paths,
 /// registry paths, environment variables, command-lines etc.
 /// can be always UTF-8, independent of the o/s, current locale
 /// or codepage.
 ///
-/// For temporary backwards compatibility, if G_UNICODE is
+/// For temporary backwards compatibility, if G_ANSI is
 /// undefined then the "A()" API functions are used with no
 /// UTF-8 conversions.
 ///
@@ -40,6 +40,8 @@
 
 #include "gdef.h"
 #include "gpath.h"
+#include "gstringview.h"
+#include "gcodepage.h"
 #include "gconvert.h"
 #include <vector>
 #include <string>
@@ -58,24 +60,8 @@ namespace G
 {
 	namespace nowide
 	{
-		#ifdef G_UNICODE
-			static constexpr bool w = true ;
-			using FIND_DATA_type = WIN32_FIND_DATAW ;
-			using WNDCLASS_type = WNDCLASSW ;
-			using PROPSHEETPAGE_type = PROPSHEETPAGEW ;
-			using PROPSHEETHEADER_type = PROPSHEETHEADERW ;
-			using NOTIFYICONDATA_type = NOTIFYICONDATAW ;
-			#if GCONFIG_HAVE_WINDOWS_STARTUP_INFO_EX
-				using STARTUPINFO_BASE_type = STARTUPINFOW ;
-				using STARTUPINFO_REAL_type = STARTUPINFOEXW ;
-				constexpr DWORD STARTUPINFO_flags = EXTENDED_STARTUPINFO_PRESENT ;
-			#else
-				using STARTUPINFO_BASE_type = STARTUPINFOW ;
-				using STARTUPINFO_REAL_type = STARTUPINFOW ;
-				constexpr DWORD STARTUPINFO_flags = 0 ;
-			#endif
-			using IShellLink_type = IShellLinkW ;
-		#else
+		#ifdef G_ANSI
+			// (G_ANSI is deprecated)
 			static constexpr bool w = false ;
 			using FIND_DATA_type = WIN32_FIND_DATAA ;
 			using WNDCLASS_type = WNDCLASSA ;
@@ -92,6 +78,25 @@ namespace G
 				constexpr DWORD STARTUPINFO_flags = 0 ;
 			#endif
 			using IShellLink_type = IShellLinkA ;
+			using ADDRINFO_type = ADDRINFOW ;
+		#else
+			static constexpr bool w = true ;
+			using FIND_DATA_type = WIN32_FIND_DATAW ;
+			using WNDCLASS_type = WNDCLASSW ;
+			using PROPSHEETPAGE_type = PROPSHEETPAGEW ;
+			using PROPSHEETHEADER_type = PROPSHEETHEADERW ;
+			using NOTIFYICONDATA_type = NOTIFYICONDATAW ;
+			#if GCONFIG_HAVE_WINDOWS_STARTUP_INFO_EX
+				using STARTUPINFO_BASE_type = STARTUPINFOW ;
+				using STARTUPINFO_REAL_type = STARTUPINFOEXW ;
+				constexpr DWORD STARTUPINFO_flags = EXTENDED_STARTUPINFO_PRESENT ;
+			#else
+				using STARTUPINFO_BASE_type = STARTUPINFOW ;
+				using STARTUPINFO_REAL_type = STARTUPINFOW ;
+				constexpr DWORD STARTUPINFO_flags = 0 ;
+			#endif
+			using IShellLink_type = IShellLinkW ;
+			using ADDRINFO_type = ADDRINFOA ;
 		#endif
 
 		inline std::string getCommandLine()
@@ -149,9 +154,10 @@ namespace G
 					io.open( path.str() , mode ) ;
 			#endif
 		}
-		inline int open( const Path & path , int flags , int pmode )
+		inline int open( const Path & path , int flags , int pmode , bool inherit = false )
 		{
-			flags |= _O_NOINHERIT ;
+			if( !inherit )
+				flags |= _O_NOINHERIT ;
 			_set_errno( 0 ) ; // mingw bug
 			int fd = -1 ;
 			if( w )
@@ -188,6 +194,13 @@ namespace G
 			else
 				return 0 == std::remove( path.cstr() ) ;
 		}
+		inline bool rmdir( const Path & path )
+		{
+			if( w )
+				return 0 == _wrmdir( Convert::widen(path.str()).c_str() ) ;
+			else
+				return 0 == _rmdir( path.cstr() ) ;
+		}
 		inline int mkdir( const Path & dir )
 		{
 			if( w )
@@ -203,18 +216,18 @@ namespace G
 			else
 				return _stat64( path.cstr() , statbuf_p ) ;
 		}
-		inline std::string getComputerNameEx()
+		inline std::string getComputerNameEx( COMPUTER_NAME_FORMAT name_type = ComputerNameNetBIOS )
 		{
 			if( w )
 			{
 				DWORD size = 0 ;
 				std::vector<wchar_t> buffer ;
-				if( !GetComputerNameExW( ComputerNameNetBIOS , NULL , &size ) && GetLastError() == ERROR_MORE_DATA && size )
+				if( !GetComputerNameExW( name_type , NULL , &size ) && GetLastError() == ERROR_MORE_DATA && size )
 					buffer.resize( static_cast<std::size_t>(size) ) ;
 				else
 					return {} ;
-				if( !GetComputerNameExW( ComputerNameNetBIOS , buffer.data() , &size ) ||
-					static_cast<std::size_t>(size+1) != buffer.size() )
+				if( !GetComputerNameExW( name_type , buffer.data() , &size ) ||
+					(static_cast<std::size_t>(size)+1U) != buffer.size() )
 						return {} ;
 				return Convert::narrow( buffer.data() , buffer.size()-1U ) ;
 			}
@@ -222,12 +235,12 @@ namespace G
 			{
 				DWORD size = 0 ;
 				std::vector<char> buffer ;
-				if( !GetComputerNameExA( ComputerNameNetBIOS , NULL , &size ) && GetLastError() == ERROR_MORE_DATA && size )
+				if( !GetComputerNameExA( name_type , NULL , &size ) && GetLastError() == ERROR_MORE_DATA && size )
 					buffer.resize( static_cast<std::size_t>(size) ) ;
 				else
 					return {} ;
-				if( !GetComputerNameExA( ComputerNameNetBIOS , buffer.data() , &size ) ||
-					static_cast<std::size_t>(size+1) != buffer.size() )
+				if( !GetComputerNameExA( name_type , buffer.data() , &size ) ||
+					(static_cast<std::size_t>(size)+1U) != buffer.size() )
 						return {} ;
 				return std::string( buffer.data() , buffer.size()-1U ) ;
 			}
@@ -641,9 +654,9 @@ namespace G
 					if( rc != 0 || n != buffer.size() ) return default_ ;
 					return Convert::narrow( buffer.data() , buffer.size()-1U ) ;
 				#else
-					const char * p = ::getenv( name.c_str() ) ;
+					const wchar_t * p = _wgetenv( Convert::widen(name).c_str() ) ;
 					if( p == nullptr ) return default_ ;
-					return CodePage::fromCodePageAnsi( std::string(p) ) ;
+					return Convert::narrow( p , wcslen(p) ) ;
 				#endif
 			}
 			else
@@ -811,14 +824,14 @@ namespace G
 			if( w )
 			{
 				unsigned int n = DragQueryFileW( hdrop , i , nullptr , 0U ) ;
-				std::vector<wchar_t> buffer( std::size_t(n+1U) , L'\0' ) ;
+				std::vector<wchar_t> buffer( std::size_t(n)+1U , L'\0' ) ;
 				n = DragQueryFileW( hdrop , i , buffer.data() , n+1U ) ;
 				return Convert::narrow( buffer.data() , std::min(std::size_t(n),buffer.size()) ) ;
 			}
 			else
 			{
 				unsigned int n = DragQueryFileA( hdrop , i , nullptr , 0U ) ;
-				std::vector<char> buffer( std::size_t(n+1U) , '\0' ) ;
+				std::vector<char> buffer( std::size_t(n)+1U , '\0' ) ;
 				n = DragQueryFileA( hdrop , i , buffer.data() , n+1U ) ;
 				return { buffer.data() , std::min(std::size_t(n),buffer.size()) } ;
 			}
@@ -909,7 +922,7 @@ namespace G
 		inline void check_hwnd( HWND hwnd )
 		{
 			if( w != !!IsWindowUnicode(hwnd) )
-				std::runtime_error( "unicode window mismatch" ) ;
+				throw std::runtime_error( "unicode window mismatch" ) ;
 		}
 		inline LRESULT callWindowProc( LONG_PTR fn , HWND hwnd , UINT message , WPARAM wparam , LPARAM lparam )
 		{
@@ -949,6 +962,13 @@ namespace G
 				return WinHelpW( hwnd , G::Convert::widen(path.str()).c_str() , id , 0 ) ;
 			else
 				return WinHelpA( hwnd , path.cstr() , id , 0 ) ;
+		}
+		inline HMENU loadMenu( HINSTANCE hinstance , int id )
+		{
+			if( w )
+				return LoadMenuW( hinstance , MAKEINTRESOURCEW(id) ) ;
+			else
+				return LoadMenuA( hinstance , MAKEINTRESOURCEA(id) ) ;
 		}
 		inline std::string getMenuString( HMENU hmenu , UINT id , UINT flags )
 		{
@@ -1271,7 +1291,7 @@ namespace G
 		{
 			return link_p->SetWorkingDirectory( dir.cstr() ) ;
 		}
-		inline HRESULT shellLinkSetDescription( IShellLinkW * link_p , const std::string & s )
+		inline HRESULT shellLinkSetDescription( IShellLinkW * link_p , std::string_view s )
 		{
 			return link_p->SetDescription( Convert::widen(s).c_str() ) ;
 		}
@@ -1279,7 +1299,7 @@ namespace G
 		{
 			return link_p->SetDescription( s.c_str() ) ;
 		}
-		inline HRESULT shellLinkSetArguments( IShellLinkW * link_p , const std::string & s )
+		inline HRESULT shellLinkSetArguments( IShellLinkW * link_p , std::string_view s )
 		{
 			return link_p->SetArguments( Convert::widen(s).c_str() ) ;
 		}
@@ -1342,6 +1362,44 @@ namespace G
 				if( n <= 0 ) return {} ;
 				return {buffer.data(),static_cast<std::size_t>(n)} ;
 			}
+		}
+		inline HANDLE createWaitableTimer( LPSECURITY_ATTRIBUTES attributes , BOOL manual_reset , const std::string & name )
+		{
+			if( w )
+			{
+				std::wstring wname = G::Convert::widen( name ) ;
+				return CreateWaitableTimerW( attributes , manual_reset , wname.c_str() ) ;
+			}
+			else
+			{
+				return CreateWaitableTimerA( attributes , manual_reset , name.c_str() ) ;
+			}
+		}
+		inline INT getAddrInfo( std::string_view host , std::string_view service , const ADDRINFOW * hints , ADDRINFOW ** results )
+		{
+			return GetAddrInfoW( Convert::widen(host).c_str() , Convert::widen(service).c_str() , hints , results ) ;
+		}
+		inline INT getAddrInfo( const std::string & host , const std::string & service , const ADDRINFOA * hints , ADDRINFOA ** results )
+		{
+			return GetAddrInfoA( host.c_str() , service.c_str() , hints , results ) ;
+		}
+		inline std::string canonicalName( const ADDRINFOW & ai )
+		{
+			return ai.ai_canonname ? Convert::narrow(ai.ai_canonname) : std::string() ;
+		}
+		inline std::string canonicalName( const ADDRINFOA & ai )
+		{
+			return ai.ai_canonname ? std::string(ai.ai_canonname) : std::string() ;
+		}
+		inline void freeAddrInfo( ADDRINFOW * results )
+		{
+			if( results )
+				FreeAddrInfoW( results ) ;
+		}
+		inline void freeAddrInfo( ADDRINFOA * results )
+		{
+			if( results )
+				FreeAddrInfoA( results ) ;
 		}
 	}
 }

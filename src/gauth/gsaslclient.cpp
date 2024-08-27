@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -32,6 +32,15 @@
 #include "glog.h"
 #include <algorithm>
 
+namespace GAuth
+{
+	namespace SaslClientStrings
+	{
+		static constexpr std::string_view login_challenge_1 {"Username:",9U} ;
+		static constexpr std::string_view login_challenge_2 {"Password:",9U} ;
+	}
+}
+
 //| \class GAuth::SaslClientImp
 /// A private pimple-pattern implementation class used by GAuth::SaslClient.
 ///
@@ -51,6 +60,13 @@ public:
 	std::string info() const ;
 	static bool match( const G::StringArray & mechanisms , const std::string & ) ;
 
+public:
+	~SaslClientImp() = default ;
+	SaslClientImp( const SaslClientImp & ) = delete ;
+	SaslClientImp( SaslClientImp && ) = delete ;
+	SaslClientImp & operator=( const SaslClientImp & ) = delete ;
+	SaslClientImp & operator=( SaslClientImp && ) = delete ;
+
 private:
 	const SaslClientSecrets & m_secrets ;
 	std::string m_config ;
@@ -59,12 +75,7 @@ private:
 	mutable std::string m_id ;
 	std::string PLAIN ;
 	std::string LOGIN ;
-	static std::string_view login_challenge_1 ;
-	static std::string_view login_challenge_2 ;
 } ;
-
-std::string_view GAuth::SaslClientImp::login_challenge_1 { "Username:" , 9U } ;
-std::string_view GAuth::SaslClientImp::login_challenge_2 { "Password:" , 9U } ;
 
 // ===
 
@@ -162,7 +173,7 @@ GAuth::SaslClient::Response GAuth::SaslClientImp::initialResponse( std::string_v
 		return {} ;
 
 	const std::string & m = m_mechanisms[0] ;
-	Response rsp = response( m , m == "LOGIN" ? login_challenge_1 : std::string_view() , selector ) ;
+	Response rsp = response( m , m == "LOGIN" ? SaslClientStrings::login_challenge_1 : std::string_view() , selector ) ;
 	if( rsp.error || rsp.data.size() > limit )
 		return {} ;
 	else
@@ -202,7 +213,7 @@ GAuth::SaslClient::Response GAuth::SaslClientImp::response( std::string_view mec
 		rsp.error = !secret.valid() ;
 		rsp.final = true ;
 	}
-	else if( mechanism == LOGIN && challenge == login_challenge_1 )
+	else if( mechanism == LOGIN && challenge == SaslClientStrings::login_challenge_1 )
 	{
 		secret = m_secrets.clientSecret( "plain"_sv , selector ) ;
 		rsp.data = secret.id() ;
@@ -210,7 +221,7 @@ GAuth::SaslClient::Response GAuth::SaslClientImp::response( std::string_view mec
 		rsp.final = false ;
 		rsp.sensitive = false ; // userid
 	}
-	else if( mechanism == LOGIN && challenge == login_challenge_2 )
+	else if( mechanism == LOGIN && challenge == SaslClientStrings::login_challenge_2 )
 	{
 		secret = m_secrets.clientSecret( "plain"_sv , selector ) ;
 		rsp.data = secret.secret() ;
@@ -279,7 +290,7 @@ GAuth::SaslClient::SaslClient( const SaslClientSecrets & secrets , const std::st
 }
 
 GAuth::SaslClient::~SaslClient()
-= default;
+= default ;
 
 bool GAuth::SaslClient::validSelector( std::string_view selector ) const
 {

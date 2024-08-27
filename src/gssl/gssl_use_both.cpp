@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,12 +28,12 @@ std::unique_ptr<GSsl::LibraryImpBase> GSsl::Library::newLibraryImp( G::StringArr
 {
 	if( LibraryImpBase::consume(library_config,"mbedtls") || G::Test::enabled("ssl-use-mbedtls") )
 	{
-		return std::make_unique<MbedTls::LibraryImp>( library_config , log_fn , verbose ) ; // up-cast
+		return std::make_unique<MbedTls::LibraryImp>( library_config , log_fn , verbose ) ;
 	}
 	else
 	{
 		LibraryImpBase::consume( library_config , "openssl" ) ;
-		return std::make_unique<OpenSSL::LibraryImp>( library_config , log_fn , verbose ) ; // up-cast
+		return std::make_unique<OpenSSL::LibraryImp>( library_config , log_fn , verbose ) ;
 	}
 }
 

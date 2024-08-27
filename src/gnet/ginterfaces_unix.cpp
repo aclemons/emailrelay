@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -39,6 +39,7 @@
 #include "gbuffer.h"
 #include "gstr.h"
 #include "groot.h"
+#include "glog.h"
 #include <ifaddrs.h>
 #include <functional>
 #include <memory>
@@ -226,7 +227,7 @@ std::string GNet::InterfacesNotifierImp::readEvent()
 
 	const char * sep = "" ;
 	std::ostringstream ss ;
-	for( ; NLMSG_OK(hdr,size) ; hdr = NLMSG_NEXT(hdr,size) , sep = ", " )
+	for( ; NLMSG_OK(hdr,size) ; hdr = NLMSG_NEXT(hdr,size) , sep = ", " ) // NOLINT
 	{
 		if( hdr->nlmsg_type == NLMSG_DONE || hdr->nlmsg_type == NLMSG_ERROR )
 			break ;
@@ -235,7 +236,7 @@ std::string GNet::InterfacesNotifierImp::readEvent()
 			hdr->nlmsg_type == RTM_DELLINK ||
 			hdr->nlmsg_type == RTM_GETLINK )
 		{
-			GDEF_UNUSED ifinfomsg * p = static_cast<ifinfomsg*>( NLMSG_DATA(hdr) ) ;
+			GDEF_UNUSED ifinfomsg * p = static_cast<ifinfomsg*>( NLMSG_DATA(hdr) ) ; // NOLINT
 			GDEF_UNUSED int n = NLMSG_PAYLOAD( hdr , size ) ;
 			ss << sep << "link" ;
 			if( hdr->nlmsg_type == RTM_NEWLINK ) ss << " new" ;
@@ -245,7 +246,7 @@ std::string GNet::InterfacesNotifierImp::readEvent()
 			hdr->nlmsg_type == RTM_DELADDR ||
 			hdr->nlmsg_type == RTM_GETADDR )
 		{
-			GDEF_UNUSED ifaddrmsg * p = static_cast<ifaddrmsg*>( NLMSG_DATA(hdr) ) ;
+			GDEF_UNUSED ifaddrmsg * p = static_cast<ifaddrmsg*>( NLMSG_DATA(hdr) ) ; // NOLINT
 			GDEF_UNUSED int n = NLMSG_PAYLOAD( hdr , size ) ;
 			ss << sep << "address" ;
 			if( hdr->nlmsg_type == RTM_NEWADDR ) ss << " new" ;

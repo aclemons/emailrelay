@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 
 namespace G
 {
-	namespace CodePage
+	namespace CodePage /// Windows codepage conversion functions.
 	{
 		std::string fromCodePage850( std::string_view s ) ;
 			///< Converts from codepage 850 to UTF-8.

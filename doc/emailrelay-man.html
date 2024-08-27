@@ -81,7 +81,7 @@ This is equivalent to <I>--log</I>, <I>--close-stderr</I>, <I>--forward-on-disco
 <DT><B>-d, --as-server</B>
 
 <DD>
-This is equivalent to <I>--log</I> and <I>--close-stderr</I>. It is a convenient way of running a background storage daemon that accepts mail messages and spools them. Use <I>--log</I> instead of <I>--as-server</I> to keep standard error stream open.
+This is equivalent to <I>--log</I> and <I>--close-stderr</I>. It is a convenient way of running a background storage daemon that accepts mail messages and spools them. Use <I>--log</I> instead of <I>--as-server</I> to keep the standard error stream open.
 <DT><B>-s, --spool-dir </B><I>&lt;dir&gt;</I>
 
 <DD>
@@ -179,11 +179,11 @@ Specifies the base directory for mailboxes when delivering messages that have lo
 <DT><B>--dnsbl </B><I>&lt;config&gt;</I>
 
 <DD>
-Specifies a list of DNSBL servers that are used to reject SMTP connections from blocked addresses. The configuration string is made up of comma-separated fields: the DNS server's transport address, a timeout in milliseconds, a rejection threshold, and then the list of DNSBL servers.
+Specifies a list of DNSBL servers that are used to reject SMTP connections from blocked addresses. The configuration string is made up of comma-separated fields: the list of DNSBL servers, an optional rejection threshold, an optional timeout in milliseconds, and optionally the transport address of the DNS server.
 <DT><B>-D, --domain </B><I>&lt;fqdn&gt;</I>
 
 <DD>
-Specifies the network name that is used in SMTP EHLO commands, <I>Received</I> lines, and for generating authentication challenges. The default is derived from a DNS lookup of the local hostname.
+Specifies the domain name that is used in SMTP client EHLO commands, server EHLO responses, <I>Received</I> lines, and for generating authentication challenges. The SMTP client will use an IP address in the EHLO command if the given domain is not a dotted FQDN. If this option is not used at all then the default value is the canonical name returned from a DNS query of the local hostname, or the system's FQDN on Windows.
 <DT><B>-z, --filter </B><I>&lt;program&gt;</I>
 
 <DD>
@@ -195,7 +195,7 @@ Specifies a timeout (in seconds) for running a <I>--filter</I> program. The defa
 <DT><B>-I, --interface </B><I>&lt;ip-address-list&gt;</I>
 
 <DD>
-Specifies the IP network addresses or interface names used to bind listening ports. By default listening ports for incoming SMTP, POP and administration connections will bind the 'any' address for IPv4 and for IPv6, ie. <I>0.0.0.0</I> and <I>::</I>. Multiple addresses can be specified by using the option more than once or by using a comma-separated list. Use a prefix of <I>smtp=</I>, <I>pop=</I> or <I>admin=</I> on addresses that should apply only to those types of listening port. Any link-local IPv6 addresses must include a zone name or scope id.  Interface names can be used instead of addresses, in which case all the addresses associated with that interface at startup will used for listening. When an interface name is decorated with a <I>-ipv4</I> or <I>-ipv6</I> suffix only their IPv4 or IPv6 addresses will be used (eg. <I>ppp0-ipv4</I>).  To inherit listening file descriptors from the parent process on unix use a syntax like this: <I>--interface</I> smtp=fd#3,smtp=fd#4,pop=fd#5.
+Specifies the IP network addresses or interface names used to bind listening ports. By default listening ports for incoming SMTP, POP and administration connections will bind the 'any' address for IPv4 and for IPv6, ie. <I>0.0.0.0</I> and <I>::</I>. Multiple addresses can be specified by using the option more than once or by using a comma-separated list. Use a prefix of <I>smtp=</I>, <I>pop=</I> or <I>admin=</I> on addresses that should apply only to those types of listening port. Any link-local IPv6 addresses must include a zone name or scope id.  Interface names can be used instead of addresses, in which case all the addresses associated with that interface at startup will used for listening. When an interface name is decorated with a <I>-ipv4</I> or <I>-ipv6</I> suffix only their IPv4 or IPv6 addresses will be used (eg. <I>ppp0-ipv4</I>).  To inherit listening file descriptors from the parent process on unix use a syntax like this: <I>--interface</I>=smtp=fd#3.
 <DT><B>-w, --prompt-timeout </B><I>&lt;time&gt;</I>
 
 <DD>
@@ -203,7 +203,7 @@ Specifies a timeout (in seconds) for getting the initial prompt from a remote SM
 <DT><B>-Z, --server-smtp-config </B><I>&lt;config&gt;</I>
 
 <DD>
-Configures the SMTP server protocol using a comma-separated list of optional features, including 'pipelining', 'chunking', 'smtputf8', and 'smtputf8strict'.
+Configures the SMTP server protocol using a comma-separated list of optional features, including 'pipelining', 'chunking', 'smtputf8', 'smtputf8strict', 'nostrictparsing' and 'noalabels'.
 <DT><B>-M, --size </B><I>&lt;bytes&gt;</I>
 
 <DD>
@@ -220,7 +220,7 @@ Enables the POP server, listening by default on port 110, providing access to sp
 <DT><B>-J, --pop-by-name</B>
 
 <DD>
-Modifies the POP server's spool directory to be the sub-directory with the same name as the user-id used for POP authentication. This allows POP clients to see only their own messages after they have been moved into separate sub-directories typically by the built-in <I>deliver:</I> or <I>copy:</I> filters. Content files can remain in the main spool directory to save disk space; they will be deleted by the POP server when it deletes the last matching envelope file.
+Modifies the POP server's spool directory to be the sub-directory with the same name as the user-id used for POP authentication. This allows POP clients to see only their own messages after they have been moved into separate sub-directories, typically by the built-in <I>deliver:</I> or <I>copy:</I> filters. Content files can remain in the main spool directory to save disk space; they will be deleted by the POP server when it deletes the last matching envelope file.
 <DT><B>-G, --pop-no-delete</B>
 
 <DD>
@@ -333,10 +333,6 @@ Selects and configures the low-level TLS library, using a comma-separated list o
 
 <DD>
 Disables all network serving, including SMTP, POP and administration interfaces. The program will terminate as soon as any initial forwarding is complete.
-<DT><B>-H, --hidden</B>
-
-<DD>
-Windows only. Hides the application window and disables all message boxes, overriding any <I>--show</I> option. This is useful when running as a windows service.
 <DT><B>--localedir </B><I>&lt;dir&gt;</I>
 
 <DD>
@@ -344,7 +340,7 @@ Enables localisation and specifies the locale base directory where message catal
 <DT><B>-t, --no-daemon</B>
 
 <DD>
-Disables the normal backgrounding at startup so that the program runs in the foreground, without forking or detaching from the terminal.  On Windows this disables the system tray icon so the program uses a normal window; when the window is closed the program terminates.
+Disables the normal backgrounding at startup so that the program runs in the foreground, without forking or detaching from the terminal.
 <DT><B>-X, --no-smtp</B>
 
 <DD>
@@ -356,7 +352,7 @@ Causes the process-id to be written into the specified file when the program sta
 <DT><B>-u, --user </B><I>&lt;username&gt;</I>
 
 <DD>
-When started as root the program switches to a non-privileged effective user-id when idle or when running external filter scripts and address verifiers. This option can be used to define the non-privileged user-id. It also determines the group ownership of new files and sockets if the directory owner is not 'sticky'. Specify <I>root</I> to disable all user-id switching. Ignored on Windows.
+When started as root the program switches to a non-privileged effective user-id when idle or when running external filter scripts and address verifiers. This option can be used to define the non-privileged user-id. It also determines the group ownership of new files and sockets if the directory owner is not 'sticky'. Specify <I>root</I> to disable all user-id switching.
 </DL>
 <A NAME="lbAN">&nbsp;</A>
 <H3>Logging options</H3>
@@ -369,7 +365,7 @@ Enables more verbose logging when used with <I>--log</I>, and more verbose help 
 <DT><B>-l, --log</B>
 
 <DD>
-Enables logging to the standard error stream and to the syslog. The <I>--close-stderr</I> and <I>--no-syslog</I> options can be used to disable output to standard error stream and the syslog separately. Note that <I>--as-server</I>, <I>--as-client</I> and <I>--as-proxy</I> imply <I>--log</I>, and <I>--as-server</I> and <I>--as-proxy</I> also imply <I>--close-stderr</I>.
+Enables logging to the standard error stream and to the system log. The <I>--close-stderr</I> and <I>--no-syslog</I> options can be used to disable output to standard error stream and the system log separately. Note that <I>--as-server</I>, <I>--as-client</I> and <I>--as-proxy</I> imply <I>--log</I>, and <I>--as-server</I> and <I>--as-proxy</I> also imply <I>--close-stderr</I>.
 <DT><B>-g, --debug</B>
 
 <DD>
@@ -377,7 +373,7 @@ Enables debug level logging, if built in. Debug messages are usually only useful
 <DT><B>--log-address</B>
 
 <DD>
-Adds the network address of remote clients to the logging output. Equivalent to <I></I><I>--log-format</I>=address<I></I>.
+Adds the network address of remote clients to the logging output. Equivalent to <I>--log-format</I>=address.
 <DT><B>-N, --log-file </B><I>&lt;file&gt;</I>
 
 <DD>
@@ -389,15 +385,15 @@ Adds one or more fields to the logging output. The field names can include <I>ti
 <DT><B>-L, --log-time</B>
 
 <DD>
-Adds a timestamp to the logging output using the local timezone. Equivalent to <I></I><I>--log-format</I>=time<I></I>.
+Adds a timestamp to the logging output using the local timezone. Equivalent to <I>--log-format</I>=time.
 <DT><B>-n, --no-syslog</B>
 
 <DD>
-Disables logging to the syslog. Note that <I>--as-client</I> implies <I>--no-syslog</I>.
-<DT><B>-k, --syslog, --syslog=</B><I>&lt;facility&gt;</I>
+Disables logging to the system log. Note that <I>--as-client</I> implies <I>--no-syslog</I>.
+<DT><B>-k, --syslog, --syslog=</B>
 
 <DD>
-When used with <I>--log</I> this option enables logging to the syslog even if the <I>--no-syslog</I> option is also used. This is typically used as a convenient override when using <I>--as-client</I>.
+When used with <I>--log</I> this option enables logging to the system log, even if the <I>--no-syslog</I> option is also used. This is typically used as a convenient override when using <I>--as-client</I>.
 <DT><B>-e, --close-stderr</B>
 
 <DD>
@@ -443,4 +439,4 @@ This document was created by
 using the manual pages.<BR>
 </BODY>
 </HTML>
-<!-- Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->
+<!-- Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->

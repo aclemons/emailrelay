@@ -74,7 +74,7 @@ a first line of defense against spammers:
 
         emailrelay --as-server -v -r --domain=example.com --address-verifier=account:
 
-Then enable POP access to the incoming e-mails with `--pop`, `--pop-port` and
+Then enable [POP][] access to the incoming e-mails with `--pop`, `--pop-port` and
 `--pop-auth`:
 
         emailrelay ... --pop --pop-port 10110 --pop-auth /etc/emailrelay.auth

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -82,9 +82,7 @@ GSsl::MbedTls::LibraryImp::LibraryImp( G::StringArray & library_config , Library
 	if( m_config.psa() )
 	{
 		#if GCONFIG_HAVE_MBEDTLS_PSA
-			int rc = psa_crypto_init() ;
-			if( rc != PSA_SUCCESS )
-				throw Error( "psa error (" + std::to_string(rc) + ")" ) ;
+			call( FN_OK(PSA_SUCCESS,psa_crypto_init) ) ;
 		#endif
 	}
 }
@@ -249,10 +247,10 @@ bool GSsl::MbedTls::Config::consume( G::StringArray & list , std::string_view it
 
 // ==
 
-GSsl::MbedTls::DigesterImp::DigesterImp( const std::string & hash_name , const std::string & state , bool need_state )
+GSsl::MbedTls::DigesterImp::DigesterImp( const std::string & hash_name , const std::string & state , bool need_state ) :
+	m_state_size(0U)
 {
 	bool have_state = !state.empty() ;
-	m_state_size = 0U ;
 
 	#if ! GCONFIG_HAVE_MBEDTLS_HASH_STATE
 	if( have_state || need_state )
@@ -275,9 +273,9 @@ GSsl::MbedTls::DigesterImp::DigesterImp( const std::string & hash_name , const s
 		if( have_state )
 			G::HashState<16,uint32_t,uint32_t>::decode( state , m_md5.GET(state) , m_md5.GET(total)[0] ) ;
 		else
-			call( FN_RETv3(mbedtls_md5_starts) , &m_md5 ) ;
+			call( FN_RET(mbedtls_md5_starts) , &m_md5 ) ;
 		#else
-		call( FN_RETv3(mbedtls_md5_starts) , &m_md5 ) ;
+		call( FN_RET(mbedtls_md5_starts) , &m_md5 ) ;
 		#endif
 	}
 	else if( hash_name == "SHA1" )
@@ -292,9 +290,9 @@ GSsl::MbedTls::DigesterImp::DigesterImp( const std::string & hash_name , const s
 		if( have_state )
 			G::HashState<20,uint32_t,uint32_t>::decode( state , m_sha1.GET(state) , m_sha1.GET(total)[0] ) ;
 		else
-			call( FN_RETv3(mbedtls_sha1_starts) , &m_sha1 ) ;
+			call( FN_RET(mbedtls_sha1_starts) , &m_sha1 ) ;
 		#else
-		call( FN_RETv3(mbedtls_sha1_starts) , &m_sha1 ) ;
+		call( FN_RET(mbedtls_sha1_starts) , &m_sha1 ) ;
 		#endif
 	}
 	else if( hash_name == "SHA256" )
@@ -309,9 +307,9 @@ GSsl::MbedTls::DigesterImp::DigesterImp( const std::string & hash_name , const s
 		if( have_state )
 			G::HashState<32,uint32_t,uint32_t>::decode( state , m_sha256.GET(state) , m_sha256.GET(total)[0] ) ;
 		else
-			call( FN_RETv3(mbedtls_sha256_starts) , &m_sha256 , 0 ) ;
+			call( FN_RET(mbedtls_sha256_starts) , &m_sha256 , 0 ) ;
 		#else
-		call( FN_RETv3(mbedtls_sha256_starts) , &m_sha256 , 0 ) ;
+		call( FN_RET(mbedtls_sha256_starts) , &m_sha256 , 0 ) ;
 		#endif
 	}
 	else
@@ -333,11 +331,11 @@ GSsl::MbedTls::DigesterImp::~DigesterImp()
 void GSsl::MbedTls::DigesterImp::add( std::string_view sv )
 {
 	if( m_hash_type == Type::Md5 )
-		call( FN_RETv3(mbedtls_md5_update) , &m_md5 , reinterpret_cast<const unsigned char*>(sv.data()) , sv.size() ) ;
+		call( FN_RET(mbedtls_md5_update) , &m_md5 , reinterpret_cast<const unsigned char*>(sv.data()) , sv.size() ) ;
 	else if( m_hash_type == Type::Sha1 )
-		call( FN_RETv3(mbedtls_sha1_update) , &m_sha1 , reinterpret_cast<const unsigned char*>(sv.data()) , sv.size() ) ;
+		call( FN_RET(mbedtls_sha1_update) , &m_sha1 , reinterpret_cast<const unsigned char*>(sv.data()) , sv.size() ) ;
 	else if( m_hash_type == Type::Sha256 )
-		call( FN_RETv3(mbedtls_sha256_update) , &m_sha256 , reinterpret_cast<const unsigned char*>(sv.data()) , sv.size() ) ;
+		call( FN_RET(mbedtls_sha256_update) , &m_sha256 , reinterpret_cast<const unsigned char*>(sv.data()) , sv.size() ) ;
 }
 
 std::string GSsl::MbedTls::DigesterImp::value()
@@ -345,19 +343,19 @@ std::string GSsl::MbedTls::DigesterImp::value()
 	if( m_hash_type == Type::Md5 )
 	{
 		std::array<unsigned char,16> buffer {} ;
-		call( FN_RETv3(mbedtls_md5_finish) , &m_md5 , buffer.data() ) ;
+		call( FN_RET(mbedtls_md5_finish) , &m_md5 , buffer.data() ) ;
 		return { reinterpret_cast<const char*>(buffer.data()) , buffer.size() } ;
 	}
 	else if( m_hash_type == Type::Sha1 )
 	{
 		std::array<unsigned char,20> buffer {} ;
-		call( FN_RETv3(mbedtls_sha1_finish) , &m_sha1 , buffer.data() ) ;
+		call( FN_RET(mbedtls_sha1_finish) , &m_sha1 , buffer.data() ) ;
 		return { reinterpret_cast<const char*>(buffer.data()) , buffer.size() } ;
 	}
 	else if( m_hash_type == Type::Sha256 )
 	{
 		std::array<unsigned char,32> buffer {} ;
-		call( FN_RETv3(mbedtls_sha256_finish) , &m_sha256 , buffer.data() ) ;
+		call( FN_RET(mbedtls_sha256_finish) , &m_sha256 , buffer.data() ) ;
 		return { reinterpret_cast<const char*>(buffer.data()) , buffer.size() } ;
 	}
 	else
@@ -406,9 +404,7 @@ GSsl::MbedTls::ProfileImp::ProfileImp( const LibraryImp & library_imp , bool is_
 		m_library_imp(library_imp) ,
 		m_default_peer_certificate_name(default_peer_certificate_name) ,
 		m_default_peer_host_name(default_peer_host_name) ,
-		m_config{} ,
-		m_authmode(0) ,
-		m_noisy(false)
+		m_config{}
 {
 	mbedtls_ssl_config * cleanup_ptr = nullptr ;
 	G::ScopeExit cleanup( [&](){if(cleanup_ptr) mbedtls_ssl_config_free(cleanup_ptr);} ) ;
@@ -597,9 +593,7 @@ int GSsl::MbedTls::ProfileImp::authmode() const
 GSsl::MbedTls::ProtocolImp::ProtocolImp( const ProfileImp & profile , const std::string & required_peer_certificate_name ,
 	const std::string & target_peer_host_name ) :
 		m_profile(profile) ,
-		m_io(nullptr) ,
-		m_ssl(profile.config()) ,
-		m_verified(false)
+		m_ssl(profile.config())
 {
 	mbedtls_ssl_set_bio( m_ssl.ptr() , this , doSend , doRecv , nullptr/*doRecvTimeout*/ ) ;
 
@@ -710,7 +704,7 @@ std::string GSsl::MbedTls::ProtocolImp::verifyResultString( int rc )
 	}
 	else
 	{
-		return std::string() ;
+		return {} ;
 	}
 }
 
@@ -732,7 +726,7 @@ GSsl::Protocol::Result GSsl::MbedTls::ProtocolImp::handshake()
 	Result result = convert( "mbedtls_ssl_handshake" , rc ) ;
 	if( result == Protocol::Result::ok )
 	{
-		const char * vstr = "" ;
+		const char * vstr = "" ; // NOLINT
 		if( m_profile.authmode() == MBEDTLS_SSL_VERIFY_NONE )
 		{
 			m_verified = false ;

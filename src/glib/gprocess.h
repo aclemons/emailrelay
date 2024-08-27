@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -49,11 +49,11 @@ namespace G
 class G::Process
 {
 public:
-	G_EXCEPTION( CannotChangeDirectory , tx("cannot change directory") ) ;
-	G_EXCEPTION( InvalidId , tx("invalid process-id string") ) ;
-	G_EXCEPTION( UidError , tx("cannot set uid") ) ;
-	G_EXCEPTION( GidError , tx("cannot set gid") ) ;
-	G_EXCEPTION( GetCwdError , tx("cannot get current working directory") ) ;
+	G_EXCEPTION( CannotChangeDirectory , tx("cannot change directory") )
+	G_EXCEPTION( InvalidId , tx("invalid process-id string") )
+	G_EXCEPTION( UidError , tx("cannot set uid") )
+	G_EXCEPTION( GidError , tx("cannot set gid") )
+	G_EXCEPTION( GetCwdError , tx("cannot get current working directory") )
 	class Id ;
 	class Umask ;
 	class UmaskImp ;
@@ -123,9 +123,10 @@ public:
 		///< Logs an error message and throws on failure, resulting in a call
 		///< to std::terminate() when called from a destructor (see G::Root).
 		///<
-		///< This affects all threads in the calling processes, with signal hacks
-		///< used in some implementations to do the synchronisation. This can
-		///< lead to surprising interruptions of sleep(), select() etc.
+		///< (Note that the identity switch applies to all threads in the
+		///< calling processes, so some run-time libraries engage in signal
+		///< shenanigans to synchronise the change across threads, which can
+		///< lead to surprising interruptions of sleep(), select() etc.)
 		///<
 		///< See also class G::Root.
 

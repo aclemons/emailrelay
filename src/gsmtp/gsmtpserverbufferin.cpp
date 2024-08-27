@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -111,7 +111,7 @@ void GSmtp::ServerBufferIn::onProtocolChange()
 
 void GSmtp::ServerBufferIn::expect( std::size_t n )
 {
-	return m_line_buffer.expect( n ) ;
+	m_line_buffer.expect( n ) ;
 }
 
 std::string GSmtp::ServerBufferIn::head() const

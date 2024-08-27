@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@
 #include "gverifier.h"
 #include "gfilestore.h"
 #include "gnewmessage.h"
+#include "gmessagestore.h"
 #include <exception>
 #include <iostream>
 #include <memory>
@@ -88,7 +89,7 @@ std::pair<G::Path,G::Path> SubmissionImp::writeFiles( const G::Path & spool_dir 
 	{
 		G::Str::trim( to , {" \t\r\n",4U} ) ;
 		GSmtp::VerifierStatus status = GSmtp::VerifierStatus::remote( to ) ;
-		msg->addTo( status.address , status.is_local , status.utf8address() ) ;
+		msg->addTo( status.address , status.is_local , GStore::MessageStore::addressStyle(status.address) ) ;
 	}
 
 	// read and stream out more content body

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,9 +24,9 @@
 GSmtp::FilterFactoryBase::Spec::Spec()
 = default ;
 
-GSmtp::FilterFactoryBase::Spec::Spec( const std::string & first_ , const std::string & second_ ) :
-	first(first_) ,
-	second(second_)
+GSmtp::FilterFactoryBase::Spec::Spec( std::string_view first_ , std::string_view second_ ) :
+	first(G::sv_to_string(first_)) ,
+	second(G::sv_to_string(second_))
 {
 }
 

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -46,7 +46,7 @@ namespace GSmtp
 class GSmtp::RequestClient : public GNet::Client
 {
 public:
-	G_EXCEPTION( ProtocolError , tx("protocol error") ) ;
+	G_EXCEPTION( ProtocolError , tx("protocol error") )
 
 	RequestClient( GNet::EventState , const std::string & key , const std::string & ok ,
 		const GNet::Location & host_and_service , unsigned int connection_timeout ,

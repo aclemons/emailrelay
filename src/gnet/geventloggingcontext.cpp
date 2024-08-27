@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -32,32 +32,32 @@ GNet::EventLoggingContext * GNet::EventLoggingContext::m_inner = nullptr ;
 std::string GNet::EventLoggingContext::m_s ;
 
 #ifndef G_LIB_SMALL
-GNet::EventLoggingContext::EventLoggingContext( std::string_view s )
+GNet::EventLoggingContext::EventLoggingContext( std::string_view s ) :
+	m_outer(m_inner)
 {
 	m_s.assign( s.data() , s.size() ) ;
 
-	G::LogOutput::context( EventLoggingContext::fn , this ) ;
-	m_outer = m_inner ;
+	G::LogOutput::Instance::context( EventLoggingContext::fn , this ) ;
 	m_inner = this ;
 }
 #endif
 
-GNet::EventLoggingContext::EventLoggingContext( EventState es , const std::string & s )
+GNet::EventLoggingContext::EventLoggingContext( EventState es , const std::string & s ) :
+	m_outer(m_inner)
 {
 	set( m_s , es ) ;
 	m_s.append( s ) ;
 
-	G::LogOutput::context( EventLoggingContext::fn , this ) ;
-	m_outer = m_inner ;
+	G::LogOutput::Instance::context( EventLoggingContext::fn , this ) ;
 	m_inner = this ;
 }
 
-GNet::EventLoggingContext::EventLoggingContext( EventState es )
+GNet::EventLoggingContext::EventLoggingContext( EventState es ) :
+	m_outer(m_inner)
 {
 	set( m_s , es ) ;
 
-	G::LogOutput::context( EventLoggingContext::fn , this ) ;
-	m_outer = m_inner ;
+	G::LogOutput::Instance::context( EventLoggingContext::fn , this ) ;
 	m_inner = this ;
 }
 
@@ -77,9 +77,9 @@ void GNet::EventLoggingContext::set( std::string & s , EventState es )
 GNet::EventLoggingContext::~EventLoggingContext()
 {
 	if( m_outer )
-		G::LogOutput::context( EventLoggingContext::fn , m_outer ) ;
+		G::LogOutput::Instance::context( EventLoggingContext::fn , m_outer ) ;
 	else
-		G::LogOutput::context() ;
+		G::LogOutput::Instance::context() ;
 	m_inner = m_outer ;
 }
 

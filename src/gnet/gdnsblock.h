@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -145,11 +145,11 @@ private:
 class GNet::DnsBlock : private EventHandler
 {
 public:
-	G_EXCEPTION( Error , tx("dnsbl error") ) ;
-	G_EXCEPTION( ConfigError , tx("invalid dnsbl configuration") ) ;
-	G_EXCEPTION( BadFieldCount , tx("not enough comma-sparated fields") ) ;
-	G_EXCEPTION( SendError , tx("socket send failed") ) ;
-	G_EXCEPTION( BadDnsResponse , tx("invalid dns response") ) ;
+	G_EXCEPTION( Error , tx("dnsbl error") )
+	G_EXCEPTION( ConfigError , tx("invalid dnsbl configuration") )
+	G_EXCEPTION( BadFieldCount , tx("not enough comma-sparated fields") )
+	G_EXCEPTION( SendError , tx("socket send failed") )
+	G_EXCEPTION( BadDnsResponse , tx("invalid dns response") )
 	using ResultList = std::vector<DnsBlockServerResult> ;
 
 	DnsBlock( DnsBlockCallback & , EventState , std::string_view config = {} ) ;

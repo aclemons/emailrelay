@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,9 +27,10 @@
 #include "gstringlist.h"
 #include "gssl.h"
 #include "gbase64.h"
-#include "glocal.h"
 #include "gexception.h"
+#include "gdatetime.h"
 #include "gtest.h"
+#include "gassert.h"
 #include "glog.h"
 #include <algorithm>
 
@@ -225,10 +226,10 @@ G::StringArray GAuth::Cram::hashTypes( std::string_view prefix , bool require_st
 
 std::string GAuth::Cram::challenge( unsigned int random , const std::string & challenge_domain_in )
 {
-	std::string challenge_domain = challenge_domain_in.empty() ? GNet::Local::canonicalName() : challenge_domain_in ;
+	G_ASSERT( !challenge_domain_in.empty() ) ;
 	return std::string(1U,'<')
 		.append(std::to_string(random)).append(1U,'.')
 		.append(std::to_string(G::SystemTime::now().s())).append(1U,'@')
-		.append(challenge_domain).append(1U,'>') ;
+		.append(challenge_domain_in).append(1U,'>') ;
 }
 

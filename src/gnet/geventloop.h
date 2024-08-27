@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -62,9 +62,9 @@ namespace GNet
 class GNet::EventLoop
 {
 public:
-	G_EXCEPTION( Error , tx("event loop error") ) ;
-	G_EXCEPTION( NoInstance , tx("no event loop instance") ) ;
-	G_EXCEPTION( Overflow , tx("event loop overflow") ) ;
+	G_EXCEPTION( Error , tx("event loop error") )
+	G_EXCEPTION( NoInstance , tx("no event loop instance") )
+	G_EXCEPTION( Overflow , tx("event loop overflow") )
 
 protected:
 	EventLoop() ;

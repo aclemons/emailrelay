@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # Copying and distribution of this file, with or without modification,
 # are permitted in any medium without royalty provided the copyright
@@ -12,10 +12,7 @@
 #
 # An example script that reads an e-mail message from stdin and deposits in into
 # a sub-directory of the E-MailRelay spool directory depending on the "To:"
-# address. This could be used with an E-MailRelay POP server using the
-# "--pop-by-name" option so that messages get routed appropriately.
-#
-# See also 'man emailrelay-filter-copy'.
+# address. This is similar to the built-in "deliver:" filter.
 #
 
 store="__SPOOL_DIR__"

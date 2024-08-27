@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,7 +39,6 @@ use File::Basename ;
 use File::Glob ;
 use FileHandle ;
 use Data::Dumper ;
-use lib( File::Basename::dirname($0) ) ;
 use AutoMakeParser ;
 use ConfigStatus ;
 $AutoMakeParser::debug = 0 ;
@@ -103,13 +102,16 @@ sub read_makefiles
 		$m->{e_qmake_out} = $m->{e_is_top_dir} ? "$$m{e_project}.pro" : "$$m{e_dir}/$$m{e_dirname}.pro" ;
 		if( $opt_for_windows )
 		{
-			$m->{e_compile_options} = "" ; # /std:c++17
+			$m->{e_compile_options} = "/std:c++17 /Zc:__cplusplus" ; # (esp. for Qt6)
+			$m->{e_compile_stdcxx} = "c++17" ;
 		}
 		else
 		{
 			$m->{e_compile_options} = $m->compile_options() ;
 			$m->{e_compile_options} .= " -std=c++11" if ( $m->{e_compile_options} !~ m/std=c++/ ) ;
 			$m->{e_compile_options} .= " -fPIC" if $m->{e_is_gui_dir} ;
+			my @stdcxx = ( "" , map { s/^-std=// ; $_ } grep { m/^-std=c++/ } split(" ",$m->{e_compile_options}) ) ;
+			$m->{e_compile_stdcxx} = $stdcxx[-1] ;
 		}
 		$m->{e_copy} = $opt_for_windows ? "copy /y" : "cp" ;
 		$m->{e_need_mbedtls_inc} = $cfg_with_mbedtls && $m->{e_dirname} eq "gssl" ;
@@ -179,7 +181,8 @@ sub read_makefiles
 		}
 		$m->{e_definitions} = \@definitions ;
 
-		my @includes = ( "." , $m->includes($m->base()) ) ;
+		my $include_up = ( $m->{e_dirname} eq "test" ? "" : ".." ) ; # <version> must not find VERSION
+		my @includes = grep {m/./} ( "." , $include_up , $m->includes($m->base()) ) ;
 		$m->{e_includes} = \@includes ;
 
 		if( !$cfg_with_qt )

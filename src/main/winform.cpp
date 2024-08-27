@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 ///
 
 #include "gdef.h"
+#include "gnowide.h"
 #include "gssl.h"
 #include "gstr.h"
 #include "gstringwrap.h"
@@ -33,6 +34,7 @@
 #include "licence.h"
 #include "legal.h"
 #include "resource.h"
+#include "glog.h"
 #include <cstring>
 
 Main::WinForm::WinForm( HINSTANCE hinstance , const G::StringArray & cfg_data ,
@@ -60,12 +62,11 @@ Main::WinForm::WinForm( HINSTANCE hinstance , const G::StringArray & cfg_data ,
   	create( parent , "E-MailRelay" , with_icon?IDI_ICON1:0 , hnotify , GGui::Cracker::wm_user_other() ) ;
 
 	if( with_system_menu_quit )
-		addSystemMenuItem( txt("Quit") , 0x10 ) ;
+		addSystemMenuItem( txt("Quit") , quitId() ) ;
 }
 
 void Main::WinForm::addSystemMenuItem( std::string_view name , unsigned int id )
 {
-	G_ASSERT( id > 2 && (id & 0xf) == 0 && id < 0xf000 ) ;
 	HMENU hmenu = GetSystemMenu( handle() , FALSE ) ;
 	if( hmenu )
 		G::nowide::insertMenuItem( hmenu , id , G::sv_to_string(name) ) ;
@@ -94,7 +95,7 @@ void Main::WinForm::close()
 	if( !m_closed )
 	{
 		m_closed = true ;
-		::DestroyWindow( handle() ) ;
+		DestroyWindow( handle() ) ;
 	}
 }
 
@@ -109,7 +110,7 @@ void Main::WinForm::onInit( HWND hdialog , int index )
 	if( index == 0 ) // "Configuration"
 	{
 		m_cfg_view = std::make_unique<GGui::ListView>( hdialog , IDC_LIST1 ) ;
-  		m_cfg_view->set( m_cfg_data , 2U , 150U ) ;
+  		m_cfg_view->set( m_cfg_data , /*ncolumns=*/2U , /*widthpx=*/150U ) ;
 	}
 	else if( index == 1 ) // "Licence"
 	{

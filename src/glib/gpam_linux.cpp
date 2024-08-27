@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -248,12 +248,8 @@ int G::PamImp::converseCallback( int n_in , G_PAM_CONST struct pam_message ** in
 		ItemArray array( n ) ;
 		for( std::size_t i = 0U ; i < n ; i++ )
 		{
-			std::string & s1 = const_cast<std::string&>(array[i].in_type) ;
-			s1 = decodeStyle( in[i]->msg_style ) ;
-
-			std::string & s2 = const_cast<std::string&>(array[i].in) ;
-			s2 = std::string(in[i]->msg ? in[i]->msg : "") ;
-
+			array[i].in_type = decodeStyle( in[i]->msg_style ) ;
+			array[i].in = std::string( in[i]->msg ? in[i]->msg : "" ) ;
 			array[i].out_defined = false ;
 		}
 
@@ -374,7 +370,7 @@ bool G::Pam::authenticate( bool require_token )
 void G::Pam::checkAccount( bool require_token )
 {
 	G_DEBUG( "G::Pam::checkAccount" ) ;
-	return m_imp->checkAccount( require_token ) ;
+	m_imp->checkAccount( require_token ) ;
 }
 #endif
 

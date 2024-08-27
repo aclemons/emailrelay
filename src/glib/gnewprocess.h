@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -61,14 +61,14 @@ namespace G
 class G::NewProcess
 {
 public:
-	G_EXCEPTION( Error , tx("cannot spawn new process") ) ;
-	G_EXCEPTION( CannotFork , tx("cannot fork") ) ;
-	G_EXCEPTION( WaitError , tx("failed waiting for child process") ) ;
-	G_EXCEPTION( ChildError , tx("child process terminated abnormally") ) ;
-	G_EXCEPTION( Insecure , tx("refusing to exec while the user-id is zero") ) ;
-	G_EXCEPTION( PipeError , tx("pipe error") ) ;
-	G_EXCEPTION( InvalidPath , tx("invalid executable path -- must be absolute") ) ;
-	G_EXCEPTION( InvalidParameter , tx("invalid parameter") ) ;
+	G_EXCEPTION( Error , tx("cannot spawn new process") )
+	G_EXCEPTION( CannotFork , tx("cannot fork") )
+	G_EXCEPTION( WaitError , tx("failed waiting for child process") )
+	G_EXCEPTION( ChildError , tx("child process terminated abnormally") )
+	G_EXCEPTION( Insecure , tx("refusing to exec while the user-id is zero") )
+	G_EXCEPTION( PipeError , tx("pipe error") )
+	G_EXCEPTION( InvalidPath , tx("invalid executable path -- must be absolute") )
+	G_EXCEPTION( InvalidParameter , tx("invalid parameter") )
 	G_EXCEPTION( CreateProcessError , tx("CreateProcess error") ) ; // windows
 	G_EXCEPTION( SystemError , tx("system error") ) ; // windows
 
@@ -106,16 +106,16 @@ public:
 		HANDLE keep_handle_2 {HNULL} ; // extra handle to keep -- windows only
 
 		Config & set_env( const Environment & ) ;
-		Config & set_stdin( Fd ) ;
-		Config & set_stdout( Fd ) ;
-		Config & set_stderr( Fd ) ;
+		Config & set_stdin( Fd ) noexcept ;
+		Config & set_stdout( Fd ) noexcept ;
+		Config & set_stderr( Fd ) noexcept ;
 		Config & set_cd( const Path & ) ;
-		Config & set_strict_exe( bool = true ) ;
+		Config & set_strict_exe( bool = true ) noexcept ;
 		Config & set_exec_search_path( const std::string & ) ;
 		Config & set_run_as( Identity ) ;
-		Config & set_strict_id( bool = true ) ;
-		Config & set_close_other_fds( bool = true ) ;
-		Config & set_exec_error_exit( int ) ;
+		Config & set_strict_id( bool = true ) noexcept ;
+		Config & set_close_other_fds( bool = true ) noexcept ;
+		Config & set_exec_error_exit( int ) noexcept ;
 		Config & set_exec_error_format( const std::string & ) ;
 		Config & set_exec_error_format_fn( FormatFn ) ;
 	} ;
@@ -277,16 +277,16 @@ private:
 } ;
 
 inline G::NewProcess::Config & G::NewProcess::Config::set_env( const Environment & e ) { env = e ; return *this ; }
-inline G::NewProcess::Config & G::NewProcess::Config::set_stdin( Fd fd ) { stdin = fd ; return *this ; }
-inline G::NewProcess::Config & G::NewProcess::Config::set_stdout( Fd fd ) { stdout = fd ; return *this ; }
-inline G::NewProcess::Config & G::NewProcess::Config::set_stderr( Fd fd ) { stderr = fd ; return *this ; }
+inline G::NewProcess::Config & G::NewProcess::Config::set_stdin( Fd fd ) noexcept { stdin = fd ; return *this ; }
+inline G::NewProcess::Config & G::NewProcess::Config::set_stdout( Fd fd ) noexcept { stdout = fd ; return *this ; }
+inline G::NewProcess::Config & G::NewProcess::Config::set_stderr( Fd fd ) noexcept { stderr = fd ; return *this ; }
 inline G::NewProcess::Config & G::NewProcess::Config::set_cd( const Path & p ) { cd = p ; return *this ; }
-inline G::NewProcess::Config & G::NewProcess::Config::set_strict_exe( bool b ) { strict_exe = b ; return *this ; }
+inline G::NewProcess::Config & G::NewProcess::Config::set_strict_exe( bool b ) noexcept { strict_exe = b ; return *this ; }
 inline G::NewProcess::Config & G::NewProcess::Config::set_exec_search_path( const std::string & s ) { exec_search_path = s ; return *this ; }
 inline G::NewProcess::Config & G::NewProcess::Config::set_run_as( Identity i ) { run_as = i ; return *this ; }
-inline G::NewProcess::Config & G::NewProcess::Config::set_strict_id( bool b ) { strict_id = b ; return *this ; }
-inline G::NewProcess::Config & G::NewProcess::Config::set_close_other_fds( bool b ) { close_other_fds = b ; return *this ; }
-inline G::NewProcess::Config & G::NewProcess::Config::set_exec_error_exit( int n ) { exec_error_exit = n ; return *this ; }
+inline G::NewProcess::Config & G::NewProcess::Config::set_strict_id( bool b ) noexcept { strict_id = b ; return *this ; }
+inline G::NewProcess::Config & G::NewProcess::Config::set_close_other_fds( bool b ) noexcept { close_other_fds = b ; return *this ; }
+inline G::NewProcess::Config & G::NewProcess::Config::set_exec_error_exit( int n ) noexcept { exec_error_exit = n ; return *this ; }
 inline G::NewProcess::Config & G::NewProcess::Config::set_exec_error_format( const std::string & s ) { exec_error_format = s ; return *this ; }
 inline G::NewProcess::Config & G::NewProcess::Config::set_exec_error_format_fn( FormatFn f ) { exec_error_format_fn = f ; return *this ; }
 

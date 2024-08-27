@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -112,6 +112,11 @@ bool GNet::SocketBase::eWouldBlock() const
 bool GNet::SocketBase::eInProgress() const
 {
 	return m_reason == WSAEWOULDBLOCK ; // sic -- WSAEINPROGRESS has different semantics wrt. Unix
+}
+
+bool GNet::SocketBase::eInUse() const
+{
+	return m_reason == WSAEADDRINUSE ;
 }
 
 bool GNet::SocketBase::eMsgSize() const

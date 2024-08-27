@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -64,7 +64,7 @@ namespace Main
 class Main::WinApp : public GGui::ApplicationBase , public Main::Output
 {
 public:
-	G_EXCEPTION( Error , tx("application error") ) ;
+	G_EXCEPTION( Error , tx("application error") )
 
 	WinApp( HINSTANCE h , HINSTANCE p , const std::string & name ) ;
 		///< Constructor. Initialise with init().
@@ -93,19 +93,18 @@ public:
 		///< can be displayed.
 
 private: // overrides
-	void output( const std::string & message , bool error , bool ) override ; // Override from Main::Output.
-	G::OptionsUsage::Config outputLayout( bool verbose ) const override ; // Override from Main::Output.
-	bool outputSimple() const override ; // Override from Main::Output.
-	void onWindowException( std::exception & e ) override ; // Override from GGui::Window.
-	DWORD classStyle() const override ; // Override from GGui::ApplicationBase.
-	std::pair<DWORD,DWORD> windowStyle() const override ; // Override from GGui::ApplicationBase.
-	UINT resource() const override ; // Override from GGui::ApplicationBase.
-	bool onCreate() override ;
-	bool onClose() override ;
-	void onTrayDoubleClick() override ;
-	void onTrayRightMouseButtonDown() override ;
-	LRESULT onUser( WPARAM , LPARAM ) override ;
-	LRESULT onUserOther( WPARAM , LPARAM ) override ;
+	void output( const std::string & message , bool error , bool ) override ; // Main::Output
+	G::OptionsUsage::Config outputLayout( bool verbose ) const override ; // Main::Output
+	bool outputSimple() const override ; // Main::Output
+	DWORD classStyle() const override ; // GGui::ApplicationBase
+	std::pair<DWORD,DWORD> windowStyle() const override ; // GGui::ApplicationBase
+	UINT resource() const override ; // GGui::ApplicationBase
+	bool onCreate() override ; // GGui::Cracker
+	bool onClose() override ; // GGui::Cracker
+	void onTrayDoubleClick() override ; // GGui::Cracker
+	void onTrayRightMouseButtonDown() override ; // GGui::Cracker
+	LRESULT onUser( WPARAM , LPARAM ) override ; // GGui::Cracker
+	LRESULT onUserOther( WPARAM , LPARAM ) override ; // GGui::Cracker
 
 private:
 	struct Config

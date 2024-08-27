@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@ namespace G
 		std::string rootsid() ;
 		std::string sidstr( PSID sid_p ) ;
 		std::string computername() ;
-		Account lookup( const std::string & name , bool = false ) ;
+		Account lookup( std::string_view , bool = false ) ;
 	}
 }
 
@@ -147,7 +147,7 @@ bool G::Identity::operator!=( const Identity & other ) const noexcept
 	return m_sid != other.m_sid ;
 }
 
-std::pair<G::Identity,std::string> G::Identity::lookup( const std::string & name )
+std::pair<G::Identity,std::string> G::Identity::lookup( std::string_view name )
 {
 	auto account = IdentityImp::lookup( name , true ) ;
 	if( !account.valid() )
@@ -158,7 +158,7 @@ std::pair<G::Identity,std::string> G::Identity::lookup( const std::string & name
 	return std::make_pair( id , account.name ) ;
 }
 
-std::pair<G::Identity,std::string> G::Identity::lookup( const std::string & name , std::nothrow_t )
+std::pair<G::Identity,std::string> G::Identity::lookup( std::string_view name , std::nothrow_t )
 {
 	auto account = IdentityImp::lookup( name , true ) ;
 	if( account.valid() )
@@ -211,7 +211,7 @@ std::string G::IdentityImp::computername()
 	return nowide::getComputerNameEx() ;
 }
 
-G::IdentityImp::Account G::IdentityImp::lookup( const std::string & name , bool with_canonical_name )
+G::IdentityImp::Account G::IdentityImp::lookup( std::string_view name , bool with_canonical_name )
 {
 	const Account error ;
 	if( name.empty() || name.find('\\') != std::string::npos )
@@ -219,7 +219,7 @@ G::IdentityImp::Account G::IdentityImp::lookup( const std::string & name , bool 
 	std::string domain = computername() ; // => local accounts
 	if( domain.empty() )
 		return error ;
-	std::string full_name = domain.append(1U,'\\').append(name) ;
+	std::string full_name = domain.append(1U,'\\').append(name.data(),name.size()) ;
 
 	DWORD sidsize = 0 ;
 	DWORD domainsize = 0 ;

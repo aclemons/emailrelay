@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 #include "gdef.h"
 #include "gprotocolmessage.h"
-#include "gsmtpserverparser.h"
+#include "gmessagestore.h"
 
 #ifndef G_LIB_SMALL
 void GSmtp::ProtocolMessage::addContentLine( const std::string & line )
@@ -32,7 +32,7 @@ void GSmtp::ProtocolMessage::addContentLine( const std::string & line )
 
 GSmtp::ProtocolMessage::ToInfo::ToInfo( const VerifierStatus & status_in ) :
 	status(status_in) ,
-	utf8address(status_in.utf8address())
+	address_style(GStore::MessageStore::addressStyle(status_in.address))
 {
 }
 

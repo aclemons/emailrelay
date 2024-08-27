@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ namespace GNet
 class GNet::EventLoopImp : public EventLoop
 {
 public:
-	G_EXCEPTION( Error , tx("select error") ) ;
+	G_EXCEPTION( Error , tx("select error") )
 	EventLoopImp() ;
 
 private: // overrides
@@ -173,7 +173,7 @@ void GNet::EventLoopImp::runOnce()
 	}
 
 	// find the highest fd value to pass to select() -- probably unnecessary
-	// that that this is the exact maximum rather than an upper bound, but
+	// that this is the exact maximum rather than an upper bound, but
 	// that's what is specified -- the fdmax data members are maintained by
 	// addImp() but invalidated by dropImp() so we need to re-evaluate if
 	// invalid -- we can use the size of the list as as upper bound for
@@ -195,7 +195,7 @@ void GNet::EventLoopImp::runOnce()
 	// modifies them, and in any case our originals might be modified as we iterate over
 	// the results and call event handlers
 	//
-	m_read_set_copy = m_read_set ; // (fast)
+	m_read_set_copy = m_read_set ;
 	m_write_set_copy = m_write_set ;
 	m_other_set_copy = m_other_set ;
 	int rc = ::select( nfds , &m_read_set_copy , &m_write_set_copy , &m_other_set_copy , timeout_p ) ;

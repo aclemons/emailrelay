@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ namespace G
 class G::OptionReader
 {
 public:
-	G_EXCEPTION( FileError , tx("error reading configuration file") ) ;
+	G_EXCEPTION( FileError , tx("error reading configuration file") )
 
 	static StringArray read( const G::Path & , std::size_t limit = 1000U ) ;
 		///< Reads options from file as a list of strings like "--foo=bar".

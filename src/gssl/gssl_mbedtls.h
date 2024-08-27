@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 #include "gdef.h"
 #include "gssl.h"
 #include "gssl_mbedtls_headers.h"
+#include "gstringview.h"
 #include "gpath.h"
 #include <memory>
 #include <stdexcept>
@@ -294,8 +295,8 @@ private:
 	Key m_pk ;
 	Certificate m_certificate ;
 	Certificate m_ca_list ;
-	int m_authmode ;
-	bool m_noisy ;
+	int m_authmode {0} ;
+	bool m_noisy {false} ;
 } ;
 
 //| \class GSsl::MbedTls::ProtocolImp
@@ -342,11 +343,11 @@ private:
 
 private:
 	const ProfileImp & m_profile ;
-	G::ReadWrite * m_io ;
+	G::ReadWrite * m_io {nullptr} ;
 	Context m_ssl ;
 	std::string m_peer_certificate ;
 	std::string m_peer_certificate_chain ;
-	bool m_verified ;
+	bool m_verified {false} ;
 } ;
 
 //| \class GSsl::MbedTls::DigesterImp

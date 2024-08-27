@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,12 +25,15 @@
 #include "gpath.h"
 #include "gstringarray.h"
 #include "gstringmap.h"
+#include "gstringview.h"
 #include "gexception.h"
 #include "goptions.h"
 #include "goptionvalue.h"
 #include "goptionmap.h"
 #include <string>
+#include <utility>
 #include <iostream>
+#include <vector>
 
 namespace G
 {
@@ -84,21 +87,27 @@ public:
 		///< is used in error messages to describe the kind of file,
 		///< defaulting to "map".
 
+	MapFile( const Path & , std::string_view kind , std::nothrow_t ) ;
+		///< A non-throwing overload that reads from a file and
+		///< ignores any errors.
+
 	explicit MapFile( std::istream & ) ;
 		///< Constructor that reads from a stream.
 
 	const StringArray & keys() const ;
 		///< Returns a reference to the internal ordered list of keys.
 
-	static void check( const Path & , std::string_view kind = {} ) ;
-		///< Throws if the file is invalid. This is equivalent to
-		///< constructing a temporary MapFile object, but it
-		///< specifically does not do any logging.
-
 	void add( std::string_view key , std::string_view value , bool clear = false ) ;
 		///< Adds or updates a single item in the map.
 		///< If updating then by default the new value
 		///< is appended with a comma separator.
+
+	bool update( std::string_view key , std::string_view value ) ;
+		///< Updates an existing value. Returns false if not
+		///< found.
+
+	bool remove( std::string_view key ) ;
+		///< Removes a value (if it exists).
 
 	void writeItem( std::ostream & , std::string_view key ) const ;
 		///< Writes a single item from this map to the stream.
@@ -106,10 +115,10 @@ public:
 	static void writeItem( std::ostream & , std::string_view key , std::string_view value ) ;
 		///< Writes an arbitrary item to the stream.
 
-	void editInto( const Path & path , bool make_backup ,
-		bool allow_read_error , bool allow_write_error ) const ;
-			///< Edits an existing file so that its contents
-			///< reflect this map.
+	Path editInto( const Path & path , bool make_backup , bool do_throw = true ) const ;
+		///< Edits an existing file so that its contents reflect
+		///< this map. Returns the path of the backup file, if
+		///< created.
 
 	bool contains( std::string_view key ) const ;
 		///< Returns true if the map contains the given key.
@@ -128,13 +137,14 @@ public:
 		///< Returns a string value from the map. Returns the default
 		///< if there is no such key or if the value is empty.
 
+	bool valueContains( std::string_view key , std::string_view token , std::string_view default_ = {} ) const ;
+		///< Returns true if value(key,default_) contains the given
+		///< comma-separated token.
+
 	bool booleanValue( std::string_view key , bool default_ ) const ;
 		///< Returns a boolean value from the map. Returns true if
 		///< the key exists with an empty value. Returns the default
 		///< if no such key.
-
-	void remove( std::string_view key ) ;
-		///< Removes a value (if it exists).
 
 	const StringMap & map() const ;
 		///< Returns a reference to the internal map.
@@ -158,21 +168,19 @@ public:
 		///< Returns a path value from the map with expand().
 
 private:
-	using List = std::list<std::string> ;
-	void readFrom( const Path & , std::string_view ) ;
-	void readFrom( std::istream & ss ) ;
+	using List = std::vector<std::string> ;
+	void readFromFile( const Path & , std::string_view , bool do_throw = true ) ;
+	void readFromStream( std::istream & ss ) ;
+	List readLines( const Path & , std::string_view , bool do_throw ) const ;
+	static std::pair<std::string_view,std::string_view> split( std::string_view ) ;
+	static std::string join( std::string_view , std::string_view ) ;
 	static std::string quote( const std::string & ) ;
-	List read( const Path & , std::string_view , bool ) const ;
-	void commentOut( List & ) const ;
-	void replace( List & ) const ;
 	bool expand_( std::string & ) const ;
-	std::string expandAll( std::string_view ) const ;
-	static void backup( const Path & ) ;
-	static void save( const Path & , List & , bool ) ;
 	std::string mandatoryValue( std::string_view ) const ;
-	bool ignore( const std::string & ) const ;
-	static std::string ekind( std::string_view ) ;
-	static std::string epath( const Path & ) ;
+	static bool valued( const std::string & ) ;
+	static bool commentedOut( const std::string & ) ;
+	static std::string strkind( std::string_view ) ;
+	static std::string strpath( const Path & ) ;
 	static Error readError( const Path & , std::string_view ) ;
 	static Error writeError( const Path & , std::string_view = {} ) ;
 	static Error missingValueError( const Path & , const std::string & , const std::string & ) ;

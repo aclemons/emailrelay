@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -182,7 +182,7 @@ void G::StringWrapImp::wrapImp( std::istream & in , WordWrapper & ww )
 
 std::size_t G::StringWrap::wordsize( const std::string & s )
 {
-	// (to it ourselves to avoid a dependency on G::Convert and G::Convert::u8parse())
+	// (do the UTF-8 parsing ourselves to avoid a dependency on G::Convert::u8parse())
 	const unsigned char * p = reinterpret_cast<const unsigned char*>( s.data() ) ;
 	std::size_t n = s.size() ;
 	std::size_t result = 0U ;

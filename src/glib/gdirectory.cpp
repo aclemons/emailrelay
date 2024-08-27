@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -119,6 +119,13 @@ void G::DirectoryList::readImp( const G::Path & dir , bool sub_dirs , std::strin
 		}
 	}
 }
+
+#ifndef G_LIB_SMALL
+bool G::DirectoryList::empty() const noexcept
+{
+	return m_list.empty() ;
+}
+#endif
 
 bool G::DirectoryList::more()
 {

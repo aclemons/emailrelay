@@ -105,7 +105,11 @@ On Unix-like systems the server will read its configuration settings from a file
 "/etc/emailrelay.conf".
 
 On Windows E-MailRelay typically runs as a Windows Service and it reads its
-configuration from the startup batch file "emailrelay-start.bat".
+configuration from the startup batch file "emailrelay-start.bat" and/or
+the configuration file "emailrelay.cfg" in the "ProgramData/E-MailRelay"
+folder. (If you can't find this folder look for the "E-MailRelay" link in the
+"Program Files/E-MailRelay" folder and then right-click and "open file
+location".)
 
 You can change the E-MailRelay server configuration by editing the configuration
 file or startup batch file directly and then restarting the server. Or you can
@@ -127,7 +131,7 @@ but it can also send logging information to "syslog" on Unix systems or the to
 the Event Viewer on Windows.
 
 Logging is configured with options like "--log", "--log-file", "--as-server" and
-"--syslog", so check these in the configuration file or startup batch file.
+"--syslog", so check these in the configuration file and/or startup batch file.
 
 For more verbose logging add the "--verbose" option. This is a good idea when
 setting up or trouble-shooting your E-MailRelay configuration.
@@ -195,34 +199,23 @@ something like this:
 
 	emailrelay --as-server --pop --pop-auth=/etc/pop.auth
 
-You will need to create the POP authentication secrets file containing usernames
-and passwords, as above.
+You will need to create the "--pop-auth" secrets file. It should contain one
+line of text that gives the username and password that your e-mail client will
+use when connecting to E-MailRelay, for example:
 
-If you use more than one e-mail client program then you will probably want to
-make independent copies of your e-mails for each. Use a "--filter" program to
-copy the e-mail files into multiple sub-directories of the main spool directory
-and then use "--pop-by-name" so that each e-mail client accesses its own
-sub-directory according to which account name it used when authenticating.
-
-The filter can be an external program or the built-in "copy:" filter:
-
-	emailrelay --as-server --filter=copy:pop --pop --pop-by-name --pop-auth=/etc/pop.auth
-
-Add the account for each e-mail client in the POP authentication secrets file
-and manually create the corresponding sub-directory.
-
-The "--pop-by-name" option is also useful when e-mail messages are being
-copied into individual mailboxes by the "deliver:" filter. In this case each
-sub-directory is a mailbox containing only those e-mails that are addressed to
-the mailbox owner.
-
-<<popbyname.png>>
-
-Refer to the "Delivery" section in the E-MailRelay reference document for more
-information.
+	server plain user1 password1
 
 If you are using POP to view a spool directory that is also being used for
 e-mail forwarding then you should use "--pop-no-delete".
+
+If using more than one e-mail client program then you might want to make
+independent copies of your e-mails for each client. Use a "--filter" program to
+copy the e-mail files into sub-directories of the main spool directory and then
+use "--pop-by-name" so that each e-mail client accesses its own sub-directory
+according to which account name it used when authenticating. The filter can be
+an external program, or just use the built-in "copy:" filter.
+
+<<popbyname.png>>
 
 IMAP
 ----
@@ -306,21 +299,23 @@ this:
 
 	client plain myname@gmail.com myapppassword
 
-Then change the E-MailRelay startup batch file or configuration file to refer
-to your secrets file by using the "--client-auth" option.
+Then change the E-MailRelay configuration file to refer to your secrets file by
+using the "--client-auth" option.
 
 Also set the "--as-proxy" or "--forward-to" option to "smtp.gmail.com:587" and
 add "--client-tls" to enable TLS encryption.
 
-On Windows the E-MailRelay startup batch file should contain something like this:
-
-	emailrelay --as-proxy=smtp.gmail.com:587 --client-tls --client-auth=C:/ProgramData/E-MailRelay/emailrelay.auth ...
-
-Or an equivalent configuration file like this:
+On Windows your settings might look something like this in the "emailrelay.cfg"
+configuration file:
 
 	forward-to smtp.gmail.com:587
 	client-tls
 	client-auth C:/ProgramData/E-MailRelay/emailrelay.auth
+
+In the startup batch file ("emailrelay-start.bat") they should all go on one
+line:
+
+	start ... emailrelay --as-proxy=smtp.gmail.com:587 --client-tls --client-auth=C:/ProgramData/E-MailRelay/emailrelay.auth ...
 
 Connection tunnelling
 ---------------------
@@ -344,8 +339,8 @@ Refer to the documentation of the "--dnsbl" option for more details.
 
 It is also possible to integrate E-MailRelay with intrusion detection systems
 such as "fail2ban" that monitor log files and dynamically modify your iptables
-firewall. Use E-MailRelay's "--log-address" command-line option so that the
-spammers' IP addresses are logged and made visible to "fail2ban".
+firewall. Use E-MailRelay's "--log-format=address" command-line option so that
+the remote IP addresses are logged and made visible to "fail2ban".
 
 Bcc handling
 ------------
@@ -370,7 +365,7 @@ As an example of an advanced E-MailRelay setup consider the following
 command-line, split onto multiple lines for readability:
 
 	emailrelay
-	--log --verbose --log-time --log-network
+	--log --verbose --log-time --log-format=unit,network
 	--close-stderr --syslog
 	--pid-file @app/emailrelay.pid
 	--user root
@@ -436,4 +431,4 @@ separate secrets file.
 
 
 _____________________________________
-Copyright (C) 2001-2023 Graeme Walker
+Copyright (C) 2001-2024 Graeme Walker

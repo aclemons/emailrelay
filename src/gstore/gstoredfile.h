@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -51,10 +51,10 @@ namespace GStore
 class GStore::StoredFile : public StoredMessage
 {
 public:
-	G_EXCEPTION( FormatError , tx("invalid envelope file") ) ;
-	G_EXCEPTION( FilenameError , tx("invalid envelope filename") ) ;
-	G_EXCEPTION( EditError , tx("cannot update envelope file") ) ;
-	G_EXCEPTION( SizeError , tx("cannot get content file size") ) ;
+	G_EXCEPTION( FormatError , tx("invalid envelope file") )
+	G_EXCEPTION( FilenameError , tx("invalid envelope filename") )
+	G_EXCEPTION( EditError , tx("cannot update envelope file") )
+	G_EXCEPTION( SizeError , tx("cannot get content file size") )
 	using State = FileStore::State ;
 
 	StoredFile( FileStore & store , const MessageId & , State = State::Normal ) ;
@@ -125,10 +125,10 @@ private:
 private:
 	G::Path cpath() const ;
 	G::Path epath( State ) const ;
-	std::size_t writeEnvelopeImp( const Envelope & , const G::Path & , std::ofstream & ) ;
 	void replaceEnvelope( const G::Path & , const G::Path & ) ;
 	const std::string & eol() const ;
 	void addReason( const G::Path & path , const std::string & , int ) const ;
+	static std::size_t writeEnvelopeImp( const Envelope & , const G::Path & , std::ofstream & ) ;
 
 private:
 	FileStore & m_store ;

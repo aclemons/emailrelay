@@ -177,7 +177,11 @@
 
     <p>
      On Windows E-MailRelay typically runs as a Windows Service and it reads its
-     configuration from the startup batch file <em>emailrelay-start.bat</em>.
+     configuration from the startup batch file <em>emailrelay-start.bat</em> and/or
+     the configuration file <em>emailrelay.cfg</em> in the <em>ProgramData/E-MailRelay</em>
+     folder. (If you can't find this folder look for the <em>E-MailRelay</em> link in the
+     <em>Program Files/E-MailRelay</em> folder and then right-click and "open file
+     location".)
     </p>
 
     <p>
@@ -207,7 +211,7 @@
 
     <p>
      Logging is configured with options like <em>--log</em>, <em>--log-file</em>, <em>--as-server</em> and
-     <em>--syslog</em>, so check these in the configuration file or startup batch file.
+     <em>--syslog</em>, so check these in the configuration file and/or startup batch file.
     </p>
 
     <p>
@@ -305,50 +309,31 @@ server plain user2 password2
 </pre>
       </div><!-- div-pre -->
     <p>
-     You will need to create the POP authentication secrets file containing usernames
-     and passwords, as above.
-    </p>
-
-    <p>
-     If you use more than one e-mail client program then you will probably want to
-     make independent copies of your e-mails for each. Use a <em>--filter</em> program to
-     copy the e-mail files into multiple sub-directories of the main spool directory
-     and then use <em>--pop-by-name</em> so that each e-mail client accesses its own
-     sub-directory according to which account name it used when authenticating.
-    </p>
-
-    <p>
-     The filter can be an external program or the built-in <em>copy:</em> filter:
+     You will need to create the <em>--pop-auth</em> secrets file. It should contain one
+     line of text that gives the username and password that your e-mail client will
+     use when connecting to E-MailRelay, for example:
     </p>
 
       <div class="div-pre">
-       <pre>emailrelay --as-server --filter=copy:pop --pop --pop-by-name --pop-auth=/etc/pop.auth
+       <pre>server plain user1 password1
 </pre>
       </div><!-- div-pre -->
-    <p>
-     Add the account for each e-mail client in the POP authentication secrets file
-     and manually create the corresponding sub-directory.
-    </p>
-
-    <p>
-     The <em>--pop-by-name</em> option is also useful when e-mail messages are being
-     copied into individual mailboxes by the <em>deliver:</em> filter. In this case each
-     sub-directory is a mailbox containing only those e-mails that are addressed to
-     the mailbox owner.
-    </p>
-
-<img src="popbyname.png" alt="image">
-
-
-    <p>
-     Refer to the <em>Delivery</em> section in the E-MailRelay reference document for more
-     information.
-    </p>
-
     <p>
      If you are using POP to view a spool directory that is also being used for
      e-mail forwarding then you should use <em>--pop-no-delete</em>.
     </p>
+
+    <p>
+     If using more than one e-mail client program then you might want to make
+     independent copies of your e-mails for each client. Use a <em>--filter</em> program to
+     copy the e-mail files into sub-directories of the main spool directory and then
+     use <em>--pop-by-name</em> so that each e-mail client accesses its own sub-directory
+     according to which account name it used when authenticating. The filter can be
+     an external program, or just use the built-in <em>copy:</em> filter.
+    </p>
+
+<img src="popbyname.png" alt="image">
+
    <h2><a class="a-header" name="SH_1_8">IMAP</a></h2> <!-- index:2:SH:1:8:IMAP -->
     <p>
      E-MailRelay does not support the IMAP protocol directly but a simple filter
@@ -467,8 +452,8 @@ WScript.Quit( 0 ) ;
 </pre>
       </div><!-- div-pre -->
     <p>
-     Then change the E-MailRelay startup batch file or configuration file to refer
-     to your secrets file by using the <em>--client-auth</em> option.
+     Then change the E-MailRelay configuration file to refer to your secrets file by
+     using the <em>--client-auth</em> option.
     </p>
 
     <p>
@@ -477,21 +462,23 @@ WScript.Quit( 0 ) ;
     </p>
 
     <p>
-     On Windows the E-MailRelay startup batch file should contain something like this:
-    </p>
-
-      <div class="div-pre">
-       <pre>emailrelay --as-proxy=smtp.gmail.com:587 --client-tls --client-auth=C:/ProgramData/E-MailRelay/emailrelay.auth ...
-</pre>
-      </div><!-- div-pre -->
-    <p>
-     Or an equivalent configuration file like this:
+     On Windows your settings might look something like this in the <em>emailrelay.cfg</em>
+     configuration file:
     </p>
 
       <div class="div-pre">
        <pre>forward-to smtp.gmail.com:587
 client-tls
-client-auth C:/ProgramData/E-MailRelay/emailrelay.auth</pre>
+client-auth C:/ProgramData/E-MailRelay/emailrelay.auth
+</pre>
+      </div><!-- div-pre -->
+    <p>
+     In the startup batch file (<em>emailrelay-start.bat</em>) they should all go on one
+     line:
+    </p>
+
+      <div class="div-pre">
+       <pre>start ... emailrelay --as-proxy=smtp.gmail.com:587 --client-tls --client-auth=C:/ProgramData/E-MailRelay/emailrelay.auth ...</pre>
       </div><!-- div-pre -->
    <h2><a class="a-header" name="SH_1_13">Connection tunnelling</a></h2> <!-- index:2:SH:1:13:Connection tunnelling -->
     <p>
@@ -525,8 +512,8 @@ client-auth C:/ProgramData/E-MailRelay/emailrelay.auth</pre>
     <p>
      It is also possible to integrate E-MailRelay with intrusion detection systems
      such as <em>fail2ban</em> that monitor log files and dynamically modify your iptables
-     firewall. Use E-MailRelay's <em>--log-address</em> command-line option so that the
-     spammers' IP addresses are logged and made visible to <em>fail2ban</em>.
+     firewall. Use E-MailRelay's <em>--log-format=address</em> command-line option so that
+     the remote IP addresses are logged and made visible to <em>fail2ban</em>.
     </p>
    <h2><a class="a-header" name="SH_1_15">Bcc handling</a></h2> <!-- index:2:SH:1:15:Bcc handling -->
     <p>
@@ -557,7 +544,7 @@ client-auth C:/ProgramData/E-MailRelay/emailrelay.auth</pre>
 
       <div class="div-pre">
        <pre>emailrelay
---log --verbose --log-time --log-network
+--log --verbose --log-time --log-format=unit,network
 --close-stderr --syslog
 --pid-file @app/emailrelay.pid
 --user root
@@ -633,10 +620,10 @@ client-auth C:/ProgramData/E-MailRelay/emailrelay.auth</pre>
 
     <div class="div-footer">
      <p>
-      Copyright (C) 2001-2023 Graeme Walker
+      Copyright (C) 2001-2024 Graeme Walker
      </p>
     </div><!-- div-footer -->
  </div> <!-- div-main -->
  </body>
 </html>
-<!-- Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->
+<!-- Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>. All rights reserved. -->

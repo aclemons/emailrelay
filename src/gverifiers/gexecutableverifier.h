@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -38,15 +38,14 @@ namespace GVerifiers
 class GVerifiers::ExecutableVerifier : public GSmtp::Verifier, private GNet::TaskCallback
 {
 public:
-	ExecutableVerifier( GNet::EventState , const G::Path & , unsigned int timeout ) ;
+	ExecutableVerifier( GNet::EventState , const GSmtp::Verifier::Config & , const G::Path & ) ;
 		///< Constructor.
 
 private: // overrides
 	G::Slot::Signal<GSmtp::Verifier::Command,const GSmtp::VerifierStatus&> & doneSignal() override ; // GSmtp::Verifier
 	void cancel() override ; // GSmtp::Verifier
 	void onTaskDone( int , const std::string & ) override ; // GNet::TaskCallback
-	void verify( GSmtp::Verifier::Command , const std::string & rcpt_to_parameter ,
-		const GSmtp::Verifier::Info & ) override ; // GSmtp::Verifier
+	void verify( const GSmtp::Verifier::Request & ) override ; // GSmtp::Verifier
 
 public:
 	~ExecutableVerifier() override = default ;
@@ -61,8 +60,8 @@ private:
 private:
 	GNet::Timer<ExecutableVerifier> m_timer ;
 	GSmtp::Verifier::Command m_command {GSmtp::Verifier::Command::VRFY} ;
+	GSmtp::Verifier::Config m_config ;
 	G::Path m_path ;
-	unsigned int m_timeout ;
 	G::Slot::Signal<GSmtp::Verifier::Command,const GSmtp::VerifierStatus&> m_done_signal ;
 	std::string m_to_address ;
 	GNet::Task m_task ;

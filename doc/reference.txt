@@ -21,8 +21,8 @@ The "emailrelay" program supports the following command-line usage:
 * --as-server (-d)
   This is equivalent to "--log" and "--close-stderr". It is a convenient way of
   running a background storage daemon that accepts mail messages and spools
-  them. Use "--log" instead of "--as-server" to keep standard error stream
-  open.
+  them. Use "--log" instead of "--as-server" to keep the standard error
+  stream open.
 * --spool-dir <dir> (-s)
   Specifies the directory used for holding mail messages that have been
   received but not yet forwarded.
@@ -110,12 +110,16 @@ The "emailrelay" program supports the following command-line usage:
 * --dnsbl <config>
   Specifies a list of DNSBL servers that are used to reject SMTP connections
   from blocked addresses. The configuration string is made up of
-  comma-separated fields: the DNS server's transport address, a timeout in
-  milliseconds, a rejection threshold, and then the list of DNSBL servers.
+  comma-separated fields: the list of DNSBL servers, an optional rejection
+  threshold, an optional timeout in milliseconds, and optionally the
+  transport address of the DNS server.
 * --domain <fqdn> (-D)
-  Specifies the network name that is used in SMTP EHLO commands, "Received"
-  lines, and for generating authentication challenges. The default is derived
-  from a DNS lookup of the local hostname.
+  Specifies the domain name that is used in SMTP client EHLO commands, server
+  EHLO responses, "Received" lines, and for generating authentication
+  challenges. The SMTP client will use an IP address in the EHLO command if
+  the given domain is not a dotted FQDN. If this option is not used at all
+  then the default value is the canonical name returned from a DNS query of
+  the local hostname, or the system's FQDN on Windows.
 * --filter <program> (-z)
   Runs the specified external filter program whenever a mail message is stored.
   The filter is passed the name of the message file in the spool directory so
@@ -142,15 +146,15 @@ The "emailrelay" program supports the following command-line usage:
   listening. When an interface name is decorated with a "-ipv4" or "-ipv6"
   suffix only their IPv4 or IPv6 addresses will be used (eg. "ppp0-ipv4").
   To inherit listening file descriptors from the parent process on unix use a
-  syntax like this: "--interface" smtp=fd#3,smtp=fd#4,pop=fd#5.
+  syntax like this: "--interface=smtp=fd#3".
 * --prompt-timeout <time> (-w)
   Specifies a timeout (in seconds) for getting the initial prompt from a remote
   SMTP server. If no prompt is received after this time then the SMTP dialog
   goes ahead without it.
 * --server-smtp-config <config> (-Z)
   Configures the SMTP server protocol using a comma-separated list of optional
-  features, including 'pipelining', 'chunking', 'smtputf8', and
-  'smtputf8strict'.
+  features, including 'pipelining', 'chunking', 'smtputf8', 'smtputf8strict',
+  'nostrictparsing' and 'noalabels'.
 * --size <bytes> (-M)
   Limits the size of mail messages that can be submitted over SMTP.
 
@@ -164,7 +168,7 @@ The "emailrelay" program supports the following command-line usage:
   Modifies the POP server's spool directory to be the sub-directory with the
   same name as the user-id used for POP authentication. This allows POP
   clients to see only their own messages after they have been moved into
-  separate sub-directories typically by the built-in "deliver:" or "copy:"
+  separate sub-directories, typically by the built-in "deliver:" or "copy:"
   filters. Content files can remain in the main spool directory to save disk
   space; they will be deleted by the POP server when it deletes the last
   matching envelope file.
@@ -302,19 +306,17 @@ The "emailrelay" program supports the following command-line usage:
   Disables all network serving, including SMTP, POP and administration
   interfaces. The program will terminate as soon as any initial forwarding is
   complete.
-* --hidden (-H)
-  Windows only. Hides the application window and disables all message boxes,
-  overriding any "--show" option. This is useful when running as a windows
-  service.
 * --localedir <dir>
   Enables localisation and specifies the locale base directory where message
   catalogues can be found. An empty directory can be used for the built-in
-  default.
+  default. Unix only.
 * --no-daemon (-t)
   Disables the normal backgrounding at startup so that the program runs in the
-  foreground, without forking or detaching from the terminal.  On Windows
-  this disables the system tray icon so the program uses a normal window;
-  when the window is closed the program terminates.
+  foreground, without forking or detaching from the terminal. Unix only.
+* --hidden (-H)
+  Hides the application window and disables all message boxes, overriding any
+  "--show" option. This is useful when running as a windows service. Windows
+  only.
 * --no-smtp (-X)
   Disables listening for incoming SMTP connections.
 * --pid-file <path> (-i)
@@ -327,7 +329,12 @@ The "emailrelay" program supports the following command-line usage:
   verifiers. This option can be used to define the non-privileged user-id. It
   also determines the group ownership of new files and sockets if the
   directory owner is not 'sticky'. Specify "root" to disable all user-id
-  switching. Ignored on Windows.
+  switching. Unix only.
+* --show <style>
+  Starts the application window in the given style: "hidden", "popup",
+  "window", "window,tray", or "tray". Ignored if also using "--no-daemon" or
+  "--hidden". If none of "--window", "--no-daemon" and "--hidden" are used
+  then the default style is "tray". Windows only.
 
 # Logging options
 
@@ -335,18 +342,18 @@ The "emailrelay" program supports the following command-line usage:
   Enables more verbose logging when used with "--log", and more verbose help
   when used with "--help".
 * --log (-l)
-  Enables logging to the standard error stream and to the syslog. The
+  Enables logging to the standard error stream and to the system log. The
   "--close-stderr" and "--no-syslog" options can be used to disable output to
-  standard error stream and the syslog separately. Note that "--as-server",
-  "--as-client" and "--as-proxy" imply "--log", and "--as-server" and
-  "--as-proxy" also imply "--close-stderr".
+  standard error stream and the system log separately. Note that
+  "--as-server", "--as-client" and "--as-proxy" imply "--log", and
+  "--as-server" and "--as-proxy" also imply "--close-stderr".
 * --debug (-g)
   Enables debug level logging, if built in. Debug messages are usually only
   useful when cross-referenced with the source code and they may expose
   plain-text passwords and mail message content.
 * --log-address
   Adds the network address of remote clients to the logging output. Equivalent
-  to ""--log-format=address"".
+  to "--log-format=address".
 * --log-file <file> (-N)
   Redirects standard-error logging to the specified file. Logging to the log
   file is not affected by "--close-stderr". The filename can include "%d" to
@@ -358,14 +365,14 @@ The "emailrelay" program supports the following command-line usage:
   significant.
 * --log-time (-L)
   Adds a timestamp to the logging output using the local timezone. Equivalent
-  to ""--log-format=time"".
+  to "--log-format=time".
 * --no-syslog (-n)
-  Disables logging to the syslog. Note that "--as-client" implies
+  Disables logging to the system log. Note that "--as-client" implies
   "--no-syslog".
-* --syslog[=<facility>] (-k)
-  When used with "--log" this option enables logging to the syslog even if the
-  "--no-syslog" option is also used. This is typically used as a convenient
-  override when using "--as-client".
+* --syslog (-k)
+  When used with "--log" this option enables logging to the system log, even if
+  the "--no-syslog" option is also used. This is typically used as a
+  convenient override when using "--as-client".
 * --close-stderr (-e)
   Causes the standard error stream to be closed soon after start-up. This is
   useful when operating as a background daemon and it is therefore implied by
@@ -388,7 +395,7 @@ be separated with a space. For example:
 
 All options that specify a filename can use a special "@app" substitution
 variable that is interpreted as the directory that contains the "emailrelay"
-executable or MacOS application bundle.
+executable.
 
 It is possible to run multiple E-MailRelay instances in one process by prefixing
 the "--spool-dir" option with an arbitrary name like "in" or "out", ie.
@@ -709,6 +716,10 @@ the "mx:" string:
 
 	--client-filter="mx:127.0.0.1:53"
 
+And the DNS timeouts can be adjusted with "nst" and "rt" parameters:
+
+	--client-filter="mx:nst=60;rt=60;127.0.0.1:53"
+
 If the DNS server responds with a forwarding address of "0.0.0.0" then the
 "ForwardToAddress" will be cleared and the message will be forwarded to the
 default "--forward-to" address.
@@ -723,10 +734,9 @@ does not have one already.
 Address verifiers
 -----------------
 By default the E-MailRelay server will accept all recipient addresses for
-incoming e-mails as valid. This default behaviour can be modified by using an
-external verifier program, specified with the "--address-verifier" command-line
-option, so the verifier can choose which recipient addresses are accepted as
-valid and which are rejected.
+incoming e-mails as valid, but an external verifier program, specified with the
+"--address-verifier" command-line option, can be used to modify or reject
+individual recipient addresses.
 
 Address verifiers can also be used to identify recipient addresses that are
 local addresses with an associated mailbox.
@@ -874,7 +884,7 @@ There is one built-in address verifier called "account:".
 
 # account:
 
-The "account:" verifier does validation of recipient address against system
+The "account:" verifier does validation of recipient addresses against system
 account names and the network domain or "--domain" value. For example, it will
 accept "alice@example.com" only if there is a local system account called
 "alice" and the local fully-qualified domain name is "example.com".
@@ -891,16 +901,17 @@ lower-case, "check" and "remote".
 Eg:
 	--address-verifier="account:1000-1002;lowercase" --domain=example.com
 
-With the "check" parameter the verifier will test whether the recipient address
-is a local account but always accept the address as valid, whether it is a local
-account or not. This is useful for outgoing traffic where local recipients can be
-delivered immediately without being sent to the next-hop SMTP server.
+With the "check" parameter the verifier will determine whether the recipient
+address is a local account but always accept the address as valid. An address
+that does not match a local account will be accepted as a valid remote address.
+This is useful for outgoing traffic where local recipients can be delivered
+immediately without being sent to the next-hop SMTP server.
 
 Eg:
 	--address-verifier=account:check --domain=example.com --delivery-dir=@app/in
 
-With the "remote" parameter the recipient address is valid only if it is a local
-account but it is treated as not local so that the e-mail message will be
+With the "remote" parameter the recipient address is valid only if it matches a
+local account but it is treated as remote so that the e-mail message will be
 available for forwarding rather than delivery.
 
 Authentication
@@ -972,7 +983,7 @@ Base64 encoding can be used instead of xtext encoding by replacing "plain" by
 	server plain:b Y2Fyb2w= bXkgcGFzc3dvcmQ= # carol
 
 Note that modern email services will expect user-ids and passwords containing
-non-ASCII characters to use UTF-8 encoding with RFC-4013 normalisation.
+non-ASCII characters to use UTF-8 character encoding and RFC-4013 normalisation.
 
 Multiple client accounts can be defined in the secrets file by using a fifth
 field as an account selector. When an e-mail message is forwarded the
@@ -1090,6 +1101,10 @@ Similarly, when using "--server-tls-connection" the E-MailRelay server will
 expect all connections to be using TLS from the start, so the whole SMTP
 dialogue is encrypted, without the need for "STARTTLS".
 
+If E-MailRelay has been built with both MbedTLS and OpenSSL/LibreSSL libraries
+(as reported by "emailrelay --version --verbose") then it will use
+OpenSSL/LibreSSL by default. To switch to MbedTLS use "--tls-config=mbedtls".
+
 PAM authentication
 ------------------
 E-MailRelay on Linux supports the use of PAM (Pluggable Authentication Modules)
@@ -1116,6 +1131,50 @@ this will require special permissioning to allow the E-MailRelay server to
 read the shadow password database, so run the server as "root" and also add the
 "--user=root" command-line option to make sure that the process's effective
 user-id stays as "root" while it accesses the PAM system.
+
+Submission
+----------
+New e-mail messages can be submitted into an E-MailRelay server using SMTP or
+by using the "emailrelay-submit" utility to create the content and envelope file
+directly in the spool directory.
+
+If using SMTP for submission make sure that the submitting user agent emits
+separate e-mail messages for each "Bcc" recipient so that one "Bcc" recipient
+cannot see the addresses of any of the others.
+
+On Linux/Unix systems the "emailrelay-submit" tool is normally installed so that
+it runs with elevated privileges so that it can write into the E-MailRelay
+spool directory. It might also be just a symbolic link to the main "emailrelay"
+binary, in the style of BusyBox, and in that case it will have reduced
+functionality.
+
+One way of using "emailrelay-submit" is to construct a new e-mail message from
+only command-line parameters. This can be useful for creating automated alert
+e-mails, for example:
+
+	emailrelay-submit -dtFN --to="user@localhost" --content U3ViamVjdDogaGVscA --content="" --content=ZXJyb3I
+
+Each "--content" parameter is a base64-encoded line of content, which can be
+a header line, an empty line or a line of body text.
+
+Alternatively, the message content can come from a RFC-5322 format file, read
+from either the standard input or "--input-file", with just envelope addresses
+passed on the command-line:
+
+	emailrelay-submit --to="user@localhost" --from="sender@localhost" --input-file=content.txt
+
+Or the submitted message content can come from a mixture of command-line
+parameters and an input file:
+
+	emailrelay-submit -dtF --to="user@localhost" --content=U3ViamVjdDogaGVscA --content="" --body --input-file=body.txt
+
+Or a complete message file can be submitted, with the envelope addresses parsed
+out of the message headers:
+
+	emailrelay-submit --bcc-split --input-file message.eml
+
+In this example if the message headers specify more than one "Bcc" recipient
+then multiple messages will be submitted.
 
 Routing
 -------
@@ -1176,9 +1235,9 @@ Delivery
 --------
 When running in a simple store-and-forward setup E-MailRelay does not concern
 itself with message delivery; every e-mail message ends up in the main spool
-directory without regard to the recipient addresses. However, it is quite easy
-to write a "delivery" filter that examines the recipient addresses in each
-message's envelope file and copies the message files into a separate "mailbox"
+directory for forwarding, without regard to the recipient addresses. However, it
+is quite easy to have a "delivery" filter that examines the recipient addresses
+in each e-mail message and moves the message files into a separate "mailbox"
 for each recipient.
 
 A "mailbox" is normally just a sub-directory of the main spool directory with a
@@ -1189,7 +1248,7 @@ Deriving a suitable mailbox name from the recipient address is best done by an
 address verifier script ("--address-verifier"). The address verifier can check
 each recipient address and map it to a mailbox name which then gets written to
 the envelope file's "To-Local" list. After that a delivery filter script
-("--filter") just has to copy the message files into the designated mailboxes.
+("--filter") just has to move the message files into the designated mailboxes.
 
 Once e-mail messages have been delivered into separate mailboxes they can be
 accessed by individual users using POP with the "--pop-by-name" option. When a
@@ -1199,9 +1258,9 @@ appropriate mailbox from which to serve up e-mails.
 
 Delivery is normally only relevant to incoming messages being received from
 external systems, but it might also be desirable for outgoing messages that are
-addressed to local users. For these messages is makes sense for the delivery
-filter to move the message files straight into the incoming mailbox rather than
-have the message forwarded to the smarthost and then come back in again.
+addressed to local users. For these messages is makes sense to use the delivery
+mechanism to move the message files straight into the incoming mailbox rather
+than have the message forwarded to the smarthost and then come back in again.
 
 # deliver:
 
@@ -1225,11 +1284,19 @@ Mailboxes are normally sub-directories of the spool directory, but the
 "--delivery-dir" command-line option can be used to provide the "deliver:"
 filter with a different base directory.
 
+Delivery status notifications
+-----------------------------
+E-MailRelay does not generate delivery status notifications (DSNs). If required
+failed messages in the spool directory can be processed by some other means,
+with the DSN messages submitted into an outgoing E-MailRelay instance that
+either forwards to a smarthost or does its own routing. See "Submission" and
+"Routing" above.
+
 IP addresses
 ------------
 By default the E-MailRelay server listens for connections on the wildcard IPv4
 and IPv6 addresses, and when making outgoing connections it does not explicitly
-bind an address to the the local socket.
+bind any particular address to the the local socket.
 
 If a single network address is specified with the "--interface" command-line
 option then that address is used for listening.
@@ -1380,9 +1447,13 @@ server and waits for the messages to be sent.
 The "unfail-all" command can be used to remove the ".bad" filename extension
 from files in the spool directory.
 
+The "smtp disable" command will cause E-MailRelay to reject new SMTP
+connections with a "421 service not available" message. This can be useful when
+shutting down the service without disrupting existing connections.
+
 The "list" command lists the messages in the spool directory, "status" provides
 network status information and activity statistics, and "notify" enables
-asynchronous event notification.
+asynchronous event notification through the administation connection.
 
 Connection blocking
 -------------------
@@ -1420,8 +1491,8 @@ initial testing:
 
 If the timeout period expires before a collective decision is reached then the
 connection is allowed by default. This default behaviour can be changed by using
-a negative timeout, although an unresponsive DNSBL servers might then result in
-all incoming connections being blocked:
+a negative timeout, but beware that an unresponsive DNSBL server might then
+result in all incoming connections being blocked:
 
 	emailrelay -r --dnsbl spam.example.com,block.example.com,1,-5000 ...
 
@@ -1451,9 +1522,9 @@ spool directory, with the sub-directory name being just the name that the POP
 client uses to authenticate.
 
 To get the e-mail message files into the "--pop-by-name" sub-directory a filter
-script can be used. This should just copy the new envelope file and content file
-into those sub-directories of the main spool directory for which there are
-matching entries in the POP secrets file.
+script can be used. This should just copy the new envelope file into those
+sub-directories of the main spool directory for which there are matching entries
+in the POP secrets file.
 
 To save disk space the POP server using "--pop-by-name" will look for content
 files in the main spool directory if it cannot see the content file in the
@@ -1463,7 +1534,7 @@ other envelope files with the same name in either the main spool directory or
 any other sub-directory.
 
 Alternatively, another way to save disk space on Linux/Unix is for the filter
-script to copy content files using hard links.
+script to copy content files into the sub-directories but use hard links.
 
 The built-in "copy:" filter can be used to work with "--pop-by-name". It copies
 message files into all sub-directories (whether they have a matching POP account
@@ -1471,8 +1542,6 @@ or not) and by default it then deletes the original message files. To keep the
 original files in the main spool directory so they can be forwarded use
 "copy:nodelete"; to copy just the envelope file and leave the content file alone
 use "copy:pop"; and to copy content files with hard links use "copy:hardlink".
-Remember to create matching sub-directories when adding users to the POP secrets
-file.
 
 The built-in "delivery:" filter also works well with "--pop-by-name". It copies
 message files into sub-directories (now conceptually delivery mailboxes)
@@ -1509,6 +1578,13 @@ the security complications of system() or popen() are avoided.
 
 The effective user-id and group-id switching can be disabled by using
 "--user=root".
+
+By default the "emailrelay" program will fork and detach so that it runs in the
+background, independently of the process that started it. The "--no-daemon"
+option can be used to run in the foreground without forking. The program exit
+code is 0 on success, 1 on error but 2 if the listening socket could not be
+bound (which often indicates that another E-MailRelay instance is already
+running).
 
 On Windows all files are opened with the _SH_DENYNO option so they can be
 accessed without sharing violations.
@@ -1559,4 +1635,4 @@ and these default to "%ProgramFiles%/E-MailRelay" for programs and
 
 
 _____________________________________
-Copyright (C) 2001-2023 Graeme Walker
+Copyright (C) 2001-2024 Graeme Walker

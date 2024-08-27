@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -52,7 +52,6 @@ helper_programs_win32 = \
 	emailrelay_test_verifier.exe
 
 helper_sources = \
-	emailrelay_test_keygen.cpp \
 	emailrelay_test_scanner.cpp \
 	emailrelay_test_client.cpp \
 	emailrelay_test_server.cpp \
@@ -79,6 +78,8 @@ test_names = \
 	testServerIdentityRunningSuidRoot.test \
 	testServerSmtpSubmit.test \
 	testServerSmtpSubmitWithPipelinedQuit.test \
+	testServerReceivingNonAsciiDomainNames.test \
+	testServerReceivingNonAsciiMailboxNames.test \
 	testServerPermissions.test \
 	testServerPop.test \
 	testServerPopDisconnect.test \
@@ -87,6 +88,8 @@ test_names = \
 	testServerFlush.test \
 	testServerPolling.test \
 	testServerWithBadClient.test \
+	testEhloParameters.test \
+	testEhloRequestUsesIPAddressIfNoFqdn.test \
 	testServerSizeLimit.test \
 	testClientAccountSelection.test \
 	testClientContinuesIfNoSecrets.test \
@@ -103,6 +106,7 @@ test_names = \
 	testScannerBlock.test \
 	testScannerTimeout.test \
 	testScannerOverUnixDomainSockets.test \
+	testVerifierPass.test \
 	testNetworkVerifierPass.test \
 	testNetworkVerifierFail.test \
 	testProxyConnectsOnce.test \
@@ -159,6 +163,8 @@ modules = \
 	Server.pm \
 	SmtpClient.pm \
 	System.pm \
+	NetClient.pm \
+	TestClient.pm \
 	TestServer.pm \
 	Verifier.pm
 
@@ -265,7 +271,7 @@ emailrelay_test_verifier_LDADD = \
 
 .PHONY: programs
 if GCONFIG_WINDOWS
-programs: $(helper_programs_win32) emailrelay_test_keygen.exe
+programs: $(helper_programs_win32)
 else
 programs: $(helper_programs)
 endif

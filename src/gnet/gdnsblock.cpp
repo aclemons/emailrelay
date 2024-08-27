@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -41,8 +41,8 @@ namespace GNet
 
 		struct HostList /// A streamable adaptor for a list of addresses.
 		{
-			const std::vector<Address> & m_list ;
-			friend inline std::ostream & operator<<( std::ostream & stream , const HostList & list )
+			const std::vector<Address> & m_list ; // NOLINT cppcoreguidelines-avoid-const-or-ref-data-members
+			friend std::ostream & operator<<( std::ostream & stream , const HostList & list )
 			{
 				const char * sep = "" ;
 				for( auto p = list.m_list.begin() ; p != list.m_list.end() ; ++p , sep = " " )

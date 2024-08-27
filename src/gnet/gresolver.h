@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@
 #include "gexception.h"
 #include "gaddress.h"
 #include <vector>
+#include <utility>
 #include <memory>
 
 namespace GNet
@@ -45,8 +46,22 @@ namespace GNet
 class GNet::Resolver
 {
 public:
-	G_EXCEPTION( Error , tx("asynchronous resolver error") ) ;
-	G_EXCEPTION( BusyError , tx("asynchronous resolver still busy") ) ;
+	G_EXCEPTION( Error , tx("asynchronous resolver error") )
+	G_EXCEPTION( BusyError , tx("asynchronous resolver still busy") )
+	struct Config /// A configuration structure for GNet::Resolver.
+	{
+		Config() ;
+		bool with_canonical_name {false} ;
+		bool raw {false} ; // straight to getaddrinfo() with no "xn--<punycode>" conversion
+		bool datagram {false} ; // for datagram sockets
+		bool idn_flag {false} ; // use glibc's AI_IDN flag if available
+		bool test_slow {false} ; // run slow for testing
+		Config & set_with_canonical_name( bool = true ) noexcept ;
+		Config & set_raw( bool = true ) noexcept ;
+		Config & set_convert_to_punycode( bool = true ) noexcept ;
+		Config & set_datagram( bool = true ) noexcept ;
+		Config & set_idn_flag( bool = true ) noexcept ;
+	} ;
 	using AddressList = std::vector<Address> ;
 	struct Callback /// An interface used for GNet::Resolver callbacks.
 	{
@@ -67,16 +82,22 @@ public:
 		///< request are discarded asynchronously, although in extreme
 		///< cases this destructor may block doing a thread join.
 
-	void start( const Location & ) ;
+	void start( const Location & , const Config & = {} ) ;
 		///< Starts asynchronous name-to-address resolution.
 		///< Precondition: async() && !busy()
 
-	static std::string resolve( Location & ) ;
-		///< Does synchronous name resolution. Fills in the name
-		///< and address fields of the supplied Location structure.
-		///< The returned error string is zero length on success.
+	static std::pair<std::string,std::string> resolve( Location & , const Config & ) ;
+		///< Does synchronous name resolution. Fills in the address
+		///< of the supplied Location structure. Returns
+		///< an error string (empty on success) and the canonical
+		///< name, if requested (see Config::with_canonical_name).
 
-	static AddressList resolve( const std::string & host , const std::string & service , int family = AF_UNSPEC , bool dgram = false ) ;
+	static std::string resolve( Location & ) ;
+		///< Does synchronous name resolution. Fills in the address
+		///< of the supplied Location structure. Returns an
+		///< error string, empty on success.
+
+	static AddressList resolve( const std::string & host , const std::string & service , int family = AF_UNSPEC , const Config & = {} ) ;
 		///< Does synchronous name resolution returning a list
 		///< of addresses. Errors are not reported. The empty
 		///< list is returned on error.
@@ -103,5 +124,10 @@ private:
 	EventState m_es ;
 	std::unique_ptr<ResolverImp> m_imp ;
 } ;
+
+inline GNet::Resolver::Config & GNet::Resolver::Config::set_with_canonical_name( bool b ) noexcept { with_canonical_name = b ; return *this ; }
+inline GNet::Resolver::Config & GNet::Resolver::Config::set_raw( bool b ) noexcept { raw = b ; return *this ; }
+inline GNet::Resolver::Config & GNet::Resolver::Config::set_datagram( bool b ) noexcept { datagram = b ; return *this ; }
+inline GNet::Resolver::Config & GNet::Resolver::Config::set_idn_flag( bool b ) noexcept { idn_flag = b ; return *this ; }
 
 #endif

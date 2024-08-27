@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -36,8 +36,7 @@ namespace GNet
 //| \class GNet::Location
 /// A class that represents the remote target for out-going client connections.
 /// It holds a host/service name pair and the preferred address family (if any)
-/// and also the results of a DNS lookup, ie. the remote address and canonical
-/// host name.
+/// and also the results of a DNS lookup for the remote address.
 ///
 /// The actual DNS lookup of host() and service() should be done externally,
 /// with the results deposited into the Location object with update().
@@ -61,7 +60,7 @@ namespace GNet
 /// {
 ///   Resolver resolver( location.host() , location.service() , location.family() ) ;
 ///   if( resolver.resolve() )
-///     location.update( resolver.address() , resolver.cname() ) ;
+///     location.update( resolver.address() ) ;
 /// }
 /// \endcode
 ///
@@ -70,8 +69,8 @@ namespace GNet
 class GNet::Location
 {
 public:
-	G_EXCEPTION( InvalidFormat , tx("invalid host:service format") ) ;
-	G_EXCEPTION( InvalidFamily , tx("invalid address family") ) ;
+	G_EXCEPTION( InvalidFormat , tx("invalid host:service format") )
+	G_EXCEPTION( InvalidFamily , tx("invalid address family") )
 
 	explicit Location( const std::string & spec , int family = AF_UNSPEC ) ;
 		///< Constructor taking a formatted "host:service" string.
@@ -106,19 +105,17 @@ public:
 
 	bool resolveTrivially() ;
 		///< If host() and service() are already in address format then do a trivial
-		///< update() so that the location is immediately resolved(), albeit with an
-		///< empty canonical name(). Does nothing if already resolved(). Returns
-		///< resolved().
+		///< update() so that the location is immediately resolved(). Does
+		///< nothing if already resolved(). Returns resolved().
 
-	void update( const Address & address , const std::string & canonical_name ) ;
-		///< Updates the address and canonical name, typically after doing
-		///< a name lookup on host() and service(). Throws if an invalid address
+	void update( const Address & address ) ;
+		///< Updates the address, typically after doing a name lookup on
+		///< host() and service(). Throws if an invalid address family.
+
+	bool update( const Address & address , std::nothrow_t ) ;
+		///< Updates the address, typically after doing a name lookup on
+		///< host() and service(). Returns false if an invalid address
 		///< family.
-
-	bool update( const Address & address , const std::string & canonical_name , std::nothrow_t ) ;
-		///< Updates the address and canonical name, typically after doing
-		///< a name lookup on host() and service(). Returns false if an invalid
-		///< address family.
 
 	bool resolved() const ;
 		///< Returns true after update() has been called or resolveTrivially()
@@ -126,10 +123,6 @@ public:
 
 	Address address() const ;
 		///< Returns the remote address.
-
-	std::string name() const ;
-		///< Returns the remote canonical name. Returns the empty string if
-		///< not available.
 
 	std::string displayString() const ;
 		///< Returns a string representation for logging and debug.
@@ -159,7 +152,6 @@ private:
 	bool m_address_valid ;
 	Address m_address ;
 	int m_family ;
-	std::string m_canonical_name ;
 	G::SystemTime m_update_time ;
 	bool m_using_socks ;
 	std::string m_socks_far_host ;

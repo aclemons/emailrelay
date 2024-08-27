@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@
 #include "gsmtpforward.h"
 #include "geventloggingcontext.h"
 #include "gcall.h"
+#include "glog.h"
 #include <algorithm>
 #include <sstream>
 
@@ -312,7 +313,7 @@ void GSmtp::Forward::doOnDelete( const std::string & reason , bool /*done*/ )
 void GSmtp::Forward::onDelete( const std::string & reason )
 {
 	G_WARNING_IF( !reason.empty() , "GSmtp::Forward::onDelete: smtp client error: " << reason ) ;
-	if( m_message.get() ) // if we own the message ie. while filtering
+	if( m_message ) // if we own the message ie. while filtering
 	{
 		// fail the message, otherwise the dtor will just unlock it
 		G_ASSERT( !reason.empty() ) ; // filters dont throw GNet::Done

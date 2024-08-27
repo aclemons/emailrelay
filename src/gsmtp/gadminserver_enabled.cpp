@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@
 #include "gstringtoken.h"
 #include "gstr.h"
 #include "gstringarray.h"
+#include "glog.h"
 #include <utility>
 #include <limits>
 
@@ -305,7 +306,7 @@ void GSmtp::AdminServerPeer::forward()
 	}
 }
 
-void GSmtp::AdminServerPeer::sendLine( std::string && line )
+void GSmtp::AdminServerPeer::sendLine( std::string && line ) // NOLINT cppcoreguidelines-rvalue-reference-param-not-moved
 {
 	if( !line.empty() )
 		line.append( "\n" ) ;
@@ -434,7 +435,7 @@ const GAuth::SaslClientSecrets & GSmtp::AdminServer::clientSecrets() const
 #ifndef G_LIB_SMALL
 void GSmtp::AdminServer::emitCommand( Command command , unsigned int arg )
 {
-	return m_imp->emitCommand( command , arg ) ;
+	m_imp->emitCommand( command , arg ) ;
 }
 #endif
 

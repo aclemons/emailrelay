@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@
 #include "gfilterfactorybase.h"
 #include "gfilestore.h"
 #include "gpath.h"
+#include "gstringview.h"
 #include <string>
 #include <utility>
 #include <memory>
@@ -48,7 +49,7 @@ public:
 		///< to new filter objects so that they can derive the paths of
 		///< the content and envelope files that they process.
 
-	static Spec parse( const std::string & spec , const G::Path & base_dir = {} ,
+	static Spec parse( std::string_view spec , const G::Path & base_dir = {} ,
 		const G::Path & app_dir = {} , G::StringArray * warnings_p = nullptr ) ;
 			///< Parses and validates the filter specification string returning
 			///< the type and value in a Spec tuple, eg. ("file","/usr/bin/foo")
@@ -70,6 +71,13 @@ public:
 			///<
 			///< Returns warnings by reference for non-fatal errors, such
 			///< as missing files.
+
+public:
+	~FilterFactory() override = default ;
+	FilterFactory( const FilterFactory & ) = delete ;
+	FilterFactory( FilterFactory && ) = delete ;
+	FilterFactory & operator=( const FilterFactory & ) = delete ;
+	FilterFactory & operator=( FilterFactory && ) = delete ;
 
 protected: // overrides
 	std::unique_ptr<GSmtp::Filter> newFilter( GNet::EventState ,

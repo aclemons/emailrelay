@@ -40,7 +40,7 @@
 # Format: as-server
 # Description: This is equivalent to "--log" and "--close-stderr". It is a
 # convenient way of running a background storage daemon that accepts mail
-# messages and spools them. Use "--log" instead of "--as-server" to keep
+# messages and spools them. Use "--log" instead of "--as-server" to keep the
 # standard error stream open.
 #
 #as-server
@@ -210,16 +210,20 @@
 # Format: dnsbl <config>
 # Description: Specifies a list of DNSBL servers that are used to reject SMTP
 # connections from blocked addresses. The configuration string is made up of
-# comma-separated fields: the DNS server's transport address, a timeout in
-# milliseconds, a rejection threshold, and then the list of DNSBL servers.
+# comma-separated fields: the list of DNSBL servers, an optional rejection
+# threshold, an optional timeout in milliseconds, and optionally the
+# transport address of the DNS server.
 #
-#dnsbl 1.1.1.1:53,1000,1,spam.dnsbl.example.com,block.dnsbl.example.com
+#dnsbl spam.dnsbl.example.com,block.dnsbl.example.com,1,1000,1.1.1.1:53
 
 # Name: domain
 # Format: domain <fqdn>
-# Description: Specifies the network name that is used in SMTP EHLO commands,
-# "Received" lines, and for generating authentication challenges. The default
-# is derived from a DNS lookup of the local hostname.
+# Description: Specifies the domain name that is used in SMTP client EHLO
+# commands, server EHLO responses, "Received" lines, and for generating
+# authentication challenges. The SMTP client will use an IP address in the
+# EHLO command if the given domain is not a dotted FQDN. If this option is
+# not used at all then the default value is the canonical name returned from
+# a DNS query of the local hostname, or the system's FQDN on Windows.
 #
 #domain smtp.example.com
 
@@ -258,8 +262,7 @@
 # used for listening. When an interface name is decorated with a "-ipv4" or
 # "-ipv6" suffix only their IPv4 or IPv6 addresses will be used (eg.
 # "ppp0-ipv4").  To inherit listening file descriptors from the parent
-# process on unix use a syntax like this: "--interface"
-# smtp=fd#3,smtp=fd#4,pop=fd#5.
+# process on unix use a syntax like this: "--interface=smtp=fd#3".
 #
 #interface 127.0.0.1,smtp=eth0
 
@@ -275,7 +278,7 @@
 # Format: server-smtp-config <config>
 # Description: Configures the SMTP server protocol using a comma-separated
 # list of optional features, including 'pipelining', 'chunking', 'smtputf8',
-# and 'smtputf8strict'.
+# 'smtputf8strict', 'nostrictparsing' and 'noalabels'.
 #
 #server-smtp-config +chunking,+smtputf8
 
@@ -302,7 +305,7 @@
 # Description: Modifies the POP server's spool directory to be the
 # sub-directory with the same name as the user-id used for POP
 # authentication. This allows POP clients to see only their own messages
-# after they have been moved into separate sub-directories typically by the
+# after they have been moved into separate sub-directories, typically by the
 # built-in "deliver:" or "copy:" filters. Content files can remain in the
 # main spool directory to save disk space; they will be deleted by the POP
 # server when it deletes the last matching envelope file.
@@ -540,14 +543,6 @@
 #
 #dont-serve
 
-# Name: hidden
-# Format: hidden
-# Description: Windows only. Hides the application window and disables all
-# message boxes, overriding any "--show" option. This is useful when running
-# as a windows service.
-#
-#hidden
-
 # Name: localedir
 # Format: localedir <dir>
 # Description: Enables localisation and specifies the locale base directory
@@ -560,8 +555,7 @@
 # Format: no-daemon
 # Description: Disables the normal backgrounding at startup so that the
 # program runs in the foreground, without forking or detaching from the
-# terminal.  On Windows this disables the system tray icon so the program
-# uses a normal window; when the window is closed the program terminates.
+# terminal.
 #
 #no-daemon
 
@@ -586,7 +580,7 @@
 # address verifiers. This option can be used to define the non-privileged
 # user-id. It also determines the group ownership of new files and sockets if
 # the directory owner is not 'sticky'. Specify "root" to disable all user-id
-# switching. Ignored on Windows.
+# switching.
 #
 #user nobody
 
@@ -602,10 +596,10 @@
 
 # Name: log
 # Format: log
-# Description: Enables logging to the standard error stream and to the
-# syslog. The "--close-stderr" and "--no-syslog" options can be used to
-# disable output to standard error stream and the syslog separately. Note
-# that "--as-server", "--as-client" and "--as-proxy" imply "--log", and
+# Description: Enables logging to the standard error stream and to the system
+# log. The "--close-stderr" and "--no-syslog" options can be used to disable
+# output to standard error stream and the system log separately. Note that
+# "--as-server", "--as-client" and "--as-proxy" imply "--log", and
 # "--as-server" and "--as-proxy" also imply "--close-stderr".
 #
 #log
@@ -621,7 +615,7 @@
 # Name: log-address
 # Format: log-address
 # Description: Adds the network address of remote clients to the logging
-# output. Equivalent to ""--log-format=address"".
+# output. Equivalent to "--log-format=address".
 #
 #log-address
 
@@ -645,22 +639,22 @@
 # Name: log-time
 # Format: log-time
 # Description: Adds a timestamp to the logging output using the local
-# timezone. Equivalent to ""--log-format=time"".
+# timezone. Equivalent to "--log-format=time".
 #
 #log-time
 
 # Name: no-syslog
 # Format: no-syslog
-# Description: Disables logging to the syslog. Note that "--as-client"
+# Description: Disables logging to the system log. Note that "--as-client"
 # implies "--no-syslog".
 #
 #no-syslog
 
 # Name: syslog
-# Format: syslog[=<facility>]
+# Format: syslog
 # Description: When used with "--log" this option enables logging to the
-# syslog even if the "--no-syslog" option is also used. This is typically
-# used as a convenient override when using "--as-client".
+# system log, even if the "--no-syslog" option is also used. This is
+# typically used as a convenient override when using "--as-client".
 #
 #syslog
 

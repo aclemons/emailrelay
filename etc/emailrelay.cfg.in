@@ -1,0 +1,657 @@
+#
+# emailrelay.cfg
+#
+# This is a configuration file for E-MailRelay (http://emailrelay.sf.net).
+#
+# The E-MailRelay startup batch file specifies this file when it starts
+# up the E-MailRelay server.
+#
+# Every configuration item in this file has an equivalent command-line
+# option with a leading "--".
+#
+# To enable one of the configuration options below remove the '#' character
+# on the last line in the block.
+#
+
+# Basic options
+# -------------
+
+# Name: as-client
+# Format: as-client <host:port>
+# Description: This is equivalent to "--log", "--no-syslog", "--no-daemon",
+# "--dont-serve", "--forward" and "--forward-to". It is a convenient way of
+# running a forwarding agent that forwards spooled mail messages and then
+# terminates.
+#
+#as-client smtp.example.com:25
+
+# Name: as-proxy
+# Format: as-proxy <host:port>
+# Description: This is equivalent to "--log", "--close-stderr",
+# "--forward-on-disconnect" and "--forward-to". It is a convenient way of
+# running a store-and-forward daemon. Use "--log", "--forward-on-disconnect"
+# and "--forward-to" instead of "--as-proxy" to keep the standard error
+# stream open.
+#
+#as-proxy smtp.example.com:25
+
+# Name: as-server
+# Format: as-server
+# Description: This is equivalent to "--log" and "--close-stderr". It is a
+# convenient way of running a background storage daemon that accepts mail
+# messages and spools them. Use "--log" instead of "--as-server" to keep the
+# standard error stream open.
+#
+#as-server
+
+# Name: spool-dir
+# Format: spool-dir <dir>
+# Description: Specifies the directory used for holding mail messages that
+# have been received but not yet forwarded.
+#
+#spool-dir C:/ProgramData/E-MailRelay/spool
+
+# SMTP client options
+# -------------------
+
+# Name: client-smtp-config
+# Format: client-smtp-config <config>
+# Description: Configures the SMTP client protocol using a comma-separated
+# list of optional features, including 'pipelining', 'smtputf8strict',
+# 'eightbitstrict' and 'binarymimestrict'.
+#
+#client-smtp-config +eightbitstrict,-pipelining
+
+# Name: forward
+# Format: forward
+# Description: Causes spooled mail messages to be forwarded when the program
+# first starts.
+#
+#forward
+
+# Name: forward-on-disconnect
+# Format: forward-on-disconnect
+# Description: Causes spooled mail messages to be forwarded whenever a SMTP
+# client connection disconnects.
+#
+#forward-on-disconnect
+
+# Name: forward-to
+# Format: forward-to <host:port>
+# Description: Specifies the transport address of the remote SMTP server that
+# spooled mail messages are forwarded to.
+#
+#forward-to smtp.example.com:25
+
+# Name: poll
+# Format: poll <period>
+# Description: Causes forwarding of spooled mail messages to happen at
+# regular intervals (with the time given in seconds).
+#
+#poll 60
+
+# Name: client-filter
+# Format: client-filter <program>
+# Description: Runs the specified external filter program whenever a mail
+# message is forwarded. The filter is passed the name of the message file in
+# the spool directory so that it can edit it as required. A network filter
+# can be specified as "net:<tcp-address>" and prefixes of "spam:",
+# "spam-edit:" and "exit:" are also allowed. The "spam:" and "spam-edit:"
+# prefixes require a SpamAssassin daemon to be running. For store-and-forward
+# applications the "--filter" option is normally more useful than
+# "--client-filter".
+#
+#client-filter C:/ProgramData/E-MailRelay/client-filter.js
+
+# Name: client-interface
+# Format: client-interface <ip-address>
+# Description: Specifies the IP network address to be used to bind the local
+# end of outgoing SMTP connections. By default the address will depend on the
+# routing tables in the normal way. Use "0.0.0.0" to use only IPv4 addresses
+# returned from DNS lookups of the "--forward-to" address, or "::" for IPv6.
+#
+#client-interface 10.0.0.2
+
+# Name: connection-timeout
+# Format: connection-timeout <time>
+# Description: Specifies a timeout (in seconds) for establishing a TCP
+# connection to remote SMTP servers. The default is 40 seconds.
+#
+#connection-timeout 10
+
+# Name: idle-timeout
+# Format: idle-timeout <time>
+# Description: Specifies a timeout (in seconds) for receiving network traffic
+# from remote SMTP and POP clients. The default is 60 seconds.
+#
+#idle-timeout 2
+
+# Name: response-timeout
+# Format: response-timeout <time>
+# Description: Specifies a timeout (in seconds) for getting responses from
+# remote SMTP servers. The default is 60 seconds.
+#
+#response-timeout 2
+
+# Name: forward-to-all
+# Format: forward-to-all
+# Description: Requires all recipient addresses to be accepted by the remote
+# server before forwarding. This is currently the default behaviour so this
+# option is for forwards compatibility only.
+#
+#forward-to-all
+
+# Name: forward-to-some
+# Format: forward-to-some
+# Description: Allow forwarding to continue even if some recipient addresses
+# on an e-mail envelope are rejected by the remote server.
+#
+#forward-to-some
+
+# Name: immediate
+# Format: immediate
+# Description: Causes mail messages to be forwarded as they are received,
+# even before they have been accepted. This can be used to do proxying
+# without store-and-forward, but in practice clients tend to to time out
+# while waiting for their mail message to be accepted.
+#
+#immediate
+
+# SMTP server options
+# -------------------
+
+# Name: port
+# Format: port <port>
+# Description: Sets the port number used for listening for incoming SMTP
+# connections.
+#
+#port 587
+
+# Name: remote-clients
+# Format: remote-clients
+# Description: Allows incoming connections from addresses that are not local.
+# The default behaviour is to reject connections that are not local in order
+# to prevent accidental exposure to the public internet, although a firewall
+# should also be used. Local address ranges are defined in RFC-1918, RFC-6890
+# etc.
+#
+#remote-clients
+
+# Name: address-verifier
+# Format: address-verifier <program>
+# Description: Runs the specified external program to verify a message
+# recipient's e-mail address. A network verifier can be specified as
+# "net:<tcp-address>". The "account:" built-in address verifier can be used
+# to check recipient addresses against the list of local system account
+# names.
+#
+#address-verifier C:/ProgramData/E-MailRelay/verifier.js
+
+# Name: anonymous
+# Format: anonymous[=<scope>]
+# Description: Disables the server's SMTP VRFY command, sends less verbose
+# SMTP greeting and responses, stops "Received" lines being added to mail
+# message content files, and stops the SMTP client protocol adding "AUTH=" to
+# the "MAIL" command. For finer control use a comma-separated list of things
+# to anonymise: "vrfy", "server", "content" and/or "client".
+#
+#anonymous
+
+# Name: delivery-dir
+# Format: delivery-dir <dir>
+# Description: Specifies the base directory for mailboxes when delivering
+# messages that have local recipients. This defaults to the main spool
+# directory.
+#
+#delivery-dir C:/ProgramData/E-MailRelay/spool/in
+
+# Name: dnsbl
+# Format: dnsbl <config>
+# Description: Specifies a list of DNSBL servers that are used to reject SMTP
+# connections from blocked addresses. The configuration string is made up of
+# comma-separated fields: the list of DNSBL servers, an optional rejection
+# threshold, an optional timeout in milliseconds, and optionally the
+# transport address of the DNS server.
+#
+#dnsbl spam.dnsbl.example.com,block.dnsbl.example.com,1,1000,1.1.1.1:53
+
+# Name: domain
+# Format: domain <fqdn>
+# Description: Specifies the domain name that is used in SMTP client EHLO
+# commands, server EHLO responses, "Received" lines, and for generating
+# authentication challenges. The SMTP client will use an IP address in the
+# EHLO command if the given domain is not a dotted FQDN. If this option is
+# not used at all then the default value is the canonical name returned from
+# a DNS query of the local hostname, or the system's FQDN on Windows.
+#
+#domain smtp.example.com
+
+# Name: filter
+# Format: filter <program>
+# Description: Runs the specified external filter program whenever a mail
+# message is stored. The filter is passed the name of the message file in the
+# spool directory so that it can edit it as required. The mail message is
+# rejected if the filter program terminates with an exit code between 1 and
+# 99. Use "net:<tcp-address>" to communicate with a filter daemon over the
+# network, or "spam:<tcp-address>" for a spamassassin spamd daemon to accept
+# or reject mail messages, or "spam-edit:<tcp-address>" to have spamassassin
+# edit the message content without rejecting it, or "exit:<number>" to
+# emulate a filter program that just exits.
+#
+#filter C:/Program\ Files/E-MailRelay/filter.bat
+
+# Name: filter-timeout
+# Format: filter-timeout <time>
+# Description: Specifies a timeout (in seconds) for running a "--filter"
+# program. The default is 60 seconds.
+#
+#filter-timeout 10
+
+# Name: interface
+# Format: interface <ip-address-list>
+# Description: Specifies the IP network addresses or interface names used to
+# bind listening ports. By default listening ports for incoming SMTP, POP and
+# administration connections will bind the 'any' address for IPv4 and for
+# IPv6, ie. "0.0.0.0" and "::". Multiple addresses can be specified by using
+# the option more than once or by using a comma-separated list. Use a prefix
+# of "smtp=", "pop=" or "admin=" on addresses that should apply only to those
+# types of listening port. Any link-local IPv6 addresses must include a zone
+# name or scope id.  Interface names can be used instead of addresses, in
+# which case all the addresses associated with that interface at startup will
+# used for listening. When an interface name is decorated with a "-ipv4" or
+# "-ipv6" suffix only their IPv4 or IPv6 addresses will be used (eg.
+# "ppp0-ipv4").  To inherit listening file descriptors from the parent
+# process on unix use a syntax like this: "--interface=smtp=fd#3".
+#
+#interface 127.0.0.1,smtp=eth0
+
+# Name: prompt-timeout
+# Format: prompt-timeout <time>
+# Description: Specifies a timeout (in seconds) for getting the initial
+# prompt from a remote SMTP server. If no prompt is received after this time
+# then the SMTP dialog goes ahead without it.
+#
+#prompt-timeout 3
+
+# Name: server-smtp-config
+# Format: server-smtp-config <config>
+# Description: Configures the SMTP server protocol using a comma-separated
+# list of optional features, including 'pipelining', 'chunking', 'smtputf8',
+# 'smtputf8strict', 'nostrictparsing' and 'noalabels'.
+#
+#server-smtp-config +chunking,+smtputf8
+
+# Name: size
+# Format: size <bytes>
+# Description: Limits the size of mail messages that can be submitted over
+# SMTP.
+#
+#size 10000000
+
+# POP server options
+# ------------------
+
+# Name: pop
+# Format: pop
+# Description: Enables the POP server, listening by default on port 110,
+# providing access to spooled mail messages. Negotiated TLS using the POP
+# "STLS" command will be enabled if the "--server-tls" option is also given.
+#
+#pop
+
+# Name: pop-by-name
+# Format: pop-by-name
+# Description: Modifies the POP server's spool directory to be the
+# sub-directory with the same name as the user-id used for POP
+# authentication. This allows POP clients to see only their own messages
+# after they have been moved into separate sub-directories, typically by the
+# built-in "deliver:" or "copy:" filters. Content files can remain in the
+# main spool directory to save disk space; they will be deleted by the POP
+# server when it deletes the last matching envelope file.
+#
+#pop-by-name
+
+# Name: pop-no-delete
+# Format: pop-no-delete
+# Description: Disables the POP DELE command so that the command appears to
+# succeed but mail messages are not deleted from the spool directory.
+#
+#pop-no-delete
+
+# Name: pop-port
+# Format: pop-port <port>
+# Description: Sets the POP server's listening port number.
+#
+#pop-port 995
+
+# Admin server options
+# --------------------
+
+# Name: admin
+# Format: admin <port>
+# Description: Enables an administration interface on the specified listening
+# port number. Use telnet or something similar to connect. The administration
+# interface can be used to trigger forwarding of spooled mail messages if the
+# "--forward-to" option is used.
+#
+#admin 587
+
+# Name: admin-terminate
+# Format: admin-terminate
+# Description: Enables the "terminate" command in the administration
+# interface.
+#
+#admin-terminate
+
+# Authentication options
+# ----------------------
+
+# Name: client-auth
+# Format: client-auth <file>
+# Description: Enables SMTP client authentication with the remote server,
+# using the account details taken from the specified secrets file. The
+# secrets file should normally contain one line having between four and five
+# space-separated fields. The first field must be "client", the second field
+# is the password type ("plain" or "md5"), the third is the xtext-encoded
+# user-id and the fourth is the xtext-encoded password. Alternatively, the
+# user-id and password fields can be Base64 encoded if the second field is
+# "plain:b". It is also possible to do without a secrets file and give the
+# Base64 encoded user-id and password directly on the command-line or in the
+# configuration file formatted as "plain:<base64-user-id>:<base64-password>".
+# Note that putting these account details on the command-line is not
+# recommended because it will make the password easily visible to all users
+# on the local machine.
+#
+#client-auth C:/ProgramData/E-MailRelay/emailrelay.auth
+
+# Name: client-auth-config
+# Format: client-auth-config <config>
+# Description: Configures the SMTP client authentication module using a
+# semicolon-separated list of configuration items. Each item is a
+# single-character key, followed by a colon and then a comma-separated list.
+# A 'm' character introduces an ordered list of preferred authentication
+# mechanisms and an 'x' introduces a list of mechanisms to avoid. An 'a' list
+# and a 'd' list can be used similarly to prefer and avoid certain mechanisms
+# once the session is encrypted with TLS.
+#
+#client-auth-config m:cram-sha1,cram-md5
+
+# Name: server-auth
+# Format: server-auth <file>
+# Description: Enables SMTP server authentication of remote SMTP clients.
+# Account names and passwords are taken from the specified secrets file. The
+# secrets file should contain lines that have four space-separated fields,
+# starting with "server" in the first field; the second field is the password
+# encoding ("plain" or "md5"), the third is the client user-id and the fourth
+# is the password. The user-id is RFC-1891 xtext encoded, and the password is
+# either xtext encoded or generated by "emailrelay-passwd". Alternatively,
+# the username and password can be Base64 encoded if the second field is
+# "plain:b". A special value of "pam:" can be used for authentication using
+# linux PAM.
+#
+#server-auth C:/ProgramData/E-MailRelay/emailrelay.auth
+
+# Name: server-auth-config
+# Format: server-auth-config <config>
+# Description: Configures the SMTP server authentication module using a
+# semicolon-separated list of configuration items. Each item is a
+# single-character key, followed by a colon and then a comma-separated list.
+# A 'm' character introduces an ordered list of allowed authentication
+# mechanisms and an 'x' introduces a list of mechanisms to deny. An 'a' list
+# and a 'd' list can be used similarly to allow and deny mechanisms once the
+# session is encrypted with TLS. In typical usage you might have an empty
+# allow list for an unencrypted session and a single preferred mechanism once
+# encrypted, "m:;a:plain".
+#
+#server-auth-config m:cram-sha256,cram-sha1
+
+# Name: pop-auth
+# Format: pop-auth <file>
+# Description: Specifies a file containing valid POP account details. The
+# file format is the same as for the SMTP server secrets file, ie. lines
+# starting with "server", with user-id and password in the third and fourth
+# fields. A special value of "pam:" can be used for authentication using
+# linux PAM.
+#
+#pop-auth C:/ProgramData/E-MailRelay/pop.auth
+
+# TLS options
+# -----------
+
+# Name: client-tls
+# Format: client-tls
+# Description: Enables negotiated TLS for outgoing SMTP connections; the SMTP
+# STARTTLS command will be issued if the remote server supports it.
+#
+#client-tls
+
+# Name: client-tls-certificate
+# Format: client-tls-certificate <pem-file>
+# Description: Defines the TLS certificate file when acting as a SMTP client.
+# This file must contain the client's private key and certificate chain using
+# the PEM file format. Alternatively, use this option twice with the first
+# one specifying the key file and the second the certificate file. Keep the
+# file permissions tight to avoid accidental exposure of the private key.
+#
+#client-tls-certificate C:/ProgramData/E-MailRelay/emailrelay.pem
+
+# Name: client-tls-connection
+# Format: client-tls-connection
+# Description: Enables the use of a TLS tunnel for outgoing SMTP connections.
+# This is for SMTP over TLS (SMTPS), not TLS negotiated within SMTP using
+# STARTTLS.
+#
+#client-tls-connection
+
+# Name: client-tls-required
+# Format: client-tls-required
+# Description: Makes the use of TLS mandatory for outgoing SMTP connections.
+# The SMTP STARTTLS command will be used before mail messages are sent out.
+# If the remote server does not allow STARTTLS then the SMTP connection will
+# fail.
+#
+#client-tls-required
+
+# Name: client-tls-server-name
+# Format: client-tls-server-name <hostname>
+# Description: Defines the target server hostname in the TLS handshake. With
+# "--client-tls-connection" this can be used for SNI, allowing the remote
+# server to adopt an appropriate identity.
+#
+#client-tls-server-name smtp.example.com
+
+# Name: client-tls-verify
+# Format: client-tls-verify <ca-list>
+# Description: Enables verification of the remote SMTP server's certificate
+# against any of the trusted CA certificates in the specified file or
+# directory. In many use cases this should be a file containing just your
+# self-signed root certificate. Specify "<default>" (including the angle
+# brackets) for the TLS library's default set of trusted CAs.
+#
+#client-tls-verify C:/ProgramData/E-MailRelay/ca-certificates.crt
+
+# Name: client-tls-verify-name
+# Format: client-tls-verify-name <cname>
+# Description: Enables verification of the CNAME within the remote SMTP
+# server's certificate.
+#
+#client-tls-verify-name smtp.example.com
+
+# Name: server-tls
+# Format: server-tls
+# Description: Enables TLS for incoming SMTP and POP connections. SMTP
+# clients can then request TLS encryption by issuing the STARTTLS command.
+# The "--server-tls-certificate" option must be used to define the server
+# certificate.
+#
+#server-tls
+
+# Name: server-tls-certificate
+# Format: server-tls-certificate <pem-file>
+# Description: Defines the TLS certificate file when acting as a SMTP or POP
+# server. This file must contain the server's private key and certificate
+# chain using the PEM file format. Alternatively, use this option twice with
+# the first specifying the key file and the second the certificate file. Keep
+# the file permissions tight to avoid accidental exposure of the private key.
+#
+#server-tls-certificate C:/ProgramData/E-MailRelay/emailrelay.pem
+
+# Name: server-tls-connection
+# Format: server-tls-connection
+# Description: Enables SMTP over TLS when acting as an SMTP server. This is
+# for SMTP over TLS (SMTPS), not TLS negotiated within SMTP using STARTTLS.
+#
+#server-tls-connection
+
+# Name: server-tls-required
+# Format: server-tls-required
+# Description: Makes the use of TLS mandatory for any incoming SMTP and POP
+# connections. SMTP clients must use the STARTTLS command to establish a TLS
+# session before they can issue SMTP AUTH or SMTP MAIL-TO commands.
+#
+#server-tls-required
+
+# Name: server-tls-verify
+# Format: server-tls-verify <ca-list>
+# Description: Enables verification of remote SMTP and POP clients'
+# certificates against any of the trusted CA certificates in the specified
+# file or directory. In many use cases this should be a file containing just
+# your self-signed root certificate. Specify "<default>" (including the angle
+# brackets) for the TLS library's default set of trusted CAs.
+#
+#server-tls-verify C:/ProgramData/E-MailRelay/ca-certificates.crt
+
+# Name: tls-config
+# Format: tls-config <options>
+# Description: Selects and configures the low-level TLS library, using a
+# comma-separated list of keywords. If OpenSSL and mbedTLS are both built in
+# then keywords of "openssl" and "mbedtls" will select one or the other.
+# Keywords like "tlsv1.0" can be used to set a minimum TLS protocol version,
+# or "-tlsv1.2" to set a maximum version.
+#
+#tls-config mbedtls,tlsv1.2
+
+# Process options
+# ---------------
+
+# Name: dont-serve
+# Format: dont-serve
+# Description: Disables all network serving, including SMTP, POP and
+# administration interfaces. The program will terminate as soon as any
+# initial forwarding is complete.
+#
+#dont-serve
+
+# Name: hidden
+# Format: hidden
+# Description: Hides the application window and disables all message boxes,
+# overriding any "--show" option. This is useful when running as a windows
+# service.
+#
+#hidden
+
+# Name: no-smtp
+# Format: no-smtp
+# Description: Disables listening for incoming SMTP connections.
+#
+#no-smtp
+
+# Name: pid-file
+# Format: pid-file <path>
+# Description: Causes the process-id to be written into the specified file
+# when the program starts up, typically after it has become a background
+# daemon. The immediate parent directory is created if necessary.
+#
+#pid-file C:/ProgramData/E-MailRelay/pid.txt
+
+# Name: show
+# Format: show <style>
+# Description: Starts the application window in the given style: "hidden",
+# "popup", "window", "window,tray", or "tray". Ignored if also using
+# "--no-daemon" or "--hidden". If none of "--window", "--no-daemon" and
+# "--hidden" are used then the default style is "tray".
+#
+#show window,tray
+
+# Logging options
+# ---------------
+
+# Name: verbose
+# Format: verbose
+# Description: Enables more verbose logging when used with "--log", and more
+# verbose help when used with "--help".
+#
+#verbose
+
+# Name: log
+# Format: log
+# Description: Enables logging to the standard error stream and to the system
+# log. The "--close-stderr" and "--no-syslog" options can be used to disable
+# output to standard error stream and the system log separately. Note that
+# "--as-server", "--as-client" and "--as-proxy" imply "--log", and
+# "--as-server" and "--as-proxy" also imply "--close-stderr".
+#
+#log
+
+# Name: debug
+# Format: debug
+# Description: Enables debug level logging, if built in. Debug messages are
+# usually only useful when cross-referenced with the source code and they may
+# expose plain-text passwords and mail message content.
+#
+#debug
+
+# Name: log-address
+# Format: log-address
+# Description: Adds the network address of remote clients to the logging
+# output. Equivalent to "--log-format=address".
+#
+#log-address
+
+# Name: log-file
+# Format: log-file <file>
+# Description: Redirects standard-error logging to the specified file.
+# Logging to the log file is not affected by "--close-stderr". The filename
+# can include "%d" to get daily log files; the "%d" is replaced by the
+# current date in the local timezone using a "YYYYMMDD" format.
+#
+#log-file C:/ProgramData/E-MailRelay/log-%d.txt
+
+# Name: log-format
+# Format: log-format
+# Description: Adds one or more fields to the logging output. The field names
+# can include "time", "unit", "address", "port", "msgid". The ordering is not
+# significant.
+#
+#log-format time,address
+
+# Name: log-time
+# Format: log-time
+# Description: Adds a timestamp to the logging output using the local
+# timezone. Equivalent to "--log-format=time".
+#
+#log-time
+
+# Name: no-syslog
+# Format: no-syslog
+# Description: Disables logging to the system log. Note that "--as-client"
+# implies "--no-syslog".
+#
+#no-syslog
+
+# Name: syslog
+# Format: syslog
+# Description: When used with "--log" this option enables logging to the
+# system log, even if the "--no-syslog" option is also used. This is
+# typically used as a convenient override when using "--as-client".
+#
+#syslog
+
+# Name: close-stderr
+# Format: close-stderr
+# Description: Causes the standard error stream to be closed soon after
+# start-up. This is useful when operating as a background daemon and it is
+# therefore implied by "--as-server" and "--as-proxy".
+#
+#close-stderr
+

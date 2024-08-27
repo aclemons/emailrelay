@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,6 +26,8 @@
 #include "gnameservers.h"
 #include "gexception.h"
 #include "gscope.h"
+#include "gstr.h"
+#include "gdatetime.h"
 #include "gstringtoken.h"
 #include "glog.h"
 
@@ -55,22 +57,32 @@ void GFilters::MxFilter::start( const GStore::MessageId & message_id )
 {
 	G::Path envelope_path = m_store.envelopePath( message_id , storestate() ) ;
 	GStore::Envelope envelope = GStore::FileStore::readEnvelope( envelope_path ) ;
-	unsigned int port = parseForwardToPort( envelope.forward_to ) ;
-	std::string domain = parseForwardToDomain( envelope.forward_to ) ;
-	if( domain.empty() )
+	auto forward_to = parseForwardTo( envelope.forward_to ) ;
+	if( !forward_to.address.empty() )
 	{
+		// already an IP address so no DNS lookup
+		G_LOG_MORE( "GFilters::MxFilter::start: " << prefix() << " copying forward-to to forward-to-address: " << forward_to.address ) ;
+		GStore::StoredFile msg( m_store , message_id , storestate() ) ;
+		msg.noUnlock() ;
+		msg.editEnvelope( [forward_to](GStore::Envelope &env_){env_.forward_to_address=forward_to.address;} ) ;
+		m_timer.startTimer( 0U ) ;
+		m_result = Result::ok ;
+	}
+	else if( forward_to.domain.empty() )
+	{
+		G_LOG_MORE( "GFilters::MxFilter::start: " << prefix() << " no forward-to domain" ) ;
 		m_timer.startTimer( 0U ) ;
 		m_result = Result::ok ;
 	}
 	else
 	{
-		G_LOG( "GFilters::MxFilter::start: " << prefix() << " looking up [" << domain << "]" ) ;
+		G_LOG( "GFilters::MxFilter::start: " << prefix() << " looking up [" << forward_to.domain << "]" ) ;
 
 		if( m_lookup ) m_lookup->doneSignal().disconnect() ;
 		m_lookup = std::make_unique<MxLookup>( m_es , m_mxlookup_config , m_mxlookup_nameservers ) ;
 		m_lookup->doneSignal().connect( G::Slot::slot(*this,&MxFilter::lookupDone) ) ;
 
-		m_lookup->start( message_id , domain , port ) ;
+		m_lookup->start( message_id , forward_to.domain , forward_to.port ) ;
 		if( m_filter_config.timeout )
 			m_timer.startTimer( m_filter_config.timeout ) ;
 		else
@@ -158,7 +170,6 @@ GStore::FileStore::State GFilters::MxFilter::storestate() const
 		GStore::FileStore::State::Locked ;
 }
 
-
 GFilters::MxLookup::Config GFilters::MxFilter::parseSpec( std::string_view spec , std::vector<GNet::Address> & nameservers_out )
 {
 	MxLookup::Config config ;
@@ -179,31 +190,39 @@ GFilters::MxLookup::Config GFilters::MxFilter::parseSpec( std::string_view spec 
 	return config ;
 }
 
-std::string GFilters::MxFilter::parseForwardToDomain( const std::string & forward_to )
+std::string GFilters::MxFilter::addressLiteral( std::string_view s , unsigned int port )
 {
-	return parseForwardTo(forward_to).first ;
+	// RFC-5321 4.1.3
+	if( s.size() > 2U && s[0] == '[' && s[s.size()-1U] == ']' )
+	{
+		if( port == 0U ) port = 25U ;
+		s = s.substr( 1U , s.size()-2U ) ;
+		bool ipv6 = G::Str::ifind( s , "ipv6:" ) == 0U ;
+		if( ipv6 ) s = s.substr( 5U ) ;
+		if( GNet::Address::validStrings( s , std::to_string(port) ) )
+		{
+			auto address = GNet::Address::parse( s , port ) ;
+			if( address.family() == ( ipv6 ? GNet::Address::Family::ipv6 : GNet::Address::Family::ipv4 ) )
+				return address.displayString() ;
+		}
+	}
+	return {} ;
 }
 
-unsigned int GFilters::MxFilter::parseForwardToPort( const std::string & forward_to )
+GFilters::MxFilter::ParserResult GFilters::MxFilter::parseForwardTo( const std::string & forward_to )
 {
-	return parseForwardTo(forward_to).second ;
-}
-
-std::pair<std::string,unsigned int> GFilters::MxFilter::parseForwardTo( const std::string & forward_to )
-{
-	// "example.com:<port>"
-	// "example.com"
-	// "user@example.com:<port>"
-	// "user@example.com"
+	// normally expect just a domain name but allow a ":<port>" suffix
+	// and ignore any "<user>@" prefix -- also allow a square-bracketed
+	// IP address that skips the MX lookup
 	//
 	auto no_user = G::Str::tailView( forward_to , "@" , false ) ;
 	std::size_t pos = no_user.rfind( ':' ) ;
 	auto head = G::Str::headView( no_user , pos , no_user ) ;
 	auto tail = G::Str::tailView( no_user , pos , {} ) ;
 	bool with_port = !tail.empty() && G::Str::isNumeric( tail ) ;
-	auto first = with_port ? head : no_user ;
-	auto second = with_port ? G::Str::toUInt(tail) : 0U ;
-	return { G::sv_to_string(first) , second } ;
+	auto domain = with_port ? head : no_user ;
+	auto port = with_port ? G::Str::toUInt(tail) : 0U ;
+	return { G::sv_to_string(domain) , port , addressLiteral(domain,port) } ;
 }
 
 std::string GFilters::MxFilter::prefix() const

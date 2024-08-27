@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -58,9 +58,6 @@ namespace G
 class G::CallStack
 {
 public:
-	CallStack() noexcept ;
-		///< Constructor.
-
 	~CallStack() noexcept ;
 		///< Destructor. Calls invalidate() on all the frames in the stack.
 
@@ -71,13 +68,14 @@ public:
 		///< Makes the given frame the innermost.
 
 public:
+	CallStack() noexcept = default ;
 	CallStack( const CallStack & ) = delete ;
 	CallStack( CallStack && ) = delete ;
 	CallStack & operator=( const CallStack & ) = delete ;
 	CallStack & operator=( CallStack && ) = delete ;
 
 private:
-	CallFrame * m_inner{nullptr} ;
+	CallFrame * m_inner {nullptr} ;
 } ;
 
 //| \class G::CallFrame
@@ -121,10 +119,6 @@ private:
 } ;
 
 // ==
-
-inline
-G::CallStack::CallStack() noexcept
-= default;
 
 inline
 G::CallStack::~CallStack() noexcept

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 #include <sstream>
 #include <utility>
 
-GNet::ServerPeer::ServerPeer( EventState es , ServerPeerInfo && peer_info , const LineBuffer::Config & line_buffer_config ) :
+GNet::ServerPeer::ServerPeer( EventState es , ServerPeerInfo && peer_info , const LineBuffer::Config & line_buffer_config ) : // NOLINT
 	EventLogging(es.logging()) ,
 	m_es(es.logging(this)) ,
 	m_address(peer_info.m_address) ,

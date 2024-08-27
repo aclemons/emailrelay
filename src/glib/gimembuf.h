@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -108,7 +108,7 @@ template <typename Tchar>
 std::streampos G::basic_imembuf<Tchar>::seekpos( std::streampos pos_in , std::ios_base::openmode which )
 {
 	using base_t = std::basic_streambuf<Tchar> ;
-	if( ( which & std::ios_base::in ) && pos_in > 0 )
+	if( ( which & std::ios_base::in ) && pos_in > 0 ) // NOLINT
 	{
 		Tchar * mp = const_cast<Tchar*>(m_p) ;
 		int pos = static_cast<int>(pos_in) ;

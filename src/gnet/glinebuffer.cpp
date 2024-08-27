@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -254,7 +254,8 @@ GNet::LineBuffer::Config GNet::LineBuffer::Config::crlf()
 
 GNet::LineBuffer::Config GNet::LineBuffer::Config::smtp()
 {
-	return Config().set_eol( {"\r\n",2U} ).set_warn( 998U+2U ).set_fmin( 2U ) ; // 998 in RFC-2822
+	static constexpr unsigned int soft_limit = 998U ; // RFC-2822
+	return Config().set_eol( {"\r\n",2U} ).set_warn(soft_limit+2U).set_fmin(2U) ;
 }
 
 GNet::LineBuffer::Config GNet::LineBuffer::Config::pop()

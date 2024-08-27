@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 
 #include "gdef.h"
 #include "gaddress.h"
+#include "gresolver.h"
 #include <utility>
 #include <vector>
 #include <string>
@@ -56,11 +57,15 @@ namespace GNet
 class GNet::ResolverFuture
 {
 public:
-	using Pair = std::pair<Address,std::string> ;
+	struct Result /// Result structure for GNet::ResolverFuture::get().
+	{
+		Address address ;
+		std::string canonicalName ; // if requested
+	} ;
 	using List = std::vector<Address> ;
 
 	ResolverFuture( const std::string & host , const std::string & service ,
-		int family , bool dgram , bool for_async_hint = false ) ;
+		int family , const Resolver::Config & ) ;
 			///< Constructor for resolving the given host and service names.
 
 	~ResolverFuture() ;
@@ -70,13 +75,14 @@ public:
 		///< Does the synchronous name resolution and stores the result.
 		///< Returns *this.
 
-	Pair get() ;
-		///< Returns the resolved address/name pair after run() has completed.
-		///< Returns default values if an error().
+	Result get() ;
+		///< Returns the resolved address after run() has completed.
+		///< Returns a default address if an error().
 
 	void get( List & ) ;
-		///< Returns the resolved addresses after run() has completed by
-		///< appending to the given list. Appends nothing if an error().
+		///< Returns by reference the resolved addresses after run() has
+		///< completed by appending to the given list. Appends nothing
+		///< if an error().
 
 	bool error() const ;
 		///< Returns true if name resolution failed or no suitable
@@ -93,23 +99,23 @@ public:
 	ResolverFuture & operator=( ResolverFuture && ) = delete ;
 
 private:
+	static std::string encode( const std::string & , bool ) ;
 	std::string failure() const ;
 	bool fetch( List & ) const ;
-	bool fetch( Pair & ) const ;
+	bool fetch( Result & ) const ;
 	bool failed() const ;
 	std::string none() const ;
 	std::string ipvx() const ;
 
 private:
+	Resolver::Config m_config ;
 	bool m_numeric_service ;
-	int m_socktype ;
 	std::string m_host ;
 	const char * m_host_p ;
 	std::string m_service ;
 	const char * m_service_p ;
 	int m_family ;
 	struct addrinfo m_ai_hint {} ;
-	bool m_test_mode ;
 	int m_rc {0} ;
 	struct addrinfo * m_ai {nullptr} ;
 	std::string m_reason ;

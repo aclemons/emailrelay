@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -53,7 +53,8 @@ namespace GQt
 
 	inline QString qstring_from_path( const G::Path & p )
 	{
-		#if defined(G_WINDOWS) && !defined(G_UNICODE)
+		#if defined(G_WINDOWS) && defined(G_ANSI)
+			// (G_ANSI is deprecated)
 			return QString::fromLocal8Bit( p.cstr() ) ;
 		#else
 			return QString::fromUtf8( p.cstr() ) ;
@@ -62,7 +63,8 @@ namespace GQt
 
 	inline G::Path path_from_qstring( const QString & q )
 	{
-		#if defined(G_WINDOWS) && !defined(G_UNICODE)
+		#if defined(G_WINDOWS) && defined(G_ANSI)
+			// (G_ANSI is deprecated)
 			QByteArray a = q.toLocal8Bit() ;
 			const char * p = a.constData() ;
 			std::size_t n = static_cast<std::size_t>(a.length()) ;

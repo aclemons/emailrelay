@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -205,8 +205,9 @@ struct CreateBatchFile : public ActionBase
 {
 	G::Path m_bat ;
 	G::Path m_exe ;
+	G::Path m_cfg ;
 	G::StringArray m_args ;
-	CreateBatchFile( const G::Path & bat , const G::Path & exe , const G::StringArray & args ) ;
+	CreateBatchFile( const G::Path & bat , const G::Path & exe , const G::Path & cfg , const G::StringArray & args ) ;
 	void run() override ;
 	QString text() const override ;
 	std::string subject() const override ;
@@ -285,7 +286,7 @@ struct CreateConfigFile : public ActionBase
 	QString m_ok ;
 	G::Path m_template ;
 	G::Path m_dst ;
-	CreateConfigFile( G::Path dst_dir , std::string dst_name , G::Path template_ ) ;
+	CreateConfigFile( G::Path dst , G::Path template_ ) ;
 	void run() override ;
 	QString text() const override ;
 	std::string subject() const override ;
@@ -297,8 +298,8 @@ struct EditConfigFile : public ActionBase
 {
 	G::Path m_path ;
 	G::MapFile m_server_config ;
-	bool m_do_backup ;
-	EditConfigFile( G::Path dir , std::string name , const G::MapFile & server_config , bool ) ;
+	bool m_make_backup ;
+	EditConfigFile( G::Path path , const G::MapFile & server_config , bool ) ;
 	void run() override ;
 	QString text() const override ;
 	std::string subject() const override ;
@@ -763,12 +764,12 @@ void CreateSecrets::run()
 			line_list.push_back( "#" ) ;
 			line_list.push_back( "# " + m_path.basename() ) ;
 			line_list.push_back( "#" ) ;
-			line_list.push_back( "# client plain <name(xtext)> <password(xtext)>" ) ;
-			line_list.push_back( "# client plain:b <name(base64)> <password(base64)>" ) ;
-			line_list.push_back( "# client md5 <name(xtext)> <password-hash>" ) ;
-			line_list.push_back( "# server plain <name(xtext)> <password(xtext)>" ) ;
-			line_list.push_back( "# server plain:b <name(base64)> <password(base64)>" ) ;
-			line_list.push_back( "# server md5 <name(xtext)> <password-hash>" ) ;
+			line_list.push_back( "# client plain <name-in-xtext> <password-in-xtext> [<selector>]" ) ;
+			line_list.push_back( "# client plain:b <name-in-base64> <password-in-base64> [<selector>]" ) ;
+			line_list.push_back( "# client md5 <name-in-xtext> <password-hash> [<selector>]" ) ;
+			line_list.push_back( "# server plain <name-in-xtext> <password-in-xtext>" ) ;
+			line_list.push_back( "# server plain:b <name-in-base64> <password-in-base64>" ) ;
+			line_list.push_back( "# server md5 <name-in-xtext> <password-hash>" ) ;
 			line_list.push_back( "# server none <address-range> <verifier-keyword>" ) ;
 			line_list.push_back( "#" ) ;
 		}
@@ -793,15 +794,9 @@ void CreateSecrets::run()
 		}
 	}
 
-	// make a backup -- ignore errors for now
+	// make a backup
 	if( file_exists )
-	{
-		G::BrokenDownTime now = G::SystemTime::now().local() ;
-		std::string timestamp = G::Date(now).str(G::Date::Format::yyyy_mm_dd) + G::Time(now).hhmmss() ;
-		G::Path backup_path( m_path.dirname() , m_path.basename() + "." + timestamp ) ;
-		G::Process::Umask umask( G::Process::Umask::Mode::Tightest ) ;
-		G::File::copy( m_path , backup_path , std::nothrow ) ;
-	}
+		G::File::backup( m_path , std::nothrow ) ;
 
 	// write the new file
 	std::ofstream file ;
@@ -819,9 +814,10 @@ void CreateSecrets::run()
 
 // ==
 
-CreateBatchFile::CreateBatchFile( const G::Path & bat , const G::Path & exe , const G::StringArray & args ) :
+CreateBatchFile::CreateBatchFile( const G::Path & bat , const G::Path & exe , const G::Path & cfg , const G::StringArray & args ) :
 	m_bat(bat) ,
 	m_exe(exe) ,
+	m_cfg(cfg) ,
 	m_args(args)
 {
 }
@@ -838,8 +834,13 @@ std::string CreateBatchFile::subject() const
 
 void CreateBatchFile::run()
 {
-	G::StringArray all_args = m_args ;
-	all_args.insert( all_args.begin() , m_exe.str() ) ;
+	// build the batch-file command-line -- previously we put all
+	// options in the batch file, but now they go into the config
+	// file and m_args is not used here
+	//
+	G::StringArray all_args ;
+	all_args.push_back( m_exe.str() ) ;
+	all_args.push_back( m_cfg.str() ) ;
 
 	// check every argument can be converted to the OEM code page
 	for( const auto & arg : all_args )
@@ -861,7 +862,7 @@ void CreateBatchFile::run()
 		}
 	}
 
-	G::BatchFile::write( m_bat , all_args , "emailrelay" ) ;
+	G::BatchFile::write( m_bat , all_args , "emailrelay" , /*make_backup=*/true ) ;
 }
 
 // ==
@@ -1090,9 +1091,9 @@ QString CreateFilterScript::ok() const
 
 // ==
 
-CreateConfigFile::CreateConfigFile( G::Path dst_dir , std::string dst_name , G::Path template_ ) :
+CreateConfigFile::CreateConfigFile( G::Path dst , G::Path template_ ) :
 	m_template(template_) ,
-	m_dst(dst_dir/dst_name)
+	m_dst(dst)
 {
 }
 
@@ -1123,18 +1124,16 @@ QString CreateConfigFile::ok() const
 
 // ==
 
-EditConfigFile::EditConfigFile( G::Path dir , std::string name , const G::MapFile & server_config , bool do_backup ) :
-	m_path(dir/name) ,
+EditConfigFile::EditConfigFile( G::Path path , const G::MapFile & server_config , bool make_backup ) :
+	m_path(path) ,
 	m_server_config(server_config) ,
-	m_do_backup(do_backup)
+	m_make_backup(make_backup)
 {
 }
 
 void EditConfigFile::run()
 {
-	const bool allow_read_error = false ;
-	const bool allow_write_error = false ;
-	m_server_config.editInto( m_path , m_do_backup , allow_read_error , allow_write_error ) ;
+	m_server_config.editInto( m_path , m_make_backup ) ;
 }
 
 QString EditConfigFile::text() const
@@ -1342,9 +1341,10 @@ InstallerImp::InstallerImp( bool installing , bool is_windows , bool is_mac , co
 	Helper::m_is_mac = is_mac ;
 
 	// define ivalue o/s-specific paths
-	m_installer_config.add( "-authtemplate" , isWindows() ? "" : "%payload%/usr/lib/emailrelay/emailrelay.auth.in" ) ;
-	m_installer_config.add( "-conftemplate" , isWindows() ? "" : "%payload%/usr/lib/emailrelay/emailrelay.conf.in" ) ;
+	m_installer_config.add( "-authtemplate" , isWindows() ? "%payload%/etc/emailrelay.auth.in" : "%payload%/usr/lib/emailrelay/emailrelay.auth.in" ) ;
+	m_installer_config.add( "-conftemplate" , isWindows() ? "%payload%/etc/emailrelay.cfg.in" : "%payload%/usr/lib/emailrelay/emailrelay.conf.in" ) ;
 	m_installer_config.add( "-bat" , isWindows() ? "%dir-config%/emailrelay-start.bat" : "" ) ; // not dir-install -- see guimain
+	m_installer_config.add( "-cfg" , isWindows() ? "%dir-config%/emailrelay.cfg" : "%dir-config%/emailrelay.conf" ) ;
 	m_installer_config.add( "-exe" , isWindows() ? "%dir-install%/emailrelay.exe" :
 		( isMac() ? "%dir-install%/E-MailRelay.app/Contents/MacOS/emailrelay" : "%dir-install%/sbin/emailrelay" ) ) ;
 	m_installer_config.add( "-gui" , isWindows() ? "%dir-install%/emailrelay-gui.exe" : "%dir-install%/sbin/emailrelay-gui.real" ) ;
@@ -1589,25 +1589,29 @@ void InstallerImp::addActions()
 
 	// update the configuration
 	//
+	{
+		G::Path cfg = ivalue( "-cfg" ) ;
+		G::Path conftemplate_src = m_installing ? ivalue( "-conftemplate" ) : std::string() ;
+		G::MapFile server_config = ServerConfiguration::fromPages(m_pages_output).map() ;
+		addAction( new CreateConfigFile(cfg,conftemplate_src) ) ;
+		addAction( new EditConfigFile(cfg,server_config,!m_installing) ) ;
+	}
 	if( isWindows() )
 	{
-		G::Path exe = ivalue( "-exe" ) ;
 		G::Path bat = ivalue( "-bat" ) ;
+		G::Path exe = ivalue( "-exe" ) ;
+		G::Path cfg = ivalue( "-cfg" ) ;
+		G::StringArray args ; // now empty -- was ServerConfiguration::fromPages(m_pages_output).args() ;
+		addAction( new CreateBatchFile(bat,exe,cfg,args) ) ;
+	}
+	if( isWindows() )
+	{
 		G::Path dir_install = pvalue( "dir-install" ) ;
 		G::Path working_dir = pvalue( "dir-config" ) ;
 		G::Path target = ivalue( "-bat" ) ;
+		G::StringArray args = {ivalue("-cfg")} ;
 		G::Path icon = ivalue( "-icon" ) ;
-		G::StringArray args = ServerConfiguration::fromPages(m_pages_output).args() ;
-		addAction( new CreateBatchFile(bat,exe,args) ) ;
 		addAction( new UpdateLink(UpdateLink::LinkType::BatchFile,true,dir_install,working_dir,target,args,icon) ) ;
-	}
-	else
-	{
-		G::Path dir_config = pvalue( "dir-config" ) ;
-		G::Path conftemplate_src = m_installing ? ivalue( "-conftemplate" ) : std::string() ;
-		G::MapFile server_config = ServerConfiguration::fromPages(m_pages_output).map() ;
-		addAction( new CreateConfigFile(dir_config,"emailrelay.conf",conftemplate_src) ) ;
-		addAction( new EditConfigFile(dir_config,"emailrelay.conf",server_config,!m_installing) ) ;
 	}
 
 	// create startup links
@@ -1623,7 +1627,7 @@ void InstallerImp::addActions()
 
 		G::Path bat = ivalue( "-bat" ) ;
 		G::Path target = isWindows() ? bat : server_exe ;
-		G::StringArray args = isWindows() ? G::StringArray() : ServerConfiguration::fromPages(m_pages_output).args() ;
+		G::StringArray args = {ivalue("-cfg")} ;
 		G::Path icon = ivalue( "-icon" ) ;
 
 		bool desktop_state = yes(pvalue("start-link-desktop")) && !yes(pvalue("start-is-mac")) ;

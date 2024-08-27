@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -34,9 +34,10 @@ std::vector<GNet::Address> GNet::nameservers( unsigned int port )
 	{
 		std::string_view sv( line ) ;
 		G::StringTokenView t( sv , " \t" ) ;
-		if( t && G::Str::imatch(t(),"nameserver") )
+		if( t.valid() && G::Str::imatch(t(),"nameserver") )
 		{
-			if( ++t && GNet::Address::validStrings(G::sv_to_string(t()),"0") )
+			++t ;
+			if( t.valid() && GNet::Address::validStrings(G::sv_to_string(t()),"0") )
 				result.push_back( GNet::Address::parse( G::sv_to_string(t()) , port ) ) ;
 		}
 	}

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -47,8 +47,8 @@ namespace GAuth
 class GAuth::SecretsFile
 {
 public:
-	G_EXCEPTION( Error , tx("invalid secrets file") ) ;
-	G_EXCEPTION( OpenError , tx("cannot read secrets file") ) ;
+	G_EXCEPTION( Error , tx("invalid secrets file") )
+	G_EXCEPTION( OpenError , tx("cannot read secrets file") )
 
 	static void check( const std::string & path , bool with_warnings ) ;
 		///< Checks the given file. Logs errors and optionally warnings and then
@@ -103,7 +103,7 @@ private:
 	struct Contents
 	{
 		MapOfSecrets m_map ;
-		SetOfStrings m_types ; // server
+		SetOfStrings m_server_types ; // server
 		MapOfInt m_selectors ; // client -- zero integer if only an empty id
 		TrustMap m_trust_map ;
 		Diagnostics m_diagnostics ;

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -45,7 +45,9 @@ GStore::NewFile::NewFile( FileStore & store , const std::string & from ,
 	m_env.from_auth_in = smtp_info.auth ;
 	m_env.from_auth_out = from_auth_out ;
 	m_env.body_type = Envelope::parseSmtpBodyType( smtp_info.body ) ;
-	m_env.utf8_mailboxes = smtp_info.utf8address ;
+	m_env.utf8_mailboxes =
+		smtp_info.address_style == MessageStore::AddressStyle::Utf8Mailbox ||
+		smtp_info.address_style == MessageStore::AddressStyle::Utf8Both ;
 
 	// ask the store for a content stream
 	G_LOG( "GStore::NewFile: new content file [" << cpath().basename() << "]" ) ;
@@ -106,7 +108,7 @@ void GStore::NewFile::commit( bool throw_on_error )
 	static_cast<MessageStore&>(m_store).updated() ;
 }
 
-void GStore::NewFile::addTo( const std::string & to , bool local , bool utf8address )
+void GStore::NewFile::addTo( const std::string & to , bool local , MessageStore::AddressStyle address_style )
 {
 	if( local )
 	{
@@ -115,8 +117,11 @@ void GStore::NewFile::addTo( const std::string & to , bool local , bool utf8addr
 	else
 	{
 		m_env.to_remote.push_back( to ) ;
-		if( utf8address )
+		if( address_style == MessageStore::AddressStyle::Utf8Mailbox ||
+			address_style == MessageStore::AddressStyle::Utf8Both )
+		{
 			m_env.utf8_mailboxes = true ;
+		}
 	}
 }
 

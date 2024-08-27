@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -239,9 +239,10 @@ sub link_options
 sub compile_options
 {
 	my ( $this ) = @_ ;
-	my @a = $this->_compile_options_imp( "AM_CPPFLAGS" , $this->{m_vars} ) ;
-	my @b = $this->_compile_options_imp( "CXXFLAGS" , $this->{m_vars} ) ;
-	my @options = ( @a , @b ) ;
+	my @a = grep { m/^.std=/ } $this->_compile_options_imp( "CXX" , $this->{m_vars} ) ;
+	my @b = $this->_compile_options_imp( "AM_CPPFLAGS" , $this->{m_vars} ) ;
+	my @c = $this->_compile_options_imp( "CXXFLAGS" , $this->{m_vars} ) ;
+	my @options = ( @a , @b , @c ) ;
 	return wantarray ? @options : join(" ",@options) ;
 }
 

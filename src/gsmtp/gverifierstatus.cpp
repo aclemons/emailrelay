@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,7 +21,6 @@
 #include "gdef.h"
 #include "gverifier.h"
 #include "gverifierstatus.h"
-#include "gsmtpserverparser.h"
 #include "gstringview.h"
 #include "gstr.h"
 #include "glog.h"
@@ -109,10 +108,5 @@ std::string GSmtp::VerifierStatus::str() const
 		.append(escape(address)).append(1U,sep)
 		.append(escape(response)).append(1U,sep)
 		.append(escape(reason)) ;
-}
-
-bool GSmtp::VerifierStatus::utf8address() const
-{
-	return ServerParser::mailboxStyle( address ) == ServerParser::MailboxStyle::Utf8 ;
 }
 

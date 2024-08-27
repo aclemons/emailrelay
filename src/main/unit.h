@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -101,12 +101,6 @@ public:
 		///< these events to other Main::Unit objects and the GUI -- see
 		///< Main::WinForm.)
 
-	std::string domain() const ;
-		///< Returns the configured domain.
-
-	G::Path spoolDir() const ;
-		///< Returns the spool directory.
-
 private: //overrides
 	std::string_view eventLoggingString() const noexcept override ;
 
@@ -117,6 +111,8 @@ public:
 	Unit & operator=( Unit && ) = delete ;
 
 private:
+	std::string domain() const ;
+	G::Path spoolDir() const ;
 	void onPollTimeout() ;
 	void onRequestForwardingTimeout() ;
 	bool logForwarding() const ;
@@ -133,6 +129,7 @@ private:
 	std::string serverTlsProfile() const ;
 	std::string clientTlsProfile() const ;
 	std::string ident() const ;
+	std::string clientDomain() const ;
 	void report() ;
 
 private:

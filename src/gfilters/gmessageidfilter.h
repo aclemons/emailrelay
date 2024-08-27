@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 #include "gdef.h"
 #include "gsimplefilterbase.h"
 #include "gfilestore.h"
+#include "gstringview.h"
 #include "gexception.h"
 
 namespace GFilters
@@ -38,7 +39,7 @@ namespace GFilters
 class GFilters::MessageIdFilter : public SimpleFilterBase
 {
 public:
-	G_EXCEPTION( Error , tx("failed to add message id to content file") ) ;
+	G_EXCEPTION( Error , tx("failed to add message id to content file") )
 
 	MessageIdFilter( GNet::EventState , GStore::FileStore & ,
 		Filter::Type , const Filter::Config & , const std::string & spec ) ;

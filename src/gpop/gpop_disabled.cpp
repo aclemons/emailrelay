@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ bool GPop::enabled() noexcept
 	return false ;
 }
 
-std::unique_ptr<GPop::Store> GPop::newStore( const G::Path & , bool , bool )
+std::unique_ptr<GPop::Store> GPop::newStore( const G::Path & , const Store::Config & )
 {
 	return {} ;
 }

@@ -221,7 +221,8 @@ emailrelay_start_OBJECTS = $(am_emailrelay_start_OBJECTS)
 emailrelay_start_DEPENDENCIES = $(am__DEPENDENCIES_1)
 emailrelay_start_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(emailrelay_start_LDFLAGS) $(LDFLAGS) -o $@
-am_emailrelay_submit_OBJECTS = submit.$(OBJEXT) legal.$(OBJEXT)
+am_emailrelay_submit_OBJECTS = submit.$(OBJEXT) submitparser.$(OBJEXT) \
+	legal.$(OBJEXT)
 emailrelay_submit_OBJECTS = $(am_emailrelay_submit_OBJECTS)
 @GCONFIG_WINDOWS_FALSE@emailrelay_submit_DEPENDENCIES =  \
 @GCONFIG_WINDOWS_FALSE@	$(top_builddir)/src/gstore/libgstore.a \
@@ -280,9 +281,9 @@ am__depfiles_remade = ./$(DEPDIR)/commandline.Po \
 	./$(DEPDIR)/serviceimp_none.Po ./$(DEPDIR)/serviceimp_win32.Po \
 	./$(DEPDIR)/servicewrapper.Po ./$(DEPDIR)/start.Po \
 	./$(DEPDIR)/submission.Po ./$(DEPDIR)/submit.Po \
-	./$(DEPDIR)/unit.Po ./$(DEPDIR)/winapp.Po \
-	./$(DEPDIR)/winform.Po ./$(DEPDIR)/winmain.Po \
-	./$(DEPDIR)/winmenu.Po
+	./$(DEPDIR)/submitparser.Po ./$(DEPDIR)/unit.Po \
+	./$(DEPDIR)/winapp.Po ./$(DEPDIR)/winform.Po \
+	./$(DEPDIR)/winmain.Po ./$(DEPDIR)/winmenu.Po
 am__mv = mv -f
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -720,7 +721,7 @@ emailrelay_passwd_SOURCES = passwd.cpp legal.cpp legal.h
 @GCONFIG_WINDOWS_TRUE@ $(GCONFIG_TLS_LIBS) \
 @GCONFIG_WINDOWS_TRUE@ $(OS_LIBS)
 
-emailrelay_submit_SOURCES = submit.cpp legal.cpp legal.h
+emailrelay_submit_SOURCES = submit.cpp submitparser.cpp submitparser.h legal.cpp legal.h
 @GCONFIG_WINDOWS_FALSE@emailrelay_submit_LDFLAGS = 
 @GCONFIG_WINDOWS_TRUE@emailrelay_submit_LDFLAGS = -static
 @GCONFIG_WINDOWS_FALSE@emailrelay_submit_LDADD = \
@@ -903,6 +904,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/start.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/submission.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/submit.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/submitparser.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/unit.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/winapp.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/winform.Po@am__quote@ # am--include-marker
@@ -1171,6 +1173,7 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/start.Po
 	-rm -f ./$(DEPDIR)/submission.Po
 	-rm -f ./$(DEPDIR)/submit.Po
+	-rm -f ./$(DEPDIR)/submitparser.Po
 	-rm -f ./$(DEPDIR)/unit.Po
 	-rm -f ./$(DEPDIR)/winapp.Po
 	-rm -f ./$(DEPDIR)/winform.Po
@@ -1244,6 +1247,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/start.Po
 	-rm -f ./$(DEPDIR)/submission.Po
 	-rm -f ./$(DEPDIR)/submit.Po
+	-rm -f ./$(DEPDIR)/submitparser.Po
 	-rm -f ./$(DEPDIR)/unit.Po
 	-rm -f ./$(DEPDIR)/winapp.Po
 	-rm -f ./$(DEPDIR)/winform.Po

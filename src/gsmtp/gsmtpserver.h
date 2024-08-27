@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -175,8 +175,8 @@ private:
 class GSmtp::ServerPeer : public GNet::ServerPeer , private ServerSender
 {
 public:
-	G_EXCEPTION( Error , tx("smtp server error") ) ;
-	G_EXCEPTION( SendError , tx("failed to send smtp response") ) ;
+	G_EXCEPTION( Error , tx("smtp server error") )
+	G_EXCEPTION( SendError , tx("failed to send smtp response") )
 
 	ServerPeer( GNet::EventStateUnbound , GNet::ServerPeerInfo && peer_info , Server & server ,
 		bool enabled , VerifierFactoryBase & vf , const GAuth::SaslServerSecrets & server_secrets ,

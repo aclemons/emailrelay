@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@ use FileHandle ;
 use File::Basename ;
 use Getopt::Long ;
 use Data::Dumper ;
-use lib dirname($0) ;
+BEGIN { unshift @INC , dirname($0) }
 use CompilationDatabase ;
 use ConfigStatus ;
 use AutoMakeParser ;
@@ -117,11 +117,11 @@ for my $cfg_program ( @cfg_programs )
 	{
 		my $dir = File::Basename::dirname( $m->path() ) ;
 
-		print $fh_out "/* lib [$dir] */\n" ;
 		for my $library ( $m->libraries() )
 		{
 			if( exists($libs{$library}) ) # ignore this library if not linked in to $program
 			{
+				print $fh_out "/* lib $dir/$library... */\n" ;
 				for my $src ( $m->sources($library) )
 				{
 					print $fh_out "#include \"$src\"\n" ;
@@ -129,7 +129,7 @@ for my $cfg_program ( @cfg_programs )
 			}
 			else
 			{
-				print $fh_out "/* (not linked) */\n" ;
+				print $fh_out "/* lib $dir/$library not linked */\n" ;
 			}
 		}
 	}

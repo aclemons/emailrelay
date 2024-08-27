@@ -1,4 +1,4 @@
-.\" Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+.\" Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 .\" 
 .\" This program is free software: you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
@@ -60,7 +60,7 @@ This is equivalent to \fI--log\fR, \fI--no-syslog\fR, \fI--no-daemon\fR, \fI--do
 This is equivalent to \fI--log\fR, \fI--close-stderr\fR, \fI--forward-on-disconnect\fR and \fI--forward-to\fR. It is a convenient way of running a store-and-forward daemon. Use \fI--log\fR, \fI--forward-on-disconnect\fR and \fI--forward-to\fR instead of \fI--as-proxy\fR to keep the standard error stream open.
 .TP
 .B \-d, --as-server
-This is equivalent to \fI--log\fR and \fI--close-stderr\fR. It is a convenient way of running a background storage daemon that accepts mail messages and spools them. Use \fI--log\fR instead of \fI--as-server\fR to keep standard error stream open.
+This is equivalent to \fI--log\fR and \fI--close-stderr\fR. It is a convenient way of running a background storage daemon that accepts mail messages and spools them. Use \fI--log\fR instead of \fI--as-server\fR to keep the standard error stream open.
 .TP
 .B \-s, --spool-dir \fI<dir>\fR
 Specifies the directory used for holding mail messages that have been received but not yet forwarded.
@@ -128,10 +128,10 @@ Disables the server's SMTP VRFY command, sends less verbose SMTP greeting and re
 Specifies the base directory for mailboxes when delivering messages that have local recipients. This defaults to the main spool directory.
 .TP
 .B --dnsbl \fI<config>\fR
-Specifies a list of DNSBL servers that are used to reject SMTP connections from blocked addresses. The configuration string is made up of comma-separated fields: the DNS server's transport address, a timeout in milliseconds, a rejection threshold, and then the list of DNSBL servers.
+Specifies a list of DNSBL servers that are used to reject SMTP connections from blocked addresses. The configuration string is made up of comma-separated fields: the list of DNSBL servers, an optional rejection threshold, an optional timeout in milliseconds, and optionally the transport address of the DNS server.
 .TP
 .B \-D, --domain \fI<fqdn>\fR
-Specifies the network name that is used in SMTP EHLO commands, \fIReceived\fR lines, and for generating authentication challenges. The default is derived from a DNS lookup of the local hostname.
+Specifies the domain name that is used in SMTP client EHLO commands, server EHLO responses, \fIReceived\fR lines, and for generating authentication challenges. The SMTP client will use an IP address in the EHLO command if the given domain is not a dotted FQDN. If this option is not used at all then the default value is the canonical name returned from a DNS query of the local hostname, or the system's FQDN on Windows.
 .TP
 .B \-z, --filter \fI<program>\fR
 Runs the specified external filter program whenever a mail message is stored. The filter is passed the name of the message file in the spool directory so that it can edit it as required. The mail message is rejected if the filter program terminates with an exit code between 1 and 99. Use \fInet:<tcp-address>\fR to communicate with a filter daemon over the network, or \fIspam:<tcp-address>\fR for a spamassassin spamd daemon to accept or reject mail messages, or \fIspam-edit:<tcp-address>\fR to have spamassassin edit the message content without rejecting it, or \fIexit:<number>\fR to emulate a filter program that just exits.
@@ -140,13 +140,13 @@ Runs the specified external filter program whenever a mail message is stored. Th
 Specifies a timeout (in seconds) for running a \fI--filter\fR program. The default is 60 seconds.
 .TP
 .B \-I, --interface \fI<ip-address-list>\fR
-Specifies the IP network addresses or interface names used to bind listening ports. By default listening ports for incoming SMTP, POP and administration connections will bind the 'any' address for IPv4 and for IPv6, ie. \fI0.0.0.0\fR and \fI::\fR. Multiple addresses can be specified by using the option more than once or by using a comma-separated list. Use a prefix of \fIsmtp=\fR, \fIpop=\fR or \fIadmin=\fR on addresses that should apply only to those types of listening port. Any link-local IPv6 addresses must include a zone name or scope id.  Interface names can be used instead of addresses, in which case all the addresses associated with that interface at startup will used for listening. When an interface name is decorated with a \fI-ipv4\fR or \fI-ipv6\fR suffix only their IPv4 or IPv6 addresses will be used (eg. \fIppp0-ipv4\fR).  To inherit listening file descriptors from the parent process on unix use a syntax like this: \fI--interface\fR smtp=fd#3,smtp=fd#4,pop=fd#5.
+Specifies the IP network addresses or interface names used to bind listening ports. By default listening ports for incoming SMTP, POP and administration connections will bind the 'any' address for IPv4 and for IPv6, ie. \fI0.0.0.0\fR and \fI::\fR. Multiple addresses can be specified by using the option more than once or by using a comma-separated list. Use a prefix of \fIsmtp=\fR, \fIpop=\fR or \fIadmin=\fR on addresses that should apply only to those types of listening port. Any link-local IPv6 addresses must include a zone name or scope id.  Interface names can be used instead of addresses, in which case all the addresses associated with that interface at startup will used for listening. When an interface name is decorated with a \fI-ipv4\fR or \fI-ipv6\fR suffix only their IPv4 or IPv6 addresses will be used (eg. \fIppp0-ipv4\fR).  To inherit listening file descriptors from the parent process on unix use a syntax like this: \fI--interface\fR=smtp=fd#3\fR.
 .TP
 .B \-w, --prompt-timeout \fI<time>\fR
 Specifies a timeout (in seconds) for getting the initial prompt from a remote SMTP server. If no prompt is received after this time then the SMTP dialog goes ahead without it.
 .TP
 .B \-Z, --server-smtp-config \fI<config>\fR
-Configures the SMTP server protocol using a comma-separated list of optional features, including 'pipelining', 'chunking', 'smtputf8', and 'smtputf8strict'.
+Configures the SMTP server protocol using a comma-separated list of optional features, including 'pipelining', 'chunking', 'smtputf8', 'smtputf8strict', 'nostrictparsing' and 'noalabels'.
 .TP
 .B \-M, --size \fI<bytes>\fR
 Limits the size of mail messages that can be submitted over SMTP.
@@ -156,7 +156,7 @@ Limits the size of mail messages that can be submitted over SMTP.
 Enables the POP server, listening by default on port 110, providing access to spooled mail messages. Negotiated TLS using the POP \fISTLS\fR command will be enabled if the \fI--server-tls\fR option is also given.
 .TP
 .B \-J, --pop-by-name
-Modifies the POP server's spool directory to be the sub-directory with the same name as the user-id used for POP authentication. This allows POP clients to see only their own messages after they have been moved into separate sub-directories typically by the built-in \fIdeliver:\fR or \fIcopy:\fR filters. Content files can remain in the main spool directory to save disk space; they will be deleted by the POP server when it deletes the last matching envelope file.
+Modifies the POP server's spool directory to be the sub-directory with the same name as the user-id used for POP authentication. This allows POP clients to see only their own messages after they have been moved into separate sub-directories, typically by the built-in \fIdeliver:\fR or \fIcopy:\fR filters. Content files can remain in the main spool directory to save disk space; they will be deleted by the POP server when it deletes the last matching envelope file.
 .TP
 .B \-G, --pop-no-delete
 Disables the POP DELE command so that the command appears to succeed but mail messages are not deleted from the spool directory.
@@ -231,14 +231,11 @@ Selects and configures the low-level TLS library, using a comma-separated list o
 .B \-x, --dont-serve
 Disables all network serving, including SMTP, POP and administration interfaces. The program will terminate as soon as any initial forwarding is complete.
 .TP
-.B \-H, --hidden
-Windows only. Hides the application window and disables all message boxes, overriding any \fI--show\fR option. This is useful when running as a windows service.
-.TP
 .B --localedir \fI<dir>\fR
 Enables localisation and specifies the locale base directory where message catalogues can be found. An empty directory can be used for the built-in default.
 .TP
 .B \-t, --no-daemon
-Disables the normal backgrounding at startup so that the program runs in the foreground, without forking or detaching from the terminal.  On Windows this disables the system tray icon so the program uses a normal window; when the window is closed the program terminates.
+Disables the normal backgrounding at startup so that the program runs in the foreground, without forking or detaching from the terminal.
 .TP
 .B \-X, --no-smtp
 Disables listening for incoming SMTP connections.
@@ -247,20 +244,20 @@ Disables listening for incoming SMTP connections.
 Causes the process-id to be written into the specified file when the program starts up, typically after it has become a background daemon. The immediate parent directory is created if necessary.
 .TP
 .B \-u, --user \fI<username>\fR
-When started as root the program switches to a non-privileged effective user-id when idle or when running external filter scripts and address verifiers. This option can be used to define the non-privileged user-id. It also determines the group ownership of new files and sockets if the directory owner is not 'sticky'. Specify \fIroot\fR to disable all user-id switching. Ignored on Windows.
+When started as root the program switches to a non-privileged effective user-id when idle or when running external filter scripts and address verifiers. This option can be used to define the non-privileged user-id. It also determines the group ownership of new files and sockets if the directory owner is not 'sticky'. Specify \fIroot\fR to disable all user-id switching.
 .SS Logging options
 .TP
 .B \-v, --verbose
 Enables more verbose logging when used with \fI--log\fR, and more verbose help when used with \fI--help\fR.
 .TP
 .B \-l, --log
-Enables logging to the standard error stream and to the syslog. The \fI--close-stderr\fR and \fI--no-syslog\fR options can be used to disable output to standard error stream and the syslog separately. Note that \fI--as-server\fR, \fI--as-client\fR and \fI--as-proxy\fR imply \fI--log\fR, and \fI--as-server\fR and \fI--as-proxy\fR also imply \fI--close-stderr\fR.
+Enables logging to the standard error stream and to the system log. The \fI--close-stderr\fR and \fI--no-syslog\fR options can be used to disable output to standard error stream and the system log separately. Note that \fI--as-server\fR, \fI--as-client\fR and \fI--as-proxy\fR imply \fI--log\fR, and \fI--as-server\fR and \fI--as-proxy\fR also imply \fI--close-stderr\fR.
 .TP
 .B \-g, --debug
 Enables debug level logging, if built in. Debug messages are usually only useful when cross-referenced with the source code and they may expose plain-text passwords and mail message content.
 .TP
 .B --log-address
-Adds the network address of remote clients to the logging output. Equivalent to \fI\fR\fI--log-format\fR=address\fI\fR.
+Adds the network address of remote clients to the logging output. Equivalent to \fI--log-format\fR=address\fR.
 .TP
 .B \-N, --log-file \fI<file>\fR
 Redirects standard-error logging to the specified file. Logging to the log file is not affected by \fI--close-stderr\fR. The filename can include \fI%d\fR to get daily log files; the \fI%d\fR is replaced by the current date in the local timezone using a \fIYYYYMMDD\fR format.
@@ -269,13 +266,13 @@ Redirects standard-error logging to the specified file. Logging to the log file 
 Adds one or more fields to the logging output. The field names can include \fItime\fR, \fIunit\fR, \fIaddress\fR, \fIport\fR, \fImsgid\fR. The ordering is not significant.
 .TP
 .B \-L, --log-time
-Adds a timestamp to the logging output using the local timezone. Equivalent to \fI\fR\fI--log-format\fR=time\fI\fR.
+Adds a timestamp to the logging output using the local timezone. Equivalent to \fI--log-format\fR=time\fR.
 .TP
 .B \-n, --no-syslog
-Disables logging to the syslog. Note that \fI--as-client\fR implies \fI--no-syslog\fR.
+Disables logging to the system log. Note that \fI--as-client\fR implies \fI--no-syslog\fR.
 .TP
-.B \-k, --syslog, --syslog=\fI<facility>\fR
-When used with \fI--log\fR this option enables logging to the syslog even if the \fI--no-syslog\fR option is also used. This is typically used as a convenient override when using \fI--as-client\fR.
+.B \-k, --syslog, --syslog=
+When used with \fI--log\fR this option enables logging to the system log, even if the \fI--no-syslog\fR option is also used. This is typically used as a convenient override when using \fI--as-client\fR.
 .TP
 .B \-e, --close-stderr
 Causes the standard error stream to be closed soon after start-up. This is useful when operating as a background daemon and it is therefore implied by \fI--as-server\fR and \fI--as-proxy\fR.

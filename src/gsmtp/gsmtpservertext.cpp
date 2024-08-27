@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,7 +23,6 @@
 #include "gdate.h"
 #include "gtime.h"
 #include "gdatetime.h"
-#include "glocal.h"
 #include "gstr.h"
 #include "glog.h"
 #include "gassert.h"
@@ -39,7 +38,7 @@ GSmtp::ServerText::ServerText( const std::string & code_ident , bool anonymous ,
 {
 	G_ASSERT( !domain.empty() ) ;
 	if( domain.empty() )
-		m_domain = GNet::Local::canonicalName() ;
+		m_domain = "localhost" ; // never gets here
 }
 
 std::string GSmtp::ServerText::greeting() const

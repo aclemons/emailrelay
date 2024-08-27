@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -42,9 +42,20 @@ public:
 		///< Returns the local hostname. Returns "localhost" on error.
 
 	static std::string canonicalName() ;
-		///< Returns the canonical network name assiciated with hostname().
-		///< Defaults to "<hostname>.localnet" if DNS does not provide
-		///< a canonical network name.
+		///< Returns the ASCII fully qualified domain name associated with
+		///< hostname(). The result of the first call is 'memoised'.
+		///<
+		///< On Unix the implementation performs a synchronous DNS query
+		///< on the hostname() and returns the canonical name. The hostname
+		///< and the returned canonical name are converted to A-labels
+		///< if necessary.
+		///<
+		///< On Windows the 'ComputerNameDnsFullyQualified' value is
+		///< returned, also converted to A-labels if necessary.
+		///<
+		///< Defaults to "<hostname-as-a-label>.localnet" or even
+		///< "localhost.localnet" if the result would otherwise be
+		///< invalid.
 
 public:
 	Local() = delete ;

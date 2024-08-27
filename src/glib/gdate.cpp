@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -103,7 +103,7 @@ void G::Date::init( const BrokenDownTime & tm )
 	m_day = tm.day() ;
 }
 
-void G::Date::check()
+void G::Date::check() const
 {
 	bool ok =
 		m_year >= yearLowerLimit() &&

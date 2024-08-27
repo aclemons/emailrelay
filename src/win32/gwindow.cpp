@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,7 +26,21 @@
 #include "glog.h"
 #include "gassert.h"
 
-extern "C" LRESULT CALLBACK gwindow_wndproc_export( HWND , UINT , WPARAM , LPARAM ) ;
+namespace GGui
+{
+	namespace WindowImp
+	{
+		LRESULT CALLBACK wndProc( HWND , UINT , WPARAM , LPARAM ) ;
+		std::pair<DWORD,DWORD> make_style( DWORD first , DWORD second = 0 )
+		{
+			return { first , second } ;
+		}
+		Window * instance( CREATESTRUCT * cs )
+		{
+			return cs ? reinterpret_cast<Window*>(cs->lpCreateParams) : nullptr ;
+		}
+	}
+}
 
 GGui::Window::Window( HWND hwnd ) :
 	Cracker(hwnd)
@@ -36,6 +50,8 @@ GGui::Window::Window( HWND hwnd ) :
 
 GGui::Window::~Window()
 {
+	static_assert( noexcept(handle()) , "" ) ;
+	static_assert( noexcept(G::nowide::setWindowLongPtr(handle(),0,0)) , "" ) ;
 	if( handle() )
 		G::nowide::setWindowLongPtr( handle() , 0 , 0 ) ;
 }
@@ -49,17 +65,18 @@ bool GGui::Window::registerWindowClass( const std::string & class_name ,
 
 	// see also IsWindowUnicode()
 
-	G::nowide::WNDCLASS_type c ;
-	c.style = style ;
-	c.lpfnWndProc = gwindow_wndproc_export ;
-	c.cbClsExtra = 8 ; // reserved
-	c.cbWndExtra = 8 ; // for pointer to Window
-	c.hInstance = hinstance ;
-	c.hIcon = icon ;
-	c.hCursor = cursor ;
-	c.hbrBackground = background ;
+	G::nowide::WNDCLASS_type wc {} ;
+	wc.style = style ;
+	wc.lpfnWndProc = WindowImp::wndProc ;
+	static_assert( sizeof(LONG_PTR) <= 8 , "" ) ;
+	wc.cbClsExtra = 8 ; // for SetClassLong(0) -- not used here
+	wc.cbWndExtra = 8 ; // for SetWindowLong(0) -- used for a pointer to the Window object -- keeps GWLP_USERDATA free
+	wc.hInstance = hinstance ;
+	wc.hIcon = icon ;
+	wc.hCursor = cursor ;
+	wc.hbrBackground = background ;
 
-	return G::nowide::registerClass( c , class_name , menu_resource_id ) != 0 ;
+	return G::nowide::registerClass( wc , class_name , menu_resource_id ) != 0 ;
 }
 
 bool GGui::Window::create( const std::string & class_name ,
@@ -99,110 +116,64 @@ void GGui::Window::invalidate( bool erase )
 	InvalidateRect( handle() , nullptr , erase ) ;
 }
 
-GGui::Window * GGui::Window::instance( HWND hwnd )
+LRESULT CALLBACK GGui::WindowImp::wndProc( HWND hwnd , UINT message , WPARAM wparam , LPARAM lparam )
 {
-	G_ASSERT( hwnd != HNULL ) ;
-	LONG_PTR wl = G::nowide::getWindowLongPtr( hwnd , 0 ) ;
-	void * vp = reinterpret_cast<void*>(wl) ;
-	return reinterpret_cast<Window*>(vp) ;
+	return Window::wndProc( hwnd , message , wparam , lparam ) ;
 }
 
-extern "C" LRESULT CALLBACK gwindow_wndproc_export( HWND hwnd , UINT message , WPARAM wparam , LPARAM lparam )
+LRESULT GGui::Window::wndProc( HWND hwnd , UINT message , WPARAM wparam , LPARAM lparam )
 {
-	try
+	if( message == WM_CREATE )
 	{
-		return GGui::Window::wndProc( hwnd , message , wparam , lparam ) ;
-	}
-	catch( std::exception & e )
-	{
-		// never gets here
-		GDEF_IGNORE_PARAM( e ) ;
-		G_DEBUG( "gwindow_wndproc_export: exception absorbed: " << e.what() ) ;
-		return 0 ;
-	}
-	catch(...) // callback
-	{
-		// never gets here
-		return 0 ;
-	}
-}
-
-bool GGui::Window::wndProcException() const
-{
-	return !m_reason.empty() ;
-}
-
-std::string GGui::Window::wndProcExceptionString()
-{
-	std::string reason = m_reason ;
-	m_reason.resize(0) ;
-	return reason ;
-}
-
-LRESULT GGui::Window::wndProc( HWND hwnd , UINT msg , WPARAM wparam , LPARAM lparam )
-{
-	Window * window = msg == WM_CREATE ?
-		instance( reinterpret_cast<CREATESTRUCT*>(lparam) ) :
-		instance( hwnd ) ;
-
-	LRESULT result = msg == WM_CREATE ? -1 : 0 ;
-	try
-	{
-		result = wndProcCore( window , hwnd , msg , wparam , lparam ) ;
-	}
-	catch( std::exception & e )
-	{
-		G_DEBUG( "GGui::Window::wndProc: exception from window message handler: " << e.what() ) ;
-		if( msg == WM_CREATE )
+		Window * window = WindowImp::instance( reinterpret_cast<CREATESTRUCT*>(lparam) ) ;
+		try
 		{
-			G_ERROR( "GGui::Window::wndProc: exception from window creation message handler: " << e.what() ) ;
+			void * vp = reinterpret_cast<void*>( window ) ;
+			LONG_PTR wl = reinterpret_cast<LONG_PTR>( vp ) ;
+			G::nowide::setWindowLongPtr( hwnd , 0 , wl ) ;
+			window->setHandle( hwnd ) ;
+			bool ok = window->onCreate() ;
+			return ok ? 0 : -1 ;
+		}
+		catch( std::exception & e )
+		{
 			window->m_reason = e.what() ;
+			return -1 ;
 		}
-		else if( msg != WM_NCDESTROY )
-		{
-			try
-			{
-				window->onWindowException( e ) ; // overridable - posts wm_quit by default
-			}
-			catch( std::exception & ee )
-			{
-				// exception from exception handler - save it for wndProcException()
-				window->m_reason = ee.what() ;
-			}
-		}
-	}
-	return result ;
-}
-
-GGui::Window * GGui::Window::instance( CREATESTRUCT * cs )
-{
-	G_ASSERT( cs != nullptr ) ;
-	return reinterpret_cast<Window*>(cs->lpCreateParams) ;
-}
-
-LRESULT GGui::Window::wndProcCore( Window * window , HWND hwnd , UINT msg , WPARAM wparam , LPARAM lparam )
-{
-	LRESULT result = 0 ;
-	if( msg == WM_CREATE )
-	{
-		G_ASSERT( window != nullptr ) ;
-		G_DEBUG( "GGui::Window::wndProc: WM_CREATE: ptr " << window ) ;
-		G_DEBUG( "GGui::Window::wndProc: WM_CREATE: hwnd " << hwnd ) ;
-		void * vp = reinterpret_cast<void*>(window) ;
-		LONG_PTR wl = reinterpret_cast<LONG_PTR>(vp) ;
-		G::nowide::setWindowLongPtr( hwnd , 0 , wl ) ;
-		window->setHandle( hwnd ) ;
-		result = window->onCreate() ? 0 : -1 ;
 	}
 	else
 	{
-		bool call_default = window == nullptr ;
-		if( window != nullptr )
-			result = window->crack( msg , wparam , lparam , call_default ) ;
-		if( call_default )
-			result = G::nowide::defWindowProc( hwnd , msg , wparam , lparam ) ;
+		GGui::Window * window = GGui::Window::instance( hwnd ) ;
+		if( window )
+		{
+			LRESULT result = 0 ;
+			bool call_default = false ;
+			try
+			{
+				result = window->crack( message , wparam , lparam , call_default ) ; // GGui::Cracker
+			}
+			catch( std::exception & e )
+			{
+				if( message != WM_NCDESTROY )
+					window->m_reason = e.what() ;
+				call_default = true ; // moot
+			}
+			if( call_default )
+				result = G::nowide::defWindowProc( hwnd , message , wparam , lparam ) ;
+			return result ;
+		}
+		else
+		{
+			return G::nowide::defWindowProc( hwnd , message , wparam , lparam ) ;
+		}
 	}
-	return result ;
+}
+
+GGui::Window * GGui::Window::instance( HWND hwnd )
+{
+	LONG_PTR wl = G::nowide::getWindowLongPtr( hwnd , 0 ) ;
+	void * vp = reinterpret_cast<void*>(wl) ;
+	return reinterpret_cast<Window*>(vp) ;
 }
 
 LRESULT GGui::Window::sendUserString( HWND hwnd , const char * string )
@@ -224,17 +195,6 @@ LRESULT GGui::Window::onUserString( const char * )
 void GGui::Window::destroy()
 {
 	DestroyWindow( handle() ) ;
-}
-
-namespace GGui
-{
-	namespace WindowImp
-	{
-		std::pair<DWORD,DWORD> make_style( DWORD first , DWORD second = 0 )
-		{
-			return { first , second } ;
-		}
-	}
 }
 
 std::pair<DWORD,DWORD> GGui::Window::windowStyleMain()
@@ -327,10 +287,13 @@ void GGui::Window::resize( Size new_size , bool repaint )
 	}
 }
 
-void GGui::Window::onWindowException( std::exception & e )
+std::string GGui::Window::reason() const
 {
-	// overridable - default implementation...
-	G_DEBUG( "GGui::Window::onWindowException: quitting event loop: hwnd " << handle() << ": " << e.what() ) ;
-	Pump::quit( e.what() ) ;
+	return m_reason ;
+}
+
+void GGui::Window::setReason( const std::string & s1 , const std::string & s2 )
+{
+	m_reason = s1 + std::string(": ",s1.empty()||s2.empty()?0U:2U) + s2 ;
 }
 

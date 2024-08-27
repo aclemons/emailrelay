@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@
 #include "gmxlookup.h"
 #include "gfilestore.h"
 #include "gstoredfile.h"
+#include "gstringview.h"
 #include "gtimer.h"
 #include "geventstate.h"
 #include <utility>
@@ -77,9 +78,14 @@ private:
 	GStore::FileStore::State storestate() const ;
 	std::string prefix() const ;
 	static MxLookup::Config parseSpec( std::string_view , std::vector<GNet::Address> & ) ;
-	static std::string parseForwardToDomain( const std::string & ) ;
-	static unsigned int parseForwardToPort( const std::string & ) ;
-	static std::pair<std::string,unsigned int> parseForwardTo( const std::string & ) ;
+	struct ParserResult
+	{
+		std::string domain ;
+		unsigned int port ;
+		std::string address ;
+	} ;
+	static ParserResult parseForwardTo( const std::string & ) ;
+	static std::string addressLiteral( std::string_view s , unsigned int port = 0U ) ;
 
 private:
 	using FileOp = GStore::FileStore::FileOp ;

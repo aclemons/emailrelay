@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -69,6 +69,10 @@ sub newSocket
 sub send
 {
 	my ( $this , $tx ) = @_ ;
+	if( !$this->{m_s}->connected() )
+	{
+		die "send: socket send error: $$this{m_server} $$this{m_port}: not connected" ;
+	}
 	$SIG{'PIPE'} = 'IGNORE' ;
 	my $nsent = $this->{m_s}->send( $tx ) ;
 	if( !defined($nsent) or $nsent != length($tx) )
@@ -80,7 +84,10 @@ sub send
 sub read
 {
 	my ( $this , $prompt , $timeout ) = @_ ;
-
+	if( !$this->{m_s}->connected() )
+	{
+		die "recv: socket receive error: $$this{m_server} $$this{m_port}: not connected" ;
+	}
 	$prompt = $this->{m_prompt} if !defined($prompt) ;
 	$timeout = $this->{m_timeout} if !defined($timeout) ;
 	$timeout = 99999 if $timeout < 0 ;

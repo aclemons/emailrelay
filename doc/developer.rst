@@ -14,8 +14,8 @@ The main principles in the design of E-MailRelay can be summarised as:
 
 Portability
 ===========
-The E-MailRelay code is written in C++11. Earlier versions of E-MailRelay used
-C++03.
+The E-MailRelay code is written in Modern C++, superficially using C++17 but
+remaining compatible with C++11.
 
 The header files *gdef.h* in *src/glib* is used to fix up some compiler
 portability issues such as missing standard types, non-standard system headers
@@ -53,7 +53,7 @@ At higher levels the C++ slot/signal design pattern is used to propagate events
 between objects (not to be confused with operating system signals). The
 slot/signal implementation has been simplified compared to Qt or boost by not
 supporting signal multicasting, so each signal connects to no more than one
-slot. The implementation now uses std::function.
+slot. The implementation is now a thin wrapper over std::function.
 
 The synchronous slot/signal pattern needs some care when when the signalling
 object gets destructed as a side-effect of raising a signal, and that situation
@@ -61,7 +61,7 @@ can be non-obvious precisely because of the slot/signal code decoupling. In
 most cases signals are emitted at the end of a function and the stack unwinds
 back to the event loop immediately afterwards, but in other situations,
 particularly when emitting more than one signal, defensive measures are
-required.
+required (see *glib/gcall.h*).
 
 Module structure
 ================
@@ -90,7 +90,7 @@ gauth
 
 gsmtp
 -----
-    SMTP protocol classes.
+    SMTP_ protocol classes.
 
 
 gpop
@@ -131,7 +131,7 @@ events from their container and use an abstract *Sender* interface to send
 network data. This means that the protocols can be independent of the network
 and event loop framework.
 
-The interaction between the SMTP server protocol class and the message store is
+The interaction between the SMTP_ server protocol class and the message store is
 mediated by the *ProtocolMessage* interface. Two main implementations of this
 interface are available: one for normal spooling (\ *ProtocolMessageStore*\ ), and
 another for immediate forwarding (\ *ProtocolMessageForward*\ ). The *Decorator*
@@ -203,8 +203,10 @@ asynchronous. A std::thread worker thread is used in a future/promise pattern to
 wrap up the *getaddrinfo()* and *waitpid()* system calls. The shared state
 comprises only the parameters and return results from these system calls, and
 synchronisation back to the main thread uses the main event loop (see
-\ *GNet::FutureEvent*\ ). Threading is not used elsewhere so the C/C++ run-time
-library does not need to be thread-safe.
+\ *GNet::FutureEvent*\ ).
+
+Multi-threading is also used in the Windows event loop once the number of
+handles goes above the WaitForMultipleObjects() limit.
 
 E-MailRelay GUI
 ===============
@@ -226,7 +228,7 @@ During development the user interface pages and the installer can be tested
 separately since the interface between them is a simple text stream containing
 key-value pairs.
 
-When run in configure mode the GUI normally ends up simply editing the
+When run in configure mode the GUI normally ends up just editing the
 *emailrelay.conf* file (or *emailrelay-start.bat* on Windows) and/or the
 *emailrelay.auth* secrets file.
 
@@ -238,10 +240,11 @@ to copy its files.
 
 When building the GUI program the library code shared with the main server
 executable is compiled separately so that different GUI-specific compiler
-options can be used. This is done as a 'unity build', concatenating the shared
-code into one source file and compiling that for the GUI. (This technique
-requires that private 'detail' namespaces are named rather than anonymous so
-that there cannot be any name clashes within the combined anonymous namespace.)
+options can be used. This is done as a 'unity build_', using the pre-processor
+to concatenate the shared code into one source file and compiling that for the
+GUI. (This technique requires that private 'detail' namespaces are explicitly
+named rather than anonymous so that there cannot be any name clashes within the
+combined anonymous namespace.)
 
 Character encoding on Windows
 =============================
@@ -254,24 +257,25 @@ information, registry paths and environment variables.
 The header file *gnowide.h* has inline functions that convert to and from UTF-8
 before calling the *wide* Windows API functions. The actual convertion between
 UTF-8 and UTF-16 wide characters is done by the G::Convert class. As a temporary
-measure the G_NO_UNICODE preprocessor switch can be defined to go back to using
+measure the G_ANSI pre-processor switch can be defined to go back to using
 *ansi* functions.
 
 The G::Path class holds filesystem paths using UTF-8. Windows-specific source
 code, such as in *gfile_win32.cpp*, passes the UTF-8 strings to the *nowide*
 inline functions which in turn call wide runtime library functions like
 _wopen(). The exception is that the G::Path::iopath() method can be used to
-initialise std::fstreams directly, without being wrapped by *nowide* functions.
+initialise std::fstreams directly, without using the *nowide* functions.
 
 The G::Arg class can be used to capture the Windows command-line in its wide
 form and then convert to UTF-8. The main() and WinMain() functions use the
 G::Arg::windows() factory function to do this.
 
 Configuration files are expected to use UTF-8 character encoding. The secrets
-file should also use UTF-8, but Base64_ or xtext_ encoding is used for the account
-details, so the encoding is less relevant there. The startup batch file
-(\ *emailrelay-start.bat*\ ) uses the OEM code page and the E-MailRelay GUI makes
-sure that the user's choice of install directory is compatible with this.
+file also notionally uses UTF-8, but Base64_ or xtext_ encoding is used for the
+account details, so the encoding is less relevant there. The startup batch file
+(\ *emailrelay-start.bat*\ ) necessarily uses the OEM code page and the E-MailRelay
+GUI now tries to ensure that the user's choice of install directory is
+compatible with this.
 
 Windows build
 =============
@@ -283,13 +287,13 @@ For active development use *winbuild.bat* to set up an environment that uses
 
 The *winbuild.bat* script expects to find mbedtls source code in a child or
 sibling directory and Qt libraries under *c:\\qt*, but refer to *winbuild.pm* for
-the details. The build proceeds using *cmake* and *msbuild* resulting in
+the details. The build proceeds using *cmake* and *cmake --build*, resulting in
 statically-linked executables but with the GUI typically dynamically-linked.
 
 The mbedtls code is built if necessary by running *cmake* and *cmake --build* in
 a *mbedtls-x64* build sub-directory. The mbedtls headers are copied into the
 mbedtls build tree. The mbedtls configuration header (mbedtls_config.h) is
-optionally edited to enable TLS v1.3. If necessary delete the *mbedtls-x64*
+optionally edited to enable TLS_ v1.3. If necessary delete the *mbedtls-x64*
 build directory to trigger a rebuild.
 
 A release assembly can be created by running *winbuild-install.bat* or
@@ -321,7 +325,8 @@ by *winbuild.pl install* with a statically-built GUI copied in manually (see
 above).
 
 The setup program is the emailrelay GUI running in setup mode, with a *payload*
-directory containing the files to be installed.
+directory containing the files to be installed. Refer to the comments in
+*src/gui/guimain.cpp* for more details.
 
 Unix build
 ==========
@@ -330,6 +335,11 @@ be used to generate cmake files. The generated cmake files incorporate some of
 the settings from the *configure* script, so run *configure* or *configure.sh*
 before *make2cmake*. The *configure* script is normally part of the release but
 it can itself be generated by running the *bootstrap* script.
+
+For a 'unity build_' run *configure* (typically with compiler options passed via
+\ *CXXFLAGS*\ ) and then *make unity*. Code-size optimisations such as *-Os* and
+*-fwhole-program* are particularly effective for a unity build. Refer to the
+comments in *unity/Makefile.am* for more information.
 
 Unix packaging
 ==============
@@ -345,8 +355,7 @@ Internationalisation
 The GUI code has i18n support using the Qt framework, with the tr() function
 used throughout the GUI source code. The GUI main() function loads translations
 from the *translations* sub-directory (relative to the executable), although
-that can be overridden with the *--qm* command-line option. Qt's *-reverse*
-option can also be used to reverse the widgets when using RTL languages.
+that can be overridden with the *--qm* command-line option.
 
 The non-GUI code has some i18n support by using gettext() via the inline txt()
 and tx() functions defined in *src/glib/ggettext.h*. The configure script
@@ -365,7 +374,7 @@ For example:
 ::
 
     $ svn co https://svn.code.sf.net/p/emailrelay/code emailrelay
-    $ cd emailrelay/tags/V_2_5_2
+    $ cd emailrelay/tags/V_2_6
 
 or
 
@@ -373,11 +382,11 @@ or
 
     $ git clone https://git.code.sf.net/p/emailrelay/git emailrelay
     $ cd emailrelay
-    $ git checkout V_2_5_2
+    $ git checkout V_2_6
 
-Code that has been formally released will be tagged with a tag like *V_2_5_2*
+Code that has been formally released will be tagged with a tag like *V_2_6*
 and any post-release or back-ported fixes will be on a *fixes* branch like
-\ *V_2_5_2_fixes*\ .
+\ *V_2_6_fixes*\ .
 
 Compile-time features
 =====================
@@ -386,7 +395,7 @@ script. These include the following:
 
 * Configuration GUI (\ *--enable-gui*\ )
 * Multi-threading (\ *--enable-std-thread*\ )
-* TLS library (\ *--with-openssl*\ , *--with-mbedtls*)
+* TLS_ library (\ *--with-openssl*\ , *--with-mbedtls*)
 * Debug-level logging (\ *--enable-debug*\ )
 * Event loop using epoll (\ *--enable-epoll*\ )
 * PAM_ support (\ *--with-pam*\ )
@@ -401,6 +410,7 @@ Use *./configure --help* to see a complete list of options.
 .. _PAM: https://en.wikipedia.org/wiki/Linux_PAM
 .. _SMTP: https://en.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol
 .. _TLS: https://en.wikipedia.org/wiki/Transport_Layer_Security
+.. _unity build: https://en.wikipedia.org/wiki/Unity_build
 .. _xtext: https://tools.ietf.org/html/rfc3461#section-4
 
-.. footer:: Copyright (C) 2001-2023 Graeme Walker
+.. footer:: Copyright (C) 2001-2024 Graeme Walker

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -61,7 +61,7 @@ std::string GFilters::MessageIdFilter::process( const G::Path & path_in , const 
 		static constexpr std::size_t line_limit = 10000U ;
 		std::string line ;
 		line.reserve( 2000U ) ;
-		while( G::Str::readLine( in , line , "\n"_sv , true , line_limit ) && line.size() > 1U && !have_id )
+		while( G::Str::readLine( in , line , "\n" , true , line_limit ) && line.size() > 1U && !have_id )
 			have_id = isId( line ) ;
 		if( !in.good() )
 			return "format error" ; // eg. no empty line, line too long
@@ -102,7 +102,7 @@ std::string GFilters::MessageIdFilter::process( const G::Path & path_in , const 
 
 bool GFilters::MessageIdFilter::isId( std::string_view line ) noexcept
 {
-	return line.find(':') != std::string::npos && G::sv_imatch( G::sv_substr_noexcept(line,0U,line.find(':')) , "message-id"_sv ) ;
+	return line.find(':') != std::string::npos && G::sv_imatch( G::sv_substr_noexcept(line,0U,line.find(':')) , "message-id" ) ;
 }
 
 std::string GFilters::MessageIdFilter::newId( const std::string & domain )

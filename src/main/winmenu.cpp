@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 ///
 
 #include "gdef.h"
+#include "gnowide.h"
 #include "gappinst.h"
 #include "winmenu.h"
 #include "glog.h"
@@ -39,7 +40,7 @@ Main::WinMenu::WinMenu( unsigned int id ) :
 	m_hmenu_popup(0)
 {
 	HINSTANCE hinstance = GGui::ApplicationInstance::hinstance() ;
-	m_hmenu = ::LoadMenu( hinstance , MAKEINTRESOURCE(id) ) ;
+	m_hmenu = G::nowide::loadMenu( hinstance , id ) ;
 	if( m_hmenu == nullptr )
 		throw Error() ;
 }
@@ -47,35 +48,35 @@ Main::WinMenu::WinMenu( unsigned int id ) :
 int Main::WinMenu::popup( const GGui::WindowBase & w , bool set_foreground , bool with_open , bool with_close )
 {
 	POINT p ;
-	::GetCursorPos( &p ) ;
+	GetCursorPos( &p ) ;
 	if( set_foreground )
-		::SetForegroundWindow( w.handle() ) ;
+		SetForegroundWindow( w.handle() ) ;
 
 	// TrackPopup() only works with a sub-menu
 	//
 	ScopeZero _( m_hmenu_popup ) ;
-	m_hmenu_popup = ::GetSubMenu( m_hmenu , 0 ) ;
+	m_hmenu_popup = GetSubMenu( m_hmenu , 0 ) ;
 
 	// make the "open" menu item bold
 	//
-	::SetMenuDefaultItem( m_hmenu_popup , open_pos , TRUE ) ;
+	SetMenuDefaultItem( m_hmenu_popup , open_pos , TRUE ) ;
 
 	// optionally grey-out menu items
 	//
 	if( !with_open )
-		::EnableMenuItem( m_hmenu_popup , open_pos , MF_BYPOSITION | MF_GRAYED ) ;
+		EnableMenuItem( m_hmenu_popup , open_pos , MF_BYPOSITION | MF_GRAYED ) ;
 	if( !with_close )
-		::EnableMenuItem( m_hmenu_popup , close_pos , MF_BYPOSITION | MF_GRAYED ) ;
+		EnableMenuItem( m_hmenu_popup , close_pos , MF_BYPOSITION | MF_GRAYED ) ;
 
 	// display the menu
 	//
 	G_DEBUG( "Main::WinMenu::popup: tracking start" ) ;
-	int rc = static_cast<int>( ::TrackPopupMenuEx( m_hmenu_popup , TPM_RETURNCMD ,
+	int rc = static_cast<int>( TrackPopupMenuEx( m_hmenu_popup , TPM_RETURNCMD ,
 		p.x , p.y , w.handle() , nullptr ) ) ;
 	G_DEBUG( "Main::WinMenu::popup: tracking end: " << rc ) ;
 
 	// (from the TrackPopupMenu() documentation (not TrackPopupMenuEx()))
-	PostMessage( w.handle() , WM_NULL , 0 , 0 ) ;
+	G::nowide::postMessage( w.handle() , WM_NULL , 0 , 0 ) ;
 
 	return rc ;
 }
@@ -86,14 +87,14 @@ void Main::WinMenu::update( bool with_open , bool with_close )
 		<< "with-close=" << with_close << " hmenu=" << m_hmenu_popup ) ;
 	if( m_hmenu_popup )
 	{
-		::EnableMenuItem( m_hmenu_popup , open_pos , MF_BYPOSITION | (with_open?0:MF_GRAYED) ) ;
-		::EnableMenuItem( m_hmenu_popup , close_pos , MF_BYPOSITION | (with_close?0:MF_GRAYED) ) ;
+		EnableMenuItem( m_hmenu_popup , open_pos , MF_BYPOSITION | (with_open?0:MF_GRAYED) ) ;
+		EnableMenuItem( m_hmenu_popup , close_pos , MF_BYPOSITION | (with_close?0:MF_GRAYED) ) ;
 	}
 }
 
 Main::WinMenu::~WinMenu()
 {
 	if( m_hmenu != nullptr )
-		::DestroyMenu( m_hmenu ) ;
+		DestroyMenu( m_hmenu ) ;
 }
 

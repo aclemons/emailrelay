@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -41,7 +41,7 @@ namespace G
 class G::Date
 {
 public:
-	G_EXCEPTION( DateError , tx("invalid date") ) ;
+	G_EXCEPTION( DateError , tx("invalid date") )
 	class LocalTime /// An overload discriminator class for Date constructors.
 		{} ;
 
@@ -134,7 +134,7 @@ public:
 
 private:
 	void init( const BrokenDownTime & ) ;
-	void check() ;
+	void check() const ;
 	static int lastDay( int month , int year ) ;
 	static bool isLeapYear( int y ) ;
 

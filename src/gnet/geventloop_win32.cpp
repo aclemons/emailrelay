@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -208,7 +208,7 @@ void GNet::EventLoopImp::runOnce()
 	auto rc = handles.wait( ms() ) ;
 	if( rc == RcType::overflow )
 	{
-		throw Overflow( handles.help(false) ) ;
+		throw Overflow() ;
 	}
 	else if( rc == RcType::timeout )
 	{
@@ -516,7 +516,7 @@ void GNet::EventLoopImp::checkForOverflow( const ListItem & item )
 	if( is_new && m_handles->overflow( m_list.size() , count_valid_fn ) )
 	{
 		m_list.pop_back() ;
-		throw Overflow( m_handles->help(true) ) ;
+		throw Overflow() ;
 	}
 }
 

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -43,10 +43,10 @@ GFilters::FilterFactory::FilterFactory( GStore::FileStore & file_store ) :
 {
 }
 
-GFilters::FilterFactory::Spec GFilters::FilterFactory::parse( const std::string & spec_in ,
+GFilters::FilterFactory::Spec GFilters::FilterFactory::parse( std::string_view spec_in ,
 	const G::Path & base_dir , const G::Path & app_dir , G::StringArray * warnings_p )
 {
-	std::string tail = G::Str::tail( spec_in , ":" ) ;
+	std::string_view tail = G::Str::tailView( spec_in , ":" ) ;
 	Spec result ;
 	if( spec_in.empty() )
 	{
@@ -55,7 +55,7 @@ GFilters::FilterFactory::Spec GFilters::FilterFactory::parse( const std::string 
 	else if( spec_in.find(',') != std::string::npos )
 	{
 		result = Spec( "chain" , "" ) ;
-		for( G::StringToken t( spec_in , ","_sv ) ; t ; ++t )
+		for( G::StringTokenView t( spec_in , "," ) ; t ; ++t )
 			result += parse( t() , base_dir , app_dir , warnings_p ) ; // one level of recursion
 	}
 	else if( G::Str::headMatch( spec_in ,"exit:" ) )

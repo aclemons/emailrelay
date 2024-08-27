@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -70,7 +70,7 @@ namespace GNet
 class GNet::TimerList
 {
 public:
-	G_EXCEPTION( NoInstance , tx("no TimerList instance") ) ;
+	G_EXCEPTION( NoInstance , tx("no TimerList instance") )
 
 	TimerList() ;
 		///< Default constructor.

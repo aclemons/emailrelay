@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -99,6 +99,11 @@ namespace G
 				StringList::removeMatch( m_list , d_list , m_ignore ) ;
 				return *this ;
 			}
+			~Filter() = default ;
+			Filter( const Filter & ) = delete ;
+			Filter( Filter && ) = delete ;
+			Filter & operator=( const Filter & ) = delete ;
+			Filter & operator=( Filter && ) = delete ;
 			StringArray & m_list ;
 			Ignore m_ignore ;
 		} ;

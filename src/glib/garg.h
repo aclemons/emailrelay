@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 
 #include "gdef.h"
 #include "gstringarray.h"
+#include "gstringview.h"
 #include "gpath.h"
 #ifdef G_WINDOWS
 #include "gnowide.h"
@@ -70,9 +71,9 @@ public:
 
 	static Path v0() ;
 		///< Returns a copy of argv[0] from the first call to the
-		///< argc/argv constructor overload. Returns the empty path
-		///< if that constructor overload has never been called
-		///< successfully. See also exe().
+		///< argc/argv constructor overload or windows(). Returns
+		///< the empty path if those methods have never been
+		///< called successfully. See also exe().
 
 	static Path exe() ;
 		///< Returns Process::exe() or in exceptional circumstances an
@@ -141,10 +142,10 @@ public:
 		///< A shift of one will remove the program name.
 
 	StringArray::const_iterator cbegin() const ;
-		///< Returns a begin operator, advanced to exclude argv0.
+		///< Returns a begin iterator, advanced to exclude argv0.
 
 	StringArray::const_iterator cend() const ;
-		///< Returns the end operator.
+		///< Returns the end iterator.
 
 private:
 	struct Windows {} ;

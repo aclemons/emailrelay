@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -219,7 +219,7 @@ std::unique_ptr<GNet::ServerPeer> Main::Scanner::newPeer( GNet::EventStateUnboun
 
 static int run( const GNet::Address & address , unsigned int idle_timeout )
 {
-	auto event_loop= GNet::EventLoop::create() ;
+	auto event_loop = GNet::EventLoop::create() ;
 	auto es = GNet::EventState::create() ;
 	GNet::TimerList timer_list ;
 	Main::Scanner scanner( es , address , idle_timeout ) ;

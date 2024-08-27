@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -46,10 +46,25 @@ namespace GPop
 class GPop::Store
 {
 public:
-	G_EXCEPTION( InvalidDirectory , tx("invalid spool directory") ) ;
+	G_EXCEPTION( InvalidDirectory , tx("invalid spool directory") )
+	struct Config /// Configuration structure for GPop::Store.
+	{
+		bool allow_delete {true} ; // working DELE command
+		bool by_name {false} ; // authentication-name used as spool-dir sub-directory
+		bool by_name_mkdir {false} ; // Store::prepare() creates sub-directory if necessary
 
-	Store( const G::Path & spool_dir , bool by_name , bool allow_delete ) ;
+		Config & set_allow_delete( bool = true ) noexcept ;
+		Config & set_by_name( bool = true ) noexcept ;
+		Config & set_by_name_mkdir( bool = true ) noexcept ;
+	} ;
+
+	Store( const G::Path & spool_dir , const Config & ) ;
 		///< Constructor. Throws InvalidDirectory.
+
+	void prepare( const std::string & user ) ;
+		///< Prepares the store for the newly-authenticated
+		///< user. Creates a pop-by-name sub-directory if
+		///< necessary.
 
 	G::Path dir() const ;
 		///< Returns the spool directory path.
@@ -73,8 +88,7 @@ private:
 
 private:
 	G::Path m_path ;
-	bool m_by_name ;
-	bool m_allow_delete ;
+	Config m_config ;
 } ;
 
 //| \class GPop::StoreMessage
@@ -132,8 +146,8 @@ private:
 class GPop::StoreList
 {
 public:
-	G_EXCEPTION( CannotDelete , tx("cannot delete message file") ) ;
-	G_EXCEPTION( CannotRead , tx("cannot read message file") ) ;
+	G_EXCEPTION( CannotDelete , tx("cannot delete message file") )
+	G_EXCEPTION( CannotRead , tx("cannot read message file") )
 	using Size = StoreMessage::Size ;
 	using List = std::vector<StoreMessage> ;
 
@@ -198,5 +212,9 @@ private:
 	G::Path m_sdir ;
 	std::vector<StoreMessage> m_list ;
 } ;
+
+inline GPop::Store::Config & GPop::Store::Config::set_allow_delete( bool b ) noexcept { allow_delete = b ; return *this ; }
+inline GPop::Store::Config & GPop::Store::Config::set_by_name( bool b ) noexcept { by_name = b ; return *this ; }
+inline GPop::Store::Config & GPop::Store::Config::set_by_name_mkdir( bool b ) noexcept { by_name_mkdir = b ; return *this ; }
 
 #endif

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -114,17 +114,23 @@ public:
 		///< Uses std::mktime() to convert this locale-dependent
 		///< local broken-down time into epoch time.
 
-	bool sameMinute( const BrokenDownTime & other ) const noexcept ;
+	bool sameMinute( const BrokenDownTime & ) const noexcept ;
 		///< Returns true if this and the other broken-down
 		///< times are the same, at minute resolution with
 		///< no rounding.
+
+	bool operator==( const BrokenDownTime & ) const noexcept ;
+		///< Equality test.
+
+	bool operator!=( const BrokenDownTime & ) const noexcept ;
+		///< Inequality test.
 
 private:
 	BrokenDownTime() ;
 
 private:
 	friend class G::DateTimeTest ;
-	struct std::tm m_tm{} ;
+	struct std::tm m_tm {} ;
 } ;
 
 //| \class G::SystemTime
@@ -373,7 +379,7 @@ private:
 class G::DateTime
 {
 public:
-	G_EXCEPTION_CLASS( Error , tx("date/time error") ) ;
+	G_EXCEPTION_CLASS( Error , tx("date/time error") )
 	using Offset = std::pair<bool,unsigned int> ;
 
 	static Offset offset( SystemTime ) ;
@@ -406,6 +412,16 @@ namespace G
 inline bool G::TimerTime::less( const TimerTime & a , const TimerTime & b ) noexcept(less_noexcept)
 {
 	return a.m_tp < b.m_tp ;
+}
+
+inline bool G::BrokenDownTime::operator==( const BrokenDownTime & other ) const noexcept
+{
+	return sameMinute(other) && m_tm.tm_sec == other.m_tm.tm_sec ;
+}
+
+inline bool G::BrokenDownTime::operator!=( const BrokenDownTime & other ) const noexcept
+{
+	return !sameMinute(other) || m_tm.tm_sec != other.m_tm.tm_sec ;
 }
 
 #endif

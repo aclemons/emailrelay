@@ -1,5 +1,5 @@
 #
-## Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+## Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -121,7 +121,15 @@ tidy:
 
 .PHONY: unity
 unity:
-	$(MAKE) -C unity programs
+	$(MAKE) -C unity unity
+
+.PHONY: small.gcc
+small.gcc:
+	$(MAKE) -C unity small.gcc
+
+.PHONY: small.clang
+small.clang:
+	$(MAKE) -C unity small.clang
 
 .PHONY: format
 format:

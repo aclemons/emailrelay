@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -129,20 +129,20 @@ bool G::Identity::operator!=( const Identity & other ) const noexcept
 }
 
 #ifndef G_LIB_SMALL
-std::pair<G::Identity,std::string> G::Identity::lookup( const std::string & name_in )
+std::pair<G::Identity,std::string> G::Identity::lookup( std::string_view name_in )
 {
 	Identity result ;
-	std::string name = name_in ;
+	std::string name = sv_to_string( name_in ) ;
 	if( !IdentityImp::lookupUser( name , result.m_uid , result.m_gid ) )
 		throw NoSuchUser( name_in ) ;
 	return std::make_pair( result , name ) ;
 }
 #endif
 
-std::pair<G::Identity,std::string> G::Identity::lookup( const std::string & name_in , std::nothrow_t )
+std::pair<G::Identity,std::string> G::Identity::lookup( std::string_view name_in , std::nothrow_t )
 {
 	Identity result ;
-	std::string name = name_in ;
+	std::string name = sv_to_string( name_in ) ;
 	IdentityImp::lookupUser( name , result.m_uid , result.m_gid ) ;
 	return std::make_pair( result , name ) ;
 }

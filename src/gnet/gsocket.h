@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -52,10 +52,18 @@ namespace GNet
 class GNet::SocketBase : public G::ReadWrite
 {
 public:
-	G_EXCEPTION( SocketError , tx("socket error") ) ;
-	G_EXCEPTION_CLASS( SocketCreateError , tx("socket create error") ) ;
-	G_EXCEPTION_CLASS( SocketBindError , tx("socket bind error") ) ;
-	G_EXCEPTION_CLASS( SocketTooMany , tx("socket accept error") ) ;
+	G_EXCEPTION( SocketError , tx("socket error") )
+	G_EXCEPTION_CLASS( SocketCreateError , tx("socket create error") )
+	G_EXCEPTION_CLASS( SocketTooMany , tx("socket accept error") )
+	G_EXCEPTION_CLASS( SocketBindErrorBase , tx("socket bind error") )
+	struct SocketBindError : SocketBindErrorBase /// Exception class for GNet::SocketBase bind failures.
+	{
+		explicit SocketBindError( const std::string & s ) ;
+		SocketBindError( const Address & a , const std::string & s , bool e_in_use ) ;
+		Address m_address {Address::defaultAddress()} ;
+		std::string m_reason ;
+		bool m_einuse {false} ;
+	} ;
 	using size_type = G::ReadWrite::size_type ;
 	using ssize_type = G::ReadWrite::ssize_type ;
 	struct Accepted /// Overload discriminator class for GNet::SocketBase.
@@ -74,6 +82,9 @@ public:
 	SOCKET fd() const noexcept override ;
 		///< Returns the socket file descriptor.
 
+	Descriptor fdd() const noexcept ;
+		///< Returns the socket descriptor.
+
 	bool eWouldBlock() const override ;
 		///< Returns true if the previous socket operation
 		///< failed because the socket would have blocked.
@@ -83,6 +94,10 @@ public:
 		///< failed with the EINPROGRESS error status.
 		///< When connecting this can be considered a
 		///< non-error.
+
+	bool eInUse() const ;
+		///< Returns true if the previous socket bind operation
+		///< failed because the socket was already in use.
 
 	bool eMsgSize() const ;
 		///< Returns true if the previous socket operation
@@ -485,6 +500,9 @@ public:
 	RawSocket & operator=( const RawSocket & ) = delete ;
 	RawSocket & operator=( RawSocket && ) = delete ;
 } ;
+
+inline GNet::Socket::SocketBindError::SocketBindError( const std::string & s ) : SocketBindErrorBase(s) , m_reason(s) {}
+inline GNet::Socket::SocketBindError::SocketBindError( const Address & a , const std::string & s , bool b ) : SocketBindErrorBase(s) , m_address(a) , m_reason(s) , m_einuse(b) {}
 
 inline GNet::Socket::Config & GNet::Socket::Config::set_listen_queue( int n ) noexcept { listen_queue = n ; return *this ; }
 inline GNet::Socket::Config & GNet::Socket::Config::set_bind_reuse( bool b ) noexcept { bind_reuse = b ; return *this ; }

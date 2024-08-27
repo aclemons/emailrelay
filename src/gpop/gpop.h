@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -34,9 +34,8 @@ namespace GPop
 	bool enabled() noexcept ;
 		///< Returns true if pop code is built in.
 
-	std::unique_ptr<Store> newStore( const G::Path & spool_dir ,
-		bool pop_by_name , bool allow_delete ) ;
-			///< Creates a new Pop::Store.
+	std::unique_ptr<Store> newStore( const G::Path & spool_dir , const Store::Config & ) ;
+		///< Creates a new Pop::Store.
 
 	std::unique_ptr<GAuth::SaslServerSecrets> newSecrets( const std::string & path ) ;
 		///< Creates a new SaslServerSecrets for newStore().

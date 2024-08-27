@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,12 +25,11 @@
 GVerifiers::InternalVerifier::InternalVerifier()
 = default;
 
-void GVerifiers::InternalVerifier::verify( Command command , const std::string & to ,
-	const GSmtp::Verifier::Info & )
+void GVerifiers::InternalVerifier::verify( const GSmtp::Verifier::Request & request )
 {
 	// accept all addresses as if remote
-	auto status = GSmtp::VerifierStatus::remote( to ) ;
-	doneSignal().emit( command , status ) ;
+	auto status = GSmtp::VerifierStatus::remote( request.address ) ;
+	doneSignal().emit( request.command , status ) ;
 }
 
 G::Slot::Signal<GSmtp::Verifier::Command,const GSmtp::VerifierStatus&> & GVerifiers::InternalVerifier::doneSignal()

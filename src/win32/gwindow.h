@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -61,7 +61,7 @@ public:
 		///< by create(). Use registerWindowClass() before calling any
 		///< create() function.
 
-	virtual ~Window() ;
+	~Window() override ;
 		///< Destructor. The Windows window is _not_ destroyed; its
 		///< SetWindowLongPtr() value is reset and any window messages
 		///< are handled by DefWindowProc().
@@ -103,7 +103,8 @@ public:
 		const std::string & title , std::pair<DWORD,DWORD> window_style ,
 		int x , int y , int dx , int dy ,
 		HWND parent , HMENU menu_or_child_id , HINSTANCE hinstance ) ;
-			///< Creates the window. Returns true on success.
+			///< Creates the window. Returns true on success. Check reason()
+			///< on error.
 			///<
 			///< The given window class name must be the name of a window
 			///< class previously registered through registerWindowClass().
@@ -125,6 +126,10 @@ public:
 			///< as defined through registerWindowClass().
 			///<
 			/// \see CreateWindow()
+
+	std::string reason() const ;
+		///< Returns an error string when an exception has been thrown
+		///< out of the window procedure.
 
 	void update() ;
 		///< Does ::UpdateWindow().
@@ -197,27 +202,15 @@ public:
 		///< Returns a default for registerWindowClass(hcursor).
 
 	static LRESULT wndProc( HWND hwnd , UINT message , WPARAM wparam , LPARAM lparam ) ;
-		///< Called directly from the global, exported window
-		///< procedure. The implementation locates the particular
-		///< Window object and calls its non-static wndProc()
-		///< method.
-
-	bool wndProcException() const ;
-		///< Returns true if an exception was thrown and caught
-		///< just before the wndproc returned.
-
-	std::string wndProcExceptionString() ;
-		///< Returns and clears the exception string.
+		///< Private window procedure.
 
 protected:
 	virtual LRESULT onUserString( const char *string ) ;
 		///< Overridable. Called when the window receives a message
 		///< from sendUserString().
 
-	virtual void onWindowException( std::exception & e ) = 0 ;
-		///< Called if an exception is being thrown out of the
-		///< window procedure. The default implementation
-		///< posts a quit message.
+	void setReason( const std::string & , const std::string & = {} ) ;
+		///< Sets the reason() string.
 
 public:
 	Window( const Window & ) = delete ;
@@ -226,9 +219,7 @@ public:
 	Window & operator=( Window && ) = delete ;
 
 private:
-	static LRESULT wndProcCore( Window * , HWND , UINT , WPARAM , LPARAM ) ;
-	virtual LRESULT onUserOther( WPARAM , LPARAM ) ;
-	static Window * instance( CREATESTRUCT * ) ;
+	LRESULT onUserOther( WPARAM , LPARAM ) override ;
 
 private:
 	std::string m_reason ;

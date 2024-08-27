@@ -1,6 +1,6 @@
 @echo off
 rem
-rem Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+rem Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 rem 
 rem This program is free software: you can redistribute it and/or modify
 rem it under the terms of the GNU General Public License as published by
@@ -53,7 +53,7 @@ rem $ cd qt-src && perl init-repository --module-subset=qtbase,qttools,qttransla
 rem
 rem Download emailrelay:
 rem $ git clone https://git.code.sf.net/p/emailrelay/git emailrelay-src
-rem $ git -C emailrelay-src checkout 2.5.3dev3
+rem $ git -C emailrelay-src checkout 2.6
 rem $ copy emailrelay-src\libexec\winbuildall.bat .
 rem
 

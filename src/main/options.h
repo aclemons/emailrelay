@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ namespace Main
 class Main::Options
 {
 public:
-	static G::Options spec( bool is_windows = G::is_windows() ) ;
+	static G::Options spec() ;
 		///< Returns an o/s-specific G::OptionParser specification.
 
 	using Tag = std::pair<unsigned,std::string> ;

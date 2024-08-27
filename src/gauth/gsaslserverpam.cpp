@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -68,7 +68,7 @@ class GAuth::PamImp : public G::Pam
 {
 public:
 	using ItemArray = GAuth::PamImp::ItemArray ;
-	G_EXCEPTION_CLASS( NoPrompt , tx("no password prompt received from pam module") ) ;
+	G_EXCEPTION_CLASS( NoPrompt , tx("no password prompt received from pam module") )
 
 	PamImp( const std::string & app , const std::string & id ) ;
 	~PamImp() override ;
@@ -245,7 +245,7 @@ bool GAuth::SaslServerPam::mustChallenge() const
 
 void GAuth::SaslServerPam::reset()
 {
-	return m_imp->reset() ;
+	m_imp->reset() ;
 }
 
 bool GAuth::SaslServerPam::init( bool secure , const std::string & mechanism )

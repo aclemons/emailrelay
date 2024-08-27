@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -55,7 +55,7 @@ std::size_t G::OptionReader::add( StringArray & out , const Path & filename , st
 
 		std::string_view value = (++t)() ;
 		if( !value.empty() )
-			value = Str::trimRightView( sv.substr(t.pos()) , std::string_view(" \t",2U) ) ;
+			value = Str::trimRightView( sv.substr(t.pos()) , " \t" ) ;
 		if( value.size() >= 2U && value[0] == '"' && value[value.size()-1U] == '"' )
 			value = value.substr( 1U , value.size() - 2U ) ;
 

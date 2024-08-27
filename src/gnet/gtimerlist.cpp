@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -205,14 +205,8 @@ void GNet::TimerList::mergeAdded()
 {
 	if( !m_list_added.empty() )
 	{
-		// soonest will always be null here because it is reset earlier in
-		// doTimeouts() -- it might not have been reset if there were
-		// no timeouts, but then nothing could have added to the
-		// merge list
-		G_ASSERT( m_soonest == nullptr ) ;
 		if( m_soonest != nullptr && (m_list.size()+m_list_added.size()) > m_list.capacity() )
-			m_soonest = nullptr ; // invalidated by m_list.insert() -- never gets here
-
+			m_soonest = nullptr ; // about to be invalidated
 		m_list.reserve( m_list.size() + m_list_added.size() ) ;
 		m_list.insert( m_list.end() , m_list_added.begin() , m_list_added.end() ) ;
 		m_list_added.clear() ;
@@ -224,11 +218,7 @@ void GNet::TimerList::purgeRemoved()
 	if( m_removed )
 	{
 		m_removed = false ;
-
-		G_ASSERT( m_soonest == nullptr ) ; // as above
-		if( m_soonest != nullptr )
-			m_soonest = nullptr ; // invalidated by m_list.erase() -- never gets here
-
+		m_soonest = nullptr ; // about to be invalidated
 		m_list.erase( std::remove_if( m_list.begin() , m_list.end() ,
 			[](const ListItem &v_){ return v_.m_timer == nullptr ; } ) , m_list.end() ) ;
 	}

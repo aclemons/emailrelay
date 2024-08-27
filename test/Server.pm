@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 # Synopsis:
 #
 #	$Server::bin_dir = "." ;
-#	my $server = new Server( 10025 , 10101 , 10026 , "/var/tmp" ) ;
+#	my $server = new Server( {smtp_port=>...,pop_port=>,...etc} ) ;
 #	$server->set_spoolDir( "/tmp" ) ;
 #	$server->set_filter( "deliver:" ) ;
 #	$server->set_...() # etc
@@ -43,6 +43,7 @@ package Server ;
 
 our @pid_list = () ;
 our $bin_dir = ".." ;
+our $keep_spool = undef ;
 our $tls_config = "x" ;
 our $with_valgrind = undef ;
 my $exe_name = "emailrelay" ;
@@ -63,23 +64,33 @@ sub _textmode
 
 sub new
 {
-	my ( $classname , $smtp_port , $pop_port , $admin_port , $spool_dir , $tls_certificate_in , $tls_verify ) = @_ ;
+	my ( $classname , $opt ) = @_ ;
+
+	my $smtp_port = $opt->{smtp_port} ;
+	my $pop_port = $opt->{pop_port} ;
+	my $admin_port = $opt->{admin_port} ;
+	my $spool_dir = $opt->{spool_dir} ;
+	my $tls_certificates = $opt->{tls_certificates} ;
+	my $tls_verify = $opt->{tls_verify} ;
+	my $server_smtp_config = $opt->{server_smtp_config} ;
+	my $domain = $opt->{domain} ;
+
+	$smtp_port ||= System::nextPort() ;
+	$pop_port ||= System::nextPort() ;
+	$admin_port ||= System::nextPort() ;
+	$spool_dir ||= System::createSpoolDir() ;
+	$server_smtp_config ||= "" ;
+	$domain ||= "test.localnet" ;
 
 	my ( $tls_private_key , $tls_certificate ) ;
-	if( ref($tls_certificate_in) )
+	if( ref($tls_certificates) )
 	{
-		($tls_private_key,$tls_certificate) = @$tls_certificate_in ;
+		($tls_private_key,$tls_certificate) = @$tls_certificates ;
 	}
 	else
 	{
-		($tls_private_key,$tls_certificate) = (undef,$tls_certificate_in) ;
+		($tls_private_key,$tls_certificate) = (undef,$tls_certificates) ;
 	}
-
-	$spool_dir ||= System::createSpoolDir() ;
-	$smtp_port ||= System::nextPort() ;
-
-	$pop_port ||= System::nextPort() ;
-	$admin_port ||= System::nextPort() ;
 
 	my $scanner_port = System::nextPort() ;
 	my $verifier_port = System::nextPort() ;
@@ -123,9 +134,12 @@ sub new
 		m_filter => $filter ,
 		m_client_filter => $client_filter ,
 		m_scanner_address => "${System::localhost}:${scanner_port}" ,
+		m_verifier => "net:${System::localhost}:$verifier_port" ,
 		m_verifier_port => $verifier_port ,
 		m_max_size => 1000 ,
 		m_local_delivery_dir => "$spool_dir/in" ,
+		m_server_smtp_config => $server_smtp_config ,
+		m_domain => $domain ,
 	} , $classname ;
 }
 
@@ -137,7 +151,7 @@ sub adminPort { return shift->{m_admin_port} }
 sub scannerAddress { return shift->{m_scanner_address} }
 sub set_scannerAddress { $_[0]->{m_scanner_address} = $_[1] }
 sub verifierPort { return shift->{m_verifier_port} }
-sub verifierAddress { return "net:${System::localhost}:" . shift->{m_verifier_port} }
+sub verifierAddress { return shift->{m_verifier} }
 sub popPort { return shift->{m_pop_port} }
 sub popSecrets { return shift->{m_pop_secrets} }
 sub clientSecrets { return shift->{m_client_secrets} }
@@ -163,10 +177,13 @@ sub filter { return shift->{m_filter} }
 sub set_filter { $_[0]->{m_filter} = $_[1] }
 sub clientFilter { return shift->{m_client_filter} }
 sub set_clientFilter { $_[0]->{m_client_filter} = $_[1] }
+sub set_verifier { $_[0]->{m_verifier} = $_[1] }
 sub maxSize { return shift->{m_max_size} }
 sub rc { return shift->{m_rc} }
 sub log { return shift->{m_log_file} }
 sub localDeliveryDir { return shift->{m_local_delivery_dir} }
+sub serverSmtpConfig { return shift->{m_server_smtp_config} }
+sub domain { return shift->{m_domain} }
 
 sub _pid
 {
@@ -230,7 +247,7 @@ sub _switches
 		( exists($sw{ClientAuth}) ? "--client-auth __CLIENT_SECRETS__ " : "" ) .
 		( exists($sw{MaxSize}) ? "--size __MAX_SIZE__ " : "" ) .
 		( exists($sw{ServerAuth}) ? "--server-auth __SERVER_SECRETS__ " : "" ) .
-		( exists($sw{Domain}) ? "--domain test.localnet " : "" ) .
+		( exists($sw{Domain}) ? "--domain __DOMAIN__ " : "" ) .
 		( exists($sw{ServerTls}) ? "--server-tls " : "" ) .
 		( exists($sw{ServerTlsRequired}) ? "--server-tls-required " : "" ) .
 		( exists($sw{ClientTls}) ? "--client-tls " : "" ) .
@@ -242,6 +259,7 @@ sub _switches
 		( exists($sw{ClientTlsCertificate}) ? "--client-tls-certificate __TLS_CERTIFICATE__ " : "" ) .
 		( (exists($sw{ClientTlsVerify}) && $sw{ClientTlsVerify}) ? "--client-tls-verify __TLS_VERIFY__ " : "" ) .
 		( exists($sw{TlsConfig}) ? "--tls-config=__TLS_CONFIG__ " : "" ) .
+		( exists($sw{ServerSmtpConfig}) ? "--server-smtp-config __SERVER_SMTP_CONFIG__ " : "" ) .
 		"" ;
 }
 
@@ -268,11 +286,13 @@ sub _set_all
 	_set( \$command_tail , "__CLIENT_SECRETS__" , $this->clientSecrets() ) ;
 	_set( \$command_tail , "__MAX_SIZE__" , $this->maxSize() ) ;
 	_set( \$command_tail , "__SERVER_SECRETS__" , $this->serverSecrets() ) ;
+	_set( \$command_tail , "__DOMAIN__" , $this->domain() ) ;
 	_set( \$command_tail , "__TLS_PRIVATE_KEY__" , $this->tlsPrivateKey() ) ;
 	_set( \$command_tail , "__TLS_CERTIFICATE__" , $this->tlsCertificate() ) ;
 	_set( \$command_tail , "__TLS_VERIFY__" , $this->tlsVerify() ) ;
 	_set( \$command_tail , "__TLS_CONFIG__" , $this->tlsConfig() ) ;
 	_set( \$command_tail , "__LOCAL_DELIVERY_DIR__" , $this->localDeliveryDir() ) ;
+	_set( \$command_tail , "__SERVER_SMTP_CONFIG__" , $this->serverSmtpConfig() ) ;
 	return $command_tail ;
 }
 
@@ -403,7 +423,7 @@ sub cleanup
 	System::unlink( $this->clientFilter() ) ;
 	# System::unlink( $this->tlsCertificate() ) ; # done in Openssl::cleanup()
 	System::unlink( $this->pidFile() ) if System::windows() ;
-	System::deleteSpoolDir( $this->spoolDir() , 1 ) ;
+	System::deleteSpoolDir( $this->spoolDir() , 1 ) unless $keep_spool ;
 	System::rmdir_( $this->{m_piddir} ) ;
 }
 

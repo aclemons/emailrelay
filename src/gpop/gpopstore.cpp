@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,12 +20,15 @@
 
 #include "gdef.h"
 #include "gpopstore.h"
+#include "gsecretsfile.h"
+#include "gprocess.h"
 #include "gstr.h"
 #include "gfile.h"
 #include "gdirectory.h"
 #include "gtest.h"
 #include "groot.h"
 #include "gassert.h"
+#include "glog.h"
 #include <algorithm>
 #include <iterator>
 #include <sstream>
@@ -42,6 +45,10 @@ namespace GPop
 		struct DirectoryReader : private G::Root /// Used by GPop::Store like G::Root when reading a directory.
 		{
 		} ;
+		struct DirectoryCreator : private G::Root /// Used by GPop::Store like G::Root when creating a sub-directory.
+		{
+			G::Process::Umask m_umask {G::Process::Umask::Mode::Tighter} ;
+		} ;
 		struct FileDeleter : private G::Root /// Used by GPop::Store like G::Root when deleting.
 		{
 		} ;
@@ -54,41 +61,53 @@ namespace GPop
 
 // ==
 
-GPop::Store::Store( const G::Path & path , bool by_name , bool allow_delete ) :
+GPop::Store::Store( const G::Path & path , const Config & config ) :
 	m_path(path) ,
-	m_by_name(by_name) ,
-	m_allow_delete(allow_delete)
+	m_config(config)
 {
-	if( !accessible( path , by_name?false:allow_delete ) )
+	// check the spool directory is accessible()
+	if( !accessible( path , m_config.by_name ? false : m_config.allow_delete ) )
 		throw InvalidDirectory() ;
 
-	if( by_name )
+	// check the pop-by-name sub-directories are accessible()
+	if( m_config.by_name )
 	{
-		// read the spool directory
-		G::DirectoryList iter ;
+		G::DirectoryList list ;
 		{
 			StoreImp::DirectoryReader claim_reader ;
-			iter.readAll( path ) ;
+			list.readDirectories( path ) ;
 		}
-
-		// check every sub-directory is accessible() and count them
-		int n = 0 ;
-		while( iter.more() )
+		while( list.more() )
 		{
-			if( iter.isDir() )
+			if( !accessible( list.filePath() , m_config.allow_delete ) )
 			{
-				bool ok = accessible( iter.filePath() , allow_delete ) ;
-				G_DEBUG( "GPop::Store::ctor: [" << iter.filePath() << "]: " << (ok?"good":"bad") ) ;
-				if( ok )
-					n++ ;
+				G_WARNING( "GPop::Store::ctor: pop-by-name sub-directory [" << list.fileName() << "] is not accessible" ) ;
 			}
 		}
+	}
+}
 
-		// warn if no accessible() sub-directories
-		if( n == 0 )
+void GPop::Store::prepare( const std::string & user )
+{
+	if( m_config.by_name && m_config.by_name_mkdir )
+	{
+		bool created = false ;
+		int e = 0 ;
+		if( G::Str::isPrintable(user) && G::Path(user).simple() && !G::File::exists(m_path/user,std::nothrow) )
 		{
-			G_WARNING( "GPop::Store::ctor: no sub-directories for pop-by-name found in \"" << path << "\": "
-				<< "create one sub-directory for each authorised pop account" ) ;
+			// (see also GStore::FileDelivery::deliverToMailboxes())
+			StoreImp::DirectoryCreator claim_root ;
+			created = G::File::mkdir( m_path/user , std::nothrow ) ;
+			e = G::Process::errno_() ;
+		}
+		if( created )
+		{
+			G_LOG( "GPop::Store::prepare: created pop-by-name sub-directory [" << user << "]" ) ;
+		}
+		else if( e )
+		{
+			G_WARNING( "GPop::Store::prepare: failed to create pop-by-name sub-directory "
+				"[" << G::Str::printable(user) << "] (" << G::Process::strerror(e) << ")" ) ;
 		}
 	}
 }
@@ -123,12 +142,12 @@ G::Path GPop::Store::dir() const
 
 bool GPop::Store::allowDelete() const
 {
-	return m_allow_delete ;
+	return m_config.allow_delete ;
 }
 
 bool GPop::Store::byName() const
 {
-	return m_by_name ;
+	return m_config.by_name ;
 }
 
 // ===
@@ -245,27 +264,32 @@ GPop::StoreList::Size GPop::StoreList::totalByteCount() const
 
 bool GPop::StoreList::valid( int id ) const
 {
-	return id >= 1 && id <= static_cast<int>(m_list.size()) && !m_list.at(id-1).deleted ;
+	std::size_t offset = static_cast<std::size_t>(id) - 1U ;
+	return id >= 1 && offset < m_list.size() && !m_list.at(offset).deleted ;
 }
 
 GPop::StoreMessage GPop::StoreList::get( int id ) const
 {
 	G_ASSERT( valid(id) ) ;
-	return valid(id) ? m_list.at(id-1) : StoreMessage::invalid() ;
+	std::size_t offset = static_cast<std::size_t>(id) - 1U ;
+	return valid(id) ? m_list.at(offset) : StoreMessage::invalid() ;
 }
 
 GPop::StoreList::Size GPop::StoreList::byteCount( int id ) const
 {
 	G_ASSERT( valid(id) ) ;
-	return valid(id) ? m_list.at(id-1).size : Size(0) ;
+	std::size_t offset = static_cast<std::size_t>(id) - 1U ;
+	return valid(id) ? m_list.at(offset).size : Size(0) ;
 }
 
 std::unique_ptr<std::istream> GPop::StoreList::content( int id ) const
 {
 	G_ASSERT( valid(id) ) ;
-	if( !valid(id) ) throw CannotRead( std::to_string(id) ) ;
+	if( !valid(id) )
+		throw CannotRead( std::to_string(id) ) ;
 
-	G::Path cpath = m_list.at(id-1).cpath(m_edir,m_sdir) ;
+	std::size_t offset = static_cast<std::size_t>(id) - 1U ;
+	G::Path cpath = m_list.at(offset).cpath(m_edir,m_sdir) ;
 	G_DEBUG( "GPop::StoreList::get: " << id << " " << cpath ) ;
 
 	auto fstream = std::make_unique<std::ifstream>() ;
@@ -283,7 +307,10 @@ std::unique_ptr<std::istream> GPop::StoreList::content( int id ) const
 void GPop::StoreList::remove( int id )
 {
 	if( valid(id) )
-		m_list.at(id-1).deleted = true ;
+	{
+		std::size_t offset = static_cast<std::size_t>(id) - 1U ;
+		m_list.at(offset).deleted = true ;
+	}
 }
 
 void GPop::StoreList::commit()
@@ -322,7 +349,8 @@ void GPop::StoreList::deleteFile( const G::Path & path , bool & all_ok ) const
 std::string GPop::StoreList::uidl( int id ) const
 {
 	G_ASSERT( valid(id) ) ;
-	return valid(id) ? m_list.at(id-1).uidl() : std::string() ;
+	std::size_t offset = static_cast<std::size_t>(id) - 1U ;
+	return valid(id) ? m_list.at(offset).uidl() : std::string() ;
 }
 #endif
 

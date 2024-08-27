@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -143,7 +143,7 @@ elsif( scalar(@ARGV) >= 2 )
 	my $fh_out ;
 	if( $opt{out} ) { $fh_out = new FileHandle( $opt{out} , $opt{append} ? "a" : "w" ) or die }
 	my $reduce = new Reduce( \@arg_make_commands , {debug=>$opt{debug}} ) ;
-	die if !$reduce->safe( $arg_src ) ; # too strict?
+	die if !$reduce->safe( $arg_src ) ;
 	$reduce->check( $arg_src , !$opt{out} ) ;
 	$reduce->emit( $fh_out ) if($fh_out) ;
 }

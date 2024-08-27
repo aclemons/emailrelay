@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2023 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ namespace G
 class G::Cleanup
 {
 public:
-	G_EXCEPTION( Error , tx("cleanup error") ) ;
+	G_EXCEPTION( Error , tx("cleanup error") )
 	struct Block /// A RAII class to temporarily block signal delivery.
 	{
 		explicit Block( bool active = true ) noexcept ;

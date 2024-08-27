@@ -1,23 +1,67 @@
 #
-# clang-tidy-16
+# clang-tidy-18
 #
-# Configuration for clang-tidy v16.
+# Configuration for clang-tidy v18.
 #
 
 Checks: "\
-bugprone-*,-bugprone-branch-clone,-bugprone-suspicious-include,-bugprone-easily-swappable-parameters,-bugprone-throw-keyword-missing,\
+bugprone-*,\
 cert-*,\
-cppcoreguidelines-*,-cppcoreguidelines-avoid-magic-numbers,-cppcoreguidelines-pro-*,-cppcoreguidelines-avoid-non-const-global-variables,-cppcoreguidelines-macro-usage,-cppcoreguidelines-owning-memory,-cppcoreguidelines-avoid-const-or-ref-data-members,-cppcoreguidelines-avoid-do-while,\
--clang-diagnostic-c++17-compat-mangling,\
-misc-*,-misc-non-private-member-variables-in-classes,-misc-no-recursion,-misc-const-correctness,\
-modernize-*,-modernize-use-trailing-return-type,-modernize-pass-by-value,-modernize-use-auto,-modernize-raw-string-literal,-modernize-use-nodiscard,-modernize-avoid-bind,-modernize-unary-static-assert,-modernize-macro-to-enum,\
-performance-*,-performance-unnecessary-value-param,\
+cppcoreguidelines-*,\
+misc-*,\
+modernize-*,\
+performance-*,\
 portability-*,\
-readability-*,-readability-named-parameter,-readability-braces-around-statements,-readability-redundant-access-specifiers,-readability-magic-numbers,-readability-inconsistent-declaration-parameter-name,-readability-else-after-return,-readability-implicit-bool-conversion,-readability-convert-member-functions-to-static,-readability-redundant-smartptr-get,-readability-qualified-auto,-readability-make-member-function-const,-readability-identifier-length,-readability-simplify-boolean-expr,\
+readability-*,\
+-bugprone-branch-clone,\
+-bugprone-easily-swappable-parameters,\
+-bugprone-empty-catch,\
+-bugprone-suspicious-include,\
+-cppcoreguidelines-avoid-do-while,\
+-cppcoreguidelines-avoid-magic-numbers,\
+-cppcoreguidelines-avoid-non-const-global-variables,\
+-cppcoreguidelines-macro-to-enum,\
+-cppcoreguidelines-macro-usage,\
+-cppcoreguidelines-owning-memory,\
+-cppcoreguidelines-pro-bounds-array-to-pointer-decay,\
+-cppcoreguidelines-pro-bounds-constant-array-index,\
+-cppcoreguidelines-pro-bounds-pointer-arithmetic,\
+-cppcoreguidelines-pro-type-const-cast,\
+-cppcoreguidelines-pro-type-member-init,\
+-cppcoreguidelines-pro-type-reinterpret-cast,\
+-cppcoreguidelines-pro-type-static-cast-downcast,\
+-cppcoreguidelines-pro-type-union-access,\
+-cppcoreguidelines-pro-type-vararg,\
+-cppcoreguidelines-special-member-functions,\
+-misc-non-private-member-variables-in-classes,\
+-misc-no-recursion,\
+-misc-const-correctness,\
+-modernize-avoid-bind,\
+-modernize-concat-nested-namespaces,\
+-modernize-macro-to-enum,\
+-modernize-pass-by-value,\
+-modernize-raw-string-literal,\
+-modernize-type-traits,\
+-modernize-unary-static-assert,\
+-modernize-use-auto,\
+-modernize-use-nodiscard,\
+-modernize-use-trailing-return-type,\
+-performance-avoid-endl,\
+-performance-enum-size,\
+-performance-unnecessary-value-param,\
+-readability-avoid-nested-conditional-operator,\
+-readability-braces-around-statements,\
+-readability-convert-member-functions-to-static,\
+-readability-else-after-return,\
+-readability-function-cognitive-complexity,\
+-readability-identifier-length,\
+-readability-implicit-bool-conversion,\
+-readability-inconsistent-declaration-parameter-name,\
+-readability-magic-numbers,\
+-readability-make-member-function-const,\
+-readability-named-parameter,\
+-readability-qualified-auto,\
+-readability-redundant-access-specifiers,\
+-readability-simplify-boolean-expr,\
 "
 
-CheckOptions:
-  - key: cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor
-    value: '1'
-  - key: readability-function-cognitive-complexity.Threshold
-    value: '180'

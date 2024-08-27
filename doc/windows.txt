@@ -7,7 +7,8 @@ To install E-MailRelay on Windows run "emailrelay-setup.exe".
 
 The installation GUI will take you through the installation options and then
 install the run-time files from the "payload" directory into your chosen
-locations and also create a startup batch file ("emailrelay-start.bat").
+locations and also create a startup batch file ("emailrelay-start.bat") and
+configuration file ("emailrelay.cfg").
 
 If you plan to install into "Program Files" and "ProgramData", or if you want
 to run E-MailRelay as a Windows service then you will need to allow the
@@ -22,10 +23,11 @@ Running the program
 After a successful installation you should see E-MailRelay listed in the
 Windows Start Menu and/or as an entry in the Windows "Services" tool.
 
-The Start Menu item will run the startup batch file "emailrelay-start.bat"
-which contains all the necessary configuration options, and once the
-E-MailRelay server is running you should see an icon appear in the Windows
-system notification area under the "Show hidden icons" button.
+The Start Menu item will run the startup batch file "emailrelay-start.bat".
+This is normally in the "ProgramData\E-MailRelay" folder, together with
+the configuration file "emailrelay.cfg". Once the E-MailRelay server is running
+you should see an icon appear in the Windows System Notification Area (also
+known as the System Tray) under the "Show hidden icons" button.
 
 Or if E-MailRelay runs as a service you should see an entry in the Windows
 "Services" tool with a status of Running. Check the E-MailRelay log file to see
@@ -33,32 +35,35 @@ what it is doing.
 
 Configuration
 -------------
-E-MailRelay is configured with options like "--verbose" or "--spool-dir" in the
-"emailrelay-startup.bat" batch file.
+E-MailRelay is configured with options like "--verbose" and "--spool-dir" in the
+"emailrelay-startup.bat" batch file, or equivalently "verbose" and "spool-dir"
+lines in the "emailrelay.cfg" configuration file.
 
 Note that "emailrelay-start.bat" lives under "ProgramData", and although this
 might be a hidden directory you can still navigate there by right-clicking on
-the E-MailRelay link under "Program Files" and selecting "Open file location".
+the E-MailRelay link under "Program Files\E-MailRelay" and selecting "Open file
+location".
 
-You can edit the batch file using Notepad: right-click on the E-MailRelay link
-or on the "emailrelay-start.bat" file, then "show more options" and "edit".
+You can edit the batch file or configuration file using Notepad: right-click on
+the file, then "show more options" and "edit".
 
 Alternatively, use the "emailrelay-gui" program to make the changes.
 
 All configuration options are documented in the E-MailRelay reference document.
 
 Account user-ids and passwords can be configured by editing the E-MailRelay
-"secrets" file. Check the "--client-auth" or "--server-auth" options in the
-startup batch file to find out where this is.
+"secrets" file, normally "ProgramData\E-MailRelay\emailrelay.auth". Check that
+the "--client-auth" or "--server-auth" options in the startup batch file or
+configuration file refer to this file.
 
 Manual installation
 -------------------
 The manual installation process for when you cannot run the setup program can be
 as simple as this:
-* Create a new program directory "c:\Program Files\E-MailRelay".
-* Create a new spool directory "c:\Program Files\E-MailRelay\spool".
-* Copy the EXE files from "programs" in the zip file into "c:\Program Files\E-MailRelay".
-* Create a new text file, eg. "c:\Program Files\E-MailRelay\auth.txt", to contain account details.
+* Create a new program directory "C:\Program Files\E-MailRelay".
+* Create a new spool directory "C:\Program Files\E-MailRelay\spool".
+* Copy the EXE files from "programs" in the zip file into "C:\Program Files\E-MailRelay".
+* Create a new text file, eg. "C:\Program Files\E-MailRelay\auth.txt", to contain account details.
 * Add account details to "auth.txt" with a line like "client plain myaccount mypassword".
 * Right-drag "emailrelay.exe" onto the desktop to create a shortcut for the server.
 * Add configuration options to the server shortcut properties in the "target" box.
@@ -83,37 +88,31 @@ automatically at boot-time. This can be enabled on the "Server startup" page
 in the installation program or later using the "emailrelay-gui" configuration
 program.
 
-Alternatively, to set up the service manually you must first have a one-line
-batch file called "emailrelay-start.bat" that contains all the configuration
+Alternatively, to set up the service manually you must first have a
+configuration file called "emailrelay.cfg" that contains all the configuration
 options for running the E-MailRelay server, and you must have a simple
 service-wrapper configuration file called "emailrelay-service.cfg" that points
 to it, and this must be in the same directory as the service wrapper executable
 ("emailrelay-service.exe").
 
-The startup batch file should contain a single line, something like this:
-
-	start "emailrelay" "C:\Program Files\E-MailRelay\emailrelay.exe" --forward-to smtp.example.com:25 ...
-
-There is no need to use "--no-daemon" and "--hidden"; these are added
-automatically.
-
-The contents of the service-wrapper configuration file can be a single
-line that points to the directory containing the startup batch file,
-like this:
+The contents of the service-wrapper configuration file can be a single line that
+points to the folder containing the configuration file, like this:
 
 	dir-config="C:\ProgramData\E-MailRelay"
 
 Then just run "emailrelay-service --install" from an Administrator command
 prompt to install the service.
 
-Every time the service starts it reads the service-wrapper configuration file
-and the startup batch file in order to run the E-MailRelay program.
-
 If you need to run multiple E-MailRelay services then put a unique service
 name and display name on the "emailrelay-service --install <name> <display-name>"
 command-line. The service name you give is used to derive the name of the
-"<name>-start.bat" batch file that contains the E-MailRelay server's
+configuration file ("<name>.cfg") that contains the E-MailRelay server's
 configuration options, so you will need to create that first.
+
+Note that a "service specific" error code when starting the service is the main
+"emailrelay" program's exit code. This will have the value 2 if the listening
+socket is already in use, normally indicating that another E-MailRelay program
+is running.
 
 Uninstall
 ---------
@@ -137,8 +136,8 @@ The Windows Event Log can be accessed by running "eventvwr.exe" or searching for
 "Event Viewer"; from there look under "Windows Logs" and "Application".
 
 You can increase the verbosity of the logging by adding the "--verbose" option
-to the E-MailRelay options, typically by editing the "emailrelay-start.bat"
-batch script in "C:\ProgramData\E-MailRelay".
+to the E-MailRelay options, typically by editing the "emailrelay.cfg"
+configuration file in the "C:\ProgramData\E-MailRelay" folder.
 
 Testing with telnet
 -------------------
@@ -160,4 +159,4 @@ and "DATA". Refer to RFC-821 Appendix F for some examples.
 
 
 _____________________________________
-Copyright (C) 2001-2023 Graeme Walker
+Copyright (C) 2001-2024 Graeme Walker
