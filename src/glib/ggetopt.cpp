@@ -173,12 +173,6 @@ std::string G::GetOpt::value( std::string_view name , std::string_view default_ 
 	return m_map.value( name , default_ ) ;
 }
 
-std::optional<std::string> G::GetOpt::optional( std::string_view name ) const
-{
-	if( !m_map.contains(name) ) return {} ;
-	return std::optional<std::string>( G::sv_to_string(name) ) ; // NOLINT
-}
-
 G::Arg G::GetOpt::args() const
 {
 	return m_args ;

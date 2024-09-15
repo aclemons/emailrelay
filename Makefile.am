@@ -123,13 +123,9 @@ tidy:
 unity:
 	$(MAKE) -C unity unity
 
-.PHONY: small.gcc
-small.gcc:
-	$(MAKE) -C unity small.gcc
-
-.PHONY: small.clang
-small.clang:
-	$(MAKE) -C unity small.clang
+.PHONY: small
+small:
+	$(MAKE) -C unity small
 
 .PHONY: format
 format:

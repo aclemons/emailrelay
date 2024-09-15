@@ -312,7 +312,7 @@ void DirectoryPage::checkCharacterSets()
 
 		//: one or more invalid characters in an installation directory
 		QString message = tr("warning: invalid characters") ;
-		const wchar_t triangle = L'\u26A0' ;
+		const QChar triangle( L'\u26A0' ) ;
 		QString text = QString("<font color=\"#cc0\">").append(triangle).append(" ").append(message).append("</font>") ;
 		m_notice_label->setText( text ) ;
 	}
@@ -535,12 +535,12 @@ DoWhatPage::DoWhatPage( Gui::Dialog & dialog , const G::MapFile & config , const
 	m_period_combo->addItem( tr("second") ) ;
 	m_period_combo->addItem( tr("minute") ) ;
 	m_period_combo->addItem( tr("hour") ) ;
-	if( config.numericValue("poll",99U) == 1U )
-		m_period_combo->setCurrentIndex( 0 ) ;
-	else if( config.numericValue("poll",1U) >= 60U ) // some information loss here :(
-		m_period_combo->setCurrentIndex( 1 ) ;
+	if( config.numericValue("poll",3600U) < 10U )
+		m_period_combo->setCurrentIndex( 0 ) ; // 1s
+	else if( config.numericValue("poll",3600U) < 300U )
+		m_period_combo->setCurrentIndex( 1 ) ; // 1min
 	else
-		m_period_combo->setCurrentIndex( 2 ) ;
+		m_period_combo->setCurrentIndex( 2 ) ; // 1hr
 	m_period_combo->setEditable( false ) ;
 	period_label->setBuddy( m_period_combo ) ;
 
@@ -607,7 +607,9 @@ void DoWhatPage::dump( std::ostream & stream , bool for_install ) const
 	dumpItem( stream , for_install , "forward-immediate" , value_yn(m_immediate_checkbox) ) ;
 	dumpItem( stream , for_install , "forward-on-disconnect" , value_yn(m_on_disconnect_checkbox) ) ;
 	dumpItem( stream , for_install , "forward-poll" , value_yn(m_periodically_checkbox) ) ;
-	dumpItem( stream , for_install , "forward-poll-period" , value_number(m_period_combo) ) ;
+	auto index = m_period_combo->currentIndex() ;
+	unsigned int period = index == 0 ? 1U : ( index == 1 ? 60U : 3600U ) ;
+	dumpItem( stream , for_install , "forward-poll-period" , std::to_string(period) ) ;
 }
 
 bool DoWhatPage::isComplete()

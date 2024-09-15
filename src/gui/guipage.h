@@ -30,7 +30,6 @@
 
 class QAbstractButton ;
 class QLineEdit ;
-class QComboBox ;
 
 namespace Gui
 {
@@ -128,11 +127,8 @@ protected:
 	static std::string value_yn( bool ) ;
 	static std::string value_yn( const QAbstractButton * ) ;
 	static std::string value_yn( const QLineEdit * ) = delete ;
-	static std::string value_yn( const QComboBox * ) = delete ;
 	static std::string value_utf8( const QLineEdit * ) ;
-	static std::string value_utf8( const QComboBox * ) ;
 	static std::string value_number( const QLineEdit * , const std::string & = "0" ) ;
-	static std::string value_number( const QComboBox * , const std::string & = "0" ) ;
 	static G::Path value_path( const QLineEdit * ) ;
 	bool testMode() const ;
 	int testModeValue() const ;

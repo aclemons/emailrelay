@@ -94,3 +94,8 @@ startup batch file and the configuration file in order to construct the server
 command-line -- see src/main/servicewrapper.cpp for more details. For diagnosic
 logging configure a registry entry "HKLM/SOFTWARE/emailrelay-service/logfile".
 
+Size optimisation
+-----------------
+Whole-program optimisation ("-fwhole-program" or "-flto") can now be applied to
+the "unity" build by using "make small". This produces fully size-optimised
+executables.

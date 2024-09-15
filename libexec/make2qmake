@@ -21,7 +21,9 @@
 # Parses the autoconf/automake artifacts throughout the source tree
 # tree and creates a set of 'qmake' files alongside the source.
 #
-# Run from the project's top directory after running 'configure'.
+# Run from the project's top directory after running 'configure'
+# then create a build directory and run qmake (or qmake6) from
+# there.
 #
 # Unix:
 #   $ ./configure --with-whatever CXXFLAGS="-X"

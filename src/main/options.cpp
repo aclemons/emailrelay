@@ -103,10 +103,11 @@ G::Options Main::Options::spec()
 	G::Options::add( opt , 'k' , "syslog" ,
 		#ifdef G_WINDOWS
 		tx("overrides --no-syslog, typically when using --as-client") , "" ,
+		M::zero , "" , 30 ,
 		#else
 		tx("overrides --no-syslog, typically when using --as-client") , "" ,
+		M::zero_or_one , "facility" , 30 ,
 		#endif
-		M::zero_or_one , "" , 30 ,
 		t_logging ) ;
 			// When used with --log this option enables logging to the system log,
 			// even if the --no-syslog option is also used. This is typically used

@@ -283,7 +283,8 @@ void submit( const G::GetOpt & opt )
 	bool add_date_header = opt.contains( "content-date" ) ;
 	bool opt_add_from_header = opt.contains( "content-from" ) ;
 	bool opt_add_to_header = opt.contains( "content-to" ) ;
-	std::optional<std::string> opt_add_content_message_id = opt.optional( "content-message-id" ) ;
+	bool opt_add_content_message_id = opt.contains( "content-message-id" ) ;
+	std::string opt_message_id_domain = opt.value( "content-message-id" , "local" ) ;
 	G::Path opt_spool_dir = pathValue( opt.value( "spool-dir" , GStore::FileStore::defaultDirectory().str() ) ) ;
 
 	// take the command-line arguments as envelope-to addresses
@@ -402,7 +403,7 @@ void submit( const G::GetOpt & opt )
 	if( opt_add_content_message_id && !have_id_header )
 	{
 		std::ostringstream ss ;
-		ss << "Message-ID: <" << G::SystemTime::now() << "." << G::Process::Id() << "@" << opt_add_content_message_id.value() << ">" ;
+		ss << "Message-ID: <" << G::SystemTime::now() << "." << G::Process::Id() << "@" << opt_message_id_domain << ">" ;
 		message.m_content.insert( message.m_content.begin() , ss.str() ) ;
 		G_LOG_S( "submit: added: message-id: [" << ss.str() << "]" ) ;
 	}
@@ -520,24 +521,28 @@ G::Options options()
 	G::Options::add( opt , 'f' , "from" ,
 		tx("sets the envelope-from address") , "" ,
 		M::one , "envelope-from-address" , 1 , t_undef ) ;
-			// Sets the envelope 'from' address.
+			// Sets the envelope 'from' address. If not supplied the envelope 'from'
+			// address is derived from the originator headers in the message content,
+			// or "anonymous" if none.
 
 	G::Options::add( opt , '\0' , "to" ,
 		tx("adds an envelope-to address") , "" ,
 		M::many , "envelope-to-address" , 2 , t_undef ) ;
-			// Adds an envelope 'to' address.
+			// Adds an envelope 'to' address. Trailing command-line arguments can also
+			// be used for envelope 'to' addresses.
 
 	G::Options::add( opt , 't' , "content-to" ,
 		tx("adds a 'To:' header using the envelope-to addresses, replacing any existing recipients") , "" ,
 		M::zero , "" , 2 , t_undef ) ;
-			// Adds a "To:" content header using the envelope-to addresses, replacing
-			// any existing "To:/cc:/bcc:" headers.
+			// Adds a "To:" content header using the envelope-to addresses given
+			// by "--to" and/or trailing command-line arguments, replacing any
+			// existing "To:/cc:/bcc:" headers.
 
 	G::Options::add( opt , 'F' , "content-from" ,
 		tx("adds a 'From:' header using the envelope-from address, replacing any existing originators") , "" ,
 		M::zero , "" , 2 , t_undef ) ;
-			// Adds a "From:" content header using the envelope-from address, replacing
-			// any existing "To:/cc:/bcc:" headers.
+			// Adds a "From:" content header using the envelope-from address given
+			// by "--from", replacing any existing "From:/Sender:" headers.
 
 	G::Options::add( opt , 'b' , "bcc-split" ,
 		tx("separate messages if more that one bcc recipient") , "" ,
@@ -551,9 +556,8 @@ G::Options options()
 
 	G::Options::add( opt , 'I' , "content-message-id" ,
 		tx("adds a 'Message-id:' header if none") , "" ,
-		M::one , "domain-part" , 2 , t_undef ) ;
-			// Adds a "Message-ID:" content header if there is none. The domain part
-			// of the message-id must be given explicitly.
+		M::zero_or_one , "domain-part" , 2 , t_undef ) ;
+			// Adds a "Message-ID:" content header if there is none.
 
 	G::Options::add( opt , 'c' , "copy" ,
 		tx("copies the envelope file into all sub-directories of the main spool directory") , "" ,
@@ -617,7 +621,7 @@ void run( const G::Arg & arg )
 	}
 	else if( opt.contains("help") )
 	{
-		std::ostream & stream = std::cerr ;
+		std::ostream & stream = std::cout ;
 		G::OptionsUsage::Config layout ;
 		if( opt.contains("verbose") )
 			layout.set_level_max( 3U ) ;

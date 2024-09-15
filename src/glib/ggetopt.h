@@ -26,7 +26,6 @@
 #include "goptions.h"
 #include "goptionvalue.h"
 #include "goptionparser.h"
-#include "goptional.h"
 #include "garg.h"
 #include "gpath.h"
 #include "gstringview.h"
@@ -144,9 +143,6 @@ public:
 		///< An overload that returns the value of the option identified
 		///< by its short-form letter.
 		///< Precondition: contains(option_letter)
-
-	std::optional<std::string> optional( std::string_view option_name ) const ;
-		///< Returns an optional value identified by its long-form name.
 
 	static StringArray readOptionsFromFile( const Path & ) ;
 		///< Reads options from file as a list of strings like "--foo=bar".

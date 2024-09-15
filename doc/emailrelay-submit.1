@@ -21,13 +21,11 @@ emailrelay-submit \- a submission utility for emailrelay
 .IR spool-directory ]
 [--from
 .IR from-address ]
-.I to-address
 .RI [ to-address \ ...]
 .SH DESCRIPTION
 .I emailrelay-submit
 is a utility which reads an RFC-822 e-mail message from the standard
-input, with SMTP envelope recipient addresses passed on the
-command-line, and writes it into the
+input and writes it into the
 .B E-MailRelay
 spool directory.
 .LP
@@ -36,7 +34,7 @@ to be printed.
 .SH OPTIONS
 .TP
 .B \-f, --from \fI<envelope-from-address>\fR
-Sets the envelope 'from' address.
+Sets the envelope 'from' address. If not supplied the envelope 'from' address is derived from the originator headers in the message content, or \fIanonymous\fR if none.
 .TP
 .B \-h, --help
 Shows help text and exits.
@@ -57,13 +55,13 @@ Submits messages separately for each \fIBcc:\fR recipient.
 Adds a \fIDate:\fR content header if there is none.
 .TP
 .B \-F, --content-from
-Adds a \fIFrom:\fR content header using the envelope-from address, replacing any existing \fITo:/cc:/bcc:\fR headers.
+Adds a \fIFrom:\fR content header using the envelope-from address given by \fI\fR\fI--from\fR\fI\fR, replacing any existing \fIFrom:/Sender:\fR headers.
 .TP
-.B \-I, --content-message-id \fI<domain-part>\fR
-Adds a \fIMessage-ID:\fR content header if there is none. The domain part of the message-id must be given explicitly.
+.B \-I, --content-message-id, --content-message-id=\fI<domain-part>\fR
+Adds a \fIMessage-ID:\fR content header if there is none.
 .TP
 .B \-t, --content-to
-Adds a \fITo:\fR content header using the envelope-to addresses, replacing any existing \fITo:/cc:/bcc:\fR headers.
+Adds a \fITo:\fR content header using the envelope-to addresses given by \fI\fR\fI--to\fR\fI\fR and/or trailing command-line arguments, replacing any existing \fITo:/cc:/bcc:\fR headers.
 .TP
 .B \-c, --copy
 Copies the envelope file into all sub-directories of the main spool directory.
@@ -72,7 +70,7 @@ Copies the envelope file into all sub-directories of the main spool directory.
 Prints the name of the content file.
 .TP
 .B --to \fI<envelope-to-address>\fR
-Adds an envelope 'to' address.
+Adds an envelope 'to' address. Trailing command-line arguments can also be used for envelope 'to' addresses.
 .TP
 .B \-V, --version
 Prints the version number and exits.

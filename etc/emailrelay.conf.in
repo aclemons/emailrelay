@@ -651,7 +651,7 @@
 #no-syslog
 
 # Name: syslog
-# Format: syslog
+# Format: syslog[=<facility>]
 # Description: When used with "--log" this option enables logging to the
 # system log, even if the "--no-syslog" option is also used. This is
 # typically used as a convenient override when using "--as-client".

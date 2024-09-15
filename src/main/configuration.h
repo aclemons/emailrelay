@@ -294,7 +294,7 @@ private:
 	std::pair<int,int> _adminServerSocketLinger() const noexcept ;
 	bool _allowRemoteClients() const noexcept ;
 	GSmtp::FilterFactoryBase::Spec _clientFilter() const ;
-	std::pair<int,int> _clientSocketLinger() const noexcept ;
+	std::pair<int,int> _clientSocketLinger() const ;
 	unsigned int _connectionTimeout() const noexcept ;
 	GSmtp::FilterFactoryBase::Spec _filter() const ;
 	unsigned int _filterTimeout() const noexcept ;

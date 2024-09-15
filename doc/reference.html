@@ -523,7 +523,7 @@
        Disables logging to the system log. Note that <em>--as-client</em> implies
        <em>--no-syslog</em>.
       </dd>
-     <dt>--syslog (-k)</dt>
+     <dt>--syslog[=&lt;facility&gt;] (-k)</dt>
       <dd>
        When used with <em>--log</em> this option enables logging to the system log, even if
        the <em>--no-syslog</em> option is also used. This is typically used as a
@@ -2204,6 +2204,12 @@ E-MailRelay&gt; quit
     </p>
 
     <p>
+     The fine-grained capabilities of E-MailRelay running as root should normally be
+     managed through the init system, such as systemd's CapabilityBoundingSet and
+     AmbientCapabilities configuration items.
+    </p>
+
+    <p>
      The program runs for most of the time with a <em>umask</em> of 077, switching to 007
      when creating files in the spool directory. After a normal installation the
      spool directory has ownership of <em>root.daemon</em> with permissions of <em>-rwxrwsr-x</em>
@@ -2241,8 +2247,8 @@ E-MailRelay&gt; quit
     </p>
 
     <p>
-     On Windows all files are opened with the _SH_DENYNO option so they can be
-     accessed without sharing violations.
+     On Windows there is no user-id switching. All files are opened with the
+     _SH_DENYNO option so they can be accessed without sharing violations.
     </p>
    <h2><a class="a-header" name="SH_1_27">Files and directories</a></h2> <!-- index:2:SH:1:27:Files and directories -->
     <p>

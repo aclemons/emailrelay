@@ -12,7 +12,7 @@ emailrelay (2.6) unstable; urgency=low
   * The "emailrelay-submit" utility can parse recipient addresses out of content headers.
   * On Windows "--no-daemon" is deprecated in favour of "--show=window".
   * The Windows event loop supports more concurrent connections [bug-id #59].
- -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Tue, 27 Aug 2024 00:00:00 +0000
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Mon,  9 Sep 2024 00:00:00 +0000
 
 emailrelay (2.5.2) unstable; urgency=low
   * Windows build scripts reworked.

@@ -334,7 +334,7 @@ sub touch
 
 sub file_copy
 {
-	my ( $src , $dst ) = @_ ;
+	my ( $src , $dst , $to_crlf ) = @_ ;
 
 	if( $dst =~ m:/$: )
 	{
@@ -347,7 +347,6 @@ sub file_copy
 		File::Path::make_path( File::Basename::dirname($dst) ) ;
 	}
 
-	my $to_crlf = undef ;
 	for my $ext ( "txt" , "js" , "pl" , "pm" )
 	{
 		if( -d $dst )
@@ -364,11 +363,12 @@ sub file_copy
 	{
 		if( -d $dst ) { $dst = "$dst/".File::Basename::basename($src) }
 		my $fh_in = new FileHandle( $src , "r" ) ;
-		my $fh_out = new FileHandle( $dst , "w" ) ;
+		my $fh_out = new FileHandle( $dst , ">:raw" ) ;
 		( $fh_in && $fh_out ) or die "error: failed to copy [$src] to [$dst]\n" ;
 		while(<$fh_in>)
 		{
 			chomp( my $line = $_ ) ;
+			$line =~ s/\r$// ;
 			print $fh_out $line , "\r\n" ;
 		}
 		$fh_out->close() or die "error: failed to copy [$src] to [$dst]\n" ;

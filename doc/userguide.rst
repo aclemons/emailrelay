@@ -5,10 +5,12 @@ User Guide
 What is it?
 ===========
 E-MailRelay is a lightweight SMTP_ store-and-forward mail server with POP_ access
-to spooled messages. It can be used as a personal internet mail server with
-SpamAssassin spam filtering and DNSBL_ connection blocking. Forwarding can be
-to a fixed smarthost or using DNS MX routing. External scripts can be used for
-address validation and e-mail message processing.
+to spooled messages. It can be used as a personal internet mail server using
+SpamAssassin spam filtering and DNSBL_ connection blocking, with incoming e-mail
+delivered to maildir_ mailboxes. Store-and-forward operation is normally to a
+fixed smarthost but DNS MX routing can also be configured. External scripts can
+be used for address validation and for processing e-mail messages as they
+are received.
 
 .. image:: whatisit.png
    :alt: whatisit.png

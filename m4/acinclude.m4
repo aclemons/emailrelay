@@ -565,6 +565,7 @@ AC_DEFUN([GCONFIG_FN_ENABLE_GUI],
 	AC_SUBST([GCONFIG_QT_LIBS],[$QT_LIBS])
 	AC_SUBST([GCONFIG_QT_CFLAGS],[$QT_CFLAGS])
 	AC_SUBST([GCONFIG_QT_MOC],[$QT_MOC])
+	AC_SUBST([GCONFIG_QT_LRELEASE],[$QT_LRELEASE])
 
 	AM_CONDITIONAL([GCONFIG_GUI],[test "$gconfig_gui" = "yes"])
 ])
@@ -747,6 +748,7 @@ AC_DEFUN([GCONFIG_FN_ENABLE_WINXP],
 	else
 		AC_DEFINE(GCONFIG_WINXP,0,[Define true for a winxp windows build])
 	fi
+	AM_CONDITIONAL([GCONFIG_WINXP],test "$enable_winxp" = "yes")
 ])
 
 dnl GCONFIG_FN_EPOLL
@@ -1812,7 +1814,7 @@ AC_DEFUN([GCONFIG_FN_PUTENV_S],
 
 dnl GCONFIG_FN_QT_BUILD
 dnl -------------------
-dnl Tests for successful Qt5 compilation if GCONFIG_FN_QT
+dnl Tests for successful Qt compilation if GCONFIG_FN_QT
 dnl has set gconfig_have_qt. Does nothing if --disable-gui.
 dnl Sets gconfig_qt_build.
 dnl
@@ -1851,114 +1853,158 @@ AC_DEFUN([GCONFIG_FN_QT_BUILD],
 
 dnl GCONFIG_FN_QT
 dnl -------------
-dnl Tests for Qt5. Sets gconfig_have_qt, QT_MOC, QT_LRELEASE, QT_LIBS and
-dnl QT_CFLAGS. A fallback copy of "pkg.m4" should be included in the
-dnl distribution.
+dnl Tests for Qt5/6. Sets gconfig_have_qt, QT_MOC, QT_LRELEASE, QT_LIBS
+dnl and QT_CFLAGS environment variables and possibly modifies LDFLAGS.
+dnl These QT_ environment variables are typically used elsewhere to
+dnl AC_SUBST() substitution variables for makefiles.
+dnl
+dnl If all four environment variables are defined on entry then it does
+dnl nothing. If QT_MOC is initially undefined then it tries pkg-config. If
+dnl pkg-config does not work then it looks for 'moc' on the path and sets
+dnl QT_MOC accordingly. If QT_MOC is defined and usable then it makes
+dnl various guesses to set QT_CFLAGS etc. If QT_MOC is still undefined
+dnl or unusable by the end then it gives up and sets gconfig_have_qt
+dnl to 'no'.
+dnl
+dnl A fallback copy of "pkg.m4" should be included in the distribution.
 dnl
 AC_DEFUN([GCONFIG_FN_QT],
 [
 	# skip the madness if the user has specified everything we need
-	if test "$QT_MOC" != "" -a "$QT_CFLAGS" != "" -a "$QT_LIBS" != ""
+	if test "$QT_MOC" != "" -a "$QT_CFLAGS" != "" -a "$QT_LIBS" != "" -a "$QT_LRELEASE" != ""
 	then
-		if echo "$QT_MOC" | grep -q /
-		then
-			QT_LRELEASE="`dirname \"$QT_MOC\"`/lrelease"
-		else
-			QT_LRELEASE="lrelease"
-		fi
 		AC_MSG_CHECKING([for QT])
 		AC_MSG_RESULT([overridden])
-		gconfig_have_qt=yes
 	else
 
-		# try pkg-config -- this says 'checking for QT'
-		PKG_CHECK_MODULES([QT],[Qt5Widgets > 5],
-			[
-				gconfig_pkgconfig_qt=yes
-			],
-			[
-				gconfig_pkgconfig_qt=no
-				AC_MSG_NOTICE([no QT 5 pkg-config])
-			]
-		)
-
-		# allow the moc command to be defined with QT_MOC on the configure
-		# command-line, typically also with CXXFLAGS and LIBS pointing to Qt
-		# headers and libraries
-		AC_ARG_VAR([QT_MOC],[moc command for QT])
-
-		if echo "$QT_MOC" | grep -q /
+		if test "$QT_MOC" != ""
 		then
-			QT_LRELEASE="`dirname \"$QT_MOC\"`/lrelease"
+			gconfig_pkgconfig_qt=no
 		else
-			QT_LRELEASE="lrelease"
+			# (this says 'checking for QT6' and automagically sets QT6_CFLAGS and QT6_LIBS variables)
+			PKG_CHECK_MODULES([QT6],[Qt6Widgets > 6],
+				[
+					gconfig_pkgconfig_qt=yes
+					gconfig_pkgconfig_qt_version=6
+					gconfig_pkgconfig_qt_var_moc=libexecdir
+					gconfig_pkgconfig_qt_var_lrelease=bindir
+					gconfig_pkgconfig_qt_var_qtchooser=none
+				],
+				[
+					gconfig_pkgconfig_qt=no
+				]
+			)
+			if test "$gconfig_pkgconfig_qt" = "no"
+			then
+				PKG_CHECK_MODULES([QT5],[Qt5Widgets > 5],
+					[
+						gconfig_pkgconfig_qt=yes
+						gconfig_pkgconfig_qt_version=5
+						gconfig_pkgconfig_qt_var_moc=host_bins
+						gconfig_pkgconfig_qt_var_lrelease=host_bins
+						gconfig_pkgconfig_qt_var_qtchooser=exec_prefix
+					],
+					[
+						gconfig_pkgconfig_qt=no
+					]
+				)
+			fi
 		fi
 
-		# or build the moc command using pkg-config results
-		if test "$QT_MOC" = ""
+		if test "$gconfig_pkgconfig_qt" = "yes"
 		then
-			if test "$gconfig_pkgconfig_qt" = "yes"
+			QT_MOC="`$PKG_CONFIG --variable=${gconfig_pkgconfig_qt_var_moc} Qt${gconfig_pkgconfig_qt_version}Core`/moc"
+			QT_LRELEASE="`$PKG_CONFIG --variable=${gconfig_pkgconfig_qt_var_lrelease} Qt${gconfig_pkgconfig_qt_version}Core`/lrelease"
+			if test -x "$QT_MOC" ; then : ; else QT_MOC="" ; fi
+			if test -x "$QT_LRELEASE" ; then : ; else QT_LRELEASE="" ; fi
+
+			if test "$gconfig_pkgconfig_qt_version" = "5"
 			then
-				QT_MOC="`$PKG_CONFIG --variable=host_bins Qt5Core`/moc"
-				QT_LRELEASE="`$PKG_CONFIG --variable=host_bins Qt5Core`/lrelease"
-				QT_CHOOSER="`$PKG_CONFIG --variable=exec_prefix Qt5Core`/bin/qtchooser"
-				if test -x "$QT_MOC" ; then : ; else QT_MOC="" ; fi
-				if test -x "$QT_LRELEASE" ; then : ; else QT_LRELEASE="" ; fi
+				QT_CHOOSER="`$PKG_CONFIG --variable=${gconfig_pkgconfig_qt_var_qtchooser} Qt${gconfig_pkgconfig_qt_version}Core`/bin/qtchooser"
 				if test -x "$QT_CHOOSER" ; then : ; else QT_CHOOSER="" ; fi
 				if test "$QT_MOC" = "" -a "$QT_CHOOSER" != ""
 				then
-					QT_MOC="$QT_CHOOSER -run-tool=moc -qt=qt5"
+					QT_MOC="$QT_CHOOSER -run-tool=moc -qt=qt${gconfig_pkgconfig_qt_version}"
 				fi
 				if test "$QT_LRELEASE" = "" -a "$QT_CHOOSER" != ""
 				then
-					QT_LRELEASE="$QT_CHOOSER -run-tool=lrelease -qt=qt5"
+					QT_LRELEASE="$QT_CHOOSER -run-tool=lrelease -qt=qt${gconfig_pkgconfig_qt_version}"
 				fi
 			fi
-		fi
 
-		# or find moc on the path
-		if test "$QT_MOC" = ""
-		then
-			AC_PATH_PROG([QT_MOC],[moc])
-		fi
+			QT_CFLAGS="-fPIC `$PKG_CONFIG --cflags Qt${gconfig_pkgconfig_qt_version}Widgets`"
+			QT_LIBS="`$PKG_CONFIG --libs-only-l Qt${gconfig_pkgconfig_qt_version}Widgets`"
+			LDFLAGS="$LDFLAGS `$PKG_CONFIG --libs-only-L Qt${gconfig_pkgconfig_qt_version}Widgets`"
+			LDFLAGS="$LDFLAGS `$PKG_CONFIG --libs-only-other Qt${gconfig_pkgconfig_qt_version}Widgets`"
+		:
 
-		if test "$QT_LRELEASE" = ""
-		then
-			AC_PATH_PROG([QT_LRELEASE],[lrelease])
-			if test "$QT_LRELEASE" = ""
+		else
+
+			if test "$QT_MOC" = ""
 			then
-				QT_LRELEASE=false
+				# find moc on the path
+				# (this says 'checking for moc...')
+				AC_PATH_PROG([QT_MOC],[moc])
+				if "$QT_MOC" --version 2>/dev/null | grep -q "moc 5" ; then :
+				elif "$QT_MOC" --version 2>/dev/null | grep -q "moc 6" ; then :
+				else QT_MOC="" ; fi
+			fi
+
+			if test -x "$QT_MOC"
+			then
+
+				if "$QT_MOC" --version 2>/dev/null | grep -q "moc 6"
+				then
+					gconfig_moc_qt_version=6
+				else
+					gconfig_moc_qt_version=5
+				fi
+
+				# assume lrelease is alongside moc -- could do better,
+				# but lrelease is not required for a normal build
+				if test "$QT_LRELEASE" = ""
+				then
+					if echo "$QT_MOC" | grep -q /
+					then
+						QT_LRELEASE="`dirname \"$QT_MOC\"`/lrelease"
+					else
+						QT_LRELEASE="lrelease"
+					fi
+				fi
+
+				# make assumptions for build flags -- assume libs dont need -L
+				QT_CFLAGS="-fPIC -I/usr/include/x86_64-linux-gnu/qt${gconfig_moc_qt_version} -DQT_GUI_LIB -DQT_CORE_LIB"
+				QT_LIBS="-lQt${gconfig_moc_qt_version}Widgets -lQt${gconfig_moc_qt_version}Gui -lQt${gconfig_moc_qt_version}Core"
+
 			fi
 		fi
+	fi
 
-		if test "$QT_MOC" != ""
+	# summarise the results
+	if test -x "$QT_MOC"
+	then
+		if "$QT_MOC" --version 2>/dev/null | grep -q "moc 5"
 		then
 			AC_MSG_NOTICE([QT moc command: $QT_MOC])
-		fi
-
-		# set gconfig_have_qt, QT_CFLAGS and QT_LIBS iff we have a moc command
-		if test "$QT_MOC" != ""
+			gconfig_have_qt=yes
+		:
+		elif "$QT_MOC" --version 2>/dev/null | grep -q "moc 6"
 		then
-			gconfig_have_qt="yes"
-			if test "$gconfig_pkgconfig_qt" = "yes"
-			then
-				QT_CFLAGS="-fPIC `$PKG_CONFIG --cflags Qt5Widgets`"
-				QT_LIBS="`$PKG_CONFIG --libs Qt5Widgets`"
-			else
-				QT_CFLAGS="-fPIC"
-				QT_LIBS=""
-			fi
+			AC_MSG_NOTICE([QT moc command: $QT_MOC])
+			gconfig_have_qt=yes
 		else
-			gconfig_have_qt="no"
+			AC_MSG_NOTICE([QT moc command not usable: $QT_MOC])
+			gconfig_have_qt=no
 		fi
-
-		# mac modifications
-		if test "$QT_MOC" != "" -a "`uname`" = "Darwin"
-		then
-			QT_DIR="`dirname $QT_MOC`/.."
-			QT_CFLAGS="-F $QT_DIR/lib"
-			QT_LIBS="-F $QT_DIR/lib -framework QtWidgets -framework QtGui -framework QtCore"
-		fi
+	:
+	elif test "$QT_MOC" = ""
+	then
+		AC_MSG_NOTICE([QT moc command not found])
+		gconfig_have_qt=no
+	else
+		AC_MSG_NOTICE([QT moc command not executable: $QT_MOC])
+		QT_MOC=""
+		gconfig_have_qt=no
 	fi
 ])
 

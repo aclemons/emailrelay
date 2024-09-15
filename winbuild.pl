@@ -536,6 +536,10 @@ sub install
 		install_copy( "$arch/src/gui/Release/emailrelay-gui.exe" , "$install/payload/files/gui/" ) ;
 		install_copy( "$arch/src/main/Release/emailrelay-keygen.exe" , "$install/payload/files/programs/" ) if $with_mbedtls ;
 
+		# template files are used by installer and are not in payload.cfg
+		install_copy( "etc/emailrelay.auth.in" , "$install/payload/files/installer/" , 1 ) ; # "-authtemplate"
+		install_copy( "etc/emailrelay.cfg.in" , "$install/payload/files/installer/" , 1 ) ; # "-conftemplate"
+
 		# optionally use windeployqt to install compiler compiler runtime installer,
 		# Qt library DLLs, Qt plugin DLLs, and Qt qtbase translations -- this
 		# is only possible if the GUI is dynamically linked -- if statically linked
@@ -740,8 +744,8 @@ sub install_core
 
 sub install_copy
 {
-	my ( $src , $dst ) = @_ ;
-	winbuild::file_copy( $src , $dst ) ;
+	my ( $src , $dst , $to_crlf ) = @_ ;
+	winbuild::file_copy( $src , $dst , $to_crlf ) ;
 }
 
 sub mkdir_

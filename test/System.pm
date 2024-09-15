@@ -588,8 +588,8 @@ sub submitMessageSequence
 		File::Copy::copy( $content , $spool_dir."/emailrelay.$x.content" ) or die ;
 		File::Copy::copy( $envelope , $spool_dir."/emailrelay.$x.envelope" ) or die ;
 	}
-	unlink( $content ) or die ;
-	unlink( $envelope ) or die ;
+	CORE::unlink( $content ) or die ;
+	CORE::unlink( $envelope ) or die ;
 }
 
 sub editEnvelope

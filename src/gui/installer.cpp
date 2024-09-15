@@ -64,7 +64,7 @@ struct TrError : std::runtime_error
 	QString m_error_text ; // translated
 	std::string m_error_more ; // un-translated
 	explicit TrError( QString error_text , std::string error_more = std::string() ) :
-		std::runtime_error(GQt::u8string_from_qstring(error_text).append(error_text.isEmpty()?0U:1U,' ').append(m_error_more)) ,
+		std::runtime_error(GQt::u8string_from_qstring(error_text).append(error_more.empty()?0U:1U,' ').append(error_more)) ,
 		m_error_text(error_text) ,
 		m_error_more(error_more)
 	{
@@ -1340,9 +1340,9 @@ InstallerImp::InstallerImp( bool installing , bool is_windows , bool is_mac , co
 	Helper::m_is_windows = is_windows ;
 	Helper::m_is_mac = is_mac ;
 
-	// define ivalue o/s-specific paths
-	m_installer_config.add( "-authtemplate" , isWindows() ? "%payload%/etc/emailrelay.auth.in" : "%payload%/usr/lib/emailrelay/emailrelay.auth.in" ) ;
-	m_installer_config.add( "-conftemplate" , isWindows() ? "%payload%/etc/emailrelay.cfg.in" : "%payload%/usr/lib/emailrelay/emailrelay.conf.in" ) ;
+	// define ivalue o/s-specific paths -- see also make-setup.sh on unix and winbuild.pl on windows
+	m_installer_config.add( "-authtemplate" , isWindows() ? "%payload%/files/installer/emailrelay.auth.in" : "%payload%/usr/lib/emailrelay/emailrelay.auth.in" ) ;
+	m_installer_config.add( "-conftemplate" , isWindows() ? "%payload%/files/installer/emailrelay.cfg.in" : "%payload%/usr/lib/emailrelay/emailrelay.conf.in" ) ;
 	m_installer_config.add( "-bat" , isWindows() ? "%dir-config%/emailrelay-start.bat" : "" ) ; // not dir-install -- see guimain
 	m_installer_config.add( "-cfg" , isWindows() ? "%dir-config%/emailrelay.cfg" : "%dir-config%/emailrelay.conf" ) ;
 	m_installer_config.add( "-exe" , isWindows() ? "%dir-install%/emailrelay.exe" :

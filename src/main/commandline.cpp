@@ -25,7 +25,6 @@
 #include "commandline.h"
 #include "gpop.h"
 #include "options.h"
-#include "gmessagestore.h"
 #include "goptionparser.h"
 #include "goptionreader.h"
 #include "goptionsusage.h"

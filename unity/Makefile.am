@@ -23,13 +23,15 @@
 #
 # Usage:
 #     make unity
+#     make small
 #
 # Also:
-#     make strip
 #     make sources
 #     make tidy
+#     make tidygui
 #     make small.gcc
 #     make small.clang
+#     make strip
 #
 # Unity builds tend to build faster when doing a full rebuild and
 # can result in smaller and better-optimised executables. They
@@ -41,8 +43,10 @@
 #
 # Unity builds enable the use of whole-program optimisations and
 # this can result in stripped binaries that are about half the
-# normal size. Use the "small.gcc" or "small.clang" targets to
-# enable whole-program size optimisations.
+# normal size. Use the "small" target to enable whole-program
+# size optimisations.
+#
+# Note that "make small" will disregard autoconf's CXXFLAGS.
 #
 
 CPPFLAGS_SMALL=-DG_LIB_SMALL
@@ -115,23 +119,28 @@ $(SOURCES_) $(CDB): Makefile Makefile.in
 	-chmod +x $(top_srcdir)/libexec/make2unity || true
 	perl -I$(top_srcdir)/libexec $(top_srcdir)/libexec/make2unity --include=. --cdb --cdb-cxx="$(CXX)" --cdb-top=$(top_srcdir) --base=$(top_srcdir)/src $(SOURCES_)
 
+all-local:
+	@echo "info: use \"make unity\" or \"make small\" for a unity build"
+
 .PHONY: programs
 programs: $(PROGRAMS_)
 
 .PHONY: unity
-unity: $(PROGRAMS_) .message
-
-.message:
-	-@echo "info: for smallest binaries make either 'small.gcc' or 'small.clang'"
-	-@touch .message 2>/dev/null || true
+unity: clean programs strip
 
 .PHONY: small.gcc
 small.gcc:
-	$(MAKE) $(AM_MAKEFLAGS) CXXFLAGS="-Os -fwhole-program" programs
+	$(MAKE) $(AM_MAKEFLAGS) CXXFLAGS="-pthread -Os -fwhole-program" programs
 
 .PHONY: small.clang
 small.clang:
-	$(MAKE) $(AM_MAKEFLAGS) CXXFLAGS="-Os -flto" programs
+	$(MAKE) $(AM_MAKEFLAGS) CXXFLAGS="-pthread -Os -flto" programs
+
+.PHONY: small
+small:
+	$(MAKE) $(AM_MAKEFLAGS) clean
+	$(CXX) --version | grep -q clang && $(MAKE) $(AM_MAKEFLAGS) small.clang || $(MAKE) $(AM_MAKEFLAGS) small.gcc
+	test -f emailrelay && "$(STRIP)" $(PROGRAMS_)
 
 .PHONY: sources
 sources: $(SOURCES_)
@@ -142,28 +151,21 @@ cdb: $(CDB)
 .PHONY: moc
 moc: $(MOC)
 
+.PHONY: strip
+strip:
+	"$(STRIP)" $(PROGRAMS_)
+
 emailrelay: emailrelay.cpp
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(CPPFLAGS_SMALL) $(IFLAGS) -o $@ $< $(LIBS) $(GCONFIG_TLS_LIBS)
-	-@"$(STRIP)" $@ 2>/dev/null || echo warning: $@ not stripped >&2
 
 emailrelay-submit: emailrelay-submit.cpp
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(IFLAGS) -o $@ $< $(LIBS) $(GCONFIG_TLS_LIBS)
-	-@"$(STRIP)" $@ 2>/dev/null || echo warning: $@ not stripped >&2
 
 emailrelay-passwd: emailrelay-passwd.cpp
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(IFLAGS) -o $@ $< $(LIBS) $(GCONFIG_TLS_LIBS)
-	-@"$(STRIP)" $@ 2>/dev/null || echo warning: $@ not stripped >&2
 
 emailrelay-gui: emailrelay-gui.cpp $(MOC)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(CPPFLAGS_GUI) $(IFLAGS) -o $@ $< $(LIBS) $(GCONFIG_TLS_LIBS) $(GCONFIG_QT_LIBS)
-	-@"$(STRIP)" $@ 2>/dev/null || echo warning: $@ not stripped >&2
-
-.PHONY: strip
-strip:
-	-"$(STRIP)" emailrelay
-	-"$(STRIP)" emailrelay-submit
-	-"$(STRIP)" emailrelay-passwd
-	-"$(STRIP)" emailrelay-gui
 
 moc_guidialog.cpp: $(top_srcdir)/src/gui/guidialog.h
 	$(GCONFIG_QT_MOC) $< -o $@
@@ -188,8 +190,5 @@ tidygui: emailrelay.cpp $(CDB) $(MOC) .clang-tidy
 .clang-tidy:
 	cp $(top_srcdir)/src/.clang-tidy .
 
-all-local:
-	@echo "info: use \"make unity\" for a unity build"
-
-CLEANFILES = $(SOURCES_) $(PROGRAMS_) $(CDB) .clang-tidy .message $(MOC)
+CLEANFILES = $(SOURCES_) $(PROGRAMS_) $(CDB) .clang-tidy $(MOC)
 

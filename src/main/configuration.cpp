@@ -802,6 +802,13 @@ GPop::Server::Config Main::Configuration::popServerConfig( const std::string & s
 			.set_sasl_server_config( _popSaslServerConfig() ) ;
 }
 
+std::pair<int,int> Main::Configuration::_clientSocketLinger() const
+{
+	Switches switches( stringValue( "client-smtp-config" ) , false ) ;
+	bool nolinger = !switches( "linger" , true ) ;
+	return nolinger ? std::make_pair(1,0) : std::make_pair(-1,-1) ;
+}
+
 GSmtp::Client::Config Main::Configuration::smtpClientConfig( const std::string & client_tls_profile ,
 	const std::string & filter_domain , const std::string & client_domain ) const
 {
@@ -947,7 +954,6 @@ unsigned int Main::Configuration::_adminPort() const noexcept { return numberVal
 std::pair<int,int> Main::Configuration::_adminServerSocketLinger() const noexcept { return std::make_pair( -1 , -1 ) ; }
 bool Main::Configuration::_allowRemoteClients() const noexcept { return contains( "remote-clients" ) ; }
 GSmtp::FilterFactoryBase::Spec Main::Configuration::_clientFilter() const { return filterValue( "client-filter" ) ; }
-std::pair<int,int> Main::Configuration::_clientSocketLinger() const noexcept { return std::make_pair( -1 , -1 ) ; }
 unsigned int Main::Configuration::_connectionTimeout() const noexcept { return numberValue( "connection-timeout" , 40U ) ; }
 GSmtp::FilterFactoryBase::Spec Main::Configuration::_filter() const { return filterValue( "filter" ) ; }
 unsigned int Main::Configuration::_filterTimeout() const noexcept { return numberValue( "filter-timeout" , 60U ) ; }

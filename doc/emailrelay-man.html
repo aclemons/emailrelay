@@ -39,9 +39,10 @@ emailrelay - e-mail transfer agent and proxy
 
 <I>emailrelay</I>
 
-is a simple SMTP proxy and store-and-forward message transfer agent.
-It does store-and-forward mail relay to a fixed next-hop server, without
-any routing.
+is a SMTP proxy and store-and-forward message transfer agent.
+It normally does simple store-and-forward mail relay to a fixed next-hop server,
+but it can be configured to do its own routing of outbound mail and also deliver
+inbound mail to local mailboxes.
 <P>
 
 It runs in two main modes: a storage daemon
@@ -390,7 +391,7 @@ Adds a timestamp to the logging output using the local timezone. Equivalent to <
 
 <DD>
 Disables logging to the system log. Note that <I>--as-client</I> implies <I>--no-syslog</I>.
-<DT><B>-k, --syslog, --syslog=</B>
+<DT><B>-k, --syslog, --syslog=</B><I>&lt;facility&gt;</I>
 
 <DD>
 When used with <I>--log</I> this option enables logging to the system log, even if the <I>--no-syslog</I> option is also used. This is typically used as a convenient override when using <I>--as-client</I>.

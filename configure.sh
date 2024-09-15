@@ -34,8 +34,6 @@
 #         -m3          git-fetch and patch mbedtls v3
 #         -S           force e_systemddir
 #         -X           suppress e_systemddir
-#         -q6          build gui using qt6 at ~/Qt/6.x.x
-#         -qt6 <dir>   build gui using qt6 at <dir>
 #
 # When cross-compiling with mbedtls the mbedtls source should be unpacked
 # into this base directory (see MBEDTLS_DIR below), or use '-g' to
@@ -59,8 +57,6 @@ do
 		w32|win32) opt_mingw=1 ; opt_win=32 ;;
 		w64|win64) opt_mingw=1 ; opt_win=64 ;;
 		p) opt_rpi=1 ;;
-		q6) opt_qt6=1 ; qt6_dir="`ls -1td \"$HOME\"/Qt/6*/gcc_64 2>/dev/null | head -1`" ;;
-		qt6) opt_qt6=1 ; qt6_dir="$2" ; $valued=1 ;;
 		S) opt_systemd=1 ;;
 		X) opt_systemd=0 ;;
 		h) echo usage: `basename $0` $usage "..." ; $thisdir/configure --help=short ; exit 0 ;;
@@ -161,17 +157,6 @@ Echo()
 		echo "$@"
 	fi
 }
-
-if test "0$opt_qt6" -ne 0
-then
-	if test ! -d "$qt6_dir" ; then echo configure.sh: no qt6 directory $qt6_dir >&2 ; exit 1 ; fi
-	export LDFLAGS="$LDFLAGS -L$qt6_dir/lib"
-	export QT_LIBS="-lQt6Gui -lQt6Widgets -lQt6Core"
-	export QT_CFLAGS="-std=c++17 -I$qt6_dir/include"
-	export QT_MOC="$qt6_dir/libexec/moc"
-	configure_qt="--enable-gui"
-	echo "configure.sh: qt: adding --enable-gui and QT_MOC=$qt6_dir/libexec/moc etc"
-fi
 
 if test "0$opt_mingw" -ne 0
 then

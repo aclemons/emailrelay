@@ -655,6 +655,8 @@ GCONFIG_DNSBL_FALSE
 GCONFIG_DNSBL_TRUE
 GCONFIG_UDS_FALSE
 GCONFIG_UDS_TRUE
+GCONFIG_WINXP_FALSE
+GCONFIG_WINXP_TRUE
 GCONFIG_WINDOWS_FALSE
 GCONFIG_WINDOWS_TRUE
 GCONFIG_TESTING_FALSE
@@ -669,6 +671,7 @@ GCONFIG_INSTALL_HOOK_FALSE
 GCONFIG_INSTALL_HOOK_TRUE
 GCONFIG_GUI_FALSE
 GCONFIG_GUI_TRUE
+GCONFIG_QT_LRELEASE
 GCONFIG_QT_MOC
 GCONFIG_QT_CFLAGS
 GCONFIG_QT_LIBS
@@ -676,10 +679,11 @@ GCONFIG_EPOLL_FALSE
 GCONFIG_EPOLL_TRUE
 GCONFIG_BSD_FALSE
 GCONFIG_BSD_TRUE
-QT_LRELEASE
 QT_MOC
-QT_LIBS
-QT_CFLAGS
+QT5_LIBS
+QT5_CFLAGS
+QT6_LIBS
+QT6_CFLAGS
 PKG_CONFIG_LIBDIR
 PKG_CONFIG_PATH
 PKG_CONFIG
@@ -834,9 +838,10 @@ CXXCPP
 PKG_CONFIG
 PKG_CONFIG_PATH
 PKG_CONFIG_LIBDIR
-QT_CFLAGS
-QT_LIBS
-QT_MOC'
+QT6_CFLAGS
+QT6_LIBS
+QT5_CFLAGS
+QT5_LIBS'
 
 
 # Initialize some variables set by options.
@@ -1524,9 +1529,10 @@ Some influential environment variables:
               directories to add to pkg-config's search path
   PKG_CONFIG_LIBDIR
               path overriding pkg-config's built-in search path
-  QT_CFLAGS   C compiler flags for QT, overriding pkg-config
-  QT_LIBS     linker flags for QT, overriding pkg-config
-  QT_MOC      moc command for QT
+  QT6_CFLAGS  C compiler flags for QT6, overriding pkg-config
+  QT6_LIBS    linker flags for QT6, overriding pkg-config
+  QT5_CFLAGS  C compiler flags for QT5, overriding pkg-config
+  QT5_LIBS    linker flags for QT5, overriding pkg-config
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -9477,37 +9483,34 @@ fi
 
 
 	# skip the madness if the user has specified everything we need
-	if test "$QT_MOC" != "" -a "$QT_CFLAGS" != "" -a "$QT_LIBS" != ""
+	if test "$QT_MOC" != "" -a "$QT_CFLAGS" != "" -a "$QT_LIBS" != "" -a "$QT_LRELEASE" != ""
 	then
-		if echo "$QT_MOC" | grep -q /
-		then
-			QT_LRELEASE="`dirname \"$QT_MOC\"`/lrelease"
-		else
-			QT_LRELEASE="lrelease"
-		fi
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for QT" >&5
 $as_echo_n "checking for QT... " >&6; }
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: overridden" >&5
 $as_echo "overridden" >&6; }
-		gconfig_have_qt=yes
 	else
 
-		# try pkg-config -- this says 'checking for QT'
+		if test "$QT_MOC" != ""
+		then
+			gconfig_pkgconfig_qt=no
+		else
+			# (this says 'checking for QT6' and automagically sets QT6_CFLAGS and QT6_LIBS variables)
 
 pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for QT" >&5
-$as_echo_n "checking for QT... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for QT6" >&5
+$as_echo_n "checking for QT6... " >&6; }
 
-if test -n "$QT_CFLAGS"; then
-    pkg_cv_QT_CFLAGS="$QT_CFLAGS"
+if test -n "$QT6_CFLAGS"; then
+    pkg_cv_QT6_CFLAGS="$QT6_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"Qt5Widgets > 5\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "Qt5Widgets > 5") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"Qt6Widgets > 6\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "Qt6Widgets > 6") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_QT_CFLAGS=`$PKG_CONFIG --cflags "Qt5Widgets > 5" 2>/dev/null`
+  pkg_cv_QT6_CFLAGS=`$PKG_CONFIG --cflags "Qt6Widgets > 6" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -9515,16 +9518,16 @@ fi
  else
     pkg_failed=untried
 fi
-if test -n "$QT_LIBS"; then
-    pkg_cv_QT_LIBS="$QT_LIBS"
+if test -n "$QT6_LIBS"; then
+    pkg_cv_QT6_LIBS="$QT6_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"Qt5Widgets > 5\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "Qt5Widgets > 5") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"Qt6Widgets > 6\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "Qt6Widgets > 6") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_QT_LIBS=`$PKG_CONFIG --libs "Qt5Widgets > 5" 2>/dev/null`
+  pkg_cv_QT6_LIBS=`$PKG_CONFIG --libs "Qt6Widgets > 6" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -9545,76 +9548,159 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        QT_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "Qt5Widgets > 5" 2>&1`
+	        QT6_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "Qt6Widgets > 6" 2>&1`
         else
-	        QT_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "Qt5Widgets > 5" 2>&1`
+	        QT6_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "Qt6Widgets > 6" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
-	echo "$QT_PKG_ERRORS" >&5
+	echo "$QT6_PKG_ERRORS" >&5
 
 
-				gconfig_pkgconfig_qt=no
-				{ $as_echo "$as_me:${as_lineno-$LINENO}: no QT 5 pkg-config" >&5
-$as_echo "$as_me: no QT 5 pkg-config" >&6;}
+					gconfig_pkgconfig_qt=no
 
 
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
-				gconfig_pkgconfig_qt=no
-				{ $as_echo "$as_me:${as_lineno-$LINENO}: no QT 5 pkg-config" >&5
-$as_echo "$as_me: no QT 5 pkg-config" >&6;}
+					gconfig_pkgconfig_qt=no
 
 
 else
-	QT_CFLAGS=$pkg_cv_QT_CFLAGS
-	QT_LIBS=$pkg_cv_QT_LIBS
+	QT6_CFLAGS=$pkg_cv_QT6_CFLAGS
+	QT6_LIBS=$pkg_cv_QT6_LIBS
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 
-				gconfig_pkgconfig_qt=yes
+					gconfig_pkgconfig_qt=yes
+					gconfig_pkgconfig_qt_version=6
+					gconfig_pkgconfig_qt_var_moc=libexecdir
+					gconfig_pkgconfig_qt_var_lrelease=bindir
+					gconfig_pkgconfig_qt_var_qtchooser=none
 
 fi
-
-		# allow the moc command to be defined with QT_MOC on the configure
-		# command-line, typically also with CXXFLAGS and LIBS pointing to Qt
-		# headers and libraries
-
-
-		if echo "$QT_MOC" | grep -q /
-		then
-			QT_LRELEASE="`dirname \"$QT_MOC\"`/lrelease"
-		else
-			QT_LRELEASE="lrelease"
-		fi
-
-		# or build the moc command using pkg-config results
-		if test "$QT_MOC" = ""
-		then
-			if test "$gconfig_pkgconfig_qt" = "yes"
+			if test "$gconfig_pkgconfig_qt" = "no"
 			then
-				QT_MOC="`$PKG_CONFIG --variable=host_bins Qt5Core`/moc"
-				QT_LRELEASE="`$PKG_CONFIG --variable=host_bins Qt5Core`/lrelease"
-				QT_CHOOSER="`$PKG_CONFIG --variable=exec_prefix Qt5Core`/bin/qtchooser"
-				if test -x "$QT_MOC" ; then : ; else QT_MOC="" ; fi
-				if test -x "$QT_LRELEASE" ; then : ; else QT_LRELEASE="" ; fi
-				if test -x "$QT_CHOOSER" ; then : ; else QT_CHOOSER="" ; fi
-				if test "$QT_MOC" = "" -a "$QT_CHOOSER" != ""
-				then
-					QT_MOC="$QT_CHOOSER -run-tool=moc -qt=qt5"
-				fi
-				if test "$QT_LRELEASE" = "" -a "$QT_CHOOSER" != ""
-				then
-					QT_LRELEASE="$QT_CHOOSER -run-tool=lrelease -qt=qt5"
-				fi
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for QT5" >&5
+$as_echo_n "checking for QT5... " >&6; }
+
+if test -n "$QT5_CFLAGS"; then
+    pkg_cv_QT5_CFLAGS="$QT5_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"Qt5Widgets > 5\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "Qt5Widgets > 5") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_QT5_CFLAGS=`$PKG_CONFIG --cflags "Qt5Widgets > 5" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$QT5_LIBS"; then
+    pkg_cv_QT5_LIBS="$QT5_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"Qt5Widgets > 5\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "Qt5Widgets > 5") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_QT5_LIBS=`$PKG_CONFIG --libs "Qt5Widgets > 5" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        QT5_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "Qt5Widgets > 5" 2>&1`
+        else
+	        QT5_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "Qt5Widgets > 5" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$QT5_PKG_ERRORS" >&5
+
+
+						gconfig_pkgconfig_qt=no
+
+
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+						gconfig_pkgconfig_qt=no
+
+
+else
+	QT5_CFLAGS=$pkg_cv_QT5_CFLAGS
+	QT5_LIBS=$pkg_cv_QT5_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+						gconfig_pkgconfig_qt=yes
+						gconfig_pkgconfig_qt_version=5
+						gconfig_pkgconfig_qt_var_moc=host_bins
+						gconfig_pkgconfig_qt_var_lrelease=host_bins
+						gconfig_pkgconfig_qt_var_qtchooser=exec_prefix
+
+fi
 			fi
 		fi
 
-		# or find moc on the path
-		if test "$QT_MOC" = ""
+		if test "$gconfig_pkgconfig_qt" = "yes"
 		then
-			# Extract the first word of "moc", so it can be a program name with args.
+			QT_MOC="`$PKG_CONFIG --variable=${gconfig_pkgconfig_qt_var_moc} Qt${gconfig_pkgconfig_qt_version}Core`/moc"
+			QT_LRELEASE="`$PKG_CONFIG --variable=${gconfig_pkgconfig_qt_var_lrelease} Qt${gconfig_pkgconfig_qt_version}Core`/lrelease"
+			if test -x "$QT_MOC" ; then : ; else QT_MOC="" ; fi
+			if test -x "$QT_LRELEASE" ; then : ; else QT_LRELEASE="" ; fi
+
+			if test "$gconfig_pkgconfig_qt_version" = "5"
+			then
+				QT_CHOOSER="`$PKG_CONFIG --variable=${gconfig_pkgconfig_qt_var_qtchooser} Qt${gconfig_pkgconfig_qt_version}Core`/bin/qtchooser"
+				if test -x "$QT_CHOOSER" ; then : ; else QT_CHOOSER="" ; fi
+				if test "$QT_MOC" = "" -a "$QT_CHOOSER" != ""
+				then
+					QT_MOC="$QT_CHOOSER -run-tool=moc -qt=qt${gconfig_pkgconfig_qt_version}"
+				fi
+				if test "$QT_LRELEASE" = "" -a "$QT_CHOOSER" != ""
+				then
+					QT_LRELEASE="$QT_CHOOSER -run-tool=lrelease -qt=qt${gconfig_pkgconfig_qt_version}"
+				fi
+			fi
+
+			QT_CFLAGS="-fPIC `$PKG_CONFIG --cflags Qt${gconfig_pkgconfig_qt_version}Widgets`"
+			QT_LIBS="`$PKG_CONFIG --libs-only-l Qt${gconfig_pkgconfig_qt_version}Widgets`"
+			LDFLAGS="$LDFLAGS `$PKG_CONFIG --libs-only-L Qt${gconfig_pkgconfig_qt_version}Widgets`"
+			LDFLAGS="$LDFLAGS `$PKG_CONFIG --libs-only-other Qt${gconfig_pkgconfig_qt_version}Widgets`"
+		:
+
+		else
+
+			if test "$QT_MOC" = ""
+			then
+				# find moc on the path
+				# (this says 'checking for moc...')
+				# Extract the first word of "moc", so it can be a program name with args.
 set dummy moc; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -9654,85 +9740,71 @@ $as_echo "no" >&6; }
 fi
 
 
-		fi
+				if "$QT_MOC" --version 2>/dev/null | grep -q "moc 5" ; then :
+				elif "$QT_MOC" --version 2>/dev/null | grep -q "moc 6" ; then :
+				else QT_MOC="" ; fi
+			fi
 
-		if test "$QT_LRELEASE" = ""
-		then
-			# Extract the first word of "lrelease", so it can be a program name with args.
-set dummy lrelease; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_QT_LRELEASE+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $QT_LRELEASE in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_QT_LRELEASE="$QT_LRELEASE" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_QT_LRELEASE="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-QT_LRELEASE=$ac_cv_path_QT_LRELEASE
-if test -n "$QT_LRELEASE"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $QT_LRELEASE" >&5
-$as_echo "$QT_LRELEASE" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-			if test "$QT_LRELEASE" = ""
+			if test -x "$QT_MOC"
 			then
-				QT_LRELEASE=false
+
+				if "$QT_MOC" --version 2>/dev/null | grep -q "moc 6"
+				then
+					gconfig_moc_qt_version=6
+				else
+					gconfig_moc_qt_version=5
+				fi
+
+				# assume lrelease is alongside moc -- could do better,
+				# but lrelease is not required for a normal build
+				if test "$QT_LRELEASE" = ""
+				then
+					if echo "$QT_MOC" | grep -q /
+					then
+						QT_LRELEASE="`dirname \"$QT_MOC\"`/lrelease"
+					else
+						QT_LRELEASE="lrelease"
+					fi
+				fi
+
+				# make assumptions for build flags -- assume libs dont need -L
+				QT_CFLAGS="-fPIC -I/usr/include/x86_64-linux-gnu/qt${gconfig_moc_qt_version} -DQT_GUI_LIB -DQT_CORE_LIB"
+				QT_LIBS="-lQt${gconfig_moc_qt_version}Widgets -lQt${gconfig_moc_qt_version}Gui -lQt${gconfig_moc_qt_version}Core"
+
 			fi
 		fi
+	fi
 
-		if test "$QT_MOC" != ""
+	# summarise the results
+	if test -x "$QT_MOC"
+	then
+		if "$QT_MOC" --version 2>/dev/null | grep -q "moc 5"
 		then
 			{ $as_echo "$as_me:${as_lineno-$LINENO}: QT moc command: $QT_MOC" >&5
 $as_echo "$as_me: QT moc command: $QT_MOC" >&6;}
-		fi
-
-		# set gconfig_have_qt, QT_CFLAGS and QT_LIBS iff we have a moc command
-		if test "$QT_MOC" != ""
+			gconfig_have_qt=yes
+		:
+		elif "$QT_MOC" --version 2>/dev/null | grep -q "moc 6"
 		then
-			gconfig_have_qt="yes"
-			if test "$gconfig_pkgconfig_qt" = "yes"
-			then
-				QT_CFLAGS="-fPIC `$PKG_CONFIG --cflags Qt5Widgets`"
-				QT_LIBS="`$PKG_CONFIG --libs Qt5Widgets`"
-			else
-				QT_CFLAGS="-fPIC"
-				QT_LIBS=""
-			fi
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: QT moc command: $QT_MOC" >&5
+$as_echo "$as_me: QT moc command: $QT_MOC" >&6;}
+			gconfig_have_qt=yes
 		else
-			gconfig_have_qt="no"
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: QT moc command not usable: $QT_MOC" >&5
+$as_echo "$as_me: QT moc command not usable: $QT_MOC" >&6;}
+			gconfig_have_qt=no
 		fi
-
-		# mac modifications
-		if test "$QT_MOC" != "" -a "`uname`" = "Darwin"
-		then
-			QT_DIR="`dirname $QT_MOC`/.."
-			QT_CFLAGS="-F $QT_DIR/lib"
-			QT_LIBS="-F $QT_DIR/lib -framework QtWidgets -framework QtGui -framework QtCore"
-		fi
+	:
+	elif test "$QT_MOC" = ""
+	then
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: QT moc command not found" >&5
+$as_echo "$as_me: QT moc command not found" >&6;}
+		gconfig_have_qt=no
+	else
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: QT moc command not executable: $QT_MOC" >&5
+$as_echo "$as_me: QT moc command not executable: $QT_MOC" >&6;}
+		QT_MOC=""
+		gconfig_have_qt=no
 	fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for QT compilation" >&5
@@ -10110,6 +10182,8 @@ $as_echo "$as_me: WARNING: gui enabled but qt does not compile" >&2;}
 
 	GCONFIG_QT_MOC=$QT_MOC
 
+	GCONFIG_QT_LRELEASE=$QT_LRELEASE
+
 
 	 if test "$gconfig_gui" = "yes"; then
   GCONFIG_GUI_TRUE=
@@ -10303,6 +10377,14 @@ $as_echo "#define GCONFIG_WINXP 1" >>confdefs.h
 $as_echo "#define GCONFIG_WINXP 0" >>confdefs.h
 
 	fi
+	 if test "$enable_winxp" = "yes"; then
+  GCONFIG_WINXP_TRUE=
+  GCONFIG_WINXP_FALSE='#'
+else
+  GCONFIG_WINXP_TRUE='#'
+  GCONFIG_WINXP_FALSE=
+fi
+
 
 # Check whether --enable-uds was given.
 if test "${enable_uds+set}" = set; then :
@@ -11182,6 +11264,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${GCONFIG_WINDOWS_TRUE}" && test -z "${GCONFIG_WINDOWS_FALSE}"; then
   as_fn_error $? "conditional \"GCONFIG_WINDOWS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${GCONFIG_WINXP_TRUE}" && test -z "${GCONFIG_WINXP_FALSE}"; then
+  as_fn_error $? "conditional \"GCONFIG_WINXP\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${GCONFIG_UDS_TRUE}" && test -z "${GCONFIG_UDS_FALSE}"; then

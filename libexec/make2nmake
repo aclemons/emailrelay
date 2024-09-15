@@ -358,7 +358,7 @@ sub create_nmake_file
 	for my $progname ( @{$m->{e_programs}} )
 	{
 		my $e = $m->{e_program}->{$progname} ;
-		"    -del /Q \$(EXE:/=\\)$$e{progfile}\n" ;
+		print $fh "    -del /Q \$(EXE:/=\\)$$e{progfile}\n" ;
 	}
 	for my $subdir ( @{$m->{e_subdirs}} )
 	{

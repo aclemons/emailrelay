@@ -31,9 +31,10 @@ emailrelay \- e-mail transfer agent and proxy
 .I server-address
 .SH DESCRIPTION
 .I emailrelay
-is a simple SMTP proxy and store-and-forward message transfer agent.
-It does store-and-forward mail relay to a fixed next-hop server, without
-any routing.
+is a SMTP proxy and store-and-forward message transfer agent.
+It normally does simple store-and-forward mail relay to a fixed next-hop server,
+but it can be configured to do its own routing of outbound mail and also deliver
+inbound mail to local mailboxes.
 .LP
 It runs in two main modes: a storage daemon
 .RI ( --as-server )
@@ -271,7 +272,7 @@ Adds a timestamp to the logging output using the local timezone. Equivalent to \
 .B \-n, --no-syslog
 Disables logging to the system log. Note that \fI--as-client\fR implies \fI--no-syslog\fR.
 .TP
-.B \-k, --syslog, --syslog=
+.B \-k, --syslog, --syslog=\fI<facility>\fR
 When used with \fI--log\fR this option enables logging to the system log, even if the \fI--no-syslog\fR option is also used. This is typically used as a convenient override when using \fI--as-client\fR.
 .TP
 .B \-e, --close-stderr

@@ -160,7 +160,11 @@ else
 endif
 
 if GCONFIG_WINDOWS
- OS_LIBS =-lws2_32 -lshell32 -liphlpapi -lcomctl32 -ladvapi32 -lgdi32 -luser32 -lkernel32
+if GCONFIG_WINXP
+  OS_LIBS =-lws2_32 -lshell32 -liphlpapi -lcomctl32 -ladvapi32 -lgdi32 -luser32 -lkernel32
+else
+  OS_LIBS =-lws2_32 -lshell32 -liphlpapi -lbcrypt -lcomctl32 -ladvapi32 -lgdi32 -luser32 -lkernel32
+endif
 else
  OS_LIBS =
 endif

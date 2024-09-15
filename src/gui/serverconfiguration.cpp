@@ -215,12 +215,7 @@ ServerConfiguration ServerConfiguration::fromPages( const G::MapFile & pages )
 		}
 		if( pages.booleanValue("forward-poll",true) )
 		{
-			if( pages.value("forward-poll-period") == "minute" )
-				out["poll"] = "60" ;
-			else if( pages.value("forward-poll-period") == "second" )
-				out["poll"] = "1" ;
-			else
-				out["poll"] = "3600" ;
+			out["poll"] = pages.value("forward-poll-period") ;
 		}
 		if( pages.value("smtp-server-port") != "25" )
 		{
