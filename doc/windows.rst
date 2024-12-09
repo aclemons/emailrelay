@@ -65,7 +65,7 @@ as simple as this:
 * Create a new program directory *C:\\Program Files\\E-MailRelay*.
 * Create a new spool directory *C:\\Program Files\\E-MailRelay\\spool*.
 * Copy the EXE files from *programs* in the zip file into *C:\\Program Files\\E-MailRelay*.
-* Create a new text file, eg. *C:\\Program Files\\E-MailRelay\\auth.txt*, to contain account details.
+* Create a new text file, e.g. *C:\\Program Files\\E-MailRelay\\auth.txt*, to contain account details.
 * Add account details to *auth.txt* with a line like *client plain myaccount mypassword*.
 * Right-drag *emailrelay.exe* onto the desktop to create a shortcut for the server.
 * Add configuration options to the server shortcut properties in the *target* box.
@@ -125,11 +125,11 @@ To uninstall:
 
 * Stop the program and/or the service.
 * Uninstall the service, if installed (\ *emailrelay-service --remove*\ ).
-* Delete the files from the E-MailRelay *program files* folder (eg. *C:\\Program Files\\E-MailRelay*).
-* Delete the files from the E-MailRelay *program data* folder (eg. *C:\\ProgramData\\E-MailRelay*).
-* Delete any desktop shortcuts (eg. *%USERPROFILE%\\Desktop\\E-MailRelay.lnk*).
-* Delete any start menu shortcuts (eg. *%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\E-MailRelay.lnk*).
-* Delete any auto-start shortcuts (eg. *%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\E-MailRelay.lnk*).
+* Delete the files from the E-MailRelay *program files* folder (e.g. *C:\\Program Files\\E-MailRelay*).
+* Delete the files from the E-MailRelay *program data* folder (e.g. *C:\\ProgramData\\E-MailRelay*).
+* Delete any desktop shortcuts (e.g. *%USERPROFILE%\\Desktop\\E-MailRelay.lnk*).
+* Delete any start menu shortcuts (e.g. *%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\E-MailRelay.lnk*).
+* Delete any auto-start shortcuts (e.g. *%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\E-MailRelay.lnk*).
 * Clean up the registry under *HKLM\\System\\CurrentControlSet\\Services\\EventLog\\Application\\emailrelay*.
 
 Diagnostics

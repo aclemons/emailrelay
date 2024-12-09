@@ -150,7 +150,7 @@ the ".bad" filename suffix. On Unix-like systems you can do this automatically
 with a cron job that runs the "emailrelay-resubmit.sh" script occasionally.
 
 Once a failed message has been renamed it will be forwarded along with all the
-others. It is a good idea to use regular polling (eg. "--poll=60") to make sure
+others. It is a good idea to use regular polling (e.g. "--poll=60") to make sure
 that this happens in a timely manner.
 
 Open mail servers
@@ -267,7 +267,7 @@ polling cycle, and then use "--poll 60" to limit it to one e-mail per minute.
 
 SpamAssassin
 ------------
-The E-MailRelay server can use *SpamAssassin* [http://spamassassin.apache.org]
+The E-MailRelay server can use *SpamAssassin* [https://spamassassin.apache.org]
 to mark or reject potential spam.
 
 It's easiest to run SpamAssassin's "spamd" program in the background and let

@@ -218,7 +218,7 @@ void Gui::Page::helpKeyTriggered()
 
 std::string Gui::Page::helpUrl( const std::string & /*language*/ ) const
 {
-	//return "http://emailrelay.sourceforge.net/help/" + G::Str::lower(m_name) + "#" + language ;
+	//return "https://emailrelay.sourceforge.net/help/" + G::Str::lower(m_name) + "#" + language ;
 	return "https://sourceforge.net/p/emailrelay/support-requests/" ;
 }
 

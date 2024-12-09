@@ -11,7 +11,7 @@
   <h1><a class="a-header" name="H_1">E-MailRelay Change Log</a></h1> <!-- index:1:H:E-MailRelay Change Log -->
    <h2><a class="a-header" name="SH_1_1">2.5.2 -> 2.6</a></h2> <!-- index:2:SH:1:1:2.5.2 -> 2.6 -->
     <ul>
-     <li>New <em>--log-format</em> option (eg. <em>--log-format=address,port</em>).</li>
+     <li>New <em>--log-format</em> option (e.g. <em>--log-format=address,port</em>).</li>
      <li>New <em>--server-smtp-config</em> <em>nostrictparsing</em> option to allow missing <em>RCPT-TO</em> angle brackets.</li>
      <li>The SMTP server converts incoming e-mail addresses to RFC-5890 A-labels by default (see NEWS).</li>
      <li>The <em>mx:</em> filter accepts an IP address in the envelope forward-to field, not just a domain name.</li>
@@ -59,9 +59,9 @@
     <ul>
      <li>Multiple <em>--filter</em> and <em>--client-filter</em> options allowed.</li>
      <li>TLS key and certificate files can be specified separately.</li>
-     <li>Finer control when using <em>--anonymous</em> (eg. <em>--anonymous=server</em>).</li>
+     <li>Finer control when using <em>--anonymous</em> (e.g. <em>--anonymous=server</em>).</li>
      <li>The <em>auth-config</em> options can distinguish between TLS and non-TLS authentication.</li>
-     <li>Hourly log file rotation using <em>%h</em> (eg. <em>--log-file=log.%d.%h</em>).</li>
+     <li>Hourly log file rotation using <em>%h</em> (e.g. <em>--log-file=log.%d.%h</em>).</li>
      <li>Listening file descriptors can be inherited from the parent process (see <em>--interface</em>).</li>
      <li>Listening ports on Windows use exclusive binding.</li>
      <li>The Linux event loop uses <em>epoll</em> by default rather than <em>select</em>.</li>
@@ -70,7 +70,7 @@
     </ul>
    <h2><a class="a-header" name="SH_1_6">2.2 -> 2.3</a></h2> <!-- index:2:SH:1:6:2.2 -> 2.3 -->
     <ul>
-     <li>Unix domain sockets supported (eg. <em>--interface=/tmp/smtp.s</em>).</li>
+     <li>Unix domain sockets supported (e.g. <em>--interface=/tmp/smtp.s</em>).</li>
      <li>Windows event log not used for verbose logging (prefer <em>--log-file</em>).</li>
      <li>New admin <em>forward</em> command to trigger forwarding without waiting.</li>
      <li>Optional base64 encoding of passwords in secrets files (<em>plain:b</em>).</li>
@@ -79,7 +79,7 @@
    <h2><a class="a-header" name="SH_1_7">2.1 -> 2.2</a></h2> <!-- index:2:SH:1:7:2.1 -> 2.2 -->
     <ul>
      <li>Connections from IPv4 'private use' addresses are allowed by default (see <em>--remote-clients</em>).</li>
-     <li>Interface names can be used with <em>--interface</em> (eg. <em>--interface=eth0</em>).</li>
+     <li>Interface names can be used with <em>--interface</em> (e.g. <em>--interface=eth0</em>).</li>
      <li>New <em>--server-tls-connection</em> option for server-side implicit TLS.</li>
      <li>New <em>--forward-to-some</em> option to permit some message recipients to be rejected.</li>
      <li>New <em>--log-address</em> option to aid adaptive firewalling.</li>
@@ -169,10 +169,10 @@
      <li>Added negotiated TLS/SSL for POP (ie. <em>STLS</em>).</li>
      <li>The first two fields in the secrets files are reordered (with backwards compatibility).</li>
      <li>Added Linux PAM authentication (<em>configure --with-pam</em> and then <em>--server-auth=/pam</em>).</li>
-     <li>Optional protocol-specific <em>--interface</em> qualifiers, eg. <em>--interface smtp=127.0.0.1,pop=192.168.1.1</em>.</li>
+     <li>Optional protocol-specific <em>--interface</em> qualifiers, e.g. <em>--interface smtp=127.0.0.1,pop=192.168.1.1</em>.</li>
      <li>Outgoing client connection bound with the first <em>--interface</em> or <em>--interface client=...</em> address.</li>
      <li>Support for SMTP-over-TLS on outgoing client connection (<em>--client-tls-connection</em>) (cf. <em>STARTTLS</em>)</li>
-     <li>Support for SOCKS 4a on outgoing client connection, eg. <em>--forward-to example.com:25@127.0.0.1:9050</em>.</li>
+     <li>Support for SOCKS 4a on outgoing client connection, e.g. <em>--forward-to example.com:25@127.0.0.1:9050</em>.</li>
      <li>TLS configuration options (<em>--tls-config=...</em>) for SSLv2/3 fallback etc.</li>
      <li>No <em>Received</em> line added if <em>--anonymous</em> and an empty <em>--domain</em> name.</li>
      <li>Error text for <em>all recipients rejected</em> is now more accurately <em>one or more recipients rejected</em>.</li>
@@ -202,11 +202,11 @@
    <h2><a class="a-header" name="SH_1_16">1.7 -> 1.8</a></h2> <!-- index:2:SH:1:16:1.7 -> 1.8 -->
     <ul>
      <li>Speed optimisations (as identified by KCachegrind/valgrind in KDevelop).</li>
-     <li>Build-time size optimisations (eg. <em>./configure --disable-exec --enable-small-exceptions ...</em>).</li>
-     <li>Build-time options to reduce runtime library dependencies (eg. <em>./configure --disable-dns --disable-identity</em>).</li>
+     <li>Build-time size optimisations (e.g. <em>./configure --disable-exec --enable-small-exceptions ...</em>).</li>
+     <li>Build-time options to reduce runtime library dependencies (e.g. <em>./configure --disable-dns --disable-identity</em>).</li>
      <li>New switch to limit the size of submitted messages (<em>--size</em>).</li>
      <li>New semantics for <em>--poll 0</em>, providing a good alternative to <em>--immediate</em> when proxying.</li>
-     <li>SMTP client protocol emits a RSET after a rejected recipient as a workround for broken server protocols.</li>
+     <li>SMTP client protocol emits a RSET after a rejected recipient as a workaround for broken server protocols.</li>
      <li>SMTP client protocol continues if the server advertises AUTH but the client has no authentication secrets.</li>
      <li>When a message cannot be forwarded the offending SMTP protocol response number, if any, is put in the envelope file.</li>
      <li>A warning is printed if logging is requested but both stderr and syslog are disabled.</li>
@@ -461,7 +461,7 @@
    <h2><a class="a-header" name="SH_1_39">0.9.1 -> 0.9.2</a></h2> <!-- index:2:SH:1:39:0.9.1 -> 0.9.2 -->
     <ul>
      <li>Better autoconf detection.</li>
-     <li>Workround for FreeBSD uname() feature.</li>
+     <li>Workaround for FreeBSD uname() feature.</li>
      <li>Added missing <em>.sh_</em> files to the distribution.</li>
      <li>Fixed a benign directory iterator bug.</li>
      <li>Use of gcc's <em>exception</em> header.</li>

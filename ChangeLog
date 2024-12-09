@@ -198,7 +198,7 @@ E-MailRelay Change Log
 * Build-time options to reduce runtime library dependencies (eg. "./configure --disable-dns --disable-identity").
 * New switch to limit the size of submitted messages ("--size").
 * New semantics for "--poll 0", providing a good alternative to "--immediate" when proxying.
-* SMTP client protocol emits a RSET after a rejected recipient as a workround for broken server protocols.
+* SMTP client protocol emits a RSET after a rejected recipient as a workaround for broken server protocols.
 * SMTP client protocol continues if the server advertises AUTH but the client has no authentication secrets.
 * When a message cannot be forwarded the offending SMTP protocol response number, if any, is put in the envelope file.
 * A warning is printed if logging is requested but both stderr and syslog are disabled.
@@ -451,7 +451,7 @@ Windows fixes and improvements...
 0.9.1 -> 0.9.2
 --------------
 * Better autoconf detection.
-* Workround for FreeBSD uname() feature.
+* Workaround for FreeBSD uname() feature.
 * Added missing ".sh_" files to the distribution.
 * Fixed a benign directory iterator bug.
 * Use of gcc's "exception" header.

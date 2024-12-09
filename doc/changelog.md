@@ -4,7 +4,7 @@ E-MailRelay Change Log
 2.5.2 -> 2.6
 ------------
 
-* New `--log-format` option (eg. `--log-format=address,port`).
+* New `--log-format` option (e.g. `--log-format=address,port`).
 * New `--server-smtp-config` `nostrictparsing` option to allow missing `RCPT-TO` angle brackets.
 * The [SMTP][] server converts incoming e-mail addresses to [RFC-5890][] A-labels by default (see NEWS).
 * The `mx:` filter accepts an IP address in the envelope forward-to field, not just a domain name.
@@ -56,9 +56,9 @@ E-MailRelay Change Log
 
 * Multiple `--filter` and `--client-filter` options allowed.
 * [TLS][] key and certificate files can be specified separately.
-* Finer control when using `--anonymous` (eg. `--anonymous=server`).
+* Finer control when using `--anonymous` (e.g. `--anonymous=server`).
 * The `auth-config` options can distinguish between TLS and non-TLS authentication.
-* Hourly log file rotation using `%h` (eg. `--log-file=log.%d.%h`).
+* Hourly log file rotation using `%h` (e.g. `--log-file=log.%d.%h`).
 * Listening file descriptors can be inherited from the parent process (see `--interface`).
 * Listening ports on Windows use exclusive binding.
 * The Linux event loop uses `epoll` by default rather than `select`.
@@ -68,7 +68,7 @@ E-MailRelay Change Log
 2.2 -> 2.3
 ----------
 
-* Unix domain sockets supported (eg. `--interface=/tmp/smtp.s`).
+* Unix domain sockets supported (e.g. `--interface=/tmp/smtp.s`).
 * Windows event log not used for verbose logging (prefer `--log-file`).
 * New admin `forward` command to trigger forwarding without waiting.
 * Optional base64 encoding of passwords in secrets files (`plain:b`).
@@ -78,7 +78,7 @@ E-MailRelay Change Log
 ----------
 
 * Connections from IPv4 'private use' addresses are allowed by default (see `--remote-clients`).
-* Interface names can be used with `--interface` (eg. `--interface=eth0`).
+* Interface names can be used with `--interface` (e.g. `--interface=eth0`).
 * New `--server-tls-connection` option for server-side implicit [TLS][].
 * New `--forward-to-some` option to permit some message recipients to be rejected.
 * New `--log-address` option to aid adaptive firewalling.
@@ -174,10 +174,10 @@ E-MailRelay Change Log
 * Added negotiated [TLS][]/SSL for [POP][] (ie. `STLS`).
 * The first two fields in the secrets files are reordered (with backwards compatibility).
 * Added Linux [PAM][] authentication (`configure --with-pam` and then `--server-auth=/pam`).
-* Optional protocol-specific `--interface` qualifiers, eg. `--interface smtp=127.0.0.1,pop=192.168.1.1`.
+* Optional protocol-specific `--interface` qualifiers, e.g. `--interface smtp=127.0.0.1,pop=192.168.1.1`.
 * Outgoing client connection bound with the first `--interface` or `--interface client=...` address.
 * Support for [SMTP][]-over-TLS on outgoing client connection (`--client-tls-connection`) (cf. `STARTTLS`)
-* Support for [SOCKS][] 4a on outgoing client connection, eg. `--forward-to example.com:25@127.0.0.1:9050`.
+* Support for [SOCKS][] 4a on outgoing client connection, e.g. `--forward-to example.com:25@127.0.0.1:9050`.
 * TLS configuration options (`--tls-config=...`) for SSLv2/3 fallback etc.
 * No `Received` line added if `--anonymous` and an empty `--domain` name.
 * Error text for `all recipients rejected` is now more accurately `one or more recipients rejected`.
@@ -210,11 +210,11 @@ E-MailRelay Change Log
 ----------
 
 * Speed optimisations (as identified by KCachegrind/valgrind in KDevelop).
-* Build-time size optimisations (eg. `./configure --disable-exec --enable-small-exceptions ...`).
-* Build-time options to reduce runtime library dependencies (eg. `./configure --disable-dns --disable-identity`).
+* Build-time size optimisations (e.g. `./configure --disable-exec --enable-small-exceptions ...`).
+* Build-time options to reduce runtime library dependencies (e.g. `./configure --disable-dns --disable-identity`).
 * New switch to limit the size of submitted messages (`--size`).
 * New semantics for `--poll 0`, providing a good alternative to `--immediate` when proxying.
-* [SMTP][] client protocol emits a RSET after a rejected recipient as a workround for broken server protocols.
+* [SMTP][] client protocol emits a RSET after a rejected recipient as a workaround for broken server protocols.
 * SMTP client protocol continues if the server advertises AUTH but the client has no authentication secrets.
 * When a message cannot be forwarded the offending SMTP protocol response number, if any, is put in the envelope file.
 * A warning is printed if logging is requested but both stderr and syslog are disabled.
@@ -490,7 +490,7 @@ Windows fixes and improvements...
 --------------
 
 * Better autoconf detection.
-* Workround for FreeBSD uname() feature.
+* Workaround for FreeBSD uname() feature.
 * Added missing `.sh_` files to the distribution.
 * Fixed a benign directory iterator bug.
 * Use of gcc's `exception` header.

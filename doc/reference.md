@@ -201,7 +201,7 @@ The `emailrelay` program supports the following command-line usage:
     scope id.  Interface names can be used instead of addresses, in which case
     all the addresses associated with that interface at startup will used for
     listening. When an interface name is decorated with a `-ipv4` or `-ipv6`
-    suffix only their IPv4 or IPv6 addresses will be used (eg. `ppp0-ipv4`).
+    suffix only their IPv4 or IPv6 addresses will be used (e.g. `ppp0-ipv4`).
     To inherit listening file descriptors from the parent process on unix use a
     syntax like this: `--interface=smtp=fd#3`.
 
@@ -721,7 +721,7 @@ stored. The disadvantage is that by then it is too late to notify the submitting
 [SMTP][] client of any processing failures so in many store-and-forward applications
 using `--filter` is more useful. The special exit code of 100 can be used to
 ignore the current message, and 102 to stop scanning for more spooled messages
-after processing the current one (eg. for simple rate-limiting).
+after processing the current one (e.g. for simple rate-limiting).
 
 Bear in mind the following points when writing `--filter` programs:
 
@@ -1619,7 +1619,7 @@ shutting down the service without disrupting existing connections.
 
 The `list` command lists the messages in the spool directory, `status` provides
 network status information and activity statistics, and `notify` enables
-asynchronous event notification through the administation connection.
+asynchronous event notification through the adminisrtation connection.
 
 Connection blocking
 -------------------

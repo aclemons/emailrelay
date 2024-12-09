@@ -3,8 +3,12 @@ Section: mail
 Priority: optional
 Maintainer: Graeme Walker <graeme_walker@users.sourceforge.net>
 Build-Depends: debhelper-compat (= 13), autotools-dev, libssl-dev, libpam0g-dev
-Standards-Version: 3.9.8
-Homepage: http://emailrelay.sourceforge.net
+Standards-Version: 4.1.4
+Rules-Requires-Root: no
+Homepage: https://emailrelay.sourceforge.net
+Vcs-Git: https://git.code.sf.net/p/emailrelay/git
+Vcs-Browser: https://sourceforge.net/p/emailrelay/git/
+Bugs: https://sourceforge.net/projects/emailrelay/support
 
 Package: emailrelay
 Architecture: any

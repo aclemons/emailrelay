@@ -53,7 +53,7 @@ slot/signal implementation has been simplified compared to Qt or boost by not
 supporting signal multicasting, so each signal connects to no more than one
 slot. The implementation is now a thin wrapper over std::function.
 
-The synchronous slot/signal pattern needs some care when when the signalling
+The synchronous slot/signal pattern needs some care when the signalling
 object gets destructed as a side-effect of raising a signal, and that situation
 can be non-obvious precisely because of the slot/signal code decoupling. In
 most cases signals are emitted at the end of a function and the stack unwinds

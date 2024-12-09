@@ -4,7 +4,7 @@ Version: 2.6
 Release: 1
 License: GPL3
 Group: System Environment/Daemons
-URL: http://emailrelay.sourceforge.net
+URL: https://emailrelay.sourceforge.net
 Source: https://sourceforge.net/projects/emailrelay/files/emailrelay/2.6/emailrelay-2.6-src.tar.gz
 BuildRequires: systemd-rpm-macros
 
