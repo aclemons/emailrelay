@@ -32,7 +32,10 @@ std::unique_ptr<GStore::StoredMessage> GStore::operator++( std::shared_ptr<Messa
 
 GStore::MessageStore::AddressStyle GStore::MessageStore::addressStyle( std::string_view address )
 {
-	if( address.empty() || address.at(0U) == '@' || address.at(address.size()-1U) == '@' )
+	if( address.empty() )
+		return AddressStyle::Empty ;
+
+	if( address.at(0U) == '@' || address.at(address.size()-1U) == '@' )
 		return AddressStyle::Invalid ; // missing stuff
 
 	if( !G::Str::isPrintable(address) )

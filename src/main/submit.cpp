@@ -82,7 +82,7 @@ static bool isatty_( int ) { return false ; }
 
 std::string versionNumber()
 {
-	return "2.6" ;
+	return "2.6a" ;
 }
 
 enum class Parts
@@ -106,8 +106,11 @@ struct SubmitMessage
 GStore::MessageStore::AddressStyle addressStyle( std::string_view address , std::string_view type )
 {
 	auto address_style = GStore::MessageStore::addressStyle( address ) ;
-	if( address_style == GStore::MessageStore::AddressStyle::Invalid )
+	if( address_style == GStore::MessageStore::AddressStyle::Invalid ||
+		address_style == GStore::MessageStore::AddressStyle::Empty )
+	{
 		throw std::runtime_error( "invalid " + G::sv_to_string(type) + " address: [" + G::Str::printable(address) + "]" ) ;
+	}
 	return address_style ;
 }
 

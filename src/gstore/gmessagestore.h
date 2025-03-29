@@ -74,6 +74,7 @@ class GStore::MessageStore
 public:
 	enum class AddressStyle
 	{
+		Empty , // empty, as in "MAIL FROM:<>" (new)
 		Invalid , // control characters or invalid UTF-8 encoding or invalid IDN
 		Ascii , // printable ASCII mailbox and domain (RFC-5321 4.1.2)
 		Utf8Mailbox , // UTF-8 mailbox, ASCII domain
