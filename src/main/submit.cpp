@@ -82,7 +82,7 @@ static bool isatty_( int ) { return false ; }
 
 std::string versionNumber()
 {
-	return "2.6a" ;
+	return "2.6b" ;
 }
 
 enum class Parts

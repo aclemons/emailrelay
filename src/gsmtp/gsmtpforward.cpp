@@ -292,7 +292,7 @@ void GSmtp::Forward::onMessageDoneSignal( const Client::MessageDoneInfo & info )
 
 	if( m_store )
 	{
-		if( !sendNext() )
+		if( info.filter_special || !sendNext() )
 		{
 			quitAndFinish() ;
 			throw GNet::Done() ; // terminates the client -- m_client_ptr calls onDeletedSignal()
