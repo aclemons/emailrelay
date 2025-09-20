@@ -81,7 +81,7 @@ GFilters::MxLookup::MxLookup( GNet::ExceptionSink es , Config config ,
 		[](const GNet::Address &a_){return a_.is6();} ) != m_nameservers.end() ;
 	if( ipv6 )
 	{
-		m_socket6 = std::make_unique<GNet::DatagramSocket>( GNet::Address::Family::ipv4 , 0 , GNet::DatagramSocket::Config() ) ;
+		m_socket6 = std::make_unique<GNet::DatagramSocket>( GNet::Address::Family::ipv6 , 0 , GNet::DatagramSocket::Config() ) ;
 		m_socket6->addReadHandler( *this , m_es ) ;
 		G_DEBUG( "GFilters::MxLookup::ctor: ipv6 udp socket: " << (*m_socket6).getLocalAddress().displayString() ) ;
 	}

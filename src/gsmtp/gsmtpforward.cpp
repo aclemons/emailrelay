@@ -288,7 +288,7 @@ void GSmtp::Forward::onMessageDoneSignal( const std::string & reason , bool spec
 
 	if( m_store )
 	{
-		if( !sendNext() )
+		if( special || !sendNext() )
 		{
 			quitAndFinish() ;
 			throw GNet::Done() ; // terminates the client -- m_client_ptr calls onDeletedSignal()
