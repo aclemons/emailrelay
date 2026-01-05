@@ -73,7 +73,7 @@ G::StringArray G::OptionParser::parse( const StringArray & args_in , std::size_t
 			for( std::size_t n = 1U ; n < arg.length() ; n++ )
 			{
 				char c = arg.at( n ) ;
-				bool discard = callback_fn ? callback_fn(m_spec.lookup(c),true).substr(0,1) == "-" : false ;
+				bool discard = callback_fn ? callback_fn(m_spec.lookup(c),true).substr(0,1) == std::string(1U,'\0') : false ;
 				if( !discard )
 					processOptionOn( c ) ;
 			}
@@ -81,7 +81,7 @@ G::StringArray G::OptionParser::parse( const StringArray & args_in , std::size_t
 		else if( isOldOption(arg) ) // eg. "-v"
 		{
 			char c = arg.at(1U) ;
-			bool discard = callback_fn ? callback_fn(m_spec.lookup(c),true).substr(0,1) == "-" : false ;
+			bool discard = callback_fn ? callback_fn(m_spec.lookup(c),true).substr(0,1) == std::string(1U,'\0') : false ;
 			if( discard )
 				i += ( ( m_spec.valued(c) && !m_spec.defaulting(c) ) ? 1U : 0U ) ;
 			else if( m_spec.valued(c) && !m_spec.defaulting(c) && (i+1U) >= args_in.size() )
@@ -99,7 +99,7 @@ G::StringArray G::OptionParser::parse( const StringArray & args_in , std::size_t
 			std::string key_in = has_eq ? key_value.substr(0U,pos_eq) : key_value ; // "foo"
 			std::string value = eqValue( key_value , pos_eq ) ; // "..."
 			std::string key = callback_fn ? callback_fn(key_in,false) : key_in ;
-			bool discard = !key.empty() && key.at( 0U ) == '-' ;
+			bool discard = !key.empty() && key.at( 0U ) == '\0' ;
 			key = key.substr( discard ? 1U : 0U ) ;
 			if( discard )
 				i += ( (m_spec.valued(key) && !m_spec.defaulting(key) && !has_eq) ? 1U : 0U ) ;

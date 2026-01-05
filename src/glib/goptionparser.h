@@ -87,7 +87,7 @@ public:
 			///< of each option. For a double-dash option the callback is passed
 			///< the string after the double-dash (with false) and it should return
 			///< the option name to be used for parsing, with an optional leading
-			///< '-' character to indicate that the parsing results should be
+			///< '\0' character to indicate that the parsing results should be
 			///< discarded. For single-dash options the option letter is looked up
 			///< in the Options spec first and the long name is passed to the
 			///< callback (with true).
