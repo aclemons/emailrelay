@@ -26,6 +26,22 @@
 #include "gstrmacros.h"
 #include <cstddef> // std::nullptr_t
 
+#if !defined(GCONFIG_HAVE_MBEDTLS_SSL_CONF_MIN_MAX_TLS_VERSION)
+#if MBEDTLS_VERSION_NUMBER >= 0x03000000
+#define GCONFIG_HAVE_MBEDTLS_SSL_CONF_MIN_MAX_TLS_VERSION 1
+#else
+#define GCONFIG_HAVE_MBEDTLS_SSL_CONF_MIN_MAX_TLS_VERSION 0
+#endif
+#endif
+
+#if !defined(GCONFIG_HAVE_MBEDTLS_X509WRITE_CRT_SET_SERIAL_RAW)
+#if MBEDTLS_VERSION_NUMBER >= 0x03000000
+#define GCONFIG_HAVE_MBEDTLS_X509WRITE_CRT_SET_SERIAL_RAW 1
+#else
+#define GCONFIG_HAVE_MBEDTLS_X509WRITE_CRT_SET_SERIAL_RAW 0
+#endif
+#endif
+
 // macro magic to provide function-name/function-pointer arguments for call()
 //
 // in later versions of mbedtls v2 some functions like foo() have a preferred
@@ -88,6 +104,45 @@ namespace GSsl
 		{
 			return fn( c , k , ks , p , ps , r , rp ) ;
 		}
+
+		inline void call_mbedtls_ssl_conf_min_version( mbedtls_ssl_config * conf , int major , int minor )
+		{
+			#if GCONFIG_HAVE_MBEDTLS_SSL_CONF_MIN_MAX_TLS_VERSION
+				if( major == 3 && minor == 4 ) // TLS v1.3
+					mbedtls_ssl_conf_min_tls_version( conf , MBEDTLS_SSL_VERSION_TLS1_3 ) ;
+				else if( major == 3 && minor == 3 ) // TLS v1.2
+					mbedtls_ssl_conf_min_tls_version( conf , MBEDTLS_SSL_VERSION_TLS1_2 ) ;
+			#else
+				mbedtls_ssl_conf_min_version( conf , major , minor ) ;
+			#endif
+		}
+
+		inline void call_mbedtls_ssl_conf_max_version( mbedtls_ssl_config * conf , int major , int minor )
+		{
+			#if GCONFIG_HAVE_MBEDTLS_SSL_CONF_MIN_MAX_TLS_VERSION
+				if( major == 3 && minor == 4 ) // TLS v1.3
+					mbedtls_ssl_conf_max_tls_version( conf , MBEDTLS_SSL_VERSION_TLS1_3 ) ;
+				else if( major == 3 && minor == 3 ) // TLS v1.2
+					mbedtls_ssl_conf_max_tls_version( conf , MBEDTLS_SSL_VERSION_TLS1_2 ) ;
+			#else
+				mbedtls_ssl_conf_max_version( conf , major , minor ) ;
+			#endif
+		}
+
+		#if GCONFIG_HAVE_MBEDTLS_X509WRITE_CRT_SET_SERIAL_RAW
+		inline void call_mbedtls_x509write_crt_set_serial( mbedtls_x509write_cert * crt , 
+			const mbedtls_mpi * , unsigned int n = 1U )
+		{
+			unsigned char uc = n ;
+			mbedtls_x509write_crt_set_serial_raw( crt , &uc , 1U ) ;
+		}
+		#else
+		inline void call_mbedtls_x509write_crt_set_serial( mbedtls_x509write_cert * crt , 
+			const mbedtls_mpi * mpi , unsigned int = 1U )
+		{
+				mbedtls_x509write_crt_set_serial( crt , mpi ) ;
+		}
+		#endif
 
 		template <typename T>
 		struct X /// Initialises and frees an mbedtls object on construction and destruction.

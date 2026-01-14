@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2026 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -149,9 +149,11 @@ private:
 	QRadioButton * m_on_demand_checkbox ;
 	QComboBox * m_period_combo ;
 	QGroupBox * m_forwarding_group ;
+	unsigned int m_period ;
 
 private slots:
 	void onToggle() ;
+	void onPeriodUpdate( int ) ;
 } ;
 
 class PopPage : public Gui::Page

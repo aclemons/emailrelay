@@ -9,6 +9,7 @@ bugprone-*,\
 cert-*,\
 cppcoreguidelines-*,\
 misc-*,\
+-misc-use-internal-linkage,\
 modernize-*,\
 performance-*,\
 portability-*,\
@@ -17,6 +18,7 @@ readability-*,\
 -bugprone-easily-swappable-parameters,\
 -bugprone-empty-catch,\
 -bugprone-suspicious-include,\
+-bugprone-suspicious-stringview-data-usage,\
 -cppcoreguidelines-avoid-do-while,\
 -cppcoreguidelines-avoid-magic-numbers,\
 -cppcoreguidelines-avoid-non-const-global-variables,\
@@ -48,6 +50,7 @@ readability-*,\
 -modernize-use-trailing-return-type,\
 -performance-avoid-endl,\
 -performance-enum-size,\
+-performance-unnecessary-copy-initialization,\
 -performance-unnecessary-value-param,\
 -readability-avoid-nested-conditional-operator,\
 -readability-braces-around-statements,\
@@ -59,6 +62,7 @@ readability-*,\
 -readability-inconsistent-declaration-parameter-name,\
 -readability-magic-numbers,\
 -readability-make-member-function-const,\
+-readability-math-missing-parentheses,\
 -readability-named-parameter,\
 -readability-qualified-auto,\
 -readability-redundant-access-specifiers,\

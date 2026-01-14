@@ -34,8 +34,8 @@ namespace G
 		enum class Platform { Unix , Windows } ;
 		template <Platform> struct PathPlatform /// A class template specialised by o/s in the implementation of G::Path.
 			{} ;
-		template <> struct G::PathImp::PathPlatform<Platform::Unix> ;
-		template <> struct G::PathImp::PathPlatform<Platform::Windows> ;
+		template <> struct PathPlatform<Platform::Unix> ;
+		template <> struct PathPlatform<Platform::Windows> ;
 	}
 }
 

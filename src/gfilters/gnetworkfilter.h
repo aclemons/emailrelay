@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2026 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -73,7 +73,10 @@ private:
 	void clientEvent( const std::string & , const std::string & , const std::string & ) ;
 	void sendResult( const std::string & ) ;
 	void onTimeout() ;
+	static bool is100( const std::string & ) ;
+	static bool is45xx( const std::string & ) ;
 	std::pair<std::string,int> responsePair() const ;
+	static std::pair<std::string,int> responsePair( const std::string & ) ;
 
 private:
 	GNet::EventState m_es ;

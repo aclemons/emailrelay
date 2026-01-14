@@ -119,7 +119,7 @@ std::string GSsl::MbedTls::generateKey( const std::string & issuer_name )
 		call( FN(mbedtls_x509write_crt_set_issuer_name) , crt.ptr() , issuer_name.c_str() ) ;
 		call( FN(mbedtls_x509write_crt_set_version) , crt.ptr() , MBEDTLS_X509_CRT_VERSION_3 ) ;
 		call( FN(mbedtls_x509write_crt_set_md_alg) , crt.ptr() , MBEDTLS_MD_SHA256 ) ;
-		call( FN(mbedtls_x509write_crt_set_serial) , crt.ptr() , mpi.ptr() ) ;
+		call_mbedtls_x509write_crt_set_serial( crt.ptr() , mpi.ptr() , 1U ) ;
 		call( FN(mbedtls_x509write_crt_set_validity) , crt.ptr() , not_before , not_after ) ;
 		call( FN(mbedtls_x509write_crt_set_basic_constraints) , crt.ptr() , is_ca , max_pathlen ) ;
 		call( FN(mbedtls_x509write_crt_set_subject_key_identifier) , crt.ptr() ) ;
