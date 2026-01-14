@@ -325,7 +325,7 @@ inline bool G::LogOutput::Instance::atVerbose() noexcept { return LogOutput::m_i
 inline bool G::LogOutput::Instance::atDebug() noexcept { return LogOutput::m_instance && LogOutput::m_instance->at( LogOutput::Severity::Debug ) ; }
 inline void G::LogOutput::Instance::context( std::string_view (*fn)(void*) , void * fn_arg ) noexcept { if( LogOutput::m_instance ) LogOutput::m_instance->context( fn , fn_arg ) ; }
 inline void * G::LogOutput::Instance::contextarg() noexcept { if( LogOutput::m_instance ) return LogOutput::m_instance->contextarg() ; else return nullptr ; }
-inline G::LogStream G::LogOutput::Instance::start( LogOutput::Severity s , const char * file , int line ) noexcept { if( LogOutput::m_instance ) return LogOutput::m_instance->start( s , file , line ) ; else return LogStream( nullptr ) ; }
+inline G::LogStream G::LogOutput::Instance::start( LogOutput::Severity s , const char * file , int line ) noexcept { if( LogOutput::m_instance ) return LogOutput::m_instance->start( s , file , line ) ; else return {} ; }
 inline void G::LogOutput::Instance::output( LogStream & stream ) noexcept { if( LogOutput::m_instance ) LogOutput::m_instance->output( stream ) ; }
 inline int G::LogOutput::Instance::fd() noexcept { return LogOutput::m_instance ? LogOutput::m_instance->fd() : -1 ; }
 inline G::LogOutput::Config G::LogOutput::Instance::config() noexcept { return LogOutput::m_instance ? LogOutput::m_instance->config() : LogOutput::Config() ; }

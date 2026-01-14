@@ -43,11 +43,14 @@ namespace G
 	{
 		constexpr int stdout_fileno = 1 ; // STDOUT_FILENO
 		constexpr int stderr_fileno = 2 ; // STDERR_FILENO
+		std::size_t tellp( std::ostream & ostream )
+		{
+			ostream.clear() ;
+			return static_cast<std::size_t>( std::max( std::streampos(0) , ostream.tellp() ) ) ;
+		}
 		std::size_t tellp( LogStream & log_stream )
 		{
-			if( log_stream.m_ostream == nullptr ) return 0U ;
-			log_stream.m_ostream->clear() ;
-			return static_cast<std::size_t>( std::max( std::streampos(0) , log_stream.m_ostream->tellp() ) ) ;
+			return log_stream.m_ostream ? tellp(*log_stream.m_ostream) : std::size_t(0U) ;
 		}
 		std::string_view info()
 		{
@@ -198,11 +201,11 @@ G::LogStream G::LogOutput::start( Severity severity , const char * , int ) noexc
 		if( instance() )
 			return instance()->start( severity ) ; // not noexcept
 		else
-			return LogStream( nullptr ) ;
+			return {} ;
 	}
 	catch(...)
 	{
-		return LogStream( nullptr ) ; // is noexcept
+		return {} ;
 	}
 }
 
@@ -264,16 +267,17 @@ void G::LogOutput::open( const Path & path , bool do_throw )
 
 G::LogStream G::LogOutput::start( Severity severity )
 {
-	m_depth++ ;
+	LogStream log_stream( m_depth , m_stream ) ;
 	if( m_depth > 1 )
-		return LogStream( nullptr ) ;
+	{
+		log_stream.m_ostream = nullptr ;
+		return log_stream ;
+	}
 
 	if( updateTime() && updatePath(m_path,m_real_path) )
 		open( m_real_path , false ) ;
 
 	m_stream.reset() ;
-	LogStream log_stream( &m_stream ) ;
-
 	log_stream << std::dec ;
 	if( !m_exename.empty() )
 		log_stream << m_exename << ": " ;
@@ -291,9 +295,8 @@ G::LogStream G::LogOutput::start( Severity severity )
 
 void G::LogOutput::output( LogStream & log_stream , int )
 {
-	// reject nested logging
-	if( m_depth ) m_depth-- ;
-	if( m_depth ) return ;
+	if( log_stream.m_ostream == nullptr ) 
+		return ;
 
 	char * buffer = m_buffer.data() ;
 	std::size_t n = LogOutputImp::tellp( log_stream ) ;
@@ -347,7 +350,8 @@ void G::LogOutput::assertionFailure( LogOutput * instance , const char * file , 
 		static std::array<char,m_buffer_size> buffer ;
 		omembuf streambuf( buffer.data() , buffer.size() ) ;
 		Stream stream( &streambuf ) ;
-		LogStream log_stream( &stream ) ;
+		unsigned int depth = 0U ;
+		LogStream log_stream( depth , stream ) ;
 
 		log_stream << LogOutputImp::assertion() << basename(file) << "(" << line << "): " << test_expression ;
 		char * p = buffer.data() ;

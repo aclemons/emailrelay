@@ -27,20 +27,31 @@
 namespace G
 {
 	//| \class G::LogStream
-	/// A non-throwing copyable wrapper for std::ostream, used by
-	/// G::LogOutput and associated logging macros. This class allows
-	/// streaming to G::LogOutput to be inherently non-throwing without
-	/// needing a try/catch block at every call site. The most common
+	/// A non-throwing moveable wrapper for std::ostream, used by
+	/// G::LogOutput and associated logging macros. The most common
 	/// streaming operators are implemented out-of-line as a modest
 	/// code-size optimisation.
 	///
 	struct LogStream
 	{
-		explicit LogStream( std::ostream * s ) noexcept :
-			m_ostream(s)
+		LogStream( unsigned int & depth , std::ostream & ostream ) noexcept :
+			m_depth_p(&depth) ,
+			m_ostream(&ostream)
 		{
+			depth++ ;
 		}
-		std::ostream * m_ostream ;
+		~LogStream()
+		{
+			if( m_depth_p && *m_depth_p )
+				(*m_depth_p)-- ;
+		}
+		LogStream() noexcept = default ;
+		LogStream( const LogStream & ) noexcept = delete ;
+		LogStream( LogStream && ) noexcept = default ;
+		LogStream & operator=( const LogStream & ) noexcept = delete ;
+		LogStream & operator=( LogStream && ) noexcept = default ;
+		unsigned int * m_depth_p {nullptr} ;
+		std::ostream * m_ostream {nullptr} ;
 	} ;
 }
 
