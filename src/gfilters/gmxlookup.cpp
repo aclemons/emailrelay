@@ -214,7 +214,7 @@ std::pair<GFilters::MxLookupImp::Result,std::string> GFilters::MxLookupImp::pars
 				G_LOG_MORE_IF( a.port() , "GFilters::MxLookupImp::parse: mx: answer: "
 					<< "host-ip [" << a.hostPartString() << "]" << from ) ;
 				if( address.port() == 0U && a.port() != 0U )
-        			address = a ;
+					address = a ;
 			}
 		}
 
@@ -333,8 +333,8 @@ GFilters::MxLookup::ReadHandler::ReadHandler( MxLookup * p , Method m ) :
 }
 
 void GFilters::MxLookup::ReadHandler::readEvent()
-{ 
-	if( m_p ) 
+{
+	if( m_p )
 		(m_p->*m_m)() ;
 }
 

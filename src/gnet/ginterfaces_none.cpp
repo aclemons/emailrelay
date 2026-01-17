@@ -57,7 +57,7 @@ bool GNet::Interfaces::loaded() const
 
 G::StringArray GNet::Interfaces::names( bool ) const
 {
-	return G::StringArray() ;
+	return {} ;
 }
 
 GNet::Interfaces::const_iterator GNet::Interfaces::begin() const

@@ -295,7 +295,7 @@ G::LogStream G::LogOutput::start( Severity severity )
 
 void G::LogOutput::output( LogStream & log_stream , int )
 {
-	if( log_stream.m_ostream == nullptr ) 
+	if( log_stream.m_ostream == nullptr )
 		return ;
 
 	char * buffer = m_buffer.data() ;

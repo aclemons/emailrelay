@@ -74,7 +74,7 @@ void GNet::AddressLocal::setScopeId( unsigned long /*ipv6_scope_id*/ )
 
 std::string GNet::AddressLocal::path() const
 {
-	return std::string() ;
+	return {} ;
 }
 
 std::string GNet::AddressLocal::displayString( bool /*ipv6_with_scope*/ ) const
@@ -89,7 +89,7 @@ std::string GNet::AddressLocal::hostPartString() const
 
 std::string GNet::AddressLocal::queryString() const
 {
-	return std::string() ;
+	return {} ;
 }
 
 bool GNet::AddressLocal::validData( const sockaddr * /*addr*/ , socklen_t /*len*/ )

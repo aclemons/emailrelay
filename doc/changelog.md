@@ -7,7 +7,8 @@ E-MailRelay Change Log
 * Network filters can abandon the current message, like exit code 100 [fr #40].
 * Fix for [SMTP][] server rejecting an empty MAIL-FROM address.
 * Fix for client-filter exit code 102 [sr #119]
-* For for `mx:` filter using IPv6 nameservers.
+* Fix for `mx:` filter using IPv6 nameservers.
+* Fix for option parsing when double dashes in the config file.
 * Fix for stopped logging.
 * GUI fix for `--poll` period setting.
 

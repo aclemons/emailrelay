@@ -130,14 +130,14 @@ namespace GSsl
 		}
 
 		#if GCONFIG_HAVE_MBEDTLS_X509WRITE_CRT_SET_SERIAL_RAW
-		inline void call_mbedtls_x509write_crt_set_serial( mbedtls_x509write_cert * crt , 
+		inline void call_mbedtls_x509write_crt_set_serial( mbedtls_x509write_cert * crt ,
 			const mbedtls_mpi * , unsigned int n = 1U )
 		{
 			unsigned char uc = n ;
 			mbedtls_x509write_crt_set_serial_raw( crt , &uc , 1U ) ;
 		}
 		#else
-		inline void call_mbedtls_x509write_crt_set_serial( mbedtls_x509write_cert * crt , 
+		inline void call_mbedtls_x509write_crt_set_serial( mbedtls_x509write_cert * crt ,
 			const mbedtls_mpi * mpi , unsigned int = 1U )
 		{
 				mbedtls_x509write_crt_set_serial( crt , mpi ) ;

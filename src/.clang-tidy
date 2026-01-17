@@ -1,7 +1,7 @@
 #
-# clang-tidy-18
+# clang-tidy-19
 #
-# Configuration for clang-tidy v18.
+# Configuration for clang-tidy v19.
 #
 
 Checks: "\
@@ -9,7 +9,6 @@ bugprone-*,\
 cert-*,\
 cppcoreguidelines-*,\
 misc-*,\
--misc-use-internal-linkage,\
 modernize-*,\
 performance-*,\
 portability-*,\
@@ -17,6 +16,7 @@ readability-*,\
 -bugprone-branch-clone,\
 -bugprone-easily-swappable-parameters,\
 -bugprone-empty-catch,\
+-bugprone-macro-parentheses,\
 -bugprone-suspicious-include,\
 -bugprone-suspicious-stringview-data-usage,\
 -cppcoreguidelines-avoid-do-while,\
@@ -38,6 +38,7 @@ readability-*,\
 -misc-non-private-member-variables-in-classes,\
 -misc-no-recursion,\
 -misc-const-correctness,\
+-misc-use-internal-linkage,\
 -modernize-avoid-bind,\
 -modernize-concat-nested-namespaces,\
 -modernize-macro-to-enum,\

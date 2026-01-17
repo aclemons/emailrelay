@@ -1,6 +1,10 @@
 News
 ====
 
-The 2.6.1 point release rolls up the 2.6 fixes and adds feature request
-number 40.
+The 2.6.1 point release rolls up the 2.6 fixes and adds feature request 40.
+
+Note that recent versions of MbedTLS require that when verifiying a remote
+server's certificate the server's CNAME should be defined. That means that
+E-MailRelay's "--client-tls-verify" option also requires
+"--client-tls-verify-name" if using MbedTLS.
 
