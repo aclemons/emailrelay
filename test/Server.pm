@@ -72,6 +72,7 @@ sub new
 	my $spool_dir = $opt->{spool_dir} ;
 	my $tls_certificates = $opt->{tls_certificates} ;
 	my $tls_verify = $opt->{tls_verify} ;
+	my $tls_verify_name = $opt->{tls_verify_name} ;
 	my $server_smtp_config = $opt->{server_smtp_config} ;
 	my $domain = $opt->{domain} ;
 
@@ -125,6 +126,7 @@ sub new
 		m_tls_private_key => $tls_private_key ,
 		m_tls_certificate => $tls_certificate ,
 		m_tls_verify => $tls_verify ,
+		m_tls_verify_name => $tls_verify_name ,
 		m_tls_config => $tls_config ,
 		m_poll_timeout => 1 ,
 		m_forward_to => "dummy3450930958349:25" ,
@@ -159,6 +161,7 @@ sub serverSecrets { return shift->{m_server_secrets} }
 sub tlsPrivateKey { return shift->{m_tls_private_key} }
 sub tlsCertificate { return shift->{m_tls_certificate} }
 sub tlsVerify { return shift->{m_tls_verify} }
+sub tlsVerifyName { return shift->{m_tls_verify_name} }
 sub tlsConfig { return shift->{m_tls_config} }
 sub pollTimeout { return shift->{m_poll_timeout} }
 sub set_pollTimeout { $_[0]->{m_poll_timeout} = $_[1] }
@@ -258,6 +261,7 @@ sub _switches
 		( exists($sw{ClientTlsPrivateKey}) ? "--client-tls-certificate __TLS_PRIVATE_KEY__ " : "" ) .
 		( exists($sw{ClientTlsCertificate}) ? "--client-tls-certificate __TLS_CERTIFICATE__ " : "" ) .
 		( (exists($sw{ClientTlsVerify}) && $sw{ClientTlsVerify}) ? "--client-tls-verify __TLS_VERIFY__ " : "" ) .
+		( (exists($sw{ClientTlsVerifyName}) && $sw{ClientTlsVerifyName}) ? "--client-tls-verify-name __TLS_VERIFY_NAME__ " : "" ) .
 		( exists($sw{TlsConfig}) ? "--tls-config=__TLS_CONFIG__ " : "" ) .
 		( exists($sw{ServerSmtpConfig}) ? "--server-smtp-config __SERVER_SMTP_CONFIG__ " : "" ) .
 		"" ;
@@ -290,6 +294,7 @@ sub _set_all
 	_set( \$command_tail , "__TLS_PRIVATE_KEY__" , $this->tlsPrivateKey() ) ;
 	_set( \$command_tail , "__TLS_CERTIFICATE__" , $this->tlsCertificate() ) ;
 	_set( \$command_tail , "__TLS_VERIFY__" , $this->tlsVerify() ) ;
+	_set( \$command_tail , "__TLS_VERIFY_NAME__" , $this->tlsVerifyName() ) ;
 	_set( \$command_tail , "__TLS_CONFIG__" , $this->tlsConfig() ) ;
 	_set( \$command_tail , "__LOCAL_DELIVERY_DIR__" , $this->localDeliveryDir() ) ;
 	_set( \$command_tail , "__SERVER_SMTP_CONFIG__" , $this->serverSmtpConfig() ) ;

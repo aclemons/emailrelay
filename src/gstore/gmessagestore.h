@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2026 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -74,6 +74,7 @@ class GStore::MessageStore
 public:
 	enum class AddressStyle
 	{
+		Empty , // empty, as in "MAIL FROM:<>" (new)
 		Invalid , // control characters or invalid UTF-8 encoding or invalid IDN
 		Ascii , // printable ASCII mailbox and domain (RFC-5321 4.1.2)
 		Utf8Mailbox , // UTF-8 mailbox, ASCII domain

@@ -603,9 +603,8 @@ void GNet::DatagramSocket::disconnect()
 GNet::Socket::ssize_type GNet::DatagramSocket::read( char * buffer , size_type length )
 {
 	if( length == 0 ) return 0 ;
-	sockaddr sender {} ; // not used
-	socklen_t sender_len = sizeof(sender) ;
-	ssize_type nread = G::Msg::recvfrom( fd() , buffer , length , 0 , &sender , &sender_len ) ;
+	AddressStorage sender ; // not used
+	ssize_type nread = G::Msg::recvfrom( fd() , buffer , length , 0 , sender.p1() , sender.p2() ) ;
 	if( sizeError(nread) )
 	{
 		saveReason() ;
@@ -617,15 +616,14 @@ GNet::Socket::ssize_type GNet::DatagramSocket::read( char * buffer , size_type l
 GNet::Socket::ssize_type GNet::DatagramSocket::readfrom( char * buffer , size_type length , Address & src_address )
 {
 	if( length == 0 ) return 0 ;
-	sockaddr sender {} ;
-	socklen_t sender_len = sizeof(sender) ;
-	ssize_type nread = G::Msg::recvfrom( fd() , buffer , length , 0 , &sender , &sender_len ) ;
+	AddressStorage sender ;
+	ssize_type nread = G::Msg::recvfrom( fd() , buffer , length , 0 , sender.p1() , sender.p2() ) ;
 	if( sizeError(nread) )
 	{
 		saveReason() ;
 		return -1 ;
 	}
-	src_address = Address( &sender , sender_len ) ;
+	src_address = Address( sender.p() , sender.n() ) ;
 	return nread ;
 }
 

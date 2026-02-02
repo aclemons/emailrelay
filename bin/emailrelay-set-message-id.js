@@ -34,7 +34,7 @@ try
 			if( !have_message_id )
 			{
 				var now = new Date() ;
-				var lhs = (now.getTime()/1000) + "." + (Math.random()*1000).toFixed(0) ) ;
+				var lhs = (now.getTime()/1000) + "." + (Math.random()*1000).toFixed(0) ;
 				var new_message_id = lhs + "@" + domain ;
 				out_.WriteLine( "Message-ID: " + new_message_id ) ;
 			}

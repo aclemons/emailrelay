@@ -484,9 +484,9 @@ GSsl::MbedTls::ProfileImp::ProfileImp( const LibraryImp & library_imp , bool is_
 	// configure protocol version
 	{
 		if( extra_config.min_() >= 0 )
-			mbedtls_ssl_conf_min_version( &m_config , MBEDTLS_SSL_MAJOR_VERSION_3 , extra_config.min_() ) ;
+			call_mbedtls_ssl_conf_min_version( &m_config , MBEDTLS_SSL_MAJOR_VERSION_3 , extra_config.min_() ) ;
 		if( extra_config.max_() >= 0 )
-			mbedtls_ssl_conf_max_version( &m_config , MBEDTLS_SSL_MAJOR_VERSION_3 , extra_config.max_() ) ;
+			call_mbedtls_ssl_conf_max_version( &m_config , MBEDTLS_SSL_MAJOR_VERSION_3 , extra_config.max_() ) ;
 	}
 
 	// hooks

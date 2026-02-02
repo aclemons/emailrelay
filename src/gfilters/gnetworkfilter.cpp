@@ -93,7 +93,12 @@ void GFilters::NetworkFilter::sendResult( const std::string & reason )
 	{
 		m_text = reason ;
 		m_timer.startTimer( 0 ) ;
-		m_result = m_text.value().empty() ? Result::ok : Result::fail ;
+		if( reason.empty() ) // (RequestClient converts "ok" to the empty string)
+			m_result = Result::ok ;
+		else if( responsePair(reason).second == 100 )
+			m_result = Result::abandon ;
+		else
+			m_result = Result::fail ;
 	}
 }
 
@@ -113,16 +118,30 @@ bool GFilters::NetworkFilter::special() const
 	return false ;
 }
 
-std::pair<std::string,int> GFilters::NetworkFilter::responsePair() const
+bool GFilters::NetworkFilter::is100( const std::string & s )
 {
-	// "[<response-code> ]<response>[<tab><reason>]"
-	std::string s = G::Str::printable( G::Str::head( m_text.value_or(std::string()) , "\t" , false ) ) ;
-	int n = 0 ;
-	if( s.size() >= 3U &&
+	return s.size() >= 3U && ( s[0] == '1' && s[1] == '0' && s[2] == '0' ) ;
+}
+
+bool GFilters::NetworkFilter::is45xx( const std::string & s )
+{
+	return s.size() >= 3U &&
 		( s[0] == '4' || s[0] == '5' ) &&
 		( s[1] >= '0' && s[1] <= '9' ) &&
-		( s[2] >= '0' && s[2] <= '9' ) &&
-		( s.size() == 3U || s[3] == ' ' ) )
+		( s[2] >= '0' && s[2] <= '9' ) ;
+}
+
+std::pair<std::string,int> GFilters::NetworkFilter::responsePair() const
+{
+	return responsePair( m_text.value_or(std::string()) ) ;
+}
+
+std::pair<std::string,int> GFilters::NetworkFilter::responsePair( const std::string & text )
+{
+	// "[<response-code> ]<response>[<tab><reason>]"
+	std::string s = G::Str::printable( G::Str::head( text , "\t" , false ) ) ;
+	int n = 0 ;
+	if( s.size() >= 3U && (s.size()==3U || s[3]==' ') && (is100(s) || is45xx(s)) )
 	{
 		n = G::Str::toInt( s.substr(0U,3U) ) ;
 		s.erase( 0U , s.size() == 3U ? 3U : 4U ) ;

@@ -1,7 +1,7 @@
 #
-# clang-tidy-18
+# clang-tidy-19
 #
-# Configuration for clang-tidy v18.
+# Configuration for clang-tidy v19.
 #
 
 Checks: "\
@@ -16,7 +16,9 @@ readability-*,\
 -bugprone-branch-clone,\
 -bugprone-easily-swappable-parameters,\
 -bugprone-empty-catch,\
+-bugprone-macro-parentheses,\
 -bugprone-suspicious-include,\
+-bugprone-suspicious-stringview-data-usage,\
 -cppcoreguidelines-avoid-do-while,\
 -cppcoreguidelines-avoid-magic-numbers,\
 -cppcoreguidelines-avoid-non-const-global-variables,\
@@ -36,6 +38,7 @@ readability-*,\
 -misc-non-private-member-variables-in-classes,\
 -misc-no-recursion,\
 -misc-const-correctness,\
+-misc-use-internal-linkage,\
 -modernize-avoid-bind,\
 -modernize-concat-nested-namespaces,\
 -modernize-macro-to-enum,\
@@ -48,6 +51,7 @@ readability-*,\
 -modernize-use-trailing-return-type,\
 -performance-avoid-endl,\
 -performance-enum-size,\
+-performance-unnecessary-copy-initialization,\
 -performance-unnecessary-value-param,\
 -readability-avoid-nested-conditional-operator,\
 -readability-braces-around-statements,\
@@ -59,6 +63,7 @@ readability-*,\
 -readability-inconsistent-declaration-parameter-name,\
 -readability-magic-numbers,\
 -readability-make-member-function-const,\
+-readability-math-missing-parentheses,\
 -readability-named-parameter,\
 -readability-qualified-auto,\
 -readability-redundant-access-specifiers,\

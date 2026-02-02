@@ -2,6 +2,17 @@
 Change Log
 **********
 
+2.6 -> 2.6.1
+============
+
+* Network filters can abandon the current message, like exit code 100 [fr #40].
+* Fix for SMTP_ server rejecting an empty MAIL-FROM address.
+* Fix for client-filter exit code 102 [sr #119]
+* Fix for *mx:* filter using IPv6 nameservers.
+* Fix for option parsing when double dashes in the config file.
+* Fix for stopped logging.
+* GUI fix for *--poll* period setting.
+
 2.5.2 -> 2.6
 ============
 

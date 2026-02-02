@@ -100,7 +100,7 @@ my %check = (
 	5 => [
 		"$cfg_source_dir/qtbase/src/corelib/kernel/qobject.h" ,
 		"$cfg_source_dir/qtbase/.qmake.conf" ,
-		"$cfg_source_dir/qtbase/qmake/Makefile.unix.unix" , # sic
+		#"$cfg_source_dir/qtbase/qmake/Makefile.unix.unix" ,
 	] ,
 	6 => [
 		"$cfg_source_dir/qtbase/src/corelib/kernel/qobject.h" ,

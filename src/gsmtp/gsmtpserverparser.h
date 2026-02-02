@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2026 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -98,7 +98,7 @@ private:
 		ValidXtext ,
 		Upper
 	} ;
-	static AddressCommand parseAddressPart( std::string_view , const Config & ) ;
+	static AddressCommand parseAddressPart( std::string_view , const Config & , bool allow_empty ) ;
 	static std::size_t parseMailNumericValue( std::string_view , std::string_view , AddressCommand & ) ;
 	static std::string parseMailStringValue( std::string_view , std::string_view , AddressCommand & , Conversion = Conversion::None ) ;
 	static bool parseMailBoolean( std::string_view , std::string_view , AddressCommand & ) ;

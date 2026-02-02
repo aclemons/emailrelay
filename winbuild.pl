@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
+# Copyright (C) 2026 Graeme Walker <graeme_walker@users.sourceforge.net>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -221,7 +221,7 @@ my $cmake_args = {
 	} ;
 
 # project version
-chomp( my $version = eval { FileHandle->new("VERSION")->gets() } || "2.6" ) ;
+chomp( my $version = eval { FileHandle->new("VERSION")->gets() } || "2.6.1" ) ;
 my $project = "emailrelay" ;
 my $install_x64 = "$project-$version-w64" ;
 my $install_x86 = "$project-$version-w32" ;

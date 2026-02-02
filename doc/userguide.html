@@ -482,7 +482,43 @@ client-auth C:/ProgramData/E-MailRelay/emailrelay.auth
       <div class="div-pre">
        <pre>start ... emailrelay --as-proxy=smtp.gmail.com:587 --client-tls --client-auth=C:/ProgramData/E-MailRelay/emailrelay.auth ...</pre>
       </div><!-- div-pre -->
-   <h2><a class="a-header" name="SH_1_13">Connection tunnelling</a></h2> <!-- index:2:SH:1:13:Connection tunnelling -->
+   <h2><a class="a-header" name="SH_1_13">Microsoft 365</a></h2> <!-- index:2:SH:1:13:Microsoft 365 -->
+    <p>
+     E-MailRelay can forward e-mails to a Microsoft 365 Exchange server for onward
+     delivery. Set the <em>--forward-to</em> address to <em>smtp.office365.com:587</em>, and enable
+     authentication and TLS by using the <em>--client-auth</em> and <em>--client-tls</em> options,
+     or add these lines to the <em>emailrelay.cfg</em> configuration file:
+    </p>
+
+      <div class="div-pre">
+       <pre>forward-to smtp.office365.com:587
+client-tls
+client-auth C:/ProgramData/E-MailRelay/emailrelay.auth
+</pre>
+      </div><!-- div-pre -->
+    <p>
+     The secrets file (<em>emailrelay.auth</em>) should contain the credentials for logging
+     in to the Microsoft server, but because Microsoft's policy is to limit the use
+     of passwords these credentials will normally have to be OAUTH tokens:
+    </p>
+
+      <div class="div-pre">
+       <pre>client oauth:b me@mydomain.onmicrosoft.com dXNlcj1ncmFlbWVAZ3JhZW1ld2Fsa2VyLm9ub...
+</pre>
+      </div><!-- div-pre -->
+    <p>
+     Configure your Microsoft 365 <a href="https://admin.exchange.microsoft.com">Exchange</a>
+     server's 'mail flow' to allow SMTP AUTH and register E-MailRelay as an
+     authenticating application, and then obtain a fresh OAUTH token to go into the
+     E-MailRelay secrets file before forwarding e-mails.
+    </p>
+
+    <p>
+     Use the <a href="https://github.com/DATA-Systems/E-MailRelay-Token-Updater">scripts</a>
+     on GitHub from DATA-Systems GmbH to help with this. You will need to edit the
+     update script to set your application id etc.
+    </p>
+   <h2><a class="a-header" name="SH_1_14">Connection tunnelling</a></h2> <!-- index:2:SH:1:14:Connection tunnelling -->
     <p>
      E-MailRelay can send mail out via a SOCKS v4 proxy, which makes it easy to route
      your mail through an encrypted tunnel created by <em>ssh -N -D</em> or via the Tor
@@ -497,7 +533,7 @@ client-auth C:/ProgramData/E-MailRelay/emailrelay.auth
       <div class="div-pre">
        <pre>emailrelay --port 587 --as-proxy=smtp.example.com:25@localhost:9050 --domain=anon.net --anonymous --connection-timeout=300</pre>
       </div><!-- div-pre -->
-   <h2><a class="a-header" name="SH_1_14">Blocklists and dynamic firewalls</a></h2> <!-- index:2:SH:1:14:Blocklists and dynamic firewalls -->
+   <h2><a class="a-header" name="SH_1_15">Blocklists and dynamic firewalls</a></h2> <!-- index:2:SH:1:15:Blocklists and dynamic firewalls -->
     <p>
      E-MailRelay can consult with remote DNSBL blocklist servers in order to block
      incoming connections from known spammers. For example:
@@ -517,7 +553,7 @@ client-auth C:/ProgramData/E-MailRelay/emailrelay.auth
      firewall. Use E-MailRelay's <em>--log-format=address</em> command-line option so that
      the remote IP addresses are logged and made visible to <em>fail2ban</em>.
     </p>
-   <h2><a class="a-header" name="SH_1_15">Bcc handling</a></h2> <!-- index:2:SH:1:15:Bcc handling -->
+   <h2><a class="a-header" name="SH_1_16">Bcc handling</a></h2> <!-- index:2:SH:1:16:Bcc handling -->
     <p>
      E-MailRelay transfers e-mail messages without changing their content in any way,
      other than by adding a <em>Received</em> header. In particular, if a message contains a
@@ -538,7 +574,7 @@ client-auth C:/ProgramData/E-MailRelay/emailrelay.auth
      An E-MailRelay <em>--filter</em> script can be used to reject messages with incorrect
      <em>Bcc:</em> headers, and an example script is included.
     </p>
-   <h2><a class="a-header" name="SH_1_16">Advanced set-up</a></h2> <!-- index:2:SH:1:16:Advanced set-up -->
+   <h2><a class="a-header" name="SH_1_17">Advanced set-up</a></h2> <!-- index:2:SH:1:17:Advanced set-up -->
     <p>
      As an example of an advanced E-MailRelay setup consider the following
      command-line, split onto multiple lines for readability:

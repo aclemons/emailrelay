@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2026 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -65,7 +65,7 @@ GSmtp::ServerParser::AddressCommand GSmtp::ServerParser::parseMailFrom( std::str
 	if( !G::Str::imatch("MAIL"_sv,t()) || G::Str::ifind(t.next()(),"FROM:"_sv) != 0U )
 		return {"invalid mail-from command"} ;
 
-	AddressCommand result = parseAddressPart( line , config ) ;
+	AddressCommand result = parseAddressPart( line , config , true ) ;
 	if( result.error.empty() )
 	{
 		if( !parseMailStringValue(line,"SMTPUTF8="_sv,result).empty() ) // RFC-6531 3.4 para1, but not clear
@@ -90,10 +90,10 @@ GSmtp::ServerParser::AddressCommand GSmtp::ServerParser::parseRcptTo( std::strin
 	if( !G::Str::imatch("RCPT"_sv,t()) || G::Str::ifind(t.next()(),"TO:"_sv) != 0U )
 		return {"invalid rcpt-to command"} ;
 
-	return parseAddressPart( line , config ) ;
+	return parseAddressPart( line , config , false ) ;
 }
 
-GSmtp::ServerParser::AddressCommand GSmtp::ServerParser::parseAddressPart( std::string_view line , const Config & config )
+GSmtp::ServerParser::AddressCommand GSmtp::ServerParser::parseAddressPart( std::string_view line , const Config & config , bool allow_empty )
 {
 	// RFC-5321 4.1.2
 	// eg. MAIL FROM:<>
@@ -191,6 +191,9 @@ GSmtp::ServerParser::AddressCommand GSmtp::ServerParser::parseAddressPart( std::
 		result.invalid_nobrackets ?
 			std::string_view( line.data()+startpos , endpos-startpos ) :
 			std::string_view( line.data()+startpos+1U , endpos-startpos-1U ) ;
+
+	if( address.empty() && !allow_empty )
+		return {"invalid empty mailbox"} ;
 
 	auto address_style = GStore::MessageStore::addressStyle( address ) ;
 	if( address_style == AddressStyle::Invalid )

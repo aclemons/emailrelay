@@ -106,7 +106,7 @@ void GNet::Monitor::addClient( const Connection & client )
 	if( pthis() )
 	{
 		pthis()->m_imp->add( client , true ) ;
-		pthis()->m_imp->emit( pthis()->m_signal , "out" , "start" ) ;
+		MonitorImp::emit( pthis()->m_signal , "out" , "start" ) ;
 	}
 }
 
@@ -115,7 +115,7 @@ void GNet::Monitor::removeClient( const Connection & client ) noexcept
 	if( pthis() )
 	{
 		pthis()->m_imp->remove( client , true ) ;
-		pthis()->m_imp->emit( pthis()->m_signal , "out" , "stop" ) ;
+		MonitorImp::emit( pthis()->m_signal , "out" , "stop" ) ;
 	}
 }
 
@@ -124,7 +124,7 @@ void GNet::Monitor::addServerPeer( const Connection & server_peer )
 	if( pthis() )
 	{
 		pthis()->m_imp->add( server_peer , false ) ;
-		pthis()->m_imp->emit( pthis()->m_signal , "in" , "start" ) ;
+		MonitorImp::emit( pthis()->m_signal , "in" , "start" ) ;
 	}
 }
 
@@ -134,7 +134,7 @@ void GNet::Monitor::removeServerPeer( const Connection & server_peer ) noexcept
 	if( pthis() )
 	{
 		pthis()->m_imp->remove( server_peer , false ) ;
-		pthis()->m_imp->emit( pthis()->m_signal , "in" , "stop" ) ;
+		MonitorImp::emit( pthis()->m_signal , "in" , "stop" ) ;
 	}
 }
 
@@ -143,7 +143,7 @@ void GNet::Monitor::addServer( const Listener & server )
 	if( pthis() )
 	{
 		pthis()->m_imp->add( server ) ;
-		pthis()->m_imp->emit( pthis()->m_signal , "listen" , "start" ) ;
+		MonitorImp::emit( pthis()->m_signal , "listen" , "start" ) ;
 	}
 }
 
@@ -152,7 +152,7 @@ void GNet::Monitor::removeServer( const Listener & server ) noexcept
 	if( pthis() )
 	{
 		pthis()->m_imp->remove( server ) ;
-		pthis()->m_imp->emit( pthis()->m_signal , "listen" , "stop" ) ;
+		MonitorImp::emit( pthis()->m_signal , "listen" , "stop" ) ;
 	}
 }
 

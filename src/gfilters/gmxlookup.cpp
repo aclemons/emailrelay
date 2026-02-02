@@ -59,7 +59,9 @@ GFilters::MxLookup::MxLookup( GNet::EventState es , Config config ,
 		m_ns_index(0U) ,
 		m_ns_failures(0U) ,
 		m_nameservers(nameservers) ,
-		m_timer(*this,&MxLookup::onTimeout,es)
+		m_timer(*this,&MxLookup::onTimeout,es) ,
+		m_handler4(this,&MxLookup::readHandler4) ,
+		m_handler6(this,&MxLookup::readHandler6)
 {
 	if( m_nameservers.empty() )
 	{
@@ -70,19 +72,13 @@ GFilters::MxLookup::MxLookup( GNet::EventState es , Config config ,
 	bool ipv4 = std::find_if( m_nameservers.begin() , m_nameservers.end() ,
 		[](const GNet::Address &a_){return a_.is4();} ) != m_nameservers.end() ;
 	if( ipv4 )
-	{
 		m_socket4 = std::make_unique<GNet::DatagramSocket>( GNet::Address::Family::ipv4 , 0 , GNet::DatagramSocket::Config() ) ;
-		m_socket4->addReadHandler( *this , m_es ) ;
-		G_DEBUG( "GFilters::MxLookup::ctor: ipv4 udp socket: " << (*m_socket4).getLocalAddress().displayString() ) ;
-	}
 
 	bool ipv6 = std::find_if( m_nameservers.begin() , m_nameservers.end() ,
 		[](const GNet::Address &a_){return a_.is6();} ) != m_nameservers.end() ;
 	if( ipv6 )
 	{
 		m_socket6 = std::make_unique<GNet::DatagramSocket>( GNet::Address::Family::ipv6 , 0 , GNet::DatagramSocket::Config() ) ;
-		m_socket6->addReadHandler( *this , m_es ) ;
-		G_DEBUG( "GFilters::MxLookup::ctor: ipv6 udp socket: " << (*m_socket6).getLocalAddress().displayString() ) ;
 	}
 }
 
@@ -102,23 +98,37 @@ void GFilters::MxLookup::start( const GStore::MessageId & message_id , const std
 		m_port = port ? port : 25U ;
 		m_ns_index = 0U ;
 		m_ns_failures = 0U ;
+		m_error.clear() ;
 		m_question = forward_to ;
+		addReadHandlers() ;
 		sendMxQuestion( m_ns_index , m_question ) ;
 		startTimer() ;
 	}
 }
 
-void GFilters::MxLookup::readEvent()
+void GFilters::MxLookup::readHandler4()
 {
-	G_DEBUG( "GFilters::MxLookup::readEvent" ) ;
+	G_ASSERT( m_socket4.get() != nullptr ) ;
+	if( m_socket4 )
+		readHandler( *m_socket4 ) ;
+}
+
+void GFilters::MxLookup::readHandler6()
+{
+	G_ASSERT( m_socket6.get() != nullptr ) ;
+	if( m_socket6 )
+		readHandler( *m_socket6 ) ;
+}
+
+void GFilters::MxLookup::readHandler( GNet::DatagramSocket & socket )
+{
+	G_DEBUG( "GFilters::MxLookup::readHandler" ) ;
 	std::vector<char> buffer( 4096U ) ; // 512 in RFC-1035 4.2.1
-	ssize_t nread = m_socket4->read( buffer.data() , buffer.size() ) ;
+	ssize_t nread = socket.read( buffer.data() , buffer.size() ) ;
 	if( nread > 0 )
 		process( buffer.data() , static_cast<std::size_t>(nread) ) ;
-	else if( (nread=m_socket6->read( buffer.data() , buffer.size() )) > 0 ) // NOLINT assignment
-		process( buffer.data() , static_cast<std::size_t>(nread) ) ;
 	else
-		fail( "dns socket error" ) ;
+		fail( "dns socket error: " + socket.reason() ) ;
 }
 
 void GFilters::MxLookup::process( const char * p , std::size_t n )
@@ -204,7 +214,7 @@ std::pair<GFilters::MxLookupImp::Result,std::string> GFilters::MxLookupImp::pars
 				G_LOG_MORE_IF( a.port() , "GFilters::MxLookupImp::parse: mx: answer: "
 					<< "host-ip [" << a.hostPartString() << "]" << from ) ;
 				if( address.port() == 0U && a.port() != 0U )
-        			address = a ;
+					address = a ;
 			}
 		}
 
@@ -248,6 +258,14 @@ void GFilters::MxLookup::cancel()
 {
 	dropReadHandlers() ;
 	m_timer.cancelTimer() ;
+}
+
+void GFilters::MxLookup::addReadHandlers()
+{
+	if( m_socket6 )
+		m_socket6->addReadHandler( m_handler6 , m_es ) ;
+	if( m_socket4 )
+		m_socket4->addReadHandler( m_handler4 , m_es ) ;
 }
 
 void GFilters::MxLookup::dropReadHandlers()
@@ -304,6 +322,20 @@ GNet::DatagramSocket & GFilters::MxLookup::socket( std::size_t ns_index )
 G::Slot::Signal<GStore::MessageId,std::string,std::string> & GFilters::MxLookup::doneSignal() noexcept
 {
 	return m_done_signal ;
+}
+
+// ==
+
+GFilters::MxLookup::ReadHandler::ReadHandler( MxLookup * p , Method m ) :
+	m_p(p) ,
+	m_m(m)
+{
+}
+
+void GFilters::MxLookup::ReadHandler::readEvent()
+{
+	if( m_p )
+		(m_p->*m_m)() ;
 }
 
 GFilters::MxLookup::Config::Config()

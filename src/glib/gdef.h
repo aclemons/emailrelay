@@ -1138,11 +1138,11 @@
 				class dummy_thread
 				{
 					public:
-						typedef int id ;
+						using id = int ;
 						template <typename T_fn> explicit dummy_thread( T_fn fn ) { fn() ; }
 						template <typename T_fn,typename T_arg1> dummy_thread( T_fn fn , T_arg1 arg1 ) { fn(arg1) ; }
 						template <typename T_fn,typename T_arg1,typename T_arg2> dummy_thread( T_fn fn , T_arg1 arg1 , T_arg2 arg2 ) { fn(arg1,arg2) ; }
-						dummy_thread() {}
+						dummy_thread() = default ;
 						bool joinable() const noexcept { return false ; }
 						void detach() {}
 						void join() {}

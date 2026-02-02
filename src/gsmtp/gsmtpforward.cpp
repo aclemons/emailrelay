@@ -21,6 +21,7 @@
 #include "gdef.h"
 #include "gsmtpforward.h"
 #include "geventloggingcontext.h"
+#include "gstr.h"
 #include "gcall.h"
 #include "glog.h"
 #include <algorithm>
@@ -155,7 +156,15 @@ void GSmtp::Forward::routingFilterDone( int filter_result )
 	const bool abandon = filter_result == 1 ;
 	//const bool fail = filter_result == 2 ;
 
+	std::string filter_error =
+		"routing filter failed: " +
+		G::Str::printable( m_routing_filter->response() ) + ": " +
+		G::Str::printable( m_routing_filter->reason() ) ;
+
 	std::string reopen_error = ok ? m_message->reopen() : std::string() ;
+	if( !reopen_error.empty() )
+		filter_error = reopen_error ;
+
 	bool continue_ = true ;
 	if( ok && reopen_error.empty() )
 	{
@@ -171,7 +180,7 @@ void GSmtp::Forward::routingFilterDone( int filter_result )
 	}
 	else
 	{
-		m_message->fail( "routing filter failed" , 0 ) ;
+		m_message->fail( filter_error , 0 ) ;
 		m_message.reset() ;
 	}
 
@@ -292,7 +301,7 @@ void GSmtp::Forward::onMessageDoneSignal( const Client::MessageDoneInfo & info )
 
 	if( m_store )
 	{
-		if( !sendNext() )
+		if( info.filter_special || !sendNext() )
 		{
 			quitAndFinish() ;
 			throw GNet::Done() ; // terminates the client -- m_client_ptr calls onDeletedSignal()

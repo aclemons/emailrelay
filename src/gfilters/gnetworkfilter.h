@@ -73,7 +73,10 @@ private:
 	void clientEvent( const std::string & , const std::string & , const std::string & ) ;
 	void sendResult( const std::string & ) ;
 	void onTimeout() ;
+	static bool is100( const std::string & ) ;
+	static bool is45xx( const std::string & ) ;
 	std::pair<std::string,int> responsePair() const ;
+	static std::pair<std::string,int> responsePair( const std::string & ) ;
 
 private:
 	GNet::EventState m_es ;

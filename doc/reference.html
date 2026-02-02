@@ -1989,7 +1989,83 @@ server plain carol my+20password
 --filter=spam:/run/spamd.s
 --filter=spam-edit:/run/spamd.s</pre>
       </div><!-- div-pre -->
-   <h2><a class="a-header" name="SH_1_21">SOCKS</a></h2> <!-- index:2:SH:1:21:SOCKS -->
+   <h2><a class="a-header" name="SH_1_21">Envelope fields</a></h2> <!-- index:2:SH:1:21:Envelope fields -->
+    <p>
+     Envelope files are structured as CR-LF text files, similar to RFC-822, using
+     a fixed field-name prefix of <em>X-MailRelay</em>. The first field name is <em>Format</em>,
+     and subsequent fields are in a fixed order, ending with an <em>End</em> field. Lines
+     after <em>End</em> are less strictly structured and can include <em>Reason</em> and
+     <em>ReasonCode</em> fields to record a log of forwarding failures.
+    </p>
+
+    <dl>
+     <dt>Format</dt>
+      <dd>
+       An identifier for the file format.
+      </dd>
+     <dt>Content</dt>
+      <dd>
+       An enumeration for the content type (unknown, 7bit, 8bit, binarymime).
+      </dd>
+     <dt>From</dt>
+      <dd>
+       The envelope <em>From</em> address.
+      </dd>
+     <dt>ToCount</dt>
+      <dd>
+       The total number of <em>To-Local</em> and <em>To-Remote</em> fields.
+      </dd>
+     <dt>To-Local</dt>
+      <dd>
+       Envelope <em>To</em> address for a local recipient.
+      </dd>
+     <dt>To-Remote</dt>
+      <dd>
+       Envelope <em>To</em> addresses for a remote recipient.
+      </dd>
+     <dt>Authentication</dt>
+      <dd>
+       The SMTP server <em>AUTH</em> command's SASL id.
+      </dd>
+     <dt>Client</dt>
+      <dd>
+       The remote client's IP address.
+      </dd>
+     <dt>ClientCertificate</dt>
+      <dd>
+       The remote client's TLS certificate.
+      </dd>
+     <dt>MailFromAuthIn</dt>
+      <dd>
+       The <em>AUTH</em> value received by the SMTP server's <em>MAIL</em> command.
+      </dd>
+     <dt>MailFromAuthOut</dt>
+      <dd>
+       The <em>AUTH</em> value sent in the SMTP client's <em>MAIL</em> command overriding the
+       client-authentication SASL id.
+      </dd>
+     <dt>ForwardTo</dt>
+      <dd>
+       Used by some filters to hold the domain name of all remote recipients.
+      </dd>
+     <dt>ForwardToAddress</dt>
+      <dd>
+       An override for the configured forwarding address.
+      </dd>
+     <dt>ClientAccountSelector</dt>
+      <dd>
+       A keyword to select a <em>client</em> row from the client-auth file.
+      </dd>
+     <dt>Utf8MailboxName</dt>
+      <dd>
+       A 1/0 boolean value to indicate that forwarding will need the SMTPUTF8 server extension.
+      </dd>
+     <dt>End</dt>
+      <dd>
+       A marker for the end of the fixed fields.
+      </dd>
+    </dl>
+   <h2><a class="a-header" name="SH_1_22">SOCKS</a></h2> <!-- index:2:SH:1:22:SOCKS -->
     <p>
      E-MailRelay can use a SOCKS 4a proxy for establishing outgoing SMTP connections;
      just append the SOCKS proxy address to the SMTP server's address, separated by
@@ -2010,7 +2086,7 @@ server plain carol my+20password
      establish the connection. The target SMTP server will see a connection coming
      from the Tor exit node rather than from the E-MailRelay server.
     </p>
-   <h2><a class="a-header" name="SH_1_22">SMTP extensions</a></h2> <!-- index:2:SH:1:22:SMTP extensions -->
+   <h2><a class="a-header" name="SH_1_23">SMTP extensions</a></h2> <!-- index:2:SH:1:23:SMTP extensions -->
     <p>
      Some standard extensions of the SMTP protocol can be enabled by using the
      <em>--server-smtp-config</em> and <em>--client-smtp-config</em> command-line options.
@@ -2020,7 +2096,7 @@ server plain carol my+20password
      there is a risk that any mail messages that require those extensions will fail
      to be forwarded.
     </p>
-   <h2><a class="a-header" name="SH_1_23">Administration interface</a></h2> <!-- index:2:SH:1:23:Administration interface -->
+   <h2><a class="a-header" name="SH_1_24">Administration interface</a></h2> <!-- index:2:SH:1:24:Administration interface -->
     <p>
      If enabled with the <em>--admin</em> command-line option, the E-MailRelay server will
      provide a network interface for performing administration tasks. This is a
@@ -2058,9 +2134,9 @@ E-MailRelay&gt; quit
     <p>
      The <em>list</em> command lists the messages in the spool directory, <em>status</em> provides
      network status information and activity statistics, and <em>notify</em> enables
-     asynchronous event notification through the adminisrtation connection.
+     asynchronous event notification through the administration connection.
     </p>
-   <h2><a class="a-header" name="SH_1_24">Connection blocking</a></h2> <!-- index:2:SH:1:24:Connection blocking -->
+   <h2><a class="a-header" name="SH_1_25">Connection blocking</a></h2> <!-- index:2:SH:1:25:Connection blocking -->
     <p>
      All incoming connections from remote network addresses are rejected by default,
      but can be allowed by using the <em>--remote-clients</em> or <em>-r</em> option. This is to
@@ -2128,7 +2204,7 @@ E-MailRelay&gt; quit
      Connections from loopback and private (RFC-1918) network addresses are never
      checked using DNSBL.
     </p>
-   <h2><a class="a-header" name="SH_1_25">POP server</a></h2> <!-- index:2:SH:1:25:POP server -->
+   <h2><a class="a-header" name="SH_1_26">POP server</a></h2> <!-- index:2:SH:1:26:POP server -->
     <p>
      The POP protocol is designed to allow e-mail user agents to retrieve and delete
      e-mail messages that have arrived at their final destination.
@@ -2192,7 +2268,7 @@ E-MailRelay&gt; quit
      to interpret message recipient addresses as belonging to local users or not. See
      <em>Delivery</em> above for more information.
     </p>
-   <h2><a class="a-header" name="SH_1_26">Run-time environment</a></h2> <!-- index:2:SH:1:26:Run-time environment -->
+   <h2><a class="a-header" name="SH_1_27">Run-time environment</a></h2> <!-- index:2:SH:1:27:Run-time environment -->
     <p>
      On Linux/Unix systems an E-MailRelay server started as <em>root</em> runs mostly with an
      unprivileged effective user-id and group-id given by the <em>--user</em> command-line
@@ -2250,7 +2326,7 @@ E-MailRelay&gt; quit
      On Windows there is no user-id switching. All files are opened with the
      _SH_DENYNO option so they can be accessed without sharing violations.
     </p>
-   <h2><a class="a-header" name="SH_1_27">Files and directories</a></h2> <!-- index:2:SH:1:27:Files and directories -->
+   <h2><a class="a-header" name="SH_1_28">Files and directories</a></h2> <!-- index:2:SH:1:28:Files and directories -->
     <p>
      On Linux/Unix systems E-MailRelay installs by default under <em>/usr/local</em>, but
      binary distributions will probably have been built to install elsewhere.

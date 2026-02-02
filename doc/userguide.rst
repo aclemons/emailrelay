@@ -377,6 +377,36 @@ line:
     start ... emailrelay --as-proxy=smtp.gmail.com:587 --client-tls --client-auth=C:/ProgramData/E-MailRelay/emailrelay.auth ...
 
 
+Microsoft 365
+=============
+E-MailRelay can forward e-mails to a Microsoft 365 Exchange server for onward
+delivery. Set the *--forward-to* address to *smtp.office365.com:587*, and enable
+authentication and TLS_ by using the *--client-auth* and *--client-tls* options,
+or add these lines to the *emailrelay.cfg* configuration file:
+
+::
+
+    forward-to smtp.office365.com:587
+    client-tls
+    client-auth C:/ProgramData/E-MailRelay/emailrelay.auth
+
+The secrets file (\ *emailrelay.auth*\ ) should contain the credentials for logging
+in to the Microsoft server, but because Microsoft's policy is to limit the use
+of passwords these credentials will normally have to be OAUTH tokens:
+
+::
+
+    client oauth:b me@mydomain.onmicrosoft.com dXNlcj1ncmFlbWVAZ3JhZW1ld2Fsa2VyLm9ub...
+
+Configure your Microsoft 365 `Exchange <https://admin.exchange.microsoft.com>`_
+server's 'mail flow' to allow SMTP_ AUTH and register E-MailRelay as an
+authenticating application, and then obtain a fresh OAUTH token to go into the
+E-MailRelay secrets file before forwarding e-mails.
+
+Use the `scripts <https://github.com/DATA-Systems/E-MailRelay-Token-Updater>`_
+on GitHub from DATA-Systems GmbH to help with this. You will need to edit the
+update script to set your application id etc.
+
 Connection tunnelling
 =====================
 E-MailRelay can send mail out via a SOCKS_ v4 proxy, which makes it easy to route

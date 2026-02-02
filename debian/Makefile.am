@@ -28,5 +28,6 @@ EXTRA_DIST = \
 	postinst \
 	prerm \
 	postrm \
-	rules
+	rules \
+	source_format
 

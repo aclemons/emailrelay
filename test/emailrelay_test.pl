@@ -2868,7 +2868,8 @@ sub testTlsServerBadClientCertificateVerifyRejected
 sub _testTlsClient
 {
 	# setup
-	my ( $client_cert_names , $client_ca_names , $server_cert_names , $server_ca_names , $client_verify , $expect_failure ) = @_ ;
+	my ( $client_cert_names , $client_ca_names , $server_cert_names ,
+		$server_ca_names , $client_verify , $client_verify_name , $expect_failure ) = @_ ;
 	requireTls() ;
 	requireOpensslTool() ; # Openssl::runServer()
 	my %args = (
@@ -2881,6 +2882,7 @@ sub _testTlsClient
 		ClientTlsConnection => 1 ,
 		ClientTlsCertificate => 1 ,
 		ClientTlsVerify => $client_verify ,
+		ClientTlsVerifyName => $client_verify_name ,
 		Admin => 1 ,
 		AdminTerminate => 1 ,
 		ForwardTo => 1 ,
@@ -2897,7 +2899,11 @@ sub _testTlsClient
 	my $server_ca = $openssl->concatenate( @$server_ca_names ) ;
 	my $spool_dir = System::createSpoolDir() ;
 	System::submitSmallMessage( $spool_dir ) ;
-	my $emailrelay = new Server( { spool_dir=>$spool_dir , tls_certificates=>$client_cert , tls_verify=>$client_ca } ) ;
+	my $emailrelay = new Server( {
+		spool_dir => $spool_dir ,
+		tls_certificates => $client_cert ,
+		tls_verify => $client_ca ,
+		tls_verify_name => $client_verify_name } ) ;
 	$emailrelay->set_forwardToPort( $server_port ) ;
 	my $admin_client = new AdminClient( $emailrelay->adminPort() ) ;
 	Check::ok( $emailrelay->run( \%args ) , "failed to start" , $emailrelay->message() ) ;
@@ -2937,7 +2943,7 @@ sub testTlsClientGoodServerCertificateVerifyAccepted
 	_testTlsClient(
 		["alice.key","alice.crt","carol.crt"] , ["dave.crt","trent.crt"] , ### why is dave required in ca-list ?
 		["bob.key","bob.crt","dave.crt"] , ["trent.crt"] ,
-		$verify , $expect_fail ) ;
+		$verify , "Bob" , $expect_fail ) ;
 }
 
 sub testTlsClientBadServerCertificateVerifyRejected
@@ -2948,7 +2954,7 @@ sub testTlsClientBadServerCertificateVerifyRejected
 	_testTlsClient(
 		["alice.key","alice.crt","carol.crt"] , ["trent.crt"] ,
 		["malory.key","malory.crt"] , ["trent.crt"] ,
-		$verify , $expect_fail ) ;
+		$verify , "Bob" , $expect_fail ) ;
 }
 
 sub testTlsClientBadServerCertificateNoVerifyAccepted
@@ -2959,14 +2965,14 @@ sub testTlsClientBadServerCertificateNoVerifyAccepted
 	_testTlsClient(
 		["alice.key","alice.crt","carol.crt"] , ["trent.crt"] ,
 		["malory.key","malory.crt"] , ["trent.crt"] ,
-		$verify , $expect_fail ) ;
+		$verify , undef , $expect_fail ) ;
 }
 
 sub _testTls
 {
 	# setup
 	my ( $client_cert_names , $client_ca_names , $server_cert_names , $server_ca_names ,
-		$client_verify , $server_verify , $expect_failure , $special ) = @_ ;
+		$client_verify , $client_verify_name , $server_verify , $expect_failure , $special ) = @_ ;
 	$special ||= 0 ;
 	requireTls() ;
 	my %client_args = (
@@ -2978,6 +2984,7 @@ sub _testTls
 		ClientTls => 1 ,
 		ClientTlsCertificate => 1 ,
 		ClientTlsVerify => $client_verify ,
+		ClientTlsVerifyName => $client_verify_name ,
 		ForwardTo => 1 ,
 		NoSmtp => 1 ,
 		Poll => 2 ,
@@ -3004,6 +3011,7 @@ sub _testTls
 		delete $client_args{ClientTls} ;
 		delete $client_args{ClientTlsCertificate} ;
 		delete $client_args{ClientTlsVerify} ;
+		delete $client_args{ClientTlsVerifyName} ;
 		delete $server_args{ServerTlsRequired} ;
 	}
 	if( $special == 2 )
@@ -3012,6 +3020,7 @@ sub _testTls
 		delete $client_args{ClientTls} ;
 		delete $client_args{ClientTlsCertificate} ;
 		delete $client_args{ClientTlsVerify} ;
+		delete $client_args{ClientTlsVerifyName} ;
 	}
 	my $openssl = _newOpenssl() ;
 	my $server_port = System::nextPort() ;
@@ -3022,7 +3031,7 @@ sub _testTls
 	my $client_spool_dir = System::createSpoolDir() ;
 	my $server_spool_dir = System::createSpoolDir() ;
 	System::submitSmallMessage( $client_spool_dir ) ;
-	my $client = new Server( { spool_dir=>$client_spool_dir , tls_certificates=>$client_cert , tls_verify=>$client_ca } ) ;
+	my $client = new Server( { spool_dir=>$client_spool_dir , tls_certificates=>$client_cert , tls_verify=>$client_ca , tls_verify_name=>$client_verify_name } ) ;
 	my $server = new Server( { smtp_port=>$server_port , spool_dir=>$server_spool_dir , tls_certificates=>$server_cert , tls_verify=>$server_ca } ) ;
 	$client->set_forwardToPort( $server_port ) ;
 	Check::ok( $server->run( \%server_args ) , "failed to start" , $server->message() ) ;
@@ -3085,7 +3094,8 @@ sub testTlsGoodServerCertificateVerifyAccepted
 	_testTls(
 		["alice.key","alice.crt","carol.crt"] , ["trent.crt"] ,
 		["bob.key","bob.crt","dave.crt"] , ["trent.crt"] ,
-		$client_verify , $server_verify , $expect_fail ) ;
+		$client_verify , "Bob" ,
+		$server_verify , $expect_fail ) ;
 }
 
 sub testTlsBadServerCertificateVerifyRejected
@@ -3096,7 +3106,8 @@ sub testTlsBadServerCertificateVerifyRejected
 	_testTls(
 		["alice.key","alice.crt","carol.crt"] , ["trent.crt"] ,
 		["malory.key","malory.crt"] , ["trent.crt"] ,
-		$client_verify , $server_verify , $expect_fail ) ;
+		$client_verify , "Bob" ,
+		$server_verify , $expect_fail ) ;
 }
 
 sub testTlsBadServerCertificateNoVerifyAccepted
@@ -3107,7 +3118,8 @@ sub testTlsBadServerCertificateNoVerifyAccepted
 	_testTls(
 		["alice.key","alice.crt","carol.crt"] , ["trent.crt"] ,
 		["malory.key","malory.crt"] , ["trent.crt"] ,
-		$client_verify , $server_verify , $expect_fail ) ;
+		$client_verify , undef ,
+		$server_verify , $expect_fail ) ;
 }
 
 sub testTlsBadClientCertificateNoVerifyAccepted
@@ -3118,7 +3130,8 @@ sub testTlsBadClientCertificateNoVerifyAccepted
 	_testTls(
 		["malory.key","malory.crt"] , ["trent.crt"] ,
 		["bob.key","bob.crt","dave.crt"] , ["trent.crt"] ,
-		$client_verify , $server_verify , $expect_fail ) ;
+		$client_verify , undef ,
+		$server_verify , $expect_fail ) ;
 }
 
 sub testTlsBadClientCertificateVerifyRejected
@@ -3129,7 +3142,8 @@ sub testTlsBadClientCertificateVerifyRejected
 	_testTls(
 		["malory.key","malory.crt"] , ["trent.crt"] ,
 		["bob.key","bob.crt","dave.crt"] , ["trent.crt"] ,
-		$client_verify , $server_verify , $expect_fail ) ;
+		$client_verify , undef ,
+		$server_verify , $expect_fail ) ;
 }
 
 sub testTlsNoClientTlsAndServerDoesntCare
@@ -3139,7 +3153,8 @@ sub testTlsNoClientTlsAndServerDoesntCare
 	_testTls(
 		["alice.key","alice.crt","carol.crt"] , ["trent.crt"] ,
 		["bob.key","bob.crt","dave.crt"] , ["trent.crt"] ,
-		$client_verify , $server_verify , $expect_fail , $special_test ) ;
+		$client_verify , "Bob" ,
+		$server_verify , $expect_fail , $special_test ) ;
 }
 
 sub testTlsNoClientTlsAndServerRequiresIt
@@ -3149,7 +3164,8 @@ sub testTlsNoClientTlsAndServerRequiresIt
 	_testTls(
 		["alice.key","alice.crt","carol.crt"] , ["trent.crt"] ,
 		["bob.key","bob.crt","dave.crt"] , ["trent.crt"] ,
-		$client_verify , $server_verify , $expect_fail , $special_test ) ;
+		$client_verify , "Bob" ,
+		$server_verify , $expect_fail , $special_test ) ;
 }
 
 # ===

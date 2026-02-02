@@ -91,7 +91,7 @@ Main::CommandLine::CommandLine( Output & output , const G::Arg & args_in ,
 				options_spec , option_map , &errors , 1U , 0U ,
 					[options_spec](const std::string & s_,bool){
 						auto option_p = parserFind( options_spec , s_ ) ;
-						return option_p ? ("-"+option_p->name) : s_ ;
+						return option_p ? (std::string(1U,'\0')+option_p->name) : s_ ;
 					} ) ;
 			if( errors.empty() && !args.empty() )
 				config_file = args[0] ;
@@ -116,7 +116,7 @@ Main::CommandLine::CommandLine( Output & output , const G::Arg & args_in ,
 						auto option_p = parserFind( options_spec , s_ ) ;
 						if( option_p && option_p->name == "spool-dir" )
 							config_names.push_back( s_.substr(0U,s_.size()-9U) ) ;
-						return option_p ? ("-"+option_p->name) : s_ ;
+						return option_p ? (std::string(1U,'\0')+option_p->name) : s_ ;
 					} ) ;
 			if( !errors.empty() )
 				config_names.clear() ;
@@ -140,11 +140,11 @@ Main::CommandLine::CommandLine( Output & output , const G::Arg & args_in ,
 					else if( s_ == option_p->name && i == 0U )
 						return option_p->name ; // no prefix, first config
 					else if( s_ == option_p->name )
-						return "-"+option_p->name ; // no prefix, not first config
+						return std::string(1U,'\0')+option_p->name ; // no prefix, not first config
 					else if( s_ == (config_names[i]+option_p->name) )
 						return option_p->name ; // our prefix
 					else if( std::find(config_names.begin(),config_names.end(),prefix+"-") != config_names.end() )
-						return "-"+option_p->name ; // valid prefix but not ours
+						return std::string(1U,'\0')+option_p->name ; // valid prefix but not ours
 					else
 						return s_ ; // invalid, fail as normal
 				} ) ;

@@ -112,7 +112,7 @@ then
 	then
     	git -C mbedtls checkout -q "mbedtls-3.5.0"
 	else
-		git -C mbedtls checkout -q "mbedtls-2.28"
+		git -C mbedtls checkout -q "mbedtls-2.28.10"
 	fi
 	if test "0$opt_mingw" -ne 0 -a "$opt_win" -eq 32
 	then
@@ -174,7 +174,7 @@ then
 	export GCONFIG_WINDMC="$TARGET-windmc"
 	export GCONFIG_WINDRES="$TARGET-windres"
 	export CXXFLAGS="$CXXFLAGS -std=c++11 -pthread"
-	#export CXXFLAGS="$CXXFLAGS -D_WIN32_WINNT=0x0501" eg. for Windows XP, otherwise whatever mingw defaults to
+	if test "$enable_winxp" != "" ; then export CXXFLAGS="$CXXFLAGS -D_WIN32_WINNT=0x0501" ; fi
 	export LDFLAGS="$LDFLAGS -pthread"
 	if test -x "`which $CXX`" ; then : ; else echo "error: no mingw c++ compiler: [$CXX]\n" ; exit 1 ; fi
 	echo with-gui 0 > winbuild.cfg

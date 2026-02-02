@@ -46,7 +46,7 @@ namespace GFilters
 /// 'restart_timeout' before the sequence starts again. There is no
 /// overall timeout.
 ///
-class GFilters::MxLookup : private GNet::EventHandler
+class GFilters::MxLookup
 {
 public:
 	struct Config /// A configuration structure for GFilters::MxLookup
@@ -78,16 +78,25 @@ public:
 	void cancel() ;
 		///< Cancels the lookup so the doneSignal() is not emitted.
 
-private: // overrides
-	void readEvent() override ; // GNet::EventHandler
-
 private:
+	struct ReadHandler : GNet::EventHandler
+	{
+		using Method = void (MxLookup::*)() ;
+		ReadHandler( MxLookup * p , Method m ) ;
+		MxLookup * m_p ;
+		Method m_m ;
+		void readEvent() override ;
+	} ;
+	void readHandler4() ;
+	void readHandler6() ;
+	void readHandler( GNet::DatagramSocket & ) ;
 	void startTimer() ;
 	void onTimeout() ;
 	void sendMxQuestion( std::size_t , const std::string & ) ;
 	void sendHostQuestion( std::size_t , const std::string & ) ;
 	void fail( const std::string & ) ;
 	void succeed( const std::string & ) ;
+	void addReadHandlers() ;
 	void dropReadHandlers() ;
 	GNet::DatagramSocket & socket( std::size_t ) ;
 	void process( const char * , std::size_t ) ;
@@ -104,6 +113,8 @@ private:
 	std::size_t m_ns_failures ;
 	std::vector<GNet::Address> m_nameservers ;
 	GNet::Timer<MxLookup> m_timer ;
+	ReadHandler m_handler4 ;
+	ReadHandler m_handler6 ;
 	std::unique_ptr<GNet::DatagramSocket> m_socket4 ;
 	std::unique_ptr<GNet::DatagramSocket> m_socket6 ;
 	G::Slot::Signal<GStore::MessageId,std::string,std::string> m_done_signal ;

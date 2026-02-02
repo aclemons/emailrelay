@@ -54,7 +54,6 @@ EXTRA_DIST = \
 	LICENSE \
 	VERSION \
 	README.md \
-	README.rst \
 	bootstrap \
 	autogen.sh \
 	winbuild.bat \
@@ -66,7 +65,7 @@ SUBDIRS = libexec bin src etc doc debian test m4 bsd po unity
 # work-round PKG_CHECK_MODULES if no pkg-config
 ACLOCAL_AMFLAGS = -I m4
 
-e_doc_DATA = COPYING AUTHORS INSTALL NEWS README ChangeLog
+e_doc_DATA = AUTHORS NEWS README ChangeLog
 
 uninstall-local:
 	-for try in 1 2 3 4 ; do echo "$(e_pamdir)/" "$(e_initdir)/" "$(e_sysconfdir)/" "$(e_examplesdir)/" "$(e_libexecdir)/" "$(e_spooldir)/" "$(e_docdir)/" "$(pkgdatadir)/" | tr ' ' '\n' | grep "/emailrelay/" | while read d ; do rmdir "$(DESTDIR)/$$d" 2>/dev/null ; done ; done
@@ -104,15 +103,16 @@ deb: $(DEB)
 $(DEB): dist
 	-mv emailrelay-$(VERSION) emailrelay-$(VERSION).old.$$$$ || true
 	tar -xzf $(TAR)
-	cd emailrelay-$(VERSION) && fakeroot debian/rules binary # or dpkg-buildpackage -b --jobs=10
 	mkdir emailrelay-$(VERSION)/debian/source
+	mv emailrelay-$(VERSION)/debian/source_format emailrelay-$(VERSION)/debian/source/format
+	cd emailrelay-$(VERSION) && fakeroot debian/rules binary # or dpkg-buildpackage -b --jobs=10
 
 .PHONY: deb-src
 deb-src: dist
 	-mv emailrelay-$(VERSION) emailrelay-$(VERSION).old.$$$$ || true
 	tar -xzf $(TAR)
 	mkdir emailrelay-$(VERSION)/debian/source
-	echo 1.0 > emailrelay-$(VERSION)/debian/source/format
+	mv emailrelay-$(VERSION)/debian/source_format emailrelay-$(VERSION)/debian/source/format
 	dpkg-source --build emailrelay-$(VERSION)
 
 .PHONY: tidy

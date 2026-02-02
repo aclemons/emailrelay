@@ -1,3 +1,13 @@
+emailrelay (2.6.1) unstable; urgency=low
+  * Network filters can abandon the current message, like exit code 100 [fr #40].
+  * Fix for SMTP server rejecting an empty MAIL-FROM address.
+  * Fix for client-filter exit code 102 [sr #119]
+  * Fix for "mx:" filter using IPv6 nameservers.
+  * Fix for option parsing when double dashes in the config file.
+  * Fix for stopped logging.
+  * GUI fix for "--poll" period setting.
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Sun,  1 Feb 2026 00:00:00 +0000
+
 emailrelay (2.6) unstable; urgency=low
   * New "--log-format" option (eg. "--log-format=address,port").
   * New "--server-smtp-config" "nostrictparsing" option to allow missing "RCPT-TO" angle brackets.
@@ -12,7 +22,7 @@ emailrelay (2.6) unstable; urgency=low
   * The "emailrelay-submit" utility can parse recipient addresses out of content headers.
   * On Windows "--no-daemon" is deprecated in favour of "--show=window".
   * The Windows event loop supports more concurrent connections [bug-id #59].
- -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Mon,  9 Sep 2024 00:00:00 +0000
+ -- maintainer graeme_walker <graeme_walker@users.sourceforge.net>  Mon, 09 Sep 2024 00:00:00 +0000
 
 emailrelay (2.5.2) unstable; urgency=low
   * Windows build scripts reworked.

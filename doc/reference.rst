@@ -1700,6 +1700,80 @@ Eg:
     --filter=spam-edit:/run/spamd.s
 
 
+Envelope fields
+===============
+Envelope files are structured as CR-LF text files, similar to RFC-822_, using
+a fixed field-name prefix of *X-MailRelay*. The first field name is *Format*,
+and subsequent fields are in a fixed order, ending with an *End* field. Lines
+after *End* are less strictly structured and can include *Reason* and
+*ReasonCode* fields to record a log of forwarding failures.
+
+*   Format
+
+    An identifier for the file format.
+
+*   Content
+
+    An enumeration for the content type (unknown, 7bit, 8bit, binarymime).
+
+*   From
+
+    The envelope *From* address.
+
+*   ToCount
+
+    The total number of *To-Local* and *To-Remote* fields.
+
+*   To-Local
+
+    Envelope *To* address for a local recipient.
+
+*   To-Remote
+
+    Envelope *To* addresses for a remote recipient.
+
+*   Authentication
+
+    The SMTP_ server *AUTH* command's SASL id.
+
+*   Client
+
+    The remote client's IP address.
+
+*   ClientCertificate
+
+    The remote client's TLS_ certificate.
+
+*   MailFromAuthIn
+
+    The *AUTH* value received by the SMTP_ server's *MAIL* command.
+
+*   MailFromAuthOut
+
+    The *AUTH* value sent in the SMTP client's *MAIL* command overriding the
+    client-authentication SASL id.
+
+*   ForwardTo
+
+    Used by some filters to hold the domain name of all remote recipients.
+
+*   ForwardToAddress
+
+    An override for the configured forwarding address.
+
+*   ClientAccountSelector
+
+    A keyword to select a *client* row from the client-auth file.
+
+*   Utf8MailboxName
+
+    A 1/0 boolean value to indicate that forwarding will need the SMTPUTF8 server extension.
+
+*   End
+
+    A marker for the end of the fixed fields.
+
+
 SOCKS
 =====
 E-MailRelay can use a SOCKS_ 4a proxy for establishing outgoing SMTP_ connections;
@@ -1755,7 +1829,7 @@ shutting down the service without disrupting existing connections.
 
 The *list* command lists the messages in the spool directory, *status* provides
 network status information and activity statistics, and *notify* enables
-asynchronous event notification through the adminisrtation connection.
+asynchronous event notification through the administration connection.
 
 Connection blocking
 ===================

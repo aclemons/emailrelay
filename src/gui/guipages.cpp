@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2001-2024 Graeme Walker <graeme_walker@users.sourceforge.net>
+// Copyright (C) 2026 Graeme Walker <graeme_walker@users.sourceforge.net>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -535,9 +535,10 @@ DoWhatPage::DoWhatPage( Gui::Dialog & dialog , const G::MapFile & config , const
 	m_period_combo->addItem( tr("second") ) ;
 	m_period_combo->addItem( tr("minute") ) ;
 	m_period_combo->addItem( tr("hour") ) ;
-	if( config.numericValue("poll",3600U) < 10U )
+	m_period = config.numericValue( "poll" , 3600U ) ;
+	if( m_period < 10U )
 		m_period_combo->setCurrentIndex( 0 ) ; // 1s
-	else if( config.numericValue("poll",3600U) < 300U )
+	else if( m_period < 300U )
 		m_period_combo->setCurrentIndex( 1 ) ; // 1min
 	else
 		m_period_combo->setCurrentIndex( 2 ) ; // 1hr
@@ -567,6 +568,7 @@ DoWhatPage::DoWhatPage( Gui::Dialog & dialog , const G::MapFile & config , const
 	layout->addStretch() ;
 	setLayout(layout);
 
+	connect( m_period_combo , SIGNAL(currentIndexChanged(int)) , this , SLOT(onPeriodUpdate(int)) ) ;
 	connect( m_pop_checkbox , SIGNAL(toggled(bool)) , this , SIGNAL(pageUpdateSignal()) ) ;
 	connect( m_smtp_checkbox , SIGNAL(toggled(bool)) , this , SLOT(onToggle()) ) ;
 	connect( m_smtp_checkbox , SIGNAL(toggled(bool)) , this , SIGNAL(pageUpdateSignal()) ) ;
@@ -574,6 +576,14 @@ DoWhatPage::DoWhatPage( Gui::Dialog & dialog , const G::MapFile & config , const
 	connect( m_periodically_checkbox , SIGNAL(toggled(bool)) , this , SLOT(onToggle()) ) ;
 
 	onToggle() ;
+}
+
+void DoWhatPage::onPeriodUpdate( int n )
+{
+	// (a non-standard polling period passes through unchanged in configuration mode)
+	if( n == 0 ) m_period = 1U ;
+	if( n == 1 ) m_period = 60U ;
+	if( n == 2 ) m_period = 3600U ;
 }
 
 void DoWhatPage::onToggle()
@@ -607,9 +617,7 @@ void DoWhatPage::dump( std::ostream & stream , bool for_install ) const
 	dumpItem( stream , for_install , "forward-immediate" , value_yn(m_immediate_checkbox) ) ;
 	dumpItem( stream , for_install , "forward-on-disconnect" , value_yn(m_on_disconnect_checkbox) ) ;
 	dumpItem( stream , for_install , "forward-poll" , value_yn(m_periodically_checkbox) ) ;
-	auto index = m_period_combo->currentIndex() ;
-	unsigned int period = index == 0 ? 1U : ( index == 1 ? 60U : 3600U ) ;
-	dumpItem( stream , for_install , "forward-poll-period" , std::to_string(period) ) ;
+	dumpItem( stream , for_install , "forward-poll-period" , std::to_string(m_period) ) ;
 }
 
 bool DoWhatPage::isComplete()
