@@ -38,7 +38,7 @@
 /// GNet::Resolver class can do to cancel a resolve request is to
 /// ask the ResolverImp to delete itself and then forget about it.
 ///
-class GNet::ResolverImp : private FutureEventHandler
+class GNet::ResolverImp : private FutureEventHandler , private ExceptionHandler
 {
 public:
 	ResolverImp( Resolver & , EventState , const Location & , const Resolver::Config & ) ;
@@ -63,6 +63,7 @@ public:
 
 private: // overrides
 	void onFutureEvent() override ; // GNet::FutureEventHandler
+	void onException( ExceptionSource * , std::exception & , bool ) override ; // GNet::ExceptionHandler
 
 public:
 	ResolverImp( const ResolverImp & ) = delete ;
@@ -75,7 +76,8 @@ private:
 
 private:
 	Resolver * m_resolver ;
-	std::unique_ptr<FutureEvent> m_future_event ;
+	EventState m_es ;
+	FutureEvent m_future_event ;
 	Timer<ResolverImp> m_timer ;
 	Location m_location ;
 	ResolverFuture m_future ;
@@ -85,16 +87,17 @@ private:
 
 std::size_t GNet::ResolverImp::m_zcount = 0U ;
 
-GNet::ResolverImp::ResolverImp( Resolver & resolver , EventState es , const Location & location , const Resolver::Config & config ) :
+GNet::ResolverImp::ResolverImp( Resolver & resolver , EventState , const Location & location , const Resolver::Config & config ) :
 	m_resolver(&resolver) ,
-	m_future_event(std::make_unique<FutureEvent>(static_cast<FutureEventHandler&>(*this),es)) ,
-	m_timer(*this,&ResolverImp::onTimeout,es) ,
+	m_es(EventState::create().eh(*this)) ,
+	m_future_event(*this,m_es) ,
+	m_timer(*this,&ResolverImp::onTimeout,m_es) ,
 	m_location(location) ,
 	m_future(location.host(),location.service(),location.family(),config)
 {
 	G_ASSERT( G::threading::works() ) ; // see Resolver::start()
 	G::Cleanup::Block block_signals ;
-	m_thread = G::threading::thread_type( ResolverImp::start , this , m_future_event->handle() ) ;
+	m_thread = G::threading::thread_type( ResolverImp::start , this , m_future_event.handle() ) ;
 }
 
 GNet::ResolverImp::~ResolverImp()
@@ -130,6 +133,13 @@ void GNet::ResolverImp::start( ResolverImp * This , HANDLE handle ) noexcept
 	}
 }
 
+void GNet::ResolverImp::onException( ExceptionSource * , std::exception & e , bool done )
+{
+	G_LOG_IF( !done , "GNet::ResolverImp: exception: " << e.what() ) ;
+	if( m_resolver && m_resolver->m_es.hasExceptionHandler() )
+		m_resolver->m_es.eh()->onException( m_resolver->m_es.esrc() , e , done ) ;
+}
+
 void GNet::ResolverImp::onFutureEvent()
 {
 	G_DEBUG( "GNet::ResolverImp::onFutureEvent: future event: ptr=" << m_resolver ) ;
@@ -141,10 +151,8 @@ void GNet::ResolverImp::onFutureEvent()
 	if( m_thread.joinable() )
 		m_thread.join() ; // worker thread is finishing, so no delay here
 
-	Resolver * resolver = m_resolver ;
-	m_resolver = nullptr ;
-	if( resolver )
-		resolver->done( std::string(m_future.reason()) , Location(m_location) ) ; // must take copies
+	if( m_resolver )
+		m_resolver->done( std::string(m_future.reason()) , Location(m_location) ) ; // must take copies
 }
 
 bool GNet::ResolverImp::zombify()

@@ -135,7 +135,6 @@ public:
 		private:
 		Private() = default ;
 		friend class GNet::EventState ;
-		friend class GNet::EventStateUnbound ;
 		friend class GNet::TimerList ;
 		friend class GNet::EventLoopImp ;
 		friend class GNet::EventStateUnbound ;
